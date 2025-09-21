@@ -26,6 +26,8 @@ jobs:
 
       - name: Run deploy.ps1
         shell: pwsh
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Write-Host "Start Deployment..."
           .\deploy.ps1
