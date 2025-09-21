@@ -1,18 +1,30 @@
+# deploy.ps1
+
 $ProjectName = "fantasy-league-custom-frontend"
 $OutputDir = "dist/$ProjectName/browser"
-$Repo = "https://x-access-token:$env:GITHUB_TOKEN@github.com/Lolindhir/fantasy-app.git"
+$Repo = "https://github.com/Lolindhir/fantasy-app.git"
+$BaseHref = "/fantasy-app/"
 
-# GitHub Actions User
-git config user.name "github-actions"
-git config user.email "github-actions@github.com"
+Write-Host "Start Deployment..."
 
+# Angular Projekt bauen
 Write-Host "Baue Angular Projekt..."
-npm run build
+ng build --configuration production --base-href $BaseHref
 
 if (!(Test-Path "$OutputDir/index.html")) {
     Write-Error "Build fehlgeschlagen! index.html nicht gefunden."
     exit 1
 }
 
-Write-Host "Deployment-Verzeichnis: $OutputDir"
-npx angular-cli-ghpages --dir=$OutputDir --no-silent --repo=$Repo
+# JSONs aus public/data kopieren
+$SourceData = "public/data/*"
+$DestData = "$OutputDir/data"
+Write-Host "Kopiere JSONs von $SourceData nach $DestData"
+if (!(Test-Path $DestData)) { New-Item -ItemType Directory -Path $DestData -Force | Out-Null }
+Copy-Item -Path $SourceData -Destination $DestData -Recurse -Force
+
+# Deployment auf GitHub Pages
+Write-Host "Deploye nach GitHub Pages..."
+npx angular-cli-ghpages --dir=$OutputDir --repo=$Repo
+
+Write-Host "Deployment abgeschlossen!"
