@@ -9,7 +9,7 @@ Write-Host "Start Deployment..."
 
 # Angular Projekt bauen
 Write-Host "Baue Angular Projekt..."
-ng build --configuration production --base-href $BaseHref
+npx ng build --configuration production --base-href $BaseHref
 
 if (!(Test-Path "$OutputDir/index.html")) {
     Write-Error "Build fehlgeschlagen! index.html nicht gefunden."
