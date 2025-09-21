@@ -1,0 +1,133 @@
+<!-- Spieler Template -->
+<ng-template #playerList let-players="players" let-columns="columns">
+  <table mat-table [dataSource]="players" class="mat-elevation-z2 full-width">
+
+    <!-- Rang -->
+    <ng-container matColumnDef="rank">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let player; let i = index">{{ i + 1 }}</td>
+    </ng-container>
+
+    <!-- Bild -->
+    <ng-container matColumnDef="picture">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let player">
+        <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="30" />
+      </td>
+    </ng-container>
+
+    <!-- Name -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef> Spieler </th>
+      <td mat-cell *matCellDef="let player" style="font-weight: bold;">{{ player.NameShort }}</td>
+    </ng-container>
+
+    <!-- Position als Chip -->
+    <ng-container matColumnDef="position">
+      <th mat-header-cell *matHeaderCellDef> Position </th>
+      <td mat-cell *matCellDef="let player">
+        <div [style.background-color]="getPositionColor(player.Position)" class="chip-position">
+          {{ player.Position }}
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- NFL Team -->
+    <ng-container matColumnDef="team">
+      <th mat-header-cell *matHeaderCellDef> Team </th>
+      <td mat-cell *matCellDef="let player">
+        <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
+      </td>
+    </ng-container>
+
+    <!-- Salary -->
+    <ng-container matColumnDef="salary">
+      <th mat-header-cell *matHeaderCellDef> Salary </th>
+      <td mat-cell *matCellDef="let player">{{ player.SalaryDollarsDisplay }}</td>
+    </ng-container>
+
+    <!-- Fantasy Team -->
+    <ng-container matColumnDef="fantasyTeam">
+      <th mat-header-cell *matHeaderCellDef> Owner </th>
+      <td mat-cell *matCellDef="let player">
+        <img 
+          *ngIf="player.TeamFantasy?.Avatar" 
+          [src]="player.TeamFantasy.Avatar" 
+          alt="Logo" 
+          width="25"
+          matTooltip="{{ player.TeamFantasy.Owner }}" 
+          matTooltipPosition="above"
+        />
+      </td>
+    </ng-container>
+
+    <!-- Header + Rows -->
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+  </table>
+</ng-template>
+
+
+<!-- Salary Cap Card -->
+<mat-card class="salarycap">
+  <mat-card-header>
+    <mat-card-title>
+      League Salary Cap = {{ formatSalaryDollars(salaryCapTopTeam) }}
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    
+  </mat-card-content>
+
+  <mat-card-actions>
+    <mat-accordion>
+      <mat-expansion-panel [(expanded)]="salaryCapTopTeamExpanded">
+        <mat-expansion-panel-header>
+          <mat-panel-title> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
+        </mat-expansion-panel-header>
+          <!-- Salary Cap Card (mit Fantasy Team) -->
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','picture','name','position','team','salary','fantasyTeam'] }"></ng-container>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </mat-card-actions>
+</mat-card>
+
+
+<!-- Teams -->
+<mat-card *ngFor="let team of fantasyTeams; let i = index" class="team-card mat-elevation-z4">
+  <mat-card-header>
+    <div mat-card-avatar>
+      <img *ngIf="team.Avatar" [src]="team.Avatar" alt="Logo" width="40" />
+    </div>
+    <mat-card-title>{{ team.Team }} [{{ team.Wins }}-{{ team.Losses }}]</mat-card-title>
+    <mat-card-subtitle>Points: {{ team.Points }}, Streak: {{ team.Streak }}, Owner: {{ team.Owner }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <p><strong>Team Salary Top {{ salaryCapTopTeamNumber }}:</strong> {{ formatSalaryDollars(team.TopSalaryTeam) }}</p>
+    <p>
+      <strong>Salary Cap Difference:</strong>
+      <span [ngClass]="{
+        'positive-diff': team.TopSalaryTeam - salaryCapTopTeam > 0,
+        'negative-diff': team.TopSalaryTeam - salaryCapTopTeam < 0
+      }">
+        {{ formatSalaryDollars(team.TopSalaryTeam - salaryCapTopTeam, true) }}
+      </span>
+    </p>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <mat-accordion>
+      <mat-expansion-panel [(expanded)]="teamExpandedTeam[i]">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            Top {{ salaryCapTopTeamNumber }} Players of {{ team.Team }}
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+          <!-- Team Card (ohne Fantasy Team) -->
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','picture','name','position','team','salary'] }"></ng-container>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </mat-card-actions>
+</mat-card>
