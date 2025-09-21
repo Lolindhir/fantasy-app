@@ -1,4 +1,4 @@
-name: Deploy Angular App
+name: Deploy Angular App via PS1
 
 on:
   workflow_dispatch: # manueller Start
@@ -25,12 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        shell: pwsh
 
-      - name: Build Angular App
-        run: npm run build -- --configuration production --base-href "/fantasy-app/"
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/fantasy-league-custom-frontend/browser
+      - name: Run Deployment Script
+        run: .\deploy.ps1
+        shell: pwsh
