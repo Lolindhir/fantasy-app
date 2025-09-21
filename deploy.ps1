@@ -2,6 +2,10 @@ $ProjectName = "fantasy-league-custom-frontend"
 $OutputDir = "dist/$ProjectName/browser"
 $Repo = "https://x-access-token:$env:GITHUB_TOKEN@github.com/Lolindhir/fantasy-app.git"
 
+# GitHub Actions User
+git config user.name "github-actions"
+git config user.email "github-actions@github.com"
+
 Write-Host "Baue Angular Projekt..."
 npm run build
 
