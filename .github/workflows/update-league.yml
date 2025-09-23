@@ -32,7 +32,7 @@ jobs:
           git push
 
       - name: Trigger Deploy Workflow
-        uses: peter-evans/workflow-dispatch@v2
+        uses: peter-evans/workflow-dispatch@v1
         with:
-          workflow: deploy.yml
+          workflow: deploy_action.yml
           ref: main
