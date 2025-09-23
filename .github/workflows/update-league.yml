@@ -1,9 +1,9 @@
 
-name: Update League & Trigger Deploy
+name: Update League
 
 on:
-#   schedule:
-#     - cron: '*/10 * * * *' # alle 10 Minuten
+  schedule:
+    - cron: '*/30 * * * *' # alle 30 Minuten
   workflow_dispatch: # manueller Start
 
 jobs:
@@ -23,16 +23,12 @@ jobs:
       - name: Run League Request Script
         run: pwsh ./public/requests/RequestLeague.ps1
 
-      - name: Commit League.json
+      - name: Commit League.json (nur wenn Script erfolgreich)
+        if: success()  
+        # nur ausführen, wenn vorheriger Schritt erfolgreich war
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/League.json
           git commit -m "Update League.json" || echo "No changes to commit"
           git push
-
-      - name: Trigger Deploy Workflow
-        uses: peter-evans/workflow-dispatch@v1
-        with:
-          workflow: deploy_action.yml
-          ref: main
