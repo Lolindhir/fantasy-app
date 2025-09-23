@@ -19,7 +19,7 @@
     <!-- Name -->
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef> Spieler </th>
-      <td mat-cell *matCellDef="let player" style="font-weight: bold;">{{ player.NameShort }}</td>
+      <td mat-cell *matCellDef="let player">{{ player.NameShort }}</td>
     </ng-container>
 
     <!-- Position als Chip -->
@@ -87,7 +87,7 @@
           <mat-panel-title> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Salary Cap Card (mit Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','picture','name','position','team','salary','fantasyTeam'] }"></ng-container>
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'] }"></ng-container>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>
@@ -101,7 +101,7 @@
       <img *ngIf="team.Avatar" [src]="team.Avatar" alt="Logo" width="40" />
     </div>
     <mat-card-title>{{ team.Team }} [{{ team.Wins }}-{{ team.Losses }}]</mat-card-title>
-    <mat-card-subtitle>Points: {{ team.Points }}, Streak: {{ team.Streak }}, Owner: {{ team.Owner }}</mat-card-subtitle>
+    <mat-card-subtitle>Owner: {{ team.Owner }}, Points: {{ team.Points }}, Streak: {{ team.Streak }}</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
@@ -126,7 +126,7 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Team Card (ohne Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','picture','name','position','team','salary'] }"></ng-container>
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['name','position','salary'] }"></ng-container>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>

@@ -1,15 +1,15 @@
-name: Deploy Angular App via PS1
+name: Deploy Angular App
 
 on:
-  workflow_dispatch: # manueller Start
-  # push:
-  #   branches:
-  #     - main
-  workflow_call: # nur als Einstiegspunkt für andere Workflows, kein eigenes Secret nötig
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_call:
 
 jobs:
-  deploy:
-    runs-on: windows-latest   # Powershell benötigt Windows Runner
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
@@ -24,10 +24,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run deploy.ps1
-        shell: pwsh
+      - name: Run Deploy Script
+        run: pwsh ./deploy.ps1
         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Write-Host "Call Deploy Script..."
-          .\deploy.ps1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

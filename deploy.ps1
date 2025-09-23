@@ -2,7 +2,6 @@
 
 $ProjectName = "fantasy-league-custom-frontend"
 $OutputDir = "dist/$ProjectName/browser"
-$Repo = "https://x-access-token:${env:GITHUB_TOKEN}@github.com/Lolindhir/fantasy-app.git"
 $BaseHref = "/fantasy-app/"
 
 Write-Host "Start Deployment..."
@@ -25,6 +24,6 @@ Copy-Item -Path $SourceData -Destination $DestData -Recurse -Force
 
 # Deployment auf GitHub Pages
 Write-Host "Deploye nach GitHub Pages..."
-npx angular-cli-ghpages --dir=$OutputDir --repo=$Repo --no-silent
+npx angular-cli-ghpages --dir=$OutputDir --no-silent
 
 Write-Host "Deployment abgeschlossen!"
