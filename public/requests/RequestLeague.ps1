@@ -81,3 +81,24 @@ $targetFile = Join-Path $scriptDir "..\data\League.json"
 # JSON schreiben
 $leagueAsJson | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
 Write-Host "League.json gespeichert!" -ForegroundColor Green
+
+
+# --- Timestamp aktualisieren ---
+Write-Host "Aktualisiere League-Timestamp..." -ForegroundColor Yellow
+
+$TimestampFile = Join-Path $scriptDir "..\data\Timestamps.json"
+$Now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+# Vorhandene Datei einlesen oder leeres Objekt erstellen
+if (Test-Path $TimestampFile) {
+    $Timestamps = Get-Content $TimestampFile | ConvertFrom-Json
+} else {
+    $Timestamps = @{}
+}
+
+# Aktuelle Datenart updaten
+$Timestamps.League = $Now
+
+# Zurückschreiben
+$Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
+Write-Host "League-Timestamp aktualisiert: $Now" -ForegroundColor Green

@@ -1,3 +1,4 @@
+
 <!-- Spieler Template -->
 <ng-template #playerList let-players="players" let-columns="columns">
   <table mat-table [dataSource]="players" class="mat-elevation-z2 full-width">
@@ -67,6 +68,12 @@
   </table>
 </ng-template>
 
+
+<!-- Timestamp Anzeige, auf rechter Seite mit Flexbox -->
+<div *ngIf="timestamp" class="timestamp">
+  <mat-icon>access_time</mat-icon>
+  Last Updated: {{ timestamp | date:'medium' }}
+</div>
 
 <!-- Salary Cap Card -->
 <mat-card class="salarycap">

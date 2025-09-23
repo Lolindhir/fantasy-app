@@ -41,3 +41,25 @@ $targetFile = Join-Path $scriptDir "..\data\Teams.json"
 # JSON schreiben
 $teamData | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
 Write-Host "Teams.json gespeichert!" -ForegroundColor Green
+
+
+
+# --- Timestamp aktualisieren ---
+Write-Host "Aktualisiere Teams-Timestamp..." -ForegroundColor Yellow
+
+$TimestampFile = Join-Path $scriptDir "..\data\Timestamps.json"
+$Now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+# Vorhandene Datei einlesen oder leeres Objekt erstellen
+if (Test-Path $TimestampFile) {
+    $Timestamps = Get-Content $TimestampFile | ConvertFrom-Json
+} else {
+    $Timestamps = @{}
+}
+
+# Aktuelle Datenart updaten
+$Timestamps.Teams = $Now
+
+# Zurückschreiben
+$Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
+Write-Host "Teams-Timestamp aktualisiert: $Now" -ForegroundColor Green

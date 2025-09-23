@@ -4,6 +4,25 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 
+export interface DataTimestamps {
+  league?: string;  // ISO String
+  players?: string; // ISO String
+  teams?: string;   // ISO String
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TimestampService {
+
+  private readonly url = 'assets/data/timestamps.json';
+
+  constructor(private http: HttpClient) {}
+
+  
+}
+
+
 export interface RawLeague {
   LeagueID: string;
   Name: string;
@@ -81,46 +100,31 @@ export class DataService {
   private salaryTargetMax = 50_000_000;
   private salaryMappingNonLinear = true; // true = nicht-linear, false = linear
 
-  // getFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<FantasyTeam[]> {
-  //   return forkJoin({
-  //     league: this.http.get<RawLeague>('data/League.json'),
-  //     players: this.http.get<RawPlayer[]>('data/Players.json'),
-  //     nflTeams: this.http.get<RawNFLTeam[]>('data/Teams.json')
-  //   }).pipe(
-  //     map(({ league, players, nflTeams }) => {
-
-  //       // 1️⃣ Teams erstellen und Fantasy-Team Referenz vorbereiten
-  //       const teams: FantasyTeam[] = league.Teams.map(team => {
-  //         const fantasyTeam: FantasyTeam = {
-  //           ...team,
-  //           Team: team.Team || `Team ${team.Owner}`,
-  //           Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
-  //           Roster: [], // wird gleich gesetzt
-  //           Standing: 0
-  //         };
-
-  //         // 2️⃣ Roster erstellen und jedem Spieler das Fantasy-Team zuweisen
-  //         fantasyTeam.Roster = this.buildRoster(team.Roster, players, nflTeams, sortFields, teams);
-
-  //         return fantasyTeam;
-  //       });
-
-  //       // 3️⃣ Teams nach Standing sortieren
-  //       teams.sort((a, b) => {
-  //         if (b.Wins !== a.Wins) return b.Wins - a.Wins;
-  //         if (b.Ties !== a.Ties) return b.Ties - a.Ties;
-  //         if (b.Points !== a.Points) return b.Points - a.Points;
-  //         return a.PointsAgainst - b.PointsAgainst; // weniger PointsAgainst zuerst
-  //       });
-
-  //       // 4️⃣ Standing zuweisen
-  //       teams.forEach((team, index) => team.Standing = index + 1);
-
-  //       return teams;
-  //     })
-  //   );
-  // }
+  /* Timestamps laden */
+  private timestampsUrl = 'data/Timestamps.json';
+  getLeagueTimestamp(): Observable<string | undefined> {
+    return this.http.get<{ league?: string }>(this.timestampsUrl).pipe(
+      map(ts => this.toLocalTime(ts.league))
+    );
+  }
+  getPlayersTimestamp(): Observable<string | undefined> {
+    return this.http.get<{ players?: string }>(this.timestampsUrl).pipe(
+      map(ts => this.toLocalTime(ts.players))
+    );
+  }
+  getTeamsTimestamp(): Observable<string | undefined> {
+    return this.http.get<{ teams?: string }>(this.timestampsUrl).pipe(
+      map(ts => this.toLocalTime(ts.teams))
+    );
+  }
+  private toLocalTime(utcString?: string): string | undefined {
+    if (!utcString) return undefined;
+    const date = new Date(utcString); // UTC-Zeit aus JSON
+    return date.toLocaleString();     // Browser-Zeit, automatisch lokalisiert
+  }
   
+
+
   getFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<FantasyTeam[]> {
     return this.getAllPlayersWithFantasyTeams(sortFields).pipe(
       map(res => res.teams)
@@ -137,7 +141,7 @@ export class DataService {
 
 
   /**
- * Lädt alle Spieler, verknüpft sie mit NFL-Team und optional Fantasy-Team.
+  * Lädt alle Spieler, verknüpft sie mit NFL-Team und optional Fantasy-Team.
   */
   getAllPlayersWithFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<{ players: Player[]; teams: FantasyTeam[] }> {
     return forkJoin({

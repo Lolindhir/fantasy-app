@@ -26,6 +26,7 @@ type PositionKey = typeof positions[number]; // 'QB' | 'RB' | 'WR' | 'TE' | 'Fle
 
 export class TeamListComponent implements OnInit {
   
+  timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];
   salaryCap: number = 0;
@@ -86,6 +87,11 @@ export class TeamListComponent implements OnInit {
         this.salaryCapTopTeam = capTopXResult.cap;
         this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
       });
+    });
+
+    // 5️⃣ Timestamp holen
+    this.dataService.getLeagueTimestamp().subscribe(ts => {
+      this.timestamp = ts;
     });
      
   }
