@@ -1,31 +1,24 @@
 # --- Konfiguration ---
 $RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$targetFile = Join-Path $scriptDir "..\data\Teams.json"
-$backupDir = Join-Path $scriptDir "..\data\backup"
-if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 
-# --- Tank01: Teams abrufen ---
+# --- Tank01: Teams ---
 Write-Host "Hole Teams..." -ForegroundColor Yellow
 $tankTeamsUrl = "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com/getNFLTeams"
 $tankHeaders = @{
     "X-RapidAPI-Key" = $RapidAPIKey
     "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
 }
-try {
-    $tankTeamsResponse = Invoke-RestMethod -Uri $tankTeamsUrl -Headers $tankHeaders
-    $tankTeams = $tankTeamsResponse.body
-} catch {
-    Write-Error "Fehler beim Abrufen der Teams: $_"
-    exit 1
-}
-
+$tankTeamsResponse = Invoke-RestMethod -Uri $tankTeamsUrl -Headers $tankHeaders
+$tankTeams = $tankTeamsResponse.body
 Write-Host "Teams gefunden: $($tankTeams.Count)" -ForegroundColor Yellow
+
 
 # --- Team JSON vorbereiten ---
 Write-Host "Erstelle Teams.json..." -ForegroundColor Yellow
+
 $teamData = @()
 foreach ($tankEntry in $tankTeams) {
+
     $teamData += [PSCustomObject]@{
         ID      = $tankEntry.teamID
         Name    = $tankEntry.teamName
@@ -36,36 +29,37 @@ foreach ($tankEntry in $tankTeams) {
         ConferenceAbv = $tankEntry.conferenceAbv
         Division = $tankEntry.division
     }
+
 }
 
+# Verzeichnis des Skripts
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$TimeSnapshot = (Get-Date)
+# Ziel-Datei im data-Ordner parallel zum Requests-Ordner
+$targetFile = Join-Path $scriptDir "..\data\Teams.json"
+
+# JSON schreiben
+$teamData | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
+Write-Host "Teams.json gespeichert!" -ForegroundColor Green
 
 
-# --- Backup alte Datei ---
-if (Test-Path $targetFile) {
-    $timestamp = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
-    Copy-Item $targetFile -Destination (Join-Path $backupDir "Teams-$timestamp.json") -Force
-    Write-Host "Backup der alten Teams.json erstellt." -ForegroundColor Green
-}
-
-# --- JSON schreiben ---
-try {
-    $teamData | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
-    Write-Host "Teams.json gespeichert!" -ForegroundColor Green
-} catch {
-    Write-Error "Fehler beim Schreiben der Teams.json: $_"
-    exit 1
-}
 
 # --- Timestamp aktualisieren ---
+Write-Host "Aktualisiere Teams-Timestamp..." -ForegroundColor Yellow
+
 $TimestampFile = Join-Path $scriptDir "..\data\Timestamps.json"
-$Now = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+$Now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+# Vorhandene Datei einlesen oder leeres Objekt erstellen
 if (Test-Path $TimestampFile) {
     $Timestamps = Get-Content $TimestampFile | ConvertFrom-Json
 } else {
     $Timestamps = @{}
 }
+
+# Aktuelle Datenart updaten
 $Timestamps.Teams = $Now
+
+# Zurückschreiben
 $Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
 Write-Host "Teams-Timestamp aktualisiert: $Now" -ForegroundColor Green

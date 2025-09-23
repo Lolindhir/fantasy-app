@@ -5,23 +5,10 @@ import { map } from 'rxjs/operators';
 
 
 export interface DataTimestamps {
-  league?: string;  // ISO String
-  players?: string; // ISO String
-  teams?: string;   // ISO String
+  League: string;  // ISO String
+  Players: string; // ISO String
+  Teams: string;   // ISO String
 }
-
-@Injectable({
-  providedIn: 'root'
-})
-export class TimestampService {
-
-  private readonly url = 'assets/data/timestamps.json';
-
-  constructor(private http: HttpClient) {}
-
-  
-}
-
 
 export interface RawLeague {
   LeagueID: string;
@@ -103,25 +90,25 @@ export class DataService {
   /* Timestamps laden */
   private timestampsUrl = 'data/Timestamps.json';
   getLeagueTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ league?: string }>(this.timestampsUrl).pipe(
-      map(ts => this.toLocalTime(ts.league))
+    return this.http.get<{ League: string }>(this.timestampsUrl).pipe(
+      map(ts => ts.League)
     );
   }
   getPlayersTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ players?: string }>(this.timestampsUrl).pipe(
-      map(ts => this.toLocalTime(ts.players))
+    return this.http.get<{ Players: string }>(this.timestampsUrl).pipe(
+      map(ts => ts.Players)
     );
   }
   getTeamsTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ teams?: string }>(this.timestampsUrl).pipe(
-      map(ts => this.toLocalTime(ts.teams))
+    return this.http.get<{ Teams: string }>(this.timestampsUrl).pipe(
+      map(ts => ts.Teams)
     );
   }
-  private toLocalTime(utcString?: string): string | undefined {
-    if (!utcString) return undefined;
-    const date = new Date(utcString); // UTC-Zeit aus JSON
-    return date.toLocaleString();     // Browser-Zeit, automatisch lokalisiert
-  }
+  // private toLocalTime(utcString?: string): string | undefined {
+  //   if (!utcString) return undefined;
+  //   const date = new Date(utcString); // UTC-Zeit aus JSON
+  //   return date.toLocaleString();     // Browser-Zeit, automatisch lokalisiert
+  // }
   
 
 

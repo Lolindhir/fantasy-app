@@ -1,28 +1,43 @@
 # --- Konfiguration ---
 $LeagueID = "1257421353431080960"
 
+# Verzeichnis des Skripts
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$dataDir = Join-Path $scriptDir "..\data"
+$backupDir = Join-Path $dataDir "backup"
+if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir | Out-Null }
+
+$targetFile = Join-Path $dataDir "League.json"
+$timestampFile = Join-Path $dataDir "Timestamps.json"
+
 # --- Sleeper: Liga ---
-Write-Host "Hole Sleeper Liga..." -ForegroundColor Yellow
-$leagueUrl = "https://api.sleeper.app/v1/league/$LeagueID"
-$league = Invoke-RestMethod -Uri $leagueUrl
-Write-Host "Sleeper Liga gefunden." -ForegroundColor Yellow
+try {
+    Write-Host "Hole Sleeper Liga..." -ForegroundColor Yellow
+    $leagueUrl = "https://api.sleeper.app/v1/league/$LeagueID"
+    $league = Invoke-RestMethod -Uri $leagueUrl -ErrorAction Stop
+    Write-Host "Sleeper Liga gefunden." -ForegroundColor Yellow
+} catch {
+    Write-Error "Fehler beim Abrufen der Liga: $_"
+    exit 1
+}
 
 # --- Sleeper: Mitglieder + Rosters ---
-Write-Host "Hole Sleeper Teams..." -ForegroundColor Yellow
-$membersUrl = "https://api.sleeper.app/v1/league/$LeagueID/users"
-$members = Invoke-RestMethod -Uri $membersUrl
-$rostersUrl = "https://api.sleeper.app/v1/league/$LeagueID/rosters"
-$rosters = Invoke-RestMethod -Uri $rostersUrl
-Write-Host "Sleeper Teams gefunden: $($rosters.Count)" -ForegroundColor Yellow
+try {
+    Write-Host "Hole Sleeper Teams..." -ForegroundColor Yellow
+    $membersUrl = "https://api.sleeper.app/v1/league/$LeagueID/users"
+    $members = Invoke-RestMethod -Uri $membersUrl -ErrorAction Stop
+    $rostersUrl = "https://api.sleeper.app/v1/league/$LeagueID/rosters"
+    $rosters = Invoke-RestMethod -Uri $rostersUrl -ErrorAction Stop
+    Write-Host "Sleeper Teams gefunden: $($rosters.Count)" -ForegroundColor Yellow
+} catch {
+    Write-Error "Fehler beim Abrufen der Teams/Rosters: $_"
+    exit 1
+}
 
 # --- Teams bauen ---
 $teamData = @()
 foreach ($roster in $rosters) {
-    
-    # Team Informationen
     $member = $members | Where-Object { $_.user_id -eq $roster.owner_id }
-
-    # Owner Avatar with call to https://sleeper.com/v1/user/{user_id}/avatar, if id not null
     $ownerAvatar = $null
     if ($member.avatar) {
         $avatarID = $member.avatar
@@ -30,75 +45,70 @@ foreach ($roster in $rosters) {
     }
 
     $teamData += [PSCustomObject]@{
-        Owner   = $member.display_name
-        OwnerID = $member.user_id
-        OwnerAvatar = $ownerAvatar
-        Team    = $member.metadata.team_name
-        TeamID  = $roster.roster_id
-        TeamAvatar  = $member.metadata.avatar
-        Points  = $roster.settings.fpts
-        PointsAgainst = $roster.settings.fpts_against
-        Wins    = $roster.settings.wins
-        Losses  = $roster.settings.losses
-        Ties    = $roster.settings.ties
-        Record = $roster.metadata.record
-        Streak = $roster.metadata.streak
-        MatchupID = $roster.settings.matchup_id
+        Owner          = $member.display_name
+        OwnerID        = $member.user_id
+        OwnerAvatar    = $ownerAvatar
+        Team           = $member.metadata.team_name
+        TeamID         = $roster.roster_id
+        TeamAvatar     = $member.metadata.avatar
+        Points         = $roster.settings.fpts
+        PointsAgainst  = $roster.settings.fpts_against
+        Wins           = $roster.settings.wins
+        Losses         = $roster.settings.losses
+        Ties           = $roster.settings.ties
+        Record         = $roster.metadata.record
+        Streak         = $roster.metadata.streak
+        MatchupID      = $roster.settings.matchup_id
         WaiverPosition = $roster.settings.waiver_position
         WaiverAdjusted = $roster.settings.waiver_adjusted
         IsCommissioner = $member.is_owner
-        Roster  = $roster.players
-        Reserve = $roster.reserve
-        Taxi = $roster.taxi
-        Starter = $roster.starters
+        Roster         = $roster.players
+        Reserve        = $roster.reserve
+        Taxi           = $roster.taxi
+        Starter        = $roster.starters
     }
 }
 
 # --- League JSON vorbereiten ---
-Write-Host "Erstelle League.json..." -ForegroundColor Yellow
 $leagueAsJson = @()
 $leagueAsJson += [PSCustomObject]@{
-    LeagueID            = $league.league_id
-    Name                = $league.name
-    Avatar              = $league.avatar
-    Season              = $league.season
-    SeasonType          = $league.season_type
-    Status              = $league.status
-    TotalTeams          = $league.total_rosters
-    Teams               = $teamData
-    RosterSize          = $league.roster_positions
-    ScoringType         = $league.scoring_settings
-    Settings            = $league.settings
-    LeagueIDPrevious    = $league.previous_league_id
+    LeagueID          = $league.league_id
+    Name              = $league.name
+    Avatar            = $league.avatar
+    Season            = $league.season
+    SeasonType        = $league.season_type
+    Status            = $league.status
+    TotalTeams        = $league.total_rosters
+    Teams             = $teamData
+    RosterSize        = $league.roster_positions
+    ScoringType       = $league.scoring_settings
+    Settings          = $league.settings
+    LeagueIDPrevious  = $league.previous_league_id
 }
 
-# Verzeichnis des Skripts
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Ziel-Datei im data-Ordner parallel zum Requests-Ordner
-$targetFile = Join-Path $scriptDir "..\data\League.json"
+$TimeSnapshot = (Get-Date)
 
-# JSON schreiben
+
+# --- Backup alte Datei ---
+if (Test-Path $targetFile) {
+    $timestamp = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
+    $backupFile = Join-Path $backupDir "League_$timestamp.json"
+    Copy-Item -Path $targetFile -Destination $backupFile -Force
+    Write-Host "Alte League.json gesichert als $backupFile" -ForegroundColor Cyan
+}
+
+# --- JSON schreiben ---
 $leagueAsJson | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
 Write-Host "League.json gespeichert!" -ForegroundColor Green
 
-
 # --- Timestamp aktualisieren ---
-Write-Host "Aktualisiere League-Timestamp..." -ForegroundColor Yellow
-
-$TimestampFile = Join-Path $scriptDir "..\data\Timestamps.json"
-$Now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-
-# Vorhandene Datei einlesen oder leeres Objekt erstellen
-if (Test-Path $TimestampFile) {
-    $Timestamps = Get-Content $TimestampFile | ConvertFrom-Json
+$Now = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+if (Test-Path $timestampFile) {
+    $Timestamps = Get-Content $timestampFile | ConvertFrom-Json
 } else {
     $Timestamps = @{}
 }
-
-# Aktuelle Datenart updaten
 $Timestamps.League = $Now
-
-# Zurückschreiben
-$Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
+$Timestamps | ConvertTo-Json -Depth 3 | Set-Content $timestampFile
 Write-Host "League-Timestamp aktualisiert: $Now" -ForegroundColor Green
