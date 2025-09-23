@@ -2,8 +2,8 @@
 name: Update League
 
 on:
-  schedule:
-    - cron: '*/30 * * * *' # alle 30 Minuten
+  # schedule:
+  #   - cron: '*/30 * * * *' # alle 30 Minuten
   workflow_dispatch: # manueller Start
 
 jobs:
@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,4 +33,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add public/data/*.json
           git commit -m "Update JSONs" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git push origin HEAD

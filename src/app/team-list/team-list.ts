@@ -67,11 +67,11 @@ export class TeamListComponent implements OnInit {
   ngOnInit(): void {
     
     // 1️⃣ Alle Spieler holen
-    this.dataService.getAllPlayers(['Salary']).subscribe(players => {
+    this.dataService.getAllPlayers(['SalaryDollars']).subscribe(players => {
       this.allPlayers = players;
 
       // 2️⃣ FantasyTeams holen
-      this.dataService.getFantasyTeams(['Salary']).subscribe(teams => {
+      this.dataService.getFantasyTeams(['SalaryDollars']).subscribe(teams => {
         // Teams verarbeiten (TopPlayers pro Team)
         this.fantasyTeams = teams.map(team => this.processTeam(team));
 
