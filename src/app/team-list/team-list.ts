@@ -118,6 +118,8 @@ export class TeamListComponent implements OnInit {
     // TopSalary aus Position-Roster
     const topSalaryPosition = Object.values(topPlayersPosition).flat().reduce((sum, p) => sum + p.SalaryDollars, 0);
 
+    // === Alle Spieler des Teams für Anzeige ===
+    const allTeamPlayers = [...roster]; // einfach alle Spieler
 
     // Top Spieler innerhalb des Teams
     const topTeam = roster.slice(0, topN);
@@ -130,7 +132,7 @@ export class TeamListComponent implements OnInit {
       ...team,
       TopPlayersPosition: topPlayersPosition,
       TopSalaryPosition: topSalaryPosition,
-      TopPlayersTeam: topPlayersTeam,
+      TopPlayersTeam: allTeamPlayers, //topPlayersTeam, um nur die Top N Spieler zu zeigen
       TopSalaryTeam: topSalaryTeam
     };
   }

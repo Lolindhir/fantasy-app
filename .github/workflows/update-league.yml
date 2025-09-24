@@ -28,7 +28,7 @@ jobs:
       - name: Run League Request Script
         run: pwsh ./public/requests/RequestLeague.ps1
 
-      - name: Commit League.json (nur wenn Script erfolgreich)
+      - name: Commit League.json (on success)
         if: success()  
         # nur ausführen, wenn vorheriger Schritt erfolgreich war
         run: |
@@ -37,3 +37,7 @@ jobs:
           git add public/data/**
           git diff --cached --quiet || git commit -m "Update data files after league request"
           git push origin HEAD
+          
+  trigger-deploy:
+    needs: update-league
+    uses: ./.github/workflows/deploy.yml
