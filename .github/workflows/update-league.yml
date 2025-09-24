@@ -2,8 +2,8 @@
 name: Update League
 
 on:
-  # schedule:
-  #   - cron: '*/30 * * * *' # alle 30 Minuten
+  schedule:
+    - cron: '*/30 * * * *' # alle 30 Minuten
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -35,5 +35,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
-          git diff --cached --quiet || git commit -m "Update data files"
+          git diff --cached --quiet || git commit -m "Update data files after league request"
           git push origin HEAD
