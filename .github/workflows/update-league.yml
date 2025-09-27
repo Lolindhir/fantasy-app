@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-            token: ${{ secrets.GITHUB_TOKEN }}
+            token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -38,8 +38,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add public/data/**
           git diff --cached --quiet || git commit -m "Update data files after league request"
-          git push origin HEAD
-
-  trigger-pages-deploy:
-    needs: update-league
-    uses: ./.github/workflows/deploy.yml
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
