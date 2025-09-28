@@ -96,14 +96,12 @@ $Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 # --- JSON als String vorbereiten ---
 $newJson = $leagueAsJson | ConvertTo-Json -Depth 5
 
-# Änderung: Prüfen, ob Datei existiert und Inhalt sich geändert hat
+# --- Prüfen, ob Update nötig ---
 if (Test-Path $targetFile) {
-    $oldJson = Get-Content $targetFile -Raw
+    $oldJson = Get-Content $targetFile -Raw | ConvertFrom-Json | ConvertTo-Json -Depth 99 -Compress
     if ($oldJson -eq $newJson) {
         Write-Host "Keine Änderungen erkannt – Update wird übersprungen." -ForegroundColor Cyan
-
-        # --- Fertig (keine Änderungen) ---
-        exit 2
+        exit 2  # kein Update nötig
     }
 }
 
