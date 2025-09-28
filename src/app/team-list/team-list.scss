@@ -5,44 +5,25 @@
   margin: 1rem auto;
 }
 
-mat-card-content,
-mat-card-actions {
-  padding: 0.5rem 1rem; // kompakter
+.team-card-subtitle {
+  font-size: normal;
+  color: gray;
 }
 
-table.mat-table {
-  width: 100%;           // Tabellenbreite an Card anpassen
-  border-collapse: collapse;
-  font-size: 14px !important;     // etwas kleinere Schrift
-
-  th.mat-header-cell,
-  td.mat-cell {
-    padding: 0.3rem 0.5rem;
-  }
-
-  img {
-    border-radius: 50%;
-  }
+.player-accordion-title {
+  font-size: normal;
 }
-
-/* Chips */
-mat-chip {
-  margin: 0 2px;
-}
-
-/* Expansion Panels kompakt */
-mat-expansion-panel {
-  margin: 0;
-  padding: 0;
-}
-mat-expansion-panel-header {
-  padding: 0 1rem;
-  min-height: 48px; // kompakte Headerhöhe
-}
-
 
 .full-width {
   width: 100%;
+}
+
+.table-text {
+  font-size: normal;
+}
+
+.player-name {
+  font-weight: bold;
 }
 
 .positive-diff {
@@ -57,7 +38,7 @@ mat-expansion-panel-header {
 
 .chip-position {
   color: white !important;
-  min-width: 35px;
+  padding: 1px 4px;
   text-align: center;
   border-radius: 7px;
 }
@@ -68,7 +49,7 @@ mat-expansion-panel-header {
   align-items: center;
   justify-content: flex-end;
   font-size: 0.9rem;
-  color: gray;
+  color: rgb(30, 30, 30);
   margin: 0 1rem;
 }
 
@@ -79,7 +60,7 @@ mat-expansion-panel-header {
 
 /* Spieler unterhalb der Grenze leicht ausgegraut */
 .below-cut td {
-  color: rgba(0,0,0,0.4);
+  opacity: 0.5;
 }
 
 .excluded-player {
@@ -92,22 +73,20 @@ mat-expansion-panel-header {
 /* Mobile Anpassungen */
 @media (max-width: 600px) {
 
-  mat-card-subtitle {
-    font-size: 12px;
+  .team-card-subtitle {
+    font-size: small;
   }
 
-  table.mat-table {
-    font-size: 12px;
+  .player-accordion-title {
+    font-size: small;
+  }
 
-    th.mat-header-cell,
-    td.mat-cell {
-      padding: 4px 6px;  /* weniger Abstand */
-    }
+  .player-cell {
+    font-size: smaller;
   }
 
   .chip-position {
-    font-size: 10px;
-    padding: 1px 4px;
+    padding: 1px 2px;
   }
 
   .timestamp {
