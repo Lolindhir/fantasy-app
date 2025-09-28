@@ -20,7 +20,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-            token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
+          fetch-depth: 0  # Voller Git-History für Push  
+          token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,7 +29,7 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Run League Request Script
+      - name: Run Request Script
         run: pwsh ./public/requests/RequestLeague.ps1
         continue-on-error: true
 
@@ -36,13 +37,8 @@ jobs:
         id: result
         run: echo "exit_code=$?" >> $GITHUB_OUTPUT
 
-  commit-changes:
-    needs: update
-    # nur ausführen, wenn vorheriger Schritt erfolgreich war
-    if: needs.update.result.exit_code == 0 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Commit League.json
+      - name: Commit and push updates
+        if: steps.result.outputs.exit_code == '0'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
