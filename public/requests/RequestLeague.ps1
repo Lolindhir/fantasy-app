@@ -1,20 +1,24 @@
+
+# Zuerst die Konfiguration einbinden
+. "$PSScriptRoot\config.ps1"
+
 # --- Konfiguration ---
-$LeagueID = "1257421353431080960"
+$LeagueID = $Global:LeagueID
 
 # Verzeichnis des Skripts
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$dataDir = Join-Path $scriptDir "..\data"
-$backupDir = Join-Path $dataDir "backup"
+$scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$dataDir     = Join-Path $scriptDir "..\data"
+$backupDir   = Join-Path $dataDir "backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir | Out-Null }
 
-$targetFile = Join-Path $dataDir "League.json"
+$targetFile    = Join-Path $dataDir "League.json"
 $timestampFile = Join-Path $dataDir "Timestamps.json"
 
 # --- Sleeper: Liga ---
 try {
     Write-Host "Hole Sleeper Liga..." -ForegroundColor Yellow
     $leagueUrl = "https://api.sleeper.app/v1/league/$LeagueID"
-    $league = Invoke-RestMethod -Uri $leagueUrl -ErrorAction Stop
+    $league    = Invoke-RestMethod -Uri $leagueUrl -ErrorAction Stop
     Write-Host "Sleeper Liga gefunden." -ForegroundColor Yellow
 } catch {
     Write-Error "Fehler beim Abrufen der Liga: $_"
@@ -25,9 +29,9 @@ try {
 try {
     Write-Host "Hole Sleeper Teams..." -ForegroundColor Yellow
     $membersUrl = "https://api.sleeper.app/v1/league/$LeagueID/users"
-    $members = Invoke-RestMethod -Uri $membersUrl -ErrorAction Stop
+    $members    = Invoke-RestMethod -Uri $membersUrl -ErrorAction Stop
     $rostersUrl = "https://api.sleeper.app/v1/league/$LeagueID/rosters"
-    $rosters = Invoke-RestMethod -Uri $rostersUrl -ErrorAction Stop
+    $rosters    = Invoke-RestMethod -Uri $rostersUrl -ErrorAction Stop
     Write-Host "Sleeper Teams gefunden: $($rosters.Count)" -ForegroundColor Yellow
 } catch {
     Write-Error "Fehler beim Abrufen der Teams/Rosters: $_"
@@ -40,7 +44,7 @@ foreach ($roster in $rosters) {
     $member = $members | Where-Object { $_.user_id -eq $roster.owner_id }
     $ownerAvatar = $null
     if ($member.avatar) {
-        $avatarID = $member.avatar
+        $avatarID    = $member.avatar
         $ownerAvatar = "https://sleepercdn.com/avatars/$avatarID"
     }
 
@@ -86,24 +90,36 @@ $leagueAsJson += [PSCustomObject]@{
     LeagueIDPrevious  = $league.previous_league_id
 }
 
-
 $TimeSnapshot = (Get-Date)
+$Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
+# --- JSON als String vorbereiten ---
+$newJson = $leagueAsJson | ConvertTo-Json -Depth 5
+
+# Änderung: Prüfen, ob Datei existiert und Inhalt sich geändert hat
+if (Test-Path $targetFile) {
+    $oldJson = Get-Content $targetFile -Raw
+    if ($oldJson -eq $newJson) {
+        Write-Host "Keine Änderungen erkannt – Update wird übersprungen." -ForegroundColor Cyan
+
+        # --- Fertig (keine Änderungen) ---
+        exit 2
+    }
+}
 
 # --- Backup alte Datei ---
 if (Test-Path $targetFile) {
-    $timestamp = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
+    $timestamp  = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
     $backupFile = Join-Path $backupDir "League_$timestamp.json"
     Copy-Item -Path $targetFile -Destination $backupFile -Force
     Write-Host "Alte League.json gesichert als $backupFile" -ForegroundColor Cyan
 }
 
 # --- JSON schreiben ---
-$leagueAsJson | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
+$newJson | Out-File $targetFile -Encoding UTF8
 Write-Host "League.json gespeichert!" -ForegroundColor Green
 
 # --- Timestamp aktualisieren ---
-$Now = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 if (Test-Path $timestampFile) {
     $Timestamps = Get-Content $timestampFile | ConvertFrom-Json
 } else {
@@ -112,3 +128,6 @@ if (Test-Path $timestampFile) {
 $Timestamps.League = $Now
 $Timestamps | ConvertTo-Json -Depth 3 | Set-Content $timestampFile
 Write-Host "League-Timestamp aktualisiert: $Now" -ForegroundColor Green
+
+# --- Fertig ---
+exit 0

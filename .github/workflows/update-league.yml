@@ -1,10 +1,10 @@
 
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Update League
 
 on:
   schedule:
-    - cron: '10 * * * *' # immer xx:10
-    - cron: '45 * * * *' # immer xx:45
+    - cron: '*/10 * * * *' # alle 10 Minuten
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
   id-token: write      # notwendig für Pages Deployment (OIDC)
 
 jobs:
-  update-league:
+  update:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,13 +30,40 @@ jobs:
 
       - name: Run League Request Script
         run: pwsh ./public/requests/RequestLeague.ps1
+        continue-on-error: true
 
-      - name: Commit League.json (on success)
-        if: success()  
-        # nur ausführen, wenn vorheriger Schritt erfolgreich war
+      - name: Get Request Result
+        id: result
+        run: echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+  commit-changes:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt erfolgreich war
+    if: needs.update.result.exit_code == 0 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit League.json
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
           git diff --cached --quiet || git commit -m "Update data files after league request"
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+
+  notify-no-update:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt keinen Erfolg hatte (keine Änderungen)
+    if: needs.update.result.exit_code == 2 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify No Update
+        run: echo "No changes detected, skipping commit."
+
+  notify-error:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt mit Fehlercode beendet wurde
+    if: needs.update.result.exit_code == 1 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Error
+        run: echo "Error occurred during league request script execution."
