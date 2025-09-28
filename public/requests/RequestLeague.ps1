@@ -93,15 +93,14 @@ $leagueAsJson += [PSCustomObject]@{
 $TimeSnapshot = (Get-Date)
 $Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-# --- JSON als String vorbereiten ---
-$newJson = $leagueAsJson | ConvertTo-Json -Depth 5
+# --- JSON als PowerShell-Objekt ---
+$newJsonObj = $leagueAsJson
 
-# --- Prüfen, ob Update nötig ---
 if (Test-Path $targetFile) {
-    $oldJson = Get-Content $targetFile -Raw | ConvertFrom-Json | ConvertTo-Json -Depth 99 -Compress
-    if ($oldJson -eq $newJson) {
+    $oldJsonObj = Get-Content $targetFile -Raw | ConvertFrom-Json
+    if (Compare-Objects $oldJsonObj $newJsonObj) {
         Write-Host "Keine Änderungen erkannt – Update wird übersprungen." -ForegroundColor Cyan
-        exit 2  # kein Update nötig
+        exit 2
     }
 }
 
@@ -129,3 +128,16 @@ Write-Host "League-Timestamp aktualisiert: $Now" -ForegroundColor Green
 
 # --- Fertig ---
 exit 0
+
+
+
+
+function Compare-Objects {
+    param($a, $b)
+
+    # Serialize beide Objekte in kompaktes JSON mit -Compress
+    $jsonA = $a | ConvertTo-Json -Compress -Depth 10
+    $jsonB = $b | ConvertTo-Json -Compress -Depth 10
+
+    return $jsonA -eq $jsonB
+}
