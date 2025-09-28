@@ -75,8 +75,8 @@
     </ng-container>
 
     <!-- Header + Rows -->
-    <tr mat-header-row *matHeaderRowDef="columns"></tr>
-    <tr mat-row *matRowDef="let row; let i = index; columns: columns;"
+    <tr mat-header-row *matHeaderRowDef="columns" class="table-row"></tr>
+    <tr mat-row *matRowDef="let row; let i = index; columns: columns;" class="table-row"
         [ngClass]="{
           'cut-line': i + 1 === lineNumber,
           'below-cut': i + 1 > lineNumber,
@@ -112,12 +112,12 @@
         <mat-expansion-panel-header>
           <mat-panel-title class="player-accordion-title"> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
         </mat-expansion-panel-header>
-          <!-- Salary Cap Card (mit Fantasy Team) -->
+          <!-- Salary Cap Card -->
           <div *ngIf="!isMobile">
             <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','picture','name','position','team','salary','fantasyTeam'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
           </div>
           <div *ngIf="isMobile">
-            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary','fantasyTeam'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
           </div>
       </mat-expansion-panel>
     </mat-accordion>
@@ -155,10 +155,10 @@
       <mat-expansion-panel [(expanded)]="teamExpandedTeam[i]">
         <mat-expansion-panel-header>
           <mat-panel-title class="player-accordion-title">
-            Top {{ salaryCapTopTeamNumber }} Players of {{ team.Team }}
+            Roster of {{ team.Team }}
           </mat-panel-title>
         </mat-expansion-panel-header>
-          <!-- Team Card (ohne Fantasy Team) -->
+          <!-- Team Card -->
           <div *ngIf="!isMobile">
             <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','picture','name','team','position','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team }"></ng-container>
           </div>

@@ -210,57 +210,6 @@ export class DataService {
       .filter((p): p is Player => !!p);
   }
 
-
-
-
-  private buildRoster(
-  rosterIds: string[],
-  players: RawPlayer[],
-  nflTeams: NFLTeam[],
-  sortFields: SortField[],
-  fantasyTeams: FantasyTeam[] // optional Fantasy-Team
-  ): Player[] {
-    const roster: Player[] = rosterIds
-      .map(pid => {
-        const raw = players.find(p => p.ID === pid);
-        const nfl = nflTeams.find(t => t.ID === raw?.TeamID);
-
-        if (!raw || !nfl) return null;
-
-        const salaryDollars = this.mapSalaryToDollars(raw.Salary, raw.Year, raw.Age);
-
-        const player: Player = {
-          ID: raw.ID,
-          Name: raw.Name,
-          NameFirst: raw.NameFirst,
-          NameLast: raw.NameLast,
-          NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
-          Position: raw.Position,
-          Salary: raw.Salary,
-          TeamNFL: nfl,
-          TeamFantasy: this.findFantasyTeamForPlayer(raw, fantasyTeams), // hier wird das Team gesetzt
-          Age: raw.Age,
-          Year: raw.Year,
-          Picture: raw.Picture || 'assets/default-player-avatar.png',
-          SalaryDollars: salaryDollars,
-          SalaryDollarsDisplay: this.formatSalaryDollars(salaryDollars)
-        };
-
-        return player;
-      })
-      .filter((p): p is Player => !!p);
-
-    return this.sortRoster(roster, sortFields);
-  }
-
-  private findFantasyTeamForPlayer(player: RawPlayer | Player, fantasyTeams: FantasyTeam[]): FantasyTeam | undefined {
-    return fantasyTeams.find(team =>
-      team.Roster.some(p => p.ID === player.ID)
-    );
-  }
-
-
-
   private mapSalaryToDollars(salary: number, year: number, age: number): number {
 
     // Salary holen
