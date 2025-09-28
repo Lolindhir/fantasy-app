@@ -93,15 +93,12 @@ $leagueAsJson += [PSCustomObject]@{
 $TimeSnapshot = (Get-Date)
 $Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-# --- JSON als PowerShell-Objekt ---
+# --- JSONs vergleichen ---
+$oldJsonObj = Get-Content $targetFile -Raw | ConvertFrom-Json
 $newJsonObj = $leagueAsJson
-
-if (Test-Path $targetFile) {
-    $oldJsonObj = Get-Content $targetFile -Raw | ConvertFrom-Json
-    if (Compare-Objects $oldJsonObj $newJsonObj) {
-        Write-Host "Keine Änderungen erkannt – Update wird übersprungen." -ForegroundColor Cyan
-        exit 2
-    }
+if (TeamsAreEqual $oldJsonObj.Teams $newJsonObj.Teams) {
+    Write-Host "Keine Änderungen bei Teams erkannt – Update wird übersprungen." -ForegroundColor Cyan
+    exit 2
 }
 
 # --- Backup alte Datei ---
@@ -132,12 +129,31 @@ exit 0
 
 
 
-function Compare-Objects {
-    param($a, $b)
+function TeamsAreEqual($oldTeams, $newTeams) {
+    if ($oldTeams.Count -ne $newTeams.Count) { return $false }
 
-    # Serialize beide Objekte in kompaktes JSON mit -Compress
-    $jsonA = $a | ConvertTo-Json -Compress -Depth 10
-    $jsonB = $b | ConvertTo-Json -Compress -Depth 10
+    # Teams nach TeamID sortieren
+    $oldSorted = $oldTeams | Sort-Object TeamID
+    $newSorted = $newTeams | Sort-Object TeamID
 
-    return $jsonA -eq $jsonB
+    for ($i = 0; $i -lt $oldSorted.Count; $i++) {
+        $oldTeam = $oldSorted[$i]
+        $newTeam = $newSorted[$i]
+
+        # Wichtige Properties vergleichen
+        $props = 'TeamID','OwnerID','Points','PointsAgainst','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted','IsCommissioner'
+        foreach ($prop in $props) {
+            if ($oldTeam.$prop -ne $newTeam.$prop) { return $false }
+        }
+
+        # Spielerlisten vergleichen (nach Spieler-ID sortiert)
+        $arrays = 'Roster','Starter','Reserve','Taxi'
+        foreach ($arr in $arrays) {
+            $oldArr = @($oldTeam.$arr) | Sort-Object
+            $newArr = @($newTeam.$arr) | Sort-Object
+            if (-not ($oldArr -eq $newArr)) { return $false }
+        }
+    }
+
+    return $true
 }
