@@ -24,14 +24,10 @@
         <!-- Flex Box -->
         <div fxLayout="column" fxLayoutAlign="none start">
           <div>{{ player.NameShort }}</div>
-          <div *ngIf="compact" fxLayout="row" fxWrap="nowrap" fxLayoutAlign="none none">
-            <div *ngIf="player.Picture">
-              <img [src]="player.Picture" alt="Image" width="30" style="margin-right: 8px;" />
-            </div>
-            <div *ngIf="player.TeamNFL?.Logo">
-              <img [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
-            </div>
-            <div [style.background-color]="getPositionColor(player.Position)" class="chip-position">
+          <div *ngIf="compact" fxLayout="row" fxLayoutAlign="start start">
+            <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="30" />
+            <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
+            <div [style.background-color]="getPositionColor(player.Position)" class="chip-position" style="display: inline-flex; margin-left: 2px; vertical-align: top;">
               {{ player.Position }}
             </div>
           </div>
