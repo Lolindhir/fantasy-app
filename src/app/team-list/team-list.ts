@@ -28,6 +28,7 @@ type PositionKey = typeof positions[number]; // 'QB' | 'RB' | 'WR' | 'TE' | 'Fle
 
 export class TeamListComponent implements OnInit {
   
+  isMobile: boolean = window.innerWidth <= 600;
   timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];

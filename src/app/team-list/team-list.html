@@ -113,7 +113,12 @@
           <mat-panel-title class="player-accordion-title"> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Salary Cap Card (mit Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
+          <div *ngIf="!isMobile">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','picture','name','position','team','salary','fantasyTeam'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
+          </div>
+          <div *ngIf="isMobile">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
+          </div>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>
@@ -154,7 +159,12 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Team Card (ohne Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['name','position','salary', 'exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team }"></ng-container>
+          <div *ngIf="!isMobile">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','picture','name','team','position','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team }"></ng-container>
+          </div>
+          <div *ngIf="isMobile">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['name','position','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team }"></ng-container>
+          </div>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>
