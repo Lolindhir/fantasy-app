@@ -9,6 +9,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 export const SharedMaterialImports = [
   MatCardModule,
@@ -20,5 +21,6 @@ export const SharedMaterialImports = [
   MatToolbarModule,
   MatListModule,
   MatDividerModule,
-  MatTooltipModule
+  MatTooltipModule,
+  MatCheckboxModule
 ];

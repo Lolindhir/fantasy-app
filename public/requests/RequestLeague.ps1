@@ -194,6 +194,7 @@ if (Test-Path $targetFile) {
 # neue JSON erzeugen
 $newLeague = $leagueAsJson[0]  # Array mit 1 Objekt
 
+# Änderungen prüfen
 if (LeagueHasChanged $oldLeague $newLeague) {
     Write-Host "Changes detected - updating file." -ForegroundColor Green
 # Backup + Schreiben + Timestamp + Exit 0
@@ -203,11 +204,7 @@ else {
     exit 2
 }
 
-
-
-
-
-
+# --- Zeitstempel ---
 $TimeSnapshot = (Get-Date)
 $Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 

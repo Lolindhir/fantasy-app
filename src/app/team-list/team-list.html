@@ -1,6 +1,6 @@
 
 <!-- Spieler Template -->
-<ng-template #playerList let-players="players" let-columns="columns">
+<ng-template #playerList let-players="players" let-columns="columns" let-lineNumber="lineNumber" let-team="team">
   <table mat-table [dataSource]="players" class="mat-elevation-z2 full-width">
 
     <!-- Rang -->
@@ -62,9 +62,28 @@
       </td>
     </ng-container>
 
+    <ng-container matColumnDef="exclude">
+      <th mat-header-cell *matHeaderCellDef> Exclude </th>
+      <td mat-cell *matCellDef="let player; let i = index">
+        <mat-checkbox 
+          [checked]="isExcluded(team.TeamID, player.ID)" 
+          (change)="toggleExclude(team.TeamID, player.ID)"
+          [disabled]="isPlayerExcludable(player, team) === false"
+        >
+        </mat-checkbox>
+      </td>
+    </ng-container>
+
     <!-- Header + Rows -->
     <tr mat-header-row *matHeaderRowDef="columns"></tr>
-    <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    <tr mat-row *matRowDef="let row; let i = index; columns: columns;"
+        [ngClass]="{
+          'cut-line': i + 1 === lineNumber,
+          'below-cut': i + 1 > lineNumber,
+          'excluded-player': isExcluded(team?.TeamID, row.ID)
+          }"
+      >
+    </tr>
   </table>
 </ng-template>
 
@@ -94,7 +113,7 @@
           <mat-panel-title> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Salary Cap Card (mit Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'] }"></ng-container>
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['name','position','salary'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null }"></ng-container>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>
@@ -133,7 +152,7 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Team Card (ohne Fantasy Team) -->
-          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['name','position','salary'] }"></ng-container>
+          <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['name','position','salary', 'exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team }"></ng-container>
       </mat-expansion-panel>
     </mat-accordion>
   </mat-card-actions>

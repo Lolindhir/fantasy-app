@@ -13,6 +13,7 @@ mat-card-actions {
 table.mat-table {
   width: 100%;           // Tabellenbreite an Card anpassen
   border-collapse: collapse;
+  font-size: 14px !important;     // etwas kleinere Schrift
 
   th.mat-header-cell,
   td.mat-cell {
@@ -69,4 +70,47 @@ mat-expansion-panel-header {
   font-size: 0.9rem;
   color: gray;
   margin: 0 1rem;
+}
+
+/* Trenner nach Zeile N */
+.cut-line td {
+  border-bottom: 3px solid #666; /* deutlicher Strich */
+}
+
+/* Spieler unterhalb der Grenze leicht ausgegraut */
+.below-cut td {
+  color: rgba(0,0,0,0.4);
+}
+
+.excluded-player {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+
+
+/* Mobile Anpassungen */
+@media (max-width: 600px) {
+  .team-card, .salarycap {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  table.mat-table {
+    font-size: 12px;
+
+    th.mat-header-cell,
+    td.mat-cell {
+      padding: 4px 6px;  /* weniger Abstand */
+    }
+  }
+
+  .chip-position {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .timestamp {
+    font-size: 10px;
+  }
 }

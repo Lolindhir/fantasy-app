@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DataService, Player } from '../services/data-service';
 import { CommonModule } from '@angular/common';
+import { ViewEncapsulation } from '@angular/core';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
 
 
@@ -21,7 +22,8 @@ type PositionKey = typeof positions[number]; // 'QB' | 'RB' | 'WR' | 'TE' | 'Fle
   selector: 'app-team-list',
   imports: [CommonModule, SharedMaterialImports],
   templateUrl: './team-list.html',
-  styleUrls: ['./team-list.scss']
+  styleUrls: ['./team-list.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 
 export class TeamListComponent implements OnInit {
@@ -40,6 +42,33 @@ export class TeamListComponent implements OnInit {
   salaryCapTopTeam: number = 0;
   salaryCapTopTeamPlayers: Player[] = [];
   salaryCapTopTeamExpanded = false;
+
+  // Temporäre Excludes pro Team
+  excludedPlayersByTeam: { [teamId: string]: Set<string> } = {};
+
+  isExcluded(teamId: string, playerId: string): boolean {
+    if(teamId === null) return false; // Kein Team, also keine Excludes
+    return this.excludedPlayersByTeam[teamId]?.has(playerId) ?? false;
+  }
+
+  toggleExclude(teamId: string, playerId: string): void {
+    if (!this.excludedPlayersByTeam[teamId]) {
+      this.excludedPlayersByTeam[teamId] = new Set();
+    }
+
+    const set = this.excludedPlayersByTeam[teamId];
+    if (set.has(playerId)) {
+      set.delete(playerId);
+    } else {
+      set.add(playerId);
+    }
+
+    // TopSalaryTeam neu berechnen
+    const team = this.fantasyTeams.find(t => t.TeamID === teamId);
+    if (team) {
+      team.TopSalaryTeam = this.calculateSalaryCapTopPlayers(team.Roster, 1).cap;
+    }
+  }
 
   // Toggles
   salaryCapExpanded = false;
@@ -93,7 +122,7 @@ export class TeamListComponent implements OnInit {
     this.dataService.getLeagueTimestamp().subscribe(ts => {
       this.timestamp = ts;
     });
-     
+
   }
 
   private processTeam(team: any, topN: number = this.salaryCapTopTeamNumber) {
@@ -126,7 +155,7 @@ export class TeamListComponent implements OnInit {
     topPlayersTeam.push(...topTeam);
 
     // TopSalary aus Team-Roster
-    const topSalaryTeam = Object.values(topPlayersTeam).flat().reduce((sum, p) => sum + p.SalaryDollars, 0);
+    const topSalaryTeam = this.calculateSalaryCapTopPlayers(allTeamPlayers, 1, topN).cap;
 
     return {
       ...team,
@@ -136,6 +165,7 @@ export class TeamListComponent implements OnInit {
       TopSalaryTeam: topSalaryTeam
     };
   }
+
 
   /**
    * Berechnet das SalaryCap für ein Team basierend auf allen Spielern
@@ -192,15 +222,26 @@ export class TeamListComponent implements OnInit {
    * - Multipliziert die Spielerzahl mit teamCount
    */
   private calculateSalaryCapTopPlayers(allPlayers: Player[], teamCount: number, topN: number = this.salaryCapTopTeamNumber): SalaryCapTopXResult {
-    // Top N Spieler insgesamt
+    // Top N Spieler, die nicht exkludiert sind
+    const allExcludedPlayers  = new Set<string>();
+
+    for (const team of this.fantasyTeams) {
+      const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
+      excluded.forEach(id => allExcludedPlayers.add(id));
+    }
+
     const topOverall: Player[] = allPlayers
+      .filter(p => !allExcludedPlayers.has(p.ID))
       .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
       .slice(0, topN * teamCount);
 
     // Durchschnitt über alle Top-Spieler
     const avgOverall = topOverall.length ? topOverall.reduce((sum, p) => sum + p.SalaryDollars, 0) / topOverall.length : 0;
     
-    const cap = avgOverall * topN; // Multipliziert mit topN (z.B. 20)
+    // Multiplikator ist topN oder topOverall.length, je nachdem was kleiner ist
+    const multiplier = Math.min(topN, topOverall.length);
+
+    const cap = avgOverall * multiplier; // Multipliziert mit multiplier (z.B. 20)
 
     return { cap, topPlayers: topOverall };
   }
@@ -230,6 +271,30 @@ export class TeamListComponent implements OnInit {
       case 'DEF': return '#999999';
       default: return '#555555';
     }
+  }
+
+  isPlayerExcludable(player: Player, team: any): boolean {
+
+    if (team === null) {
+      return false; // Kein Team, also keine Excludes
+    }
+
+    //hole die angepassten Top Players Count für das Team
+    const adjustedTopPlayersCount = this.getAdjustedTopPlayersCount(team);
+
+    // Überprüfe, ob der Spieler in den Top N des Teams ist
+    const isInTopN: boolean = team.Roster
+      .sort((a: Player, b: Player) => b.SalaryDollars - a.SalaryDollars)
+      .slice(0, adjustedTopPlayersCount)
+      .some((p: Player) => p.ID === player.ID);
+
+    return isInTopN;
+  }
+
+  getAdjustedTopPlayersCount(team: any): number {
+    // Excludes berücksichtigen
+    const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
+    return this.salaryCapTopTeamNumber + excluded.size;
   }
 
 }
