@@ -1,5 +1,5 @@
 
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
 name: Update Teams
 
 on:
@@ -46,6 +46,14 @@ jobs:
           git add public/data/**
           git diff --cached --quiet || git commit -m "Update data files after teams request"
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+
+  debug-job:
+    needs: update
+    runs-on: ubuntu-latest
+    steps:
+    - name: Debug Exit Code
+      run: |
+        echo "Exit code from update job: ${{ needs.update.outputs.exit_code }}"
 
   trigger-players-update:
     needs: update
