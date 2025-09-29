@@ -1,0 +1,79 @@
+
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Update Teams
+
+on:
+  schedule:
+    - cron: "0 10 * * 3"   # jeden Mittwoch um 10:00 UTC
+  workflow_dispatch: # manueller Start
+
+permissions:
+  contents: write      # damit Commits + Push erlaubt sind
+  pages: write         # notwendig für Pages Deployment
+  id-token: write      # notwendig für Pages Deployment (OIDC)
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Voller Git-History für Push  
+          token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Run Request Script
+        run: pwsh ./public/requests/RequestTeams.ps1
+        continue-on-error: true
+
+      - name: Get Request Result
+        id: result
+        run: echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Commit and push updates
+        if: steps.result.outputs.exit_code == '0'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add public/data/**
+          git diff --cached --quiet || git commit -m "Update data files after teams request"
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+
+  trigger-players-update:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt erfolgreich war (Änderungen)
+    if: needs.update.result.exit_code == 2 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Players Update Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: update-players.yml
+          repo: ${{ github.repository }}
+          token: ${{ secrets.PAT_PUSH }}
+          ref: main
+
+  notify-no-update:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt keinen Erfolg hatte (keine Änderungen)
+    if: needs.update.result.exit_code == 2 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify No Update
+        run: echo "No changes detected, skipping commit."
+
+  notify-error:
+    needs: update
+    # nur ausführen, wenn vorheriger Schritt mit Fehlercode beendet wurde
+    if: needs.update.result.exit_code == 1 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Error
+        run: echo "Error occurred during teams request script execution."

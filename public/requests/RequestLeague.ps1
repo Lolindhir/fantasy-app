@@ -92,7 +92,6 @@ function LeagueHasChanged($oldLeague, $newLeague) {
 
 # Zuerst die Konfiguration einbinden
 . "$PSScriptRoot\config.ps1"
-
 # --- Konfiguration ---
 $LeagueID = $Global:LeagueID
 

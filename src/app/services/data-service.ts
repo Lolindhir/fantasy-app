@@ -104,6 +104,22 @@ export class DataService {
       map(ts => ts.Teams)
     );
   }
+  //gib den neuesten Zeitstempel von allen drei Dateien zurück
+  getLatestTimestamp(): Observable<string | undefined> {
+    return forkJoin({
+      league: this.getLeagueTimestamp(),
+      players: this.getPlayersTimestamp(),
+      teams: this.getTeamsTimestamp()
+    }).pipe(
+      map(({ league, players, teams }) => {
+        return [league, players, teams].reduce((a, b) => {
+          if (a === undefined) return b;
+          if (b === undefined) return a;
+          return a > b ? a : b;
+        });
+      })
+    );
+  }
   // private toLocalTime(utcString?: string): string | undefined {
   //   if (!utcString) return undefined;
   //   const date = new Date(utcString); // UTC-Zeit aus JSON

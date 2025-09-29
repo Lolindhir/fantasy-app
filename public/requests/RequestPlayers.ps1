@@ -1,29 +1,118 @@
 # --- Funktionen ---
+# Globale Variable für den zuletzt erfolgreichen Key
+$Global:CurrentApiKey = $null
+function Invoke-Tank01-With-Fallback {
+    param(
+        [string]$Url,
+        [string[]]$Keys
+    )
+
+    $delay = 2  # Start-Wartezeit in Sekunden
+
+    # Wenn bereits ein funktionierender Key gespeichert ist, probiere diesen zuerst
+    if ($Global:CurrentApiKey -and $Keys -contains $Global:CurrentApiKey) {
+        $headers = @{
+            "X-RapidAPI-Key" = $Global:CurrentApiKey
+            "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
+        }
+        try {
+            Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
+            return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
+        } catch {
+            $statusCode = $_.Exception.Response.StatusCode.Value__
+            if ($statusCode -eq 429) {
+                Write-Warning "Cached key $($Global:CurrentApiKey) hit 429 - switching..."
+                # Reset Key, nächster Versuch mit allen Keys
+                $Global:CurrentApiKey = $null
+            } else {
+                throw $_
+            }
+        }
+    }
+
+    # Normale Fallback-Logik (alle Keys durchprobieren)
+    foreach ($key in $Keys) {
+        $headers = @{
+            "X-RapidAPI-Key" = $key
+            "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
+        }
+
+        try {
+            Write-Host "  Try with key: $key" -ForegroundColor DarkGray
+            $result = Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
+            # Wenn erfolgreich: Key merken
+            $Global:CurrentApiKey = $key
+            return $result
+        } catch {
+            $statusCode = $_.Exception.Response.StatusCode.Value__
+            if ($statusCode -eq 429) {
+                Write-Warning "429 Too Many Requests - wait $delay sec before next key..."
+                Start-Sleep -Seconds $delay
+                $delay = [Math]::Min($delay * 2, 30)
+                continue
+            } else {
+                throw $_
+            }
+        }
+    }
+
+    throw "All API keys have failed (including 429 errors)."
+}
+
+function PlayersHaveChanged($oldPlayers, $newPlayers) {
+    if (-not $oldPlayers) { return $true }
+
+    if ($oldPlayers.Count -ne $newPlayers.Count) {
+        Write-Host "Player count changed: $($oldPlayers.Count) -> $($newPlayers.Count)"
+        return $true
+    }
+
+    for ($i = 0; $i -lt $oldPlayers.Count; $i++) {
+        $old = $oldPlayers[$i]
+        $new = $newPlayers[$i]
+
+        $propsToCheck = @('ID','TankID','Name','NameFirst','NameLast','NameShort','Status','Position','Age','Year','Salary','TeamID','Number','Picture')
+        foreach ($prop in $propsToCheck) {
+            if ($old.$prop -ne $new.$prop) {
+                Write-Host "Player property '$prop' changed: '$($old.$prop)' -> '$($new.$prop)'"
+                return $true
+            }
+        }
+    }
+
+    return $false
+}
+
 function Convert-StringToDate($dateStr) {
     [datetime]::ParseExact($dateStr, 'yyyyMMdd', $null)
 }
 
-function Get-DraftKings($dateStr) {
-    Write-Host "Hole Tank01 DraftKings Salaries $dateStr..." -ForegroundColor Yellow
+function Get-DraftKings($dateStr, $apiKeys) {
+    Write-Host "Fetch Tank01 DraftKings salaries $dateStr..." -ForegroundColor Yellow
     $dfsUrl = "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com/getNFLDFS?date=$dateStr"
     try {
-        $dfsResponse = Invoke-RestMethod -Uri $dfsUrl -Headers $tankHeaders
+        $dfsResponse = Invoke-Tank01-With-Fallback -Url $dfsUrl -Keys $apiKeys
     } catch {
-        Write-Warning "Fehler beim Abrufen der DraftKings Daten: $_"
+        Write-Warning "Error fetching DraftKings data: $_"
         return $null
     }
 
     $draftKings = $dfsResponse.body.draftkings
     if (-not $draftKings -or $draftKings.Count -eq 0) {
-        Write-Host "Keine DraftKings Spieler gefunden, Datum um 1 Tag reduzieren..." -ForegroundColor Blue
+        Write-Host "No DraftKings players found, reducing date by 1 day..." -ForegroundColor Blue
         $prevDate = (Convert-StringToDate $dateStr).AddDays(-1).ToString("yyyyMMdd")
-        return Get-DraftKings $prevDate
+        return Get-DraftKings $prevDate $apiKeys
     }
     return $draftKings
 }
 
 # --- Konfiguration ---
-$RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
+. "$PSScriptRoot\config.ps1"
+$apiKeys = @(
+    $Global:RapidAPIKey,
+    $Global:RapidAPIKeyAlt1
+    # , $Global:RapidAPIKeyAlt2
+)
 $Date = (Get-Date -Format "yyyyMMdd")
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
@@ -31,44 +120,41 @@ $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 
 # --- Sleeper Spieler abrufen ---
-Write-Host "Hole Sleeper Spieler..." -ForegroundColor Yellow
+Write-Host "Fetch Sleeper players..." -ForegroundColor Yellow
 try {
     $sleeperPlayersUrl = "https://api.sleeper.app/v1/players/nfl"
     $sleeperPlayers = Invoke-RestMethod -Uri $sleeperPlayersUrl
     $sleeperPlayers = $sleeperPlayers.PSObject.Properties.Value
 } catch {
-    Write-Error "Fehler beim Abrufen der Sleeper Spieler: $_"
+    Write-Error "Error fetching Sleeper players: $_"
     exit 1
 }
-Write-Host "Sleeper Spieler gefunden: $($sleeperPlayers.Count)" -ForegroundColor Yellow
+Write-Host "Sleeper players found: $($sleeperPlayers.Count)" -ForegroundColor Yellow
 
-# --- Tank01 Spieler abrufen ---
-Write-Host "Hole Tank01 Spieler..." -ForegroundColor Yellow
+# --- Tank01 Spieler ---
+Write-Host "Fetch Tank01 players..." -ForegroundColor Yellow
 $tankPlayersUrl = "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com/getNFLPlayerList"
-$tankHeaders = @{
-    "X-RapidAPI-Key" = $RapidAPIKey
-    "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
-}
 try {
-    $tankPlayersResponse = Invoke-RestMethod -Uri $tankPlayersUrl -Headers $tankHeaders
+    $tankPlayersResponse = Invoke-Tank01-With-Fallback -Url $tankPlayersUrl -Keys $apiKeys
     $tankPlayers = $tankPlayersResponse.body
 } catch {
-    Write-Error "Fehler beim Abrufen der Tank01 Spieler: $_"
+    Write-Error "Error fetching Tank01 players: $_"
     exit 1
 }
-Write-Host "Tank01 Spieler gefunden: $($tankPlayers.Count)" -ForegroundColor Yellow
+Write-Host "Tank01 players found: $($tankPlayers.Count)" -ForegroundColor Yellow
 
-# --- Tank01 DraftKings Salaries ---
-Write-Host "Hole Tank01 DraftKings Salaries..." -ForegroundColor Yellow
-$draftKings = Get-DraftKings $Date
+# --- DraftKings Salaries ---
+Write-Host "Fetch Tank01 DraftKings Salaries..." -ForegroundColor Yellow
+$draftKings = Get-DraftKings $Date $apiKeys
 if (-not $draftKings) {
-    Write-Error "DraftKings Daten konnten nicht abgerufen werden, Abbruch."
+    Write-Error "Error fetching DraftKings data: $_"
     exit 1
 }
-Write-Host "DraftKings Spieler gefunden: $($draftKings.Count)" -ForegroundColor Yellow
+Write-Host "DraftKings players found: $($draftKings.Count)" -ForegroundColor Yellow
+
 
 # --- Spieler JSON vorbereiten ---
-Write-Host "Erstelle Players.json..." -ForegroundColor Yellow
+Write-Host "Creating Players.json..." -ForegroundColor Yellow
 $sleeperLookup = @{}
 foreach ($sleeper in $sleeperPlayers) { $sleeperLookup[$sleeper.player_id] = $sleeper }
 
@@ -103,21 +189,34 @@ foreach ($tankEntry in $tankPlayers) {
     }
 }
 
+# Änderungen prüfen
+$oldPlayers = $null
+if (Test-Path $targetFile) {
+    $oldJsonRaw = Get-Content $targetFile -Raw
+    if ($oldJsonRaw) { $oldPlayers = ($oldJsonRaw | ConvertFrom-Json) }
+}
+
+if (-not (PlayersHaveChanged $oldPlayers $playerData)) {
+    Write-Host "No changes - update skipped." -ForegroundColor Cyan
+    exit 2
+}
+
+# --- Zeitstempel ---
 $TimeSnapshot = (Get-Date)
 
 # --- Backup alte Datei ---
 if (Test-Path $targetFile) {
     $timestamp = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
-    Copy-Item $targetFile -Destination (Join-Path $backupDir "Players-$timestamp.json") -Force
-    Write-Host "Backup der alten Players.json erstellt." -ForegroundColor Green
+    Copy-Item $targetFile -Destination (Join-Path $backupDir "Players_$timestamp.json") -Force
+    Write-Host "Old Players.json backup created." -ForegroundColor Green
 }
 
 # --- JSON schreiben ---
 try {
     $playerData | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
-    Write-Host "Players.json gespeichert!" -ForegroundColor Green
+    Write-Host "Players.json saved!" -ForegroundColor Green
 } catch {
-    Write-Error "Fehler beim Schreiben der Players.json: $_"
+    Write-Error "Error writing Players.json: $_"
     exit 1
 }
 
@@ -129,4 +228,4 @@ if (Test-Path $TimestampFile) {
 } else { $Timestamps = @{} }
 $Timestamps.Players = $Now
 $Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
-Write-Host "Players-Timestamp aktualisiert: $Now" -ForegroundColor Green
+Write-Host "Players-Timestamp updated: $Now" -ForegroundColor Green

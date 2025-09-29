@@ -120,7 +120,7 @@ export class TeamListComponent implements OnInit {
     });
 
     // 5️⃣ Timestamp holen
-    this.dataService.getLeagueTimestamp().subscribe(ts => {
+    this.dataService.getLatestTimestamp().subscribe(ts => {
       this.timestamp = ts;
     });
 
