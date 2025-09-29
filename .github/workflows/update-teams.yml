@@ -15,7 +15,8 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
-
+    outputs:
+      exit_code: ${{ steps.result.outputs.exit_code }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,7 +50,7 @@ jobs:
   trigger-players-update:
     needs: update
     # nur ausführen, wenn vorheriger Schritt erfolgreich war (Änderungen)
-    if: needs.update.result.exit_code == '2' 
+    if: needs.update.outputs.exit_code == '2'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Players Update Workflow
@@ -63,7 +64,7 @@ jobs:
   notify-no-update:
     needs: update
     # nur ausführen, wenn vorheriger Schritt keinen Erfolg hatte (keine Änderungen)
-    if: needs.update.result.exit_code == '2'  
+    if: needs.update.outputs.exit_code == '2'
     runs-on: ubuntu-latest
     steps:
       - name: Notify No Update
@@ -72,7 +73,7 @@ jobs:
   notify-error:
     needs: update
     # nur ausführen, wenn vorheriger Schritt mit Fehlercode beendet wurde
-    if: needs.update.result.exit_code == '1' 
+    if: needs.update.outputs.exit_code == '1'
     runs-on: ubuntu-latest
     steps:
       - name: Notify Error
