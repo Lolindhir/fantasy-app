@@ -20,10 +20,10 @@
     <!-- Name -->
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef class="table-text"> Spieler </th>
-      <td mat-cell *matCellDef="let player" class="player-name table-text">
+      <td mat-cell *matCellDef="let player" class="table-text">
         <!-- Flex Box -->
         <div fxLayout="column" fxLayoutAlign="none start">
-          <div>{{ player.NameShort }}</div>
+          <div class="player-name">{{ player.NameShort }}</div>
           <div *ngIf="compact" fxLayout="row" fxLayoutAlign="start start">
             <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="30" />
             <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
