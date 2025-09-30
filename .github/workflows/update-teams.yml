@@ -34,7 +34,8 @@ jobs:
         id: script
         run:
           pwsh ./public/requests/RequestTeams.ps1
-          echo "exit_code=$LASTEXITCODE" >> $GITHUB_OUTPUT
+          $exit = $LASTEXITCODE
+          echo "exit_code=$exit" >> $env:GITHUB_OUTPUT
         continue-on-error: true
 
       - name: Commit and push updates
