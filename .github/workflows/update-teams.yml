@@ -16,7 +16,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     outputs:
-      exit_code: ${{ steps.result.outputs.exit_code }}
+      exit_code: ${{ steps.script.outputs.exit_code }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,15 +31,14 @@ jobs:
           cache: 'npm'
 
       - name: Run Request Script
-        run: pwsh ./public/requests/RequestTeams.ps1
+        id: script
+        run:
+          pwsh ./public/requests/RequestTeams.ps1
+          echo "exit_code=$LASTEXITCODE" >> $GITHUB_OUTPUT
         continue-on-error: true
 
-      - name: Get Request Result
-        id: result
-        run: echo "exit_code=$LASTEXITCODE" >> $GITHUB_OUTPUT
-
       - name: Commit and push updates
-        if: steps.result.outputs.exit_code == '0'
+        if: steps.script.outputs.exit_code == '0'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
