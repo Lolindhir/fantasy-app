@@ -161,6 +161,14 @@ foreach ($sleeper in $sleeperPlayers) { $sleeperLookup[$sleeper.player_id] = $sl
 $draftKingsLookup = @{}
 foreach ($dk in $draftKings) { $draftKingsLookup[$dk.playerID] = $dk }
 
+
+# Alte Spieler laden (für Vergleich und evtl. Gehälter)
+$oldPlayers = $null
+if (Test-Path $targetFile) {
+    $oldJsonRaw = Get-Content $targetFile -Raw
+    if ($oldJsonRaw) { $oldPlayers = ($oldJsonRaw | ConvertFrom-Json) }
+}
+
 $playerData = @()
 foreach ($tankEntry in $tankPlayers) {
     if (-not $tankEntry.sleeperBotID) { continue }
@@ -170,6 +178,15 @@ foreach ($tankEntry in $tankPlayers) {
 
     $dfsEntry = $draftKingsLookup[$tankEntry.playerID]
     $salary = if ($dfsEntry) { $dfsEntry.salary } else { 0 }
+
+    # --- Neue Prüfung für alten Salary ---
+    if ($salary -eq 0 -and $oldPlayers) {
+        $oldPlayer = $oldPlayers | Where-Object { $_.ID -eq $sleeperEntry.player_id }
+        if ($oldPlayer -and $oldPlayer.Salary -gt 0) {
+            $salary = $oldPlayer.Salary
+            Write-Host "  Using old salary for $($sleeperEntry.full_name): $($salary)" -ForegroundColor DarkGray
+        }
+    }
 
     $playerData += [PSCustomObject]@{
         ID = $sleeperEntry.player_id
@@ -190,12 +207,6 @@ foreach ($tankEntry in $tankPlayers) {
 }
 
 # Änderungen prüfen
-$oldPlayers = $null
-if (Test-Path $targetFile) {
-    $oldJsonRaw = Get-Content $targetFile -Raw
-    if ($oldJsonRaw) { $oldPlayers = ($oldJsonRaw | ConvertFrom-Json) }
-}
-
 if (-not (PlayersHaveChanged $oldPlayers $playerData)) {
     Write-Host "No changes - update skipped." -ForegroundColor Cyan
     exit 2
