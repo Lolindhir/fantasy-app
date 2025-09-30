@@ -74,7 +74,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
         $propsToCheck = @('ID','TankID','Name','NameFirst','NameLast','NameShort','Status','Position','Age','Year','Salary','TeamID','Number','Picture')
         foreach ($prop in $propsToCheck) {
             if ($old.$prop -ne $new.$prop) {
-                Write-Host "Player property '$prop' changed: '$($old.$prop)' -> '$($new.$prop)'"
+                Write-Host "Player '$($old.Name)' property '$prop' changed: '$($old.$prop)' -> '$($new.$prop)'"
                 return $true
             }
         }

@@ -37,7 +37,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','TotalTeams')
     foreach ($prop in $propsToCheck) {
         if ($oldLeague.$prop -ne $newLeague.$prop) {
-            Write-Host "Liga-Property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
+            Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
             return $true
         }
     }
@@ -70,7 +70,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
         $propsToCheck = @('TeamID','Name','Avatar','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
-                Write-Host "Team-Property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
+                Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
                 return $true
             }
         }

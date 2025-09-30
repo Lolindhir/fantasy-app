@@ -78,7 +78,7 @@ function TeamsHaveChanged($oldTeams, $newTeams) {
         $propsToCheck = @('ID','Name','Abv','City','Logo','Conference','ConferenceAbv','Division')
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
-                Write-Host "Team-Property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
+                Write-Host "Team '$($oldTeam.Name)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
                 return $true
             }
         }
