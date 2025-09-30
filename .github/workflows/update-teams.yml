@@ -31,14 +31,15 @@ jobs:
           cache: 'npm'
 
       - name: Run Request Script
-        run: pwsh exit 2
+        shell: pwsh
+        run: exit 2
         continue-on-error: true
 
       - name: Get Request Result
         id: result
         shell: pwsh
         run: |
-          echo echo "exitCode=$?" >> $GITHUB_OUTPUT
+          echo "exitCode=$LASTEXITCODE" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Commit and push updates
         if: steps.result.outputs.exitCode == '0'
