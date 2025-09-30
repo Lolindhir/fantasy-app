@@ -36,7 +36,8 @@ jobs:
 
       - name: Get Request Result
         id: result
-        run: echo "exitCode=$LASTEXITCODE" >> $GITHUB_OUTPUT
+        shell: pwsh
+        run: echo "exitCode=$($env:LASTEXITCODE)" >> $env:GITHUB_OUTPUT
 
       - name: Commit and push updates
         if: steps.result.outputs.exitCode == '0'
