@@ -165,7 +165,7 @@ export class DataService {
         // 2️⃣ Alle Spieler bauen, ohne TeamFantasy
         const allPlayers: Player[] = players.map(raw => {
           const nfl = nflTeams.find(t => t.ID === raw.TeamID);
-          const salaryDollars = this.mapSalaryToDollars(raw.Salary, raw.Year, raw.Age);          
+          const salaryDollars = this.mapSalaryToDollars(raw.Salary, raw.Year, raw.Age, raw.Position);
 
           const player: Player = {
           ID: raw.ID,
@@ -226,7 +226,7 @@ export class DataService {
       .filter((p): p is Player => !!p);
   }
 
-  private mapSalaryToDollars(salary: number, year: number, age: number): number {
+  private mapSalaryToDollars(salary: number, year: number, age: number, position: string): number {
 
     // Salary holen
     const salaryFlat = this.salaryMappingNonLinear ? this.mapSalaryToDollarsNonLinear(salary) : this.mapSalaryToDollarsLinear(salary);
@@ -247,6 +247,11 @@ export class DataService {
 
     // von der Salary noch pro Alter über 25 Jahre 100k abziehen
     salaryAdjusted = salaryAdjusted - 100_000 * (age - 25);
+
+    // Kicker Sonderbehandlung: pro Jahr 150k drauf
+    if (position === 'K') {
+      salaryAdjusted = salaryAdjusted + 150_000 * year;
+    }
 
     return salaryAdjusted;
   }
