@@ -200,7 +200,7 @@ if (LeagueHasChanged $oldLeague $newLeague) {
 }
 else {
     Write-Host "No changes - update skipped." -ForegroundColor Cyan
-    exit 2
+    exit 0
 }
 
 # --- Zeitstempel ---

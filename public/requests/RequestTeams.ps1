@@ -150,7 +150,7 @@ if (TeamsHaveChanged $oldTeams $newTeams) {
 }
 else {
     Write-Host "No changes - update skipped." -ForegroundColor Cyan
-    exit 2
+    exit 0
 }
 
 

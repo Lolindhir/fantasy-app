@@ -209,7 +209,7 @@ foreach ($tankEntry in $tankPlayers) {
 # Änderungen prüfen
 if (-not (PlayersHaveChanged $oldPlayers $playerData)) {
     Write-Host "No changes - update skipped." -ForegroundColor Cyan
-    exit 2
+    exit 0
 }
 
 # --- Zeitstempel ---
