@@ -113,7 +113,7 @@ export class TeamListComponent implements OnInit {
       this.timestamp = ts;
 
       // SalaryCap berechnen (basierend auf allen Spielern)
-      const teamCount = this.fantasyTeams.length || 10;
+      const teamCount = this.fantasyTeams.length || 6;
       //const capResult = this.calculateSalaryCap(this.allPlayers, teamCount);
       //this.salaryCap = capResult.cap;
       //this.salaryCapTopPlayers = capResult.topPlayers;
@@ -243,16 +243,17 @@ export class TeamListComponent implements OnInit {
       excluded.forEach(id => allExcludedPlayers.add(id));
     }
 
-    const sorted = [...allPlayers].sort((a,b) => b.SalaryDollars - a.SalaryDollars);
-    console.log('Top 30 Spieler nach Salary sortiert:', sorted.slice(0, 30).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+    // const sorted = [...allPlayers].sort((a,b) => b.SalaryDollars - a.SalaryDollars);
+    // console.log('Top 30 Spieler nach Salary sortiert:', sorted.slice(0, 30).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
-    const topOverall: Player[] = sorted.slice(0, topN * teamCount);
-    console.log('TopOverall Slice:', topOverall.map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+    // const topOverall: Player[] = sorted.slice(0, topN * teamCount);
+    // console.log('TopOverall Slice:', topOverall.map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
-    // const topOverall: Player[] = allPlayers
-    // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) })) // sicherstellen, dass Zahl
-    // .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
-    // .slice(0, topN * teamCount);
+    const topOverall: Player[] = allPlayers
+    .filter(p => !allExcludedPlayers.has(p.ID))   // <-- Excludes anwenden!
+    .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+    .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
+    .slice(0, topN * teamCount);
 
     // Durchschnitt über alle Top-Spieler
     const avgOverall = topOverall.length ? topOverall.reduce((sum, p) => sum + p.SalaryDollars, 0) / topOverall.length : 0;
