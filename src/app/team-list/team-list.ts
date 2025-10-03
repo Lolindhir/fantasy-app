@@ -29,8 +29,7 @@ type PositionKey = typeof positions[number]; // 'QB' | 'RB' | 'WR' | 'TE' | 'Fle
 
 export class TeamListComponent implements OnInit {
   
-  isMobile: boolean = false;
-  //isMobile: boolean = window.innerWidth <= 600;
+  isMobile: boolean = window.innerWidth <= 600;
   timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];
@@ -245,9 +244,9 @@ export class TeamListComponent implements OnInit {
     }
 
     const topOverall: Player[] = allPlayers
-      .filter(p => !allExcludedPlayers.has(p.ID))
-      .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
-      .slice(0, topN * teamCount);
+    .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) })) // sicherstellen, dass Zahl
+    .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
+    .slice(0, topN * teamCount);
 
     // Durchschnitt über alle Top-Spieler
     const avgOverall = topOverall.length ? topOverall.reduce((sum, p) => sum + p.SalaryDollars, 0) / topOverall.length : 0;
