@@ -243,10 +243,16 @@ export class TeamListComponent implements OnInit {
       excluded.forEach(id => allExcludedPlayers.add(id));
     }
 
-    const topOverall: Player[] = allPlayers
-    .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) })) // sicherstellen, dass Zahl
-    .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
-    .slice(0, topN * teamCount);
+    const sorted = [...allPlayers].sort((a,b) => b.SalaryDollars - a.SalaryDollars);
+    console.log('Top 30 Spieler nach Salary sortiert:', sorted.slice(0, 30).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+
+    const topOverall: Player[] = sorted.slice(0, topN * teamCount);
+    console.log('TopOverall Slice:', topOverall.map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+
+    // const topOverall: Player[] = allPlayers
+    // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) })) // sicherstellen, dass Zahl
+    // .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
+    // .slice(0, topN * teamCount);
 
     // Durchschnitt über alle Top-Spieler
     const avgOverall = topOverall.length ? topOverall.reduce((sum, p) => sum + p.SalaryDollars, 0) / topOverall.length : 0;
