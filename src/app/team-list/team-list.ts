@@ -105,7 +105,8 @@ export class TeamListComponent implements OnInit {
       
       // Alle Spieler setzen
       this.allPlayers = players;
-      
+      console.log('All players loaded:', this.allPlayers.length);
+
       // Teams verarbeiten (TopPlayers pro Team)
       this.fantasyTeams = teams.map(team => this.processTeam(team));
 
@@ -124,7 +125,7 @@ export class TeamListComponent implements OnInit {
       this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;      
 
       // ✅ Debug hier rein!
-      console.log('All players loaded:', this.allPlayers.length);
+      console.log('All players loaded extended:', this.allPlayers.length);
       console.log('Sample top 10:', [...this.allPlayers]
         .sort((a,b)=>b.SalaryDollars-a.SalaryDollars)
         .slice(0,10));
