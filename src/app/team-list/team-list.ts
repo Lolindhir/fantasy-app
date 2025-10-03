@@ -104,8 +104,9 @@ export class TeamListComponent implements OnInit {
     }).subscribe(({ players, teams, ts }) => {
       
       // Alle Spieler setzen
-      this.allPlayers = players;
-      console.log('All players loaded:', this.allPlayers.length);
+      this.allPlayers = players.sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+      console.log('All players loaded extended:', this.allPlayers.length);
+      console.log('Sample top 50:', this.allPlayers.slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
       // Teams verarbeiten (TopPlayers pro Team)
       this.fantasyTeams = teams.map(team => this.processTeam(team));
@@ -271,13 +272,13 @@ export class TeamListComponent implements OnInit {
     
     if(amount >= 0){
       if (plus) {
-        return `+ $${(amount / 1_000_000).toFixed(1)} Mio.`;
+        return `+ $${(amount / 1_000_000).toFixed(2)} Mio.`;
       } else {
-        return `$${(amount / 1_000_000).toFixed(1)} Mio.`;
+        return `$${(amount / 1_000_000).toFixed(2)} Mio.`;
       }
 
     } else {
-      return `- $${(-amount / 1_000_000).toFixed(1)} Mio.`;
+      return `- $${(-amount / 1_000_000).toFixed(2)} Mio.`;
     }
     
   }
