@@ -104,9 +104,9 @@ export class TeamListComponent implements OnInit {
     }).subscribe(({ players, teams, ts }) => {
       
       // Alle Spieler setzen
-      this.allPlayers = [...players];
-      // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
-      // .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+      this.allPlayers = [...players]
+      .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+      .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
       console.log('All players loaded extended:', [...this.allPlayers].length);
       console.log('Sample top 50:', [...this.allPlayers].slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
