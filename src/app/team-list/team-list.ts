@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DataService, Player } from '../services/data-service';
+import { DataService, Player, SortField } from '../services/data-service';
 import { CommonModule } from '@angular/common';
 import { ViewEncapsulation } from '@angular/core';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
@@ -104,11 +104,11 @@ export class TeamListComponent implements OnInit {
     }).subscribe(({ players, teams, ts }) => {
       
       // Alle Spieler setzen
-      this.allPlayers = [...players]
-      .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
-      .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
-      console.log('All players loaded extended:', this.allPlayers.length);
-      console.log('Sample top 50:', this.allPlayers.slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+      this.allPlayers = [...players];
+      // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+      // .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+      console.log('All players loaded extended:', [...this.allPlayers].length);
+      console.log('Sample top 50:', [...this.allPlayers].slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
       // Teams verarbeiten (TopPlayers pro Team)
       this.fantasyTeams = teams.map(team => this.processTeam(team));
@@ -123,7 +123,7 @@ export class TeamListComponent implements OnInit {
       //this.salaryCapTopPlayers = capResult.topPlayers;
 
       // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
-      const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
+      const capTopXResult = this.calculateSalaryCapTopPlayers([...this.allPlayers], teamCount, this.salaryCapTopTeamNumber);
       this.salaryCapTopTeam = capTopXResult.cap;
       this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;      
 
@@ -259,15 +259,9 @@ export class TeamListComponent implements OnInit {
     // .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
     // .slice(0, topN * teamCount);
 
-    // Alle Salary auf ganze Dollar runden (falls noch nicht geschehen)
-    const playersRounded = allPlayers.map(p => ({
-      ...p,
-      SalaryDollars: Math.round(p.SalaryDollars)
-    }));
-
     // Top Spieler insgesamt nach Salary sortieren
     // Wenn Salary gleich, nach NameShort sortieren → stabiler Sort
-    const topOverall: Player[] = playersRounded
+    const topOverall: Player[] = allPlayers
       .slice() // Defensive Kopie
       .sort((a, b) => {
         const diff = b.SalaryDollars - a.SalaryDollars;

@@ -285,8 +285,6 @@ export class DataService {
     }
   }
 
-
-
   private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
     return roster.sort((a, b) => {
       for (const field of sortFields) {
@@ -294,11 +292,12 @@ export class DataService {
           const diff = (b[field] as number) - (a[field] as number);
           if (diff !== 0) return diff;
         } else {
-          const cmp = String(a[field]).localeCompare(String(b[field]));
+          const cmp = String(a[field]).localeCompare(String(b[field]), 'en', { sensitivity: 'base' });
           if (cmp !== 0) return cmp;
         }
       }
-      return 0;
+      // Fallback: eindeutige ID zum stabilisieren, falls alles andere gleich
+      return a.ID.localeCompare(b.ID);
     });
   }
 
