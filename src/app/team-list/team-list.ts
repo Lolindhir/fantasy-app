@@ -104,7 +104,9 @@ export class TeamListComponent implements OnInit {
     }).subscribe(({ players, teams, ts }) => {
       
       // Alle Spieler setzen
-      this.allPlayers = players.sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+      this.allPlayers = [...players]
+      .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+      .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
       console.log('All players loaded extended:', this.allPlayers.length);
       console.log('Sample top 50:', this.allPlayers.slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
@@ -164,7 +166,7 @@ export class TeamListComponent implements OnInit {
     const allTeamPlayers = [...roster]; // einfach alle Spieler
 
     // Top Spieler innerhalb des Teams
-    const topTeam = roster
+    const topTeam = [...roster]
     .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
     .slice(0, topN);
     topPlayersTeam.push(...topTeam);
@@ -251,11 +253,29 @@ export class TeamListComponent implements OnInit {
     // const topOverall: Player[] = sorted.slice(0, topN * teamCount);
     // console.log('TopOverall Slice:', topOverall.map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
-    const topOverall: Player[] = allPlayers
-    .filter(p => !allExcludedPlayers.has(p.ID))   // <-- Excludes anwenden!
-    .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
-    .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
-    .slice(0, topN * teamCount);
+    // const topOverall: Player[] = allPlayers
+    // .filter(p => !allExcludedPlayers.has(p.ID))   // <-- Excludes anwenden!
+    // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+    // .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
+    // .slice(0, topN * teamCount);
+
+    // Alle Salary auf ganze Dollar runden (falls noch nicht geschehen)
+    const playersRounded = allPlayers.map(p => ({
+      ...p,
+      SalaryDollars: Math.round(p.SalaryDollars)
+    }));
+
+    // Top Spieler insgesamt nach Salary sortieren
+    // Wenn Salary gleich, nach NameShort sortieren → stabiler Sort
+    const topOverall: Player[] = playersRounded
+      .slice() // Defensive Kopie
+      .sort((a, b) => {
+        const diff = b.SalaryDollars - a.SalaryDollars;
+        if (diff !== 0) return diff;
+        return a.NameShort.localeCompare(b.NameShort); // Stabilität bei Gleichstand
+      })
+      .slice(0, topN * teamCount);
+
 
     // Durchschnitt über alle Top-Spieler
     const avgOverall = topOverall.length ? topOverall.reduce((sum, p) => sum + p.SalaryDollars, 0) / topOverall.length : 0;
@@ -272,13 +292,13 @@ export class TeamListComponent implements OnInit {
     
     if(amount >= 0){
       if (plus) {
-        return `+ $${(amount / 1_000_000).toFixed(2)} Mio.`;
+        return `+ $${(amount / 1_000_000).toFixed(0)} Mio.`;
       } else {
-        return `$${(amount / 1_000_000).toFixed(2)} Mio.`;
+        return `$${(amount / 1_000_000).toFixed(0)} Mio.`;
       }
 
     } else {
-      return `- $${(-amount / 1_000_000).toFixed(2)} Mio.`;
+      return `- $${(-amount / 1_000_000).toFixed(0)} Mio.`;
     }
     
   }

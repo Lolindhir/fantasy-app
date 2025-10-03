@@ -253,6 +253,9 @@ export class DataService {
       salaryAdjusted = salaryAdjusted + 150_000 * year;
     }
 
+    // Hier runden auf ganze Dollar
+    salaryAdjusted = Math.round(salaryAdjusted);
+
     return salaryAdjusted;
   }
 
