@@ -3,6 +3,7 @@ import { DataService, Player } from '../services/data-service';
 import { CommonModule } from '@angular/common';
 import { ViewEncapsulation } from '@angular/core';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
+import { forkJoin } from 'rxjs';
 
 
 export interface SalaryCapResult {
@@ -96,32 +97,31 @@ export class TeamListComponent implements OnInit {
 
   ngOnInit(): void {
     
-    // 1️⃣ Alle Spieler holen
-    this.dataService.getAllPlayers(['SalaryDollars']).subscribe(players => {
+    forkJoin({
+      players: this.dataService.getAllPlayers(['SalaryDollars']),
+      teams: this.dataService.getFantasyTeams(['SalaryDollars']),
+      ts: this.dataService.getLatestTimestamp()
+    }).subscribe(({ players, teams, ts }) => {
+      
+      // Alle Spieler setzen
       this.allPlayers = players;
+      
+      // Teams verarbeiten (TopPlayers pro Team)
+      this.fantasyTeams = teams.map(team => this.processTeam(team));
 
-      // 2️⃣ FantasyTeams holen
-      this.dataService.getFantasyTeams(['SalaryDollars']).subscribe(teams => {
-        // Teams verarbeiten (TopPlayers pro Team)
-        this.fantasyTeams = teams.map(team => this.processTeam(team));
-
-        // 3️⃣ SalaryCap berechnen (basierend auf allen Spielern)
-        const teamCount = this.fantasyTeams.length || 10;
-        const capResult = this.calculateSalaryCap(this.allPlayers, teamCount);
-
-        this.salaryCap = capResult.cap;
-        this.salaryCapTopPlayers = capResult.topPlayers; // jetzt gefüllt
-
-        // 4️⃣ Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
-        const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
-        this.salaryCapTopTeam = capTopXResult.cap;
-        this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
-      });
-    });
-
-    // 5️⃣ Timestamp holen
-    this.dataService.getLatestTimestamp().subscribe(ts => {
+      // Timestamp setzen
       this.timestamp = ts;
+
+      // SalaryCap berechnen (basierend auf allen Spielern)
+      const teamCount = this.fantasyTeams.length || 10;
+      const capResult = this.calculateSalaryCap(this.allPlayers, teamCount);
+      this.salaryCap = capResult.cap;
+      this.salaryCapTopPlayers = capResult.topPlayers;
+
+      // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
+      const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
+      this.salaryCapTopTeam = capTopXResult.cap;
+      this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
     });
 
   }
@@ -152,7 +152,9 @@ export class TeamListComponent implements OnInit {
     const allTeamPlayers = [...roster]; // einfach alle Spieler
 
     // Top Spieler innerhalb des Teams
-    const topTeam = roster.slice(0, topN);
+    const topTeam = roster
+    .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
+    .slice(0, topN);
     topPlayersTeam.push(...topTeam);
 
     // TopSalary aus Team-Roster
