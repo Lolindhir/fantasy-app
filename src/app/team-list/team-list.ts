@@ -33,13 +33,13 @@ export class TeamListComponent implements OnInit {
   timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];
-  salaryCap: number = 0;
+  //salaryCap: number = 0;
   // Positions-Keys als const Array
   readonly positions = ['QB', 'RB', 'WR', 'TE', 'Flex'] as const;
   // SalaryCap Top-Players initialisieren
-  salaryCapTopPlayers: Record<PositionKey, Player[]> = {
-    QB: [], RB: [], WR: [], TE: [], Flex: []
-  };
+  // salaryCapTopPlayers: Record<PositionKey, Player[]> = {
+  //   QB: [], RB: [], WR: [], TE: [], Flex: []
+  // };
   salaryCapTopTeamNumber: number = 20;
   salaryCapTopTeam: number = 0;
   salaryCapTopTeamPlayers: Player[] = [];
@@ -114,9 +114,9 @@ export class TeamListComponent implements OnInit {
 
       // SalaryCap berechnen (basierend auf allen Spielern)
       const teamCount = this.fantasyTeams.length || 10;
-      const capResult = this.calculateSalaryCap(this.allPlayers, teamCount);
-      this.salaryCap = capResult.cap;
-      this.salaryCapTopPlayers = capResult.topPlayers;
+      //const capResult = this.calculateSalaryCap(this.allPlayers, teamCount);
+      //this.salaryCap = capResult.cap;
+      //this.salaryCapTopPlayers = capResult.topPlayers;
 
       // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
       const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
@@ -128,7 +128,7 @@ export class TeamListComponent implements OnInit {
       console.log('Sample top 10:', [...this.allPlayers]
         .sort((a,b)=>b.SalaryDollars-a.SalaryDollars)
         .slice(0,10));
-      console.log('Final SalaryCap:', this.salaryCap);
+      //console.log('Final SalaryCap:', this.salaryCap);
       console.log('Final SalaryCapTopTeam:', this.salaryCapTopTeam);
       console.log('TeamCount:', teamCount);
 
@@ -238,10 +238,10 @@ export class TeamListComponent implements OnInit {
     // Top N Spieler, die nicht exkludiert sind
     const allExcludedPlayers  = new Set<string>();
 
-    for (const team of this.fantasyTeams) {
-      const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
-      excluded.forEach(id => allExcludedPlayers.add(id));
-    }
+    // for (const team of this.fantasyTeams) {
+    //   const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
+    //   excluded.forEach(id => allExcludedPlayers.add(id));
+    // }
 
     const topOverall: Player[] = allPlayers
       .filter(p => !allExcludedPlayers.has(p.ID))
