@@ -107,8 +107,8 @@ export class TeamListComponent implements OnInit {
       this.allPlayers = [...players]
       .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
       .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
-      console.log('All players loaded extended:', [...this.allPlayers].length);
-      console.log('Sample top 50:', [...this.allPlayers].slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
+      console.log('All players loaded extended:', this.allPlayers.length);
+      console.log('Sample top 50:', this.allPlayers.slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
       // Teams verarbeiten (TopPlayers pro Team)
       this.fantasyTeams = teams.map(team => this.processTeam(team));
