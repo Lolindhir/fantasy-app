@@ -123,7 +123,7 @@ export class TeamListComponent implements OnInit {
       //this.salaryCapTopPlayers = capResult.topPlayers;
 
       // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
-      const capTopXResult = this.calculateSalaryCapTopPlayers([...this.allPlayers], teamCount, this.salaryCapTopTeamNumber);
+      const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
       this.salaryCapTopTeam = capTopXResult.cap;
       this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;      
 
