@@ -124,6 +124,9 @@ export class TeamListComponent implements OnInit {
       this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
     });
 
+    console.log('All players loaded:', this.allPlayers.length);
+    console.log('Sample top 10:', [...this.allPlayers].sort((a,b)=>b.SalaryDollars-a.SalaryDollars).slice(0,10));
+
   }
 
   private processTeam(team: any, topN: number = this.salaryCapTopTeamNumber) {
@@ -243,6 +246,8 @@ export class TeamListComponent implements OnInit {
     
     // Multiplikator ist topN oder topOverall.length, je nachdem was kleiner ist
     const multiplier = Math.min(topN, topOverall.length);
+
+    console.log('TopOverall length:', topOverall.length, 'expected:', topN * teamCount);
 
     const cap = avgOverall * multiplier; // Multipliziert mit multiplier (z.B. 20)
 
