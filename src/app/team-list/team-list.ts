@@ -122,10 +122,14 @@ export class TeamListComponent implements OnInit {
       const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
       this.salaryCapTopTeam = capTopXResult.cap;
       this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
-    });
 
-    console.log('All players loaded:', this.allPlayers.length);
-    console.log('Sample top 10:', [...this.allPlayers].sort((a,b)=>b.SalaryDollars-a.SalaryDollars).slice(0,10));
+      // ✅ Debug hier rein!
+      console.log('All players loaded:', this.allPlayers.length);
+      console.log('Sample top 10:', [...this.allPlayers]
+        .sort((a,b)=>b.SalaryDollars-a.SalaryDollars)
+        .slice(0,10));
+
+    });
 
   }
 
