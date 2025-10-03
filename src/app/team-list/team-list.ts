@@ -121,13 +121,16 @@ export class TeamListComponent implements OnInit {
       // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
       const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
       this.salaryCapTopTeam = capTopXResult.cap;
-      this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;
+      this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;      
 
       // ✅ Debug hier rein!
       console.log('All players loaded:', this.allPlayers.length);
       console.log('Sample top 10:', [...this.allPlayers]
         .sort((a,b)=>b.SalaryDollars-a.SalaryDollars)
         .slice(0,10));
+      console.log('Final SalaryCap:', this.salaryCap);
+      console.log('Final SalaryCapTopTeam:', this.salaryCapTopTeam);
+      console.log('TeamCount:', teamCount);
 
     });
 
@@ -250,8 +253,6 @@ export class TeamListComponent implements OnInit {
     
     // Multiplikator ist topN oder topOverall.length, je nachdem was kleiner ist
     const multiplier = Math.min(topN, topOverall.length);
-
-    console.log('TopOverall length:', topOverall.length, 'expected:', topN * teamCount);
 
     const cap = avgOverall * multiplier; // Multipliziert mit multiplier (z.B. 20)
 
