@@ -29,7 +29,8 @@ type PositionKey = typeof positions[number]; // 'QB' | 'RB' | 'WR' | 'TE' | 'Fle
 
 export class TeamListComponent implements OnInit {
   
-  isMobile: boolean = window.innerWidth <= 600;
+  isMobile: boolean = false;
+  //isMobile: boolean = window.innerWidth <= 600;
   timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];
@@ -238,10 +239,10 @@ export class TeamListComponent implements OnInit {
     // Top N Spieler, die nicht exkludiert sind
     const allExcludedPlayers  = new Set<string>();
 
-    // for (const team of this.fantasyTeams) {
-    //   const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
-    //   excluded.forEach(id => allExcludedPlayers.add(id));
-    // }
+    for (const team of this.fantasyTeams) {
+      const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
+      excluded.forEach(id => allExcludedPlayers.add(id));
+    }
 
     const topOverall: Player[] = allPlayers
       .filter(p => !allExcludedPlayers.has(p.ID))
