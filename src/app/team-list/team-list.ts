@@ -103,7 +103,9 @@ export class TeamListComponent implements OnInit {
     // TopSalaryTeam neu berechnen
     const team = this.fantasyTeams.find(t => t.TeamID === teamId);
     if (team) {
-      team.Salary = this.calculateSalaryCapTopPlayers(team.Roster).cap;
+      const result = this.calculateSalaryCapTopPlayers(team.Roster);
+      team.Salary = result.cap;
+      team.SalaryProjected = result.capProjected;
     }
   }
 

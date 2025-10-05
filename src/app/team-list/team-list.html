@@ -118,15 +118,22 @@
 </ng-template>
 
 
-<mat-slide-toggle [(ngModel)]="showProjected">
-  <span style="margin-left: 10px;">{{ showProjected ? 'Projected Salaries On' : 'Toggle Projected Salaries On' }}</span>
-</mat-slide-toggle>
-
 <!-- Timestamp Anzeige, auf rechter Seite mit Flexbox -->
-<div *ngIf="timestamp" class="timestamp">
+<div *ngIf="timestamp" class="timestamp" style="margin-bottom: 10px;">
   <mat-icon>access_time</mat-icon>
   Updated: {{ timestamp | date:'dd.MM.yyyy, HH:mm' }}
 </div>
+
+<div>
+  <mat-slide-toggle [(ngModel)]="showProjected">
+    <span style="margin-left: 10px;;">{{ showProjected ? 'Projected Salaries On' : 'Toggle Projected Salaries On' }}</span>
+  </mat-slide-toggle>
+</div> 
+
+  
+
+
+
 
 <!-- Salary Cap Card -->
 <mat-card class="salarycap">
