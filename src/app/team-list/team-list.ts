@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ViewEncapsulation } from '@angular/core';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { forkJoin } from 'rxjs';
-
+import { FormsModule } from '@angular/forms';
 
 
 export interface SalaryCapResult {
@@ -17,7 +17,11 @@ export interface SalaryCapResult {
 
 @Component({
   selector: 'app-team-list',
-  imports: [CommonModule, SharedMaterialImports],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SharedMaterialImports
+  ],
   templateUrl: './team-list.html',
   styleUrls: ['./team-list.scss'],
   encapsulation: ViewEncapsulation.None
@@ -26,6 +30,7 @@ export interface SalaryCapResult {
 export class TeamListComponent implements OnInit {
   
   isMobile: boolean = window.innerWidth <= 600;
+  showProjected: boolean = false;
   timestamp: string | undefined;
   fantasyTeams: any[] = [];
   allPlayers: Player[] = [];
@@ -33,6 +38,7 @@ export class TeamListComponent implements OnInit {
   salaryCap: number = 0;
   salaryCapProjected: number = 0;
   salaryCapTopPlayers: Player[] = [];
+  salaryCapProjectedTopPlayers: Player[] = [];
   salaryCapTopPlayersExpanded = false;
 
   constructor(private dataService: DataService) {}
@@ -68,7 +74,8 @@ export class TeamListComponent implements OnInit {
       
       //sortiere allPlayers nach SalaryDollars absteigend
       this.allPlayers = this.sortPlayersBySalary(this.allPlayers, false);
-      this.salaryCapTopPlayers = this.allPlayers.slice(0, this.salaryRelevantTeamSize * teamCount);
+      this.salaryCapTopPlayers = this.sortPlayersBySalary(this.allPlayers, false).slice(0, this.salaryRelevantTeamSize * teamCount);
+      this.salaryCapProjectedTopPlayers = this.sortPlayersBySalary(this.allPlayers, true).slice(0, this.salaryRelevantTeamSize * teamCount);
 
     });
 
@@ -169,17 +176,17 @@ export class TeamListComponent implements OnInit {
   }
 
   
-  formatSalaryDollars(amount: number, plus: boolean = false): string {
+  formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
     if(amount === 0) return 'Rookie';
 
     if(amount >= 0){
       if (plus) {
-        return `+ $${(amount / 1_000_000).toFixed(0)} Mio.`;
+        return `+ $${(amount / 1_000_000).toFixed(afterPoint)} Mio.`;
       } else {
-        return `$${(amount / 1_000_000).toFixed(0)} Mio.`;
+        return `$${(amount / 1_000_000).toFixed(afterPoint)} Mio.`;
       }
     } else {
-      return `- $${(-amount / 1_000_000).toFixed(0)} Mio.`;
+      return `- $${(-amount / 1_000_000).toFixed(afterPoint)} Mio.`;
     }
   }
 
