@@ -59,6 +59,12 @@
       <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">{{ player.SalaryDollarsDisplay }}</td>
     </ng-container>
 
+    <!-- SalaryProjected -->
+    <ng-container matColumnDef="salaryProjected">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Projected </th>
+      <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">{{ player.SalaryDollarsProjectedDisplay }}</td>
+    </ng-container>
+
     <!-- Fantasy Team -->
     <ng-container matColumnDef="fantasyTeam">
       <th mat-header-cell *matHeaderCellDef class="table-text"> Owner </th>
@@ -110,7 +116,7 @@
 <mat-card class="salarycap">
   <mat-card-header>
     <mat-card-title>
-      League Salary Cap = {{ formatSalaryDollars(salaryCapTopTeam) }}
+      League Salary Cap = {{ formatSalaryDollars(salaryCap) }} (Proj.: {{ formatSalaryDollars(salaryCapProjected) }}) 
     </mat-card-title>
   </mat-card-header>
 
@@ -120,16 +126,16 @@
 
   <mat-card-actions>
     <mat-accordion>
-      <mat-expansion-panel [(expanded)]="salaryCapTopTeamExpanded">
+      <mat-expansion-panel [(expanded)]="salaryCapTopPlayersExpanded">
         <mat-expansion-panel-header>
-          <mat-panel-title class="player-accordion-title"> Top {{ salaryCapTopTeamNumber * fantasyTeams.length }} Players of NFL</mat-panel-title>
+          <mat-panel-title class="player-accordion-title"> Top {{ salaryRelevantTeamSize * fantasyTeams.length }} Players of NFL</mat-panel-title>
         </mat-expansion-panel-header>
           <!-- Salary Cap Card -->
           <div *ngIf="!isMobile">
-            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','picture','name','position','team','salary','fantasyTeam'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null, compact: false }"></ng-container>
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopPlayers, columns: ['rank','picture','name','position','team','salary','salaryProjected','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: false }"></ng-container>
           </div>
           <div *ngIf="isMobile">
-            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopTeamPlayers, columns: ['rank','name','salary','fantasyTeam'], lineNumber: salaryCapTopTeamNumber * fantasyTeams.length, team: null, compact: true }"></ng-container>
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopPlayers, columns: ['rank','name','salary','salaryProjected','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: true }"></ng-container>
           </div>
       </mat-expansion-panel>
     </mat-accordion>
@@ -150,14 +156,23 @@
   </mat-card-header>
 
   <mat-card-content>
-    <p><strong>Team Salary Top {{ salaryCapTopTeamNumber }}:</strong> {{ formatSalaryDollars(team.TopSalaryTeam) }}</p>
+    <p><strong>Team Salary Top {{ salaryRelevantTeamSize }}:</strong> {{ formatSalaryDollars(team.Salary) }} (Proj.: {{ formatSalaryDollars(team.SalaryProjected) }})</p>
     <p>
       <strong>Salary Cap Difference:</strong>
       <span [ngClass]="{
-        'positive-diff': team.TopSalaryTeam - salaryCapTopTeam > 0,
-        'negative-diff': team.TopSalaryTeam - salaryCapTopTeam < 0
+        'positive-diff': team.Salary - salaryCap > 0,
+        'negative-diff': team.Salary - salaryCap < 0
       }">
-        {{ formatSalaryDollars(team.TopSalaryTeam - salaryCapTopTeam, true) }}
+        {{ formatSalaryDollars(team.Salary - salaryCap, true) }}
+      </span>
+    </p>
+    <p>
+      <strong>Projected Cap Difference:</strong>
+      <span [ngClass]="{
+        'positive-diff': team.SalaryProjected - salaryCapProjected > 0,
+        'negative-diff': team.SalaryProjected - salaryCapProjected < 0
+      }">
+        {{ formatSalaryDollars(team.SalaryProjected - salaryCapProjected, true) }}
       </span>
     </p>
   </mat-card-content>
@@ -172,10 +187,10 @@
         </mat-expansion-panel-header>
           <!-- Team Card -->
           <div *ngIf="!isMobile">
-            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','picture','name','team','position','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: false }"></ng-container>
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayers, columns: ['rank','picture','name','team','position','salary','salaryProjected','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: false }"></ng-container>
           </div>
           <div *ngIf="isMobile">
-            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersTeam, columns: ['rank','name','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: true }"></ng-container>
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayers, columns: ['rank','name','salary','salaryProjected','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: true }"></ng-container>
           </div>
       </mat-expansion-panel>
     </mat-accordion>
