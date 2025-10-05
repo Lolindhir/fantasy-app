@@ -179,7 +179,6 @@ export class TeamListComponent implements OnInit {
 
   
   formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
-    if(amount === 0) return 'Rookie';
 
     if(amount >= 0){
       if (plus) {
