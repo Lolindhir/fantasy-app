@@ -34,7 +34,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     if (-not $oldLeague) { return $true }  # keine alte Daten -> Änderung
 
     # Prüfe Top-Level Eigenschaften der Liga
-    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','TotalTeams')
+    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','TotalTeams', 'SalaryCap', 'SalaryCapProjected')
     foreach ($prop in $propsToCheck) {
         if ($oldLeague.$prop -ne $newLeague.$prop) {
             Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
@@ -78,7 +78,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
         # Vergleiche Roster, Reserve, Taxi
         $arraysToCompare = @('Roster','Reserve','Taxi')
         foreach ($field in $arraysToCompare) {
-            if (-not (Compare-Arrays $oldTeam.$field $newTeam.$field $field $oldTeam.Team)) {
+            if (-not (Compare-Arrays $oldTeam.$field $newTeam.$field $field $oldTeam.Owner)) {
                 return $true
             }
         }
@@ -94,6 +94,21 @@ function LeagueHasChanged($oldLeague, $newLeague) {
 . "$PSScriptRoot\config.ps1"
 # --- Konfiguration ---
 $LeagueID = $Global:LeagueID
+$TeamCount = $Global:TeamCount
+$SalaryRelevantTeamSize = $Global:SalaryRelevantTeamSize
+if (-not $LeagueID) {
+    Write-Error "LeagueID not set in config.ps1!"
+    exit 1
+}
+if (-not $TeamCount -or $TeamCount -le 0) {
+    Write-Error "TeamCount not set or invalid in config.ps1!"
+    exit 1
+}
+if (-not $SalaryRelevantTeamSize -or $SalaryRelevantTeamSize -le 0) {
+    Write-Error "SalaryRelevantTeamSize not set or invalid in config.ps1!"
+    exit 1
+}
+
 
 # Verzeichnis des Skripts
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -163,23 +178,64 @@ foreach ($roster in $rosters) {
     }
 }
 
+# --- Spieler-Daten holen aus Players.json ---
+$playersFile = Join-Path $dataDir "Players.json"
+if (!(Test-Path $playersFile)) {
+    Write-Error "Players.json not found at '$playersFile'!"
+    exit 1
+}
+$playersJson = Get-Content $playersFile -Raw
+if (-not $playersJson) {
+    Write-Error "Players.json is empty!"
+    exit 1
+}
+$playersData = $playersJson | ConvertFrom-Json
+if (-not $playersData -or $playersData.Count -eq 0) {
+    Write-Error "No valid players found in Players.json!"
+    exit 1
+}
 
+# --- Top-N Spieler bestimmen ---
+$topCount = $Global:SalaryRelevantTeamSize * $TeamCount
+
+# Sortiere Spieler nach SalaryDollars und SalaryDollarsProjected (absteigend)
+$topPlayers = $playersData | Sort-Object -Property SalaryDollars -Descending | Select-Object -First $topCount
+$topPlayersProjected = $playersData | Sort-Object -Property SalaryDollarsProjected -Descending | Select-Object -First $topCount
+
+if ($topPlayers.Count -eq 0 -or $topPlayersProjected.Count -eq 0) {
+    Write-Error "No players found for Salary Cap calculation!"
+    exit 1
+}
+
+# --- Salary Cap berechnen ---
+$avgSalary = ($topPlayers | Measure-Object -Property SalaryDollars -Average).Average
+$avgSalaryProjected = ($topPlayersProjected | Measure-Object -Property SalaryDollarsProjected -Average).Average
+
+$salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize)
+$salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize)
+
+Write-Host "Top $topCount players considered for Salary Cap calculation." -ForegroundColor Yellow
+Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
+Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
 # --- League JSON vorbereiten ---
 $leagueAsJson = @()
 $leagueAsJson += [PSCustomObject]@{
-    LeagueID          = $league.league_id
-    Name              = $league.name
-    Avatar            = $league.avatar
-    Season            = $league.season
-    SeasonType        = $league.season_type
-    Status            = $league.status
-    TotalTeams        = $league.total_rosters
-    Teams             = $teamData
-    RosterSize        = $league.roster_positions
-    ScoringType       = $league.scoring_settings
-    Settings          = $league.settings
-    LeagueIDPrevious  = $league.previous_league_id
+    LeagueID                = $league.league_id
+    Name                    = $league.name
+    Avatar                  = $league.avatar
+    Season                  = $league.season
+    SeasonType              = $league.season_type
+    Status                  = $league.status
+    TotalTeams              = $league.total_rosters
+    SalaryCap               = $salaryCapTotal
+    SalaryCapProjected      = $salaryCapProjected
+    SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
+    Teams                   = $teamData
+    RosterSize              = $league.roster_positions
+    ScoringType             = $league.scoring_settings
+    Settings                = $league.settings
+    LeagueIDPrevious        = $league.previous_league_id
 }
 
 # Änderungen prüfen

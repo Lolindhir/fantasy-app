@@ -40,7 +40,7 @@ export class TeamListComponent implements OnInit {
   // salaryCapTopPlayers: Record<PositionKey, Player[]> = {
   //   QB: [], RB: [], WR: [], TE: [], Flex: []
   // };
-  salaryCapTopTeamNumber: number = 20;
+  salaryCapTopTeamNumber: number = 0;
   salaryCapTopTeam: number = 0;
   salaryCapTopTeamPlayers: Player[] = [];
   salaryCapTopTeamExpanded = false;
@@ -100,15 +100,16 @@ export class TeamListComponent implements OnInit {
     forkJoin({
       players: this.dataService.getAllPlayers(['SalaryDollars']),
       teams: this.dataService.getFantasyTeams(['SalaryDollars']),
+      league: this.dataService.getLeague(['SalaryDollars']),
       ts: this.dataService.getLatestTimestamp()
-    }).subscribe(({ players, teams, ts }) => {
-      
+    }).subscribe(({ players, teams, league, ts }) => {
+      // TopPlayers pro Team aus League-Daten
+      this.salaryCapTopTeamNumber = league.SalaryRelevantTeamSize || 20;
+
       // Alle Spieler setzen
       this.allPlayers = [...players]
       .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
       .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
-      console.log('All players loaded extended:', this.allPlayers.length);
-      console.log('Sample top 50:', this.allPlayers.slice(0, 50).map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
       // Teams verarbeiten (TopPlayers pro Team)
       this.fantasyTeams = teams.map(team => this.processTeam(team));
@@ -123,9 +124,11 @@ export class TeamListComponent implements OnInit {
       //this.salaryCapTopPlayers = capResult.topPlayers;
 
       // Alternative SalaryCap Berechnung (Top X Spieler insgesamt)
-      const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
-      this.salaryCapTopTeam = capTopXResult.cap;
-      this.salaryCapTopTeamPlayers = capTopXResult.topPlayers;      
+      //const capTopXResult = this.calculateSalaryCapTopPlayers(this.allPlayers, teamCount, this.salaryCapTopTeamNumber);
+      this.salaryCapTopTeam = league.SalaryCap || 0;
+      //sortiere allPlayers nach SalaryDollars absteigend
+      this.allPlayers.sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+      this.salaryCapTopTeamPlayers = this.allPlayers.slice(0, this.salaryCapTopTeamNumber * teamCount);
 
       // ✅ Debug hier rein!
       console.log('All players loaded extended:', this.allPlayers.length);
@@ -141,11 +144,15 @@ export class TeamListComponent implements OnInit {
   }
 
   private processTeam(team: any, topN: number = this.salaryCapTopTeamNumber) {
+    
     const positions = { QB: 2, WR: 2, RB: 2, TE: 2 } as const;
     const roster = [...team.Roster];
     const topPlayersPosition: { [key in keyof typeof positions | 'Flex']?: Player[] } = {};
     const topPlayersTeam: Player[] = [];
     const usedIds = new Set<string>();
+
+    //roster nach SalaryDollars sortieren (absteigend)
+    roster.sort((a: Player, b: Player) => b.SalaryDollars - a.SalaryDollars);
 
     // Top Spieler pro Position innerhalb des Teams
     for (const pos of Object.keys(positions) as Array<keyof typeof positions>) {
@@ -163,7 +170,7 @@ export class TeamListComponent implements OnInit {
     const topSalaryPosition = Object.values(topPlayersPosition).flat().reduce((sum, p) => sum + p.SalaryDollars, 0);
 
     // === Alle Spieler des Teams für Anzeige ===
-    const allTeamPlayers = [...roster]; // einfach alle Spieler
+    const allTeamPlayers = roster; // einfach alle Spieler
 
     // Top Spieler innerhalb des Teams
     const topTeam = [...roster]
@@ -184,53 +191,53 @@ export class TeamListComponent implements OnInit {
   }
 
 
-  /**
-   * Berechnet das SalaryCap für ein Team basierend auf allen Spielern
-   */
-  private calculateSalaryCap(allPlayers: Player[], teamCount: number): SalaryCapResult {
-  const positions = { QB: 2, WR: 2, RB: 2, TE: 2 } as const;
-  const usedIds = new Set<string>();
-  const topPlayers: { [key in keyof typeof positions | 'Flex']: Player[] } = {
-    QB: [], RB: [], WR: [], TE: [], Flex: []
-  };
+  // /**
+  //  * Berechnet das SalaryCap für ein Team basierend auf allen Spielern
+  //  */
+  // private calculateSalaryCap(allPlayers: Player[], teamCount: number): SalaryCapResult {
+  // const positions = { QB: 2, WR: 2, RB: 2, TE: 2 } as const;
+  // const usedIds = new Set<string>();
+  // const topPlayers: { [key in keyof typeof positions | 'Flex']: Player[] } = {
+  //   QB: [], RB: [], WR: [], TE: [], Flex: []
+  // };
 
-    // Top Spieler pro Position (für SalaryCap)
-    for (const pos of Object.keys(positions) as Array<keyof typeof positions>) {
-      const top = allPlayers
-        .filter(p => p.Position === pos && !usedIds.has(p.ID))
-        .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
-        .slice(0, positions[pos] * teamCount); // alle benötigten Spieler
+  //   // Top Spieler pro Position (für SalaryCap)
+  //   for (const pos of Object.keys(positions) as Array<keyof typeof positions>) {
+  //     const top = allPlayers
+  //       .filter(p => p.Position === pos && !usedIds.has(p.ID))
+  //       .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
+  //       .slice(0, positions[pos] * teamCount); // alle benötigten Spieler
 
-      top.forEach(p => usedIds.add(p.ID));
-      topPlayers[pos] = top;
-    }
+  //     top.forEach(p => usedIds.add(p.ID));
+  //     topPlayers[pos] = top;
+  //   }
 
-    // Top Flex-Spieler (WR, RB, TE)
-    const flex = allPlayers
-      .filter(p => ['WR', 'RB', 'TE'].includes(p.Position) && !usedIds.has(p.ID))
-      .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
-      .slice(0, 4 * teamCount);
+  //   // Top Flex-Spieler (WR, RB, TE)
+  //   const flex = allPlayers
+  //     .filter(p => ['WR', 'RB', 'TE'].includes(p.Position) && !usedIds.has(p.ID))
+  //     .sort((a, b) => b.SalaryDollars - a.SalaryDollars)
+  //     .slice(0, 4 * teamCount);
 
-    flex.forEach(p => usedIds.add(p.ID));
-    topPlayers['Flex'] = flex;
+  //   flex.forEach(p => usedIds.add(p.ID));
+  //   topPlayers['Flex'] = flex;
 
-    // SalaryCap berechnen: Durchschnitt * Anzahl Spieler pro Team
-    const avgQB = topPlayers.QB.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.QB.length || 0;
-    const avgRB = topPlayers.RB.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.RB.length || 0;
-    const avgWR = topPlayers.WR.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.WR.length || 0;
-    const avgTE = topPlayers.TE.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.TE.length || 0;
-    const avgFlex = topPlayers.Flex.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.Flex.length || 0;
+  //   // SalaryCap berechnen: Durchschnitt * Anzahl Spieler pro Team
+  //   const avgQB = topPlayers.QB.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.QB.length || 0;
+  //   const avgRB = topPlayers.RB.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.RB.length || 0;
+  //   const avgWR = topPlayers.WR.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.WR.length || 0;
+  //   const avgTE = topPlayers.TE.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.TE.length || 0;
+  //   const avgFlex = topPlayers.Flex.reduce((sum, p) => sum + p.SalaryDollars, 0) / topPlayers.Flex.length || 0;
 
-    // Anzahl Spieler pro Team
-    const cap =
-      avgQB * positions.QB +
-      avgRB * positions.RB +
-      avgWR * positions.WR +
-      avgTE * positions.TE +
-      avgFlex * 4; // 4 Flex-Spieler pro Team
+  //   // Anzahl Spieler pro Team
+  //   const cap =
+  //     avgQB * positions.QB +
+  //     avgRB * positions.RB +
+  //     avgWR * positions.WR +
+  //     avgTE * positions.TE +
+  //     avgFlex * 4; // 4 Flex-Spieler pro Team
 
-    return { cap, topPlayers };
-  }
+  //   return { cap, topPlayers };
+  // }
 
 
   /**
@@ -253,22 +260,22 @@ export class TeamListComponent implements OnInit {
     // const topOverall: Player[] = sorted.slice(0, topN * teamCount);
     // console.log('TopOverall Slice:', topOverall.map(p => ({name: p.NameShort, salary: p.SalaryDollars})));
 
-    // const topOverall: Player[] = allPlayers
-    // .filter(p => !allExcludedPlayers.has(p.ID))   // <-- Excludes anwenden!
-    // .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
-    // .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
-    // .slice(0, topN * teamCount);
-
-    // Top Spieler insgesamt nach Salary sortieren
-    // Wenn Salary gleich, nach NameShort sortieren → stabiler Sort
     const topOverall: Player[] = allPlayers
-      .slice() // Defensive Kopie
-      .sort((a, b) => {
-        const diff = b.SalaryDollars - a.SalaryDollars;
-        if (diff !== 0) return diff;
-        return a.NameShort.localeCompare(b.NameShort); // Stabilität bei Gleichstand
-      })
-      .slice(0, topN * teamCount);
+    .filter(p => !allExcludedPlayers.has(p.ID))   // <-- Excludes anwenden!
+    .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
+    .sort((a,b) => b.SalaryDollars - a.SalaryDollars)
+    .slice(0, topN * teamCount);
+
+    // // Top Spieler insgesamt nach Salary sortieren
+    // // Wenn Salary gleich, nach NameShort sortieren → stabiler Sort
+    // const topOverall: Player[] = allPlayers
+    //   .slice() // Defensive Kopie
+    //   .sort((a, b) => {
+    //     const diff = b.SalaryDollars - a.SalaryDollars;
+    //     if (diff !== 0) return diff;
+    //     return a.NameShort.localeCompare(b.NameShort); // Stabilität bei Gleichstand
+    //   })
+    //   .slice(0, topN * teamCount);
 
 
     // Durchschnitt über alle Top-Spieler
@@ -284,6 +291,8 @@ export class TeamListComponent implements OnInit {
 
   formatSalaryDollars(amount: number, plus: boolean = false): string {
     
+    if(amount === 0) return 'Rookie';
+
     if(amount >= 0){
       if (plus) {
         return `+ $${(amount / 1_000_000).toFixed(0)} Mio.`;

@@ -14,11 +14,16 @@ export interface RawLeague {
   LeagueID: string;
   Name: string;
   Season: string;
+  SalaryCap: number;
+  SalaryCapProjected: number;
+  SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[]; // nur rohe Teams
 }
 
 export interface League extends Omit<RawLeague, 'Teams'> {
   Teams: FantasyTeam[]; // angereicherte Teams
+  SalaryCapDisplay: string;
+  SalaryCapProjectedDisplay: string;
 }
 
 export interface RawFantasyTeam {
@@ -51,7 +56,8 @@ export interface RawPlayer {
   NameShort: string;
   Position: string;
   TeamID: string; // Referenz, nicht das Teamobjekt
-  Salary: number;
+  SalaryDollars: number;
+  SalaryDollarsProjected: number;
   Age: number;
   Year: number;
   Picture: string;
@@ -60,8 +66,8 @@ export interface RawPlayer {
 export interface Player extends Omit<RawPlayer, 'TeamID'> {
   TeamNFL: NFLTeam; // angereichertes NFL-Team
   TeamFantasy?: FantasyTeam; // optionales Fantasy-Team (wenn zugeordnet)
-  SalaryDollars: number;
   SalaryDollarsDisplay: string;
+  SalaryDollarsProjectedDisplay: string;
 }
 
 export interface RawNFLTeam {
@@ -73,7 +79,7 @@ export interface RawNFLTeam {
 
 export interface NFLTeam extends RawNFLTeam {}
 
-export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'Salary'
+export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'SalaryDollars' | ...
 
 @Injectable({
   providedIn: 'root'
@@ -81,11 +87,11 @@ export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' |
 export class DataService {
   
   private http = inject(HttpClient);
-  private salarySourceMin = 0;
-  private salarySourceMax = 8000;
-  private salaryTargetMin = 250_000;
-  private salaryTargetMax = 50_000_000;
-  private salaryMappingNonLinear = true; // true = nicht-linear, false = linear
+  // private salarySourceMin = 0;
+  // private salarySourceMax = 8000;
+  // private salaryTargetMin = 250_000;
+  // private salaryTargetMax = 50_000_000;
+  // private salaryMappingNonLinear = true; // true = nicht-linear, false = linear
 
   /* Timestamps laden */
   private timestampsUrl = 'data/Timestamps.json';
@@ -125,36 +131,36 @@ export class DataService {
   //   const date = new Date(utcString); // UTC-Zeit aus JSON
   //   return date.toLocaleString();     // Browser-Zeit, automatisch lokalisiert
   // }
-  
 
 
   getFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<FantasyTeam[]> {
-    return this.getAllPlayersWithFantasyTeams(sortFields).pipe(
+    return this.getLeagueWithPlayers(sortFields).pipe(
       map(res => res.teams)
     );
   }
 
-
   getAllPlayers(sortFields: SortField[] = ['NameLast']): Observable<Player[]> {
-    return this.getAllPlayersWithFantasyTeams(sortFields).pipe(
-      // Nur die Spieler extrahieren
-      map(res => this.sortRoster(res.players, sortFields))
+    return this.getLeagueWithPlayers(sortFields).pipe(
+      map(res => res.players)
+    );
+  }
+
+  getLeague(sortFields: SortField[] = ['NameLast']): Observable<League> {
+    return this.getLeagueWithPlayers(sortFields).pipe(
+      map(res => res.league)
     );
   }
 
 
-  /**
-  * Lädt alle Spieler, verknüpft sie mit NFL-Team und optional Fantasy-Team.
-  */
-  getAllPlayersWithFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<{ players: Player[]; teams: FantasyTeam[] }> {
+  getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[] }> {
     return forkJoin({
-      league: this.http.get<RawLeague>('data/League.json'),
-      players: this.http.get<RawPlayer[]>('data/Players.json'),
-      nflTeams: this.http.get<RawNFLTeam[]>('data/Teams.json')
+      leagueRaw: this.http.get<RawLeague>('data/League.json'),
+      playersRaw: this.http.get<RawPlayer[]>('data/Players.json'),
+      nflTeamsRaw: this.http.get<RawNFLTeam[]>('data/Teams.json')
     }).pipe(
-      map(({ league, players, nflTeams }) => {
-        // 1️⃣ FantasyTeams initial aufbauen, Roster leer lassen
-        const teams: FantasyTeam[] = league.Teams.map(team => ({
+      map(({ leagueRaw, playersRaw, nflTeamsRaw }) => {
+        // 1️⃣ FantasyTeams initial aufbauen
+        const teams: FantasyTeam[] = leagueRaw.Teams.map(team => ({
           ...team,
           Team: team.Team || `Team ${team.Owner}`,
           Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
@@ -162,36 +168,24 @@ export class DataService {
           Standing: 0
         }));
 
-        // 2️⃣ Alle Spieler bauen, ohne TeamFantasy
-        const allPlayers: Player[] = players.map(raw => {
-          const nfl = nflTeams.find(t => t.ID === raw.TeamID);
-          const salaryDollars = this.mapSalaryToDollars(raw.Salary, raw.Year, raw.Age, raw.Position);
-
-          const player: Player = {
-          ID: raw.ID,
-          Name: raw.Name,
-          NameFirst: raw.NameFirst,
-          NameLast: raw.NameLast,
-          NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
-          Position: raw.Position,
-          Salary: raw.Salary,
-          TeamNFL: nfl!,
-          TeamFantasy: undefined, // wird später gesetzt
-          Age: raw.Age,
-          Year: raw.Year,
-          Picture: raw.Picture || 'assets/default-player-avatar.png',
-          SalaryDollars: salaryDollars,
-          SalaryDollarsDisplay: this.formatSalaryDollars(salaryDollars)
-        };
-
-        return player;
+        // 2️⃣ Spieler aufbauen
+        const players: Player[] = playersRaw.map(raw => {
+          const nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
+          return {
+            ...raw,
+            TeamNFL: nfl,
+            TeamFantasy: undefined,
+            SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollars),
+            SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjected),
+            NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`
+          };
         });
 
-        // 3️⃣ Roster der Teams füllen & Spieler TeamFantasy zuweisen
+        // 3️⃣ Roster füllen
         teams.forEach(team => {
           team.Roster = this.rosterIdsToPlayers(
-            (league.Teams.find(t => t.TeamID === team.TeamID)?.Roster) || [],
-            allPlayers
+            (leagueRaw.Teams.find(t => t.TeamID === team.TeamID)?.Roster) || [],
+            players
           );
           team.Roster.forEach(player => (player.TeamFantasy = team));
         });
@@ -203,18 +197,20 @@ export class DataService {
           if (b.Points !== a.Points) return b.Points - a.Points;
           return a.PointsAgainst - b.PointsAgainst;
         });
+        teams.forEach((team, idx) => (team.Standing = idx + 1));
 
-        teams.forEach((team, index) => (team.Standing = index + 1));
+        // 5️⃣ Spieler sortieren
+        const playersSorted = this.sortRoster(players, sortFields);
 
-        // 5️⃣ Alle Spieler sortieren
-        const playersSorted = this.sortRoster(allPlayers, sortFields);
+        // 6️⃣ League angereichert
+        const league: League = {
+          ...leagueRaw,
+          Teams: teams,
+          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
+          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected)
+        };
 
-        // Alle Spieler innerhalb eines Teams ebenfalls sortieren
-        teams.forEach(team => {
-          team.Roster = this.sortRoster(team.Roster, sortFields);
-        });
-
-        return { players: playersSorted, teams };
+        return { league, players: playersSorted, teams };
       })
     );
   }
@@ -226,53 +222,54 @@ export class DataService {
       .filter((p): p is Player => !!p);
   }
 
-  private mapSalaryToDollars(salary: number, year: number, age: number, position: string): number {
+  // private mapSalaryToDollars(salary: number, year: number, age: number, position: string): number {
 
-    // Salary holen
-    const salaryFlat = this.salaryMappingNonLinear ? this.mapSalaryToDollarsNonLinear(salary) : this.mapSalaryToDollarsLinear(salary);
-    let salaryAdjusted = salaryFlat;
+  //   // Salary holen
+  //   const salaryFlat = this.salaryMappingNonLinear ? this.mapSalaryToDollarsNonLinear(salary) : this.mapSalaryToDollarsLinear(salary);
+  //   let salaryAdjusted = salaryFlat;
 
-    //Rookies kosten weniger Geld
-    //1. Jahr nur 50%, 2. Jahr 70%, 3. Jahr 90%
-    if (year === 1) {
-      salaryAdjusted = salaryAdjusted * 0.5;
-    } else if (year === 2) {
-      salaryAdjusted = salaryAdjusted * 0.75;
-    } else if (year === 3) {
-      salaryAdjusted = salaryAdjusted * 0.9;
-    }
+  //   //Rookies kosten weniger Geld
+  //   //1. Jahr nur 50%, 2. Jahr 70%, 3. Jahr 90%
+  //   if (year === 1) {
+  //     salaryAdjusted = salaryAdjusted * 0.5;
+  //   } else if (year === 2) {
+  //     salaryAdjusted = salaryAdjusted * 0.75;
+  //   } else if (year === 3) {
+  //     salaryAdjusted = salaryAdjusted * 0.9;
+  //   }
 
-    // auf die Salary noch pro Jahr 100k draufschlagen
-    salaryAdjusted = salaryAdjusted + 100_000 * year;
+  //   // auf die Salary noch pro Jahr 100k draufschlagen
+  //   salaryAdjusted = salaryAdjusted + 100_000 * year;
 
-    // von der Salary noch pro Alter über 25 Jahre 100k abziehen
-    salaryAdjusted = salaryAdjusted - 100_000 * (age - 25);
+  //   // von der Salary noch pro Alter über 25 Jahre 100k abziehen
+  //   salaryAdjusted = salaryAdjusted - 100_000 * (age - 25);
 
-    // Kicker Sonderbehandlung: pro Jahr 150k drauf
-    if (position === 'K') {
-      salaryAdjusted = salaryAdjusted + 150_000 * year;
-    }
+  //   // Kicker Sonderbehandlung: pro Jahr 150k drauf
+  //   if (position === 'K') {
+  //     salaryAdjusted = salaryAdjusted + 150_000 * year;
+  //   }
 
-    // Hier runden auf ganze Dollar
-    salaryAdjusted = Math.round(salaryAdjusted);
+  //   // Hier runden auf ganze Dollar
+  //   salaryAdjusted = Math.round(salaryAdjusted);
 
-    return salaryAdjusted;
-  }
+  //   return salaryAdjusted;
+  // }
 
-  private mapSalaryToDollarsLinear(salary: number): number {
-    return this.salaryTargetMin + ((salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin)) * (this.salaryTargetMax - this.salaryTargetMin);
-  }
+  // private mapSalaryToDollarsLinear(salary: number): number {
+  //   return this.salaryTargetMin + ((salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin)) * (this.salaryTargetMax - this.salaryTargetMin);
+  // }
 
-  private mapSalaryToDollarsNonLinear(salary: number): number {
-    const k = 2; // Quadratische Skalierung
+  // private mapSalaryToDollarsNonLinear(salary: number): number {
+  //   const k = 2; // Quadratische Skalierung
 
-    const normalized = (salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin);
-    const scaled = Math.pow(normalized, k);
+  //   const normalized = (salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin);
+  //   const scaled = Math.pow(normalized, k);
 
-    return this.salaryTargetMin + scaled * (this.salaryTargetMax - this.salaryTargetMin);
-  }
+  //   return this.salaryTargetMin + scaled * (this.salaryTargetMax - this.salaryTargetMin);
+  // }
 
   private formatSalaryDollars(amount: number): string {
+    if(amount === 0) return 'Rookie';
     if (amount >= 1_000_000) {
       // Millionenbereich → 1 Nachkommastelle
       return `$${(amount / 1_000_000).toFixed(1)} Mio.`;
@@ -288,7 +285,7 @@ export class DataService {
   private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
     return roster.sort((a, b) => {
       for (const field of sortFields) {
-        if (field === 'Salary' || field === 'SalaryDollars') {
+        if (field === 'SalaryDollars' || field === 'SalaryDollarsProjected' || field === 'Age' || field === 'Year') {
           const diff = (b[field] as number) - (a[field] as number);
           if (diff !== 0) return diff;
         } else {

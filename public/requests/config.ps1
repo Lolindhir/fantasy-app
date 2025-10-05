@@ -1,6 +1,11 @@
 # config.ps1
 # Zentrale Konfiguration für Sleeper / Tank01
 
+# League Settings
+$Global:LeagueStart = "20250901"  # yyyyMMdd
+$Global:TeamCount = 6
+$Global:SalaryRelevantTeamSize = 20
+
 # League-ID
 $Global:LeagueID = "1257421353431080960"
 
