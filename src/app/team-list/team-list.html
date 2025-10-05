@@ -65,7 +65,7 @@
       <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">
         <div fxLayout="column" fxLayoutAlign="none start">
           <div>{{ player.SalaryDollarsProjectedDisplay }}</div>
-          <div *ngIf="showProjected" class="player-salary-difference">
+          <div class="player-salary-difference">
             <span [ngClass]="{
               'positive-diff': player.SalaryDollarsProjected - player.SalaryDollars > 0,
               'negative-diff': player.SalaryDollarsProjected - player.SalaryDollars < 0
