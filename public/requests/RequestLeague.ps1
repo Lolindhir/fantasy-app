@@ -153,6 +153,10 @@ foreach ($roster in $rosters) {
         $ownerAvatar = "https://sleepercdn.com/avatars/$avatarID"
     }
 
+     # Punkte berechnen als Double
+    $points = [double]($roster.settings.fpts + ($roster.settings.fpts_decimal / 100))
+    $pointsAgainst = [double]($roster.settings.fpts_against + ($roster.settings.fpts_against_decimal / 100))
+
     $teamData += [PSCustomObject]@{
         Owner          = $member.display_name
         OwnerID        = $member.user_id
@@ -160,8 +164,8 @@ foreach ($roster in $rosters) {
         Team           = $member.metadata.team_name
         TeamID         = $roster.roster_id
         TeamAvatar     = $member.metadata.avatar
-        Points         = $roster.settings.fpts
-        PointsAgainst  = $roster.settings.fpts_against
+        Points         = $points
+        PointsAgainst  = $pointsAgainst
         Wins           = $roster.settings.wins
         Losses         = $roster.settings.losses
         Ties           = $roster.settings.ties

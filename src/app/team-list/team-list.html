@@ -139,7 +139,7 @@
 <mat-card class="salarycap">
   <mat-card-header>
     <mat-card-title>
-      League Salary Cap = {{ formatSalaryDollars(salaryCap, true, 0) }} (Proj.: {{ formatSalaryDollars(salaryCapProjected, true, 0) }}) 
+      League Salary Cap = {{ formatSalaryDollars(salaryCap, false, 0) }} (Proj.: {{ formatSalaryDollars(salaryCapProjected, false, 0) }}) 
     </mat-card-title>
   </mat-card-header>
 
@@ -180,12 +180,12 @@
     </div>
     <mat-card-title>{{ team.Team }} [{{ team.Wins }}-{{ team.Losses }}]</mat-card-title>
     <mat-card-subtitle>
-      <span class="team-card-subtitle">Owner: {{ team.Owner }}, Points: {{ team.Points }}, Streak: {{ team.Streak }}</span>
+      <span class="team-card-subtitle">Owner: {{ team.Owner }}, Points: {{ team.Points.toFixed(0) }}, Streak: {{ team.Streak }}</span>
     </mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
-    <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, true, 0) }} (Proj.: {{ formatSalaryDollars(team.SalaryProjected, true, 0) }})</p>
+    <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, false, 0) }} (Proj.: {{ formatSalaryDollars(team.SalaryProjected, false, 0) }})</p>
     <p>
       <strong>Salary Cap Difference:</strong>
       <span [ngClass]="{
