@@ -1,0 +1,40 @@
+
+name: Update Games
+
+on:
+  schedule:
+    - cron: "0 11 * * 2"  # Läuft jeden Dienstag um 12:00 UTC
+  workflow_dispatch: # manueller Start
+
+permissions:
+  contents: write      # damit Commits + Push erlaubt sind
+  pages: write         # notwendig für Pages Deployment
+  id-token: write      # notwendig für Pages Deployment (OIDC)
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Voller Git-History für Push  
+          token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Run Request Script
+        run: pwsh ./public/requests/RequestGames.ps1
+
+      - name: Commit and push updates
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add public/data/**
+          git diff --cached --quiet || git commit -m "Update data files after games request"
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+
