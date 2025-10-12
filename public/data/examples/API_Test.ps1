@@ -143,7 +143,7 @@ foreach ($pos in $positions) {
     Set-Variable -Name "tank$pos" -Value $tankTempMatch -Scope Script
     $tankMatches[$pos] = $tankTempMatch
 
-    Write-Host "Matched $($pos): $($sleeperPlayerPos.full_name) → $($tankTempMatch.longName)" -ForegroundColor Cyan
+    Write-Host "Matched $($pos): $($sleeperPlayerPos.full_name) -> $($tankTempMatch.longName)" -ForegroundColor Cyan
 }
 
 
