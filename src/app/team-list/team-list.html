@@ -13,7 +13,7 @@
     <ng-container matColumnDef="picture">
       <th mat-header-cell *matHeaderCellDef class="table-text"></th>
       <td mat-cell *matCellDef="let player" class="table-text">
-        <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="40" />
+        <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="40"/>
       </td>
     </ng-container>
 
@@ -25,7 +25,7 @@
         <div fxLayout="column" fxLayoutAlign="none start">
           <div class="player-name">{{ player.NameShort }}</div>
           <div *ngIf="compact" fxLayout="row" fxLayoutAlign="start start">
-            <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="30" />
+            <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="40" />
             <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
             <div [style.background-color]="getPositionColor(player.Position)" class="chip-position" style="display: inline-flex; margin-left: 2px; vertical-align: top;">
               {{ player.Position }}
