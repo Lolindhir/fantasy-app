@@ -79,6 +79,9 @@ function Invoke-Tank01 {
     return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
 }
 
+Write-Host "Fetching Tank01 players..." -ForegroundColor Yellow
+
+
 # --- Tank01: Alle Spieler abrufen ---
 $playerListUrl = "https://$apiHost/getNFLPlayerList"
 try {
@@ -168,6 +171,8 @@ function Get-DraftKings($dateStr, $apiKeys) {
     return $draftKings
 }
 
+Write-Host "Fetching Draft King Salaries..." -ForegroundColor Yellow
+
 $dfsDate = (Get-Date).ToString("yyyyMMdd")
 $dkPlayers = Get-DraftKings $dfsDate $apiKey
 
@@ -189,7 +194,7 @@ if (-not $dkMatch) {
 # --- Spiele des Tank01-Spielers abrufen ---
 # ==========================================================
 if ($tankMatch.playerID) {
-    $gamesUrl = "https://$apiHost/getNFLGamesForPlayer?playerID=$($tankMatch.playerID)&fantasyPoints=true"
+    $gamesUrl = "https://$apiHost/getNFLGamesForPlayer?playerID=$($tankMatch.playerID)&fantasyPoints=true&itemFormat=list"
     try {
         $gamesResponse = Invoke-Tank01 -Url $gamesUrl
         $playerGames = $gamesResponse.body
@@ -201,27 +206,87 @@ if ($tankMatch.playerID) {
 }
 
 # ==========================================================
+# --- Box Score des Tank01-Spielers abrufen (letztes Spiel) ---
+# ==========================================================
+$gameID = $playerGames[0].gameID
+
+Write-Host "Fetching Game Score for '$($gameID)'..." -ForegroundColor Yellow
+
+$gameIDEncoded = [uri]::EscapeDataString($gameID)
+$boxScoresUrl = "https://$apiHost/getNFLBoxScore?gameID=$($gameIDEncoded)&playByPlay=false&fantasyPoints=true"
+try {
+    $bscoreResponse = Invoke-Tank01 -Url $boxScoresUrl
+    $boxScore = $bscoreResponse.body
+} catch {
+    $boxScore = @()
+}
+
+if (-not $boxScore) {
+    Write-Error "No Game Score found."
+    exit 1
+}
+
+
+# ==========================================================
+# --- League-Schedule abrufen ---
+# ==========================================================
+Write-Host "Fetching League Schedule..." -ForegroundColor Yellow
+
+# week all or week number
+# seasonType can be: reg, post, pre, or all
+# season (2025, 2024, ...), if empty current season assumed
+$scheduleUrl = "https://$apiHost/getNFLGamesForWeek?week=all&seasonType=reg"
+try {
+    $scheduleResponse = Invoke-Tank01 -Url $scheduleUrl
+    $schedule = $scheduleResponse.body
+} catch {
+    $schedule = @()
+}
+
+if (-not $schedule) {
+    Write-Error "No schedule found."
+    exit 1
+}
+
+
+
+# ==========================================================
 # --- JSON-Dateien speichern ---
 # ==========================================================
 Write-Host "Saving JSON files..." -ForegroundColor Green
 
 # --- Sleeper Daten ---
 $league  | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\SleeperLeague.json"  -Encoding utf8
+Write-Host "Saved league: $("$PSScriptRoot\SleeperLeague.json")" -ForegroundColor Green
 $members | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\SleeperMembers.json" -Encoding utf8
+Write-Host "Saved members: $("$PSScriptRoot\SleeperMembers.json")" -ForegroundColor Green
 $rosters | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\SleeperRosters.json" -Encoding utf8
+Write-Host "Saved rosters: $("$PSScriptRoot\SleeperRoster.json")" -ForegroundColor Green
+
 
 # Nur EINEN Sleeper-Spieler
 $sleeperPlayer | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\SleeperPlayer.json" -Encoding utf8
+Write-Host "Saved Sleeper player: $("$PSScriptRoot\SleeperPlayer.json")" -ForegroundColor Green
 
 # Nur EINEN Tank01-Spieler
 $tankMatch | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Tank01Player.json" -Encoding utf8
+Write-Host "Saved Tank01 player: $("$PSScriptRoot\Tank01Player.json")" -ForegroundColor Green
 
 # Nur EINEN DraftKings-/Salary-Spieler
 $dkMatch | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Tank01PlayerSalary.json" -Encoding utf8
+Write-Host "Saved salary: $("$PSScriptRoot\Tank01PlayerSalary.json")" -ForegroundColor Green
 
 # Nur Spiele dieses Spielers
 $playerGames | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Tank01PlayerGames.json" -Encoding utf8
+Write-Host "Saved games for player: $("$PSScriptRoot\Tank01PlayerGames.json")" -ForegroundColor Green
 
+# Game Score des letzten Spiel des Spielers ausgeben
+$boxScore | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Tank01GameScore.json" -Encoding utf8
+Write-Host "Saved game score: $("$PSScriptRoot\Tank01GameScore.json")" -ForegroundColor Green
+
+# Schedule ausgeben
+$schedule | ConvertTo-Json -Depth 10 | Out-File "$PSScriptRoot\Tank01Schedule.json" -Encoding utf8
+Write-Host "Saved schedule: $("$PSScriptRoot\Tank01Schedule.json")" -ForegroundColor Green
 
 # ==========================================================
 # --- Tank01: Spiele für QB, RB, WR, TE, K abrufen
@@ -234,7 +299,6 @@ foreach ($pos in $positions) {
     $tankPlayer = Get-Variable -Name $tankVarName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Value
 
     if ($tankPlayer -and $tankPlayer.playerID) {
-        Write-Host "`nFetching games for $pos ($($tankPlayer.longName))..." -ForegroundColor Yellow
 
         $gamesUrl = "https://$apiHost/getNFLGamesForPlayer?playerID=$($tankPlayer.playerID)&fantasyPoints=true"
         try {
@@ -255,9 +319,8 @@ foreach ($pos in $positions) {
     $jsonPath = Join-Path $PSScriptRoot "Tank01PlayerGames$pos.json"
     $playerGames | ConvertTo-Json -Depth 10 | Out-File -Encoding UTF8 $jsonPath
 
-    Write-Host "Saved games for $pos → $jsonPath" -ForegroundColor Green
+    Write-Host "Saved games for $($pos): $jsonPath" -ForegroundColor Green
 }
-
 
 
 Write-Host "All JSON files saved successfully in script directory." -ForegroundColor Cyan
