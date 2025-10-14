@@ -87,6 +87,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'Age',
             'Year',
             'TeamID',
+            'TeamAbbr',
             'Number',
             'Picture',
             'SalaryCurrentRaw',
@@ -96,7 +97,25 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'SalaryDollars',
             'SalaryDollarsCurrent',
             'SalaryDollarsSeasonStart',
-            'SalaryDollarsProjected'
+            'SalaryDollarsProjected',
+            'College',
+            'HighSchool',
+            'ESPN',
+            'FantasyPros',
+            'Injured',
+            #'Injury',   #object
+            #'GameHistory'   #object
+            'GamesPlayed',
+            'SnapsTotal',
+            'AttemptsTotal',
+            'FantasyPointsTotal',
+            'FantasyPointsAvgGame',
+            'FantasyPointsAvgSnap',
+            'FantasyPointsAvgAttempt',
+            'TouchdownsTotal',
+            'TouchdownsRushing',
+            'TouchdownsReceiving',
+            'TouchdownsPassing'
         )
         foreach ($prop in $propsToCheck) {
             if ($old.$prop -ne $new.$prop) {
@@ -361,6 +380,7 @@ $Date = (Get-Date -Format "yyyyMMdd")
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
+$gamesFile = Join-Path $scriptDir "..\data\Games.json"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 
 # --- Season Start Datum aus config.ps1 ---
@@ -426,6 +446,112 @@ if (Test-Path $targetFile) {
         }
     }
 }
+
+
+# --- Load Games.json (alle Saisonspiele mit Stats) ---
+$playerHistory = @{}
+
+if (Test-Path $gamesFile) {
+    try {
+        $gamesRaw = Get-Content $gamesFile -Raw
+        $games = $gamesRaw | ConvertFrom-Json
+        Write-Host "Loaded $($games.Count) games from Games.json..." -ForegroundColor Yellow
+
+        foreach ($game in $games) {
+            if (-not $game.playerStats) { continue }
+
+            foreach ($playerKey in $game.playerStats.PSObject.Properties.Name) {
+                $p = $game.playerStats.$playerKey
+                if (-not $p.playerID) { continue }
+
+                $playerID = $p.playerID
+                if (-not $playerHistory.ContainsKey($playerID)) {
+                    $playerHistory[$playerID] = [ordered]@{
+                        TankID                 = $playerID
+                        GamesPlayed            = 0
+                        FantasyPointsTotalPPR  = 0.0
+                        TouchdownsTotal        = 0
+                        TouchdownsPassing      = 0
+                        TouchdownsReceiving    = 0
+                        TouchdownsRushing      = 0
+                        SnapsTotal             = 0
+                        AttemptsTotal          = 0
+                        GameHistory            = @()
+                    }
+                }
+
+                # --- GameInfo aufbauen (individuelle Teile aus Stat-Objekt übernehmen) ---
+                $gameStats = [ordered]@{}
+                # foreach ($prop in $p.PSObject.Properties) {
+                #     $gameStats[$prop.Name] = $prop.Value
+                # }
+                $gameStats.GameID = $p.gameID
+                $gameStats.FantasyPoints = [double]$p.fantasyPointsDefault.PPR
+
+                if($p.snapCounts) {
+                    # Kicker erhalten pro Attempt einen Snap, alle anderen nehmen die Offensive Snaps
+                    if ($p.Kicking) {
+                        $gameStats.SnapCount = [int]$([int]$p.Kicking.fgAttempts + [int]$p.Kicking.xpAttempts)
+                        $gameStats.SnapPercentage = 1
+                    } else {
+                        $gameStats.SnapCount = [int]$p.snapCounts.offSnap
+                        $gameStats.SnapPercentage = [double]$p.snapCounts.offSnapPct
+                    }                    
+                } else {
+                    $gameStats.SnapCount = 0
+                    $gameStats.SnapPercentage = 0
+                }
+
+                $gameStats.Attempts = 0
+                if($p.Passing.passAttempts) { $gameStats.Attempts += [int]$p.Passing.passAttempts }
+                if($p.Receiving.targets) { $gameStats.Attempts += [int]$p.Receiving.targets }
+                if($p.Rushing.carries) { $gameStats.Attempts += [int]$p.Rushing.carries }
+                if($p.Kicking.fgAttempts) { $gameStats.Attempts += [int]$p.Kicking.fgAttempts }
+                if($p.Kicking.xpAttempts) { $gameStats.Attempts += [int]$p.Kicking.xpAttempts }
+
+                if($p.Passing) {$gameStats.Passing = $p.Passing}
+                if($p.Receiving) {$gameStats.Receiving = $p.Receiving}
+                if($p.Rushing) {$gameStats.Rushing = $p.Rushing}
+                if($p.Kicking) {$gameStats.Kicking = $p.Kicking}
+
+                # Game zur Historie hinzufügen (vorne)
+                $playerHistory[$playerID].GameHistory = @($gameStats) + $playerHistory[$playerID].GameHistory
+
+                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein)
+                if($gameStats.SnapCount -gt 0) { 
+
+                    $playerHistory[$playerID].GamesPlayed++ 
+                
+                    $ppr = 0.0
+                    if ($p.fantasyPointsDefault.PPR) { $ppr = [double]$p.fantasyPointsDefault.PPR }
+                    $playerHistory[$playerID].FantasyPointsTotalPPR += $ppr
+
+                    $rushTD = 0
+                    if ($p.Rushing.rushTD) { $rushTD = [int]$p.Rushing.rushTD }
+                    $recTD = 0
+                    if ($p.Receiving.recTD) { $recTD = [int]$p.Receiving.recTD }
+                    $passTD = 0
+                    if ($p.Passing.passTD) { $passTD = [int]$p.Passing.passTD }
+
+                    $playerHistory[$playerID].TouchdownsRushing += $rushTD
+                    $playerHistory[$playerID].TouchdownsReceiving += $recTD
+                    $playerHistory[$playerID].TouchdownsPassing += $passTD
+                    $playerHistory[$playerID].TouchdownsTotal += ($rushTD + $recTD + $passTD)
+                    $playerHistory[$playerID].SnapsTotal += $gameStats.SnapCount
+                    $playerHistory[$playerID].AttemptsTotal += $gameStats.Attempts            }
+
+                }             
+        }
+
+    } catch {
+        Write-Error "Error reading Games.json: $_"
+        return 1
+    }
+} else {
+    Write-Error "Games.json not found!"
+    return 1
+}
+
 
 # Cache für SeasonStart DraftKings
 $draftKingsStartLookup = $null
@@ -539,6 +665,69 @@ foreach ($tankEntry in $tankPlayers) {
     # und dann Mittelwert mit SalaryDollars
     $salaryDollarsProjected = [math]::Round((($salaryDollarsCurrent + $salaryDollarsSeasonStart) / 2 + $salaryDollars) / 2)    
 
+    # --- Injury bestimmen ---
+    $injured = $false
+    $injury = [PSCustomObject]@{
+        ReturnDate  = ""
+        Description = ""
+        Date        = ""
+        Designation = ""
+    }
+
+    if ($tankEntry.injury.injReturnDate) {
+        $injury.ReturnDate = $tankEntry.injury.injReturnDate
+    }
+    if ($tankEntry.injury.injDate) {
+        $injury.Date = $tankEntry.injury.injDate
+    }
+    if ($tankEntry.injury.description) {
+        $injury.Description = $tankEntry.injury.description
+    }    
+    if ($tankEntry.injury.designation) {
+        $injury.Designation = $tankEntry.injury.designation
+        $injured = $true
+    }
+
+
+    # --- Player Stats (aus Games.json) ---
+    $stats = $playerHistory[$tankEntry.playerID]
+    if ($stats) {
+        $gamesPlayed = $stats.GamesPlayed
+        $fantasyPointsTotalPPR = [math]::Round($stats.FantasyPointsTotalPPR,2)
+        $fantasyPointsAvgPPR = 0
+        $fantasyPointsAvgSnapPPR = 0
+        $fantasyPointsAvgAttemptPPR = 0
+        if($stats.GamesPlayed -gt 0){
+            $fantasyPointsAvgPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.GamesPlayed),2)
+        }
+        if($stats.SnapsTotal -gt 0){
+            $fantasyPointsAvgSnapPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.SnapsTotal),2)
+        }
+        if($stats.AttemptsTotal -gt 0){
+            $fantasyPointsAvgAttemptPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.AttemptsTotal),2)
+        }
+        $snaps = $stats.SnapsTotal
+        $attempts = $stats.AttemptsTotal
+        $tdTotal = $stats.TouchdownsTotal
+        $tdRush = $stats.TouchdownsRushing
+        $tdRec = $stats.TouchdownsReceiving
+        $tdPass = $stats.TouchdownsPassing
+        $gameHistory = $stats.GameHistory
+    } else {
+        $gamesPlayed = 0
+        $snaps = 0
+        $attempts = 0
+        $fantasyPointsTotalPPR = 0
+        $fantasyPointsAvgPPR = 0
+        $fantasyPointsAvgSnapPPR = 0
+        $fantasyPointsAvgAttemptPPR = 0
+        $tdTotal = 0
+        $tdRush = 0
+        $tdRec = 0
+        $tdPass = 0
+        $gameHistory = @()
+    }
+
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
         ID                           = $playerID
@@ -547,10 +736,13 @@ foreach ($tankEntry in $tankPlayers) {
         NameFirst                    = $sleeperEntry.first_name
         NameLast                     = $sleeperEntry.last_name
         NameShort                    = $tankEntry.cbsShortName
+        TeamID                       = $tankEntry.teamID
+        TeamAbbr                     = $tankEntry.team
         Status                       = $sleeperEntry.status
         Position                     = $position
         Age                          = $age
         Year                         = $year
+        Number                       = $tankEntry.jerseyNum
         SalaryCurrentRaw             = $salaryCurrentRaw
         SalarySeasonStartRaw         = $salarySeasonStartRaw
         SalaryCurrent                = $salaryCurrent
@@ -559,9 +751,25 @@ foreach ($tankEntry in $tankPlayers) {
         SalaryDollarsCurrent         = $salaryDollarsCurrent
         SalaryDollarsSeasonStart     = $salaryDollarsSeasonStart
         SalaryDollarsProjected       = $salaryDollarsProjected
-        TeamID                       = $tankEntry.teamID
-        Number                       = $tankEntry.jerseyNum
         Picture                      = $tankEntry.espnHeadshot
+        FantasyPros                  = $tankEntry.fantasyProsLink
+        ESPN                         = $tankEntry.espnLink
+        College                      = $sleeperEntry.college
+        HighSchool                   = $sleeperEntry.high_school
+        Injured                      = $injured
+        InjuryDetails                = $injury
+        GamesPlayed                  = $gamesPlayed
+        SnapsTotal                   = $snaps
+        AttemptsTotal                = $attempts
+        FantasyPointsTotal           = $fantasyPointsTotalPPR
+        FantasyPointsAvgGame         = $fantasyPointsAvgPPR
+        FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
+        FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
+        TouchdownsTotal              = $tdTotal
+        TouchdownsPassing            = $tdPass
+        TouchdownsReceiving          = $tdRec
+        TouchdownsRushing            = $tdRush
+        GameHistory                  = $gameHistory
     }
 }
 
