@@ -701,10 +701,10 @@ foreach ($tankEntry in $tankPlayers) {
             $fantasyPointsAvgPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.GamesPlayed),2)
         }
         if($stats.SnapsTotal -gt 0){
-            $fantasyPointsAvgSnapPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.SnapsTotal),2)
+            $fantasyPointsAvgSnapPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.SnapsTotal),5)
         }
         if($stats.AttemptsTotal -gt 0){
-            $fantasyPointsAvgAttemptPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.AttemptsTotal),2)
+            $fantasyPointsAvgAttemptPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.AttemptsTotal),5)
         }
         $snaps = $stats.SnapsTotal
         $attempts = $stats.AttemptsTotal

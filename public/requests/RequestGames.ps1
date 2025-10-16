@@ -182,19 +182,38 @@ if (Test-Path $gamesFile) {
     }
 }
 
-# --- Iterate schedule; for games with gameStatus containing "Final" that are not in $games, fetch boxscore ---
+# --- Iterate schedule; for games with gameStatus containing "Final" that are not in $games or do not have snapCounts, fetch boxscore ---
 $addedCount = 0
 foreach ($g in $schedule) {
     # safeguard: ensure gameID exists
     if (-not $g.gameID) { continue }
+    $gameID = $g.gameID
 
     # Check if status contains "Final" (case-insensitive)
     $status = $g.gameStatus
     if (-not $status) { continue }
     if ($status -imatch "Final") {
-        # If not yet present in games -> fetch
-        if (-not ($games | Where-Object { $_.gameID -eq $g.gameID })) {
-            $gameID = $g.gameID
+
+        # try get matching game
+        $matchingGame = $games | Where-Object { $_.gameID -eq $g.gameID }
+        $snapsMissing = $false
+        
+        if($matchingGame) {
+            if(
+                $matchingGame.playerStats.PSObject.Properties.Value |
+                Where-Object { -not ($_.PSObject.Properties.Name -contains 'snapCounts') }
+            ) {
+                $snapsMissing = $true
+                Write-Host "No Snap Counts for '$($gameID)'..." -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "No Game Score for '$($gameID)'..." -ForegroundColor Yellow
+        }        
+
+        # If not yet present in games or no snapCounts -> fetch
+        if (-not $matchingGame -or $snapsMissing
+        )  {
+            
             Write-Host "Fetching Game Score for '$($gameID)'..." -ForegroundColor Yellow
 
             $gameIDEncoded = [uri]::EscapeDataString($gameID)
