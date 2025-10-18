@@ -88,6 +88,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'Year',
             'TeamID',
             'TeamAbbr',
+            'ByeWeek',
             'Number',
             'Picture',
             'SalaryCurrentRaw',
@@ -95,6 +96,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'SalaryCurrent',
             'SalarySeasonStart',
             'SalaryDollars',
+            'SalaryDollarsFantasy',
             'SalaryDollarsCurrent',
             'SalaryDollarsSeasonStart',
             'SalaryDollarsProjected',
@@ -106,10 +108,12 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             #'Injury',   #object
             #'GameHistory'   #object
             'GamesPlayed',
+            'GamesPotential',
             'SnapsTotal',
             'AttemptsTotal',
             'FantasyPointsTotal',
             'FantasyPointsAvgGame',
+            'FantasyPointsAvgPotentialGame',
             'FantasyPointsAvgSnap',
             'FantasyPointsAvgAttempt',
             'TouchdownsTotal',
@@ -194,6 +198,29 @@ function MapSalaryToDollars {
     # === Parameter-Bereich ===
     $salarySourceMin = 0    
     $salarySourceMax = 8000
+    $salaryTargetMin = 250000
+    $salaryTargetMax = 50000000
+    $salaryMappingNonLinear = $true   # oder $false für lineare Skalierung
+
+    # Salary holen (linear oder non-linear)
+    if ($salaryMappingNonLinear) {
+        $salaryFlat = MapSalaryToDollarsNonLinear -salary $salary -salarySourceMin $salarySourceMin -salarySourceMax $salarySourceMax -salaryTargetMin $salaryTargetMin -salaryTargetMax $salaryTargetMax
+    } else {
+        $salaryFlat = MapSalaryToDollarsLinear -salary $salary -salarySourceMin $salarySourceMin -salarySourceMax $salarySourceMax -salaryTargetMin $salaryTargetMin -salaryTargetMax $salaryTargetMax
+    }
+
+    # Runden auf ganze Dollar
+    return [math]::Round($salaryFlat)
+}
+
+function MapSalaryFantasy {
+    param (
+        [double]$salary
+    )
+
+    # === Parameter-Bereich ===
+    $salarySourceMin = 0    
+    $salarySourceMax = 20
     $salaryTargetMin = 250000
     $salaryTargetMax = 50000000
     $salaryMappingNonLinear = $true   # oder $false für lineare Skalierung
@@ -381,6 +408,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
 $gamesFile = Join-Path $scriptDir "..\data\Games.json"
+$leagueFile = Join-Path $scriptDir "..\data\League.json"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 
 # --- Season Start Datum aus config.ps1 ---
@@ -390,6 +418,20 @@ if (-not $Global:LeagueStart) {
 }
 $seasonStartDate = $Global:LeagueStart
 
+$finalWeek = 0
+if (Test-Path $leagueFile) {
+    try {
+        $leagueRaw = Get-Content $leagueFile -Raw
+        $league = $leagueRaw | ConvertFrom-Json
+        if($league){
+            $finalWeek = $league.FinalWeek
+        }
+        Write-Host "Loaded final week (Week $($finalWeek)) from League.json..." -ForegroundColor Yellow
+    } catch {
+        Write-Error "Error fetching league: $_"
+        exit 1
+    }
+}
 
 # --- Sleeper Spieler abrufen ---
 Write-Host "Fetch Sleeper players..." -ForegroundColor Yellow
@@ -451,6 +493,9 @@ if (Test-Path $targetFile) {
 # --- Load Games.json (alle Saisonspiele mit Stats) ---
 $playerHistory = @{}
 
+# Team → ByeWeek mapping vorbereiten
+$teamByeWeek = @{}
+
 if (Test-Path $gamesFile) {
     try {
         $gamesRaw = Get-Content $gamesFile -Raw
@@ -459,6 +504,29 @@ if (Test-Path $gamesFile) {
 
         # Sortiere Games nach GameID (neueste oben)
         $games = $games | Sort-Object -Property gameID -Descending
+
+        # Alle Weeks der Saison durchgehen
+        for ($week = 1; $week -le 18; $week++) {
+            # Alle Teams in dieser Woche
+            $teamsPlaying = @()
+            foreach ($game in $games | Where-Object { $_.gameWeek -match "Week $week" }) {
+                $teamsPlaying += $game.home
+                $teamsPlaying += $game.away
+            }
+            
+            # Alle Teams der Liga
+            $allTeams = ($games | ForEach-Object { $_.home; $_.away } | Sort-Object -Unique)
+            
+            # Teams, die nicht gespielt haben -> ByeWeek
+            $teamsNotPlaying = $allTeams | Where-Object { $teamsPlaying -notcontains $_ }
+            
+            foreach ($team in $teamsNotPlaying) {
+                # Sollte nur eine Woche pro Team sein
+                if (-not $teamByeWeek.ContainsKey($team)) {
+                    $teamByeWeek[$team] = $week
+                }
+            }
+        }
 
         foreach ($game in $games) {
             if (-not $game.playerStats) { continue }
@@ -497,6 +565,7 @@ if (Test-Path $gamesFile) {
                 } else {
                     Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
                 }
+                $gameStats.GameDetails.WeekFinal = $game.weekFinal
                 $gameStats.GameDetails.Date = $game.gameDate
                 $gameStats.GameDetails.Home = $game.home
                 $gameStats.GameDetails.Away = $game.away
@@ -534,8 +603,8 @@ if (Test-Path $gamesFile) {
                 # Game zur Historie hinzufügen (vorne)
                 $playerHistory[$playerID].GameHistory += @($gameStats)
 
-                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein)
-                if($gameStats.SnapCount -gt 0) { 
+                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein) und die Woche final ist
+                if($gameStats.SnapCount -gt 0 -and $gameStats.GameDetails.WeekFinal) { 
 
                     $playerHistory[$playerID].GamesPlayed++ 
                 
@@ -582,6 +651,20 @@ foreach ($tankEntry in $tankPlayers) {
 
     # Alte Daten laden
     $oldPlayer = $oldPlayersLookup[$sleeperEntry.player_id]
+
+    # --- PlayerID ---
+    $playerID = $sleeperEntry.player_id
+    # --- Year berechnen ---
+    $year = $sleeperEntry.years_exp + 1
+    # --- Age ---
+    $age = $sleeperEntry.age
+    # --- Position ---
+    $position = $sleeperEntry.position
+    # --- Team ---
+    $team = $tankEntry.team
+
+    # --- Bye-Week bestimmen
+    $byeWeek = if ($teamByeWeek.ContainsKey($team)) { $teamByeWeek[$team] } else { 0 }
 
     # --- Salary (heutige DraftKings) ---
     $dfsEntry = $draftKingsLookup[$tankEntry.playerID]
@@ -634,15 +717,6 @@ foreach ($tankEntry in $tankPlayers) {
     # --- auf Array prüfen und zu Number konvertieren ---
     if ($salarySeasonStartRaw -is [System.Array]) { $salarySeasonStartRaw = $salarySeasonStartRaw[0] }
     $salarySeasonStartRaw = [double]$salarySeasonStartRaw
-
-    # --- PlayerID ---
-    $playerID = $sleeperEntry.player_id
-    # --- Year berechnen ---
-    $year = $sleeperEntry.years_exp + 1
-    # --- Age ---
-    $age = $sleeperEntry.age
-    # --- Position ---
-    $position = $sleeperEntry.position
 
     # --- Salary anpassen (Meta-Daten) ---
     # $salaryCurrent = AdjustSalaryWithMeta -salary $salaryCurrentRaw -year $year -age $age -position $position -playerID $playerID
@@ -709,17 +783,29 @@ foreach ($tankEntry in $tankPlayers) {
     # --- Player Stats (aus Games.json) ---
     $stats = $playerHistory[$tankEntry.playerID]
     if ($stats) {
+        
         $gamesPlayed = $stats.GamesPlayed
+
+        # --- Potentielle Spiele berechnen (ByeWeek berücksichtigen) ---
+        $gamesPotential = $finalWeek
+        if($byeWeek -le $finalWeek){
+            $gamesPotential--
+        }
+
         $fantasyPointsTotalPPR = [math]::Round($stats.FantasyPointsTotalPPR,2)
         $fantasyPointsAvgPPR = 0
-        $fantasyPointsAvgSnapPPR = 0
-        $fantasyPointsAvgAttemptPPR = 0
         if($stats.GamesPlayed -gt 0){
             $fantasyPointsAvgPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.GamesPlayed),2)
         }
+        $fantasyPointsAvgPotentialPPR = 0
+        if($gamesPotential -gt 0){
+            $fantasyPointsAvgPotentialPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$gamesPotential),2)
+        }
+        $fantasyPointsAvgSnapPPR = 0
         if($stats.SnapsTotal -gt 0){
             $fantasyPointsAvgSnapPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.SnapsTotal),5)
         }
+        $fantasyPointsAvgAttemptPPR = 0
         if($stats.AttemptsTotal -gt 0){
             $fantasyPointsAvgAttemptPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.AttemptsTotal),5)
         }
@@ -732,10 +818,12 @@ foreach ($tankEntry in $tankPlayers) {
         $gameHistory = $stats.GameHistory
     } else {
         $gamesPlayed = 0
+        $gamesPotential = 0
         $snaps = 0
         $attempts = 0
         $fantasyPointsTotalPPR = 0
         $fantasyPointsAvgPPR = 0
+        $fantasyPointsAvgPotentialPPR = 0
         $fantasyPointsAvgSnapPPR = 0
         $fantasyPointsAvgAttemptPPR = 0
         $tdTotal = 0
@@ -744,6 +832,9 @@ foreach ($tankEntry in $tankPlayers) {
         $tdPass = 0
         $gameHistory = @()
     }
+
+    # --- Salary aus Fantasy berechnen
+    $salaryDollarsFantasy = MapSalaryFantasy -salary $fantasyPointsAvgPotentialPPR
 
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
@@ -755,6 +846,7 @@ foreach ($tankEntry in $tankPlayers) {
         NameShort                    = $tankEntry.cbsShortName
         TeamID                       = $tankEntry.teamID
         TeamAbbr                     = $tankEntry.team
+        ByeWeek                      = $byeWeek
         Status                       = $sleeperEntry.status
         Position                     = $position
         Age                          = $age
@@ -765,6 +857,7 @@ foreach ($tankEntry in $tankPlayers) {
         SalaryCurrent                = $salaryCurrent
         SalarySeasonStart            = $salarySeasonStart
         SalaryDollars                = $salaryDollars
+        SalaryDollarsFantasy         = $salaryDollarsFantasy
         SalaryDollarsCurrent         = $salaryDollarsCurrent
         SalaryDollarsSeasonStart     = $salaryDollarsSeasonStart
         SalaryDollarsProjected       = $salaryDollarsProjected
@@ -776,10 +869,12 @@ foreach ($tankEntry in $tankPlayers) {
         Injured                      = $injured
         InjuryDetails                = $injury
         GamesPlayed                  = $gamesPlayed
+        GamesPotential               = $gamesPotential
         SnapsTotal                   = $snaps
         AttemptsTotal                = $attempts
         FantasyPointsTotal           = $fantasyPointsTotalPPR
         FantasyPointsAvgGame         = $fantasyPointsAvgPPR
+        FantasyPointsAvgPotentialGame = $fantasyPointsAvgPotentialPPR
         FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
         FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
         Ranking                      = @()
@@ -802,14 +897,14 @@ Write-Host "Calculating player rankings..." -ForegroundColor Yellow
 function Add-Rankings {
     param (
         [Parameter(Mandatory)] [Array]$players,
-        [string]$propTotal = 'FantasyPointsTotal',
+        [string]$propTotal = 'FantasyPointsAvgPotentialGame',
         [string]$propAvg = 'FantasyPointsAvgGame',
         [double]$weightTotal = 0.5,   # Gewichtung Total
         [double]$weightAvg = 0.5      # Gewichtung PerGame
     )
 
     # Nur Spieler berücksichtigen, die überhaupt Werte haben
-    $playersActive = $players | Where-Object { $_.$propTotal -gt 0 -or $_.$propAvg -gt 0 }
+    $playersActive = $players | Where-Object { $_.$propTotal -gt 0 -and $_.$propAvg -gt 0 }
 
     # --- Helper: Ranking mit Sprüngen & Gleichständen ---
     function Set-Rankings($list, $type, $property) {

@@ -34,7 +34,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     if (-not $oldLeague) { return $true }  # keine alte Daten -> Änderung
 
     # Prüfe Top-Level Eigenschaften der Liga
-    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','TotalTeams', 'SalaryCap', 'SalaryCapProjected')
+    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected')
     foreach ($prop in $propsToCheck) {
         if ($oldLeague.$prop -ne $newLeague.$prop) {
             Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
@@ -117,6 +117,7 @@ $backupDir   = Join-Path $dataDir "backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir | Out-Null }
 
 $targetFile    = Join-Path $dataDir "League.json"
+$scheduleFile = Join-Path $dataDir "Schedule.json"
 $timestampFile = Join-Path $dataDir "Timestamps.json"
 
 # --- Sleeper: Liga ---
@@ -222,6 +223,56 @@ Write-Host "Top $topCount players considered for Salary Cap calculation." -Foreg
 Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
 Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
+# --- Aktuelle Woche berechnen ---
+$currentWeek = $null
+$finalWeek = $null
+# --- Load old schedule if present ---
+$schedule = $null
+if (Test-Path $scheduleFile) {
+    try {
+        $scheduleRaw = Get-Content $scheduleFile -Raw
+        if ($scheduleRaw) { $schedule = $scheduleRaw | ConvertFrom-Json }
+    } catch {
+        Write-Warning "Could not read existing Schedule.json: $_"
+        $schedule = $null
+    }
+}
+if ($schedule) {
+    # Sortiere Spiele chronologisch nach Datum (gameID beginnt mit YYYYMMDD)
+    $sortedGames = $schedule | Sort-Object { $_.gameID }
+
+    foreach ($game in $sortedGames) {
+        # Nur Spiele zählen, die NICHT mit "Final" beginnen (also z.B. "Scheduled", "In Progress", etc.)
+        if ($game.gameStatus -notmatch '^Final') {
+            # Woche extrahieren
+            if ($game.gameWeek -match 'Week (\d+)') {
+                $currentWeek = [int]$matches[1]
+                Write-Host "-> Found first non-final game: $($game.gameID) (Week $currentWeek)" -ForegroundColor Yellow
+            } else {
+                Write-Warning "Could not parse gameWeek for $($game.gameID): $($game.gameWeek)"
+            }
+            break
+        }
+    }
+
+    # Wenn alle Spiele "Final" sind (oder "Final/OT"), letzte bekannte Woche nehmen
+    if (-not $currentWeek -and $sortedGames.Count -gt 0) {
+        if ($sortedGames[-1].gameWeek -match 'Week (\d+)') {
+            $finalWeek = [int]$matches[1]
+            Write-Host "All games final. Defaulting to last known week: Week $currentWeek" -ForegroundColor DarkGray
+        }
+    } else {
+        $finalWeek = $currentWeek - 1
+    }
+}
+
+if ($finalWeek) {
+    Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
+} else {
+    Write-Host "Could not determine current week." -ForegroundColor DarkYellow
+}
+
+
 # --- League JSON vorbereiten ---
 $leagueAsJson = @()
 $leagueAsJson += [PSCustomObject]@{
@@ -231,6 +282,7 @@ $leagueAsJson += [PSCustomObject]@{
     Season                  = $league.season
     SeasonType              = $league.season_type
     Status                  = $league.status
+    FinalWeek               = $finalWeek
     TotalTeams              = $league.total_rosters
     SalaryCap               = $salaryCapTotal
     SalaryCapProjected      = $salaryCapProjected

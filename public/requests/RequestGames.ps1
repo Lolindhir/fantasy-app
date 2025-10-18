@@ -165,6 +165,26 @@ if (ObjectsAreEqualByJson $oldSchedule $schedule) {
     }
 }
 
+# --- Determine which weeks are closed (all games final) ---
+$weeksClosed = @{}
+
+# Gruppiere nach Week und prüfe, ob alle Spiele mit "Final" beginnen
+foreach ($weekGroup in ($schedule | Group-Object -Property gameWeek)) {
+    $week = $weekGroup.Name
+    $allFinal = $true
+    foreach ($g in $weekGroup.Group) {
+        if ($g.gameStatus -notmatch '^Final') {
+            $allFinal = $false
+            break
+        }
+    }
+    $weeksClosed[$week] = $allFinal
+    if($allFinal){
+        Write-Host "$($week) marked as all final" -ForegroundColor Cyan
+    }
+}
+
+
 # --- Load existing Games.json (list of game objects) ---
 $games = @()
 if (Test-Path $gamesFile) {
@@ -184,7 +204,12 @@ if (Test-Path $gamesFile) {
 
 # --- Iterate schedule; for games with gameStatus containing "Final" that are not in $games or do not have snapCounts, fetch boxscore ---
 $addedCount = 0
+$updatedCount = 0
 foreach ($g in $schedule) {
+    
+    $added = $false
+    $updated = $false
+
     # safeguard: ensure gameID exists
     if (-not $g.gameID) { continue }
     $gameID = $g.gameID
@@ -248,12 +273,12 @@ foreach ($g in $schedule) {
                         if ($index -ge 0) {
                             $games[$index] = $boxObj
                             Write-Host "  -> Updated existing Game Score for $gameID" -ForegroundColor Yellow
+                            $updated = $true
                         } else {
                             $games += $boxObj
                             Write-Host "  -> Game Score saved for $gameID" -ForegroundColor Green
+                            $added = $true
                         }
-
-                        $addedCount++
                     }
                 } else {
                     Write-Warning "  -> No boxScore.body returned for $gameID"
@@ -267,7 +292,39 @@ foreach ($g in $schedule) {
         } else {
             Write-Host "Game $($g.gameID) already present in Games.json - skipping." -ForegroundColor DarkGray
         }
+
+        # --- check & update weekFinal flag ---
+        # try get matching game (safeguard, game should exist)
+        $matchingGame = $games | Where-Object { $_.gameID -eq $g.gameID }
+        if($matchingGame) {
+            
+            if ($matchingGame.gameWeek -and $weeksClosed.ContainsKey($matchingGame.gameWeek)) {
+                $newValue = [bool]$weeksClosed[$matchingGame.gameWeek]
+            } else {
+                $newValue = $false
+            }
+
+            # Prüfen, ob das Property existiert
+            if ($matchingGame.PSObject.Properties.Name -contains 'weekFinal') {
+                $oldValue = [bool]$matchingGame.weekFinal
+                if ($oldValue -ne $newValue) {
+                    $matchingGame.weekFinal = $newValue
+                    Write-Host "Updated weekFinal for $($matchingGame.gameID): $oldValue -> $newValue" -ForegroundColor Yellow
+                    $updated = $true
+                }
+            } else {
+                # Erstmaliges Hinzufügen
+                $matchingGame | Add-Member -NotePropertyName "weekFinal" -NotePropertyValue $newValue
+                Write-Host "Added weekFinal for $($matchingGame.gameID): $newValue" -ForegroundColor Yellow
+                $added = $true
+            }
+        }  
+
     } # end if status Final
+
+    if($added) { $addedCount++ }
+    if($updated) { $updatedCount++ }
+
 } # end foreach schedule
 
 
@@ -313,13 +370,11 @@ Write-Host "  - Remaining games: $afterCount"
 Write-Host "  - Removed games: $diff" -ForegroundColor Cyan
 
 
-
-
 # --- Sortierung, neuestes Spiel oben auf
 $games = $games | Sort-Object gameID -Descending
 
 # --- If any new games were added -> write Games.json + update timestamp (and backup previous) ---
-if ($addedCount -gt 0 -or $diff -gt 0) {
+if ($addedCount -gt 0 -or $updatedCount -gt 0 -or $diff -gt 0) {
     # Backup old Games.json
     if (Test-Path $gamesFile) {
         $ts = $currentTime.ToString("yyyyMMdd_HHmmss")
@@ -330,7 +385,7 @@ if ($addedCount -gt 0 -or $diff -gt 0) {
     # Save new games
     try {
         $games | ConvertTo-Json -Depth 20 | Out-File -FilePath $gamesFile -Encoding UTF8
-        Write-Host "Games.json updated with $addedCount new or updated game(s)." -ForegroundColor Green
+        Write-Host "Games.json updated with $($addedCount+$updatedCount) new or updated game(s)." -ForegroundColor Green
 
         # update timestamp
         if (Test-Path $timestampFile) { $timestamps = Get-Content $timestampFile | ConvertFrom-Json } else { $timestamps = @{} }
