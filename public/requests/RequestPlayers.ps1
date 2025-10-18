@@ -457,6 +457,9 @@ if (Test-Path $gamesFile) {
         $games = $gamesRaw | ConvertFrom-Json
         Write-Host "Loaded $($games.Count) games from Games.json..." -ForegroundColor Yellow
 
+        # Sortiere Games nach GameID (neueste oben)
+        $games = $games | Sort-Object -Property gameID -Descending
+
         foreach ($game in $games) {
             if (-not $game.playerStats) { continue }
 
@@ -486,6 +489,20 @@ if (Test-Path $gamesFile) {
                 #     $gameStats[$prop.Name] = $prop.Value
                 # }
                 $gameStats.GameID = $p.gameID
+
+                # --- Details bauen
+                $gameStats.GameDetails = [ordered]@{}
+                if ($game.gameWeek -match 'Week (\d+)') {
+                    $gameStats.GameDetails.Week = [int]$matches[1]
+                } else {
+                    Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
+                }
+                $gameStats.GameDetails.Date = $game.gameDate
+                $gameStats.GameDetails.Home = $game.home
+                $gameStats.GameDetails.Away = $game.away
+                $gameStats.GameDetails.HomePoints = $game.homePts
+                $gameStats.GameDetails.AwayPoints = $game.awayPts
+
                 $gameStats.FantasyPoints = [double]$p.fantasyPointsDefault.PPR
 
                 if($p.snapCounts) {
@@ -515,7 +532,7 @@ if (Test-Path $gamesFile) {
                 if($p.Kicking) {$gameStats.Kicking = $p.Kicking}
 
                 # Game zur Historie hinzufügen (vorne)
-                $playerHistory[$playerID].GameHistory = @($gameStats) + $playerHistory[$playerID].GameHistory
+                $playerHistory[$playerID].GameHistory += @($gameStats)
 
                 # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein)
                 if($gameStats.SnapCount -gt 0) { 
@@ -765,6 +782,7 @@ foreach ($tankEntry in $tankPlayers) {
         FantasyPointsAvgGame         = $fantasyPointsAvgPPR
         FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
         FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
+        Ranking                      = @()
         TouchdownsTotal              = $tdTotal
         TouchdownsPassing            = $tdPass
         TouchdownsReceiving          = $tdRec
@@ -775,6 +793,136 @@ foreach ($tankEntry in $tankPlayers) {
 
 # Spieler nach ID aufsteigend sortieren
 $playerData = $playerData | Sort-Object -Property ID
+
+
+
+# --- Rankings hinzufügen ---
+Write-Host "Calculating player rankings..." -ForegroundColor Yellow
+
+function Add-Rankings {
+    param (
+        [Parameter(Mandatory)] [Array]$players,
+        [string]$propTotal = 'FantasyPointsTotal',
+        [string]$propAvg = 'FantasyPointsAvgGame',
+        [double]$weightTotal = 0.5,   # Gewichtung Total
+        [double]$weightAvg = 0.5      # Gewichtung PerGame
+    )
+
+    # Nur Spieler berücksichtigen, die überhaupt Werte haben
+    $playersActive = $players | Where-Object { $_.$propTotal -gt 0 -or $_.$propAvg -gt 0 }
+
+    # --- Helper: Ranking mit Sprüngen & Gleichständen ---
+    function Set-Rankings($list, $type, $property) {
+        $sorted = $list | Sort-Object -Property $property -Descending
+        $prevValue = $null
+        $rank = 0
+        $i = 0
+
+        foreach ($player in $sorted) {
+            $i++
+            $value = $player.$property
+            if ($null -eq $value -or $value -eq 0) { continue }
+
+            # Nur neuen Rang vergeben, wenn sich der Wert ändert
+            if ($value -ne $prevValue) { $rank = $i }
+            $prevValue = $value
+
+            if (-not $player.PSObject.Properties["Ranking"]) {
+                $player | Add-Member -NotePropertyName 'Ranking' -NotePropertyValue @()
+            }
+
+            $player.Ranking += [PSCustomObject]@{ Type = $type; Value = $rank }
+        }
+    }
+
+    # --- Basis-Rankings ---
+    Set-Rankings $playersActive 'Total' $propTotal
+    Set-Rankings $playersActive 'PerGame' $propAvg
+
+    # --- Combined Rank vorbereiten (Gewichtung über Ränge) ---
+    foreach ($p in $playersActive) {
+        $rankTotal = ($p.Ranking | Where-Object { $_.Type -eq 'Total' }).Value
+        $rankAvg   = ($p.Ranking | Where-Object { $_.Type -eq 'PerGame' }).Value
+        if ($null -ne $rankTotal -and $null -ne $rankAvg) {
+            $combinedValue = ($rankTotal * $weightTotal) + ($rankAvg * $weightAvg)
+            $p | Add-Member -NotePropertyName 'CombinedRankValue' -NotePropertyValue $combinedValue -Force
+        }
+    }
+
+    # --- Combined Ranking mit Tiebreaks ---
+    $combinedList = $playersActive | Where-Object { $_.CombinedRankValue -gt 0 } |
+        Sort-Object -Property @{Expression = 'CombinedRankValue'; Ascending = $true},
+                               @{Expression = $propTotal; Ascending = $false},
+                               @{Expression = $propAvg; Ascending = $false}
+
+    $prevValue = $null
+    $rank = 0
+    $i = 0
+    foreach ($p in $combinedList) {
+        $i++
+        $value = $p.CombinedRankValue
+
+        # Gleichstand -> gleicher Rang, Sprung danach
+        if ($value -ne $prevValue) { $rank = $i }
+        $prevValue = $value
+
+        if (-not $p.PSObject.Properties["Ranking"]) {
+            $p | Add-Member -NotePropertyName 'Ranking' -NotePropertyValue @()
+        }
+        $p.Ranking += [PSCustomObject]@{ Type = 'Combined'; Value = $rank }
+    }
+
+    # --- Positions-Rankings ---
+    $positions = $playersActive | Select-Object -ExpandProperty Position -Unique
+    foreach ($pos in $positions) {
+        $posPlayers = $playersActive | Where-Object { $_.Position -eq $pos }
+
+        # Positionsbasierte Rankings
+        Set-Rankings $posPlayers "Total_Pos" $propTotal
+        Set-Rankings $posPlayers "PerGame_Pos" $propAvg
+
+        # Kombinierter Positionswert
+        foreach ($p in $posPlayers) {
+            $rankTotal = ($p.Ranking | Where-Object { $_.Type -eq 'Total_Pos' }).Value
+            $rankAvg   = ($p.Ranking | Where-Object { $_.Type -eq 'PerGame_Pos' }).Value
+            if ($null -ne $rankTotal -and $null -ne $rankAvg) {
+                $combinedValue = ($rankTotal * $weightTotal) + ($rankAvg * $weightAvg)
+                $p | Add-Member -NotePropertyName 'CombinedRankValue_Pos' -NotePropertyValue $combinedValue -Force
+            }
+        }
+
+        # Positionsweise Combined mit Tiebreaks
+        $combinedPosList = $posPlayers | Where-Object { $_.CombinedRankValue_Pos -gt 0 } |
+            Sort-Object -Property @{Expression = 'CombinedRankValue_Pos'; Ascending = $true},
+                                   @{Expression = $propTotal; Ascending = $false},
+                                   @{Expression = $propAvg; Ascending = $false}
+
+        $prevValue = $null
+        $rank = 0
+        $i = 0
+        foreach ($p in $combinedPosList) {
+            $i++
+            $value = $p.CombinedRankValue_Pos
+            if ($value -ne $prevValue) { $rank = $i }
+            $prevValue = $value
+            $p.Ranking += [PSCustomObject]@{ Type = 'Combined_Pos'; Value = $rank }
+        }
+    }
+
+    # Temporäre Felder entfernen
+    foreach ($p in $playersActive) {
+        $p.PSObject.Properties.Remove('CombinedRankValue')
+        $p.PSObject.Properties.Remove('CombinedRankValue_Pos')
+    }
+
+    return $players
+}
+
+# Ranking anwenden
+$playerData = Add-Rankings -players $playerData -weightTotal 0.5 -weightAvg 0.5
+Write-Host "Player rankings calculated and added." -ForegroundColor Yellow
+
+
 
 # Änderungen prüfen
 if (-not (PlayersHaveChanged $oldPlayers $playerData)) {

@@ -197,7 +197,7 @@ foreach ($g in $schedule) {
         # try get matching game
         $matchingGame = $games | Where-Object { $_.gameID -eq $g.gameID }
         $snapsMissing = $false
-        
+
         if($matchingGame) {
             if(
                 $matchingGame.playerStats.PSObject.Properties.Value |
@@ -222,15 +222,39 @@ foreach ($g in $schedule) {
             try {
                 $bscoreResponse = Invoke-Tank01-With-Fallback -Url $boxScoresUrl -Keys $apiKeys
                 $boxScore = $bscoreResponse.body
+
                 if ($boxScore) {
-                    # Convert hashtable to object for array storage
+                    # Convert to PSCustomObject only at the end
                     $boxObj = $boxScore | ConvertTo-Json -Depth 10 | ConvertFrom-Json
 
-                    # Append object to list
-                    $games += $boxObj
-                    $addedCount++
+                    # Prüfen, ob nach Fetch noch Spieler ohne snapCounts existieren
+                    $missingSnapsFetched = @()
+                    foreach ($playerProp in $boxObj.playerStats.PSObject.Properties) {
+                        $player = $playerProp.Value
+                        if (-not $player.snapCounts) {
+                            # Spieler-ID und Name speichern
+                            $missingSnapsFetched += $player
+                            Write-Host "  -> Player missing snapCounts: $($player.playerID) - $($player.longName)" -ForegroundColor Gray
+                        }
+                    }
 
-                    Write-Host "  -> Game Score saved for $gameID" -ForegroundColor Green
+                    # Wenn es Spieler ohne snapCounts gibt und das Spiel vorher schon existierte, nicht überschreiben
+                    if ($missingSnapsFetched.Count -gt 0 -and $matchingGame) {
+                        Write-Host "  -> Fetched game still has players without snapCounts. Existing game is kept." 
+                    } else {
+                        # Spiel anhand der ID finden
+                        $index = [array]::IndexOf(($games | ForEach-Object { $_.gameID }), $gameID)
+
+                        if ($index -ge 0) {
+                            $games[$index] = $boxObj
+                            Write-Host "  -> Updated existing Game Score for $gameID" -ForegroundColor Yellow
+                        } else {
+                            $games += $boxObj
+                            Write-Host "  -> Game Score saved for $gameID" -ForegroundColor Green
+                        }
+
+                        $addedCount++
+                    }
                 } else {
                     Write-Warning "  -> No boxScore.body returned for $gameID"
                 }
@@ -246,8 +270,56 @@ foreach ($g in $schedule) {
     } # end if status Final
 } # end foreach schedule
 
+
+# --- Duplikate und leere SnapCounts entfernen ---
+Write-Host "Cleaning up duplicate games and entries without snapCounts..." -ForegroundColor Yellow
+
+$beforeCount = $games.Count
+
+# --- Schritt 1: Duplikate nach gameID entfernen ---
+$games = $games | Group-Object -Property gameID | ForEach-Object {
+    $group = $_.Group
+
+    # Bevorzuge Spielversionen, bei denen alle Spieler snapCounts haben
+    $validGames = $group | Where-Object {
+        ($_.playerStats.PSObject.Properties.Value | Where-Object { -not $_.snapCounts }).Count -eq 0
+    }
+
+    if ($validGames) {
+        $validGames | Select-Object -First 1
+    } else {
+        # Wenn keine Version vollständig ist, nimm die erste
+        $group | Select-Object -First 1
+    }
+}
+
+# --- Schritt 2: Spiele entfernen, wenn mindestens ein Spieler keinen snapCounts hat ---
+$games = $games | Where-Object {
+    $missingSnaps = $_.playerStats.PSObject.Properties.Value | Where-Object { -not $_.snapCounts }
+    if ($missingSnaps.Count -gt 0) {
+        Write-Host "  -> Removed game $($_.gameID) (missing snapCounts for one or more players)" -ForegroundColor Green
+        $false
+    } else {
+        $true
+    }
+}
+
+$afterCount = $games.Count
+$diff = $beforeCount - $afterCount
+
+Write-Host "Cleanup complete:" -ForegroundColor Cyan
+Write-Host "  - Original games: $beforeCount"
+Write-Host "  - Remaining games: $afterCount"
+Write-Host "  - Removed games: $diff" -ForegroundColor Cyan
+
+
+
+
+# --- Sortierung, neuestes Spiel oben auf
+$games = $games | Sort-Object gameID -Descending
+
 # --- If any new games were added -> write Games.json + update timestamp (and backup previous) ---
-if ($addedCount -gt 0) {
+if ($addedCount -gt 0 -or $diff -gt 0) {
     # Backup old Games.json
     if (Test-Path $gamesFile) {
         $ts = $currentTime.ToString("yyyyMMdd_HHmmss")
@@ -258,7 +330,7 @@ if ($addedCount -gt 0) {
     # Save new games
     try {
         $games | ConvertTo-Json -Depth 20 | Out-File -FilePath $gamesFile -Encoding UTF8
-        Write-Host "Games.json updated with $addedCount new game(s)." -ForegroundColor Green
+        Write-Host "Games.json updated with $addedCount new or updated game(s)." -ForegroundColor Green
 
         # update timestamp
         if (Test-Path $timestampFile) { $timestamps = Get-Content $timestampFile | ConvertFrom-Json } else { $timestamps = @{} }
