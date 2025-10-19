@@ -100,12 +100,15 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'SalaryDollarsCurrent',
             'SalaryDollarsSeasonStart',
             'SalaryDollarsProjected',
+            'SalaryDollarsProjectedFantasy',
             'College',
             'HighSchool',
             'ESPN',
             'FantasyPros',
             'Injured',
             #'Injury',   #object
+            #'Ranking',   #object
+            #'PointHistory',   #object
             #'GameHistory'   #object
             'GamesPlayed',
             'GamesPotential',
@@ -221,7 +224,7 @@ function MapSalaryFantasy {
     # === Parameter-Bereich ===
     $salarySourceMin = 0    
     $salarySourceMax = 20
-    $salaryTargetMin = 250000
+    $salaryTargetMin = 0
     $salaryTargetMax = 50000000
     $salaryMappingNonLinear = $true   # oder $false für lineare Skalierung
 
@@ -407,9 +410,73 @@ $Date = (Get-Date -Format "yyyyMMdd")
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
+if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 $gamesFile = Join-Path $scriptDir "..\data\Games.json"
 $leagueFile = Join-Path $scriptDir "..\data\League.json"
-if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
+
+# --- Season aus config.ps1 ---
+if (-not $Global:LeagueYear) {
+    Write-Error "LeagueYear not set in config.ps1!"
+    exit 1
+}
+$seasonYear = $Global:LeagueYear
+
+# --- Lookup-Tabelle für Spielerstatistiken des letzten Jahres holen
+$seasonLast = $seasonYear - 1
+$seasonLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonLast.json"
+$playersLookupLastSeason = @{}
+try {
+    $seasonLastRaw = Get-Content $seasonLastFile -Raw
+    $playersLastSeason = $seasonLastRaw | ConvertFrom-Json
+    if(-not $playersLastSeason){
+        Write-Host "Couldn't load old player stats for year: $seasonLast" -ForegroundColor Red
+        exit 1
+    } else {
+        foreach ($player in $playersLastSeason) { $playersLookupLastSeason[$player.TankID] = $player }
+        Write-Host "Loaded old player stats for year: $seasonLast..." -ForegroundColor Yellow
+    }
+} catch {
+    Write-Error "Error fetching old player stats: $_"
+    exit 1
+}
+
+# --- Lookup-Tabelle für Spielerstatistiken des vorletzten Jahres holen
+$seasonBeforeLast = $seasonYear - 2
+$seasonBeforeLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonBeforeLast.json"
+$playersLookupBeforeLastSeason = @{}
+try {
+    $seasonBeforeLastRaw = Get-Content $seasonBeforeLastFile -Raw
+    $playersBeforeLastSeason = $seasonBeforeLastRaw | ConvertFrom-Json
+    if(-not $playersBeforeLastSeason){
+        Write-Host "Couldn't load old player stats for year: $seasonBeforeLast" -ForegroundColor Red
+        exit 1
+    } else {
+        foreach ($player in $playersBeforeLastSeason) { $playersLookupBeforeLastSeason[$player.TankID] = $player }
+        Write-Host "Loaded old player stats for year: $seasonBeforeLast..." -ForegroundColor Yellow
+    }
+} catch {
+    Write-Error "Error fetching old player stats: $_"
+    exit 1
+}
+
+# --- Lookup-Tabelle für Spielerstatistiken des vorvorletzten Jahres holen
+$seasonBeforeBeforeLast = $seasonYear - 3
+$seasonBeforeBeforeLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonBeforeBeforeLast.json"
+$playersLookupBeforeBeforeLastSeason = @{}
+try {
+    $seasonBeforeBeforeLastRaw = Get-Content $seasonBeforeBeforeLastFile -Raw
+    $playersBeforeBeforeLastSeason = $seasonBeforeBeforeLastRaw | ConvertFrom-Json
+    if(-not $playersBeforeBeforeLastSeason){
+        Write-Host "Couldn't load old player stats for year: $seasonBeforeBeforeLast" -ForegroundColor Red
+        exit 1
+    } else {
+        foreach ($player in $playersBeforeBeforeLastSeason) { $playersLookupBeforeBeforeLastSeason[$player.TankID] = $player }
+        Write-Host "Loaded old player stats for year: $seasonBeforeBeforeLast..." -ForegroundColor Yellow
+    }
+} catch {
+    Write-Error "Error fetching old player stats: $_"
+    exit 1
+}
 
 # --- Season Start Datum aus config.ps1 ---
 if (-not $Global:LeagueStart) {
@@ -417,6 +484,14 @@ if (-not $Global:LeagueStart) {
     exit 1
 }
 $seasonStartDate = $Global:LeagueStart
+
+# --- Gewichtungen aus config.ps1 ---
+if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
+    Write-Error "Weights not set in config.ps1!"
+    exit 1
+}
+$weightTotal = $Global:WeightTotal
+$weightGame = $Global:WeightGame
 
 $finalWeek = 0
 if (Test-Path $leagueFile) {
@@ -833,8 +908,63 @@ foreach ($tankEntry in $tankPlayers) {
         $gameHistory = @()
     }
 
-    # --- Salary aus Fantasy berechnen
-    $salaryDollarsFantasy = MapSalaryFantasy -salary $fantasyPointsAvgPotentialPPR
+    # --- Daten der Vorjahre laden und abspeichern
+    $playerLastSeason = $playersLookupLastSeason[$tankEntry.playerID]
+    $playerBeforeLastSeason = $playersLookupBeforeLastSeason[$tankEntry.playerID]
+    $playerBeforeBeforeLastSeason = $playersLookupBeforeBeforeLastSeason[$tankEntry.playerID]
+    $pointHistory = [ordered]@{}
+    $pointHistory.SeasonMinus1 = [ordered]@{}
+        $pointHistory.SeasonMinus1.Total = 0
+        $pointHistory.SeasonMinus1.AvgGame = 0
+        $pointHistory.SeasonMinus1.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus1.GamesPlayed = 0
+        $pointHistory.SeasonMinus1.PotentialGames = 0
+    $pointHistory.SeasonMinus2 = [ordered]@{}
+        $pointHistory.SeasonMinus2.Total = 0
+        $pointHistory.SeasonMinus2.AvgGame = 0
+        $pointHistory.SeasonMinus2.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus2.GamesPlayed = 0
+        $pointHistory.SeasonMinus2.PotentialGames = 0
+    $pointHistory.SeasonMinus3 = [ordered]@{}
+        $pointHistory.SeasonMinus3.Total = 0
+        $pointHistory.SeasonMinus3.AvgGame = 0
+        $pointHistory.SeasonMinus3.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus3.GamesPlayed = 0
+        $pointHistory.SeasonMinus3.PotentialGames = 0
+    if($playerLastSeason){
+        $pointHistory.SeasonMinus1.Total = $playerLastSeason.TotalFantasyPoints
+        $pointHistory.SeasonMinus1.AvgGame = $playerLastSeason.FantasyPointsAvg
+        $pointHistory.SeasonMinus1.AgvPotentialGame = $playerLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus1.GamesPlayed = $playerLastSeason.TotalGames
+        $pointHistory.SeasonMinus1.PotentialGames = $playerLastSeason.PotentialGames
+    }
+    if($playerBeforeLastSeason){
+        $pointHistory.SeasonMinus2.Total = $playerBeforeLastSeason.TotalFantasyPoints
+        $pointHistory.SeasonMinus2.AvgGame = $playerBeforeLastSeason.FantasyPointsAvg
+        $pointHistory.SeasonMinus2.AgvPotentialGame = $playerBeforeLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus2.GamesPlayed = $playerBeforeLastSeason.TotalGames
+        $pointHistory.SeasonMinus2.PotentialGames = $playerBeforeLastSeason.PotentialGames
+    }
+    if($playerBeforeBeforeLastSeason){
+        $pointHistory.SeasonMinus3.Total = $playerBeforeBeforeLastSeason.TotalFantasyPoints
+        $pointHistory.SeasonMinus3.AvgGame = $playerBeforeBeforeLastSeason.FantasyPointsAvg
+        $pointHistory.SeasonMinus3.AgvPotentialGame = $playerBeforeBeforeLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus3.GamesPlayed = $playerBeforeBeforeLastSeason.TotalGames
+        $pointHistory.SeasonMinus3.PotentialGames = $playerBeforeBeforeLastSeason.PotentialGames
+    }
+
+    # --------------------------------------
+    # --- Salaries aus Fantasy berechnen ---
+    # --------------------------------------
+    # Jahrespunkte berechnen
+    $ptsCurrent = $fantasyPointsAvgPotentialPPR * $weightTotal + $fantasyPointsAvgPPR * $weightGame
+    $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
+    $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
+    $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
+    # Aktuelle Salary berechnen -> Durchschnitt aus letzter Saison, vorletzter Saison und vorvorletzter Saison
+    $salaryDollarsFantasy = MapSalaryFantasy -salary ($ptsSeasonMinus1 * 0.5 + $ptsSeasonMinus2 * 0.3 + $ptsSeasonMinus3 * 0.2)
+    # Projected Salary berechnen -> Durchschnitt aus aktueller Saison, letzter Saison und vorletzter Saison
+    $salaryDollarsProjectedFantasy = MapSalaryFantasy -salary ($ptsCurrent * 0.5 + $ptsSeasonMinus1 * 0.3 + $ptsSeasonMinus2 * 0.2)
 
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
@@ -861,6 +991,7 @@ foreach ($tankEntry in $tankPlayers) {
         SalaryDollarsCurrent         = $salaryDollarsCurrent
         SalaryDollarsSeasonStart     = $salaryDollarsSeasonStart
         SalaryDollarsProjected       = $salaryDollarsProjected
+        SalaryDollarsProjectedFantasy       = $salaryDollarsProjectedFantasy
         Picture                      = $tankEntry.espnHeadshot
         FantasyPros                  = $tankEntry.fantasyProsLink
         ESPN                         = $tankEntry.espnLink
@@ -878,6 +1009,7 @@ foreach ($tankEntry in $tankPlayers) {
         FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
         FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
         Ranking                      = @()
+        PointHistory                 = $pointHistory
         TouchdownsTotal              = $tdTotal
         TouchdownsPassing            = $tdPass
         TouchdownsReceiving          = $tdRec
@@ -1014,7 +1146,7 @@ function Add-Rankings {
 }
 
 # Ranking anwenden
-$playerData = Add-Rankings -players $playerData -weightTotal 0.5 -weightAvg 0.5
+$playerData = Add-Rankings -players $playerData -weightTotal $weightTotal -weightAvg $weightGame
 Write-Host "Player rankings calculated and added." -ForegroundColor Yellow
 
 

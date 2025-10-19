@@ -34,7 +34,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     if (-not $oldLeague) { return $true }  # keine alte Daten -> Änderung
 
     # Prüfe Top-Level Eigenschaften der Liga
-    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected')
+    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected', 'SalaryCapFantasy', 'SalaryCapProjectedFantasy')
     foreach ($prop in $propsToCheck) {
         if ($oldLeague.$prop -ne $newLeague.$prop) {
             Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
@@ -212,16 +212,27 @@ if ($topPlayers.Count -eq 0 -or $topPlayersProjected.Count -eq 0) {
     exit 1
 }
 
-# --- Salary Cap berechnen ---
+Write-Host "Top $topCount players considered for Salary Cap calculation." -ForegroundColor Yellow
+
+# --- DraftKing Salary Cap berechnen ---
 $avgSalary = ($topPlayers | Measure-Object -Property SalaryDollars -Average).Average
 $avgSalaryProjected = ($topPlayersProjected | Measure-Object -Property SalaryDollarsProjected -Average).Average
 
 $salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize)
 $salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize)
 
-Write-Host "Top $topCount players considered for Salary Cap calculation." -ForegroundColor Yellow
-Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
-Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
+Write-Host "DraftKings Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
+Write-Host "DraftKings Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
+
+# --- Fantasy Salary Cap berechnen ---
+$avgSalaryFantasy = ($topPlayers | Measure-Object -Property SalaryDollarsFantasy -Average).Average
+$avgSalaryProjectedFantasy = ($topPlayersProjected | Measure-Object -Property SalaryDollarsProjectedFantasy -Average).Average
+
+$salaryCapTotalFantasy = [math]::Round($avgSalaryFantasy * $SalaryRelevantTeamSize)
+$salaryCapProjectedFantasy = [math]::Round($avgSalaryProjectedFantasy * $SalaryRelevantTeamSize)
+
+Write-Host "Fantasy Salary Cap (current): $($salaryCapTotalFantasy.ToString("N0"))" -ForegroundColor Yellow
+Write-Host "Fantasy Salary Cap (projected): $($salaryCapProjectedFantasy.ToString("N0"))" -ForegroundColor Yellow
 
 # --- Aktuelle Woche berechnen ---
 $currentWeek = $null
@@ -286,6 +297,8 @@ $leagueAsJson += [PSCustomObject]@{
     TotalTeams              = $league.total_rosters
     SalaryCap               = $salaryCapTotal
     SalaryCapProjected      = $salaryCapProjected
+    SalaryCapFantasy               = $salaryCapTotalFantasy
+    SalaryCapProjectedFantasy      = $salaryCapProjectedFantasy
     SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
     Teams                   = $teamData
     RosterSize              = $league.roster_positions
