@@ -95,8 +95,8 @@ function TeamsHaveChanged($oldTeams, $newTeams) {
 # Keys als Liste definieren
 $apiKeys = @(
     $Global:RapidAPIKey,
-    $Global:RapidAPIKeyAlt1
-    # , $Global:RapidAPIKeyAlt2  # falls Weiteren vorhanden sind
+    $Global:RapidAPIKeyAlt1,
+    $Global:RapidAPIKeyAlt2
 )
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Teams.json"

@@ -403,8 +403,8 @@ function AdjustSalaryWithMeta {
 . "$PSScriptRoot\config.ps1"
 $apiKeys = @(
     $Global:RapidAPIKey,
-    $Global:RapidAPIKeyAlt1
-    # , $Global:RapidAPIKeyAlt2
+    $Global:RapidAPIKeyAlt1,
+    $Global:RapidAPIKeyAlt2
 )
 $Date = (Get-Date -Format "yyyyMMdd")
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -961,10 +961,23 @@ foreach ($tankEntry in $tankPlayers) {
     $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
     $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
     $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
+    # Ceiling Vergangenheit berechnen
+    $maxPast = [Math]::Max([Math]::Max($ptsSeasonMinus1, $ptsSeasonMinus2), $ptsSeasonMinus3)
+    $ceilingPast = [Math]::Ceiling($maxPast / 2)
+    # Ceiling Projected berechnen
+    $maxProjected = [Math]::Max($maxPast, $ptsCurrent)
+    $ceilingProjected = [Math]::Ceiling($maxProjected / 2)
+    # Ceiling anwenden (keiner der Werte darf unterhalb des Floors liegen)
+    $ptsSeasonMinus1 = [Math]::Max($ptsSeasonMinus1, $ceilingPast)
+    $ptsSeasonMinus2 = [Math]::Max($ptsSeasonMinus2, $ceilingPast)
+    $ptsSeasonMinus3 = [Math]::Max($ptsSeasonMinus3, $ceilingPast)
     # Aktuelle Salary berechnen -> Durchschnitt aus letzter Saison, vorletzter Saison und vorvorletzter Saison
-    $salaryDollarsFantasy = MapSalaryFantasy -salary ($ptsSeasonMinus1 * 0.5 + $ptsSeasonMinus2 * 0.3 + $ptsSeasonMinus3 * 0.2)
+    $salaryDollarsFantasy = MapSalaryFantasy -salary (($ptsSeasonMinus1 + $ptsSeasonMinus2 + $ptsSeasonMinus3)/3)
     # Projected Salary berechnen -> Durchschnitt aus aktueller Saison, letzter Saison und vorletzter Saison
-    $salaryDollarsProjectedFantasy = MapSalaryFantasy -salary ($ptsCurrent * 0.5 + $ptsSeasonMinus1 * 0.3 + $ptsSeasonMinus2 * 0.2)
+    $ptsCurrent      = [Math]::Max($ptsCurrent, $ceilingProjected)
+    $ptsSeasonMinus1 = [Math]::Max($ptsSeasonMinus1, $ceilingProjected)
+    $ptsSeasonMinus2 = [Math]::Max($ptsSeasonMinus2, $ceilingProjected)
+    $salaryDollarsProjectedFantasy = MapSalaryFantasy -salary (($ptsCurrent + $ptsSeasonMinus1 + $ptsSeasonMinus2)/3)
 
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{

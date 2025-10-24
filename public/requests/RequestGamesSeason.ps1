@@ -100,8 +100,8 @@ function ObjectsAreEqualByJson {
 # apiKeys must be available in config.ps1 as in your other script
 $apiKeys = @(
     $Global:RapidAPIKey,
-    $Global:RapidAPIKeyAlt1
-    #, $Global:RapidAPIKeyAlt2
+    $Global:RapidAPIKeyAlt1,
+    $Global:RapidAPIKeyAlt2
 )
 
 $apiHost = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
