@@ -216,6 +216,48 @@ function MapSalaryToDollars {
     return [math]::Round($salaryFlat)
 }
 
+function Get-FantasySalaryWithFloor {
+    param(
+        [double]$pts1,
+        [double]$pts2,
+        [double]$pts3,
+        [double]$weight1 = 0.5,   # Gewicht, wenn pts1 das Maximum ist
+        [double]$weight2 = 0.35,  # Gewicht, wenn pts2 das Maximum ist
+        [double]$weight3 = 0.25   # Gewicht, wenn pts3 das Maximum ist
+    )
+
+    # --- Spezialfall: Wenn die zwei neuesten Werte 0 sind, Salary = 0 ---
+    if ($pts1 -eq 0 -and $pts2 -eq 0) {
+        return 0
+    }
+
+    # --- Bestimmen, welches Jahr (Punktwert) das Maximum hat ---
+    if ($pts1 -ge $pts2 -and $pts1 -ge $pts3) {
+        $floorRatio = $weight1
+        $maxVal = $pts1
+    }
+    elseif ($pts2 -ge $pts1 -and $pts2 -ge $pts3) {
+        $floorRatio = $weight2
+        $maxVal = $pts2
+    }
+    else {
+        $floorRatio = $weight3
+        $maxVal = $pts3
+    }
+
+    # --- Floor berechnen: gewichteter Anteil des Maximums ---
+    $floor = [double]($maxVal * $floorRatio)
+
+    # --- Floor anwenden (kein Wert darf unterhalb des Floors liegen) ---
+    $pts1 = [Math]::Max($pts1, $floor)
+    $pts2 = [Math]::Max($pts2, $floor)
+    $pts3 = [Math]::Max($pts3, $floor)
+
+    # --- Salary berechnen (Durchschnitt der drei gefloorten Werte) ---
+    return MapSalaryFantasy -salary (($pts1 + $pts2 + $pts3) / 3)
+}
+
+
 function MapSalaryFantasy {
     param (
         [double]$salary
@@ -961,23 +1003,11 @@ foreach ($tankEntry in $tankPlayers) {
     $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
     $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
     $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
-    # Ceiling Vergangenheit berechnen
-    $maxPast = [Math]::Max([Math]::Max($ptsSeasonMinus1, $ptsSeasonMinus2), $ptsSeasonMinus3)
-    $ceilingPast = [Math]::Ceiling($maxPast / 2)
-    # Ceiling Projected berechnen
-    $maxProjected = [Math]::Max($maxPast, $ptsCurrent)
-    $ceilingProjected = [Math]::Ceiling($maxProjected / 2)
-    # Ceiling anwenden (keiner der Werte darf unterhalb des Floors liegen)
-    $ptsSeasonMinus1 = [Math]::Max($ptsSeasonMinus1, $ceilingPast)
-    $ptsSeasonMinus2 = [Math]::Max($ptsSeasonMinus2, $ceilingPast)
-    $ptsSeasonMinus3 = [Math]::Max($ptsSeasonMinus3, $ceilingPast)
-    # Aktuelle Salary berechnen -> Durchschnitt aus letzter Saison, vorletzter Saison und vorvorletzter Saison
-    $salaryDollarsFantasy = MapSalaryFantasy -salary (($ptsSeasonMinus1 + $ptsSeasonMinus2 + $ptsSeasonMinus3)/3)
-    # Projected Salary berechnen -> Durchschnitt aus aktueller Saison, letzter Saison und vorletzter Saison
-    $ptsCurrent      = [Math]::Max($ptsCurrent, $ceilingProjected)
-    $ptsSeasonMinus1 = [Math]::Max($ptsSeasonMinus1, $ceilingProjected)
-    $ptsSeasonMinus2 = [Math]::Max($ptsSeasonMinus2, $ceilingProjected)
-    $salaryDollarsProjectedFantasy = MapSalaryFantasy -salary (($ptsCurrent + $ptsSeasonMinus1 + $ptsSeasonMinus2)/3)
+    # Vergangenheitswerte
+    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 -weight1 0.6 -weight2 0.3 -weight3 0.2
+    # Projektionswerte
+    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 -weight1 0.6 -weight2 0.3 -weight3 0.2
+
 
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{

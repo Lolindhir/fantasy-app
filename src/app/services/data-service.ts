@@ -15,7 +15,9 @@ export interface RawLeague {
   Name: string;
   Season: string;
   SalaryCap: number;
+  SalaryCapFantasy: number;
   SalaryCapProjected: number;
+  SalaryCapProjectedFantasy: number;
   SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[]; // nur rohe Teams
 }
@@ -57,7 +59,9 @@ export interface RawPlayer {
   Position: string;
   TeamID: string; // Referenz, nicht das Teamobjekt
   SalaryDollars: number;
+  SalaryDollarsFantasy: number;
   SalaryDollarsProjected: number;
+  SalaryDollarsProjectedFantasy: number;
   Age: number;
   Year: number;
   Picture: string;
@@ -175,8 +179,10 @@ export class DataService {
             ...raw,
             TeamNFL: nfl,
             TeamFantasy: undefined,
-            SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollars),
-            SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjected),
+            SalaryDollars: raw.SalaryDollarsFantasy,
+            SalaryDollarsProjected: raw.SalaryDollarsProjectedFantasy,
+            SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollarsFantasy),
+            SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjectedFantasy),
             NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`
           };
         });
@@ -206,8 +212,10 @@ export class DataService {
         const league: League = {
           ...leagueRaw,
           Teams: teams,
-          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
-          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected)
+          SalaryCap: leagueRaw.SalaryCapFantasy,
+          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapFantasy),
+          SalaryCapProjected: leagueRaw.SalaryCapProjectedFantasy,
+          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjectedFantasy)
         };
 
         return { league, players: playersSorted, teams };

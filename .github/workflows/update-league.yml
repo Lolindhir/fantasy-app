@@ -35,5 +35,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
-          git diff --cached --quiet || git commit -m "Update data files after league request"
+          git diff --cached --quiet || git commit -m "League Update"
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
