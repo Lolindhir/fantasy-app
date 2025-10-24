@@ -1004,9 +1004,9 @@ foreach ($tankEntry in $tankPlayers) {
     $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
     $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
     # Vergangenheitswerte
-    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 -weight1 0.6 -weight2 0.3 -weight3 0.2
+    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 -weight1 0.5 -weight2 0.35 -weight3 0.25
     # Projektionswerte
-    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 -weight1 0.6 -weight2 0.3 -weight3 0.2
+    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 -weight1 0.5 -weight2 0.35 -weight3 0.25
 
 
     # --- Player Objekt bauen ---
