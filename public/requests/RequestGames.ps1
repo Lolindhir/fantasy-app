@@ -333,7 +333,7 @@ Write-Host "Cleaning up duplicate games and entries without snapCounts..." -Fore
 
 $beforeCount = $games.Count
 
-# --- Schritt 1: Duplikate nach gameID entfernen ---
+# --- Duplikate nach gameID entfernen ---
 $games = $games | Group-Object -Property gameID | ForEach-Object {
     $group = $_.Group
 
@@ -347,17 +347,6 @@ $games = $games | Group-Object -Property gameID | ForEach-Object {
     } else {
         # Wenn keine Version vollständig ist, nimm die erste
         $group | Select-Object -First 1
-    }
-}
-
-# --- Schritt 2: Spiele entfernen, wenn mindestens ein Spieler keinen snapCounts hat ---
-$games = $games | Where-Object {
-    $missingSnaps = $_.playerStats.PSObject.Properties.Value | Where-Object { -not $_.snapCounts }
-    if ($missingSnaps.Count -gt 0) {
-        Write-Host "  -> Removed game $($_.gameID) (missing snapCounts for one or more players)" -ForegroundColor Green
-        $false
-    } else {
-        $true
     }
 }
 
