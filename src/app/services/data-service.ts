@@ -50,6 +50,51 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar
   Standing: number; // Platzierung in der Liga
 }
 
+export interface InjuryDetails {
+  Date: string;
+  ReturnDate: string;
+  Description: string;
+  Designation: string;
+}
+
+export interface RankingEntry {
+  Type: 'Total' | 'PerGame' | 'Combined' | 'Total_Pos' | 'PerGame_Pos' | 'Combined_Pos';
+  Value: number;
+}
+
+export interface PointHistorySeason {
+  Season: number; //z.B. 2024, abgeleitet aus League.Season
+  Total: number;
+  AvgGame: number;
+  AvgPotentialGame: number;
+  GamesPlayed: number;
+  PotentialGames: number;
+}
+
+export interface PointHistory {
+  SeasonMinus1?: PointHistorySeason;
+  SeasonMinus2?: PointHistorySeason;
+  SeasonMinus3?: PointHistorySeason;
+}
+
+export interface PlayerStats {
+  GamesPlayed: number;
+  GamesPotential: number;
+  SnapsTotal: number;
+  AttemptsTotal: number;
+  TouchdownsTotal: number;
+  TouchdownsPassing: number;
+  TouchdownsReceiving: number;
+  TouchdownsRushing: number;
+  FantasyPointsTotal: number;
+  FantasyPointsAvgGame: number;
+  FantasyPointsAvgPotentialGame: number;
+  FantasyPointsAvgSnap: number;
+  FantasyPointsAvgAttempt: number;
+  Ranking: RankingEntry[];
+  PointHistory: PointHistory;
+}
+
 export interface RawPlayer {
   ID: string;
   Name: string;
@@ -57,7 +102,6 @@ export interface RawPlayer {
   NameLast: string;
   NameShort: string;
   Position: string;
-  TeamID: string; // Referenz, nicht das Teamobjekt
   SalaryDollars: number;
   SalaryDollarsFantasy: number;
   SalaryDollarsProjected: number;
@@ -65,13 +109,38 @@ export interface RawPlayer {
   Age: number;
   Year: number;
   Picture: string;
+  Number: string;
+  FantasyPros: string;
+  ESPN: string;
+  College: string;
+  HighSchool: string;
+  Injured: boolean;
+  InjuryDetails: InjuryDetails;
+  //nur für Verarbeitung benötigt
+  TeamID: string; // Referenz, nicht das Teamobjekt
+  GamesPlayed: number;
+  GamesPotential: number;
+  SnapsTotal: number;
+  AttemptsTotal: number;
+  FantasyPointsTotal: number;
+  FantasyPointsAvgGame: number;
+  FantasyPointsAvgPotentialGame: number;
+  FantasyPointsAvgSnap: number;
+  FantasyPointsAvgAttempt: number;
+  TouchdownsTotal: number;
+  TouchdownsPassing: number;
+  TouchdownsReceiving: number;
+  TouchdownsRushing: number;
+  Ranking: RankingEntry[]
+  PointHistory: PointHistory
 }
 
-export interface Player extends Omit<RawPlayer, 'TeamID'> {
+export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
   TeamNFL: NFLTeam; // angereichertes NFL-Team
   TeamFantasy?: FantasyTeam; // optionales Fantasy-Team (wenn zugeordnet)
   SalaryDollarsDisplay: string;
   SalaryDollarsProjectedDisplay: string;
+  Stats: PlayerStats;
 }
 
 export interface RawNFLTeam {
@@ -163,6 +232,7 @@ export class DataService {
       nflTeamsRaw: this.http.get<RawNFLTeam[]>('data/Teams.json')
     }).pipe(
       map(({ leagueRaw, playersRaw, nflTeamsRaw }) => {
+
         // 1️⃣ FantasyTeams initial aufbauen
         const teams: FantasyTeam[] = leagueRaw.Teams.map(team => ({
           ...team,
@@ -173,8 +243,67 @@ export class DataService {
         }));
 
         // 2️⃣ Spieler aufbauen
+        const seasonYear = Number(leagueRaw.Season); // z. B. "2025" -> 2025
+
         const players: Player[] = playersRaw.map(raw => {
           const nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
+
+          // PlayerStats korrekt aus Raw-Daten zusammensetzen
+          const stats: PlayerStats = 
+          {
+            GamesPlayed: raw.GamesPlayed,
+            GamesPotential: raw.GamesPotential,
+            SnapsTotal: raw.SnapsTotal,
+            AttemptsTotal: raw.AttemptsTotal,
+            FantasyPointsTotal: raw.FantasyPointsTotal,
+            FantasyPointsAvgGame: raw.FantasyPointsAvgGame,
+            FantasyPointsAvgPotentialGame: raw.FantasyPointsAvgPotentialGame,
+            FantasyPointsAvgSnap: raw.FantasyPointsAvgSnap,
+            FantasyPointsAvgAttempt: raw.FantasyPointsAvgAttempt,
+            TouchdownsTotal: raw.TouchdownsTotal,
+            TouchdownsPassing: raw.TouchdownsPassing,
+            TouchdownsReceiving: raw.TouchdownsReceiving,
+            TouchdownsRushing: raw.TouchdownsRushing,
+            Ranking: raw.Ranking,
+            PointHistory: raw.PointHistory
+          };
+
+          //Injury Dates umwandeln (20251004 zu 2025-10-04)
+          if (raw.InjuryDetails?.Date) {
+            const rd = raw.InjuryDetails.Date;
+            if (/^\d{8}$/.test(rd)) {
+              const year = rd.slice(0, 4);
+              const month = rd.slice(4, 6);
+              const day = rd.slice(6, 8);
+              raw.InjuryDetails.Date = `${year}-${month}-${day}`; // ✅ ISO-kompatibel
+            }
+          }
+          if (raw.InjuryDetails?.ReturnDate) {
+            const rd = raw.InjuryDetails.ReturnDate;
+            if (/^\d{8}$/.test(rd)) {
+              const year = rd.slice(0, 4);
+              const month = rd.slice(4, 6);
+              const day = rd.slice(6, 8);
+              raw.InjuryDetails.ReturnDate = `${year}-${month}-${day}`; // ✅ ISO-kompatibel
+            }
+          }
+
+          // SeasonYears in PointHistory ergänzen
+          if (stats?.PointHistory) {
+            const mapping = {
+              SeasonMinus1: seasonYear - 1,
+              SeasonMinus2: seasonYear - 2,
+              SeasonMinus3: seasonYear - 3
+            } as const;
+
+            (Object.entries(stats.PointHistory) as [keyof typeof stats.PointHistory, PointHistorySeason | undefined][])
+              .forEach(([key, season]) => {
+                if (season) {
+                  season.Season = mapping[key];
+                }
+              });
+          }
+
           return {
             ...raw,
             TeamNFL: nfl,
@@ -183,7 +312,8 @@ export class DataService {
             SalaryDollarsProjected: raw.SalaryDollarsProjectedFantasy,
             SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollarsFantasy),
             SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjectedFantasy),
-            NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`
+            NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
+            Stats: stats
           };
         });
 

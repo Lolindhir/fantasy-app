@@ -958,39 +958,39 @@ foreach ($tankEntry in $tankPlayers) {
     $pointHistory.SeasonMinus1 = [ordered]@{}
         $pointHistory.SeasonMinus1.Total = 0
         $pointHistory.SeasonMinus1.AvgGame = 0
-        $pointHistory.SeasonMinus1.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus1.AvgPotentialGame = 0
         $pointHistory.SeasonMinus1.GamesPlayed = 0
         $pointHistory.SeasonMinus1.PotentialGames = 0
     $pointHistory.SeasonMinus2 = [ordered]@{}
         $pointHistory.SeasonMinus2.Total = 0
         $pointHistory.SeasonMinus2.AvgGame = 0
-        $pointHistory.SeasonMinus2.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus2.AvgPotentialGame = 0
         $pointHistory.SeasonMinus2.GamesPlayed = 0
         $pointHistory.SeasonMinus2.PotentialGames = 0
     $pointHistory.SeasonMinus3 = [ordered]@{}
         $pointHistory.SeasonMinus3.Total = 0
         $pointHistory.SeasonMinus3.AvgGame = 0
-        $pointHistory.SeasonMinus3.AgvPotentialGame = 0
+        $pointHistory.SeasonMinus3.AvgPotentialGame = 0
         $pointHistory.SeasonMinus3.GamesPlayed = 0
         $pointHistory.SeasonMinus3.PotentialGames = 0
     if($playerLastSeason){
         $pointHistory.SeasonMinus1.Total = $playerLastSeason.TotalFantasyPoints
         $pointHistory.SeasonMinus1.AvgGame = $playerLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus1.AgvPotentialGame = $playerLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus1.AvgPotentialGame = $playerLastSeason.FantasyPointsAvgPotential
         $pointHistory.SeasonMinus1.GamesPlayed = $playerLastSeason.TotalGames
         $pointHistory.SeasonMinus1.PotentialGames = $playerLastSeason.PotentialGames
     }
     if($playerBeforeLastSeason){
         $pointHistory.SeasonMinus2.Total = $playerBeforeLastSeason.TotalFantasyPoints
         $pointHistory.SeasonMinus2.AvgGame = $playerBeforeLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus2.AgvPotentialGame = $playerBeforeLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus2.AvgPotentialGame = $playerBeforeLastSeason.FantasyPointsAvgPotential
         $pointHistory.SeasonMinus2.GamesPlayed = $playerBeforeLastSeason.TotalGames
         $pointHistory.SeasonMinus2.PotentialGames = $playerBeforeLastSeason.PotentialGames
     }
     if($playerBeforeBeforeLastSeason){
         $pointHistory.SeasonMinus3.Total = $playerBeforeBeforeLastSeason.TotalFantasyPoints
         $pointHistory.SeasonMinus3.AvgGame = $playerBeforeBeforeLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus3.AgvPotentialGame = $playerBeforeBeforeLastSeason.FantasyPointsAvgPotential
+        $pointHistory.SeasonMinus3.AvgPotentialGame = $playerBeforeBeforeLastSeason.FantasyPointsAvgPotential
         $pointHistory.SeasonMinus3.GamesPlayed = $playerBeforeBeforeLastSeason.TotalGames
         $pointHistory.SeasonMinus3.PotentialGames = $playerBeforeBeforeLastSeason.PotentialGames
     }
@@ -1000,9 +1000,9 @@ foreach ($tankEntry in $tankPlayers) {
     # --------------------------------------
     # Jahrespunkte berechnen
     $ptsCurrent = $fantasyPointsAvgPotentialPPR * $weightTotal + $fantasyPointsAvgPPR * $weightGame
-    $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
-    $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
-    $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AgvPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
+    $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
+    $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
+    $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
     # Vergangenheitswerte
     $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 -weight1 0.5 -weight2 0.35 -weight3 0.25
     # Projektionswerte

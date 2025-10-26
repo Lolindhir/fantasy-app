@@ -1,0 +1,113 @@
+<h2 mat-dialog-title>
+  <div class="header">
+    <img class="team-logo" [src]="player.Picture" alt="{{ player.TeamNFL.Name }}" />
+    <span>{{ player.Name }}</span>
+    <button mat-icon-button (click)="close()"><mat-icon>close</mat-icon></button>
+  </div>
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <mat-tab-group>
+    <!-- 🏈 Übersicht -->
+    <mat-tab label="Übersicht">
+      <div class="overview">
+        <img [src]="player.Picture" alt="{{ player.Name }}" class="player-image" />
+        <div class="info">
+          <!-- <h3>{{ player.Name }}</h3> -->
+            <div><span><strong>#{{ rankingCombined }}</strong> (Overall)</span><span style="margin-left: 10px;"><strong>#{{ rankingCombinedPosition }}</strong> (Position)</span></div>
+            <div fxLayout="row" fxLayoutAlign="start center">
+
+                <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="30"/>
+
+                <div style="margin-left: 5px;">
+                    <span>
+                        {{ player.TeamNFL.Name }} ({{ player.Position }} #{{ player.Number }})
+                    </span>
+                </div>
+            </div>
+            <p *ngIf="player.TeamFantasy">Fantasy Team: <strong>{{ player.TeamFantasy.Team }}</strong></p>
+            <p>Alter: {{ player.Age }} | Jahr: {{ player.Year }}</p>
+            <p>College: {{ player.College }}</p>
+            <p>Gehalt: <strong>{{ player.SalaryDollarsDisplay }}</strong></p>
+            <p>Projiziert: {{ player.SalaryDollarsProjectedDisplay }}</p>
+
+          <mat-chip-listbox aria-label="Status">
+            <mat-chip [color]="player.Injured ? 'warn' : 'primary'" selected>
+              {{ player.Injured ? player.InjuryDetails.Designation : 'Active' }}
+            </mat-chip>
+          </mat-chip-listbox>
+        </div>
+        
+      </div>
+    </mat-tab>
+
+    <!-- 📊 Stats -->
+    <mat-tab label="Stats">
+        <div class="stats-grid">
+            <div><strong>Games Played:</strong> {{ player.Stats.GamesPlayed }}</div>
+            <div><strong>Snaps Played:</strong> {{ player.Stats.SnapsTotal }}</div>
+            <div><strong>Attempts:</strong> {{ player.Stats.AttemptsTotal }}</div>
+            <div><strong>Fantasy Pts:</strong> {{ player.Stats.FantasyPointsTotal | number:'1.0-2' }}</div>
+            <div><strong>Avg/Game:</strong> {{ player.Stats.FantasyPointsAvgGame | number:'1.1-2' }}</div>
+            <div><strong>Total Touchdowns:</strong> {{ player.Stats.TouchdownsTotal | number }}</div>
+            <div><strong>Receiving Touchdowns:</strong> {{ player.Stats.TouchdownsReceiving | number }}</div>
+            <div><strong>Rushing Touchdowns:</strong> {{ player.Stats.TouchdownsRushing | number }}</div>
+            <div><strong>Passing Touchdowns:</strong> {{ player.Stats.TouchdownsPassing | number }}</div>
+        </div>
+        <div style="margin-top: 10px;">
+            <a mat-stroked-button color="primary" [href]="player.FantasyPros" target="_blank">FantasyPros</a>
+            <a mat-stroked-button color="accent" [href]="player.ESPN" target="_blank">ESPN</a>
+        </div>
+
+        <div class="links">
+            <div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <!-- <div class="chart-container" *ngIf="chartData">
+            <canvas baseChart
+                [data]="chartData"
+                [options]="chartOptions"
+                chartType="line">
+            </canvas>
+        </div> -->
+    </mat-tab>
+
+    <!-- 📈 Historie -->
+    <mat-tab label="History">
+        <table mat-table [dataSource]="getDefinedSeasons(player.Stats.PointHistory)">
+            <ng-container matColumnDef="season">
+            <th mat-header-cell *matHeaderCellDef> Season </th>
+            <td mat-cell *matCellDef="let row"> {{ row.Season }} </td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef> Total </th>
+            <td mat-cell *matCellDef="let row"> {{ row.Total }} </td>
+            </ng-container>
+            <ng-container matColumnDef="avgGame">
+            <th mat-header-cell *matHeaderCellDef> Avg/Game </th>
+            <td mat-cell *matCellDef="let row"> {{ row.AvgGame }} </td>
+            </ng-container>
+            <ng-container matColumnDef="games">
+            <th mat-header-cell *matHeaderCellDef> Games </th>
+            <td mat-cell *matCellDef="let row"> {{ row.GamesPlayed }}/{{ row.PotentialGames }} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="['season','total','avgGame','games']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['season','total','avgGame','games']"></tr>
+        </table>
+    </mat-tab>
+
+    <!-- 🩹 Verletzung / Details -->
+    <mat-tab *ngIf="player.Injured && player.InjuryDetails" label="Injury">
+      <div class="injury">
+        <p><strong>{{ player.InjuryDetails.Description }}</strong></p>
+        <p *ngIf="player.InjuryDetails.Designation"><strong>Designation:</strong> {{ player.InjuryDetails.Designation }}</p>
+        <!-- <p *ngIf="player.InjuryDetails.Date"><strong>Injury Date:</strong> {{ player.InjuryDetails.Date | date }}</p> -->
+        <p *ngIf="player.InjuryDetails.ReturnDate"><strong>Expected Return Date:</strong> {{ player.InjuryDetails.ReturnDate | date }}</p>
+      </div>
+      
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
