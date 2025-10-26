@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>
   <div class="header">
-    <img class="team-logo" [src]="player.Picture" alt="{{ player.TeamNFL.Name }}" />
+    <img class="player-logo" [src]="player.Picture" alt="{{ player.TeamNFL.Name }}" />
     <span>{{ player.Name }}</span>
     <button mat-icon-button (click)="close()"><mat-icon>close</mat-icon></button>
   </div>
@@ -9,35 +9,49 @@
 <mat-dialog-content class="dialog-content">
   <mat-tab-group>
     <!-- 🏈 Übersicht -->
-    <mat-tab label="Übersicht">
+    <mat-tab label="Overview">
       <div class="overview">
-        <img [src]="player.Picture" alt="{{ player.Name }}" class="player-image" />
+        <!-- <img [src]="player.Picture" alt="{{ player.Name }}" class="player-image" /> -->
+
         <div class="info">
-          <!-- <h3>{{ player.Name }}</h3> -->
-            <div><span><strong>#{{ rankingCombined }}</strong> (Overall)</span><span style="margin-left: 10px;"><strong>#{{ rankingCombinedPosition }}</strong> (Position)</span></div>
-            <div fxLayout="row" fxLayoutAlign="start center">
+          <div class="rankings">
+            <span><strong>#{{ rankingCombined }}</strong> (Overall)</span>
+            <span><strong>#{{ rankingCombinedPosition }}</strong> (Position)</span>
+          </div>
 
-                <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="30"/>
+          <div class="team">
+            <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" class="team-logo" />
+            <span>{{ player.TeamNFL.Name }} ({{ player.Position }} #{{ player.Number }})</span>
+          </div>
 
-                <div style="margin-left: 5px;">
-                    <span>
-                        {{ player.TeamNFL.Name }} ({{ player.Position }} #{{ player.Number }})
-                    </span>
-                </div>
+          <div class="player-details">
+            <div *ngIf="player.TeamFantasy">
+              <span class="label">Fantasy Team:</span>
+              <strong>{{ player.TeamFantasy.Team }}</strong>
             </div>
-            <p *ngIf="player.TeamFantasy">Fantasy Team: <strong>{{ player.TeamFantasy.Team }}</strong></p>
-            <p>Alter: {{ player.Age }} | Jahr: {{ player.Year }}</p>
-            <p>College: {{ player.College }}</p>
-            <p>Gehalt: <strong>{{ player.SalaryDollarsDisplay }}</strong></p>
-            <p>Projiziert: {{ player.SalaryDollarsProjectedDisplay }}</p>
+            <div>
+              <span class="label">Alter:</span> {{ player.Age }}
+              <span class="label"> | Jahr:</span> {{ player.Year }}
+            </div>
+            <div>
+              <span class="label">College:</span> {{ player.College }}
+            </div>
+            <div>
+              <span class="label">Gehalt:</span> <strong>{{ player.SalaryDollarsDisplay }}</strong>
+            </div>
+            <div>
+              <span class="label">Projiziert:</span> {{ player.SalaryDollarsProjectedDisplay }}
+            </div>
+          </div>
 
-          <mat-chip-listbox aria-label="Status">
-            <mat-chip [color]="player.Injured ? 'warn' : 'primary'" selected>
-              {{ player.Injured ? player.InjuryDetails.Designation : 'Active' }}
-            </mat-chip>
-          </mat-chip-listbox>
+          <div class="status-chip">
+            <mat-chip-listbox aria-label="Status">
+              <mat-chip [color]="player.Injured ? 'warn' : 'primary'" selected>
+                {{ player.Injured ? player.InjuryDetails.Designation : 'Active' }}
+              </mat-chip>
+            </mat-chip-listbox>
+          </div>
         </div>
-        
       </div>
     </mat-tab>
 

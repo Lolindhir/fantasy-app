@@ -1,6 +1,7 @@
 import { Component, Inject, OnInit, ViewEncapsulation, importProvidersFrom } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Player, PointHistory, PointHistorySeason } from '../services/data-service'; // Pfad ggf. anpassen
+import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
@@ -26,7 +27,8 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatTableModule,
     MatButtonModule,
     MatChipsModule,
-    MatIconModule
+    MatIconModule,
+    SharedMaterialImports
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
