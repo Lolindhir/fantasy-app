@@ -72,9 +72,9 @@ export interface PointHistorySeason {
 }
 
 export interface PointHistory {
-  SeasonMinus1?: PointHistorySeason;
-  SeasonMinus2?: PointHistorySeason;
-  SeasonMinus3?: PointHistorySeason;
+  SeasonMinus1: PointHistorySeason;
+  SeasonMinus2: PointHistorySeason;
+  SeasonMinus3: PointHistorySeason;
 }
 
 export interface PlayerStats {

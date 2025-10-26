@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, ViewEncapsulation, importProvidersFrom } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { Player, PointHistory, PointHistorySeason } from '../services/data-service'; // Pfad ggf. anpassen
+import { Player, PointHistory, PointHistorySeason, PlayerStats } from '../services/data-service'; // Pfad ggf. anpassen
 import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
@@ -108,11 +108,33 @@ export class PlayerDetailDialogComponent implements OnInit {
     return this.player.TeamNFL?.Logo || 'assets/nfl-logo.svg';
   }
 
-  getDefinedSeasons(hist: PointHistory | undefined): PointHistorySeason[] {
-    if (!hist) return [];
-    return [hist.SeasonMinus1, hist.SeasonMinus2, hist.SeasonMinus3].filter(
-      (s): s is PointHistorySeason => !!s
-    );
+  getDefinedSeasons(stats: PlayerStats | undefined): PointHistorySeason[] {
+    if (!stats) return [];
+
+    const seasons: (PointHistorySeason | undefined)[] = [
+      {
+        Season: stats.PointHistory.SeasonMinus1.Season + 1,
+        GamesPlayed: stats.GamesPlayed,
+        PotentialGames: stats.GamesPotential,
+        Total: stats.FantasyPointsTotal,
+        AvgGame: stats.FantasyPointsAvgGame,
+        AvgPotentialGame: stats.FantasyPointsAvgPotentialGame
+        // ggf. weitere Werte übernehmen
+      },
+      stats.PointHistory.SeasonMinus1,
+      stats.PointHistory.SeasonMinus2,
+      stats.PointHistory.SeasonMinus3,
+    ];
+
+    // Filtert undefined raus
+    return seasons.filter((s): s is PointHistorySeason => !!s);
   }
+
+  // getDefinedSeasons(hist: PointHistory | undefined): PointHistorySeason[] {
+  //   if (!hist) return [];
+  //   return [hist.SeasonMinus1, hist.SeasonMinus2, hist.SeasonMinus3].filter(
+  //     (s): s is PointHistorySeason => !!s
+  //   );
+  // }
 
 }
