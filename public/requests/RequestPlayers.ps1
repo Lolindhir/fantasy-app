@@ -685,10 +685,14 @@ if (Test-Path $gamesFile) {
                 $gameStats.GameDetails.WeekFinal = $game.weekFinal
                 $gameStats.GameDetails.Date = $game.gameDate
                 $gameStats.GameDetails.Home = $game.home
+                $gameStats.GameDetails.HomeID = $game.teamIDHome
                 $gameStats.GameDetails.Away = $game.away
-                $gameStats.GameDetails.HomePoints = $game.homePts
-                $gameStats.GameDetails.AwayPoints = $game.awayPts
+                $gameStats.GameDetails.AwayID = $game.teamIDAway
+                $gameStats.GameDetails.HomePoints = [int]$game.homePts
+                $gameStats.GameDetails.AwayPoints = [int]$game.awayPts
 
+                $gameStats.TeamID = $p.teamID
+                $gameStats.TeamAbv = $p.teamAbv
                 $gameStats.FantasyPoints = [double]$p.fantasyPointsDefault.PPR
 
                 if($p.snapCounts) {
@@ -712,10 +716,55 @@ if (Test-Path $gamesFile) {
                 if($p.Kicking.fgAttempts) { $gameStats.Attempts += [int]$p.Kicking.fgAttempts }
                 if($p.Kicking.xpAttempts) { $gameStats.Attempts += [int]$p.Kicking.xpAttempts }
 
-                if($p.Passing) {$gameStats.Passing = $p.Passing}
-                if($p.Receiving) {$gameStats.Receiving = $p.Receiving}
-                if($p.Rushing) {$gameStats.Rushing = $p.Rushing}
-                if($p.Kicking) {$gameStats.Kicking = $p.Kicking}
+                if ($p.Passing) {
+                    $pass = $p.Passing
+                    $gameStats.Passing = [PSCustomObject]@{
+                        QBRating        = [double]$pass.qbr
+                        Rating          = [double]$pass.rtg
+                        PassAttempts    = [int]$pass.passAttempts
+                        PassAvg         = [double]$pass.passAvg
+                        PassTDs         = [int]$pass.passTD
+                        PassYards       = [int]$pass.passYds
+                        Interceptions   = [int]$pass.int
+                        PassCompletions = [int]$pass.passCompletions
+                    }
+                }
+                if ($p.Receiving) {
+                    $rec = $p.Receiving
+                    $gameStats.Receiving = [PSCustomObject]@{
+                        Receptions       = [int]$rec.receptions
+                        ReceptionTDs     = [int]$rec.recTD
+                        LongReceptions   = [int]$rec.longRec
+                        Targets          = [int]$rec.targets
+                        ReceptionYards   = [int]$rec.recYds
+                        ReceptionAvg     = [double]$rec.recAvg
+                    }
+                }
+
+                if ($p.Rushing) {
+                    $rush = $p.Rushing
+                    $gameStats.Rushing = [PSCustomObject]@{
+                        RushAvg     = [double]$rush.rushAvg
+                        RushYards   = [int]$rush.rushYds
+                        Carries     = [int]$rush.carries
+                        LongRush    = [int]$rush.longRush
+                        RushTDs     = [int]$rush.rushTD
+                    }
+                }
+                if ($p.Kicking) {
+                    $kick = $p.Kicking
+                    $gameStats.Kicking = [PSCustomObject]@{
+                        KickingPts  = [double]$kick.kickingPts
+                        FgLong      = [int]$kick.fgLong
+                        FgMade      = [int]$kick.fgMade
+                        FgAttempts  = [int]$kick.fgAttempts
+                        FgMissed    = [int]$kick.fgMissed
+                        FgPct       = [double]$kick.fgPct
+                        XpMade      = [int]$kick.xpMade
+                        XpAttempts  = [int]$kick.xpAttempts
+                        XpMissed    = [int]$kick.xpMissed
+                    }
+                }
 
                 # Game zur Historie hinzufügen (vorne)
                 $playerHistory[$playerID].GameHistory += @($gameStats)

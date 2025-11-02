@@ -21,7 +21,7 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
   encapsulation: ViewEncapsulation.None,
   imports: [
     CommonModule,
-    BaseChartDirective,
+    //BaseChartDirective,
     MatDialogModule,
     MatTabsModule,
     MatTableModule,

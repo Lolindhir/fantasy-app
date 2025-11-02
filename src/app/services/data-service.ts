@@ -14,6 +14,7 @@ export interface RawLeague {
   LeagueID: string;
   Name: string;
   Season: string;
+  FinalWeek: number;
   SalaryCap: number;
   SalaryCapFantasy: number;
   SalaryCapProjected: number;
@@ -95,6 +96,73 @@ export interface PlayerStats {
   PointHistory: PointHistory;
 }
 
+export interface GameHistory {
+  GameID: string;
+  TeamID: string;
+  TeamAbv: string;
+  GameDetails: GameDetails;
+  FantasyPoints: number;
+  SnapCount: number;
+  SnapPercentage: number;
+  Attempts: number;
+  Passing?: PassingStats;
+  Rushing?: RushingStats;
+  Receiving?: ReceivingStats;
+  Kicking?: KickingStats;
+}
+
+export interface GameDetails {
+  Week: number;
+  WeekFinal: boolean;
+  Date: string; // "YYYYMMDD"
+  Home: string;
+  HomeID: string;
+  Away: string;
+  AwayID: string;
+  HomePoints: number;
+  AwayPoints: number;
+}
+
+export interface PassingStats {
+  QBRating: number;
+  Rating: number;
+  PassAttempts: number;
+  PassAvg: number;
+  PassTDs: number;
+  PassYards: number;
+  Interceptions: number;
+  PassCompletions: number;
+}
+
+export interface RushingStats {
+  RushAvg: number;
+  RushYards: number;
+  Carries: number;
+  LongRush: number;
+  RushTDs: number;
+}
+
+export interface ReceivingStats {
+  Receptions: number;
+  ReceptionTDs: number;
+  LongReceptions: number;
+  Targets: number;
+  ReceptionYards: number;
+  ReceptionAvg: number;
+}
+
+export interface KickingStats {
+  KickingPts: number;
+  FgLong: number;
+  FgMade: number;
+  FgAttempts: number;
+  FgMissed: number;
+  FgPct: number;
+  XpMade: number;
+  XpAttempts: number;
+  XpMissed: number;
+}
+
 export interface RawPlayer {
   ID: string;
   Name: string;
@@ -131,8 +199,9 @@ export interface RawPlayer {
   TouchdownsPassing: number;
   TouchdownsReceiving: number;
   TouchdownsRushing: number;
-  Ranking: RankingEntry[]
-  PointHistory: PointHistory
+  Ranking: RankingEntry[];
+  PointHistory: PointHistory;
+  GameHistory?: GameHistory[]; 
 }
 
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
@@ -141,6 +210,7 @@ export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'Game
   SalaryDollarsDisplay: string;
   SalaryDollarsProjectedDisplay: string;
   Stats: PlayerStats;
+  GameHistoryFull?: GameHistory[]; // vollständige Spielhistorie bis zur aktuellen Woche
 }
 
 export interface RawNFLTeam {
@@ -304,6 +374,10 @@ export class DataService {
               });
           }
 
+          // GameHistory für laufende Saison vorbereiten
+          var currentWeek = 0;
+          currentWeek = leagueRaw.FinalWeek;
+
           return {
             ...raw,
             TeamNFL: nfl,
@@ -313,7 +387,8 @@ export class DataService {
             SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollarsFantasy),
             SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjectedFantasy),
             NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
-            Stats: stats
+            Stats: stats,
+            GameHistoryFull: this.prepareGameHistory(raw, currentWeek) // nur für laufende Saison vorbereiten
           };
         });
 
@@ -433,6 +508,43 @@ export class DataService {
       }
       // Fallback: eindeutige ID zum stabilisieren, falls alles andere gleich
       return a.ID.localeCompare(b.ID);
+    });
+  }
+
+  private prepareGameHistory(player: RawPlayer, currentWeek: number): GameHistory[] {
+    const existingGames = player.GameHistory ?? [];
+
+    const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
+
+    return weeks.map(week => {
+      const existing = existingGames.find(g => g.GameDetails.Week === week);
+      if (existing) return existing;
+
+      // Leerer Platzhalter, falls keine Daten vorhanden — alle erforderlichen Felder belegen
+      return {
+        GameID: '',
+        TeamID: '',
+        TeamAbv: '',
+        GameDetails: {
+          Week: week,
+          WeekFinal: false,
+          Date: '',
+          Home: '-',
+          HomeID: '',
+          Away: '-',
+          AwayID: '',
+          HomePoints: 0,
+          AwayPoints: 0
+        },
+        FantasyPoints: 0,
+        SnapCount: 0,
+        SnapPercentage: 0,
+        Attempts: 0,
+        Passing: undefined,
+        Rushing: undefined,
+        Receiving: undefined,
+        Kicking: undefined
+      } as GameHistory;
     });
   }
 
