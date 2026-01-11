@@ -441,6 +441,57 @@ function AdjustSalaryWithMeta {
     )
 }
 
+function Get-SeasonPointStats {
+
+    param (
+        $playerSeason,
+        [int]$lastScoredWeek
+    )
+
+    $result = [ordered]@{
+        Total               = 0.0
+        AvgGame             = 0.0
+        AvgPotentialGame    = 0.0
+        GamesPlayed         = 0
+        PotentialGames      = 0
+    }
+
+    if (-not $playerSeason -or -not $playerSeason.Games) {
+        return $result
+    }
+
+    # --- alle Spiele der Saison, die gescored werden (dafür die lastScoredWeek nutzen)
+    # --- und nur Spiele mit SnapCount > 0
+    $games = $playerSeason.Games | Where-Object { $_.SnapCount -gt 0 -and $_.GameDetails.Week -le $lastScoredWeek }
+
+    # --- PotentialGames: alle Spiele der Season
+    $result.PotentialGames = $lastScoredWeek - 1
+
+    $result.GamesPlayed = $games.Count
+
+    if ($games.Count -gt 0) {
+
+        $result.Total = [math]::Round(
+            ($games | Measure-Object FantasyPoints -Sum).Sum,
+            2
+        )
+
+        $result.AvgGame = [math]::Round(
+            $result.Total / $result.GamesPlayed,
+            2
+        )
+    }
+
+    if ($result.PotentialGames -gt 0) {
+        $result.AvgPotentialGame = [math]::Round(
+            $result.Total / $result.PotentialGames,
+            2
+        )
+    }
+
+    return $result
+}
+
 
 function Get-LetterGrade {
     param([double]$value)
@@ -725,7 +776,7 @@ if (Test-Path $gamesFile) {
         $games = $games | Sort-Object -Property gameID -Descending
 
         # Alle Weeks der Saison durchgehen
-        for ($week = 1; $week -le $lastWeek; $week++) {
+        for ($week = 1; $week -le 18; $week++) {
             # Alle Teams in dieser Woche
             $teamsPlaying = @()
             foreach ($game in $games | Where-Object { $_.gameWeek -match "Week $week" }) {
@@ -749,14 +800,6 @@ if (Test-Path $gamesFile) {
 
         foreach ($game in $games) {
             if (-not $game.playerStats) { continue }
-
-            # Game Week ermitteln und falls größer als Last Week dann nicht hinzufügen
-            if ($game.gameWeek -match 'Week (\d+)') {
-                $gameWeek = [int]$matches[1]
-            } else {
-                Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
-            }
-            if ($gameWeek -gt $lastWeek) { continue }
 
             foreach ($playerKey in $game.playerStats.PSObject.Properties.Name) {
                 $p = $game.playerStats.$playerKey
@@ -785,11 +828,19 @@ if (Test-Path $gamesFile) {
                 # }
                 $gameStats.GameID = $p.gameID
 
+                # Game Week ermitteln
+                if ($game.gameWeek -match 'Week (\d+)') {
+                    $gameWeek = [int]$matches[1]
+                } else {
+                    Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
+                }
+
                 # --- Details bauen
                 $gameStats.GameDetails = [ordered]@{}
                 $gameStats.GameDetails.Week = $gameWeek
                 $gameStats.GameDetails.WeekFinal = $game.weekFinal
                 $gameStats.GameDetails.WeekPlayoff = $gameStats.GameDetails.Week -ge $playoffStartWeek -and $playoffStartWeek -gt 0
+                $gameStats.GameDetails.WeekScored = $gameStats.GameDetails.Week -le $lastWeek
                 $gameStats.GameDetails.Date = $game.gameDate
                 $gameStats.GameDetails.Home = $game.home
                 $gameStats.GameDetails.HomeID = $game.teamIDHome
@@ -884,8 +935,8 @@ if (Test-Path $gamesFile) {
                 # Game zur Historie hinzufügen (vorne)
                 $playerHistory[$playerID].GameHistory += @($gameStats)
 
-                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein) und die Woche final ist
-                if($gameStats.SnapCount -gt 0 -and $gameStats.GameDetails.WeekFinal) { 
+                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein) und die Woche final ist und die Woche gescored wird
+                if($gameStats.SnapCount -gt 0 -and $gameStats.GameDetails.WeekFinal -and $gameStats.GameDetails.WeekScored) { 
 
                     $playerHistory[$playerID].GamesPlayed++ 
                 
@@ -1118,46 +1169,11 @@ foreach ($tankEntry in $tankPlayers) {
     $playerLastSeason = $playersLookupLastSeason[$tankEntry.playerID]
     $playerBeforeLastSeason = $playersLookupBeforeLastSeason[$tankEntry.playerID]
     $playerBeforeBeforeLastSeason = $playersLookupBeforeBeforeLastSeason[$tankEntry.playerID]
-    $pointHistory = [ordered]@{}
-    $pointHistory.SeasonMinus1 = [ordered]@{}
-        $pointHistory.SeasonMinus1.Total = 0
-        $pointHistory.SeasonMinus1.AvgGame = 0
-        $pointHistory.SeasonMinus1.AvgPotentialGame = 0
-        $pointHistory.SeasonMinus1.GamesPlayed = 0
-        $pointHistory.SeasonMinus1.PotentialGames = 0
-    $pointHistory.SeasonMinus2 = [ordered]@{}
-        $pointHistory.SeasonMinus2.Total = 0
-        $pointHistory.SeasonMinus2.AvgGame = 0
-        $pointHistory.SeasonMinus2.AvgPotentialGame = 0
-        $pointHistory.SeasonMinus2.GamesPlayed = 0
-        $pointHistory.SeasonMinus2.PotentialGames = 0
-    $pointHistory.SeasonMinus3 = [ordered]@{}
-        $pointHistory.SeasonMinus3.Total = 0
-        $pointHistory.SeasonMinus3.AvgGame = 0
-        $pointHistory.SeasonMinus3.AvgPotentialGame = 0
-        $pointHistory.SeasonMinus3.GamesPlayed = 0
-        $pointHistory.SeasonMinus3.PotentialGames = 0
-    if($playerLastSeason){
-        $pointHistory.SeasonMinus1.Total = $playerLastSeason.TotalFantasyPoints
-        $pointHistory.SeasonMinus1.AvgGame = $playerLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus1.AvgPotentialGame = $playerLastSeason.FantasyPointsAvgPotential
-        $pointHistory.SeasonMinus1.GamesPlayed = $playerLastSeason.TotalGames
-        $pointHistory.SeasonMinus1.PotentialGames = $playerLastSeason.PotentialGames
-    }
-    if($playerBeforeLastSeason){
-        $pointHistory.SeasonMinus2.Total = $playerBeforeLastSeason.TotalFantasyPoints
-        $pointHistory.SeasonMinus2.AvgGame = $playerBeforeLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus2.AvgPotentialGame = $playerBeforeLastSeason.FantasyPointsAvgPotential
-        $pointHistory.SeasonMinus2.GamesPlayed = $playerBeforeLastSeason.TotalGames
-        $pointHistory.SeasonMinus2.PotentialGames = $playerBeforeLastSeason.PotentialGames
-    }
-    if($playerBeforeBeforeLastSeason){
-        $pointHistory.SeasonMinus3.Total = $playerBeforeBeforeLastSeason.TotalFantasyPoints
-        $pointHistory.SeasonMinus3.AvgGame = $playerBeforeBeforeLastSeason.FantasyPointsAvg
-        $pointHistory.SeasonMinus3.AvgPotentialGame = $playerBeforeBeforeLastSeason.FantasyPointsAvgPotential
-        $pointHistory.SeasonMinus3.GamesPlayed = $playerBeforeBeforeLastSeason.TotalGames
-        $pointHistory.SeasonMinus3.PotentialGames = $playerBeforeBeforeLastSeason.PotentialGames
-    }
+    $pointHistory = [ordered]@{
+    SeasonMinus1 = Get-SeasonPointStats $playerLastSeason $lastWeek
+    SeasonMinus2 = Get-SeasonPointStats $playerBeforeLastSeason $lastWeek
+    SeasonMinus3 = Get-SeasonPointStats $playerBeforeBeforeLastSeason $lastWeek
+}
 
     # --------------------------------------
     # --- Salaries aus Fantasy berechnen ---

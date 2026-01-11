@@ -114,6 +114,8 @@ export interface GameHistory {
 export interface GameDetails {
   Week: number;
   WeekFinal: boolean;
+  WeekPlayoff: boolean;
+  WeekScored: boolean;
   Date: string; // "YYYYMMDD"
   Home: string;
   HomeID: string;

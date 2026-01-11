@@ -3,6 +3,17 @@ param (
     [string]$year
 )
 
+function To-IntOrNull($value) {
+    if ($null -eq $value) { return $null }
+    if ($value -is [string] -and $value -match '^\d+$') {
+        return [int]$value
+    }
+    if ($value -is [int]) {
+        return $value
+    }
+    return $null
+}
+
 # --- Validierung des Jahres ---
 if ($year -notmatch '^\d{4}$') {
     Write-Error "Please enter a valid year (e.g. 2024)."
@@ -35,15 +46,15 @@ Write-Host "   Output file: $OutputFile"
 $games = Get-Content $InputFile -Raw | ConvertFrom-Json
 
 # --- Determine total weeks in dataset ---
-$weeks = @()
-foreach ($g in $games) {
-    if ($g.gameWeek -match '\d+') {
-        $weeks += [int]($matches[0])
-    }
-}
-$weeks = $weeks | Sort-Object -Unique
-$potentialGames = ($weeks | Measure-Object).Count - 1
-Write-Host "Found $($weeks.Count) weeks -> PotentialGames = $potentialGames" -ForegroundColor Cyan
+# $weeks = @()
+# foreach ($g in $games) {
+#     if ($g.gameWeek -match '\d+') {
+#         $weeks += [int]($matches[0])
+#     }
+# }
+# $weeks = $weeks | Sort-Object -Unique
+# $potentialGames = ($weeks | Measure-Object).Count - 1
+# Write-Host "Found $($weeks.Count) weeks -> PotentialGames = $potentialGames" -ForegroundColor Cyan
 
 # --- Dictionary for player aggregation ---
 $playersDict = @{}
@@ -76,68 +87,60 @@ foreach ($game in $games) {
         # --- Initialize player ---
         if (-not $playersDict.ContainsKey($playerID)) {
             $playersDict[$playerID] = [PSCustomObject]@{
-                playerID             = $p.playerID
-                longName             = $p.longName
-                teamAbv              = $p.teamAbv
-                teamIDs              = @($p.teamID)
-                totalFantasyPoints   = 0.0
-                totalGames           = 0
-                totalSnaps           = 0
-                totalSnapPct         = 0.0
+                TankID = $p.playerID
+                Name     = $p.longName
+                TeamIDs  = @($p.teamID)
+                Games    = @()
             }
         }
-
         $player = $playersDict[$playerID]
 
-        # --- Accumulate values ---
-        $player.totalFantasyPoints        += $fp
-        $player.totalGames                += 1
-        $player.totalSnaps                += $snapCount
-        $player.totalSnapPct              += $snapPct
+        # --- GameDetails ---
+        $week = $null
+        if ($game.gameWeek -match '\d+') {
+            $week = [int]$matches[0]
+        }
+
+        $gameDetails = [PSCustomObject]@{
+            Week        = $week
+            Date        = $game.gameDate
+            Home        = $game.home
+            HomeID      = $game.teamIDHome
+            Away        = $game.away
+            AwayID      = $game.teamIDAway
+            HomePoints = To-IntOrNull $game.homePts
+            AwayPoints = To-IntOrNull $game.awayPts
+        }
+
+        $gameEntry = [PSCustomObject]@{
+            GameID          = $p.gameID
+            Week            = $week
+            GameDetails     = $gameDetails
+            TeamID          = $p.teamID
+            TeamAbv         = $p.teamAbv
+            FantasyPoints   = $fp
+            SnapCount       = $snapCount
+            SnapPercentage  = $snapPct
+        }
+
+        if (-not $player.Games) {
+            $player.Games = @()
+        }
+        $player.Games += @($gameEntry)
 
         # --- Track team switches ---
         if (-not ($player.teamIDs -contains $p.teamID)) {
             $player.teamIDs += $p.teamID
         }
 
-        $player.teamAbv = $p.teamAbv
+        # $player.teamAbv = $p.teamAbv
     }
 }
 
 # --- Build final player list ---
-$players = @()
-foreach ($p in $playersDict.Values) {
-    $avgSnapPct = 0
-    if ($p.totalGames -gt 0) {
-        $avgSnapPct = [math]::Round($p.totalSnapPct / $p.totalGames, 3)
-    }
-
-    $totalGames = $p.totalGames
-    $avgPoints = 0
-    if ($totalGames -gt 0) {
-        $avgPoints = [math]::Round($p.totalFantasyPoints / $totalGames, 2)
-    }
-
-    $avgPotentialPoints = 0
-    if ($potentialGames -gt 0) {
-        $avgPotentialPoints        = [math]::Round($p.totalFantasyPoints / $potentialGames, 2)
-    }
-
-    $players += [PSCustomObject]@{
-        TankID          = $p.playerID
-        Name            = $p.longName
-        TeamIDs         = $p.teamIDs
-        TotalGames      = $totalGames
-        PotentialGames  = $potentialGames
-        TotalSnaps      = $p.totalSnaps
-        AvgSnapPct      = $avgSnapPct
-        TotalFantasyPoints              = [math]::Round($p.totalFantasyPoints, 2)
-        FantasyPointsAvg                = $avgPoints
-        FantasyPointsAvgPotential       = $avgPotentialPoints
-    }
-}
+$players = $playersDict.Values | Sort-Object PlayerID
 
 # --- Export to JSON ---
 $players | ConvertTo-Json -Depth 5 | Out-File $OutputFile -Encoding UTF8
 
-Write-Host "Player summary saved to $OutputFile"
+Write-Host "Player summary saved to $OutputFile" -ForegroundColor Green
