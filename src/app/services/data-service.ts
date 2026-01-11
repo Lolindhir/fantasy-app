@@ -530,6 +530,8 @@ export class DataService {
         GameDetails: {
           Week: week,
           WeekFinal: false,
+          WeekPlayoff: false,
+          WeekScored: true,
           Date: '',
           Home: '-',
           HomeID: '',
