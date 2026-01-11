@@ -34,7 +34,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     if (-not $oldLeague) { return $true }  # keine alte Daten -> Änderung
 
     # Prüfe Top-Level Eigenschaften der Liga
-    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected', 'SalaryCapFantasy', 'SalaryCapProjectedFantasy')
+    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','LastWeek','PlayoffStartWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected', 'SalaryCapFantasy', 'SalaryCapProjectedFantasy')
     foreach ($prop in $propsToCheck) {
         if ($oldLeague.$prop -ne $newLeague.$prop) {
             Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
@@ -234,6 +234,10 @@ $salaryCapProjectedFantasy = [math]::Round($avgSalaryProjectedFantasy * $SalaryR
 Write-Host "Fantasy Salary Cap (current): $($salaryCapTotalFantasy.ToString("N0"))" -ForegroundColor Yellow
 Write-Host "Fantasy Salary Cap (projected): $($salaryCapProjectedFantasy.ToString("N0"))" -ForegroundColor Yellow
 
+# --- Letzte Liga-Woche holen ---
+$lastWeek = $league.settings.last_scored_leg
+Write-Host "Last scored week in league: Week $lastWeek" -ForegroundColor Yellow
+
 # --- Aktuelle Woche berechnen ---
 $currentWeek = $null
 $finalWeek = $null
@@ -270,10 +274,16 @@ if ($schedule) {
     if (-not $currentWeek -and $sortedGames.Count -gt 0) {
         if ($sortedGames[-1].gameWeek -match 'Week (\d+)') {
             $finalWeek = [int]$matches[1]
-            Write-Host "All games final. Defaulting to last known week: Week $currentWeek" -ForegroundColor DarkGray
+            Write-Host "All games final. Defaulting to last known week" -ForegroundColor DarkGray
         }
     } else {
         $finalWeek = $currentWeek - 1
+    }
+
+    # Wenn die finale Woche größer als die letzte gewertete Woche ist, setzen wir sie auf diese
+    if ($finalWeek -gt $lastWeek) {
+        $finalWeek = $lastWeek
+        Write-Host "Adjusting final week to last scored week: Week $finalWeek" -ForegroundColor DarkGray
     }
 }
 
@@ -293,6 +303,8 @@ $leagueAsJson += [PSCustomObject]@{
     Season                  = $league.season
     SeasonType              = $league.season_type
     Status                  = $league.status
+    LastWeek                = $lastWeek
+    PlayoffStartWeek        = $league.settings.playoff_week_start
     FinalWeek               = $finalWeek
     TotalTeams              = $league.total_rosters
     SalaryCap               = $salaryCapTotal

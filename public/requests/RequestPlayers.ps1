@@ -464,6 +464,14 @@ function Add-PositionalGradings {
         [double]$weightPotential = 0.2
     )
 
+    # --- Wunsch-Gradings (Werte von 0-5) ---
+    # Ranking (Kombination aus Overall und Positional Rank)
+    # Verlässlichkeit (Vergangenheit, Floor, Effizienz)
+    # Potential (Impact, Ceiling, Draft Position Rookies, Highest Scores in Vergangenheit)
+    # Form (letzte X Spiele inklusive Playoffs, Teamrecord)
+    # Position Individuelles
+
+
     # --- Hilfsfunktion: Schulnote ---
     function Get-Grade([double]$value) {
         switch ($value) {
@@ -624,13 +632,19 @@ $weightTotal = $Global:WeightTotal
 $weightGame = $Global:WeightGame
 
 $finalWeek = 0
+$lastWeek = 0
+$playoffStartWeek = 0
 if (Test-Path $leagueFile) {
     try {
         $leagueRaw = Get-Content $leagueFile -Raw
         $league = $leagueRaw | ConvertFrom-Json
         if($league){
+            $lastWeek = $league.LastWeek
+            $playoffStartWeek = $league.PlayoffStartWeek
             $finalWeek = $league.FinalWeek
         }
+        Write-Host "Loaded last week (Week $($lastWeek)) from League.json..." -ForegroundColor Yellow
+        Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from League.json..." -ForegroundColor Yellow
         Write-Host "Loaded final week (Week $($finalWeek)) from League.json..." -ForegroundColor Yellow
     } catch {
         Write-Error "Error fetching league: $_"
@@ -711,7 +725,7 @@ if (Test-Path $gamesFile) {
         $games = $games | Sort-Object -Property gameID -Descending
 
         # Alle Weeks der Saison durchgehen
-        for ($week = 1; $week -le 18; $week++) {
+        for ($week = 1; $week -le $lastWeek; $week++) {
             # Alle Teams in dieser Woche
             $teamsPlaying = @()
             foreach ($game in $games | Where-Object { $_.gameWeek -match "Week $week" }) {
@@ -735,6 +749,14 @@ if (Test-Path $gamesFile) {
 
         foreach ($game in $games) {
             if (-not $game.playerStats) { continue }
+
+            # Game Week ermitteln und falls größer als Last Week dann nicht hinzufügen
+            if ($game.gameWeek -match 'Week (\d+)') {
+                $gameWeek = [int]$matches[1]
+            } else {
+                Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
+            }
+            if ($gameWeek -gt $lastWeek) { continue }
 
             foreach ($playerKey in $game.playerStats.PSObject.Properties.Name) {
                 $p = $game.playerStats.$playerKey
@@ -765,12 +787,9 @@ if (Test-Path $gamesFile) {
 
                 # --- Details bauen
                 $gameStats.GameDetails = [ordered]@{}
-                if ($game.gameWeek -match 'Week (\d+)') {
-                    $gameStats.GameDetails.Week = [int]$matches[1]
-                } else {
-                    Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
-                }
+                $gameStats.GameDetails.Week = $gameWeek
                 $gameStats.GameDetails.WeekFinal = $game.weekFinal
+                $gameStats.GameDetails.WeekPlayoff = $gameStats.GameDetails.Week -ge $playoffStartWeek -and $playoffStartWeek -gt 0
                 $gameStats.GameDetails.Date = $game.gameDate
                 $gameStats.GameDetails.Home = $game.home
                 $gameStats.GameDetails.HomeID = $game.teamIDHome
