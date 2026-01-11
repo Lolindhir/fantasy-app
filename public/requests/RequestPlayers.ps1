@@ -108,6 +108,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'Injured',
             #'Injury',   #object
             #'Ranking',   #object
+            #'Grading',   #object
             #'PointHistory',   #object
             #'GameHistory'   #object
             'GamesPlayed',
@@ -439,6 +440,93 @@ function AdjustSalaryWithMeta {
         [math]::Round($adjustedSeason)
     )
 }
+
+
+function Get-LetterGrade {
+    param([double]$value)
+    if ($value -ge 95) { return 'S' }
+    elseif ($value -ge 85) { return 'A' }
+    elseif ($value -ge 75) { return 'B' }
+    elseif ($value -ge 65) { return 'C' }
+    elseif ($value -ge 50) { return 'D' }
+    elseif ($value -ge 35) { return 'E' }
+    else { return 'F' }
+}
+
+
+function Add-PositionalGradings {
+    param(
+        [Parameter(Mandatory)][Array]$players,
+        [double]$weightForm = 0.2,
+        [double]$weightConsistency = 0.2,
+        [double]$weightEfficiency = 0.2,
+        [double]$weightImpact = 0.2,
+        [double]$weightPotential = 0.2
+    )
+
+    # --- Hilfsfunktion: Schulnote ---
+    function Get-Grade([double]$value) {
+        switch ($value) {
+            {$_ -ge 95} { return "S" }
+            {$_ -ge 90} { return "A" }
+            {$_ -ge 80} { return "B" }
+            {$_ -ge 70} { return "C" }
+            {$_ -ge 60} { return "D" }
+            {$_ -ge 50} { return "E" }
+            default { return "F" }
+        }
+    }
+
+    # --- Spieler nach Position gruppieren ---
+    $positions = $players | Select-Object -ExpandProperty Position -Unique
+
+    foreach ($pos in $positions) {
+        $posPlayers = $players | Where-Object { $_.Position -eq $pos }
+
+        # --- Maximalwerte pro Kriterium ermitteln ---
+        $maxForm = ($posPlayers | Measure-Object -Property FantasyPointsAvgGame -Maximum).Maximum
+        $maxConsistency = ($posPlayers | Measure-Object -Property FantasyPointsAvgPotentialGame -Maximum).Maximum
+        $maxEfficiency = ($posPlayers | Measure-Object -Property FantasyPointsAvgSnap -Maximum).Maximum
+        $maxImpact = ($posPlayers | Measure-Object -Property TouchdownsTotal -Maximum).Maximum
+        $maxPotential = ($posPlayers | Measure-Object -Property FantasyPointsAvgPotentialGame -Maximum).Maximum
+
+        foreach ($p in $posPlayers) {
+            # --- Normierte Werte berechnen ---
+            $formValue = if ($maxForm -gt 0) { ($p.FantasyPointsAvgGame / $maxForm) * 100 } else { 0 }
+            $consistencyValue = if ($maxConsistency -gt 0) { ($p.FantasyPointsAvgPotentialGame / $maxConsistency) * 100 } else { 0 }
+            $efficiencyValue = if ($maxEfficiency -gt 0) { ($p.FantasyPointsAvgSnap / $maxEfficiency) * 100 } else { 0 }
+            # Impact: Punkte abziehen für Touchdowns, weniger TDs = höherer Impact
+            $impactValue = if ($maxImpact -gt 0) { ((1 - ($p.TouchdownsTotal / $maxImpact)) * 100) } else { 100 }
+            $potentialValue = if ($maxPotential -gt 0) { ($p.FantasyPointsAvgPotentialGame / $maxPotential) * 100 } else { 0 }
+
+            # --- Gesamt-GradeValue ---
+            $gradeValue = ($formValue * $weightForm) + ($consistencyValue * $weightConsistency) +
+                          ($efficiencyValue * $weightEfficiency) + ($impactValue * $weightImpact) +
+                          ($potentialValue * $weightPotential)
+
+            $p.Grading += [PSCustomObject]@{ GradeValueForm = [math]::Round($formValue,2) }
+            $p.Grading += [PSCustomObject]@{ GradeValueConsistency = [math]::Round($consistencyValue,2) }
+            $p.Grading += [PSCustomObject]@{ GradeValueEfficiency = [math]::Round($efficiencyValue,2) }
+            $p.Grading += [PSCustomObject]@{ GradeValueImpact = [math]::Round($impactValue,2) }
+            $p.Grading += [PSCustomObject]@{ GradeValuePotential = [math]::Round($potentialValue,2) }
+            $p.Grading += [PSCustomObject]@{ GradeValue = [math]::Round($gradeValue,2) }
+            $p.Grading += [PSCustomObject]@{ Grade = (Get-Grade $gradeValue) }
+
+            # --- Objekt erweitern ---
+            # $p.Grading.GradeValueForm = [math]::Round($formValue,2)
+            # $p.Grading.GradeValueConsistency = [math]::Round($consistencyValue,2)
+            # $p.Grading.GradeValueEfficiency = [math]::Round($efficiencyValue,2)
+            # $p.Grading.GradeValueImpact = [math]::Round($impactValue,2)
+            # $p.Grading.GradeValuePotential = [math]::Round($potentialValue,2)
+            # $p.Grading.GradeValue = [math]::Round($gradeValue,2)
+            # $p.Grading.Grade = (Get-Grade $gradeValue)
+        }
+    }
+
+    return $players
+}
+
+
 
 
 # --- Konfiguration ---
@@ -1101,6 +1189,7 @@ foreach ($tankEntry in $tankPlayers) {
         FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
         FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
         Ranking                      = @()
+        Grading                      = @()
         PointHistory                 = $pointHistory
         TouchdownsTotal              = $tdTotal
         TouchdownsPassing            = $tdPass
@@ -1241,6 +1330,16 @@ function Add-Rankings {
 $playerData = Add-Rankings -players $playerData -weightTotal $weightTotal -weightAvg $weightGame
 Write-Host "Player rankings calculated and added." -ForegroundColor Yellow
 
+
+# Gradings berechnen
+Write-Host "Calculating player gradings..." -ForegroundColor Yellow
+$playerData = Add-PositionalGradings -players $playerData `
+                                     -weightForm 0.2 `
+                                     -weightConsistency 0.2 `
+                                     -weightEfficiency 0.2 `
+                                     -weightImpact 0.2 `
+                                     -weightPotential 0.2
+Write-Host "Player gradings calculated and added." -ForegroundColor Yellow
 
 
 # Änderungen prüfen
