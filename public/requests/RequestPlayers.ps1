@@ -804,10 +804,18 @@ if (Test-Path $gamesFile) {
                 if($p.Kicking.fgAttempts) { $gameStats.Attempts += [int]$p.Kicking.fgAttempts }
                 if($p.Kicking.xpAttempts) { $gameStats.Attempts += [int]$p.Kicking.xpAttempts }
 
+                # QBR sauber in Double konvertieren, falls möglich
+                $qbrValue = $null
+                if ([double]::TryParse($pass.qbr, [ref]$qbrValue)) {
+                    $QBRating = $qbrValue
+                } else {
+                    $QBRating = $null  # oder 0, je nach Wunsch
+                }
+
                 if ($p.Passing) {
                     $pass = $p.Passing
                     $gameStats.Passing = [PSCustomObject]@{
-                        QBRating        = [double]$pass.qbr
+                        QBRating        = $QBRating
                         Rating          = [double]$pass.rtg
                         PassAttempts    = [int]$pass.passAttempts
                         PassAvg         = [double]$pass.passAvg
