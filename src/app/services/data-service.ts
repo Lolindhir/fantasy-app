@@ -15,6 +15,8 @@ export interface RawLeague {
   Name: string;
   Season: string;
   FinalWeek: number;
+  PlayoffWeek: number;
+  LastWeek: number;
   SalaryCap: number;
   SalaryCapFantasy: number;
   SalaryCapProjected: number;
@@ -379,6 +381,10 @@ export class DataService {
           // GameHistory für laufende Saison vorbereiten
           var currentWeek = 0;
           currentWeek = leagueRaw.FinalWeek;
+          var playoffStartWeek = 0;
+          playoffStartWeek = leagueRaw.PlayoffWeek;
+          var lastWeek = 0;
+          lastWeek = leagueRaw.LastWeek;
 
           return {
             ...raw,
@@ -390,7 +396,7 @@ export class DataService {
             SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjectedFantasy),
             NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
             Stats: stats,
-            GameHistoryFull: this.prepareGameHistory(raw, currentWeek) // nur für laufende Saison vorbereiten
+            GameHistoryFull: this.prepareGameHistory(raw, currentWeek, playoffStartWeek, lastWeek) // nur für laufende Saison vorbereiten
           };
         });
 
@@ -513,7 +519,7 @@ export class DataService {
     });
   }
 
-  private prepareGameHistory(player: RawPlayer, currentWeek: number): GameHistory[] {
+  private prepareGameHistory(player: RawPlayer, currentWeek: number, playoffStartWeek: number, lastWeek: number): GameHistory[] {
     const existingGames = player.GameHistory ?? [];
 
     const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
@@ -530,8 +536,8 @@ export class DataService {
         GameDetails: {
           Week: week,
           WeekFinal: false,
-          WeekPlayoff: false,
-          WeekScored: true,
+          WeekPlayoff: week >= playoffStartWeek && week <= lastWeek,
+          WeekScored: week <= lastWeek,
           Date: '',
           Home: '-',
           HomeID: '',
