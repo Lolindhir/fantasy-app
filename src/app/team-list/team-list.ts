@@ -49,9 +49,9 @@ export class TeamListComponent implements OnInit {
     ngOnInit(): void {
       
       forkJoin({
-        players: this.dataService.getAllPlayers(['SalaryDollars']),
-        teams: this.dataService.getFantasyTeams(['SalaryDollars']),
-        league: this.dataService.getLeague(['SalaryDollars']),
+        players: this.dataService.getAllPlayers(['Salary']),
+        teams: this.dataService.getFantasyTeams(['Salary']),
+        league: this.dataService.getLeague(['Salary']),
         ts: this.dataService.getLatestTimestamp()
       }).subscribe(({ players, teams, league, ts }) => {
         // TopPlayers pro Team aus League-Daten
@@ -59,8 +59,8 @@ export class TeamListComponent implements OnInit {
 
         // Alle Spieler setzen
         this.allPlayers = [...players]
-        .map(p => ({ ...p, SalaryDollars: Number(p.SalaryDollars) }))
-        .sort((a, b) => b.SalaryDollars - a.SalaryDollars);
+        .map(p => ({ ...p, Salary: Number(p.Salary) }))
+        .sort((a, b) => b.Salary - a.Salary);
 
         // Teams verarbeiten (TopPlayers pro Team)
         this.fantasyTeams = teams.map(team => this.processTeam(team));
@@ -75,7 +75,7 @@ export class TeamListComponent implements OnInit {
         this.salaryCap = league.SalaryCap || 0;
         this.salaryCapProjected = league.SalaryCapProjected || 0;
         
-        //sortiere allPlayers nach SalaryDollars absteigend
+        //sortiere allPlayers nach Salary absteigend
         this.allPlayers = this.sortPlayersBySalary(this.allPlayers, false);
         this.salaryCapTopPlayers = this.sortPlayersBySalary(this.allPlayers, false).slice(0, this.salaryRelevantTeamSize * teamCount);
         this.salaryCapProjectedTopPlayers = this.sortPlayersBySalary(this.allPlayers, true).slice(0, this.salaryRelevantTeamSize * teamCount);
@@ -163,12 +163,12 @@ export class TeamListComponent implements OnInit {
 
       //Salary berechnen
       const topPlayers = this.sortPlayersBySalary(allPlayersNonExcluded, false).slice(0, playerCount);
-      const avgOverall = playerCount > 0 ? topPlayers.reduce((sum, p) => sum + p.SalaryDollars, 0) / playerCount : 0;
+      const avgOverall = playerCount > 0 ? topPlayers.reduce((sum, p) => sum + p.Salary, 0) / playerCount : 0;
       const cap = avgOverall * playerCount;
 
       //Projected Salary berechnen
       const topPlayersProjected = this.sortPlayersBySalary(allPlayersNonExcluded, true).slice(0, playerCount);
-      const avgOverallProjected = playerCount > 0 ? topPlayersProjected.reduce((sum, p) => sum + p.SalaryDollarsProjected, 0) / playerCount : 0;
+      const avgOverallProjected = playerCount > 0 ? topPlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0) / playerCount : 0;
       const capProjected = avgOverallProjected * playerCount;
 
 
@@ -217,7 +217,7 @@ export class TeamListComponent implements OnInit {
 
       // Überprüfe, ob der Spieler in den Top N des Teams ist
       const isInTopN: boolean = team.Roster
-        .sort((a: Player, b: Player) => b.SalaryDollars - a.SalaryDollars)
+        .sort((a: Player, b: Player) => b.Salary - a.Salary)
         .slice(0, adjustedTopPlayersCount)
         .some((p: Player) => p.ID === player.ID);
 
@@ -233,15 +233,15 @@ export class TeamListComponent implements OnInit {
     sortPlayersBySalary(players: Player[], useProjected: boolean): Player[] {
       const sorted = [...players].sort((a, b) => {
         if (useProjected) {
-          // Primär: SalaryDollarsProjected, Sekundär: SalaryDollars
-          const diff = (b.SalaryDollarsProjected ?? 0) - (a.SalaryDollarsProjected ?? 0);
+          // Primär: SalaryProjected, Sekundär: Salary
+          const diff = (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
           if (diff !== 0) return diff;
-          return (b.SalaryDollars ?? 0) - (a.SalaryDollars ?? 0);
+          return (b.Salary ?? 0) - (a.Salary ?? 0);
         } else {
-          // Primär: SalaryDollars, Sekundär: SalaryDollarsProjected
-          const diff = (b.SalaryDollars ?? 0) - (a.SalaryDollars ?? 0);
+          // Primär: Salary, Sekundär: SalaryProjected
+          const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
           if (diff !== 0) return diff;
-          return (b.SalaryDollarsProjected ?? 0) - (a.SalaryDollarsProjected ?? 0);
+          return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
         }
       });
       return sorted;

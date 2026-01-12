@@ -18,9 +18,7 @@ export interface RawLeague {
   PlayoffWeek: number;
   LastWeek: number;
   SalaryCap: number;
-  SalaryCapFantasy: number;
   SalaryCapProjected: number;
-  SalaryCapProjectedFantasy: number;
   SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[]; // nur rohe Teams
 }
@@ -174,10 +172,8 @@ export interface RawPlayer {
   NameLast: string;
   NameShort: string;
   Position: string;
-  SalaryDollars: number;
-  SalaryDollarsFantasy: number;
-  SalaryDollarsProjected: number;
-  SalaryDollarsProjectedFantasy: number;
+  Salary: number;
+  SalaryProjected: number;
   Age: number;
   Year: number;
   Picture: string;
@@ -211,8 +207,8 @@ export interface RawPlayer {
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
   TeamNFL: NFLTeam; // angereichertes NFL-Team
   TeamFantasy?: FantasyTeam; // optionales Fantasy-Team (wenn zugeordnet)
-  SalaryDollarsDisplay: string;
-  SalaryDollarsProjectedDisplay: string;
+  SalaryDisplay: string;
+  SalaryProjectedDisplay: string;
   Stats: PlayerStats;
   GameHistoryFull?: GameHistory[]; // vollständige Spielhistorie bis zur aktuellen Woche
 }
@@ -226,7 +222,7 @@ export interface RawNFLTeam {
 
 export interface NFLTeam extends RawNFLTeam {}
 
-export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'SalaryDollars' | ...
+export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'Salary' | ...
 
 @Injectable({
   providedIn: 'root'
@@ -390,10 +386,10 @@ export class DataService {
             ...raw,
             TeamNFL: nfl,
             TeamFantasy: undefined,
-            SalaryDollars: raw.SalaryDollarsFantasy,
-            SalaryDollarsProjected: raw.SalaryDollarsProjectedFantasy,
-            SalaryDollarsDisplay: this.formatSalaryDollars(raw.SalaryDollarsFantasy),
-            SalaryDollarsProjectedDisplay: this.formatSalaryDollars(raw.SalaryDollarsProjectedFantasy),
+            Salary: raw.Salary,
+            SalaryProjected: raw.SalaryProjected,
+            SalaryDisplay: this.formatSalaryDollars(raw.Salary),
+            SalaryProjectedDisplay: this.formatSalaryDollars(raw.SalaryProjected),
             NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
             Stats: stats,
             GameHistoryFull: this.prepareGameHistory(raw, currentWeek, playoffStartWeek, lastWeek) // nur für laufende Saison vorbereiten
@@ -425,10 +421,10 @@ export class DataService {
         const league: League = {
           ...leagueRaw,
           Teams: teams,
-          SalaryCap: leagueRaw.SalaryCapFantasy,
-          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapFantasy),
-          SalaryCapProjected: leagueRaw.SalaryCapProjectedFantasy,
-          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjectedFantasy)
+          SalaryCap: leagueRaw.SalaryCap,
+          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
+          SalaryCapProjected: leagueRaw.SalaryCapProjected,
+          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected)
         };
 
         return { league, players: playersSorted, teams };
@@ -506,7 +502,7 @@ export class DataService {
   private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
     return roster.sort((a, b) => {
       for (const field of sortFields) {
-        if (field === 'SalaryDollars' || field === 'SalaryDollarsProjected' || field === 'Age' || field === 'Year') {
+        if (field === 'Salary' || field === 'SalaryProjected' || field === 'Age' || field === 'Year') {
           const diff = (b[field] as number) - (a[field] as number);
           if (diff !== 0) return diff;
         } else {

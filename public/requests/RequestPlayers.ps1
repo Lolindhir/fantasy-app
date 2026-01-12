@@ -91,16 +91,8 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'ByeWeek',
             'Number',
             'Picture',
-            'SalaryCurrentRaw',
-            'SalarySeasonStartRaw',
-            'SalaryCurrent',
-            'SalarySeasonStart',
-            'SalaryDollars',
-            'SalaryDollarsFantasy',
-            'SalaryDollarsCurrent',
-            'SalaryDollarsSeasonStart',
-            'SalaryDollarsProjected',
-            'SalaryDollarsProjectedFantasy',
+            'Salary',
+            'SalaryProjected',
             'College',
             'HighSchool',
             'ESPN',
@@ -138,25 +130,6 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
 
 function Convert-StringToDate($dateStr) {
     [datetime]::ParseExact($dateStr, 'yyyyMMdd', $null)
-}
-
-function Get-DraftKings($dateStr, $apiKeys) {
-    Write-Host "Fetch Tank01 DraftKings salaries $dateStr..." -ForegroundColor Yellow
-    $dfsUrl = "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com/getNFLDFS?date=$dateStr"
-    try {
-        $dfsResponse = Invoke-Tank01-With-Fallback -Url $dfsUrl -Keys $apiKeys
-    } catch {
-        Write-Warning "Error fetching DraftKings data: $_"
-        return $null
-    }
-
-    $draftKings = $dfsResponse.body.draftkings
-    if (-not $draftKings -or $draftKings.Count -eq 0) {
-        Write-Host "No DraftKings players found, reducing date by 1 day..." -ForegroundColor Blue
-        $prevDate = (Convert-StringToDate $dateStr).AddDays(-1).ToString("yyyyMMdd")
-        return Get-DraftKings $prevDate $apiKeys
-    }
-    return $draftKings
 }
 
 function MapSalaryToDollarsLinear {
@@ -303,43 +276,6 @@ function GetDeterministicRandom {
     $rand = New-Object System.Random $hashInt
     return $rand.Next($min, $max + 1)
 }
-
-# function AdjustSalaryWithMeta {
-#     param (
-#         [double]$salary,
-#         [int]$year,
-#         [int]$age,
-#         [string]$position,
-#         [int]$playerID
-#     )
-
-#     $adjusted = $salary
-
-#     # Salary unter 0 initial anpassen
-#     if ($adjusted -le 0) {
-#         $adjusted = GetDeterministicRandom -playerID $playerID -min 1 -max 100
-#     }
-
-#     # Erfahrungsbonus: pro Jahr in der Liga +50 Punkte
-#     $adjusted += ($year - 1) * 50
-
-#     # Altersmalus: pro Jahr über 29 -100 Punkte
-#     if ($age -gt 29) {
-#         $adjusted -= ($age - 29) * 100
-#     }
-
-#     # Kicker-Bonus: pro Jahr in der Liga +200 Punkte
-#     if ($position -eq "K") {
-#         $adjusted += $year * 200
-#     }
-
-#     # Wert unter 0 verhindern
-#     if ($adjusted -le 0) {
-#         $adjusted = GetDeterministicRandom -playerID $playerID -min 1 -max 100
-#     }
-
-#     return [math]::Round($adjusted)
-# }
 
 function GetFallbackSalary {
     param (
@@ -519,7 +455,7 @@ function Add-PositionalGradings {
     # Ranking (Kombination aus Overall und Positional Rank)
     # Verlässlichkeit (Vergangenheit, Floor, Effizienz)
     # Potential (Impact, Ceiling, Draft Position Rookies, Highest Scores in Vergangenheit)
-    # Form (letzte X Spiele inklusive Playoffs, Teamrecord)
+    # Form (letzte X Spiele inklusive Playoffs, Teamrecord, Entwicklung Einsatzzeit)
     # Position Individuelles
 
 
@@ -584,9 +520,6 @@ function Add-PositionalGradings {
 
     return $players
 }
-
-
-
 
 # --- Konfiguration ---
 . "$PSScriptRoot\config.ps1"
@@ -727,23 +660,10 @@ try {
 }
 Write-Host "Tank01 players found: $($tankPlayers.Count)" -ForegroundColor Yellow
 
-# --- DraftKings Salaries ---
-Write-Host "Fetch Tank01 DraftKings Salaries..." -ForegroundColor Yellow
-$draftKings = Get-DraftKings $Date $apiKeys
-if (-not $draftKings) {
-    Write-Error "Error fetching DraftKings data: $_"
-    exit 1
-}
-Write-Host "DraftKings players found: $($draftKings.Count)" -ForegroundColor Yellow
-
-
 # --- Spieler JSON vorbereiten ---
 Write-Host "Creating Players.json..." -ForegroundColor Yellow
 $sleeperLookup = @{}
 foreach ($sleeper in $sleeperPlayers) { $sleeperLookup[$sleeper.player_id] = $sleeper }
-
-$draftKingsLookup = @{}
-foreach ($dk in $draftKings) { $draftKingsLookup[$dk.playerID] = $dk }
 
 # Alte Spieler laden (für Vergleich und evtl. Gehälter)
 $oldPlayersLookup = @{}
@@ -971,9 +891,6 @@ if (Test-Path $gamesFile) {
 }
 
 
-# Cache für SeasonStart DraftKings
-$draftKingsStartLookup = $null
-
 $playerData = @()
 foreach ($tankEntry in $tankPlayers) {
     if (-not $tankEntry.sleeperBotID) { continue }
@@ -997,96 +914,6 @@ foreach ($tankEntry in $tankPlayers) {
 
     # --- Bye-Week bestimmen
     $byeWeek = if ($teamByeWeek.ContainsKey($team)) { $teamByeWeek[$team] } else { 0 }
-
-    # --- Salary (heutige DraftKings) ---
-    $dfsEntry = $draftKingsLookup[$tankEntry.playerID]
-    $salaryCurrentRaw = if ($dfsEntry) { $dfsEntry.salary } else { 0 }
-    # --- Prüfung für alten Salary ---
-    if ($salaryCurrentRaw -eq 0 -and $oldPlayers) {
-        $oldPlayer = $oldPlayers | Where-Object { $_.ID -eq $sleeperEntry.player_id }
-        if ($oldPlayer -and $oldPlayer.SalaryCurrentRaw -gt 0) {
-            $salaryCurrentRaw = $oldPlayer.SalaryCurrentRaw
-            Write-Host "  Using old salary for $($sleeperEntry.full_name): $($salaryCurrentRaw)" -ForegroundColor DarkGray
-        }
-        # historischen Wert nach Umstellung auf neue Players.json Struktur abfragen als Fallback
-        elseif ($oldPlayer -and $oldPlayer.Salary -gt 0) {
-            $salaryCurrentRaw = $oldPlayer.Salary
-            Write-Host "  Using fallback salary for $($sleeperEntry.full_name): $($salaryCurrentRaw)" -ForegroundColor DarkGray
-        }
-    }
-    # --- auf Array prüfen und zu Number konvertieren ---
-    if ($salaryCurrentRaw -is [System.Array]) { $salaryCurrentRaw = $salaryCurrentRaw[0] }
-    $salaryCurrentRaw = [double]$salaryCurrentRaw
-
-    # --- SalarySeasonStart bestimmen ---
-    $salarySeasonStartRaw = $null
-    if ($oldPlayer -and $oldPlayer.SalarySeasonStartRaw) {
-        $salarySeasonStartRaw = $oldPlayer.SalarySeasonStartRaw
-    }
-    if (-not $salarySeasonStartRaw) {
-        # DraftKingsStart nur bei Bedarf laden
-        if (-not $draftKingsStartLookup) {
-            Write-Host "Fetching DraftKings salaries for season start $seasonStartDate..." -ForegroundColor Yellow
-            $draftKingsStart = Get-DraftKings $seasonStartDate $apiKeys
-
-            if (-not $draftKingsStart -or $draftKingsStart.Count -eq 0) {
-                Write-Warning "No DraftKings entries found for season start $seasonStartDate"
-                $draftKingsStartLookup = @{}
-            } else {
-                # Ein Lookup erstellen für O(1)-Zugriff
-                $draftKingsStartLookup = @{}
-                foreach ($dk in $draftKingsStart) {
-                    if ($dk.playerID) {
-                        $draftKingsStartLookup[$dk.playerID] = $dk
-                    }
-                }
-            }
-        }
-
-        $dfsStartEntry = $draftKingsStartLookup[$tankEntry.playerID]
-        $salarySeasonStartRaw = if ($dfsStartEntry) { $dfsStartEntry.salary } else { 0 }
-    }
-    # --- auf Array prüfen und zu Number konvertieren ---
-    if ($salarySeasonStartRaw -is [System.Array]) { $salarySeasonStartRaw = $salarySeasonStartRaw[0] }
-    $salarySeasonStartRaw = [double]$salarySeasonStartRaw
-
-    # --- Salary anpassen (Meta-Daten) ---
-    # $salaryCurrent = AdjustSalaryWithMeta -salary $salaryCurrentRaw -year $year -age $age -position $position -playerID $playerID
-    # $salarySeasonStart = AdjustSalaryWithMeta -salary $salarySeasonStartRaw -year $year -age $age -position $position -playerID $playerID
-    $adjusted = AdjustSalaryWithMeta -salaryCurrent $salaryCurrentRaw -salarySeasonStart $salarySeasonStartRaw -year $year -age $age -position $position -playerID $playerID
-    $salaryCurrent = $adjusted[0]
-    $salarySeasonStart = $adjusted[1]
-
-    # --- Salary in Dollar umrechnen ---
-    $salaryDollarsCurrent = MapSalaryToDollars -salary $salaryCurrent
-    $salaryDollarsSeasonStart = MapSalaryToDollars -salary $salarySeasonStart
-
-    # --- Salary holen oder setzen ---
-    $salaryDollars = $null
-    if ($year -eq 1) {
-        # Rookies haben bewusst kein SalaryLastSeason
-        $salaryDollars = 0
-    } else {
-        if ($oldPlayer -and $oldPlayer.SalaryDollars) {
-            $salaryDollars = $oldPlayer.SalaryDollars
-        }
-        if (-not $salaryDollars) {
-            # wenn nicht vorhanden, nimm SalarySeasonStart
-            $salaryDollars = $salaryDollarsSeasonStart
-
-            # wenn es sich um einen Spieler in seinem zweiten Jahr handelt, dann halbiere den SalaryDollars, da er das vorige Jahr ein Rookie war
-            if ($year -eq 2) {
-                $salaryDollars = [math]::Round($salaryDollars / 2)
-            }
-        }
-    }
-    # --- auf Array prüfen ---
-    if ($salaryDollars -is [System.Array]) { $salaryDollars = $salaryDollars[0] }
-
-    # --- SalaryProjected bestimmen ---
-    # Durchschnitt aus SalaryDollarsCurrent und SalaryDollarsSeasonStart
-    # und dann Mittelwert mit SalaryDollars
-    $salaryDollarsProjected = [math]::Round((($salaryDollarsCurrent + $salaryDollarsSeasonStart) / 2 + $salaryDollars) / 2)    
 
     # --- Injury bestimmen ---
     $injured = $false
@@ -1205,16 +1032,8 @@ foreach ($tankEntry in $tankPlayers) {
         Age                          = $age
         Year                         = $year
         Number                       = $tankEntry.jerseyNum
-        SalaryCurrentRaw             = $salaryCurrentRaw
-        SalarySeasonStartRaw         = $salarySeasonStartRaw
-        SalaryCurrent                = $salaryCurrent
-        SalarySeasonStart            = $salarySeasonStart
-        SalaryDollars                = $salaryDollars
-        SalaryDollarsFantasy         = $salaryDollarsFantasy
-        SalaryDollarsCurrent         = $salaryDollarsCurrent
-        SalaryDollarsSeasonStart     = $salaryDollarsSeasonStart
-        SalaryDollarsProjected       = $salaryDollarsProjected
-        SalaryDollarsProjectedFantasy       = $salaryDollarsProjectedFantasy
+        Salary                       = [math]::Round($salaryDollarsFantasy)
+        SalaryProjected              = [math]::Round($salaryDollarsProjectedFantasy)
         Picture                      = $tankEntry.espnHeadshot
         FantasyPros                  = $tankEntry.fantasyProsLink
         ESPN                         = $tankEntry.espnLink
