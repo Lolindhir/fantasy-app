@@ -1,62 +1,194 @@
 # --- Funktionen ---
 # Globale Variable für den zuletzt erfolgreichen Key
 $Global:CurrentApiKey = $null
+# function Invoke-Tank01-With-Fallback {
+#     param(
+#         [string]$Url,
+#         [string[]]$Keys
+#     )
+
+#     $delay = 2  # Start-Wartezeit in Sekunden
+
+#     # Wenn bereits ein funktionierender Key gespeichert ist, probiere diesen zuerst
+#     if ($Global:CurrentApiKey -and $Keys -contains $Global:CurrentApiKey) {
+#         $headers = @{
+#             "X-RapidAPI-Key" = $Global:CurrentApiKey
+#             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
+#         }
+#         try {
+#             Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
+#             return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
+#         } catch {
+#             $statusCode = $_.Exception.Response.StatusCode.Value__
+#             if ($statusCode -eq 429) {
+#                 Write-Warning "Cached key $($Global:CurrentApiKey) hit 429 - switching..."
+#                 # Reset Key, nächster Versuch mit allen Keys
+#                 $Global:CurrentApiKey = $null
+#             } else {
+#                 throw $_
+#             }
+#         }
+#     }
+
+#     # Normale Fallback-Logik (alle Keys durchprobieren)
+#     foreach ($key in $Keys) {
+#         $headers = @{
+#             "X-RapidAPI-Key" = $key
+#             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
+#         }
+
+#         try {
+#             Write-Host "  Try with key: $key" -ForegroundColor DarkGray
+#             $result = Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
+#             # Wenn erfolgreich: Key merken
+#             $Global:CurrentApiKey = $key
+#             return $result
+#         } catch {
+#             $statusCode = $_.Exception.Response.StatusCode.Value__
+#             if ($statusCode -eq 429) {
+#                 Write-Warning "429 Too Many Requests - wait $delay sec before next key..."
+#                 Start-Sleep -Seconds $delay
+#                 $delay = [Math]::Min($delay * 2, 30)
+#                 continue
+#             } else {
+#                 throw $_
+#             }
+#         }
+#     }
+
+#     throw "All API keys have failed (including 429 errors)."
+# }
+
 function Invoke-Tank01-With-Fallback {
     param(
         [string]$Url,
         [string[]]$Keys
     )
 
-    $delay = 2  # Start-Wartezeit in Sekunden
+    $delay = 2
+    $maxRetries = 4
 
-    # Wenn bereits ein funktionierender Key gespeichert ist, probiere diesen zuerst
+    function Invoke-With-Retry {
+        param($Url, $Headers)
+
+        $attempt = 0
+        $localDelay = $delay
+
+        while ($attempt -lt $maxRetries) {
+            try {
+                return Invoke-RestMethod `
+                    -Uri $Url `
+                    -Headers $Headers `
+                    -TimeoutSec 60 `
+                    -ErrorAction Stop
+            }
+            catch {
+                $attempt++
+
+                $statusCode = $null
+                if ($_.Exception.Response) {
+                    $statusCode = $_.Exception.Response.StatusCode.Value__
+                }
+
+                # -----------------------------
+                # Network errors
+                # -----------------------------
+                if ($_.Exception.Message -match "Connection reset" -or
+                    $_.Exception.Message -match "transport connection" -or
+                    $_.Exception.Message -match "The underlying connection was closed" -or
+                    $_.Exception.Message -match "Unable to read data") {
+
+                    if ($attempt -lt $maxRetries) {
+                        Write-Warning "Network issue - retry in $localDelay sec..."
+                        Start-Sleep -Seconds $localDelay
+                        $localDelay = [Math]::Min($localDelay * 2, 30)
+                        continue
+                    }
+                }
+
+                # -----------------------------
+                # Server errors (5xx)
+                # -----------------------------
+                if ($statusCode -ge 500 -and $attempt -lt $maxRetries) {
+                    Write-Warning "Server error $statusCode - retry in $localDelay sec..."
+                    Start-Sleep -Seconds $localDelay
+                    $localDelay = [Math]::Min($localDelay * 2, 30)
+                    continue
+                }
+
+                throw $_
+            }
+        }
+
+        throw "Max retries reached."
+    }
+
+    # -------------------------------------------------
+    # 1️⃣ Try cached key first
+    # -------------------------------------------------
     if ($Global:CurrentApiKey -and $Keys -contains $Global:CurrentApiKey) {
         $headers = @{
-            "X-RapidAPI-Key" = $Global:CurrentApiKey
+            "X-RapidAPI-Key"  = $Global:CurrentApiKey
             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
         }
+
         try {
             Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
-            return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
-        } catch {
-            $statusCode = $_.Exception.Response.StatusCode.Value__
+            return Invoke-With-Retry $Url $headers
+        }
+        catch {
+            $statusCode = $null
+            if ($_.Exception.Response) {
+                $statusCode = $_.Exception.Response.StatusCode.Value__
+            }
+
             if ($statusCode -eq 429) {
-                Write-Warning "Cached key $($Global:CurrentApiKey) hit 429 - switching..."
-                # Reset Key, nächster Versuch mit allen Keys
+                Write-Warning "Cached key hit 429 - switching..."
                 $Global:CurrentApiKey = $null
-            } else {
-                throw $_
+            }
+            else {
+                Write-Warning "Cached key failed - switching to next key..."
+                $Global:CurrentApiKey = $null
             }
         }
     }
 
-    # Normale Fallback-Logik (alle Keys durchprobieren)
+    # -------------------------------------------------
+    # 2️⃣ Try all keys
+    # -------------------------------------------------
     foreach ($key in $Keys) {
+
         $headers = @{
-            "X-RapidAPI-Key" = $key
+            "X-RapidAPI-Key"  = $key
             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
         }
 
         try {
             Write-Host "  Try with key: $key" -ForegroundColor DarkGray
-            $result = Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
-            # Wenn erfolgreich: Key merken
+            $result = Invoke-With-Retry $Url $headers
+
+            # Erfolgreich → Key merken
             $Global:CurrentApiKey = $key
             return $result
-        } catch {
-            $statusCode = $_.Exception.Response.StatusCode.Value__
+        }
+        catch {
+            $statusCode = $null
+            if ($_.Exception.Response) {
+                $statusCode = $_.Exception.Response.StatusCode.Value__
+            }
+
             if ($statusCode -eq 429) {
-                Write-Warning "429 Too Many Requests - wait $delay sec before next key..."
-                Start-Sleep -Seconds $delay
-                $delay = [Math]::Min($delay * 2, 30)
+                Write-Warning "429 Too Many Requests - switching key..."
                 continue
-            } else {
-                throw $_
+            }
+            else {
+                Write-Warning "Key failed - trying next..."
+                continue
             }
         }
     }
 
-    throw "All API keys have failed (including 429 errors)."
+    throw "All API keys exhausted."
 }
 
 function PlayersHaveChanged($oldPlayers, $newPlayers) {
