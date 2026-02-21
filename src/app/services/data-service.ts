@@ -222,6 +222,11 @@ export interface RawNFLTeam {
 
 export interface NFLTeam extends RawNFLTeam {}
 
+export interface TopPlayersSalaryResult {
+  cap: number;          // Salary der Top-N Spieler
+  topPlayers: Player[]; // die Spieler, die aktuell im Top-N sind
+}
+
 export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'Salary' | ...
 
 @Injectable({
@@ -554,5 +559,48 @@ export class DataService {
     });
   }
 
+  /**
+   * Berechnet das Top-N Salary für ein gegebenes Roster.
+   * Wenn Spieler entfernt werden, rücken automatisch die nächsten Spieler nach.
+   */
+  calculateTopPlayersSalary(
+    roster: Player[],
+    topN: number,
+    salarySelector: (player: Player) => number
+  ): TopPlayersSalaryResult {
+
+    if (!roster || roster.length === 0) {
+      return { cap: 0, topPlayers: [] };
+    }
+
+    const sortedRoster = [...roster]
+      .sort((a, b) => salarySelector(b) - salarySelector(a));
+
+    const actualTopN = Math.min(topN, sortedRoster.length);
+    const topPlayers = sortedRoster.slice(0, actualTopN);
+
+    const cap = topPlayers
+      .reduce((sum, p) => sum + salarySelector(p), 0);
+
+    return { cap, topPlayers };
+  }
+
+  /**
+   * Berechnet das Roster nach einem Trade.
+   * outgoing: Spieler, die das Team verlassen
+   * incoming: Spieler, die das Team erhalten
+   */
+  getRosterAfterTrade(
+    currentRoster: Player[],
+    outgoing: Player[],
+    incoming: Player[]
+  ): Player[] {
+    let newRoster = [...currentRoster];
+    outgoing.forEach(p => {
+      newRoster = newRoster.filter(x => x.ID !== p.ID);
+    });
+    incoming.forEach(p => newRoster.push(p));
+    return newRoster;
+  }
 
 }

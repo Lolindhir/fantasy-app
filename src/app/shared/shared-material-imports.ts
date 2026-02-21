@@ -11,6 +11,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
 export const SharedMaterialImports = [
   MatCardModule,
@@ -24,5 +27,8 @@ export const SharedMaterialImports = [
   MatDividerModule,
   MatTooltipModule,
   MatCheckboxModule,
-  MatSlideToggleModule
+  MatSlideToggleModule,
+  MatFormFieldModule,
+  MatInputModule,
+  MatSelectModule
 ];

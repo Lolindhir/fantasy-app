@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { TeamListComponent } from './team-list/team-list';
+import { RouterModule, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TeamListComponent],
+  standalone: true,
+  imports: [RouterModule, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
