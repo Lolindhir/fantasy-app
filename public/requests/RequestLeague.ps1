@@ -218,8 +218,8 @@ Write-Host "Top $topCount players considered for Salary Cap calculation." -Foreg
 $avgSalary = ($topPlayers | Measure-Object -Property Salary -Average).Average
 $avgSalaryProjected = ($topPlayersProjected | Measure-Object -Property SalaryProjected -Average).Average
 
-$salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize)
-$salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize)
+$salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize * 0.9)  # 10% Veränderung ist gewünscht, selbst bei fairer Verteilung
+$salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize * 0.9)  # 10% Veränderung ist gewünscht, selbst bei fairer Verteilung
 
 Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
 Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
