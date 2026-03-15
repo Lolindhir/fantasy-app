@@ -328,8 +328,8 @@ function Get-FantasySalaryWithFloor {
         [double]$pts2,
         [double]$pts3,
         [double]$weight1 = 0.5,   # Gewicht, wenn pts1 das Maximum ist
-        [double]$weight2 = 0.35,  # Gewicht, wenn pts2 das Maximum ist
-        [double]$weight3 = 0.25   # Gewicht, wenn pts3 das Maximum ist
+        [double]$weight2 = 0.3,  # Gewicht, wenn pts2 das Maximum ist
+        [double]$weight3 = 0.2   # Gewicht, wenn pts3 das Maximum ist
     )
 
     # --- Spezialfall: Wenn die zwei neuesten Werte 0 sind, Salary = 0 ---
