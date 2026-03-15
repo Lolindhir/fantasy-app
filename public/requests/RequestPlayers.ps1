@@ -328,8 +328,8 @@ function Get-FantasySalaryWithFloor {
         [double]$pts2,
         [double]$pts3,
         [double]$weight1 = 0.5,   # Gewicht, wenn pts1 das Maximum ist
-        [double]$weight2 = 0.3,  # Gewicht, wenn pts2 das Maximum ist
-        [double]$weight3 = 0.2   # Gewicht, wenn pts3 das Maximum ist
+        [double]$weight2 = 0.33,  # Gewicht, wenn pts2 das Maximum ist
+        [double]$weight3 = 0.17   # Gewicht, wenn pts3 das Maximum ist
     )
 
     # --- Spezialfall: Wenn die zwei neuesten Werte 0 sind, Salary = 0 ---
@@ -575,6 +575,7 @@ $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 $gamesFile = Join-Path $scriptDir "..\data\Games.json"
 $leagueFile = Join-Path $scriptDir "..\data\League.json"
+$errorsFile = Join-Path $scriptDir "..\data\Errors.json"
 
 # --- Season aus config.ps1 ---
 if (-not $Global:LeagueYear) {
@@ -1052,9 +1053,25 @@ foreach ($tankEntry in $tankPlayers) {
     $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
     $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
     # Vergangenheitswerte
-    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 -weight1 0.5 -weight2 0.35 -weight3 0.25
+    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 #-weight1 0.5 -weight2 0.35 -weight3 0.25
     # Projektionswerte
-    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 -weight1 0.5 -weight2 0.35 -weight3 0.25
+    # Wenn aktuelle Saison vor Spieltag 1 liegt, dann ist ptsCurrent der Wert der letzten Saison, ansonsten die aktuelle Saison
+    if($finalWeek -eq 0){
+        $ptsCurrent = $ptsSeasonMinus1
+    }
+    if($finalWeek -eq 1){
+        $ptsCurrent = $ptsCurrent * 0.25 + $ptsSeasonMinus1 * 0.75
+    }
+    if($finalWeek -eq 2){
+        $ptsCurrent = $ptsCurrent * 0.35 + $ptsSeasonMinus1 * 0.65
+    }
+    if($finalWeek -eq 3){
+        $ptsCurrent = $ptsCurrent * 0.5 + $ptsSeasonMinus1 * 0.5
+    }
+    if($finalWeek -eq 4){
+        $ptsCurrent = $ptsCurrent * 0.75 + $ptsSeasonMinus1 * 0.25
+    }
+    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 #-weight1 0.5 -weight2 0.35 -weight3 0.25
 
 
     # ----------------------------------------------
@@ -1371,6 +1388,55 @@ Write-Host "Calculating player gradings..." -ForegroundColor Yellow
 $playerData = Add-PositionalGradings -players $playerData
 Write-Host "Player gradings calculated and added." -ForegroundColor Yellow
 
+
+# Aus Errors.json EmptyPlayers-Error holen
+$emptyPlayersError = $null
+if (Test-Path $errorsFile) {        
+    try {
+        $errorsRaw = Get-Content $errorsFile -Raw
+        $errors = $errorsRaw | ConvertFrom-Json
+        $emptyPlayersError = $errors | Where-Object { $_.Type -eq 'EmptyPlayers' }
+    } catch {
+        Write-Error "Error reading Errors.json: $_"
+        exit 1
+    }
+}
+# Nun prüfen ob mindestens ein Spieler vorhanden ist
+# Wenn nicht, dann prüfen ob EmptyPlayers true ist
+# Wenn ja, dann Fehler werfen und Exit 1 (weil wiederholte leere Spieler)
+# Wenn nein, dann Warnung ausgeben, aber Exit 0 (weil erstmal leere Spieler möglich) und EmptyPlayers auf true setzen
+# Wenn Spieler vorhanden sind, dann EmptyPlayers auf false setzen (weil erfolgreich Spieler geladen)
+if ($playerData.Count -eq 0) {
+    if ($emptyPlayersError -and $emptyPlayersError.Value -eq $true) {
+        Write-Error "No players found and EmptyPlayers error already set. Exiting with error."
+        exit 1
+    } else {
+        Write-Warning "No players found. Setting EmptyPlayers error for next run."
+        $newError = [PSCustomObject]@{ Type = 'EmptyPlayers'; Value = $true }
+        if ($errors) {
+            # Fehler aktualisieren oder hinzufügen
+            $existingError = $errors | Where-Object { $_.Type -eq 'EmptyPlayers' }
+            if ($existingError) {
+                $existingError.Value = $true
+            } else {
+                $errors += $newError
+            }
+        } else {
+            # Neue Fehlerliste erstellen
+            $errors = @($newError)
+        }
+        # Fehlerliste speichern
+        $errors | ConvertTo-Json -Depth 3 | Set-Content $errorsFile
+        exit 0
+    }
+} else {
+    # Spieler gefunden, EmptyPlayers Fehler zurücksetzen, falls vorhanden
+    if ($emptyPlayersError) {
+        $emptyPlayersError.Value = $false
+        # Fehlerliste aktualisieren
+        $errors | ConvertTo-Json -Depth 3 | Set-Content $errorsFile
+    }
+}
 
 # Änderungen prüfen
 if (-not (PlayersHaveChanged $oldPlayers $playerData)) {
