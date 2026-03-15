@@ -1,11 +1,78 @@
 .trade-container {
   display: flex;
-  gap: 40px;
+  gap: 32px;
+  align-items: flex-start;
 }
 
+/* Spalten */
 .trade-column {
   flex: 1;
+  min-width: 0;
 }
+
+/* Angular Material Felder */
+.full-width {
+  width: 100%;
+}
+
+/* Spieler Liste */
+.selected-players {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 8px 12px;
+  margin-top: 8px;
+
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+
+.player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .trade-container {
+    gap: 20px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .trade-container {
+    flex-direction: column;
+  }
+
+  .trade-column {
+    width: 100%;
+  }
+}
+
+// .trade-container {
+//   display: flex;
+//   gap: 40px;
+// }
+
+// .trade-column {
+//   flex: 1;
+//   min-width: 0;
+// }
+
+// /* Mobile Layout */
+// @media (max-width: 768px) {
+//   .trade-container {
+//     flex-direction: column;
+//     gap: 20px;
+//   }
+// }
+
+// mat-form-field {
+//   width: 100%;
+// }
 
 .trade-summary {
   margin-top: 30px;

@@ -15,7 +15,7 @@
   <div class="trade-column">
     <h3>Gibt ab</h3>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="fill" class="full-width">
       <mat-label>Spieler wählen</mat-label>
       <mat-select (selectionChange)="addOutgoing($event.value)">
         <mat-option *ngFor="let p of availableOutgoing" [value]="p">
@@ -24,8 +24,13 @@
       </mat-select>
     </mat-form-field>
 
-    <div class="selected-players" *ngFor="let p of outgoingPlayers" matTooltip="Dieser Spieler verlässt das Team. Top-N Berechnung wird angepasst.">
-      {{ p.Name }}
+    <div
+      class="selected-players"
+      *ngFor="let p of outgoingPlayers"
+      matTooltip="Dieser Spieler verlässt das Team. Top-N Berechnung wird angepasst."
+    >
+      <span class="player-name">{{ p.Name }}</span>
+
       <button mat-icon-button color="warn" (click)="removeOutgoing(p)">
         <mat-icon>close</mat-icon>
       </button>
@@ -36,12 +41,12 @@
   <div class="trade-column">
     <h3>Erhält</h3>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="fill" class="full-width">
       <mat-label>Spieler suchen</mat-label>
-      <input matInput (input)="filterIncoming($event)" placeholder="Name suchen...">
+      <input matInput (input)="filterIncoming($event)" placeholder="Name suchen..." />
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="fill" class="full-width">
       <mat-label>Spieler wählen</mat-label>
       <mat-select (selectionChange)="addIncoming($event.value)">
         <mat-option *ngFor="let p of filteredIncoming" [value]="p">
@@ -50,8 +55,13 @@
       </mat-select>
     </mat-form-field>
 
-    <div class="selected-players" *ngFor="let p of incomingPlayers" matTooltip="Dieser Spieler wird ins Team geholt. Top-N Berechnung wird angepasst.">
-      {{ p.Name }}
+    <div
+      class="selected-players"
+      *ngFor="let p of incomingPlayers"
+      matTooltip="Dieser Spieler wird ins Team geholt. Top-N Berechnung wird angepasst."
+    >
+      <span class="player-name">{{ p.Name }}</span>
+
       <button mat-icon-button color="primary" (click)="removeIncoming(p)">
         <mat-icon>close</mat-icon>
       </button>

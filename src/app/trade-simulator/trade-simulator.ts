@@ -185,6 +185,7 @@ export class TradeSimulatorComponent implements OnInit {
     this.dialog.open(PlayerDetailDialogComponent, {
       data: player,
       width: '800px',
+      maxHeight: '90vh',
       panelClass: 'player-dialog'
     });
   }
