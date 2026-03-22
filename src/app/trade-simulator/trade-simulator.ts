@@ -19,6 +19,8 @@ import { MatDialog } from '@angular/material/dialog';
 })
 export class TradeSimulatorComponent implements OnInit {
 
+  isMobile: boolean = window.innerWidth <= 600;
+
   selectedTeam?: FantasyTeam;
 
   outgoingPlayers: Player[] = [];
@@ -111,7 +113,8 @@ export class TradeSimulatorComponent implements OnInit {
   get availableOutgoing(): Player[] {
     if (!this.selectedTeam) return [];
     return this.selectedTeam.Roster
-      .filter(p => !this.outgoingPlayers.includes(p));
+      .filter(p => !this.outgoingPlayers.includes(p))
+      .sort((a, b) => b.Salary - a.Salary);
   }
 
   get availableIncoming(): Player[] {
@@ -173,6 +176,9 @@ export class TradeSimulatorComponent implements OnInit {
       !this.incomingPlayers.includes(p) &&
       p.Name.toLowerCase().includes(input)
     );
+
+    //sortieren nach Salary
+    this.filteredIncoming.sort((a, b) => b.Salary - a.Salary);
   }
 
 
