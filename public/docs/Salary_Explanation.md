@@ -64,17 +64,15 @@ So entsteht eine **realistische Marktspreizung**.
 
 ---
 
-## 🔮 Unterschied: Salary vs. SalaryProjected
+## 🔮 Unterschied: Salary vs. Projected Salary
 
 **Salary**
 
 → basiert nur auf den **letzten drei abgeschlossenen Jahren**
 
-**SalaryProjected**
+**Projected Salary**
 
 → ersetzt das **älteste Jahr durch die aktuelle Saison**
-
-Dadurch reagieren **Projected-Werte schneller auf Breakouts oder Einbrüche**.
 
 ---
 

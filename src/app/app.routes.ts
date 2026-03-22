@@ -6,7 +6,7 @@ import { AboutComponent } from './about/about';
 export const routes: Routes = [
   { path: '', component: TeamListComponent }, // aktuelle Startseite
   { path: 'trade', component: TradeSimulatorComponent },
-  { path: 'about', component: AboutComponent },
+  { path: 'handbook', component: AboutComponent },
 
   // Angular Fallback
   { path: '**', redirectTo: '' }

@@ -21,10 +21,15 @@ export class AboutComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.http.get('docs/Salary_Explanation.md', { responseType: 'text' })
+    this.http.get('docs/Overview.md', { responseType: 'text' })
       .subscribe(data => {
         this.markdownText = data;
       });
+  }  
+
+  selectTab(tab: string) {
+    this.http.get(`docs/${tab}.md`, { responseType: 'text' })
+      .subscribe(data => this.markdownText = data);
   }
 
 }
