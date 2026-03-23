@@ -1,4 +1,4 @@
-# 🏈 League Handbook – Übersicht
+# League Handbook – Übersicht
 
 ## 💰 Salary System
 - Spieler-Salary basiert **nur auf Fantasy-Leistung**
@@ -10,6 +10,7 @@
 - Skalierung:
   - bis ~50 Mio. = Elite
   - bewusst **überproportional für Top-Spieler**
+- **Rookies** haben niedrigeres Salary, auch bei hoher Performance
 
 ---
 
