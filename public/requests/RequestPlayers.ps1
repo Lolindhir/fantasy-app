@@ -641,13 +641,6 @@ try {
     exit 1
 }
 
-# --- Season Start Datum aus config.ps1 ---
-if (-not $Global:LeagueStart) {
-    Write-Error "LeagueStart not set in config.ps1!"
-    exit 1
-}
-$seasonStartDate = $Global:LeagueStart
-
 # --- Gewichtungen aus config.ps1 ---
 if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
     Write-Error "Weights not set in config.ps1!"
