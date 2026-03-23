@@ -1,4 +1,4 @@
-# 🏈 Wie berechnet sich das Spieler-Salary?
+# Wie berechnet sich das Spieler-Salary?
 
 Das Salary eines Spielers basiert ausschließlich auf seiner **Fantasy-Leistung**.
 Es gibt **keinen Bonus für Namen, Draftstatus oder Beliebtheit** – nur produzierte Punkte zählen.
@@ -58,7 +58,8 @@ Das bedeutet:
 
 - **Gute Spieler** werden deutlich teurer als Durchschnittsspieler  
 - **Elite-Spieler** steigen überproportional stark im Wert  
-- **Mittelmaß** bleibt bezahlbar  
+- **Mittelmaß** bleibt bezahlbar
+- **Rookies** haben bis zu ihrer dritten Saison ein niedriges Salary (analog zur realen NFL)
 
 So entsteht eine **realistische Marktspreizung**.
 
