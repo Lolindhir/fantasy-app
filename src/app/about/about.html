@@ -1,8 +1,31 @@
 <div class="tabs" style="display: flex; flex-wrap: wrap; gap: 8px;">
-  <button style="flex: 1 1 auto;" (click)="selectTab('Overview')">Übersicht</button>
-  <button style="flex: 1 1 auto;" (click)="selectTab('Salary_Explanation')">Salary Cap Berechnung</button>
-  <button style="flex: 1 1 auto;" (click)="selectTab('Offseason_Flow')">Offseason Infografik</button>
-  <button style="flex: 1 1 auto;" (click)="selectTab('Offseason_Schedule')">Offseason Regeln</button>
+  <button 
+    style="flex: 1 1 auto;"
+    (click)="selectTab('Overview')"
+    [ngStyle]="selectedTab === 'Overview' ? {'background':'#1976d2','color':'white'} : {}">
+    Übersicht
+  </button>
+
+  <button 
+    style="flex: 1 1 auto;"
+    (click)="selectTab('Salary_Explanation')"
+    [ngStyle]="selectedTab === 'Salary_Explanation' ? {'background':'#1976d2','color':'white'} : {}">
+    Salary Cap Berechnung
+  </button>
+
+  <button 
+    style="flex: 1 1 auto;"
+    (click)="selectTab('Offseason_Flow')"
+    [ngStyle]="selectedTab === 'Offseason_Flow' ? {'background':'#1976d2','color':'white'} : {}">
+    Offseason Infografik
+  </button>
+
+  <button 
+    style="flex: 1 1 auto;"
+    (click)="selectTab('Offseason_Schedule')"
+    [ngStyle]="selectedTab === 'Offseason_Schedule' ? {'background':'#1976d2','color':'white'} : {}">
+    Offseason Regeln
+  </button>
 </div>
 
 <markdown class="markdown" [data]="markdownText"></markdown>
