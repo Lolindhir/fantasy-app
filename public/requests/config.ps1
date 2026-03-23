@@ -3,7 +3,6 @@
 
 # League Settings
 $Global:LeagueYear = 2025
-$Global:LeagueStart = "20250901"  # yyyyMMdd
 $Global:TeamCount = 6
 $Global:SalaryRelevantTeamSize = 20
 
