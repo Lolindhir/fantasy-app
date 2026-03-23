@@ -2,28 +2,32 @@
   <button 
     style="flex: 1 1 auto;"
     (click)="selectTab('Overview')"
-    [ngStyle]="selectedTab === 'Overview' ? {'background':'#1976d2','color':'white'} : {}">
+    [style.background]="selectedTab === 'Overview' ? '#1976d2' : null"
+    [style.color]="selectedTab === 'Overview' ? 'white' : null">
     Übersicht
   </button>
 
   <button 
     style="flex: 1 1 auto;"
     (click)="selectTab('Salary_Explanation')"
-    [ngStyle]="selectedTab === 'Salary_Explanation' ? {'background':'#1976d2','color':'white'} : {}">
+    [style.background]="selectedTab === 'Salary_Explanation' ? '#1976d2' : null"
+    [style.color]="selectedTab === 'Salary_Explanation' ? 'white' : null">
     Salary Cap Berechnung
   </button>
 
   <button 
     style="flex: 1 1 auto;"
     (click)="selectTab('Offseason_Flow')"
-    [ngStyle]="selectedTab === 'Offseason_Flow' ? {'background':'#1976d2','color':'white'} : {}">
+    [style.background]="selectedTab === 'Offseason_Flow' ? '#1976d2' : null"
+    [style.color]="selectedTab === 'Offseason_Flow' ? 'white' : null">
     Offseason Infografik
   </button>
 
   <button 
     style="flex: 1 1 auto;"
     (click)="selectTab('Offseason_Schedule')"
-    [ngStyle]="selectedTab === 'Offseason_Schedule' ? {'background':'#1976d2','color':'white'} : {}">
+    [style.background]="selectedTab === 'Offseason_Schedule' ? '#1976d2' : null"
+    [style.color]="selectedTab === 'Offseason_Schedule' ? 'white' : null">
     Offseason Regeln
   </button>
 </div>
