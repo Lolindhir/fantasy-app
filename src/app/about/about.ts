@@ -17,10 +17,12 @@ import { SharedMaterialImports } from '../shared/shared-material-imports';
 export class AboutComponent implements OnInit {
 
   markdownText = '';
+  selectedTab = '';
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
+    this.selectedTab = 'Overview';
     this.http.get('docs/Overview.md', { responseType: 'text' })
       .subscribe(data => {
         this.markdownText = data;
@@ -28,6 +30,7 @@ export class AboutComponent implements OnInit {
   }  
 
   selectTab(tab: string) {
+    this.selectedTab = tab;
     this.http.get(`docs/${tab}.md`, { responseType: 'text' })
       .subscribe(data => this.markdownText = data);
   }
