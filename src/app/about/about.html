@@ -1,9 +1,8 @@
-
-<div class="tabs">
-  <button (click)="selectTab('Overview')">Übersicht</button>
-  <button (click)="selectTab('Salary_Explanation')">Salary Cap Berechnung</button>
-  <button (click)="selectTab('Offseason_Flow')">Offseason Infografik</button>
-  <button (click)="selectTab('Offseason_Schedule')">Offseason Regeln</button>
+<div class="tabs" style="display: flex; flex-wrap: wrap; gap: 8px;">
+  <button style="flex: 1 1 auto;" (click)="selectTab('Overview')">Übersicht</button>
+  <button style="flex: 1 1 auto;" (click)="selectTab('Salary_Explanation')">Salary Cap Berechnung</button>
+  <button style="flex: 1 1 auto;" (click)="selectTab('Offseason_Flow')">Offseason Infografik</button>
+  <button style="flex: 1 1 auto;" (click)="selectTab('Offseason_Schedule')">Offseason Regeln</button>
 </div>
 
 <markdown class="markdown" [data]="markdownText"></markdown>
