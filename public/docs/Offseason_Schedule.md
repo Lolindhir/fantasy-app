@@ -1,4 +1,4 @@
-# 🏈 Offseason Ablauf & Regeln
+# Offseason Ablauf & Regeln
 
 ## ⚡ 1. Ablaufübersicht
 
