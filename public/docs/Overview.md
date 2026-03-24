@@ -19,7 +19,7 @@
 - Berechnet aus den **Top-Spielern der Liga**
 - Leichter Druck durch **0.9 Faktor**
 
-→ Ziel: Trades, Entscheidungen & Wert von günstigen Spielern
+➡️ Ziel: Trades, Entscheidungen & Wert von günstigen Spielern
 
 ---
 
