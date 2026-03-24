@@ -1,4 +1,4 @@
 
-<div style="flex-direction: column;">
+<p align="center">
     <img src="docs/Offseason_Flow.png" class="image">
-</div>
+</p>
