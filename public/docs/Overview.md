@@ -45,6 +45,8 @@
 10. 📋 Free Agent Draft  
 11. 🏈 Saisonstart → Cap irrelevant  
 
+*\*Details siehe Offseason Regeln*
+
 ---
 
 ## ⚠️ Cap Enforcement
