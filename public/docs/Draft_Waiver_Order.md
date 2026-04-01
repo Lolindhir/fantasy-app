@@ -53,7 +53,7 @@ Der Free Agent Draft findet kurz vor Saisonstart statt und dient dazu, verfügba
 
 ### 📌 Format
 
-- 🔄 Snake Draft (Reihenfolge kehrt sich jede Runde um)
+- ❌ Kein Snake Draft (jede Runde gleiche Reihenfolge)
 
 
 ### 🧠 Begründung
