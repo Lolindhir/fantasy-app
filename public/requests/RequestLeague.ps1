@@ -105,7 +105,10 @@ function LeagueHasChanged($oldLeague, $newLeague) {
     if (Compare-PlayoffStandings -oldPlayoffs $oldLeague.Standings.Playoffs -newPlayoffs $newLeague.Standings.Playoffs) {
         return $true
     }
-
+    # Prüfe Regular Season
+    if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) {
+        return $true
+    }
 
     # Keine Änderungen gefunden
     return $false
@@ -335,16 +338,18 @@ try {
     # Playoff-Standings berechnen
     $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
 
+    # Regular Season Standings berechnen
+    $regularStandings = Get-RegularSeasonStandings -teamData $teamData
 
     # --- Platzierungen in finale Struktur packen ---
     $Standings = if ($winnersBracket -or $losersBracket) {
         [PSCustomObject]@{
             Playoffs = $playoffStandings
+            RegularSeason = $regularStandings
         }
     } else {
         $null
     }
-
 
 
 
