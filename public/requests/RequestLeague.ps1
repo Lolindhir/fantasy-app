@@ -83,7 +83,7 @@ function LeagueHasChanged($oldLeague, $newLeague) {
         $newTeam = $newLeague.Teams[$i]
 
         # Prüfe Top-Level Eigenschaften des Teams
-        $propsToCheck = @('TeamID','Name','Avatar','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
+        $propsToCheck = @('TeamID','Name','Avatar','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
                 Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
@@ -180,6 +180,8 @@ try {
             Team           = $member.metadata.team_name
             TeamID         = $roster.roster_id
             TeamAvatar     = $member.metadata.avatar
+            PlaceRegular   = 0 # wird später in StandingsUtils berechnet
+            PlacePlayoffs  = 0 # wird später in StandingsUtils berechnet
             Points         = $points
             PointsAgainst  = $pointsAgainst
             Wins           = $roster.settings.wins

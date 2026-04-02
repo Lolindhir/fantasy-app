@@ -128,6 +128,7 @@ function Get-PlayoffStandings{
         $teamID = $_.Value
         $teamInfo = $teamData | Where-Object { $_.TeamID -eq $teamID }
         if ($teamInfo) {
+            $teamInfo.PlacePlayoffs = $placeNum # Platzierung in TeamData speichern
             [PSCustomObject]@{
                 Place        = $placeNum
                 TeamID       = $teamID
@@ -202,7 +203,7 @@ function Get-RegularSeasonStandings {
     # Win Percentage berechnen
     function Get-WinPct($team) {
         $games = $team.Wins + $team.Losses + $team.Ties
-        if ($games -eq 0) { return 0 }
+        if ($games -eq 0) { return -1 } # Keine Spiele, Win% undefiniert
         return ($team.Wins + (0.5 * $team.Ties)) / $games
     }
 
@@ -210,6 +211,7 @@ function Get-RegularSeasonStandings {
     function Get-Ordinal($n) {
         if ($n % 100 -in 11,12,13) { return "$($n)th" }
         switch ($n % 10) {
+            0 { return "none" }
             1 { return "$($n)st" }
             2 { return "$($n)nd" }
             3 { return "$($n)rd" }
@@ -224,13 +226,35 @@ function Get-RegularSeasonStandings {
         @{Expression = { $_.PointsAgainst }; Ascending = $true }
 
     # Ergebnis bauen
+    $lastPlace = $null
+    $lastKey = $null
+
     $result = for ($i = 0; $i -lt $sortedTeams.Count; $i++) {
         $team = $sortedTeams[$i]
+        $currentPlace = 0
+        # Berechne Win Percentage für das Team        
         $winPct = Get-WinPct $team
+        # Vergleichsschlüssel für Gleichstand
+        $currentKey = "{0:N6}-{1:N2}-{2:N2}" -f $winPct, $team.Points, $team.PointsAgainst
+
+        if($winPct -ge 0) {            
+            if ($i -eq 0) {
+                $currentPlace = 1
+            }
+            elseif (($i -gt 0) -and ($currentKey -eq $lastKey)) {                
+                $currentPlace = $lastPlace + 1
+            }
+            else {
+                $currentPlace = $lastPlace + 1
+            }            
+        }      
+                
+        # Platzierung im TeamData speichern
+        $team.PlaceRegular = $currentPlace
 
         [PSCustomObject]@{
-            Place         = $i + 1
-            PlaceOrdinal  = Get-Ordinal ($i + 1)
+            Place         = $currentPlace
+            PlaceOrdinal  = Get-Ordinal ($currentPlace)
             TeamID        = $team.TeamID
             Owner         = $team.Owner
             TeamName      = $team.Team
@@ -243,6 +267,9 @@ function Get-RegularSeasonStandings {
             Record        = $team.Record
             Streak        = $team.Streak
         }
+
+        $lastPlace = $currentPlace
+        $lastKey = $currentKey
     }
 
     return $result
