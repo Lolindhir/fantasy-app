@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingsUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -135,29 +136,11 @@ try {
     # Backup-Verzeichnis sicherstellen, wenn es nicht existiert
     if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir | Out-Null }
 
-    # --- Sleeper: Liga ---
-    try {
-        Write-Host "Get Sleeper League..." -ForegroundColor Yellow
-        $leagueUrl = "https://api.sleeper.app/v1/league/$LeagueID"
-        $league    = Invoke-RestMethod -Uri $leagueUrl -ErrorAction Stop
-        Write-Host "Sleeper League found." -ForegroundColor Yellow
-    } catch {
-        Write-Error "Error retrieving league: $_"
-        exit 1
-    }
-
-    # --- Sleeper: Mitglieder + Rosters ---
-    try {
-        Write-Host "Get Sleeper Teams..." -ForegroundColor Yellow
-        $membersUrl = "https://api.sleeper.app/v1/league/$LeagueID/users"
-        $members    = Invoke-RestMethod -Uri $membersUrl -ErrorAction Stop
-        $rostersUrl = "https://api.sleeper.app/v1/league/$LeagueID/rosters"
-        $rosters    = Invoke-RestMethod -Uri $rostersUrl -ErrorAction Stop
-        Write-Host "Sleeper Teams found: $($rosters.Count)" -ForegroundColor Yellow
-    } catch {
-        Write-Error "Error retrieving teams/rosters: $_"
-        exit 1
-    }
+    # --- Sleeper Daten holen ---
+    $league = Get-SleeperLeague
+    $members = Get-SleeperMembers
+    $rosters = Get-SleeperRosters
+    Write-Host "Sleeper Teams found: $($rosters.Count)" -ForegroundColor Yellow
 
     # --- Teams bauen ---
     $teamData = @()
@@ -303,28 +286,18 @@ try {
 
 
     # --- Sleeper: Playoff Brackets laden ---
-    $winnersBracket = $null
-    $losersBracket  = $null
-
-    try {
-        Write-Host "Get Sleeper Winners Bracket..." -ForegroundColor Yellow
-        $winnersUrl = "https://api.sleeper.app/v1/league/$LeagueID/winners_bracket"
-        $winnersBracket = Invoke-RestMethod -Uri $winnersUrl -ErrorAction Stop
-    } catch {
-        Write-Warning "No winners bracket available."
-    }
-
-    try {
-        Write-Host "Get Sleeper Losers Bracket..." -ForegroundColor Yellow
-        $losersUrl = "https://api.sleeper.app/v1/league/$LeagueID/losers_bracket"
-        $losersBracket = Invoke-RestMethod -Uri $losersUrl -ErrorAction Stop
-    } catch {
-        Write-Warning "No losers bracket available."
-    }
+    $winnersBracket = Get-SleeperWinnersBracket
+    $losersBracket  = Get-SleeperLosersBracket
 
     # Winners und Losers sicher extrahieren
-    if (-not $winnersBracket) { $winnersBracket = @() }
-    if (-not $losersBracket)  { $losersBracket  = @() }
+    if (-not $winnersBracket) { 
+        $winnersBracket = @() 
+        Write-Warning "Winners bracket is empty."
+    }
+    if (-not $losersBracket)  { 
+        $losersBracket  = @() 
+        Write-Warning "Losers bracket is empty."
+    }
 
     # --- Playoff-Daten in finale Struktur packen ---
     $Playoffs = if ($winnersBracket -or $losersBracket) {
@@ -335,7 +308,6 @@ try {
     } else {
         $null
     }
-
 
     # Playoff-Standings berechnen
     $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
