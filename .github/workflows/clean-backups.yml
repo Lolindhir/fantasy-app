@@ -1,0 +1,46 @@
+name: Backup Cleanup
+
+on:
+  schedule:
+    - cron: "0 15 * * 3"  # Mittwoch 15:00 UTC (Nachmittags)
+  workflow_dispatch: # Manueller Start
+
+permissions:
+  contents: write      # für Commit + Push
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Cleanup Backups
+        run: |
+          BACKUP_DIR="public/data/backup"
+          cd $BACKUP_DIR || exit 1
+
+          for TYPE in $(ls | sed -E 's/_.*//' | sort -u); do
+            echo "Processing type: $TYPE"
+            FILES=($(ls ${TYPE}_* | sort))
+            COUNT=${#FILES[@]}
+            if [ $COUNT -gt 5 ]; then
+              TO_DELETE=$((COUNT - 5))
+              echo "Deleting $TO_DELETE old files of type $TYPE"
+              for FILE in "${FILES[@]:0:$TO_DELETE}"; do
+                echo "Deleting $FILE"
+                rm "$FILE"
+              done
+            fi
+          done
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $BACKUP_DIR/**
+          git diff --cached --quiet || git commit -m "Cleanup old backups"
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
