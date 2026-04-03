@@ -568,7 +568,6 @@ $apiKeys = @(
     $Global:RapidAPIKeyAlt1,
     $Global:RapidAPIKeyAlt2
 )
-$Date = (Get-Date -Format "yyyyMMdd")
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
