@@ -10,6 +10,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -35,7 +36,6 @@ $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 
 # Dateinamen
-$PlayersFile = $config.PlayersFile
 $ScheduleFile = $config.ScheduleFile
 
 
@@ -114,28 +114,16 @@ try {
         exit 1
     }
 
+
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
     $teamData = Get-Teams
     $playoffs = Get-Playoffs
     $standings = Get-Standings -playoffs $playoffs -teamData $teamData
 
-
-    # --- Spieler-Daten holen aus Players.json ---
-    if (!(Test-Path $PlayersFile)) {
-        Write-Error "Players.json not found at '$PlayersFile'!"
-        exit 1
-    }
-    $playersJson = Get-Content $PlayersFile -Raw
-    if (-not $playersJson) {
-        Write-Error "Players.json is empty!"
-        exit 1
-    }
-    $playersData = $playersJson | ConvertFrom-Json
-    if (-not $playersData -or $playersData.Count -eq 0) {
-        Write-Error "No valid players found in Players.json!"
-        exit 1
-    }
+    
+    # --- Alle Spieler holen (für Salary Cap Berechnung) ---
+    $playersData = Get-PlayersFromFile    
 
     # --- Top-N Spieler bestimmen ---
     $topCount = $Global:SalaryRelevantTeamSize * $teamData.Count  # z.B. 20 relevante Spieler pro Team * Anzahl Teams
