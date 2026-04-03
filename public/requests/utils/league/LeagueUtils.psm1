@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\StandingUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\TeamUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
