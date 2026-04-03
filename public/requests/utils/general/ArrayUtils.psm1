@@ -1,3 +1,4 @@
+
 function Compare-Arrays($oldArray, $newArray, $fieldName, $compareName) {
     # Falls beide leer oder null sind
     if ((-not $oldArray -or $oldArray.Count -eq 0) -and (-not $newArray -or $newArray.Count -eq 0)) {

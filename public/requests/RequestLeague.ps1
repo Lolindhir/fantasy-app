@@ -5,6 +5,7 @@
 
 try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
@@ -33,65 +34,68 @@ catch {
 $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 
-# Verzeichnis des Skripts
-$ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$DataDir     = Join-Path $ScriptDir "..\data"
-$BackupDir   = Join-Path $DataDir "backup"
-
-# Ziel-Dateinamen
-$TargetFile    = Join-Path $DataDir "League.json"
-$ScheduleFile = Join-Path $DataDir "Schedule.json"
-$TimestampFile = Join-Path $DataDir "Timestamps.json"
+# Dateinamen
+$PlayersFile = $config.PlayersFile
+$ScheduleFile = $config.ScheduleFile
 
 
 # ===========================================================================
 # 3. Funktionen
 # ===========================================================================
 
-function LeagueHasChanged($oldLeague, $newLeague) {
-    if (-not $oldLeague) { return $true }  # keine alte Daten -> Änderung
+function Get-Compare {
+    
+    return {
+        param($oldLeague, $newLeague)
 
-    # Prüfe Top-Level Eigenschaften der Liga
-    $propsToCheck = @('LeagueID','Name','Avatar','Season','SeasonType','Status','FinalWeek','LastWeek','PlayoffStartWeek','TotalTeams', 'SalaryCap', 'SalaryCapProjected', 'SalaryCapFantasy', 'SalaryCapProjectedFantasy')
-    foreach ($prop in $propsToCheck) {
-        if ($oldLeague.$prop -ne $newLeague.$prop) {
-            Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
+        if (-not $oldLeague) { return $true }
+
+        # Top-Level
+        $propsToCheck = @(
+            'LeagueID','Name','Avatar','Season','SeasonType','Status',
+            'FinalWeek','LastWeek','PlayoffStartWeek','TotalTeams',
+            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy'
+        )
+
+        foreach ($prop in $propsToCheck) {
+            if ($oldLeague.$prop -ne $newLeague.$prop) {
+                Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
+                return $true
+            }
+        }
+
+        # Arrays
+        $arrayPropsToCheck = @('RosterSize')
+
+        foreach ($prop in $arrayPropsToCheck) {
+            if (-not (Compare-Arrays $oldLeague.$prop $newLeague.$prop $prop "League")) {
+                return $true
+            }
+        }
+
+        # Teams
+        if (Compare-Teams $oldLeague.Teams $newLeague.Teams) {
             return $true
         }
-    }
 
-    # Vergleiche Array-Eigenschaften der Liga
-    $arrayPropsToCheck = @('RosterSize')
-    foreach ($prop in $arrayPropsToCheck) {
-        if (-not (Compare-Arrays $oldLeague.$prop $newLeague.$prop $prop "League")) {
+        # Playoffs
+        if (Compare-PlayoffStandings `
+            -oldPlayoffs $oldLeague.Standings.Playoffs `
+            -newPlayoffs $newLeague.Standings.Playoffs) {
             return $true
         }
-    }
-    foreach ($field in $arraysToCompare) {
-        if (-not (Compare-Arrays $oldTeam.$field $newTeam.$field $field $oldTeam.Team)) {
+
+        # Regular Season
+        if (Compare-RegularSeasonStandings `
+            -oldRegularSeason $oldLeague.Standings.RegularSeason `
+            -newRegularSeason $newLeague.Standings.RegularSeason) {
             return $true
         }
-    }
 
-    # Teams vergleichen
-    if (Compare-Teams $oldLeague.Teams $newLeague.Teams) {
-        return $true
+        return $false
     }
-
-    #--- Standings vergleichen ---
-    # Prüfe Playoffs
-    if (Compare-PlayoffStandings -oldPlayoffs $oldLeague.Standings.Playoffs -newPlayoffs $newLeague.Standings.Playoffs) {
-        return $true
-    }
-    # Prüfe Regular Season
-    if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) {
-        return $true
-    }
-
-    # Keine Änderungen gefunden
-    return $false
+    
 }
-
 
 # ===========================================================================
 # 4. Logik
@@ -110,9 +114,6 @@ try {
         exit 1
     }
 
-    # Backup-Verzeichnis sicherstellen, wenn es nicht existiert
-    if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir | Out-Null }
-
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
     $teamData = Get-Teams
@@ -121,12 +122,11 @@ try {
 
 
     # --- Spieler-Daten holen aus Players.json ---
-    $playersFile = Join-Path $DataDir "Players.json"
-    if (!(Test-Path $playersFile)) {
-        Write-Error "Players.json not found at '$playersFile'!"
+    if (!(Test-Path $PlayersFile)) {
+        Write-Error "Players.json not found at '$PlayersFile'!"
         exit 1
     }
-    $playersJson = Get-Content $playersFile -Raw
+    $playersJson = Get-Content $PlayersFile -Raw
     if (-not $playersJson) {
         Write-Error "Players.json is empty!"
         exit 1
@@ -246,57 +246,9 @@ try {
         LeagueIDPrevious        = $league.previous_league_id
     }
 
-    # Änderungen prüfen
-    # alte JSON laden
-    $oldLeague = $null
-    if (Test-Path $TargetFile) {
-        $oldJsonRaw = Get-Content $TargetFile -Raw
-        if ($oldJsonRaw) { $oldLeague = ($oldJsonRaw | ConvertFrom-Json) }
-    }
-
-    # neue JSON erzeugen
-    $newLeague = $leagueAsJson[0]  # Array mit 1 Objekt
-
-    # Änderungen prüfen
-    if (LeagueHasChanged $oldLeague $newLeague) {
-        Write-Host "Changes detected - updating file." -ForegroundColor Green
-    # Backup + Schreiben + Timestamp + Exit 0
-    }
-    else {
-        Write-Host "No changes - update skipped." -ForegroundColor Cyan
-        exit 0
-    }
-
-    # --- Zeitstempel ---
-    $TimeSnapshot = (Get-Date)
-    $Now          = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-
-    # --- Backup alte Datei ---
-    if (Test-Path $TargetFile) {
-        $timestamp  = $TimeSnapshot.ToUniversalTime().ToString("yyyyMMdd_HHmmss")
-        $backupFile = Join-Path $BackupDir "League_$timestamp.json"
-        Copy-Item -Path $TargetFile -Destination $backupFile -Force
-        Write-Host "Old League.json backed up as $backupFile" -ForegroundColor Cyan
-    }
-
     # --- JSON schreiben ---
-    try {
-        $leagueAsJson | ConvertTo-Json -Depth 5 | Out-File $TargetFile -Encoding UTF8
-        Write-Host "League.json saved!" -ForegroundColor Green
-    } catch {
-        Write-Error "Error writing League.json: $_"
-        exit 1
-    }
-
-    # --- Timestamp aktualisieren ---
-    if (Test-Path $TimestampFile) {
-        $Timestamps = Get-Content $TimestampFile | ConvertFrom-Json
-    } else {
-        $Timestamps = @{}
-    }
-    $Timestamps.League = $Now
-    $Timestamps | ConvertTo-Json -Depth 3 | Set-Content $TimestampFile
-    Write-Host "League-Timestamp updated: $Now" -ForegroundColor Green
+    $compare = & Get-Compare
+    Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
 
     # --- Fertig ---
     exit 0

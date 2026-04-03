@@ -15,6 +15,17 @@ function Get-Config {
     $Global:WeightTotal = 0.5
     $Global:WeightGame = 0.5
 
+    # File Locations
+    $Global:DataDir = "$PSScriptRoot\..\..\data"
+    $Global:BackupDir = Join-Path $Global:DataDir "backup"
+    $Global:PlayersFile = Join-Path $Global:DataDir "Players.json"
+    $Global:LeagueFile = Join-Path $Global:DataDir "League.json"
+    $Global:TeamsFile = Join-Path $Global:DataDir "Teams.json"
+    $Global:ScheduleFile = Join-Path $Global:DataDir "Schedule.json"
+    $Global:GamesFile = Join-Path $Global:DataDir "Games.json"
+    $Global:TimestampsFile = Join-Path $Global:DataDir "Timestamps.json"
+    $Global:ErrorsFile = Join-Path $Global:DataDir "Errors.json"
+
     return @{
         LeagueYear = $Global:LeagueYear
         SalaryRelevantTeamSize = $Global:SalaryRelevantTeamSize
@@ -24,6 +35,15 @@ function Get-Config {
         RapidAPIKeyAlt2 = $Global:RapidAPIKeyAlt2
         WeightTotal = $Global:WeightTotal
         WeightGame = $Global:WeightGame
+        DataDir = $Global:DataDir
+        BackupDir = $Global:BackupDir
+        PlayersFile = $Global:PlayersFile
+        LeagueFile = $Global:LeagueFile
+        TeamsFile = $Global:TeamsFile
+        ScheduleFile = $Global:ScheduleFile
+        GamesFile = $Global:GamesFile
+        TimestampsFile = $Global:TimestampsFile
+        ErrorsFile = $Global:ErrorsFile
     }
     
 }
