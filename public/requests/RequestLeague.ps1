@@ -6,8 +6,9 @@
 try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\ArrayUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\StandingsUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -72,33 +73,9 @@ function LeagueHasChanged($oldLeague, $newLeague) {
         }
     }
 
-    # Prüfe Anzahl der Teams
-    if ($oldLeague.Teams.Count -ne $newLeague.Teams.Count) {
-        Write-Host "Team count changed: $($oldLeague.Teams.Count) -> $($newLeague.Teams.Count)"
+    # Teams vergleichen
+    if (Compare-Teams $oldLeague.Teams $newLeague.Teams) {
         return $true
-    }
-
-    # Prüfe jedes Team
-    for ($i = 0; $i -lt $oldLeague.Teams.Count; $i++) {
-        $oldTeam = $oldLeague.Teams[$i]
-        $newTeam = $newLeague.Teams[$i]
-
-        # Prüfe Top-Level Eigenschaften des Teams
-        $propsToCheck = @('TeamID','Name','Avatar','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
-        foreach ($prop in $propsToCheck) {
-            if ($oldTeam.$prop -ne $newTeam.$prop) {
-                Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
-                return $true
-            }
-        }
-
-        # Vergleiche Roster, Reserve, Taxi
-        $arraysToCompare = @('Roster','Reserve','Taxi')
-        foreach ($field in $arraysToCompare) {
-            if (-not (Compare-Arrays $oldTeam.$field $newTeam.$field $field $oldTeam.Owner)) {
-                return $true
-            }
-        }
     }
 
     #--- Standings vergleichen ---
@@ -136,52 +113,12 @@ try {
     # Backup-Verzeichnis sicherstellen, wenn es nicht existiert
     if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir | Out-Null }
 
-    # --- Sleeper Daten holen ---
-    $league = Get-SleeperLeague
-    $members = Get-SleeperMembers
-    $rosters = Get-SleeperRosters
-    Write-Host "Sleeper Teams found: $($rosters.Count)" -ForegroundColor Yellow
+    # --- Liga, Teams, Standings holen ---
+    $league = Get-LeagueRaw
+    $teamData = Get-Teams
+    $playoffs = Get-Playoffs
+    $standings = Get-Standings -playoffs $playoffs -teamData $teamData
 
-    # --- Teams bauen ---
-    $teamData = @()
-    foreach ($roster in $rosters) {
-        $member = $members | Where-Object { $_.user_id -eq $roster.owner_id }
-        $ownerAvatar = $null
-        if ($member.avatar) {
-            $avatarID    = $member.avatar
-            $ownerAvatar = "https://sleepercdn.com/avatars/$avatarID"
-        }
-
-        # Punkte berechnen als Double
-        $points = [double]($roster.settings.fpts + ($roster.settings.fpts_decimal / 100))
-        $pointsAgainst = [double]($roster.settings.fpts_against + ($roster.settings.fpts_against_decimal / 100))
-
-        $teamData += [PSCustomObject]@{
-            Owner          = $member.display_name
-            OwnerID        = $member.user_id
-            OwnerAvatar    = $ownerAvatar
-            Team           = $member.metadata.team_name
-            TeamID         = $roster.roster_id
-            TeamAvatar     = $member.metadata.avatar
-            PlaceRegular   = 0 # wird später in StandingsUtils berechnet
-            PlacePlayoffs  = 0 # wird später in StandingsUtils berechnet
-            Points         = $points
-            PointsAgainst  = $pointsAgainst
-            Wins           = $roster.settings.wins
-            Losses         = $roster.settings.losses
-            Ties           = $roster.settings.ties
-            Record         = $roster.metadata.record
-            Streak         = $roster.metadata.streak
-            MatchupID      = $roster.settings.matchup_id
-            WaiverPosition = $roster.settings.waiver_position
-            WaiverAdjusted = $roster.settings.waiver_adjusted
-            IsCommissioner = $member.is_owner
-            Roster         = $roster.players
-            Reserve        = $roster.reserve
-            Taxi           = $roster.taxi
-            Starter        = $roster.starters
-        }
-    }
 
     # --- Spieler-Daten holen aus Players.json ---
     $playersFile = Join-Path $DataDir "Players.json"
@@ -284,49 +221,6 @@ try {
     }
 
 
-
-    # --- Sleeper: Playoff Brackets laden ---
-    $winnersBracket = Get-SleeperWinnersBracket
-    $losersBracket  = Get-SleeperLosersBracket
-
-    # Winners und Losers sicher extrahieren
-    if (-not $winnersBracket) { 
-        $winnersBracket = @() 
-        Write-Warning "Winners bracket is empty."
-    }
-    if (-not $losersBracket)  { 
-        $losersBracket  = @() 
-        Write-Warning "Losers bracket is empty."
-    }
-
-    # --- Playoff-Daten in finale Struktur packen ---
-    $Playoffs = if ($winnersBracket -or $losersBracket) {
-        [PSCustomObject]@{
-            WinnersBracket = $winnersBracket
-            LosersBracket  = $losersBracket
-        }
-    } else {
-        $null
-    }
-
-    # Playoff-Standings berechnen
-    $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
-
-    # Regular Season Standings berechnen
-    $regularStandings = Get-RegularSeasonStandings -teamData $teamData
-
-    # --- Platzierungen in finale Struktur packen ---
-    $Standings = if ($winnersBracket -or $losersBracket) {
-        [PSCustomObject]@{
-            Playoffs = $playoffStandings
-            RegularSeason = $regularStandings
-        }
-    } else {
-        $null
-    }
-
-
-
     # --- League JSON vorbereiten ---
     $leagueAsJson = @()
     $leagueAsJson += [PSCustomObject]@{
@@ -343,9 +237,9 @@ try {
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
-        Standings               = $Standings
+        Standings               = $standings
         Teams                   = $teamData
-        Playoffs                = $Playoffs
+        Playoffs                = $playoffs
         RosterSize              = $league.roster_positions
         ScoringType             = $league.scoring_settings
         Settings                = $league.settings
