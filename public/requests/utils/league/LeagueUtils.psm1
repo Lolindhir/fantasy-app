@@ -25,7 +25,7 @@ function Get-LeagueRaw {
 
     try {
         $leagueData = Get-SleeperLeague -leagueID $leagueID
-        Write-Host "Sleeper League found." -ForegroundColor Yellow
+        Write-Host "Raw Sleeper League data fetched." -ForegroundColor Yellow
 
         return $leagueData
     }
@@ -95,7 +95,7 @@ function Get-Standings {
 
         # --- Platzierungen in finale Struktur packen ---
         $standings = if ($winnersBracket -or $losersBracket) {
-            [PSCustomObject]@{
+            [PSCustomObject][ordered]@{
                 Playoffs = $playoffStandings
                 RegularSeason = $regularStandings
             }

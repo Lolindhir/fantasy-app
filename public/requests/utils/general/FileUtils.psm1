@@ -34,7 +34,7 @@ function Save-JsonFile {
         [string]$TargetFile,
 
         # Oder Typ angeben, damit Pfad aus Config gezogen wird
-        [ValidateSet("League","Players","Teams","Schedule","Games")]
+        [ValidateSet("League","Players","Teams","Schedule","Games","Standings")]
         [string]$Type,
 
         # Array oder Objekt, das gespeichert werden soll
@@ -67,6 +67,7 @@ function Save-JsonFile {
             Teams    = $config.TeamsFile
             Schedule = $config.ScheduleFile
             Games    = $config.GamesFile
+            Standings = $config.StandingsFile
         }
 
         $TargetFile = $pathMap[$Type]
@@ -88,20 +89,27 @@ function Save-JsonFile {
     # ------------------------------
     # 3️⃣ Änderungen prüfen
     # ------------------------------
-    $changed = $true
-    try {
-        $changed = & $CompareScript $oldData $Data
-    } catch {
-        Write-Warning "Error in CompareScript: $_"
+    
+    # Wenn kein CompareScript angegeben, immer speichern
+    if (-not $CompareScript) {
+        Write-Host "No CompareScript provided - skipping change detection and saving file." -ForegroundColor Green
+    }
+    else {
         $changed = $true
-    }
+        try {
+            $changed = & $CompareScript $oldData $Data
+        } catch {
+            Write-Warning "Error in CompareScript: $_"
+            $changed = $true
+        }
 
-    if (-not $changed) {
-        Write-Host "No changes detected - update skipped." -ForegroundColor Cyan
-        return
-    } else {
-        Write-Host "Changes detected - updating file." -ForegroundColor Green
-    }
+        if (-not $changed) {
+            Write-Host "No changes detected - update skipped." -ForegroundColor Cyan
+            return
+        } else {
+            Write-Host "Changes detected - updating file." -ForegroundColor Green
+        }
+    }    
 
     # ------------------------------
     # 4️⃣ Timestamp vorbereiten

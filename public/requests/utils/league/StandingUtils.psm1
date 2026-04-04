@@ -1,4 +1,21 @@
 
+# ===========================================================================
+# Imports
+# ===========================================================================
+
+try {
+    Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+}
+catch {
+    Write-Error "Fehler beim Laden der Module: $_"
+    throw $_
+}
+
+
+# ===========================================================================
+# Helper Utils
+# ===========================================================================
+
 function Compare-Standings{
     
     param(
@@ -57,6 +74,23 @@ function Compare-Standings{
     return $false
 }
 
+function Get-Ordinal {
+    param([int]$number)
+
+    switch ($number) {
+        0 { "none" }
+        1 { "1st" }
+        2 { "2nd" }
+        3 { "3rd" }
+        default { "$number" + "th" }
+    }
+}
+
+function Get-WinPct($team) {
+    $games = $team.Wins + $team.Losses + $team.Ties
+    if ($games -eq 0) { return -1 } # Keine Spiele, Win% undefiniert
+    return ($team.Wins + (0.5 * $team.Ties)) / $games
+}
 
 # ===========================================================================
 # Playoff-Standings Utils
@@ -66,6 +100,7 @@ function Get-BracketStandings{
     param(
         [Parameter(Mandatory=$true)]
         [AllowEmptyCollection()]
+        [AllowNull()]
         [array]$matches,
         [Parameter(Mandatory=$true)]
         [int]$startPlace
@@ -94,22 +129,24 @@ function Get-PlayoffStandings{
     param(
         [Parameter(Mandatory=$true)]
         [AllowEmptyCollection()]
+        [AllowNull()]
         [array]$winnersBracket,
         [Parameter(Mandatory=$true)]
         [AllowEmptyCollection()]
+        [AllowNull()]
         [array]$losersBracket,
         [Parameter(Mandatory=$true)]
         [array]$teamData
     )
 
-    # Prüfe Brackets auf null oder leer
+    # Prüfe Winner Bracket auf null oder leer
     if (-not $winnersBracket -or $winnersBracket.Count -eq 0) {
         Write-Warning "No winners bracket available."
         return @()  # leeres Array zurückgeben
     }
+    # Prüfe Loser Bracket auf null oder leer -> ist erlaubt, also kein Fehler, aber dann nur Gewinner-Bracket-Standings berechnen
     if (-not $losersBracket -or $losersBracket.Count -eq 0) {
-        Write-Warning "No losers bracket available."
-        return @()  # leeres Array zurückgeben
+        Write-Host "No losers bracket available." -ForegroundColor Yellow
     }
 
     # Platzierungen berechnen
@@ -164,7 +201,7 @@ function Get-PlayoffStandings{
 }
 
 function Get-PlayoffProperties{
-    return @('Place','TeamID','Owner','TeamName','PlaceType','PlaceOrdinal')
+    return @('Place','TeamID','Owner','TeamName','PlaceType','PlaceOrdinal', 'PlaceCumulative', 'PlaceAverage', 'Championships')
 }
 
 function Compare-PlayoffStandings{
@@ -194,43 +231,36 @@ function Compare-PlayoffStandings{
 # Regular Season-Standings Utils
 # ===========================================================================
 
-function Get-RegularSeasonStandings {
-    param (
-        [Parameter(Mandatory = $true)]
-        [array]$teamData
+function Get-RankedRegularSeasonStandings {
+    param(
+        [array]$teams,
+        [switch]$writePlace
     )
 
-    # Win Percentage berechnen
-    function Get-WinPct($team) {
-        $games = $team.Wins + $team.Losses + $team.Ties
-        if ($games -eq 0) { return -1 } # Keine Spiele, Win% undefiniert
-        return ($team.Wins + (0.5 * $team.Ties)) / $games
+    Write-Host "$($teams.Count) regular season teams to rank." -ForegroundColor Yellow
+
+    # Sortierung
+    $sorted = $teams | Sort-Object -Property @{
+        Expression = { Get-WinPct $_ }; Descending = $true
+    }, @{
+        Expression = "Points"; Descending = $true
+    }, @{
+        Expression = "PointsAgainst"; Ascending = $true
     }
 
-    # Ordinal (1st, 2nd, ...)
-    function Get-Ordinal($n) {
-        if ($n % 100 -in 11,12,13) { return "$($n)th" }
-        switch ($n % 10) {
-            0 { return "none" }
-            1 { return "$($n)st" }
-            2 { return "$($n)nd" }
-            3 { return "$($n)rd" }
-            default { return "$($n)th" }
-        }
+    # gib die Teams der Reihenfolge nach aus
+    Write-Host "Teams ranked in the following order:" -ForegroundColor Yellow
+    foreach ($team in $sorted) {
+        $winPct = Get-WinPct $team
+        Write-Host "Team: $($team.Team) | Owner: $($team.Owner) | Win%: $([math]::Round($winPct, 4)) | Points: $($team.Points) | Points Against: $($team.PointsAgainst)" -ForegroundColor Cyan
     }
-
-    # Sortierung nach Sleeper-Logik
-    $sortedTeams = $teamData | Sort-Object `
-        @{Expression = { Get-WinPct $_ }; Descending = $true },
-        @{Expression = { $_.Points }; Descending = $true },
-        @{Expression = { $_.PointsAgainst }; Ascending = $true }
 
     # Ergebnis bauen
     $lastPlace = $null
     $lastKey = $null
 
-    $result = for ($i = 0; $i -lt $sortedTeams.Count; $i++) {
-        $team = $sortedTeams[$i]
+    for ($i = 0; $i -lt $sorted.Count; $i++) {
+        $team = $sorted[$i]
         $currentPlace = 0
         # Berechne Win Percentage für das Team        
         $winPct = Get-WinPct $team
@@ -242,19 +272,46 @@ function Get-RegularSeasonStandings {
                 $currentPlace = 1
             }
             elseif (($i -gt 0) -and ($currentKey -eq $lastKey)) {                
-                $currentPlace = $lastPlace + 1
+                $currentPlace = $lastPlace
             }
             else {
                 $currentPlace = $lastPlace + 1
             }            
-        }      
-                
-        # Platzierung im TeamData speichern
-        $team.PlaceRegular = $currentPlace
+        }
+
+        # Properties setzen
+        if($writePlace) {
+            $team.Place = $currentPlace
+            $team.PlaceOrdinal = Get-Ordinal $currentPlace
+        }
+        else {
+            $team.PlaceRegular = $currentPlace
+        }
+
+        $lastPlace = $currentPlace
+        $lastKey = $currentKey
+    }
+
+    return $sorted
+}
+
+function Get-RegularSeasonStandings {
+    param (
+        [Parameter(Mandatory = $true)]
+        [array]$teamData
+    )
+
+    # Sortierung nach Sleeper-Logik
+    $sortedTeams = Get-RankedRegularSeasonStandings -teams $teamData
+
+    $result = for ($i = 0; $i -lt $sortedTeams.Count; $i++) {
+        $team = $sortedTeams[$i]
+
+        $winPct = Get-WinPct $team
 
         [PSCustomObject]@{
-            Place         = $currentPlace
-            PlaceOrdinal  = Get-Ordinal ($currentPlace)
+            Place         = $team.PlaceRegular
+            PlaceOrdinal  = Get-Ordinal ($team.PlaceRegular)
             TeamID        = $team.TeamID
             Owner         = $team.Owner
             TeamName      = $team.Team
@@ -267,9 +324,6 @@ function Get-RegularSeasonStandings {
             Record        = $team.Record
             Streak        = $team.Streak
         }
-
-        $lastPlace = $currentPlace
-        $lastKey = $currentKey
     }
 
     return $result
@@ -298,4 +352,162 @@ function Compare-RegularSeasonStandings{
     }
 
     return $false
+}
+
+
+# ===========================================================================
+# Standings File Utils
+# ===========================================================================
+
+function Get-OutputStandingsForSeason {
+    param(
+        [string]$season,
+        [array]$standingsPlayoffs,
+        [array]$standingsRegularSeason
+    )
+
+    $output = [PSCustomObject][ordered]@{
+        Season = $season
+        Playoffs = $standingsPlayoffs
+        RegularSeason = $standingsRegularSeason
+    }
+
+    return $output
+}
+
+function Get-OutputStandingsForAllTime {
+    param(
+        [array]$allSeasonStandings
+    )
+
+    $seasonNumber = $allSeasonStandings.Count
+
+    # gehe durch alle Seasons durch und baue kumulierte Standings für Regular Season und Playoffs je Team auf
+    $standingsRegularSeason = @{}
+    $standingsPlayoffs = @{}
+    foreach ($season in $allSeasonStandings) {
+        foreach ($team in $season.RegularSeason) {
+            if (-not $standingsRegularSeason.ContainsKey($team.TeamID)) {
+                $standingsRegularSeason[$team.TeamID] = [PSCustomObject]@{
+                    Place = 0
+                    PlaceOrdinal = "none"
+                    TeamID = $team.TeamID
+                    Owner = $team.Owner
+                    TeamName = $team.TeamName
+                    Wins = 0
+                    Losses = 0
+                    Ties = 0
+                    WinPercentage = -1
+                    Points = 0
+                    PointsAgainst = 0
+                }
+            }
+            $standingsRegularSeason[$team.TeamID].Wins += $team.Wins
+            $standingsRegularSeason[$team.TeamID].Losses += $team.Losses
+            $standingsRegularSeason[$team.TeamID].Ties += $team.Ties
+            $standingsRegularSeason[$team.TeamID].Points += $team.Points
+            $standingsRegularSeason[$team.TeamID].PointsAgainst += $team.PointsAgainst
+        }
+        foreach ($team in $season.Playoffs) {
+            if (-not $standingsPlayoffs.ContainsKey($team.TeamID)) {
+                $standingsPlayoffs[$team.TeamID] = [PSCustomObject]@{
+                    Place = 0
+                    PlaceOrdinal = "none"
+                    TeamID = $team.TeamID
+                    Owner = $team.Owner
+                    TeamName = $team.TeamName
+                    Championships = 0
+                    PlaceCumulative = 0
+                    PlaceAverage = -1
+                    Placements = @() # Array aller Platzierungen über die Seasons hinweg, z.B. [1, 3, 2, ...]
+                }
+            }
+            if($team.Place -eq 1) {
+                $standingsPlayoffs[$team.TeamID].Championships += 1
+            }
+            $standingsPlayoffs[$team.TeamID].PlaceCumulative += $team.Place
+            $standingsPlayoffs[$team.TeamID].Placements += $team.Place
+        }
+    }
+
+    # Win Percentage berechnen und Standings in finale Struktur packen
+    foreach ($teamID in $standingsRegularSeason.Keys) {
+        $team = $standingsRegularSeason[$teamID]
+        $winPct = Get-WinPct $team
+
+        # Update der Standings
+        $standingsRegularSeason[$team.TeamID].WinPercentage = [math]::Round($winPct, 4)
+        $standingsRegularSeason[$team.TeamID].Points = [math]::Round($standingsRegularSeason[$team.TeamID].Points, 2)
+        $standingsRegularSeason[$team.TeamID].PointsAgainst = [math]::Round($standingsRegularSeason[$team.TeamID].PointsAgainst, 2)
+    }
+
+    # Place Average berechnen und Standings in finale Struktur packen
+    foreach ($teamID in $standingsPlayoffs.Keys) {
+        $team = $standingsPlayoffs[$teamID]
+        if ($seasonNumber -gt 0) {
+            $placeAvg = ($team.PlaceCumulative / $seasonNumber)
+        } else {
+            $placeAvg = -1 # Keine Spiele, Win% undefiniert
+        }
+
+        # Update der Standings
+        $standingsPlayoffs[$team.TeamID].PlaceAverage = [math]::Round($placeAvg, 2)
+    }
+
+    # Regular Season: Sortierung und Rankings eintragen
+    $standingsRegularSeasonSorted = Get-RankedRegularSeasonStandings -teams ($standingsRegularSeason.Values) -writePlace
+
+    # Playoffs: Sortierung nach PlaceAverage, dann Championships, dann Regular Season Place als Tiebreaker
+    $standingsPlayoffsSorted = $standingsPlayoffs.Values | Sort-Object -Property @{
+        Expression = "PlaceAverage"; Ascending = $true
+    }, @{
+        Expression = "Championships"; Descending = $true
+    }, @{
+        Expression = { 
+            $teamID = $_.TeamID
+            if ($standingsRegularSeason -and $standingsRegularSeason.ContainsKey($teamID)) {
+                return $standingsRegularSeason[$teamID].Place
+            } else {
+                return [int]::MaxValue # Wenn kein Regular Season Platz, dann ans Ende sortieren
+            }
+        }; Ascending = $true
+    }
+
+    # Update der Playoff Place basierend auf Sortierung
+    for ($i = 0; $i -lt $standingsPlayoffsSorted.Count; $i++) {
+        $standingsPlayoffsSorted[$i].Place = $i + 1
+        $standingsPlayoffsSorted[$i].PlaceOrdinal = Get-Ordinal ($i + 1)
+    }
+
+    $output = [PSCustomObject]@{
+        Season = "AllTime"
+        Playoffs = $standingsPlayoffsSorted
+        RegularSeason = $standingsRegularSeasonSorted
+    }
+
+    return $output
+}
+
+function Get-AllExistingStandings {
+
+    $filePath = (Get-Config).StandingsFile
+
+     # Prüfe ob Datei existiert
+     if (-not (Test-Path $filePath)) {
+        Write-Warning "Standings file not found at $filePath. Returning empty array."
+        return @()
+    }
+
+    try {
+        $data = Get-Content $FilePath -Raw | ConvertFrom-Json
+        if ($data -is [array]) {
+            return $data
+        } else {
+            return @($data)
+        }
+    }
+    catch {
+        Write-Warning "Could not read existing Standings.json: $_"
+        return @()
+    }
 }

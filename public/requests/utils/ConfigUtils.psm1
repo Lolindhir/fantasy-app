@@ -1,10 +1,8 @@
 
 function Get-Config {
-    
+
     # League Settings
-    $Global:LeagueYear = 2025
     $Global:SalaryRelevantTeamSize = 20
-    $Global:LeagueID = "1257421353431080960"
 
     # RapidAPI-Key für Tank01
     $Global:RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
@@ -23,13 +21,27 @@ function Get-Config {
     $Global:TeamsFile = Join-Path $Global:DataDir "Teams.json"
     $Global:ScheduleFile = Join-Path $Global:DataDir "Schedule.json"
     $Global:GamesFile = Join-Path $Global:DataDir "Games.json"
+    $Global:StandingsFile = Join-Path $Global:DataDir "Standings.json"
     $Global:TimestampsFile = Join-Path $Global:DataDir "Timestamps.json"
     $Global:ErrorsFile = Join-Path $Global:DataDir "Errors.json"
+
+    # Lade Metadata
+    $metadataPath = Join-Path $Global:DataDir "Metadata.json"
+    if (Test-Path $metadataPath) {
+        $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
+        $Global:LeagueID = $metadataContent.LeagueID
+        $Global:LeagueYear = $metadataContent.LeagueYear
+        $Global:CapDeadline = $metadataContent.CapDeadline
+    } else {
+        Write-Error "Metadata file not found at $metadataPath."
+        throw "Metadata file not found."
+    }
 
     return @{
         LeagueYear = $Global:LeagueYear
         SalaryRelevantTeamSize = $Global:SalaryRelevantTeamSize
         LeagueID = $Global:LeagueID
+        CapDeadline = $Global:CapDeadline
         RapidAPIKey = $Global:RapidAPIKey
         RapidAPIKeyAlt1 = $Global:RapidAPIKeyAlt1
         RapidAPIKeyAlt2 = $Global:RapidAPIKeyAlt2
@@ -42,6 +54,7 @@ function Get-Config {
         TeamsFile = $Global:TeamsFile
         ScheduleFile = $Global:ScheduleFile
         GamesFile = $Global:GamesFile
+        StandingsFile = $Global:StandingsFile
         TimestampsFile = $Global:TimestampsFile
         ErrorsFile = $Global:ErrorsFile
     }
