@@ -35,6 +35,7 @@ catch {
 # Benötigte Konfigurationen
 $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
+$CapDeadline = $config.CapDeadline
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
@@ -55,7 +56,7 @@ function Get-Compare {
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status',
             'FinalWeek','LastWeek','PlayoffStartWeek','TotalTeams',
-            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy'
+            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize'
         )
 
         foreach ($prop in $propsToCheck) {
@@ -283,6 +284,7 @@ try {
         TotalTeams              = $league.total_rosters
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
+        CapDeadline             = $CapDeadline
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
         Teams                   = $teamData
         Standings               = $standings
