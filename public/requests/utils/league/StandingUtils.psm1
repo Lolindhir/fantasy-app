@@ -5,6 +5,8 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -355,9 +357,79 @@ function Compare-RegularSeasonStandings{
 }
 
 
+
+# ===========================================================================
+# Standings Remote Utils
+# ===========================================================================
+
+function Get-StandingsRemote {
+    param (
+        [string]$leagueID = (Get-Config).LeagueID,
+        [array]$playoffs = (Get-Playoffs -leagueID $leagueID),
+        [Parameter(Mandatory=$true)][array]$teamData
+    )
+
+    try {
+        $winnersBracket = $playoffs.WinnersBracket
+        $losersBracket  = $playoffs.LosersBracket
+
+        Write-Host "Calculate standings..." -ForegroundColor Yellow
+
+        # Playoff-Standings berechnen
+        $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
+
+        # Regular Season Standings berechnen
+        $regularStandings = Get-RegularSeasonStandings -teamData $teamData
+
+        # --- Platzierungen in finale Struktur packen ---
+        $standings = if ($winnersBracket -or $losersBracket) {
+            [PSCustomObject][ordered]@{
+                Playoffs = $playoffStandings
+                RegularSeason = $regularStandings
+            }
+        } else {
+            $null
+        }
+
+        Write-Host "Standings calculated." -ForegroundColor Yellow
+
+        return $standings
+    }
+    catch {
+         throw $_
+    }    
+}
+
+
 # ===========================================================================
 # Standings File Utils
 # ===========================================================================
+
+
+function Get-StandingsLocal {
+
+    $filePath = (Get-Config).StandingsFile
+
+     # Prüfe ob Datei existiert
+     if (-not (Test-Path $filePath)) {
+        Write-Warning "Standings file not found at $filePath. Returning empty array."
+        return @()
+    }
+
+    try {
+        $data = Get-Content $FilePath -Raw | ConvertFrom-Json
+        if ($data -is [array]) {
+            return $data
+        } else {
+            return @($data)
+        }
+    }
+    catch {
+        Write-Warning "Could not read existing Standings.json: $_"
+        return @()
+    }
+}
+
 
 function Get-OutputStandingsForSeason {
     param(
@@ -486,28 +558,4 @@ function Get-OutputStandingsForAllTime {
     }
 
     return $output
-}
-
-function Get-AllExistingStandings {
-
-    $filePath = (Get-Config).StandingsFile
-
-     # Prüfe ob Datei existiert
-     if (-not (Test-Path $filePath)) {
-        Write-Warning "Standings file not found at $filePath. Returning empty array."
-        return @()
-    }
-
-    try {
-        $data = Get-Content $FilePath -Raw | ConvertFrom-Json
-        if ($data -is [array]) {
-            return $data
-        } else {
-            return @($data)
-        }
-    }
-    catch {
-        Write-Warning "Could not read existing Standings.json: $_"
-        return @()
-    }
 }

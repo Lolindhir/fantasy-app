@@ -4,8 +4,8 @@
 # ===========================================================================
 
 try {
-    Import-Module "$PSScriptRoot\InvokeUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\invoke\InvokeUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"

@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\league\StandingUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -29,6 +30,19 @@ function Compare-Teams {
         return $true
     }
 
+    # Konvertierung der Old Data in Hashtables für schnelleren Zugriff
+    foreach ($team in $oldTeams) {
+        if ($team.Placements -is [pscustomobject]) {
+
+            $hash = @{}
+            foreach ($prop in $team.Placements.PSObject.Properties) {
+                $hash[$prop.Name] = $prop.Value
+            }
+
+            $team.Placements = $hash
+        }
+    }
+
     # Prüfe jedes Team
     for ($i = 0; $i -lt $oldTeams.Count; $i++) {
         $oldTeam = $oldTeams[$i]
@@ -39,6 +53,31 @@ function Compare-Teams {
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
                 Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
+                return $true
+            }
+        }
+
+        # Prüfe Placements
+        if ($oldTeam.Placements.Count -ne $newTeam.Placements.Count) {
+            Write-Host "Team '$($oldTeam.Owner)' placements count changed: $($oldTeam.Placements.Count) -> $($newTeam.Placements.Count)"
+            return $true
+        }
+        foreach ($key in $oldTeam.Placements.Keys) {
+            if (-not $newTeam.Placements.ContainsKey($key)) {
+                Write-Host "Team '$($oldTeam.Owner)' missing placement for season '$key'"
+                return $true
+            }
+
+            $oldPlacement = $oldTeam.Placements[$key]
+            $newPlacement = $newTeam.Placements[$key]
+            
+            if(Compare-RegularSeasonStandings $oldPlacement.Regular $newPlacement.Regular) {
+                Write-Host "Team '$($oldTeam.Owner)' regular season placement for season '$key' changed."
+                return $true
+            }
+
+            if (Compare-PlayoffStandings $oldPlacement.Playoffs $newPlacement.Playoffs) {
+                Write-Host "Team '$($oldTeam.Owner)' playoff placement for season '$key' changed."
                 return $true
             }
         }
@@ -99,6 +138,7 @@ function Get-Teams {
                 WaiverPosition = $roster.settings.waiver_position
                 WaiverAdjusted = $roster.settings.waiver_adjusted
                 IsCommissioner = $member.is_owner
+                Placements     = @{} # wird später berechnet
                 Roster         = $roster.players
                 Reserve        = $roster.reserve
                 Taxi           = $roster.taxi
@@ -110,6 +150,11 @@ function Get-Teams {
     }
     catch {
         throw $_
-    }    
+    }  
+}
+
+function Get-TeamsForLeague {
+    return Get-Teams |
+        Select-Object * -ExcludeProperty PlaceRegular, PlacePlayoffs, Points, PointsAgainst, Wins, Losses, Ties, Record, Streak
 }
 

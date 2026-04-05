@@ -141,7 +141,7 @@ function Save-JsonFile {
     # 6️⃣ JSON schreiben
     # ------------------------------
     try {
-        $Data | ConvertTo-Json -Depth 5 | Out-File $TargetFile -Encoding UTF8
+        $Data | ConvertTo-Json -Depth 10 | Out-File $TargetFile -Encoding UTF8
         Write-Host "$TargetFile saved!" -ForegroundColor Green
     } catch {
         throw "Error writing $($TargetFile): $_"

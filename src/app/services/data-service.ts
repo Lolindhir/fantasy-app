@@ -31,24 +31,31 @@ export interface League extends Omit<RawLeague, 'Teams'> {
 
 export interface RawFantasyTeam {
   Owner: string;
-  Team: string;
-  TeamID: number;
-  Roster: string[]; // nur Spieler-IDs
-  TeamAvatar?: string;
+  OwnerID: string;
   OwnerAvatar: string;
-  Points: number;
-  PointsAgainst: number;
-  Wins: number;
-  Losses: number;
-  Ties: number;
-  Record: string;
-  Streak: string;
+  Team: string | null;
+  TeamID: number;
+  TeamAvatar?: string | null;
+
+  MatchupID: number | null;
+  WaiverPosition: number;
+  WaiverAdjusted: number;
+  IsCommissioner: boolean;
+
+  Placements: any; // später typisieren
+
+  Roster: string[]; // nur Spieler-IDs, später in Player-Objekte umwandeln
 }
 
 export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar' | 'OwnerAvatar'> {
   Roster: Player[]; // richtige Spieler
   Avatar: string;
   Standing: number; // Platzierung in der Liga
+  Wins: number;
+  Losses: number;
+  Ties: number;
+  Points: number;
+  PointsAgainst: number;
 }
 
 export interface InjuryDetails {
@@ -314,7 +321,12 @@ export class DataService {
           Team: team.Team || `Team ${team.Owner}`,
           Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
           Roster: [],
-          Standing: 0
+          Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0 ? team.Placements.Current.Playoffs.Place : team.Placements.Current.Regular.Place ?? 0,
+          Wins: team.Placements.Current.Regular.Wins ?? 0,
+          Losses: team.Placements.Current.Regular.Losses ?? 0,
+          Ties: team.Placements.Current.Regular.Ties ?? 0,
+          Points: team.Placements.Current.Regular.Points ?? 0,
+          PointsAgainst: team.Placements.Current.Regular.PointsAgainst ?? 0
         }));
 
         // 2️⃣ Spieler aufbauen
@@ -411,13 +423,7 @@ export class DataService {
         });
 
         // 4️⃣ Teams nach Standing sortieren
-        teams.sort((a, b) => {
-          if (b.Wins !== a.Wins) return b.Wins - a.Wins;
-          if (b.Ties !== a.Ties) return b.Ties - a.Ties;
-          if (b.Points !== a.Points) return b.Points - a.Points;
-          return a.PointsAgainst - b.PointsAgainst;
-        });
-        teams.forEach((team, idx) => (team.Standing = idx + 1));
+        teams.sort((a, b) => a.Standing - b.Standing);
 
         // 5️⃣ Spieler sortieren
         const playersSorted = this.sortRoster(players, sortFields);

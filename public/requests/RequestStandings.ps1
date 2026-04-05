@@ -4,11 +4,9 @@
 # ===========================================================================
 
 try {
-    Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -19,16 +17,6 @@ catch {
 # ===========================================================================
 # 2. Globale Variablen und Konfiguration
 # ===========================================================================
-
-# Konfiguration holen
-try {
-    $config = Get-Config
-}
-catch {
-    Write-Error "Error loading configuration: $_"
-    exit 1
-}
-
 
 
 # ===========================================================================
@@ -44,7 +32,8 @@ function Get-SeasonDataRecursive {
     Write-Host "Fetching data for league ID $leagueID..." -ForegroundColor Cyan
 
     $league = Get-LeagueRaw -leagueID $leagueID
-    $standings = Get-Standings -leagueID $leagueID
+    $teamData = Get-Teams -leagueID $leagueID
+    $standings = Get-StandingsRemote -leagueID $leagueID -teamData $teamData
 
     $accumulatedData += Get-OutputStandingsForSeason -season $league.season -standingsPlayoffs $standings.Playoffs -standingsRegular $standings.RegularSeason
 

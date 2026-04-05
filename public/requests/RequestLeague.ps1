@@ -10,6 +10,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -117,9 +118,67 @@ try {
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
-    $teamData = Get-Teams
+    $teamData = Get-TeamsForLeague
     $playoffs = Get-Playoffs
-    $standings = Get-Standings -playoffs $playoffs -teamData $teamData
+    $standings = Get-StandingsLocal
+
+    # --- Für jedes Team die Standings ergänzen ---
+    # (nur AllTime, aktuelle und letzte Saison)
+    $currentSeason = $league.Season
+    $previousSeason = $league.Season - 1
+    Write-Host "Enriching team data ($($teamData.Count) teams) with standings for seasons: Current ($currentSeason), Previous ($previousSeason), AllTime" -ForegroundColor Yellow
+    Write-Host "Total standings to enrich from: $($standings.Count)" -ForegroundColor Yellow
+    foreach ($standingSeason in $standings) {
+
+        $key = switch ($standingSeason.Season) {
+            "AllTime" { "AllTime" }
+            $currentSeason { "Current" }
+            $previousSeason { "Previous" }
+            default { $null }
+        }
+
+        if (-not $key) { continue }
+
+        Write-Host "Enriching standings for season '$($standingSeason.Season)' (key: '$key')" -ForegroundColor Yellow
+        foreach ($team in $teamData) {
+            #$teamSeasonStanding = $standingSeason.Playoffs | Where-Object { $_.TeamID -eq $team.TeamID }
+
+            # if ($teamSeasonStanding) {
+            #     $team.Placements[$key] = $teamSeasonStanding
+            # }
+
+            # Ensure Placements exists
+            if (-not ($team.Placements -is [hashtable])) {
+                $team.Placements = @{}
+            }
+
+            # Sub-Objekt initialisieren (wichtig!)
+            if (-not ($team.Placements[$key] -is [hashtable])) {
+                $team.Placements[$key] = @{}
+            }
+
+            # --- Playoffs ---
+            $playoffStanding = $standingSeason.Playoffs |
+                Where-Object { $_.TeamID -eq $team.TeamID } |
+                Select-Object -First 1
+
+            if ($playoffStanding) {
+
+                $team.Placements[$key]["Playoffs"] = $playoffStanding |
+                    Select-Object * -ExcludeProperty TeamID, Owner, TeamName
+            }
+
+            # --- Regular Season ---
+            $regularStanding = $standingSeason.RegularSeason |
+                Where-Object { $_.TeamID -eq $team.TeamID } |
+                Select-Object -First 1
+
+            if ($regularStanding) {
+                $team.Placements[$key]["Regular"] = $regularStanding |
+                    Select-Object * -ExcludeProperty TeamID, Owner, TeamName
+            }
+        }
+    }
 
     
     # --- Alle Spieler holen (für Salary Cap Berechnung) ---
@@ -225,8 +284,8 @@ try {
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
-        Standings               = $standings
         Teams                   = $teamData
+        Standings               = $standings
         Playoffs                = $playoffs
         RosterSize              = $league.roster_positions
         ScoringType             = $league.scoring_settings
