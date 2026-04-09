@@ -94,6 +94,13 @@ function Get-Compare {
             return $true
         }
 
+        # Awards
+        if (Compare-Awards `
+            -oldAwards $oldLeague.Standings.Awards `
+            -newAwards $newLeague.Standings.Awards) {
+            return $true
+        }
+
         return $false
     }
     
@@ -141,6 +148,20 @@ try {
         if (-not $key) { continue }
 
         Write-Host "Enriching standings for season '$($standingSeason.Season)' (key: '$key')" -ForegroundColor Yellow
+        
+        # --- Mapping für Awards aufbauen, wenn vorhanden ---
+        $awardsByTeamId = @{}
+        if($standingSeason.Awards){
+            foreach ($award in $standingSeason.Awards) {
+                if (-not $awardsByTeamId.ContainsKey($award.TeamID)) {
+                    $awardsByTeamId[$award.TeamID] = @()
+                }
+
+                $awardsByTeamId[$award.TeamID] += $award
+            }
+        }        
+        
+        # --- jedes Team durchgehen und zugehörige Placements hinzufügen ---
         foreach ($team in $teamData) {
             #$teamSeasonStanding = $standingSeason.Playoffs | Where-Object { $_.TeamID -eq $team.TeamID }
 
@@ -177,6 +198,14 @@ try {
             if ($regularStanding) {
                 $team.Placements[$key]["Regular"] = $regularStanding |
                     Select-Object * -ExcludeProperty TeamID, Owner, TeamName
+            }
+
+            # --- Awards ---
+            if ($awardsByTeamId.ContainsKey($team.TeamID)) {
+                $team.Placements[$key]["Awards"] = $awardsByTeamId[$team.TeamID] |
+                    Select-Object Name, IconUnicode, StatDisplay
+            } else {
+                $team.Placements[$key]["Awards"] = @()
             }
         }
     }

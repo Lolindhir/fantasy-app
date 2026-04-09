@@ -26,24 +26,40 @@ catch {
 function Get-SeasonDataRecursive {
     param(
         [string]$leagueID = (Get-Config).LeagueID,
-        [array]$accumulatedData = @()
+        $accumulatedData = $null
     )
+
+    # Initialisierung nur beim ersten Aufruf
+    if (-not $accumulatedData) {
+        $accumulatedData = [PSCustomObject]@{
+            AllSeasons     = @()
+            PreviousSeason = $null
+        }
+    }
 
     Write-Host "Fetching data for league ID $leagueID..." -ForegroundColor Cyan
 
     $league = Get-LeagueRaw -leagueID $leagueID
     $teamData = Get-Teams -leagueID $leagueID
-    $standings = Get-StandingsRemote -leagueID $leagueID -teamData $teamData
 
-    $accumulatedData += Get-OutputStandingsForSeason -season $league.season -standingsPlayoffs $standings.Playoffs -standingsRegular $standings.RegularSeason
-
-    Write-Host "Fetched data for season $($league.season)." -ForegroundColor Cyan
-
+    $standingsPreviousLeague = $null
     # Rekursiv weitere Seasons holen, falls vorhanden (Abbruch, wenn keine PreviousLeagueID mehr vorhanden ist)
-
     if ($league.previous_league_id -and $league.previous_league_id -ne "") {
         $accumulatedData = Get-SeasonDataRecursive -leagueID $league.previous_league_id -accumulatedData $accumulatedData
+        $standingsPreviousLeague = $accumulatedData.PreviousSeason
     }
+
+    #berechne Standings
+    $standings = Get-StandingsRemote -leagueID $leagueID -teamData $teamData -regularSeasonGames ($league.settings.playoff_week_start - 1) -previousSeasonStandings $standingsPreviousLeague
+
+    #bereite den Output der Standings vor
+    $output = Get-OutputStandingsForSeason -season $league.season -standingsPlayoffs $standings.Playoffs -standingsRegular $standings.RegularSeason -awards $standings.Awards
+    
+    #baue accumulatedData
+    $accumulatedData.AllSeasons += $output
+    $accumulatedData.PreviousSeason = $output
+
+    Write-Host "Fetched data for season $($league.season)." -ForegroundColor Cyan
 
     return $accumulatedData
 }
@@ -86,6 +102,14 @@ function Get-Compare {
                 Write-Host "Regular season standings changed for season '$($oldSeason.Season)'."
                 return $true
             }
+
+            # Vergleiche Awards
+            if (Compare-Awards `
+                -oldAwards $oldSeason.Awards `
+                -newAwards $newSeason.Awards) {
+                Write-Host "Awards changed for season '$($oldSeason.Season)'."
+                return $true
+            }
         }
 
         return $false
@@ -103,12 +127,15 @@ try {
     Write-Host "Starting to fetch and build standings data..." -ForegroundColor Yellow
 
     # Array mit allen Seasons holen
-    $allSeasonData += Get-SeasonDataRecursive
+    $allSeasonData += (Get-SeasonDataRecursive).AllSeasons
 
     if (-not $allSeasonData -or $allSeasonData.Count -eq 0) {
         Write-Error "No season data available!"
         exit 1
     }
+
+    # All Season Data sortieren (neueste Saison zuerst)
+    $allSeasonData = $allSeasonData | Sort-Object -Property Season -Descending
 
     # AllTime berechnen
     $allSeasonData += Get-OutputStandingsForAllTime -allSeasonStandings $allSeasonData

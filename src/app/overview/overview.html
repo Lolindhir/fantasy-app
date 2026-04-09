@@ -1,0 +1,102 @@
+
+<div *ngIf="vm$ | async as vm" class="container">
+
+  <!-- 🧾 HEADER -->
+  <section class="card header">
+    <div>
+      <h2>{{ vm.league.Name }}</h2>
+      <p>{{ vm.league.Season }}, {{ vm.league.Status }}</p>
+    </div>
+
+    <div class="header-info">
+      <div>💰 {{ vm.league.SalaryCapDisplay }}</div>
+      <div>📈 {{ vm.league.SalaryCapProjectedDisplay }}</div>
+    </div>
+
+    <div *ngIf="vm.deadlineInfo" class="deadline">
+      ⏱️ {{ vm.deadlineInfo.days }}d {{ vm.deadlineInfo.hours }}h
+    </div>
+
+    <div *ngIf="vm.champion" class="champion">
+      🏆 {{ vm.champion.Owner }}
+    </div>
+  </section>
+
+  <!-- 🏆 STANDINGS -->
+  <section class="card">
+    <h2>Standings</h2>
+
+    <div class="standings-wrapper">
+      <div class="podium">
+        <!-- Platz 2 -->
+        <div class="podium-item second" *ngIf="vm.league.Teams[1]">
+          <div class="owner runner-up">{{ vm.league.Teams[1].Owner }}</div>
+          <div>{{ vm.league.Teams[1].AwardsDisplay }}</div>
+          <div class="medal">🥈</div>
+        </div>
+
+        <!-- Platz 1 -->
+        <div class="podium-item first" *ngIf="vm.league.Teams[0]">
+          <div class="owner champ">{{ vm.league.Teams[0].Owner }}</div>
+          <div>{{ vm.league.Teams[0].AwardsDisplay }}</div>
+          <div class="cup">🏆</div>
+        </div>
+
+        <!-- Platz 3 -->
+        <div class="podium-item third" *ngIf="vm.league.Teams[2]">
+          <div class="owner">{{ vm.league.Teams[2].Owner }}</div>
+          <div>{{ vm.league.Teams[2].AwardsDisplay }}</div>
+          <div class="medal">🥉</div>
+        </div>      
+      </div>
+
+      <!-- Restliche Teams -->
+      <div class="rest">
+          <div *ngFor="let team of vm.league.Teams.slice(3)" class="team-row">
+            <div class="place">{{ standingEmoji(team.Standing) }}</div>
+            <div class="owner">{{ team.Owner }} <span style="font-size: smaller;">{{ team.AwardsDisplay }}</span></div>
+          </div>
+      </div>
+    </div>
+    
+  </section>
+
+  <!-- 🔥 Awards -->
+  <section class="card awards">
+    <h3>Regular Season Awards</h3>
+    <div class="awards-grid">
+      <div *ngFor="let award of vm.awards" class="award-card">
+        <div class="award-icon">{{award.Icon}}</div>
+        <div class="award-name">{{ award.Name }}</div>
+        <div class="award-owner">- {{ award.Owner }} -</div>
+        <div class="award-stat">{{ award.StatDisplay }}</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 🏛️ ALL TIME -->
+  <section class="card">
+    <h2>All-Time</h2>
+
+    <div *ngFor="let team of vm.allTime" class="allTime-row">
+      
+      <div class="allTime-place">{{ team.Placements.AllTime.Playoffs.Place }}</div>
+
+      <div class="allTime-owner">{{ team.Owner }}</div>
+
+      <div class="allTime-awards">
+        {{ repeatEmoji('🏆', team.Championships) }}
+        {{ repeatEmoji('🥈', team.RunnerUps) }}
+        {{ repeatEmoji('🥉', team.Thirds) }}
+        {{ repeatEmoji('👑', team.RegularSeasonWins) }}
+      </div>
+
+      <div class="allTime-avg">
+        Ø🏅 = {{ team.Placements.AllTime.Playoffs.PlaceAverage }}
+      </div>
+
+    </div>
+  </section>
+
+</div>

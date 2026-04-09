@@ -10,23 +10,115 @@ export interface DataTimestamps {
   Teams: string;   // ISO String
 }
 
+export interface PlayoffTeam {
+  Place: number;
+  PlaceOrdinal: string;
+  TeamID: string;
+  Owner: string;
+  TeamName: string;
+}
+
+export interface RegularSeasonTeam {
+  Place: number;
+  PlaceOrdinal: string;
+  TeamID: string;
+  Owner: string;
+  TeamName: string;
+}
+
+export interface RawAward {
+  Name: string;
+  IconUnicode: string;
+  StatDisplay: string;
+}
+
+export interface Award extends RawAward {
+  Icon: string;
+}
+
+export interface AwardInStanding extends Award {
+  TeamID: string;
+  Owner: string;
+  TeamName: string;
+}
+
+export interface Standing {
+  Season: string;
+  Playoffs?: PlayoffTeam[];
+  RegularSeason: RegularSeasonTeam[];
+  Awards?: AwardInStanding[];
+}
+
 export interface RawLeague {
   LeagueID: string;
   Name: string;
   Season: string;
+  SeasonType: string;
+  Status: string;
   FinalWeek: number;
   PlayoffWeek: number;
   LastWeek: number;
   SalaryCap: number;
   SalaryCapProjected: number;
+  CapDeadline: string;   // ISO String
   SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[]; // nur rohe Teams
+  Standings: Standing[];
 }
 
 export interface League extends Omit<RawLeague, 'Teams'> {
   Teams: FantasyTeam[]; // angereicherte Teams
   SalaryCapDisplay: string;
   SalaryCapProjectedDisplay: string;
+}
+
+export interface Placement {
+  Place: number;
+  PlaceOrdinal: string;
+}
+
+export interface PlacementRegularSeason extends Placement {
+  Wins: number;
+  Losses: number;
+  Ties: number;
+  Points: number;
+  PointsAgainst: number;
+  WinPercentage: number;
+  WinPercentageDisplay: string;
+  Record: string;
+  Streak: string;
+}
+
+export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {
+  RegularSeasonWins: number;
+}
+
+export interface PlacementPlayoffs extends Placement {}
+
+export interface PlacementPlayoffsAllTime extends PlacementPlayoffs {
+  Championships: number;
+  RunnerUps: number;
+  Thirds: number;
+  PlaceCumulative: number;
+  PlaceAverage: number;
+  Placements: string[];
+}
+
+export interface Placements {
+  Current: {
+    Regular: PlacementRegularSeason;
+    Playoffs?: PlacementPlayoffs;
+    Awards: Award[];
+  };
+  Previous: {
+    Regular: PlacementRegularSeason;
+    Playoffs?: PlacementPlayoffs;
+    Awards: Award[];
+  };
+  AllTime: {
+    Regular: PlacementRegularSeasonAllTime;
+    Playoffs: PlacementPlayoffsAllTime;
+  };
 }
 
 export interface RawFantasyTeam {
@@ -42,12 +134,12 @@ export interface RawFantasyTeam {
   WaiverAdjusted: number;
   IsCommissioner: boolean;
 
-  Placements: any; // später typisieren
+  Placements: Placements;
 
   Roster: string[]; // nur Spieler-IDs, später in Player-Objekte umwandeln
 }
 
-export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar' | 'OwnerAvatar'> {
+export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar'> {
   Roster: Player[]; // richtige Spieler
   Avatar: string;
   Standing: number; // Platzierung in der Liga
@@ -56,6 +148,13 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar
   Ties: number;
   Points: number;
   PointsAgainst: number;
+  Streak: string;
+  Record: string;
+  Championships: number;
+  RunnerUps: number;
+  Thirds: number;
+  RegularSeasonWins: number;
+  AwardsDisplay: string;
 }
 
 export interface InjuryDetails {
@@ -316,18 +415,35 @@ export class DataService {
       map(({ leagueRaw, playersRaw, nflTeamsRaw }) => {
 
         // 1️⃣ FantasyTeams initial aufbauen
-        const teams: FantasyTeam[] = leagueRaw.Teams.map(team => ({
-          ...team,
-          Team: team.Team || `Team ${team.Owner}`,
-          Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
-          Roster: [],
-          Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0 ? team.Placements.Current.Playoffs.Place : team.Placements.Current.Regular.Place ?? 0,
-          Wins: team.Placements.Current.Regular.Wins ?? 0,
-          Losses: team.Placements.Current.Regular.Losses ?? 0,
-          Ties: team.Placements.Current.Regular.Ties ?? 0,
-          Points: team.Placements.Current.Regular.Points ?? 0,
-          PointsAgainst: team.Placements.Current.Regular.PointsAgainst ?? 0
-        }));
+        const teams: FantasyTeam[] = leagueRaw.Teams.map(team => {
+  
+          const awards = this.ensureArray(team.Placements.Current.Awards)
+            .map(a => this.mapAward(a));
+
+          return {
+            ...team,
+            Team: team.Team || `Team ${team.Owner}`,
+            Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
+            Roster: [],
+            Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0 
+              ? team.Placements.Current.Playoffs.Place 
+              : team.Placements.Current.Regular.Place ?? 0,
+            Wins: team.Placements.Current.Regular.Wins ?? 0,
+            Losses: team.Placements.Current.Regular.Losses ?? 0,
+            Ties: team.Placements.Current.Regular.Ties ?? 0,
+            Points: team.Placements.Current.Regular.Points ?? 0,
+            PointsAgainst: team.Placements.Current.Regular.PointsAgainst ?? 0,
+            Streak: team.Placements.Current.Regular.Streak ?? '',
+            Record: team.Placements.Current.Regular.Record ?? '',
+            Championships: team.Placements.AllTime.Playoffs.Championships ?? 0,
+            RunnerUps: team.Placements.AllTime.Playoffs.RunnerUps ?? 0,
+            Thirds: team.Placements.AllTime.Playoffs.Thirds ?? 0,
+            RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0,
+
+            // 👉 HIER ersetzt du deine alte Logik
+            AwardsDisplay: awards.map(a => a.Icon).join('')
+          };
+        });
 
         // 2️⃣ Spieler aufbauen
         const seasonYear = Number(leagueRaw.Season); // z. B. "2025" -> 2025
@@ -427,6 +543,26 @@ export class DataService {
 
         // 5️⃣ Spieler sortieren
         const playersSorted = this.sortRoster(players, sortFields);
+
+        leagueRaw.Standings.forEach(standing => {
+
+          // Awards des Standings in Award[] umwandeln
+          standing.Awards?.forEach(award => {
+            award.Icon = this.unicodeToEmoji(award.IconUnicode);
+          });
+
+          // Optional: Wenn du Playoffs / RegularSeason Teams selbst anreichern willst:
+          standing.Playoffs?.forEach(team => {
+            // Falls du auch hier Raw-Awards hättest (je nach Datenquelle)
+            // team.Awards = this.ensureArray(team.Awards).map(a => this.mapAward(a));
+          });
+
+          standing.RegularSeason.forEach(team => {
+            // Team-Awards im RegularSeason Standings (falls relevant)
+            // team.Awards = this.ensureArray(team.Awards).map(a => this.mapAward(a));
+          });
+
+        });
 
         // 6️⃣ League angereichert
         const league: League = {
@@ -607,6 +743,27 @@ export class DataService {
     });
     incoming.forEach(p => newRoster.push(p));
     return newRoster;
+  }
+
+  private unicodeToEmoji(unicode: string): string {
+    return unicode
+      .split(" ")
+      .map(code => String.fromCodePoint(parseInt(code, 16)))
+      .join("");
+  }
+
+  private mapAward(raw: RawAward): Award {
+    return {
+      Name: raw.Name,
+      IconUnicode: raw.IconUnicode,
+      StatDisplay: raw.StatDisplay,
+      Icon: this.unicodeToEmoji(raw.IconUnicode)
+    };
+  }
+
+  private ensureArray<T>(value: T | T[] | null | undefined): T[] {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
   }
 
 }
