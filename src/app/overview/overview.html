@@ -1,20 +1,22 @@
 
 <div *ngIf="vm$ | async as vm" class="container">
 
+  <div class="headline">{{ vm.league.Name }} Dynasty Fantasy</div>
+
   <!-- 🧾 HEADER -->
-  <section class="card header">
+  <section class="header">
     <div>
-      <h2>{{ vm.league.Name }}</h2>
-      <p>{{ vm.league.Season }}, {{ vm.league.Status }}</p>
+      <div class="header-season">Season {{ vm.league.Season }}, {{ vm.league.Status }}</div>
     </div>
 
     <div class="header-info">
-      <div>💰 {{ vm.league.SalaryCapDisplay }}</div>
-      <div>📈 {{ vm.league.SalaryCapProjectedDisplay }}</div>
+      <div>💰 Current (2025): {{ vm.league.SalaryCapDisplay }}</div>
+      <div>📈 Projected (2026): {{ vm.league.SalaryCapProjectedDisplay }}</div>
     </div>
 
-    <div *ngIf="vm.deadlineInfo" class="deadline">
-      ⏱️ {{ vm.deadlineInfo.days }}d {{ vm.deadlineInfo.hours }}h
+    <div *ngIf="vm.deadlineInfo">
+      <div class="deadline-text">Deadline Day: {{ vm.deadlineDisplay }}</div>
+      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d {{ vm.deadlineInfo.hours }}h</div>
     </div>
 
     <div *ngIf="vm.champion" class="champion">
@@ -23,7 +25,7 @@
   </section>
 
   <!-- 🏆 STANDINGS -->
-  <section class="card">
+  <section>
     <h2>Standings</h2>
 
     <div class="standings-wrapper">
@@ -62,7 +64,7 @@
   </section>
 
   <!-- 🔥 Awards -->
-  <section class="card awards">
+  <section class="awards">
     <h3>Regular Season Awards</h3>
     <div class="awards-grid">
       <div *ngFor="let award of vm.awards" class="award-card">
@@ -76,7 +78,7 @@
 
 
   <!-- 🏛️ ALL TIME -->
-  <section class="card">
+  <section>
     <h2>All-Time</h2>
 
     <div *ngFor="let team of vm.allTime" class="allTime-row">

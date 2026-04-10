@@ -60,6 +60,7 @@ export class OverviewComponent implements OnInit {
 
       // ⏱️ Deadline
       const deadline = new Date(league.CapDeadline);
+      const deadlineDisplay = deadline.toLocaleDateString();
       const now = new Date();
       const msLeft = deadline.getTime() - now.getTime();
 
@@ -75,6 +76,7 @@ export class OverviewComponent implements OnInit {
         allTime,
         salaryByTeam,
         awards,
+        deadlineDisplay,
         deadlineInfo
       };
     })
