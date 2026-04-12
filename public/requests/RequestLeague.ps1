@@ -297,6 +297,17 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
+    # Status setzen
+    $status = "Active"
+    switch($league.status){
+        "complete" {$status = "Complete"} 
+        "off_season" {$status = "Off Season"} 
+        "in_season" {$status = "In Season"} 
+        "playoffs" {$status = "In Playoffs"}
+        default {$status = "Active"} 
+    }
+    Write-Host "League is in status '$status'." -ForegroundColor Yellow
+
 
     # --- League JSON vorbereiten ---
     $leagueAsJson = @()
@@ -306,7 +317,7 @@ try {
         Avatar                  = $league.avatar
         Season                  = $league.season
         SeasonType              = $league.season_type
-        Status                  = $league.status
+        Status                  = $status
         LastWeek                = $lastWeek
         PlayoffStartWeek        = $league.settings.playoff_week_start
         FinalWeek               = $finalWeek

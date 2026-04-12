@@ -1,22 +1,22 @@
 
 <div *ngIf="vm$ | async as vm" class="container">
 
-  <div class="headline">{{ vm.league.Name }} Dynasty Fantasy</div>
+  <div class="headline">{{ vm.league.Name }} 🏈 Dynasty</div>
 
   <!-- 🧾 HEADER -->
   <section class="header">
     <div>
-      <div class="header-season">Season {{ vm.league.Season }}, {{ vm.league.Status }}</div>
+      <div class="header-season">Season {{ vm.league.Season }} - {{ vm.league.Status }}</div>
     </div>
 
     <div class="header-info">
       <div>💰 Current (2025): {{ vm.league.SalaryCapDisplay }}</div>
-      <div>📈 Projected (2026): {{ vm.league.SalaryCapProjectedDisplay }}</div>
+      <div>📈 {{ vm.projectedText }} (2026): {{ vm.league.SalaryCapProjectedDisplay }}</div>
     </div>
 
-    <div *ngIf="vm.deadlineInfo">
-      <div class="deadline-text">Deadline Day: {{ vm.deadlineDisplay }}</div>
-      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d {{ vm.deadlineInfo.hours }}h</div>
+    <div *ngIf="vm.deadlineInfo && vm.league.Status == 'Off Season'">
+      <!-- <div class="deadline-text">Deadline Day: {{ vm.deadlineDisplay }}</div> -->
+      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d until Cap Deadline</div>
     </div>
 
     <div *ngIf="vm.champion" class="champion">

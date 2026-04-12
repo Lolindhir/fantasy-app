@@ -21,6 +21,8 @@ export class OverviewComponent implements OnInit {
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
+      const projectedText = league.ProjectedText;
+
       const isFinished =
         league.Status === 'Completed';
 
@@ -76,6 +78,7 @@ export class OverviewComponent implements OnInit {
         allTime,
         salaryByTeam,
         awards,
+        projectedText,
         deadlineDisplay,
         deadlineInfo
       };

@@ -70,6 +70,7 @@ export interface League extends Omit<RawLeague, 'Teams'> {
   Teams: FantasyTeam[]; // angereicherte Teams
   SalaryCapDisplay: string;
   SalaryCapProjectedDisplay: string;
+  ProjectedText: string;
 }
 
 export interface Placement {
@@ -571,7 +572,8 @@ export class DataService {
           SalaryCap: leagueRaw.SalaryCap,
           SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
           SalaryCapProjected: leagueRaw.SalaryCapProjected,
-          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected)
+          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected),
+          ProjectedText: leagueRaw.Status == "Complete" ? "Next" : "Projected"
         };
 
         return { league, players: playersSorted, teams };
