@@ -35,6 +35,9 @@ export class TradeSimulatorComponent implements OnInit {
   salaryRelevantTeamSize: number = 20; // Anzahl der Top-Spieler, die für den Salary Cap relevant sind
   newTeamTopPlayers: Player[] = [];
 
+  projectedText = "Projected"
+  projectedAbr = "Proj."
+
   constructor(private dataService: DataService, private dialog: MatDialog) {}
 
   ngOnInit() {
@@ -43,7 +46,16 @@ export class TradeSimulatorComponent implements OnInit {
       this.league = res.league;
       this.SalaryCap = this.league?.SalaryCap || 0;
       this.SalaryCapProjected = this.league?.SalaryCapProjected || 0;
+
+      // Projected Text anpassen
+      this.projectedText += " " + (res.league.SeasonAsNumber + 1).toString()
+      this.projectedAbr += " " + (res.league.SeasonAsNumber + 1).toString()
+      if(res.league.IsFinished){
+        this.projectedText = (res.league.SeasonAsNumber + 1).toString();
+        this.projectedAbr = (res.league.SeasonAsNumber + 1).toString();
+      }
     });
+
   }
 
   get newTeamSalary(): number {

@@ -45,6 +45,7 @@ export class TeamListComponent implements OnInit {
   salaryCapProjectedTopPlayers: Player[] = [];
   salaryCapTopPlayersExpanded = false;
   projectedText = "Projected"
+  projectedAbr = "Proj."
 
   constructor(private dataService: DataService, private dialog: MatDialog) {}
 
@@ -83,7 +84,12 @@ export class TeamListComponent implements OnInit {
       this.salaryCapProjectedTopPlayers = this.sortPlayersBySalary(this.allPlayers, true).slice(0, this.salaryRelevantTeamSize * teamCount);
 
       // Projected Text anpassen
-      this.projectedText = league.ProjectedText;
+      this.projectedText += " " + (league.SeasonAsNumber + 1).toString()
+      this.projectedAbr += " " + (league.SeasonAsNumber + 1).toString()
+      if(league.IsFinished){
+        this.projectedText = (league.SeasonAsNumber + 1).toString();
+        this.projectedAbr = (league.SeasonAsNumber + 1).toString();
+      }
 
     });
 

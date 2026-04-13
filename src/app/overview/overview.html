@@ -10,8 +10,8 @@
     </div>
 
     <div class="header-info">
-      <div>💰 Current (2025): {{ vm.league.SalaryCapDisplay }}</div>
-      <div>📈 {{ vm.projectedText }} (2026): {{ vm.league.SalaryCapProjectedDisplay }}</div>
+      <div>💰 {{ vm.league.IsFinished ? "Last" : "Current"}} ({{ vm.league.SeasonAsNumber }}): {{ vm.league.SalaryCapDisplay }}</div>
+      <div>📈 {{ vm.league.IsFinished ? "Next" : "Projected"}} ({{ vm.league.SeasonAsNumber + 1 }}): {{ vm.league.SalaryCapProjectedDisplay }}</div>
     </div>
 
     <div *ngIf="vm.deadlineInfo && vm.league.Status == 'Off Season'">
@@ -78,7 +78,7 @@
 
 
   <!-- 🏛️ ALL TIME -->
-  <section>
+  <section class="allTime">
     <h2>All-Time</h2>
 
     <div *ngFor="let team of vm.allTime" class="allTime-row">

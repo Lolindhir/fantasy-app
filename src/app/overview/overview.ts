@@ -21,10 +21,8 @@ export class OverviewComponent implements OnInit {
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
-      const projectedText = league.ProjectedText;
-
       const isFinished =
-        league.Status === 'Completed';
+        league.IsFinished;
 
       // 🏆 Champion
       const champion = teams.find(t =>
@@ -78,7 +76,6 @@ export class OverviewComponent implements OnInit {
         allTime,
         salaryByTeam,
         awards,
-        projectedText,
         deadlineDisplay,
         deadlineInfo
       };

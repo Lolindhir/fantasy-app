@@ -61,7 +61,7 @@
 
     <!-- SalaryProjected -->
     <ng-container matColumnDef="salaryProjected">
-      <th mat-header-cell *matHeaderCellDef class="table-text"> Projected </th>
+      <th mat-header-cell *matHeaderCellDef class="table-text"> {{projectedAbr}} </th>
       <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">
         <div fxLayout="column" fxLayoutAlign="none start">
           <div>{{ player.SalaryProjectedDisplay }}</div>
@@ -126,7 +126,7 @@
 
 <div>
   <mat-slide-toggle [(ngModel)]="showProjected">
-    <span style="margin-left: 10px;;">{{ showProjected ? 'Projected Salaries On' : 'Toggle Projected Salaries On' }}</span>
+    <span style="margin-left: 10px;;">{{ showProjected ? projectedText  + ' Salaries On' : 'Toggle ' + projectedText + ' Salaries On' }}</span>
   </mat-slide-toggle>
 </div> 
 
@@ -139,7 +139,7 @@
 <mat-card class="salarycap">
   <mat-card-header>
     <mat-card-title>
-      League Salary Cap = {{ formatSalaryDollars(salaryCap, false, 0) }} (Proj.: {{ formatSalaryDollars(salaryCapProjected, false, 0) }}) 
+      League Salary Cap = {{ formatSalaryDollars(salaryCap, false, 0) }} ({{ projectedAbr }}: {{ formatSalaryDollars(salaryCapProjected, false, 0) }}) 
     </mat-card-title>
   </mat-card-header>
 
@@ -185,7 +185,7 @@
   </mat-card-header>
 
   <mat-card-content>
-    <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, false, 0) }} (Proj.: {{ formatSalaryDollars(team.SalaryProjected, false, 0) }})</p>
+    <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, false, 0) }} ({{ projectedAbr }}: {{ formatSalaryDollars(team.SalaryProjected, false, 0) }})</p>
     <p>
       <strong>Salary Cap Difference:</strong>
       <span [ngClass]="{
@@ -196,7 +196,7 @@
       </span>
     </p>
     <p>
-      <strong>Projected Cap Difference:</strong>
+      <strong>{{ projectedText }} Cap Difference:</strong>
       <span [ngClass]="{
         'positive-diff': team.SalaryProjected - salaryCapProjected > 0,
         'negative-diff': team.SalaryProjected - salaryCapProjected < 0
