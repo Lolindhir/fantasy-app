@@ -62,7 +62,7 @@
         *ngFor="let p of incomingPlayers"
         matTooltip="Dieser Spieler wird ins Team geholt. Top-N Berechnung wird angepasst."
       >
-        <span class="player-name">{{ p.Name }}</span>
+        <span class="player-name">{{ p.Name }} ({{ p.SalaryDisplay }})</span>
 
         <button mat-icon-button color="primary" (click)="removeIncoming(p)">
           <mat-icon>close</mat-icon>
