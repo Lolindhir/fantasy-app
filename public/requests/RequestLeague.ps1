@@ -301,8 +301,9 @@ try {
     $status = "Active"
     switch($league.status){
         "complete" {$status = "Complete"} 
-        "off_season" {$status = "Off Season"} 
-        "in_season" {$status = "In Season"} 
+        "off_season" {$status = "Off-Season"} 
+        "pre_draft" {$status = "Pre-Season"} 
+        "in_season" {$status = "In-Season"} 
         "playoffs" {$status = "In Playoffs"}
         default {$status = "Active"} 
     }
