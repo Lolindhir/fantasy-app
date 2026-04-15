@@ -1,7 +1,7 @@
 # Draft & Waiver Regeln
 
 
-## 🧑‍🎓 Rookie Draft (Pre-Season)
+## 🧑‍🎓 Rookie Draft (Off-Season)
 
 Der Rookie Draft findet nach dem NFL Draft statt und dient der Verteilung aller neuen Spieler auf die Teams.
 
@@ -11,8 +11,8 @@ Die Reihenfolge basiert auf der Platzierung der Vorsaison:
 
 1. Platz 5  
 2. Platz 6  
-3. Platz 3  
-4. Platz 4  
+3. Platz 4  
+4. Platz 3  
 5. Platz 2  
 6. Platz 1  
 
@@ -26,8 +26,8 @@ Die Reihenfolge basiert auf der Platzierung der Vorsaison:
 Dieses System verfolgt bewusst zwei Ziele:
 
 **1. Aktivität bis zum Ende belohnen**  
-- Teams außerhalb der Top-Platzierungen haben einen starken Anreiz, weiter zu gewinnen  
-- Besonders Platz 3–5 bleibt bis zum Schluss relevant  
+- Teams außerhalb der Top- bzw. Ewige Tabelle-relevanten Platzierungen (1-3) haben einen Anreiz, weiter zu gewinnen  
+- Besonders Platz 5 bleibt bis zum Schluss relevant  
 
 **2. Absichtliches Verlieren verhindern (Anti-Tanking)**  
 - Der letzte Platz erhält nicht automatisch den besten Pick  
