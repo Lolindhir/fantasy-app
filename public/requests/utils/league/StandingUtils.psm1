@@ -474,8 +474,22 @@ function Get-Awards {
         $previousSeasonStandings
     )
 
-    $awards = @()
+    # Award Arten aufbauen
+    $awardTypes = @{
+        Special = [PSCustomObject]@{
+            Name = "Special"
+            DisplayText = "Special"
+            Order = 1
+        }
+        RegularSeason = [PSCustomObject]@{
+            Name = "RegularSeason"
+            DisplayText = "Regular Season"
+            Order = 2
+        }
+    }
 
+    # Awards aufbauen
+    $awards = @()
     if(-not $regularSeasonStandings){
         return $awards
     }
@@ -488,6 +502,7 @@ function Get-Awards {
     $king = $regularSeasonStandings | Sort-Object Place | Select-Object -First 1
     $awards += [PSCustomObject]@{
         Name            = "Regular Season King"
+        Type            = $awardTypes['Special']
         IconUnicode     = "1F451" #👑
         StatDisplay     = "Record: ($($king.Wins)-$($king.Losses)-$($king.Ties)) | Points: $($king.Points)"
         TeamID          = $king.TeamID
@@ -499,6 +514,7 @@ function Get-Awards {
     $bestPerformer = $regularSeasonStandings | Sort-Object Points -Descending | Select-Object -First 1
     $awards += [PSCustomObject]@{
         Name            = "Best Performer"
+        Type            = $awardTypes['RegularSeason']
         IconUnicode     = "1F525" #🔥
         StatDisplay     = "Points: $($bestPerformer.Points) | Points per Game: $($bestPerformer.PointsPerGame)"
         TeamID          = $bestPerformer.TeamID
@@ -510,6 +526,7 @@ function Get-Awards {
     $streaker = $regularSeasonStandings | Sort-Object WinStreakScore -Descending | Select-Object -First 1
     $awards += [PSCustomObject]@{
         Name            = "Streaker"
+        Type            = $awardTypes['RegularSeason']
         IconUnicode     = "26A1" #⚡
         StatDisplay     = "Longest Streak: $($streaker.LongestWinStreak) Wins | Record: $($streaker.Record)"
         TeamID          = $streaker.TeamID
@@ -521,6 +538,7 @@ function Get-Awards {
     $overperformer = $regularSeasonStandings | Sort-Object EfficiencyScore -Descending | Select-Object -First 1
     $awards += [PSCustomObject]@{
         Name            = "Overperformer"
+        Type            = $awardTypes['RegularSeason']
         IconUnicode     = "1F680" #🚀
         StatDisplay     = "Point Difference: $($overperformer.PointDifference) | Wins: $($overperformer.Wins)"
         TeamID          = $overperformer.TeamID
@@ -532,6 +550,7 @@ function Get-Awards {
     $ironWill = $regularSeasonStandings | Sort-Object IronWillScore -Descending | Select-Object -First 1
     $awards += [PSCustomObject]@{
         Name            = "Brick Wall"
+        Type            = $awardTypes['RegularSeason']
         IconUnicode     = "1F9F1" #🧱
         StatDisplay     = "Points Against per Game: $($ironWill.PointsAgainstPerGame) | League Difference: $($ironWill.PointsAgainstPerGameDiffLeagueAvg) | Wins: $($ironWill.Wins))"
         TeamID          = $ironWill.TeamID
@@ -575,6 +594,7 @@ function Get-Awards {
         $playoffTeam = $playoffsByTeamId[$clutchPeaker.TeamID]
         $awards += [PSCustomObject]@{
             Name            = "Clutch Peaker"
+            Type            = $awardTypes['Special']
             IconUnicode     = "1F3AF" #🎯
             StatDisplay     = "Regular Season: $($clutchPeaker.PlaceOrdinal) | Playoffs: $($playoffTeam.PlaceOrdinal)"
             TeamID          = $clutchPeaker.TeamID
@@ -615,6 +635,7 @@ function Get-Awards {
         $mostImproved = $regularSeasonStandings | Where-Object { $null -ne $_.ImprovementScore } | Sort-Object ImprovementScore -Descending | Select-Object -First 1
         $awards += [PSCustomObject]@{
             Name            = "Most Improved"
+            Type            = $awardTypes['RegularSeason']
             IconUnicode     = "1F4AA" #💪
             StatDisplay     = "Wins: $($prev.Wins) to $($mostImproved.Wins) | Points: $($prev.Points) to $($mostImproved.Points)"
             TeamID          = $mostImproved.TeamID

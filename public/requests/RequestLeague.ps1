@@ -203,7 +203,7 @@ try {
             # --- Awards ---
             if ($awardsByTeamId.ContainsKey($team.TeamID)) {
                 $team.Placements[$key]["Awards"] = $awardsByTeamId[$team.TeamID] |
-                    Select-Object Name, IconUnicode, StatDisplay
+                    Select-Object * -ExcludeProperty TeamID, Owner, TeamName
             } else {
                 $team.Placements[$key]["Awards"] = @()
             }

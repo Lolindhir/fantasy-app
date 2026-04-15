@@ -26,8 +26,15 @@ export interface RegularSeasonTeam {
   TeamName: string;
 }
 
+export interface AwardType {
+  Name: string;
+  DisplayText: string;
+  Order: number;
+}
+
 export interface RawAward {
   Name: string;
+  Type: AwardType;
   IconUnicode: string;
   StatDisplay: string;
 }
@@ -759,6 +766,7 @@ export class DataService {
   private mapAward(raw: RawAward): Award {
     return {
       Name: raw.Name,
+      Type: raw.Type,
       IconUnicode: raw.IconUnicode,
       StatDisplay: raw.StatDisplay,
       Icon: this.unicodeToEmoji(raw.IconUnicode)
