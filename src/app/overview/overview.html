@@ -10,11 +10,43 @@
     </div>
 
     <div class="header-info">
+
+      <div class="row">
+        <div class="label">🤝 Trades</div>
+        <div class="status">
+          {{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}
+        </div>
+        <div class="meta" *ngIf="vm.league.TradesOpen && vm.league.TradeDeadlineWeek">
+            KC
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="label">📝 Waivers</div>
+        <div class="status">
+          {{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}
+        </div>
+        <div class="meta">
+            <!-- optional -->
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="label">✂️ Cuts</div>
+        <div class="status">
+          {{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}
+        </div>
+        <div class="meta"></div>
+      </div>
+
+    </div>
+
+    <div class="header-info">
       <div>💰 {{ vm.league.IsFinished ? "Last" : "Current"}} ({{ vm.league.SeasonAsNumber }}): {{ vm.league.SalaryCapDisplay }}</div>
       <div>📈 {{ vm.league.IsFinished ? "Next" : "Projected"}} ({{ vm.league.SeasonAsNumber + 1 }}): {{ vm.league.SalaryCapProjectedDisplay }}</div>
     </div>
 
-    <div *ngIf="vm.deadlineInfo && vm.league.Status == 'Off Season'">
+    <div *ngIf="vm.deadlineInfo && vm.league.Status == 'Off-Season'">
       <!-- <div class="deadline-text">Deadline Day: {{ vm.deadlineDisplay }}</div> -->
       <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d until Cap Deadline</div>
     </div>

@@ -55,7 +55,7 @@ function Get-Compare {
         # Top-Level
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status',
-            'FinalWeek','LastWeek','PlayoffStartWeek','TotalTeams',
+            'FinalWeek','CurrentWeek','LastWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize'
         )
 
@@ -297,17 +297,38 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
-    # Status setzen
+    # Status setzen, Offenheit von Trades, Cuts, Waivers prüfen
     $status = "Active"
+    $cutsAllowed = $true
+    $waiversOpen = $true
+    $tradesOpen = $true
     switch($league.status){
-        "complete" {$status = "Complete"} 
-        "off_season" {$status = "Off-Season"} 
+        "complete" {
+            $status = "Finished"
+            $cutsAllowed = $false
+            $waiversOpen = $false
+            $tradesOpen = $false
+        } 
+        "off_season" {
+            $status = "Off-Season"
+
+            # check if trades are open
+        } 
         "pre_draft" {$status = "Pre-Season"} 
         "in_season" {$status = "In-Season"} 
         "playoffs" {$status = "In Playoffs"}
         default {$status = "Active"} 
     }
     Write-Host "League is in status '$status'." -ForegroundColor Yellow
+
+
+    
+
+    # Ermitteln, wann die Waivers sind
+
+    # Waiver Wire Reihenfolge ermitteln
+
+    # Draft Reihenfolge ermitteln
 
 
     # --- League JSON vorbereiten ---
@@ -319,9 +340,14 @@ try {
         Season                  = $league.season
         SeasonType              = $league.season_type
         Status                  = $status
+        CurrentWeek             = $currentWeek
         LastWeek                = $lastWeek
         PlayoffStartWeek        = $league.settings.playoff_week_start
         FinalWeek               = $finalWeek
+        TradeDeadlineWeek       = $league.settings.trade_deadline
+        CutsAllowed             = $cutsAllowed
+        WaiversOpen             = $waiversOpen
+        TradesOpen              = $tradesOpen
         TotalTeams              = $league.total_rosters
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
