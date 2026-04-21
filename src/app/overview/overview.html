@@ -46,8 +46,8 @@
     </div>
 
     <div class="header-info">
-      <div>💰 {{ vm.league.IsFinished ? "Last" : "Current"}} ({{ vm.league.SeasonAsNumber }}):</div>
-      <div class="status">💵 {{ vm.league.SalaryCapDisplay }}</div>
+      <div>{{ vm.league.IsFinished ? "⏮️ Last" : "📌 Current"}} ({{ vm.league.SeasonAsNumber }}):</div>
+      <div class="status">💰 {{ vm.league.SalaryCapDisplay }}</div>
 
       <div>{{ vm.league.IsFinished ? "📊 Next" : "🔮 Projected"}} ({{ vm.league.SeasonAsNumber + 1 }}):</div>
       <div class="status">
@@ -72,6 +72,11 @@
 
     <div *ngIf="vm.champion" class="champion">
       🏆 {{ vm.champion.Owner }}
+      <img 
+          *ngIf="vm.champion.Avatar" 
+          [src]="vm.champion.Avatar" 
+          alt="Logo" 
+        />
     </div>
   </section>
 
