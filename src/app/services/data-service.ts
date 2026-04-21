@@ -585,7 +585,7 @@ export class DataService {
           SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
           SalaryCapProjected: leagueRaw.SalaryCapProjected,
           SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected),
-          IsFinished: leagueRaw.Status == "Complete",
+          IsFinished: leagueRaw.Status == "Finished",
           SeasonAsNumber: +leagueRaw.Season
         };
 
