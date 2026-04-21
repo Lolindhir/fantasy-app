@@ -47,11 +47,11 @@
 
     <div class="header-info">
       <div>{{ vm.league.IsFinished ? "⏮️ Last" : "📌 Current"}} ({{ vm.league.SeasonAsNumber }}):</div>
-      <div class="status">💰 {{ vm.league.SalaryCapDisplay }}</div>
+      <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
 
       <div>{{ vm.league.IsFinished ? "📊 Next" : "🔮 Projected"}} ({{ vm.league.SeasonAsNumber + 1 }}):</div>
       <div class="status">
-        {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }} {{ vm.league.SalaryCapProjectedDisplay }}
+        {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
       </div>
 
       <div></div>
