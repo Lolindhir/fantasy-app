@@ -301,7 +301,7 @@ try {
     $status = "Active"
     $cutsAllowed = $true
     $waiversOpen = $true
-    $tradesOpen = $true
+    $tradesOpen = $true # check if trades are open 
     switch($league.status){
         "complete" {
             $status = "Finished"
@@ -311,8 +311,7 @@ try {
         } 
         "off_season" {
             $status = "Off-Season"
-
-            # check if trades are open
+            $waiversOpen = $false
         } 
         "pre_draft" {$status = "Pre-Season"} 
         "in_season" {$status = "In-Season"} 
