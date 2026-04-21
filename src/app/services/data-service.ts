@@ -67,8 +67,11 @@ export interface RawLeague {
   LastWeek: number;
   TradeDeadlineWeek: number;
   CutsAllowed: boolean;
+  CutsMetaText: string;
   WaiversOpen: boolean;
+  WaiversMetaText: string;
   TradesOpen: boolean;
+  TradesMetaText: string;
   SalaryCap: number;
   SalaryCapProjected: number;
   CapDeadline: string;   // ISO String

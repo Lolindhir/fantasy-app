@@ -56,7 +56,8 @@ function Get-Compare {
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status',
             'FinalWeek','CurrentWeek','LastWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
-            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize'
+            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize',
+            'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
 
         foreach ($prop in $propsToCheck) {
@@ -300,8 +301,11 @@ try {
     # Status setzen, Offenheit von Trades, Cuts, Waivers prüfen
     $status = "Active"
     $cutsAllowed = $true
+    $cutsMetaText = ""
     $waiversOpen = $true
-    $tradesOpen = $true # check if trades are open 
+    $waiversMetaText = ""
+    $tradesOpen = $true # check if trades are open
+    $tradesMetaText = "" 
     switch($league.status){
         "complete" {
             $status = "Finished"
@@ -345,8 +349,11 @@ try {
         FinalWeek               = $finalWeek
         TradeDeadlineWeek       = $league.settings.trade_deadline
         CutsAllowed             = $cutsAllowed
+        CutsMetaText            = $cutsMetaText
         WaiversOpen             = $waiversOpen
+        WaiversMetaText         = $waiversMetaText
         TradesOpen              = $tradesOpen
+        TradesMetaText          = $tradesMetaText
         TotalTeams              = $league.total_rosters
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected

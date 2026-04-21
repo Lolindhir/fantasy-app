@@ -113,4 +113,16 @@ export class OverviewComponent implements OnInit {
     return Array(3).fill(emoji).join('') + ` +${count - 3}`;
   }
 
+  formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
+    if(amount >= 0){
+      if (plus) {
+        return `+ $${(amount / 1_000_000).toFixed(afterPoint)} Mio.`;
+      } else {
+        return `$${(amount / 1_000_000).toFixed(afterPoint)} Mio.`;
+      }
+    } else {
+      return `- $${(-amount / 1_000_000).toFixed(afterPoint)} Mio.`;
+    }
+  }
+
 }
