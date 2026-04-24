@@ -55,7 +55,7 @@ function Get-Compare {
         # Top-Level
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status',
-            'FinalWeek','CurrentWeek','LastWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
+            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
@@ -243,6 +243,7 @@ try {
     $lastWeek = $league.settings.last_scored_leg
     Write-Host "Last scored week in league: Week $lastWeek" -ForegroundColor Yellow
 
+
     # --- Aktuelle Woche berechnen ---
     $currentWeek = $null
     $finalWeek = $null
@@ -302,9 +303,11 @@ try {
     $status = "Active"
     $cutsAllowed = $true
     $cutsMetaText = ""
-    $waiversOpen = $true
+    $waiversOpen = [int]$league.settings.daily_waivers -eq 1
+    Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
-    $tradesOpen = $true # check if trades are open
+    $tradesOpen = [int]$league.settings.disable_trades -eq 0
+    Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
     $tradesMetaText = "" 
     switch($league.status){
         "complete" {
@@ -313,18 +316,14 @@ try {
             $waiversOpen = $false
             $tradesOpen = $false
         } 
-        "off_season" {
-            $status = "Off-Season"
-            $waiversOpen = $false
-        } 
+        "off_season" { $status = "Off-Season" } 
         "pre_draft" {$status = "Pre-Season"} 
         "in_season" {$status = "In-Season"} 
         "playoffs" {$status = "In Playoffs"}
         default {$status = "Active"} 
     }
     Write-Host "League is in status '$status'." -ForegroundColor Yellow
-
-
+    Write-Host "Waivers open: $waiversOpen | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
     
 
     # Ermitteln, wann die Waivers sind
@@ -344,9 +343,9 @@ try {
         SeasonType              = $league.season_type
         Status                  = $status
         CurrentWeek             = $currentWeek
-        LastWeek                = $lastWeek
+        FinalScoredWeek         = $finalWeek
+        LastLeagueWeek          = $lastWeek
         PlayoffStartWeek        = $league.settings.playoff_week_start
-        FinalWeek               = $finalWeek
         TradeDeadlineWeek       = $league.settings.trade_deadline
         CutsAllowed             = $cutsAllowed
         CutsMetaText            = $cutsMetaText

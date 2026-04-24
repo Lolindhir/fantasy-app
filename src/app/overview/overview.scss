@@ -24,6 +24,7 @@
 .header-season {
   font-size: large;
   margin-bottom: 10px;
+  font-weight: bold;
 }
 
 .header-info {
@@ -62,14 +63,18 @@
   //font-weight: bold;
 }
 
-.deadline {
-  color: darkorange;
-  font-size: large;
+.deadlineHeader {
   margin-bottom: 10px;
 }
 
+.deadline {
+  color: darkorange;
+  font-size: large;
+}
+
 .deadline-text {
-  font-style: small;
+  font-size: small;
+  font-style: italic;
 }
 
 .champion {
@@ -130,6 +135,55 @@
     justify-content: space-between;
     align-items: center;
   }
+}
+
+//=================================
+// Off-Season Klassen
+//=================================
+
+.offseason-row {
+  display: grid;
+  grid-template-columns: 1fr max-content max-content max-content max-content;
+  align-items: center;
+  column-gap: 20px;
+
+  padding: 6px 10px;
+  margin: 4px 10px;
+
+  border-radius: 8px;
+  background: linear-gradient(to right, #eff2f5, #e2e8f0);
+}
+
+.offseason-row .team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.offseason-row img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.team-name {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.offseason-label {
+  //font-size: 0.95rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.offseason-stat {
+  //font-size: 0.95rem;
+  text-align: right;
+  white-space: nowrap;
 }
 
 

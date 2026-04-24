@@ -656,9 +656,9 @@ if (Test-Path $leagueFile) {
         $leagueRaw = Get-Content $leagueFile -Raw
         $league = $leagueRaw | ConvertFrom-Json
         if($league){
-            $lastWeek = $league.LastWeek
+            $lastWeek = $league.LastLeagueWeek
             $playoffStartWeek = $league.PlayoffStartWeek
-            $finalWeek = $league.FinalWeek
+            $finalWeek = $league.FinalScoredWeek
         }
         Write-Host "Loaded last week (Week $($lastWeek)) from League.json..." -ForegroundColor Yellow
         Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from League.json..." -ForegroundColor Yellow

@@ -65,9 +65,9 @@
       </div>
     </div>
 
-    <div *ngIf="vm.deadlineInfo && vm.league.Status == 'Off-Season'">
-      <div class="deadline-text">Deadline Day: {{ vm.deadlineDisplay }}</div>
+    <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
       <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d until Cap Deadline</div>
+      <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
     </div>
 
     <div *ngIf="vm.champion" class="champion">
@@ -80,8 +80,44 @@
     </div>
   </section>
 
+  <!-- 📊 Off-Season Overview -->
+  <section *ngIf="vm.offSeason">
+    <h2>Available Cap Space</h2>
+
+    <div class="offseason-row" *ngFor="let t of vm.salaryByTeam">
+
+      <div class="team">
+        <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
+        <span class="team-name">{{ t.team.Team }}</span>
+      </div>
+
+      <div class="offseason-label">
+        {{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:
+      </div>
+      
+      <div class="offseason-stat"
+          [ngClass]="{
+            'positive-diff': t.total > vm.league.SalaryCap,
+            'negative-diff': t.total < vm.league.SalaryCap
+          }">
+        {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
+      </div>
+
+      <div class="offseason-stat">
+        💰 {{ formatSalaryDollars(t.total, false, 1) }}
+      </div>
+
+      <div class="offseason-stat">
+        👥 {{ t.team.Roster.length }}
+      </div>
+
+
+    </div>
+
+  </section>
+
   <!-- 🏆 STANDINGS -->
-  <section>
+  <section *ngIf="vm.league.IsFinished">
     <h2>{{ vm.league.IsFinished ? "Season Results" : "Standings"}}</h2>
 
     <div class="standings-wrapper">
@@ -120,7 +156,7 @@
   </section>
 
   <!-- 🔥 Awards -->
-  <section class="awards">
+  <section class="awards" *ngIf="vm.league.IsFinished">
     <h3>Regular Season Awards</h3>
     <div class="awards-grid">
       <div *ngFor="let award of vm.awards" class="award-card">
@@ -135,7 +171,7 @@
 
   <!-- 🏛️ ALL TIME -->
   <section class="allTime">
-    <h2>All-Time</h2>
+    <h2>All-Time Standings</h2>
 
     <div *ngFor="let team of vm.allTime" class="allTime-row">
       

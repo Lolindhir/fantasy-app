@@ -21,8 +21,8 @@ export class OverviewComponent implements OnInit {
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
-      const isFinished =
-        league.IsFinished;
+      const isFinished = league.IsFinished;
+      const offSeason = league.Status == "Off-Season"
 
       // 🏆 Champion
       const champion = teams.find(t =>
@@ -46,7 +46,7 @@ export class OverviewComponent implements OnInit {
       const salaryByTeam = teams.map(t => ({
         team: t,
         total: t.Roster.reduce((sum, p) => sum + p.Salary, 0)
-      }));
+      })).sort((a, b) => a.total - b.total);
 
       // 🔥 Awards
       const currentSeason = league.Season; // z. B. "2026"
@@ -77,7 +77,8 @@ export class OverviewComponent implements OnInit {
         salaryByTeam,
         awards,
         deadlineDisplay,
-        deadlineInfo
+        deadlineInfo,
+        offSeason
       };
     })
   );

@@ -62,9 +62,9 @@ export interface RawLeague {
   Season: string;
   SeasonType: string;
   Status: string;
-  FinalWeek: number;
+  FinalScoredWeek: number;
   PlayoffWeek: number;
-  LastWeek: number;
+  LastLeagueWeek: number;
   TradeDeadlineWeek: number;
   CutsAllowed: boolean;
   CutsMetaText: string;
@@ -525,11 +525,11 @@ export class DataService {
 
           // GameHistory für laufende Saison vorbereiten
           var currentWeek = 0;
-          currentWeek = leagueRaw.FinalWeek;
+          currentWeek = leagueRaw.FinalScoredWeek;
           var playoffStartWeek = 0;
           playoffStartWeek = leagueRaw.PlayoffWeek;
           var lastWeek = 0;
-          lastWeek = leagueRaw.LastWeek;
+          lastWeek = leagueRaw.LastLeagueWeek;
 
           return {
             ...raw,
