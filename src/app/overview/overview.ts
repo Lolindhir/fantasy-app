@@ -17,6 +17,12 @@ import { CommonModule } from '@angular/common';
 export class OverviewComponent implements OnInit {
 
   private dataService = inject(DataService);
+  expandedTeamId: number | null = null;
+
+  toggleTeam(teamId: number) {
+    this.expandedTeamId =
+      this.expandedTeamId === teamId ? null : teamId;
+  }
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
@@ -52,19 +58,32 @@ export class OverviewComponent implements OnInit {
         );
 
         // sort aus DataService nutzen
-        const sorted = this.sortPlayersBySalary(t.Roster, false);
+        const sortedSalary = this.sortPlayersBySalary(t.Roster, false);
         const sortedProjected = this.sortPlayersBySalary(t.Roster, true);
 
-        const topPlayers = sorted.slice(0, playerCount);
+        const topPlayers = sortedSalary.slice(0, playerCount);
         const topPlayersProjected = sortedProjected.slice(0, playerCount);
 
         const total = topPlayers.reduce((sum, p) => sum + p.Salary, 0);
         const totalProjected = topPlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
 
+        const totalAll = sortedSalary.reduce((sum, p) => sum + p.Salary, 0);
+        const totalAllProjected = sortedProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
+
+        const top5Players = sortedSalary.slice(0, 5);
+        const top5PlayersProjected = sortedProjected.slice(0, 5);
+
+        const totalTop5 = top5Players.reduce((sum, p) => sum + p.Salary, 0);
+        const totalTop5Projected = top5PlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
+
         return {
           team: t,
           total,
           totalProjected,
+          totalAll,
+          totalAllProjected,
+          totalTop5,
+          totalTop5Projected,
           topPlayers,
           topPlayersProjected,
           countedPlayers: playerCount
@@ -134,8 +153,8 @@ export class OverviewComponent implements OnInit {
   }
 
   repeatEmojiLimited(emoji: string, count: number): string {
-    if (count <= 3) return Array(count).fill(emoji).join('');
-    return Array(3).fill(emoji).join('') + ` +${count - 3}`;
+    if (count <= 2) return Array(count).fill(emoji).join('');
+    return `${count}` + Array(1).fill(emoji).join('');
   }
 
   formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {

@@ -14,6 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  column-gap: 40px;
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: #f9f9f9;
@@ -25,6 +26,10 @@
   font-size: large;
   margin-bottom: 10px;
   font-weight: bold;
+}
+
+.header-season .season-description {
+  white-space: nowrap;
 }
 
 .header-info {
@@ -151,6 +156,49 @@
   margin: 4px 5px;
 
   border-radius: 8px;
+
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cap-space-row:hover {
+  background: linear-gradient(to right, #e6ebf0, #d8dee7);
+}
+
+.cap-space-details {
+  margin: 0 10px 6px 10px;
+  padding: 6px 10px;
+
+  border-radius: 0 0 8px 8px;
+
+  background: linear-gradient(to right, #f5f7fa, #e4e9f0);
+
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+
+  font-size: 0.95rem;
+
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cap-space-details .label {
+  font-weight: bold;
+}
+
+.cap-space-details .stat {
+  margin-left: 10px;
+}
+
+.cap-space-expand-icon {
+  margin-right: 5px;
+  font-size: 0.7rem;
+  opacity: 0.75;
 }
 
 .cap-space-content {
@@ -162,7 +210,7 @@
   align-items: center;
   gap: 6px;
   overflow: hidden;
-  //font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .cap-space-row img {

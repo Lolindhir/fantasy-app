@@ -6,7 +6,7 @@
   <!-- 🧾 HEADER -->
   <section class="header">
     <div>
-      <div class="header-season">Season {{ vm.league.Season }} - {{ vm.league.Status }}</div>
+      <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
     </div>
 
     <div class="header-info">
@@ -66,7 +66,7 @@
     </div>
 
     <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
-      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }}d until Cap Deadline</div>
+      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span style="font-size: small">until Cap Deadline</span></div>
       <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
     </div>
 
@@ -94,26 +94,83 @@
       </div>
     </div>
 
-    <div class="cap-space-row cap-space-content" *ngFor="let t of vm.salaryByTeam">
+    <ng-container *ngFor="let t of vm.salaryByTeam">
 
-      <div class="team">
-        <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
-        <span class="cap-space-team-name">{{ t.team.Team }}</span>
-      </div>
-      
-      <div class="cap-space-stat"
-          [ngClass]="{
-            'positive-diff': t.total > vm.league.SalaryCap,
-            'negative-diff': t.total < vm.league.SalaryCap
-          }">
-        {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
-      </div>
-      
-      <div class="cap-space-projection">
-        {{ t.total > t.totalProjected ? "📈" : "📉" }}
+      <!-- MAIN ROW -->
+      <div class="cap-space-row cap-space-content" (click)="toggleTeam(t.team.TeamID)">
+
+        <div class="team">
+          <span class="cap-space-expand-icon">
+            {{ expandedTeamId === t.team.TeamID ? "▼" : "▶" }}
+          </span>
+          <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
+          <span class="cap-space-team-name">{{ t.team.Team }}</span>
+        </div>
+        
+        <div class="cap-space-stat"
+            [ngClass]="{
+              'positive-diff': t.total > vm.league.SalaryCap,
+              'negative-diff': t.total < vm.league.SalaryCap
+            }">
+          {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
+        </div>
+        
+        <div class="cap-space-projection">
+          {{ t.total > t.totalProjected ? "📈" : "📉" }}
+        </div>
+
       </div>
 
-    </div>
+      <!-- EXPANDED ROW -->
+      <div class="cap-space-details" *ngIf="expandedTeamId === t.team.TeamID">
+
+        <div>
+          <span class="label">{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }} Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.total, false, 1) }}</span>
+        </div>
+
+        <div>
+          <span class="label">{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }} Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalProjected, false, 1) }}</span>
+        </div>
+
+        <div>
+          <span class="label">💀 {{ vm.league.IsFinished ? "Next" : "Proj."}} Cap Space:</span>
+          <span class="stat"
+            [ngClass]="{
+              'positive-diff': t.totalProjected > vm.league.SalaryCapProjected,
+              'negative-diff': t.totalProjected < vm.league.SalaryCapProjected
+            }">{{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ t.total > t.totalProjected ? "📈" : "📉" }}</span>
+        </div>
+
+        <div>
+          <span class="label">👥 Roster:</span>
+          <span class="stat">{{ t.team.Roster.length }}</span>
+        </div>
+
+        <div>
+          <span class="label">💎 Top Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.topPlayers[0].Salary, false, 1)}} ({{t.topPlayers[0].NameShort}})</span>
+        </div>
+
+        <div>
+          <span class="label">⭐ Top 5:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalTop5, false, 1)}} ({{t.totalTop5/t.totalAll * 100 | number:'1.0-0' }}% of total cap)</span>
+        </div>
+
+        <div>
+          <span class="label">⚖️ Avg Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalAll / t.team.Roster.length, false, 1)}}</span>
+        </div>        
+
+        <!-- <div>
+          <span class="label">Picks</span>
+          <span class="stat">{{ repeatEmojiLimited('⭐', t.team.Picks ?? 0) }}</span>
+        </div> -->
+
+      </div>
+
+    </ng-container>    
 
   </section>
 
@@ -181,10 +238,10 @@
       <div class="allTime-owner">{{ team.Owner }}</div>
 
       <div class="allTime-awards">
-        {{ repeatEmoji('🏆', team.Championships) }}
-        {{ repeatEmoji('🥈', team.RunnerUps) }}
-        {{ repeatEmoji('🥉', team.Thirds) }}
-        {{ repeatEmoji('👑', team.RegularSeasonWins) }}
+        {{ repeatEmojiLimited('🏆', team.Championships) }}
+        {{ repeatEmojiLimited('🥈', team.RunnerUps) }}
+        {{ repeatEmojiLimited('🥉', team.Thirds) }}
+        {{ repeatEmojiLimited('👑', team.RegularSeasonWins) }}
       </div>
 
       <div class="allTime-avg">
