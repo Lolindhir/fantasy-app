@@ -22,8 +22,8 @@ export class OverviewComponent implements OnInit {
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
       const isFinished = league.IsFinished;
-      //const offSeason = league.Status == "Off-Season"
-      const offSeason = true;
+      const offSeason = league.Status == "Off-Season"
+      //const offSeason = true;
 
       // 🏆 Champion
       const champion = teams.find(t =>
