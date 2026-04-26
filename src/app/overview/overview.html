@@ -46,10 +46,10 @@
     </div>
 
     <div class="header-info">
-      <div>{{ vm.league.IsFinished ? "⏮️ Last" : "📌 Current"}} ({{ vm.league.SeasonAsNumber }}):</div>
+      <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
       <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
 
-      <div>{{ vm.league.IsFinished ? "📊 Next" : "🔮 Projected"}} ({{ vm.league.SeasonAsNumber + 1 }}):</div>
+      <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
       <div class="status">
         {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
       </div>
@@ -84,15 +84,21 @@
   <section *ngIf="vm.offSeason">
     <h2>Available Cap Space</h2>
 
-    <div class="cap-space-row" *ngFor="let t of vm.salaryByTeam">
+    <div class="cap-space-row">
+      <div></div>
+      <div class="cap-space-label">
+        {{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}
+      </div>
+      <div class="cap-space-projection">
+        {{ vm.league.IsFinished ? "📊" : "🔮"}}
+      </div>
+    </div>
+
+    <div class="cap-space-row cap-space-content" *ngFor="let t of vm.salaryByTeam">
 
       <div class="team">
         <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
         <span class="cap-space-team-name">{{ t.team.Team }}</span>
-      </div>
-
-      <div class="cap-space-label">
-        {{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:
       </div>
       
       <div class="cap-space-stat"
@@ -100,19 +106,11 @@
             'positive-diff': t.total > vm.league.SalaryCap,
             'negative-diff': t.total < vm.league.SalaryCap
           }">
-        {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }} 💰
-      </div>
-
-      <div class="cap-space-label cap-space-small">
-        {{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:
+        {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
       </div>
       
-      <div class="cap-space-stat cap-space-small"
-          [ngClass]="{
-            'positive-diff': t.totalProjected > vm.league.SalaryCapProjected,
-            'negative-diff': t.totalProjected < vm.league.SalaryCapProjected
-          }">
-        {{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ t.totalProjected > vm.league.SalaryCapProjected ? "📈" : "📉" }}
+      <div class="cap-space-projection">
+        {{ t.total > t.totalProjected ? "📈" : "📉" }}
       </div>
 
     </div>
