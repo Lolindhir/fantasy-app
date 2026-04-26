@@ -138,14 +138,14 @@
 }
 
 //=================================
-// Off-Season Klassen
+// Cap Space Klassen
 //=================================
 
-.offseason-row {
+.cap-space-row {
   display: grid;
-  grid-template-columns: 1fr max-content max-content max-content max-content;
+  grid-template-columns: 1fr repeat(4, max-content);
   align-items: center;
-  column-gap: 20px;
+  column-gap: 5px;
 
   padding: 6px 10px;
   margin: 4px 10px;
@@ -154,36 +154,42 @@
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
 }
 
-.offseason-row .team {
+.cap-space-row .team {
   display: flex;
   align-items: center;
   gap: 6px;
   overflow: hidden;
 }
 
-.offseason-row img {
+.cap-space-row img {
   width: 24px;
   height: 24px;
   border-radius: 50%;
 }
 
-.team-name {
+.cap-space-team-name {
   font-weight: bold;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.offseason-label {
+.cap-space-label {
   //font-size: 0.95rem;
   text-align: left;
   white-space: nowrap;
+  margin-left: 20px;
 }
 
-.offseason-stat {
+.cap-space-stat {
   //font-size: 0.95rem;
   text-align: right;
   white-space: nowrap;
+  min-width: 14ch;
+}
+
+.cap-space-small {
+  font-size: 0.9rem;
 }
 
 

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DataService, League, FantasyTeam, AwardInStanding } from '../services/data-service';
+import { DataService, League, FantasyTeam, AwardInStanding, Player } from '../services/data-service';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -22,7 +22,8 @@ export class OverviewComponent implements OnInit {
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
       const isFinished = league.IsFinished;
-      const offSeason = league.Status == "Off-Season"
+      //const offSeason = league.Status == "Off-Season"
+      const offSeason = true;
 
       // 🏆 Champion
       const champion = teams.find(t =>
@@ -43,10 +44,33 @@ export class OverviewComponent implements OnInit {
       );
 
       // 💰 Salary je Team
-      const salaryByTeam = teams.map(t => ({
-        team: t,
-        total: t.Roster.reduce((sum, p) => sum + p.Salary, 0)
-      })).sort((a, b) => a.total - b.total);
+      const salaryByTeam = teams.map(t => {
+
+        const playerCount = Math.min(
+          league.SalaryRelevantTeamSize, // 👈 aus League!
+          t.Roster.length
+        );
+
+        // sort aus DataService nutzen
+        const sorted = this.sortPlayersBySalary(t.Roster, false);
+        const sortedProjected = this.sortPlayersBySalary(t.Roster, true);
+
+        const topPlayers = sorted.slice(0, playerCount);
+        const topPlayersProjected = sortedProjected.slice(0, playerCount);
+
+        const total = topPlayers.reduce((sum, p) => sum + p.Salary, 0);
+        const totalProjected = topPlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
+
+        return {
+          team: t,
+          total,
+          totalProjected,
+          topPlayers,
+          topPlayersProjected,
+          countedPlayers: playerCount
+        };
+
+      }).sort((a, b) => a.total - b.total);
 
       // 🔥 Awards
       const currentSeason = league.Season; // z. B. "2026"
@@ -124,6 +148,23 @@ export class OverviewComponent implements OnInit {
     } else {
       return `- $${(-amount / 1_000_000).toFixed(afterPoint)} Mio.`;
     }
+  }
+
+  sortPlayersBySalary(players: Player[], useProjected: boolean): Player[] {
+    const sorted = [...players].sort((a, b) => {
+      if (useProjected) {
+        // Primär: SalaryProjected, Sekundär: Salary
+        const diff = (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
+        if (diff !== 0) return diff;
+        return (b.Salary ?? 0) - (a.Salary ?? 0);
+      } else {
+        // Primär: Salary, Sekundär: SalaryProjected
+        const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
+        if (diff !== 0) return diff;
+        return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
+      }
+    });
+    return sorted;
   }
 
 }
