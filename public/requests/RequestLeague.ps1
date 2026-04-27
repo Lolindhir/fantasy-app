@@ -239,14 +239,22 @@ try {
     Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
     Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
+    # --- Playoff Start holen ---
+    $playoffStart = $league.settings.playoff_week_start
+    Write-Host "Playoff start week: Week $lastWeek" -ForegroundColor Yellow
+
     # --- Letzte Liga-Woche holen ---
     $lastWeek = $league.settings.last_scored_leg
+    if($null -eq $lastWeek){
+        Write-Host "Last scored week in league not set in league settings." -ForegroundColor Yellow
+        $lastWeek = $playoffStart - 1 + $playoffs.WinnersBracket.length
+    }
     Write-Host "Last scored week in league: Week $lastWeek" -ForegroundColor Yellow
 
 
     # --- Aktuelle Woche berechnen ---
-    $currentWeek = $null
-    $finalWeek = $null
+    $currentWeek = 0
+    $finalWeek = 0
     # --- Load old schedule if present ---
     $schedule = $null
     if (Test-Path $ScheduleFile) {
@@ -293,7 +301,7 @@ try {
         }
     }
 
-    if ($finalWeek) {
+    if ($finalWeek -ge 0) {
         Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
     } else {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
@@ -303,7 +311,7 @@ try {
     $status = "Active"
     $cutsAllowed = $true
     $cutsMetaText = ""
-    $waiversOpen = [int]$league.settings.daily_waivers -eq 1
+    $waiversOpen = [int]$league.settings.disable_adds -eq 0
     Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
     $tradesOpen = [int]$league.settings.disable_trades -eq 0
@@ -316,8 +324,8 @@ try {
             $waiversOpen = $false
             $tradesOpen = $false
         } 
-        "off_season" { $status = "Off-Season" } 
-        "pre_draft" {$status = "Pre-Season"} 
+        "pre_draft" {$status = "Off-Season"} 
+        "off_season" { $status = "Pre-Season" } 
         "in_season" {$status = "In-Season"} 
         "playoffs" {$status = "In Playoffs"}
         default {$status = "Active"} 
@@ -345,7 +353,7 @@ try {
         CurrentWeek             = $currentWeek
         FinalScoredWeek         = $finalWeek
         LastLeagueWeek          = $lastWeek
-        PlayoffStartWeek        = $league.settings.playoff_week_start
+        PlayoffStartWeek        = $playoffStart
         TradeDeadlineWeek       = $league.settings.trade_deadline
         CutsAllowed             = $cutsAllowed
         CutsMetaText            = $cutsMetaText

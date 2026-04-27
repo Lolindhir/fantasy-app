@@ -1,3 +1,18 @@
+# ===========================================================================
+# 1. Imports
+# ===========================================================================
+
+try {
+    Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
+}
+catch {
+    Write-Error "Fehler beim Laden der Module: $_"
+    exit 1
+}
+
+
+
 # --- Funktionen ---
 # Globale Variable für den zuletzt erfolgreichen Key
 $Global:CurrentApiKey = $null
@@ -92,6 +107,9 @@ $apiKeys = @(
     $Global:RapidAPIKeyAlt2
 )
 
+# year aus config holen
+$year = $Global:LeagueYear
+
 $apiHost = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataDir = Join-Path $scriptDir "..\data"
@@ -110,22 +128,6 @@ if (-not (Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir
 $timestampFile = Join-Path $dataDir "Timestamps.json"
 $boxScoreWaitSeconds = 1  # Wartezeit zwischen BoxScore-Requests (anpassbar)
 
-# --- Fetch schedule from Tank01 ---
-Write-Host "Fetching full schedule (week=all, seasonType=reg)..." -ForegroundColor Yellow
-$scheduleUrl = "https://$apiHost/getNFLGamesForWeek?week=all&seasonType=reg"
-try {
-    $scheduleResp = Invoke-Tank01-With-Fallback -Url $scheduleUrl -Keys $apiKeys
-    $schedule = $scheduleResp.body
-} catch {
-    Write-Error "Error fetching schedule: $_"
-    exit 1
-}
-if (-not $schedule) {
-    Write-Error "No schedule returned."
-    exit 1
-}
-
-Write-Host "Schedule retrieved, total games: $($schedule.Count)" -ForegroundColor Green
 
 # --- Load old schedule if present ---
 $oldSchedule = $null
@@ -138,6 +140,55 @@ if (Test-Path $scheduleFile) {
         $oldSchedule = $null
     }
 }
+
+# --- Pre-Check: Existing Schedule belongs to current season? ---
+if ($oldSchedule -and $oldSchedule.Count -gt 0) {
+
+    $invalidSeasonGame = $oldSchedule | Where-Object {
+        $_.season -ne $year
+    } | Select-Object -First 1
+
+    if ($invalidSeasonGame) {
+        Write-Host "Schedule contains games from a different season -> clearing data." -ForegroundColor Yellow
+
+        # Backup
+        $ts = (Get-Date).ToUniversalTime().ToString("yyyyMMdd_HHmmss")
+
+        if (Test-Path $scheduleFile) {
+            Copy-Item $scheduleFile -Destination (Join-Path $backupDir "Schedule_$ts.json") -Force
+        }
+
+        if (Test-Path $gamesFile) {
+            Copy-Item $gamesFile -Destination (Join-Path $backupDir "Games_$ts.json") -Force
+        }
+
+        # Clear files
+        @() | ConvertTo-Json -Depth 20 | Out-File -FilePath $scheduleFile -Encoding UTF8
+        @() | ConvertTo-Json -Depth 20 | Out-File -FilePath $gamesFile -Encoding UTF8
+
+        Write-Host "Schedule.json and Games.json cleared." -ForegroundColor Green
+    }
+}
+
+
+# --- Fetch schedule from Tank01 ---
+Write-Host "Fetching full schedule (week=all, seasonType=reg)..." -ForegroundColor Yellow
+$scheduleUrl = "https://$apiHost/getNFLGamesForWeek?week=all&seasonType=reg&season=$year"
+try {
+    $scheduleResp = Invoke-Tank01-With-Fallback -Url $scheduleUrl -Keys $apiKeys
+    $schedule = $scheduleResp.body
+} catch {
+    Write-Error "Error fetching schedule: $_"
+    exit 1
+}
+if (-not $schedule) {
+    Write-Warning "No schedule returned."
+    exit 0
+}
+
+Write-Host "Schedule retrieved, total games: $($schedule.Count)" -ForegroundColor Green
+
+
 
 # --- Compare and save Schedule.json only if changed ---
 if (ObjectsAreEqualByJson $oldSchedule $schedule) {

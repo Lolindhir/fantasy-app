@@ -116,7 +116,7 @@
         </div>
         
         <div class="cap-space-projection">
-          {{ t.total > t.totalProjected ? "📈" : "📉" }}
+          {{ vm.league.SalaryCap - t.total < vm.league.SalaryCapProjected - t.totalProjected ? "📈" : "📉" }}
         </div>
 
       </div>
@@ -140,7 +140,7 @@
             [ngClass]="{
               'positive-diff': t.totalProjected > vm.league.SalaryCapProjected,
               'negative-diff': t.totalProjected < vm.league.SalaryCapProjected
-            }">{{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ t.total > t.totalProjected ? "📈" : "📉" }}</span>
+            }">{{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ vm.league.SalaryCap - t.total < vm.league.SalaryCapProjected - t.totalProjected ? "📈" : "📉" }}</span>
         </div>
 
         <div>

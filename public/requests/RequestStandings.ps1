@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -32,8 +33,9 @@ function Get-SeasonDataRecursive {
     # Initialisierung nur beim ersten Aufruf
     if (-not $accumulatedData) {
         $accumulatedData = [PSCustomObject]@{
-            AllSeasons     = @()
-            PreviousSeason = $null
+            AllSeasonsCompleted = @()
+            AllSeasons          = @()
+            PreviousSeason      = $null
         }
     }
 
@@ -56,6 +58,9 @@ function Get-SeasonDataRecursive {
     $output = Get-OutputStandingsForSeason -season $league.season -standingsPlayoffs $standings.Playoffs -standingsRegular $standings.RegularSeason -awards $standings.Awards
     
     #baue accumulatedData
+    if($league.status -eq "complete"){
+        $accumulatedData.AllSeasonsCompleted += $output
+    }
     $accumulatedData.AllSeasons += $output
     $accumulatedData.PreviousSeason = $output
 
@@ -128,6 +133,7 @@ try {
 
     # Array mit allen Seasons holen
     $allSeasonData += (Get-SeasonDataRecursive).AllSeasons
+    $allSeasonCompletedData += (Get-SeasonDataRecursive).AllSeasonsCompleted
 
     if (-not $allSeasonData -or $allSeasonData.Count -eq 0) {
         Write-Error "No season data available!"
@@ -136,9 +142,10 @@ try {
 
     # All Season Data sortieren (neueste Saison zuerst)
     $allSeasonData = $allSeasonData | Sort-Object -Property Season -Descending
+    $allSeasonCompletedData = $allSeasonCompletedData | Sort-Object -Property Season -Descending
 
     # AllTime berechnen
-    $allSeasonData += Get-OutputStandingsForAllTime -allSeasonStandings $allSeasonData
+    $allSeasonData += Get-OutputStandingsForAllTime -allSeasonStandings $allSeasonCompletedData
 
     # All Season Data sortieren (neueste Saison zuerst und AllTime am Start)
     # Sortierung nach Season als String, mit Descending ist AllTime an vorderster Stelle, danach die Jahre in absteigender Reihenfolge

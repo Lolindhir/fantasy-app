@@ -117,7 +117,7 @@ function Get-BracketStandings{
     $placements = @{}
 
     foreach ($match in $matches) {
-        if ($match.p) {
+        if ($match.p -and $match.w -and $match.l) {
             # Gewinner bekommt Platz p + Offset
             $placements["$($startPlace + $match.p - 1)"] = $match.w
             # Verlierer bekommt Platz p+1 + Offset
@@ -155,6 +155,16 @@ function Get-PlayoffStandings{
     # Platzierungen berechnen
     $winnerPlacements = Get-BracketStandings $winnersBracket 1
     $loserPlacements  = Get-BracketStandings $losersBracket ($winnerPlacements.Count + 1)
+
+    # Prüfe Winner Placements auf null oder leer
+    if (-not $winnerPlacements -or $winnerPlacements.Count -eq 0) {
+        Write-Warning "No winners placements available."
+        return @()  # leeres Array zurückgeben
+    }
+    # Prüfe Loser Placements auf null oder leer -> ist erlaubt, also kein Fehler, aber dann nur Gewinner-Bracket-Standings berechnen
+    if (-not $loserPlacements -or $loserPlacements.Count -eq 0) {
+        Write-Host "No losers placements available." -ForegroundColor Yellow
+    }
 
     # Zusammenführen
     $placements = @{}
@@ -317,7 +327,7 @@ function Format-WinPct {
         return "1.000"
     }
 
-    return ([math]::Round($winPct, 3).ToString("0.000", [System.Globalization.CultureInfo]::InvariantCulture)).Substring(1)
+    return ([math]::Round($value, 3).ToString("0.000", [System.Globalization.CultureInfo]::InvariantCulture)).Substring(1)
 }
 
 function Get-RegularSeasonStandings {
@@ -378,10 +388,18 @@ function Get-RegularSeasonStandings {
         $efficiencyScore = $pointsPerGameDiff + $pointsAgainstPerGameDiff + $team.Wins
 
         # Iron Will Score berechnen
-        $ironWillScore = ($pointsAgainstPerGame / $leagueAvgPointsAgainstPerGame) + [math]::Sqrt($winPct * 0.25)
+        if($leagueAvgPointsAgainstPerGame -gt 0){
+            $ironWillScore = ($pointsAgainstPerGame / $leagueAvgPointsAgainstPerGame) + [math]::Sqrt($winPct * 0.25)
+        } else {
+            $ironWillScore = -999
+        }
 
         # Win% Historie berechnen
-        $record = $team.Record.ToCharArray()
+        if ([string]::IsNullOrEmpty($team.Record)) {
+            $record = @()
+        } else {
+            $record = $team.Record.ToCharArray()
+        }
         $winPctHistory = @()
         $wins = 0
         for ($j = 0; $j -lt $record.Length; $j++) {
@@ -633,11 +651,19 @@ function Get-Awards {
         }
         # Award-Vergabe        
         $mostImproved = $regularSeasonStandings | Where-Object { $null -ne $_.ImprovementScore } | Sort-Object ImprovementScore -Descending | Select-Object -First 1
+        $prev = $previousByTeamId[$mostImproved.TeamID]
+        if (-not $prev) {
+            $prevWins = "N/A"
+            $prevPoints = "N/A"
+        } else {
+            $prevWins = $prev.Wins
+            $prevPoints = $prev.Points
+        }
         $awards += [PSCustomObject]@{
             Name            = "Most Improved"
             Type            = $awardTypes['RegularSeason']
             IconUnicode     = "1F4AA" #💪
-            StatDisplay     = "Wins: $($prev.Wins) to $($mostImproved.Wins) | Points: $($prev.Points) to $($mostImproved.Points)"
+            StatDisplay     = "Wins: $($prevWins) to $($mostImproved.Wins) | Points: $($prevPoints) to $($mostImproved.Points)"
             TeamID          = $mostImproved.TeamID
             Owner           = $mostImproved.Owner
             TeamName        = $mostImproved.TeamName
@@ -720,8 +746,16 @@ function Get-StandingsRemote {
         # Playoff-Standings berechnen
         $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
 
+        if($playoffStandings.Count -eq 0){
+            Write-Host "No playoff information available yet." -ForegroundColor Cyan
+        }
+
         # Regular Season Standings berechnen
         $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames
+
+        if($regularStandings.Count -eq 0){
+            Write-Host "No regular season information available yet." -ForegroundColor Cyan
+        }
 
         # Awards berechnen
         $awards = Get-Awards -regularSeasonStandings $regularStandings -playoffsStandings $playoffStandings -previousSeasonStandings $previousSeasonStandings
