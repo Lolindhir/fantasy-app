@@ -651,16 +651,16 @@ export class DataService {
   // }
 
   private formatSalaryDollars(amount: number): string {
-    if(amount === 0) return 'Rookie';
+    // if(amount === 0) return 'Rookie';
     if (amount >= 1_000_000) {
       // Millionenbereich → 1 Nachkommastelle
       return `$${(amount / 1_000_000).toFixed(1)} Mio.`;
     } else if (amount >= 1_000) {
-      // Tausenderbereich → auf k mit 1 Nachkommastelle
-      return `$${(amount / 1_000).toFixed(0)}k`;
+      // Millionenbereich → mit 2 Nachkommastellen
+      return `$${(amount / 1_000_000).toFixed(2)} Mio.`;
     } else {
       // darunter einfach normal
-      return `${amount} $`;
+      return `$0.0 Mio.`;
     }
   }
 
