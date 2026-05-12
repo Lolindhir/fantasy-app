@@ -1,0 +1,63 @@
+[
+  {
+    "type": "trade",
+    "transaction_id": "434852362033561600",
+    "status_updated": 1558039402803,
+    "status": "complete",
+    "settings": null,     // trades do not use this field
+    "roster_ids": [2, 1], // roster_ids involved in this transaction
+    "metadata": null,
+    "leg": 1,         // in football, this is the week
+    "drops": null,
+    "draft_picks": [  // picks that were traded
+      {
+        "season": "2019",// the season this draft pick belongs to
+        "round": 5,      // which round this draft pick is
+        "roster_id": 1,  // original owner's roster_id
+        "previous_owner_id": 1,  // previous owner's roster id (in this trade)
+        "owner_id": 2,   // the new owner of this pick after the trade
+      },
+      {
+        "season": "2019",
+        "round": 3,
+        "roster_id": 2,
+        "previous_owner_id": 2,
+        "owner_id": 1,
+      }
+    ],
+    "creator": "160000000000000000",  // user id who initiated the transaction
+    "created": 1558039391576,
+    "consenter_ids": [2, 1], // roster_ids of the people who agreed to this transaction
+    "adds": null
+    "waiver_budget": [   // roster_id 2 sends 55 FAAB dollars to roster_id 3
+      {
+        "sender": 2,
+        "receiver": 3,
+        "amount": 55
+      }
+    ],
+  },
+  {
+    "type": "free_agent",  // could be waiver or trade as well
+    "transaction_id": "434890120798142464",
+    "status_updated": 1558048393967,
+    "status": "complete",
+    "settings": null,   // could be {'waiver_bid': 44} if it's FAAB waivers
+    "roster_ids": [1],  // roster_ids involved in this transaction
+    "metadata": null,   // can contain notes in waivers like why it didn't go through
+    "leg": 1,
+    "drops": {
+      "1736": 1         // player id 1736 dropped from roster_id 1
+    },
+    "draft_picks": [],
+    "creator": "160000000000000000",
+    "created": 1558048393967,
+    "consenter_ids": [1], // the roster_ids who agreed to this transaction
+    "adds": {
+      "2315": 1   // player id 2315 added to roster_id 1
+      ...
+    },
+    "waiver_budget": []  // this used for trades only involving FAAB
+  },
+  ...
+]
