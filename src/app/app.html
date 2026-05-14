@@ -39,7 +39,10 @@
     [class.scrolled]="isScrolled"
     (click)="menuOpen = !menuOpen"
   >
-    ☰
+    ☰ 
+    @if (!isScrolled) {
+      <span style="margin-left: 15px; font-size: medium;">{{ currentPage }}</span>
+    }
   </button>
 
   <!-- MOBILE MENU -->
