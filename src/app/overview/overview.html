@@ -9,66 +9,71 @@
       <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
     </div>
 
-    <div class="header-info">
+    <div class="header-columns">
 
-      <div class="label">🤝 Trades:</div>
-      <div class="status">
-        <span>
-          {{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}
-        </span>
-        <span class="meta" *ngIf="vm.league.TradesMetaText.length > 0">
-            {{vm.league.TradesMetaText}}
-        </span>
+      <div class="header-info">
+
+        <div class="label">🤝 Trades:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.TradesMetaText.length > 0">
+              {{vm.league.TradesMetaText}}
+          </span>
+        </div>
+
+
+        <div class="label">📝 Waivers:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.WaiversMetaText.length > 0">
+              {{vm.league.WaiversMetaText}}
+          </span>
+        </div>      
+
+
+        <div class="label">✂️ Cuts:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.CutsMetaText.length > 0">
+              {{vm.league.CutsMetaText}}
+          </span>
+        </div>
+
       </div>
 
+      <div class="header-info">
+        <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
+        <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
 
-      <div class="label">📝 Waivers:</div>
-      <div class="status">
-        <span>
-          {{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}
-        </span>
-        <span class="meta" *ngIf="vm.league.WaiversMetaText.length > 0">
-            {{vm.league.WaiversMetaText}}
-        </span>
-      </div>      
+        <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
+        <div class="status">
+          {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
+        </div>
 
+        <div></div>
+        <div>
+          <span class="meta" [ngClass]="{
+              'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
+              'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
+            }">
+              ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
+          </span>
+        </div>
 
-      <div class="label">✂️ Cuts:</div>
-      <div class="status">
-        <span>
-          {{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}
-        </span>
-        <span class="meta" *ngIf="vm.league.CutsMetaText.length > 0">
-            {{vm.league.CutsMetaText}}
-        </span>
       </div>
 
-    </div>
-
-    <div class="header-info">
-      <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
-      <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
-
-      <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
-      <div class="status">
-        {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
+      <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
+        <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span style="font-size: small">until Cap Deadline</span></div>
+        <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
       </div>
 
-      <div></div>
-      <div>
-        <span class="meta" [ngClass]="{
-            'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
-            'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
-          }">
-            ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
-        </span>
-      </div>
-    </div>
-
-    <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
-      <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span style="font-size: small">until Cap Deadline</span></div>
-      <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
-    </div>
+    </div>    
 
     <div *ngIf="vm.champion" class="champion">
       🏆 {{ vm.champion.Owner }}
