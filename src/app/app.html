@@ -1,26 +1,76 @@
-<nav class="main-nav">
-  
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-    Overview
-  </a>
+<div class="app-container">
 
-  <a routerLink="/teams" routerLinkActive="active">
-    Teams
-  </a>
+  <nav class="main-nav desktop-nav">
 
-  <a>
-    Drafts & Moves
-  </a>
+    <div class="nav-links">
 
-  <a routerLink="/trade" routerLinkActive="active">
-    Trade Simulator
-  </a>
+      <a routerLink="/" routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: true }">
+        Overview
+      </a>
 
-  <a routerLink="/handbook" routerLinkActive="active">
-    Handbook
-  </a>
-</nav>
+      <a routerLink="/teams" routerLinkActive="active">
+        Teams
+      </a>
 
-<div style="max-width: 1000px; margin: 20px auto; padding: 0 15px; flex-direction: column;">
-  <router-outlet></router-outlet>
+      <a class="disabled-link">
+        Drafts & Moves
+      </a>
+
+      <a routerLink="/trade" routerLinkActive="active">
+        Trade Simulator
+      </a>
+
+      <a routerLink="/handbook" routerLinkActive="active">
+        Handbook
+      </a>
+
+    </div>
+
+  </nav>
+
+
+  <!-- MOBILE TOP BAR -->
+  <div class="mobile-top-bar">
+  </div>
+
+  <button
+    class="floating-burger"
+    [class.scrolled]="isScrolled"
+    (click)="menuOpen = !menuOpen"
+  >
+    ☰
+  </button>
+
+  <!-- MOBILE MENU -->
+
+  <div class="mobile-menu" [class.open]="menuOpen">
+
+    <a routerLink="/" routerLinkActive="active" (click)="menuOpen = false" 
+      [routerLinkActiveOptions]="{ exact: true }">
+      Overview
+    </a>
+
+    <a routerLink="/teams" routerLinkActive="active" (click)="menuOpen = false">
+      Teams
+    </a>
+
+    <a class="disabled-link">
+      Drafts & Moves
+    </a>
+
+    <a routerLink="/trade" routerLinkActive="active" (click)="menuOpen = false">
+      Trade Simulator
+    </a>
+
+    <a routerLink="/handbook" routerLinkActive="active" (click)="menuOpen = false">
+      Handbook
+    </a>
+
+  </div>
+
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+
 </div>
