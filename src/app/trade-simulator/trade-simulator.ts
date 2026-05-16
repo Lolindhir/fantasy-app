@@ -22,12 +22,25 @@ export class TradeSimulatorComponent implements OnInit {
   isMobile: boolean = window.innerWidth <= 600;
 
   selectedTeam?: FantasyTeam;
+  selectedIncomingTeam?: FantasyTeam;
+  availableIncomingTeams: FantasyTeam[] = [];
+  selectedOutgoing: Player | null = null;
+  selectedIncoming: Player | null = null;
+  searchTerm: string = '';
 
   outgoingPlayers: Player[] = [];
   incomingPlayers: Player[] = [];
 
   allPlayers: Player[] = [];
   league: League | undefined;
+
+  tradeResult?: {
+    currentSalary: number;
+    newSalary: number;
+    currentProjected: number;
+    newProjected: number;
+    topPlayers: Player[];
+  };
 
   SalaryCap: number = 0;
   SalaryCapProjected: number = 0;
@@ -55,7 +68,52 @@ export class TradeSimulatorComponent implements OnInit {
         this.projectedAbr = (res.league.SeasonAsNumber + 1).toString();
       }
     });
+  }
 
+  updateTradeState() {
+    if (!this.selectedTeam) return;
+
+    const roster = this.dataService.getRosterAfterTrade(
+      this.selectedTeam.Roster,
+      this.outgoingPlayers,
+      this.incomingPlayers
+    );
+
+    const topPlayers = [...roster]
+      .sort((a, b) => b.Salary - a.Salary)
+      .slice(0, this.salaryRelevantTeamSize);
+
+    this.tradeResult = {
+      currentSalary:
+        this.dataService.calculateTopPlayersSalary(
+          this.selectedTeam.Roster,
+          this.salaryRelevantTeamSize,
+          p => p.Salary
+        ).cap,
+
+      newSalary:
+        this.dataService.calculateTopPlayersSalary(
+          roster,
+          this.salaryRelevantTeamSize,
+          p => p.Salary
+        ).cap,
+
+      currentProjected:
+        this.dataService.calculateTopPlayersSalary(
+          this.selectedTeam.Roster,
+          this.salaryRelevantTeamSize,
+          p => p.SalaryProjected
+        ).cap,
+
+      newProjected:
+        this.dataService.calculateTopPlayersSalary(
+          roster,
+          this.salaryRelevantTeamSize,
+          p => p.SalaryProjected
+        ).cap,
+
+      topPlayers
+    };
   }
 
   get newTeamSalary(): number {
@@ -155,11 +213,14 @@ export class TradeSimulatorComponent implements OnInit {
     if (!this.outgoingPlayers.includes(player)) {
       this.outgoingPlayers.push(player);
     }
+    this.selectedOutgoing = null;
+    this.updateTradeState();
   }
 
   // Spieler aus der Outgoing-Liste entfernen
   removeOutgoing(player: Player) {
     this.outgoingPlayers = this.outgoingPlayers.filter(p => p !== player);
+    this.updateTradeState();
   }
 
   // Spieler zur Incoming-Liste hinzufügen
@@ -167,33 +228,75 @@ export class TradeSimulatorComponent implements OnInit {
     if (!this.incomingPlayers.includes(player)) {
       this.incomingPlayers.push(player);
     }
+    this.selectedIncoming = null;
+    this.searchTerm = '';
+    this.filterIncoming({ target: { value: '' } } as unknown as Event);
+    this.updateTradeState();
   }
 
   // Spieler aus der Incoming-Liste entfernen
   removeIncoming(player: Player) {
     this.incomingPlayers = this.incomingPlayers.filter(p => p !== player);
+    this.updateTradeState();
   }
 
   // Filter-Funktion für die Suche rechts
   filteredIncoming: Player[] = [];
 
   filterIncoming(event: Event) {
+    
     const input = (event.target as HTMLInputElement).value.toLowerCase();
+
     if (!this.selectedTeam) return;
 
     const teamIds = this.selectedTeam.Roster.map(p => p.ID);
 
-    this.filteredIncoming = this.allPlayers.filter(p =>
+    var playerBase = this.allPlayers;
+    //wenn ein Incoming Team ausgewählt ist, nur Spieler dieses Teams anzeigen, ansonsten alle verfügbaren Spieler
+    if(this.selectedIncomingTeam){
+      const incomingTeamRosterIds = this.selectedIncomingTeam.Roster.map(p => p.ID);
+      playerBase = playerBase.filter(p => incomingTeamRosterIds.includes(p.ID));
+    }
+
+    this.filteredIncoming = playerBase.filter(p =>
       !teamIds.includes(p.ID) &&
-      !this.incomingPlayers.includes(p) &&
-      p.Name.toLowerCase().includes(input)
+      !this.incomingPlayers.includes(p)
     );
+
+    if(input != ''){
+      this.filteredIncoming = this.filteredIncoming.filter(p =>
+        p.Name.toLowerCase().includes(input)
+      );
+    }
 
     //sortieren nach Salary
     this.filteredIncoming.sort((a, b) => b.Salary - a.Salary);
   }
 
+  onTeamChange(team: FantasyTeam) {
+    this.selectedTeam = team;
+    this.selectedIncomingTeam = undefined;
 
+    // Verfügbare Incoming Teams aktualisieren (alle außer dem ausgewählten Team)
+    this.availableIncomingTeams = this.league?.Teams.filter(t => t.Team !== team.Team) || [];
+
+    // Trade resetten
+    this.outgoingPlayers = [];
+    this.incomingPlayers = [];
+
+    // Incoming Filter reset
+    //this.filteredIncoming = this.availableIncoming;
+    this.filterIncoming({ target: { value: '' } } as unknown as Event);
+
+    this.selectedIncoming = null;
+
+    this.updateTradeState();
+  }
+
+  onIncomingTeamChange(team: FantasyTeam) {
+    this.selectedIncomingTeam = team;
+    this.filterIncoming({ target: { value: '' } } as unknown as Event);
+  }
 
   //ab hier 1 zu 1 aus TeamListComponent, da gleiche Funktionalität benötigt wird
 
@@ -220,7 +323,9 @@ export class TradeSimulatorComponent implements OnInit {
     }
   }
 
-  formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
+  formatSalaryDollars(amount: number | undefined, plus: boolean, afterPoint: number): string {
+
+    if (amount === null || amount === undefined) return "N/A";
 
     if(amount >= 0){
       if (plus) {

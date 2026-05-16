@@ -4,7 +4,7 @@
 
   <mat-form-field appearance="fill">
     <mat-label>Team auswählen</mat-label>
-    <mat-select [(ngModel)]="selectedTeam">
+    <mat-select [(ngModel)]="selectedTeam" (selectionChange)="onTeamChange($event.value)">
       <mat-option *ngFor="let team of league?.Teams" [value]="team">
         {{ team.Team }}
       </mat-option>
@@ -19,7 +19,7 @@
 
       <mat-form-field appearance="fill" class="full-width">
         <mat-label>Spieler wählen</mat-label>
-        <mat-select (selectionChange)="addOutgoing($event.value)">
+        <mat-select [(value)]="selectedOutgoing" (selectionChange)="addOutgoing($event.value)">
           <mat-option *ngFor="let p of availableOutgoing" [value]="p">
             {{ p.Name }} – {{ p.SalaryDisplay }}
           </mat-option>
@@ -31,7 +31,7 @@
         *ngFor="let p of outgoingPlayers"
         matTooltip="Dieser Spieler verlässt das Team. Top-N Berechnung wird angepasst."
       >
-        <span class="player-name">{{ p.Name }}</span>
+        <span class="player-name">{{ p.Name }} ({{ p.SalaryDisplay }})</span>
 
         <button mat-icon-button color="warn" (click)="removeOutgoing(p)">
           <mat-icon>close</mat-icon>
@@ -44,13 +44,22 @@
       <h3>Erhält</h3>
 
       <mat-form-field appearance="fill" class="full-width">
+        <mat-label>Trade Partner Team</mat-label>
+        <mat-select [(ngModel)]="selectedIncomingTeam" (selectionChange)="onIncomingTeamChange($event.value)">
+          <mat-option *ngFor="let team of availableIncomingTeams" [value]="team">
+            {{ team.Team }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="full-width">
         <mat-label>Spieler suchen</mat-label>
-        <input matInput (input)="filterIncoming($event)" placeholder="Name suchen..." />
+        <input matInput [(ngModel)]="searchTerm" (input)="filterIncoming($event)" placeholder="Name suchen..." />
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="full-width">
         <mat-label>Spieler wählen</mat-label>
-        <mat-select (selectionChange)="addIncoming($event.value)">
+        <mat-select [(value)]="selectedIncoming" (selectionChange)="addIncoming($event.value)">
           <mat-option *ngFor="let p of filteredIncoming" [value]="p">
             {{ p.Name }} – {{ p.SalaryDisplay }}
           </mat-option>
@@ -71,6 +80,7 @@
     </div>
 
   </div>
+
 
   <ng-template #tradePlayerList 
               let-players="players" 
@@ -161,7 +171,7 @@
   </ng-template>
 
   <!-- Trade-Summary -->
-  <mat-card class="team-card mat-elevation-z4">
+  <mat-card class="team-card mat-elevation-z4" *ngIf="tradeResult">
 
     <mat-card-header>
       <mat-card-title>
