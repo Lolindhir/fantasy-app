@@ -125,3 +125,114 @@ function Get-SleeperLosersBracket {
 
     return $losersBracketData
 }
+
+function Get-SleeperTransactions {
+    param (
+        [string]$leagueID = (Get-Config).LeagueID,
+        [int]$week
+    )
+
+    Write-Host "Get Sleeper Transactions for Week $week..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/league/$leagueID/transactions/$week"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $transactionsData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper transactions data for week $week."
+        throw $_
+    }
+
+    Write-Host "Sleeper Transactions for Week $week found." -ForegroundColor Yellow
+
+    return $transactionsData
+}
+
+function Get-SleeperDrafts {
+    param (
+        [string]$leagueID = (Get-Config).LeagueID
+    )
+
+    Write-Host "Get Sleeper Drafts..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/league/$leagueID/drafts"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $draftsData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper drafts data."
+        throw $_
+    }
+
+    Write-Host "Sleeper Drafts found." -ForegroundColor Yellow
+
+    return $draftsData
+}
+
+function Get-SleeperDraft {
+    param (
+        [string]$draftID
+    )
+
+    Write-Host "Get Sleeper Draft $draftID..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/draft/$draftID"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $draftData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper draft data."
+        throw $_
+    }
+
+    Write-Host "Sleeper Draft found." -ForegroundColor Yellow
+
+    return $draftData
+}
+
+function Get-SleeperDraftPicks {
+    param (
+        [string]$draftID
+    )
+
+    Write-Host "Get Sleeper Draft Picks for Draft $draftID..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/draft/$draftID/picks"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $draftPicksData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper draft picks data."
+        throw $_
+    }
+
+    Write-Host "Sleeper Draft Picks found." -ForegroundColor Yellow
+
+    return $draftPicksData
+}
+
+function Get-SleeperTradedPicks {
+    param (
+        [string]$leagueID = (Get-Config).LeagueID
+    )
+
+    Write-Host "Get Sleeper Traded Picks..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/league/$leagueID/traded_picks"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $tradedPicksData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper traded picks data."
+        throw $_
+    }
+
+    Write-Host "Sleeper Traded Picks found." -ForegroundColor Yellow
+
+    return $tradedPicksData
+}
