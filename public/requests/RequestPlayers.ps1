@@ -215,6 +215,7 @@ function PlayersHaveChanged($oldPlayers, $newPlayers) {
             'NameLast',
             'NameShort',
             'Status',
+            'IsFreeAgent',
             'Position',
             'Age',
             'Year',
