@@ -1098,6 +1098,7 @@ foreach ($tankEntry in $tankPlayers) {
         TeamAbbr                     = $tankEntry.team
         ByeWeek                      = $byeWeek
         Status                       = $sleeperEntry.status
+        IsFreeAgent                  = $tankEntry.isFreeAgent
         Position                     = $position
         Age                          = $age
         Year                         = $year
