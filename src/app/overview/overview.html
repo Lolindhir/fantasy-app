@@ -1,8 +1,21 @@
 
 <div *ngIf="vm$ | async as vm" class="container">
 
-  <div class="headline">{{ vm.league.Name }} 🏈 Dynasty</div>
-
+  <div class="headline">
+    <img 
+          *ngIf="vm.league.Avatar" 
+          [src]="vm.league.Avatar" 
+          alt="🏈"
+        />
+    <div>{{ vm.league.Name }}</div>
+    <!-- <div>{{ vm.league.Name }} 🏈 Dynasty</div> -->
+     <img 
+          *ngIf="vm.league.Avatar" 
+          [src]="vm.league.Avatar" 
+          alt="🏈"
+        />
+  </div>
+  
   <!-- 🧾 HEADER -->
   <section class="header">
     <div>

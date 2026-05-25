@@ -59,6 +59,7 @@ export interface Standing {
 export interface RawLeague {
   LeagueID: string;
   Name: string;
+  Avatar: string;
   Season: string;
   SeasonType: string;
   Status: string;

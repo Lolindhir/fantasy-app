@@ -6,6 +6,7 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\AvatarUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\StandingUtils.psm1" -ErrorAction Stop -Force
 }
@@ -117,7 +118,7 @@ function Get-Teams {
             $ownerAvatar = $null
             if ($member.avatar) {
                 $avatarID    = $member.avatar
-                $ownerAvatar = "https://sleepercdn.com/avatars/$avatarID"
+                $ownerAvatar = Get-SleeperAvatar($avatarID)
             }
 
             # Punkte berechnen als Double

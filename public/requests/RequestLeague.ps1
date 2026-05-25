@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\ArrayUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
@@ -346,7 +347,7 @@ try {
     $leagueAsJson += [PSCustomObject]@{
         LeagueID                = $league.league_id
         Name                    = $league.name
-        Avatar                  = $league.avatar
+        Avatar                  = Get-SleeperAvatar($league.avatar)
         Season                  = $league.season
         SeasonType              = $league.season_type
         Status                  = $status
