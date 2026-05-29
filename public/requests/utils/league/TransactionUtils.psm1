@@ -15,10 +15,6 @@ catch {
 # Compare Utils
 # ===========================================================================
 
-function Get-AwardProperties{
-    return @('Name','IconUnicode','StatDisplay','TeamID','Owner','TeamName')
-}
-
 function Compare-Awards{
     
     param(
@@ -64,24 +60,34 @@ function Compare-Awards{
     return $false
 }
 
+function Get-AwardProperties{
+    return @('Name','IconUnicode','StatDisplay','TeamID','Owner','TeamName')
+}
+
 
 # ===========================================================================
 # Build Utils
 # ===========================================================================
 
-function Get-OutputStandingsForSeason {
+function Get-TransactionOutput {
     param(
-        [string]$season,
-        [array]$standingsPlayoffs,
-        [array]$standingsRegularSeason,
-        [array]$awards
+        [object]$sleeperTransaction,
+        [object]$customTransaction
     )
 
-    $output = [PSCustomObject][ordered]@{
-        Season = $season
-        Playoffs = $standingsPlayoffs
-        RegularSeason = $standingsRegularSeason
-        Awards = $awards
+    if(-not $sleeperTransaction) {
+        Write-Warning "Sleeper transaction data is null or empty. Returning null."
+        return $null
+    }
+
+    $output = [PSCustomObject]@{
+        TransactionID = $sleeperTransaction.transaction_id,
+        Type = $sleeperTransaction.type,
+        Status = $sleeperTransaction.status,
+        CreatedAt = [DateTime]::Parse($sleeperTransaction.created_at),
+        UpdatedAt = [DateTime]::Parse($sleeperTransaction.updated_at),
+        SleeperData = $sleeperTransaction,
+        CustomData = $customTransaction
     }
 
     return $output
@@ -91,7 +97,7 @@ function Get-OutputStandingsForSeason {
 # Remote Utils
 # ===========================================================================
 
-function Get-StandingsRemote {
+function Get-TransactionsRemote {
     param (
         [string]$leagueID = (Get-Config).LeagueID,
         [array]$playoffs = (Get-Playoffs -leagueID $leagueID),
