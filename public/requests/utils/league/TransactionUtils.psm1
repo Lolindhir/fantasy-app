@@ -15,53 +15,64 @@ catch {
 # Compare Utils
 # ===========================================================================
 
-function Compare-Awards{
-    
+function Compare-Transactions{
     param(
         [Parameter(Mandatory=$true)]
         [AllowNull()]
         [AllowEmptyCollection()]
-        [array]$oldAwards,
+        [array]$oldTransactions,
         [Parameter(Mandatory=$true)]
         [AllowNull()]
         [AllowEmptyCollection()]
-        [array]$newAwards
+        [array]$newTransactions,
+        [array]$propertiesToCheck = (Get-TransactionProperties)
     )
 
-    if (-not $oldAwards -and -not $newAwards) {
-        return $false
-    }
-
-    if (-not $oldAwards -or -not $newAwards) {
-        Write-Host "Awards presence changed."
+    # Wenn nur eine Seite Daten hat, dann Änderung
+    if (($oldTransactions -and -not $newTransactions) -or (-not $oldTransactions -and $newTransactions)) {
+        if ($oldTransactions) {
+            $oldStatus = "Present"
+        } else {
+            $oldStatus = "Not Present"
+        }
+        if ($newTransactions) {
+            $newStatus = "Present"
+        } else {
+            $newStatus = "Not Present"
+        }
+        Write-Host "Transactions presence changed: " $oldStatus " -> " $newStatus
         return $true
     }
+    # Wenn beide Seiten Transactions haben, dann vergleichen
+    if ($oldTransactions -and $newTransactions) {
 
-    if ($oldAwards.Count -ne $newAwards.Count) {
-        Write-Host "Awards count changed."
-        return $true
-    }
-
-    for ($i = 0; $i -lt $oldAwards.Count; $i++) {
-        $oldAward = $oldAwards[$i]
-        $newAward = $newAwards[$i]
-
-        if ($oldAward.Name -ne $newAward.Name) {
-            Write-Host "Award name changed at index $($i): '$($oldAward.Name)' -> '$($newAward.Name)'"
+        # Vergleiche Anzahl der Transaction-Platzierungen
+        if ($oldTransactions.Count -ne $newTransactions.Count) {
+            Write-Host "Transactions placements count changed: $($oldTransactions.Count) -> $($newTransactions.Count)"
             return $true
         }
 
-        if(Compare-Standings -oldStandings $oldAwards -newStandings $newAwards -propertiesToCheck (Get-AwardProperties) -outputProperty "Name") {
-            Write-Host "Awards changed."
-            return $true
+        # Vergleiche jede Transaction
+        for ($i = 0; $i -lt $oldTransactions.Count; $i++) {
+            $oldTransaction = $oldTransactions[$i]
+            $newTransaction = $newTransactions[$i]
+
+            # Prüfe Top-Level Eigenschaften der Transaction
+            $propsToCheck = $propertiesToCheck
+            foreach ($prop in $propsToCheck) {
+                if ($oldTransaction.$prop -ne $newTransaction.$prop) {
+                    Write-Host "$($oldTransaction.$outputProperty)'s property '$prop' changed: '$($oldTransaction.$prop)' -> '$($newTransaction.$prop)'"
+                    return $true
+                }
+            }
         }
     }
 
     return $false
 }
 
-function Get-AwardProperties{
-    return @('Name','IconUnicode','StatDisplay','TeamID','Owner','TeamName')
+function Get-TransactionProperties{
+    return @('Type','TransactionID','Status','Creator','CreatedAt','UpdatedAt')
 }
 
 
@@ -75,70 +86,91 @@ function Get-TransactionOutput {
         [object]$customTransaction
     )
 
-    if(-not $sleeperTransaction) {
-        Write-Warning "Sleeper transaction data is null or empty. Returning null."
-        return $null
+    if($sleeperTransaction) {
+        return $sleeperTransaction
     }
-
-    $output = [PSCustomObject]@{
-        TransactionID = $sleeperTransaction.transaction_id,
-        Type = $sleeperTransaction.type,
-        Status = $sleeperTransaction.status,
-        CreatedAt = [DateTime]::Parse($sleeperTransaction.created_at),
-        UpdatedAt = [DateTime]::Parse($sleeperTransaction.updated_at),
-        SleeperData = $sleeperTransaction,
-        CustomData = $customTransaction
+    else {
+        $output = [PSCustomObject]@{
+            TransactionID = $sleeperTransaction.transaction_id
+            Type = $sleeperTransaction.type
+            Status = $sleeperTransaction.status
+            CreatedAt = [DateTime]::Parse($sleeperTransaction.created_at)
+            UpdatedAt = [DateTime]::Parse($sleeperTransaction.updated_at)
+            SleeperData = $sleeperTransaction
+            CustomData = $customTransaction
+        }
     }
 
     return $output
 }
 
 # ===========================================================================
+# Getter Utils
+# ===========================================================================
+
+function Get-TransactionsRecursive {
+    param(
+        [string]$leagueID = (Get-Config).LeagueID,
+        $accumulatedData = $null
+    )
+
+    # Initialisierung nur beim ersten Aufruf
+    if (-not $accumulatedData) {
+        $accumulatedData = [PSCustomObject]@{
+            AllSeasonsCompleted = @()
+            AllSeasons          = @()
+            PreviousSeason      = $null
+        }
+    }
+
+    $league = Get-LeagueRaw -leagueID $leagueID
+
+    # Rekursiv weitere Seasons holen, falls vorhanden (Abbruch, wenn keine PreviousLeagueID mehr vorhanden ist)
+    if ($league.previous_league_id -and $league.previous_league_id -ne "") {
+        $accumulatedData = Get-TransactionsRemoteRecursive -leagueID $league.previous_league_id -accumulatedData $accumulatedData
+    }
+
+    #berechne Transactions
+    $output = Get-TransactionsRemote -leagueID $leagueID -startWeek 1 -endWeek (Get-Config).MaxTransactionWeek
+    
+    #baue accumulatedData
+    if($league.status -eq "complete"){
+        $accumulatedData.AllSeasonsCompleted += $output
+    }
+    $accumulatedData.AllSeasons += $output
+    $accumulatedData.PreviousSeason = $output
+
+    return $accumulatedData
+}
+
+# ===========================================================================
 # Remote Utils
 # ===========================================================================
+
 
 function Get-TransactionsRemote {
     param (
         [string]$leagueID = (Get-Config).LeagueID,
-        [array]$playoffs = (Get-Playoffs -leagueID $leagueID),
-        [Parameter(Mandatory=$true)][array]$teamData,
-        [Parameter(Mandatory=$true)][int]$regularSeasonGames,
-        [Parameter(Mandatory=$true)][AllowNull()]$previousSeasonStandings
+        [number]$startWeek = 1,
+        [number]$endWeek = (Get-Config).MaxTransactionWeek
     )
 
     try {
-        $winnersBracket = $playoffs.WinnersBracket
-        $losersBracket  = $playoffs.LosersBracket
 
-        Write-Host "Calculate standings..." -ForegroundColor Yellow
+        $transactions = @()
 
-        # Playoff-Standings berechnen
-        $playoffStandings = Get-PlayoffStandings -winnersBracket $winnersBracket -losersBracket $losersBracket -teamData $teamData
+        Get-Host "Get Transactions for League $leagueID from Sleeper API..." -ForegroundColor Yellow
 
-        if($playoffStandings.Count -eq 0){
-            Write-Host "No playoff information available yet." -ForegroundColor Cyan
+        # Hole Transaktionen für alle Wochen bis zur aktuellen Woche
+        for ($week = $startWeek; $week -le $endWeek; $week++) {
+
+            Write-Host "Get Transactions for Week $week" -ForegroundColor Yellow
+            $weekTransactions = Get-SleeperTransactions -leagueID $leagueID -week $week
+            $transactions += Get-TransactionOutput -sleeperTransaction $weekTransactions
         }
+        Write-Host "Transactions retrieved." -ForegroundColor Yellow
 
-        # Regular Season Standings berechnen
-        $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames
-
-        if($regularStandings.Count -eq 0){
-            Write-Host "No regular season information available yet." -ForegroundColor Cyan
-        }
-
-        # Awards berechnen
-        $awards = Get-Awards -regularSeasonStandings $regularStandings -playoffsStandings $playoffStandings -previousSeasonStandings $previousSeasonStandings
-
-        # --- Platzierungen in finale Struktur packen ---
-        $standings = [PSCustomObject][ordered]@{
-            Playoffs = $playoffStandings
-            RegularSeason = $regularStandings
-            Awards = $awards
-        }
-
-        Write-Host "Standings calculated." -ForegroundColor Yellow
-
-        return $standings
+        return $transactions
     }
     catch {
          throw $_
@@ -151,13 +183,13 @@ function Get-TransactionsRemote {
 # ===========================================================================
 
 
-function Get-StandingsLocal {
+function Get-TransactionsLocalForCurrentSeason {
 
-    $filePath = (Get-Config).StandingsFile
+    $filePath = (Get-Config).TransactionsFile
 
      # Prüfe ob Datei existiert
      if (-not (Test-Path $filePath)) {
-        Write-Warning "Standings file not found at $filePath. Returning empty array."
+        Write-Warning "Transactions file not found at $filePath. Returning empty array."
         return @()
     }
 
@@ -170,7 +202,7 @@ function Get-StandingsLocal {
         }
     }
     catch {
-        Write-Warning "Could not read existing Standings.json: $_"
+        Write-Warning "Could not read existing Transactions.json: $_"
         return @()
     }
 }

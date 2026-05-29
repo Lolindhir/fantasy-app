@@ -3,6 +3,7 @@ function Get-Config {
 
     # League Settings
     $Global:SalaryRelevantTeamSize = 20
+    $Gloabal:MaxTransactionWeek = 20
 
     # RapidAPI-Key für Tank01
     $Global:RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
@@ -22,6 +23,9 @@ function Get-Config {
     $Global:ScheduleFile = Join-Path $Global:DataDir "Schedule.json"
     $Global:GamesFile = Join-Path $Global:DataDir "Games.json"
     $Global:StandingsFile = Join-Path $Global:DataDir "Standings.json"
+    $Global:TransactionsFile = Join-Path $Global:DataDir "Transactions.json"
+    $Global:TransactionsFileHistorical = Join-Path $Global:DataDir "\past_seasons\Transactions\Transactions_"
+    $Global:TransactionsFileHistoricalSuffix = ".json"
     $Global:TimestampsFile = Join-Path $Global:DataDir "Timestamps.json"
     $Global:ErrorsFile = Join-Path $Global:DataDir "Errors.json"
 
@@ -40,6 +44,7 @@ function Get-Config {
     return @{
         LeagueYear = $Global:LeagueYear
         SalaryRelevantTeamSize = $Global:SalaryRelevantTeamSize
+        MaxTransactionWeek = $Global:MaxTransactionWeek
         LeagueID = $Global:LeagueID
         CapDeadline = $Global:CapDeadline
         RapidAPIKey = $Global:RapidAPIKey
@@ -55,6 +60,9 @@ function Get-Config {
         ScheduleFile = $Global:ScheduleFile
         GamesFile = $Global:GamesFile
         StandingsFile = $Global:StandingsFile
+        TransactionsFile = $Global:TransactionsFile
+        TransactionsFileHistorical = $Global:TransactionsFileHistorical
+        TransactionsFileHistoricalSuffix = $Global:TransactionsFileHistoricalSuffix
         TimestampsFile = $Global:TimestampsFile
         ErrorsFile = $Global:ErrorsFile
     }
