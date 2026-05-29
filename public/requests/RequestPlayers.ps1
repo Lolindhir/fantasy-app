@@ -950,6 +950,12 @@ foreach ($tankEntry in $tankPlayers) {
     # --- Bye-Week bestimmen
     $byeWeek = if ($teamByeWeek.ContainsKey($team)) { $teamByeWeek[$team] } else { 0 }
 
+    # --- Free Agency Status bestimmen ---
+    $freeAgent = $false
+    if ($tankEntry.isFreeAgent -eq $true -or $tankEntry.isFreeAgent -eq "true" -or $tankEntry.isFreeAgent -eq "True") {
+        $freeAgent = $true
+    }
+
     # --- Injury bestimmen ---
     $injured = $false
     $injury = [PSCustomObject]@{
@@ -1099,7 +1105,7 @@ foreach ($tankEntry in $tankPlayers) {
         TeamAbbr                     = $tankEntry.team
         ByeWeek                      = $byeWeek
         Status                       = $sleeperEntry.status
-        IsFreeAgent                  = $tankEntry.isFreeAgent
+        IsFreeAgent                  = $freeAgent
         Position                     = $position
         Age                          = $age
         Year                         = $year

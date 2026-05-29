@@ -295,6 +295,7 @@ export interface RawPlayer {
   NameLast: string;
   NameShort: string;
   Position: string;
+  IsFreeAgent: boolean;
   Salary: number;
   SalaryProjected: number;
   Age: number;
@@ -466,7 +467,18 @@ export class DataService {
         const seasonYear = Number(leagueRaw.Season); // z. B. "2025" -> 2025
 
         const players: Player[] = playersRaw.map(raw => {
-          const nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
+          const FREE_AGENT_TEAM: NFLTeam = {
+            ID: 'FA',
+            Name: 'Free Agent',
+            Abv: 'FA',
+            Logo: 'assets/logo_nfl.png'
+          };
+          var nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
+          var jerseyNumber = raw.Number;
+          if(raw.IsFreeAgent) {
+            nfl = FREE_AGENT_TEAM;
+            jerseyNumber = '';
+          }
 
           // PlayerStats korrekt aus Raw-Daten zusammensetzen
           const stats: PlayerStats = 
@@ -534,6 +546,7 @@ export class DataService {
 
           return {
             ...raw,
+            Number: jerseyNumber,
             TeamNFL: nfl,
             TeamFantasy: undefined,
             Salary: raw.Salary,
