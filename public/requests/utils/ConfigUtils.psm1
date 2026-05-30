@@ -3,7 +3,7 @@ function Get-Config {
 
     # League Settings
     $Global:SalaryRelevantTeamSize = 20
-    $Gloabal:MaxTransactionWeek = 20
+    $Global:MaxTransactionWeek = 20
 
     # RapidAPI-Key für Tank01
     $Global:RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
