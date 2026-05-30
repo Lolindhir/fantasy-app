@@ -116,11 +116,7 @@ function Get-TransactionsRecursive {
 
     # Initialisierung nur beim ersten Aufruf
     if (-not $accumulatedData) {
-        $accumulatedData = [PSCustomObject]@{
-            AllSeasonsCompleted = @()
-            AllSeasons          = @()
-            PreviousSeason      = $null
-        }
+        $accumulatedData = @{}
     }
 
     $league = Get-LeagueRaw -leagueID $leagueID
@@ -131,8 +127,15 @@ function Get-TransactionsRecursive {
     }
 
     #berechne Transactions
-    $output = Get-TransactionsRemote -leagueID $leagueID -startWeek 1 -endWeek (Get-Config).MaxTransactionWeek
+    $transactionsForSeason = Get-TransactionsRemoteForSeason -leagueID $leagueID -startWeek 1 -endWeek (Get-Config).MaxTransactionWeek
     
+    $output = [PSCustomObject]@{
+        LeagueID = $leagueID
+        Season = $league.season
+        SeasonStatus = $league.status
+        Transactions = $transactionsForSeason
+    }
+
     #baue accumulatedData
     if($league.status -eq "complete"){
         $accumulatedData.AllSeasonsCompleted += $output
@@ -148,7 +151,7 @@ function Get-TransactionsRecursive {
 # ===========================================================================
 
 
-function Get-TransactionsRemote {
+function Get-TransactionsRemoteForSeason {
     param (
         [string]$leagueID = (Get-Config).LeagueID,
         [number]$startWeek = 1,
