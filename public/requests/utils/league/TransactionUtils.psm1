@@ -5,6 +5,7 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -104,13 +105,153 @@ function Get-TransactionOutput {
     return $output
 }
 
+
+# ===========================================================================
+# Save Utils
+# ===========================================================================
+
+function Save-TransactionsCurrentSeason {
+    param (
+        [array]$transactions
+    )
+
+    # --- JSON schreiben ---
+    Write-Host "Saving transactions data to JSON..." -ForegroundColor Yellow
+    $compare = & Compare-Transactions
+    Save-JsonFile -Type "Transactions" -Data $transactions -CompareScript $compare -CreateBackup -UpdateTimestamp
+
+    Write-Host "Saved current season transactions." -ForegroundColor Green
+}
+
+function Save-TransactionsHistoricalSeason {
+    param (
+        [int]$season,
+        [array]$transactions
+    )
+
+    $cfg = Get-Config
+
+    $filePath = "$($cfg.TransactionsFileHistorical)$season$($cfg.TransactionsFileHistoricalSuffix)"
+
+    # --- JSON schreiben ---
+    Write-Host "Saving historical transactions for $season data to JSON..." -ForegroundColor Yellow
+    $compare = & Compare-Transactions
+    Save-JsonFile -TargetFile $filePath -Data $transactions -CompareScript $compare
+
+    Write-Host "Saved historical transactions for $season" -ForegroundColor DarkCyan
+}
+
 # ===========================================================================
 # Getter Utils
 # ===========================================================================
 
+function Get-Transactions {
+    param(
+        [ValidateSet("Local","Remote")]
+        [string]$Source = "Local",
+
+        [switch]$IncludeHistory
+    )
+
+    if ($Source -eq "Remote") {
+        return Get-TransactionsRemote -IncludeHistory:$IncludeHistory
+    }
+
+    return Get-TransactionsLocal -IncludeHistory:$IncludeHistory
+}
+
+function Get-TransactionsLocal {
+    param(
+        [switch]$IncludeHistory
+    )
+
+    $transactions = @()
+
+    # Current Season
+    $transactions += Get-TransactionsLocalForSeason -Season (Get-Config).LeagueYear
+
+    if ($IncludeHistory) {
+
+        $folder = Join-Path (Get-Config).DataDir "past_seasons\Transactions"
+
+        Get-ChildItem $folder -Filter "*.json" | ForEach-Object {
+            $transactions += Get-Content $_.FullName -Raw | ConvertFrom-Json
+        }
+    }
+
+    return $transactions
+}
+
+function Get-TransactionsRemote {
+    param(
+        [switch]$IncludeHistory
+    )
+
+    $transactions = @()
+
+    if ($IncludeHistory) {
+
+        $allSeasons = Get-TransactionsRecursive
+
+        foreach ($season in $allSeasons.AllSeasons) {
+            $transactions += $season.Transactions
+        }
+    }
+    else {
+
+        $transactions += Get-TransactionsRemoteForSeason
+    }
+
+    return $transactions
+}
+
+function Get-AllTransactions {
+    param (
+        [switch]$IncludeHistory = $false
+    )
+
+    $all = @()
+
+    # 1. Current Season (immer)
+    $current = Get-TransactionsLocalForCurrentSeason
+    $all += $current
+
+    # 2. Optional History
+    if ($IncludeHistory) {
+
+        $cfg = Get-Config
+
+        # naive approach: alle files im folder
+        $files = Get-ChildItem "$($cfg.DataDir)\past_seasons\Transactions" -Filter "*.json"
+
+        foreach ($file in $files) {
+            Write-Host "Loading history: $($file.Name)" -ForegroundColor DarkGray
+
+            $data = Get-Content $file.FullName -Raw | ConvertFrom-Json
+            $all += $data
+        }
+    }
+
+    # Sortierung = Timeline Engine
+    return $all | Sort-Object CreatedAt
+}
+
+function Get-TransactionsForSeason {
+    param (
+        [int]$season
+    )
+
+    if ($season -eq (Get-Config).LeagueYear) {
+        return Get-TransactionsLocalForCurrentSeason
+    }
+
+    return Get-TransactionsHistoricalSeason -season $season
+}
+
 function Get-TransactionsRecursive {
     param(
         [string]$leagueID = (Get-Config).LeagueID,
+        [switch]$OnlyCompletedSeasons,
         $accumulatedData = $null
     )
 
@@ -123,7 +264,7 @@ function Get-TransactionsRecursive {
 
     # Rekursiv weitere Seasons holen, falls vorhanden (Abbruch, wenn keine PreviousLeagueID mehr vorhanden ist)
     if ($league.previous_league_id -and $league.previous_league_id -ne "") {
-        $accumulatedData = Get-TransactionsRemoteRecursive -leagueID $league.previous_league_id -accumulatedData $accumulatedData
+        $accumulatedData = Get-TransactionsRemoteRecursive -leagueID $league.previous_league_id -OnlyCompletedSeasons:$OnlyCompletedSeasons -accumulatedData $accumulatedData
     }
 
     #berechne Transactions
@@ -197,7 +338,35 @@ function Get-TransactionsLocalForCurrentSeason {
     }
 
     try {
-        $data = Get-Content $FilePath -Raw | ConvertFrom-Json
+        $data = Get-Content $filePath -Raw | ConvertFrom-Json
+        if ($data -is [array]) {
+            return $data
+        } else {
+            return @($data)
+        }
+    }
+    catch {
+        Write-Warning "Could not read existing Transactions.json: $_"
+        return @()
+    }
+}
+
+function Get-TransactionsHistoricalSeason {
+    param (
+        [int]$season
+    )
+
+    $cfg = Get-Config
+
+    $filePath = "$($cfg.TransactionsFileHistorical)$season$($cfg.TransactionsFileHistoricalSuffix)"
+
+    if (-not (Test-Path $filePath)) {
+        Write-Warning "No historical file for season $season"
+        return @()
+    }
+
+    try {
+        $data = Get-Content $filePath -Raw | ConvertFrom-Json
         if ($data -is [array]) {
             return $data
         } else {
