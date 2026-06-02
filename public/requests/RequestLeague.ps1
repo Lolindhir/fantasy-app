@@ -12,6 +12,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -125,6 +126,9 @@ try {
         exit 1
     }
 
+
+    # --- Transaktionen für aktuelle Saison aktualisieren ---
+    #Update-TransactionsCurrentSeason
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw

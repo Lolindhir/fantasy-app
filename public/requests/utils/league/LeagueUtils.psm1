@@ -32,3 +32,22 @@ function Get-LeagueRaw {
     }    
 }
 
+function Get-LeaguesRecursive {
+    param(
+        [string]$leagueID = (Get-Config).LeagueID,
+        [array]$accumulatedLeagues = @()
+    )
+
+    $league = Get-SleeperLeague -leagueID $leagueID
+
+    if ($league.previous_league_id -and $league.previous_league_id -ne "") {
+        $accumulatedLeagues = Get-LeaguesRecursive `
+            -leagueID $league.previous_league_id `
+            -accumulatedLeagues $accumulatedLeagues
+    }
+
+    $accumulatedLeagues += $league
+
+    return $accumulatedLeagues
+}
+

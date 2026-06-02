@@ -24,7 +24,8 @@ function Get-Config {
     $Global:GamesFile = Join-Path $Global:DataDir "Games.json"
     $Global:StandingsFile = Join-Path $Global:DataDir "Standings.json"
     $Global:TransactionsFile = Join-Path $Global:DataDir "Transactions.json"
-    $Global:TransactionsFileHistorical = Join-Path $Global:DataDir "\past_seasons\Transactions\Transactions_"
+    $Global:TransactionsArchiveDir = Join-Path $Global:DataDir "past_seasons\Transactions"
+    $Global:TransactionsFileHistoricalPrefix = Join-Path $Global:TransactionsArchiveDir "Transactions_"
     $Global:TransactionsFileHistoricalSuffix = ".json"
     $Global:TimestampsFile = Join-Path $Global:DataDir "Timestamps.json"
     $Global:ErrorsFile = Join-Path $Global:DataDir "Errors.json"
@@ -61,7 +62,8 @@ function Get-Config {
         GamesFile = $Global:GamesFile
         StandingsFile = $Global:StandingsFile
         TransactionsFile = $Global:TransactionsFile
-        TransactionsFileHistorical = $Global:TransactionsFileHistorical
+        TransactionsArchiveDir = $Global:TransactionsArchiveDir
+        TransactionsFileHistoricalPrefix = $Global:TransactionsFileHistoricalPrefix
         TransactionsFileHistoricalSuffix = $Global:TransactionsFileHistoricalSuffix
         TimestampsFile = $Global:TimestampsFile
         ErrorsFile = $Global:ErrorsFile
