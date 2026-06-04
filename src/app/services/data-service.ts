@@ -5,9 +5,9 @@ import { map } from 'rxjs/operators';
 
 
 export interface DataTimestamps {
-  League: string;  // ISO String
-  Players: string; // ISO String
-  Teams: string;   // ISO String
+  League: string;
+  Players: string;
+  Teams: string;
 }
 
 export interface PlayoffTeam {
@@ -75,14 +75,14 @@ export interface RawLeague {
   TradesMetaText: string;
   SalaryCap: number;
   SalaryCapProjected: number;
-  CapDeadline: string;   // ISO String
+  CapDeadline: string;
   SalaryRelevantTeamSize: number;
-  Teams: RawFantasyTeam[]; // nur rohe Teams
+  Teams: RawFantasyTeam[];
   Standings: Standing[];
 }
 
 export interface League extends Omit<RawLeague, 'Teams'> {
-  Teams: FantasyTeam[]; // angereicherte Teams
+  Teams: FantasyTeam[];
   SalaryCapDisplay: string;
   SalaryCapProjectedDisplay: string;
   IsFinished: boolean;
@@ -153,13 +153,13 @@ export interface RawFantasyTeam {
 
   Placements: Placements;
 
-  Roster: string[]; // nur Spieler-IDs, später in Player-Objekte umwandeln
+  Roster: string[];
 }
 
 export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar'> {
-  Roster: Player[]; // richtige Spieler
+  Roster: Player[];
   Avatar: string;
-  Standing: number; // Platzierung in der Liga
+  Standing: number;
   Wins: number;
   Losses: number;
   Ties: number;
@@ -187,7 +187,7 @@ export interface RankingEntry {
 }
 
 export interface PointHistorySeason {
-  Season: number; //z.B. 2024, abgeleitet aus League.Season
+  Season: number;
   Total: number;
   AvgGame: number;
   AvgPotentialGame: number;
@@ -239,7 +239,7 @@ export interface GameDetails {
   WeekFinal: boolean;
   WeekPlayoff: boolean;
   WeekScored: boolean;
-  Date: string; // "YYYYMMDD"
+  Date: string;
   Home: string;
   HomeID: string;
   Away: string;
@@ -288,6 +288,47 @@ export interface KickingStats {
   XpMissed: number;
 }
 
+export type FreeAgentPredictionModel =
+  | 'CurrentOnly'
+  | 'RuleBasedAutoCut';
+
+export type FreeAgentSalaryMode =
+  | 'Current'
+  | 'Projected';
+
+export type FreeAgentMarketStatus =
+  | 'Rostered'
+  | 'FreeAgent'
+  | 'ProjectedCapCut'
+  | 'PossibleCapCut';
+
+export interface FreeAgentMarketInfo {
+  Status: FreeAgentMarketStatus;
+  PredictionModel: FreeAgentPredictionModel;
+  SalaryMode: FreeAgentSalaryMode;
+  Probability: number;
+  Reason: string;
+
+  TeamID?: number;
+  TeamName?: string;
+  Owner?: string;
+
+  CutOrder?: number;
+  SalaryRank?: number;
+
+  SalaryUsed?: number;
+  SalaryUsedDisplay?: string;
+
+  CapLimit?: number;
+  CapLimitDisplay?: string;
+
+  CapBeforeCut?: number;
+  CapBeforeCutDisplay?: string;
+
+  CapAfterCut?: number;
+  CapAfterCutDisplay?: string;
+}
+
 export interface RawPlayer {
   ID: string;
   Name: string;
@@ -308,8 +349,7 @@ export interface RawPlayer {
   HighSchool: string;
   Injured: boolean;
   InjuryDetails: InjuryDetails;
-  //nur für Verarbeitung benötigt
-  TeamID: string; // Referenz, nicht das Teamobjekt
+  TeamID: string;
   GamesPlayed: number;
   GamesPotential: number;
   SnapsTotal: number;
@@ -325,16 +365,25 @@ export interface RawPlayer {
   TouchdownsRushing: number;
   Ranking: RankingEntry[];
   PointHistory: PointHistory;
-  GameHistory?: GameHistory[]; 
+  GameHistory?: GameHistory[];
 }
 
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
-  TeamNFL: NFLTeam; // angereichertes NFL-Team
-  TeamFantasy?: FantasyTeam; // optionales Fantasy-Team (wenn zugeordnet)
+  TeamNFL: NFLTeam;
+  TeamFantasy?: FantasyTeam;
+
+  IsFantasyFreeAgent: boolean;
+
+  IsFreeAgentDraftAvailable: boolean;
+  FreeAgentMarketInfo: FreeAgentMarketInfo;
+
+  IsFreeAgentDraftAvailableProjected: boolean;
+  FreeAgentMarketInfoProjected: FreeAgentMarketInfo;
+
   SalaryDisplay: string;
   SalaryProjectedDisplay: string;
   Stats: PlayerStats;
-  GameHistoryFull?: GameHistory[]; // vollständige Spielhistorie bis zur aktuellen Woche
+  GameHistoryFull?: GameHistory[];
 }
 
 export interface RawNFLTeam {
@@ -347,42 +396,39 @@ export interface RawNFLTeam {
 export interface NFLTeam extends RawNFLTeam {}
 
 export interface TopPlayersSalaryResult {
-  cap: number;          // Salary der Top-N Spieler
-  topPlayers: Player[]; // die Spieler, die aktuell im Top-N sind
+  cap: number;
+  topPlayers: Player[];
 }
 
-export type SortField = keyof Player; // 'ID' | 'Name' | 'Position' | 'TeamID' | 'Salary' | ...
+export type SortField = keyof Player;
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataService {
-  
-  private http = inject(HttpClient);
-  // private salarySourceMin = 0;
-  // private salarySourceMax = 8000;
-  // private salaryTargetMin = 250_000;
-  // private salaryTargetMax = 50_000_000;
-  // private salaryMappingNonLinear = true; // true = nicht-linear, false = linear
 
-  /* Timestamps laden */
+  private http = inject(HttpClient);
+
   private timestampsUrl = 'data/Timestamps.json';
+
   getLeagueTimestamp(): Observable<string | undefined> {
     return this.http.get<{ League: string }>(this.timestampsUrl).pipe(
       map(ts => ts.League)
     );
   }
+
   getPlayersTimestamp(): Observable<string | undefined> {
     return this.http.get<{ Players: string }>(this.timestampsUrl).pipe(
       map(ts => ts.Players)
     );
   }
+
   getTeamsTimestamp(): Observable<string | undefined> {
     return this.http.get<{ Teams: string }>(this.timestampsUrl).pipe(
       map(ts => ts.Teams)
     );
   }
-  //gib den neuesten Zeitstempel von allen drei Dateien zurück
+
   getLatestTimestamp(): Observable<string | undefined> {
     return forkJoin({
       league: this.getLeagueTimestamp(),
@@ -398,12 +444,6 @@ export class DataService {
       })
     );
   }
-  // private toLocalTime(utcString?: string): string | undefined {
-  //   if (!utcString) return undefined;
-  //   const date = new Date(utcString); // UTC-Zeit aus JSON
-  //   return date.toLocaleString();     // Browser-Zeit, automatisch lokalisiert
-  // }
-
 
   getFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<FantasyTeam[]> {
     return this.getLeagueWithPlayers(sortFields).pipe(
@@ -423,7 +463,6 @@ export class DataService {
     );
   }
 
-
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[] }> {
     return forkJoin({
       leagueRaw: this.http.get<RawLeague>('data/League.json'),
@@ -432,9 +471,8 @@ export class DataService {
     }).pipe(
       map(({ leagueRaw, playersRaw, nflTeamsRaw }) => {
 
-        // 1️⃣ FantasyTeams initial aufbauen
         const teams: FantasyTeam[] = leagueRaw.Teams.map(team => {
-  
+
           const awards = this.ensureArray(team.Placements.Current.Awards)
             .map(a => this.mapAward(a));
 
@@ -443,8 +481,8 @@ export class DataService {
             Team: team.Team || `Team ${team.Owner}`,
             Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
             Roster: [],
-            Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0 
-              ? team.Placements.Current.Playoffs.Place 
+            Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0
+              ? team.Placements.Current.Playoffs.Place
               : team.Placements.Current.Regular.Place ?? 0,
             Wins: team.Placements.Current.Regular.Wins ?? 0,
             Losses: team.Placements.Current.Regular.Losses ?? 0,
@@ -457,32 +495,29 @@ export class DataService {
             RunnerUps: team.Placements.AllTime.Playoffs.RunnerUps ?? 0,
             Thirds: team.Placements.AllTime.Playoffs.Thirds ?? 0,
             RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0,
-
-            // 👉 HIER ersetzt du deine alte Logik
             AwardsDisplay: awards.map(a => a.Icon).join('')
           };
         });
 
-        // 2️⃣ Spieler aufbauen
-        const seasonYear = Number(leagueRaw.Season); // z. B. "2025" -> 2025
+        const seasonYear = Number(leagueRaw.Season);
+
+        const FREE_AGENT_TEAM: NFLTeam = {
+          ID: 'FA',
+          Name: 'Free Agent',
+          Abv: 'FA',
+          Logo: 'assets/logo_nfl.png'
+        };
 
         const players: Player[] = playersRaw.map(raw => {
-          const FREE_AGENT_TEAM: NFLTeam = {
-            ID: 'FA',
-            Name: 'Free Agent',
-            Abv: 'FA',
-            Logo: 'assets/logo_nfl.png'
-          };
-          var nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
-          var jerseyNumber = raw.Number;
-          if(raw.IsFreeAgent) {
+          let nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
+          let jerseyNumber = raw.Number;
+
+          if (raw.IsFreeAgent) {
             nfl = FREE_AGENT_TEAM;
             jerseyNumber = '';
           }
 
-          // PlayerStats korrekt aus Raw-Daten zusammensetzen
-          const stats: PlayerStats = 
-          {
+          const stats: PlayerStats = {
             GamesPlayed: raw.GamesPlayed,
             GamesPotential: raw.GamesPotential,
             SnapsTotal: raw.SnapsTotal,
@@ -500,27 +535,26 @@ export class DataService {
             PointHistory: raw.PointHistory
           };
 
-          //Injury Dates umwandeln (20251004 zu 2025-10-04)
           if (raw.InjuryDetails?.Date) {
             const rd = raw.InjuryDetails.Date;
             if (/^\d{8}$/.test(rd)) {
               const year = rd.slice(0, 4);
               const month = rd.slice(4, 6);
               const day = rd.slice(6, 8);
-              raw.InjuryDetails.Date = `${year}-${month}-${day}`; // ✅ ISO-kompatibel
+              raw.InjuryDetails.Date = `${year}-${month}-${day}`;
             }
           }
+
           if (raw.InjuryDetails?.ReturnDate) {
             const rd = raw.InjuryDetails.ReturnDate;
             if (/^\d{8}$/.test(rd)) {
               const year = rd.slice(0, 4);
               const month = rd.slice(4, 6);
               const day = rd.slice(6, 8);
-              raw.InjuryDetails.ReturnDate = `${year}-${month}-${day}`; // ✅ ISO-kompatibel
+              raw.InjuryDetails.ReturnDate = `${year}-${month}-${day}`;
             }
           }
 
-          // SeasonYears in PointHistory ergänzen
           if (stats?.PointHistory) {
             const mapping = {
               SeasonMinus1: seasonYear - 1,
@@ -536,65 +570,73 @@ export class DataService {
               });
           }
 
-          // GameHistory für laufende Saison vorbereiten
-          var currentWeek = 0;
-          currentWeek = leagueRaw.FinalScoredWeek;
-          var playoffStartWeek = 0;
-          playoffStartWeek = leagueRaw.PlayoffWeek;
-          var lastWeek = 0;
-          lastWeek = leagueRaw.LastLeagueWeek;
+          const currentWeek = leagueRaw.FinalScoredWeek;
+          const playoffStartWeek = leagueRaw.PlayoffWeek;
+          const lastWeek = leagueRaw.LastLeagueWeek;
 
           return {
             ...raw,
             Number: jerseyNumber,
             TeamNFL: nfl,
             TeamFantasy: undefined,
+
+            IsFantasyFreeAgent: false,
+
+            IsFreeAgentDraftAvailable: false,
+            FreeAgentMarketInfo: this.createFreeAgentMarketInfo(
+              'Rostered',
+              'CurrentOnly',
+              'Current',
+              0,
+              'Pending fantasy roster assignment.'
+            ),
+
+            IsFreeAgentDraftAvailableProjected: false,
+            FreeAgentMarketInfoProjected: this.createFreeAgentMarketInfo(
+              'Rostered',
+              'CurrentOnly',
+              'Projected',
+              0,
+              'Pending fantasy roster assignment.'
+            ),
+
             Salary: raw.Salary,
             SalaryProjected: raw.SalaryProjected,
             SalaryDisplay: this.formatSalaryDollars(raw.Salary),
             SalaryProjectedDisplay: this.formatSalaryDollars(raw.SalaryProjected),
             NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
             Stats: stats,
-            GameHistoryFull: this.prepareGameHistory(raw, currentWeek, playoffStartWeek, lastWeek) // nur für laufende Saison vorbereiten
+            GameHistoryFull: this.prepareGameHistory(raw, currentWeek, playoffStartWeek, lastWeek)
           };
         });
 
-        // 3️⃣ Roster füllen
         teams.forEach(team => {
           team.Roster = this.rosterIdsToPlayers(
             (leagueRaw.Teams.find(t => t.TeamID === team.TeamID)?.Roster) || [],
             players
           );
+
           team.Roster.forEach(player => (player.TeamFantasy = team));
         });
 
-        // 4️⃣ Teams nach Standing sortieren
+        this.enrichFreeAgentMarket(players, teams, leagueRaw);
+
         teams.sort((a, b) => a.Standing - b.Standing);
 
-        // 5️⃣ Spieler sortieren
         const playersSorted = this.sortRoster(players, sortFields);
 
         leagueRaw.Standings.forEach(standing => {
-
-          // Awards des Standings in Award[] umwandeln
           standing.Awards?.forEach(award => {
             award.Icon = this.unicodeToEmoji(award.IconUnicode);
           });
 
-          // Optional: Wenn du Playoffs / RegularSeason Teams selbst anreichern willst:
           standing.Playoffs?.forEach(team => {
-            // Falls du auch hier Raw-Awards hättest (je nach Datenquelle)
-            // team.Awards = this.ensureArray(team.Awards).map(a => this.mapAward(a));
           });
 
           standing.RegularSeason.forEach(team => {
-            // Team-Awards im RegularSeason Standings (falls relevant)
-            // team.Awards = this.ensureArray(team.Awards).map(a => this.mapAward(a));
           });
-
         });
 
-        // 6️⃣ League angereichert
         const league: League = {
           ...leagueRaw,
           Teams: teams,
@@ -602,7 +644,7 @@ export class DataService {
           SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
           SalaryCapProjected: leagueRaw.SalaryCapProjected,
           SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected),
-          IsFinished: leagueRaw.Status == "Finished",
+          IsFinished: leagueRaw.Status == 'Finished',
           SeasonAsNumber: +leagueRaw.Season
         };
 
@@ -611,69 +653,212 @@ export class DataService {
     );
   }
 
-  // Hilfsmethode im Service
   private rosterIdsToPlayers(rosterIds: string[], allPlayers: Player[]): Player[] {
     return rosterIds
       .map(pid => allPlayers.find(p => p.ID === pid))
       .filter((p): p is Player => !!p);
   }
 
-  // private mapSalaryToDollars(salary: number, year: number, age: number, position: string): number {
+  private enrichFreeAgentMarket(
+    players: Player[],
+    teams: FantasyTeam[],
+    league: RawLeague
+  ): void {
 
-  //   // Salary holen
-  //   const salaryFlat = this.salaryMappingNonLinear ? this.mapSalaryToDollarsNonLinear(salary) : this.mapSalaryToDollarsLinear(salary);
-  //   let salaryAdjusted = salaryFlat;
+    this.applyFreeAgentPredictionModel(
+      players,
+      teams,
+      league,
+      'RuleBasedAutoCut',
+      'Current'
+    );
 
-  //   //Rookies kosten weniger Geld
-  //   //1. Jahr nur 50%, 2. Jahr 70%, 3. Jahr 90%
-  //   if (year === 1) {
-  //     salaryAdjusted = salaryAdjusted * 0.5;
-  //   } else if (year === 2) {
-  //     salaryAdjusted = salaryAdjusted * 0.75;
-  //   } else if (year === 3) {
-  //     salaryAdjusted = salaryAdjusted * 0.9;
-  //   }
+    this.applyFreeAgentPredictionModel(
+      players,
+      teams,
+      league,
+      'RuleBasedAutoCut',
+      'Projected'
+    );
+  }
 
-  //   // auf die Salary noch pro Jahr 100k draufschlagen
-  //   salaryAdjusted = salaryAdjusted + 100_000 * year;
+  private applyFreeAgentPredictionModel(
+    players: Player[],
+    teams: FantasyTeam[],
+    league: RawLeague,
+    model: FreeAgentPredictionModel,
+    salaryMode: FreeAgentSalaryMode
+  ): void {
 
-  //   // von der Salary noch pro Alter über 25 Jahre 100k abziehen
-  //   salaryAdjusted = salaryAdjusted - 100_000 * (age - 25);
+    players.forEach(player => {
+      const isFantasyFreeAgent = !player.TeamFantasy;
 
-  //   // Kicker Sonderbehandlung: pro Jahr 150k drauf
-  //   if (position === 'K') {
-  //     salaryAdjusted = salaryAdjusted + 150_000 * year;
-  //   }
+      if (salaryMode === 'Current') {
+        player.IsFantasyFreeAgent = isFantasyFreeAgent;
+      }
 
-  //   // Hier runden auf ganze Dollar
-  //   salaryAdjusted = Math.round(salaryAdjusted);
+      const info = isFantasyFreeAgent
+        ? this.createFreeAgentMarketInfo(
+            'FreeAgent',
+            'CurrentOnly',
+            salaryMode,
+            1,
+            'Player is currently not assigned to any fantasy team.'
+          )
+        : this.createFreeAgentMarketInfo(
+            'Rostered',
+            model,
+            salaryMode,
+            0,
+            'Player is currently rostered by a fantasy team.'
+          );
 
-  //   return salaryAdjusted;
-  // }
+      this.setFreeAgentMarketInfo(player, info, salaryMode);
+    });
 
-  // private mapSalaryToDollarsLinear(salary: number): number {
-  //   return this.salaryTargetMin + ((salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin)) * (this.salaryTargetMax - this.salaryTargetMin);
-  // }
+    if (model === 'CurrentOnly') {
+      return;
+    }
 
-  // private mapSalaryToDollarsNonLinear(salary: number): number {
-  //   const k = 2; // Quadratische Skalierung
+    if (model === 'RuleBasedAutoCut') {
+      this.applyRuleBasedAutoCutModel(players, teams, league, salaryMode);
+    }
+  }
 
-  //   const normalized = (salary - this.salarySourceMin) / (this.salarySourceMax - this.salarySourceMin);
-  //   const scaled = Math.pow(normalized, k);
+  private applyRuleBasedAutoCutModel(
+    players: Player[],
+    teams: FantasyTeam[],
+    league: RawLeague,
+    salaryMode: FreeAgentSalaryMode
+  ): void {
 
-  //   return this.salaryTargetMin + scaled * (this.salaryTargetMax - this.salaryTargetMin);
-  // }
+    const salaryRelevantTeamSize = league.SalaryRelevantTeamSize;
+    const capLimit = salaryMode === 'Projected'
+      ? (league.SalaryCapProjected ?? league.SalaryCap)
+      : league.SalaryCap;
+
+    const salarySelector = salaryMode === 'Projected'
+      ? (p: Player) => p.SalaryProjected ?? p.Salary
+      : (p: Player) => p.Salary;
+
+    teams.forEach(team => {
+      let simulatedRoster = [...team.Roster];
+
+      let currentCap = this.calculateTopPlayersSalary(
+        simulatedRoster,
+        salaryRelevantTeamSize,
+        salarySelector
+      ).cap;
+
+      if (currentCap <= capLimit) {
+        return;
+      }
+
+      let cutOrder = 1;
+
+      while (currentCap > capLimit) {
+        const sortedRoster = [...simulatedRoster].sort(
+          (a, b) => salarySelector(b) - salarySelector(a)
+        );
+
+        const nextCutCandidate = sortedRoster[5];
+
+        if (!nextCutCandidate) {
+          break;
+        }
+
+        const capBeforeCut = currentCap;
+        const salaryUsed = salarySelector(nextCutCandidate);
+
+        simulatedRoster = simulatedRoster.filter(
+          p => p.ID !== nextCutCandidate.ID
+        );
+
+        currentCap = this.calculateTopPlayersSalary(
+          simulatedRoster,
+          salaryRelevantTeamSize,
+          salarySelector
+        ).cap;
+
+        const info = this.createFreeAgentMarketInfo(
+          'ProjectedCapCut',
+          'RuleBasedAutoCut',
+          salaryMode,
+          1,
+          'Team is over the salary cap. Rule-based model cuts the current 6th highest salary player until the team is under the cap.',
+          {
+            TeamID: team.TeamID,
+            TeamName: team.Team ?? `Team ${team.Owner}`,
+            Owner: team.Owner,
+
+            CutOrder: cutOrder,
+            SalaryRank: 6,
+
+            SalaryUsed: salaryUsed,
+            SalaryUsedDisplay: this.formatSalaryDollars(salaryUsed),
+
+            CapLimit: capLimit,
+            CapLimitDisplay: this.formatSalaryDollars(capLimit),
+
+            CapBeforeCut: capBeforeCut,
+            CapBeforeCutDisplay: this.formatSalaryDollars(capBeforeCut),
+
+            CapAfterCut: currentCap,
+            CapAfterCutDisplay: this.formatSalaryDollars(currentCap)
+          }
+        );
+
+        this.setFreeAgentMarketInfo(nextCutCandidate, info, salaryMode);
+
+        cutOrder++;
+      }
+    });
+  }
+
+  private createFreeAgentMarketInfo(
+    status: FreeAgentMarketStatus,
+    model: FreeAgentPredictionModel,
+    salaryMode: FreeAgentSalaryMode,
+    probability: number,
+    reason: string,
+    extra?: Partial<FreeAgentMarketInfo>
+  ): FreeAgentMarketInfo {
+    return {
+      Status: status,
+      PredictionModel: model,
+      SalaryMode: salaryMode,
+      Probability: probability,
+      Reason: reason,
+      ...extra
+    };
+  }
+
+  private setFreeAgentMarketInfo(
+    player: Player,
+    info: FreeAgentMarketInfo,
+    salaryMode: FreeAgentSalaryMode
+  ): void {
+    const isAvailable =
+      info.Status === 'FreeAgent' ||
+      info.Status === 'ProjectedCapCut' ||
+      info.Status === 'PossibleCapCut';
+
+    if (salaryMode === 'Projected') {
+      player.FreeAgentMarketInfoProjected = info;
+      player.IsFreeAgentDraftAvailableProjected = isAvailable;
+      return;
+    }
+
+    player.FreeAgentMarketInfo = info;
+    player.IsFreeAgentDraftAvailable = isAvailable;
+  }
 
   private formatSalaryDollars(amount: number): string {
-    // if(amount === 0) return 'Rookie';
     if (amount >= 1_000_000) {
-      // Millionenbereich → 1 Nachkommastelle
       return `$${(amount / 1_000_000).toFixed(1)} Mio.`;
     } else if (amount >= 1_000) {
-      // Millionenbereich → mit 2 Nachkommastellen
       return `$${(amount / 1_000_000).toFixed(2)} Mio.`;
     } else {
-      // darunter einfach normal
       return `$0.0 Mio.`;
     }
   }
@@ -689,7 +874,7 @@ export class DataService {
           if (cmp !== 0) return cmp;
         }
       }
-      // Fallback: eindeutige ID zum stabilisieren, falls alles andere gleich
+
       return a.ID.localeCompare(b.ID);
     });
   }
@@ -703,7 +888,6 @@ export class DataService {
       const existing = existingGames.find(g => g.GameDetails.Week === week);
       if (existing) return existing;
 
-      // Leerer Platzhalter, falls keine Daten vorhanden — alle erforderlichen Felder belegen
       return {
         GameID: '',
         TeamID: '',
@@ -733,10 +917,6 @@ export class DataService {
     });
   }
 
-  /**
-   * Berechnet das Top-N Salary für ein gegebenes Roster.
-   * Wenn Spieler entfernt werden, rücken automatisch die nächsten Spieler nach.
-   */
   calculateTopPlayersSalary(
     roster: Player[],
     topN: number,
@@ -759,29 +939,27 @@ export class DataService {
     return { cap, topPlayers };
   }
 
-  /**
-   * Berechnet das Roster nach einem Trade.
-   * outgoing: Spieler, die das Team verlassen
-   * incoming: Spieler, die das Team erhalten
-   */
   getRosterAfterTrade(
     currentRoster: Player[],
     outgoing: Player[],
     incoming: Player[]
   ): Player[] {
     let newRoster = [...currentRoster];
+
     outgoing.forEach(p => {
       newRoster = newRoster.filter(x => x.ID !== p.ID);
     });
+
     incoming.forEach(p => newRoster.push(p));
+
     return newRoster;
   }
 
   private unicodeToEmoji(unicode: string): string {
     return unicode
-      .split(" ")
+      .split(' ')
       .map(code => String.fromCodePoint(parseInt(code, 16)))
-      .join("");
+      .join('');
   }
 
   private mapAward(raw: RawAward): Award {
