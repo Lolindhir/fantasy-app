@@ -39,6 +39,11 @@ export class App {
             this.currentPage = 'Teams';
             break;
 
+          case '/players':
+            this.currentPage = 'Players';
+            break;
+            
+
           case '/trade':
             this.currentPage = 'Trade Simulator';
             break;
