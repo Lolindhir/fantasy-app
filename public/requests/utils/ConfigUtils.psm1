@@ -23,6 +23,7 @@ function Get-Config {
     $Global:ScheduleFile = Join-Path $Global:DataDir "Schedule.json"
     $Global:GamesFile = Join-Path $Global:DataDir "Games.json"
     $Global:StandingsFile = Join-Path $Global:DataDir "Standings.json"
+    $Global:ManualTransactionsFile = Join-Path $Global:DataDir "ManualFADraftPickTrades.json"
     $Global:TransactionsFile = Join-Path $Global:DataDir "Transactions.json"
     $Global:TransactionsArchiveDir = Join-Path $Global:DataDir "past_seasons\Transactions"
     $Global:TransactionsFileHistoricalPrefix = Join-Path $Global:TransactionsArchiveDir "Transactions_"
@@ -61,6 +62,7 @@ function Get-Config {
         ScheduleFile = $Global:ScheduleFile
         GamesFile = $Global:GamesFile
         StandingsFile = $Global:StandingsFile
+        ManualTransactionsFile = $Global:ManualTransactionsFile
         TransactionsFile = $Global:TransactionsFile
         TransactionsArchiveDir = $Global:TransactionsArchiveDir
         TransactionsFileHistoricalPrefix = $Global:TransactionsFileHistoricalPrefix

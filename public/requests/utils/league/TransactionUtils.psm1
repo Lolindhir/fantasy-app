@@ -113,8 +113,11 @@ function Compare-Transactions {
         $newTransaction = $newSorted[$i]
 
         foreach ($prop in $propertiesToCheck) {
-            if ($oldTransaction.$prop -ne $newTransaction.$prop) {
-                Write-Host "Transaction '$($oldTransaction.TransactionID)' property '$prop' changed: '$($oldTransaction.$prop)' -> '$($newTransaction.$prop)'"
+            $oldValue = ConvertTo-ComparableJson -value $oldTransaction.$prop
+            $newValue = ConvertTo-ComparableJson -value $newTransaction.$prop
+
+            if ($oldValue -ne $newValue) {
+                Write-Host "Transaction '$($oldTransaction.TransactionID)' property '$prop' changed."
                 return $true
             }
         }
@@ -134,8 +137,76 @@ function Get-TransactionProperties {
         'Week',
         'Creator',
         'CreatedAt',
-        'UpdatedAt'
+        'UpdatedAt',
+        'RosterIDs',
+        'Adds',
+        'Drops',
+        'DraftPicks',
+        'Notes'
     )
+}
+
+function ConvertTo-ComparableJson {
+    param(
+        [AllowNull()]
+        $value
+    )
+
+    if ($null -eq $value) {
+        return $null
+    }
+
+    $stableValue = ConvertTo-StableComparableObject -value $value
+    return ($stableValue | ConvertTo-Json -Depth 50 -Compress)
+}
+
+function ConvertTo-StableComparableObject {
+    param(
+        [AllowNull()]
+        $value
+    )
+
+    if ($null -eq $value) {
+        return $null
+    }
+
+    if ($value -is [string]) {
+        return $value
+    }
+
+    if ($value -is [System.ValueType]) {
+        return $value
+    }
+
+    if ($value -is [System.Collections.IDictionary]) {
+        $ordered = [ordered]@{}
+
+        foreach ($key in ($value.Keys | Sort-Object)) {
+            $ordered[[string]$key] = ConvertTo-StableComparableObject -value $value[$key]
+        }
+
+        return [PSCustomObject]$ordered
+    }
+
+    if ($value -is [System.Collections.IEnumerable]) {
+        return @(
+            foreach ($item in $value) {
+                ConvertTo-StableComparableObject -value $item
+            }
+        )
+    }
+
+    if ($value.PSObject -and $value.PSObject.Properties) {
+        $ordered = [ordered]@{}
+
+        foreach ($prop in ($value.PSObject.Properties | Sort-Object Name)) {
+            $ordered[$prop.Name] = ConvertTo-StableComparableObject -value $prop.Value
+        }
+
+        return [PSCustomObject]$ordered
+    }
+
+    return $value
 }
 
 function Get-TransactionsFromSeasonData {
@@ -196,6 +267,9 @@ function Get-TransactionOutput {
         $notes = $sleeperTransaction.metadata.notes
     }
 
+    $draftPicks = Normalize-DraftPickOutputs `
+        -draftPicks @(Get-DraftPickOutputsFromSleeperTransaction -sleeperTransaction $sleeperTransaction)
+
     $output = [PSCustomObject][ordered]@{
         TransactionID = $sleeperTransaction.transaction_id
         Source        = "Sleeper"
@@ -216,7 +290,7 @@ function Get-TransactionOutput {
 
         Adds          = ConvertTo-SafeObject -value $sleeperTransaction.adds
         Drops         = ConvertTo-SafeObject -value $sleeperTransaction.drops
-        DraftPicks    = @(Get-DraftPickOutputsFromSleeperTransaction -sleeperTransaction $sleeperTransaction)
+        DraftPicks    = $draftPicks
         #WaiverBudget  = ConvertTo-SafeArray -value $sleeperTransaction.waiver_budget
 
         #Settings      = $sleeperTransaction.settings
@@ -257,6 +331,348 @@ function Get-TransactionsSeasonOutput {
     return $output
 }
 
+function Normalize-DraftPickOutputs {
+    param(
+        [AllowNull()]
+        [array]$draftPicks
+    )
+
+    return @(
+        ConvertTo-SafeArray -value $draftPicks | ForEach-Object {
+            Remove-DraftPickTransactionID -draftPick $_
+        }
+    )
+}
+
+function Remove-DraftPickTransactionID {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$draftPick
+    )
+
+    $output = [ordered]@{}
+
+    foreach ($prop in $draftPick.PSObject.Properties) {
+        if ($prop.Name -eq "TransactionID") {
+            continue
+        }
+
+        $output[$prop.Name] = $prop.Value
+    }
+
+    return [PSCustomObject]$output
+}
+
+# ===========================================================================
+# Manual Free Agent Draft Pick Trade Utils
+# ===========================================================================
+
+function Get-ManualFADraftPickTradesFilePath {
+    $cfg = Get-Config
+
+    if ($cfg -is [System.Collections.IDictionary]) {
+        if ($cfg.ContainsKey("ManualTransactionsFile") -and -not [string]::IsNullOrWhiteSpace($cfg["ManualTransactionsFile"])) {
+            return $cfg["ManualTransactionsFile"]
+        }
+    }
+    elseif (($cfg.PSObject.Properties.Name -contains "ManualTransactionsFile") -and -not [string]::IsNullOrWhiteSpace($cfg.ManualTransactionsFile)) {
+        return $cfg.ManualTransactionsFile
+    }
+
+    return Join-Path (Split-Path $cfg.TransactionsFile -Parent) "ManualFADraftPickTrades.json"
+}
+
+function Get-ManualFADraftPickTrades {
+    param(
+        [AllowNull()]
+        [string]$season = $null
+    )
+
+    $filePath = Get-ManualFADraftPickTradesFilePath
+
+    if (-not (Test-Path $filePath)) {
+        Write-Host "Manual FA draft pick trades file not found at $filePath. Skipping." -ForegroundColor DarkGray
+        return @()
+    }
+
+    try {
+        $data = Get-Content $filePath -Raw | ConvertFrom-Json
+        $trades = ConvertTo-SafeArray -value $data
+
+        if (-not [string]::IsNullOrWhiteSpace($season)) {
+            $trades = @(
+                $trades | Where-Object {
+                    [string]$_.Season -eq [string]$season
+                }
+            )
+        }
+
+        return $trades
+    }
+    catch {
+        Write-Warning "Could not read ManualFADraftPickTrades.json: $_"
+        return @()
+    }
+}
+
+function ConvertTo-UnixMillisecondsFromDateString {
+    param(
+        [AllowNull()]
+        [string]$date
+    )
+
+    if ([string]::IsNullOrWhiteSpace($date)) {
+        return 0
+    }
+
+    $dt = [datetime]::MinValue
+    $validDate = [datetime]::TryParseExact(
+        $date,
+        "yyyy-MM-dd",
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [System.Globalization.DateTimeStyles]::None,
+        [ref]$dt
+    )
+
+    if (-not $validDate) {
+        Write-Warning "Could not parse manual transaction date '$date'. Using CreatedAt = 0."
+        return 0
+    }
+
+    $dto = [datetimeoffset]::new(
+        $dt.Year,
+        $dt.Month,
+        $dt.Day,
+        0,
+        0,
+        0,
+        [TimeSpan]::Zero
+    )
+
+    return $dto.ToUnixTimeMilliseconds()
+}
+
+function Get-StableManualFADraftPickTradeID {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$manualTrade
+    )
+
+    if (
+        ($manualTrade.PSObject.Properties.Name -contains "ManualTransactionID") -and
+        -not [string]::IsNullOrWhiteSpace($manualTrade.ManualTransactionID)
+    ) {
+        return [string]$manualTrade.ManualTransactionID
+    }
+
+    $pickKey = @(
+        ConvertTo-SafeArray -value $manualTrade.Picks | ForEach-Object {
+            "$($_.Season)-R$($_.Round)-O$($_.OriginalRosterID)-F$($_.FromRosterID)-T$($_.ToRosterID)"
+        }
+    ) -join "|"
+
+    $sleeperTransactionID = $null
+    if ($manualTrade.PSObject.Properties.Name -contains "SleeperTransactionID") {
+        $sleeperTransactionID = [string]$manualTrade.SleeperTransactionID
+    }
+
+    $raw = "$($manualTrade.Season)|$($manualTrade.Date)|$sleeperTransactionID|$pickKey"
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($raw)
+    $sha1 = [System.Security.Cryptography.SHA1]::Create()
+
+    try {
+        $hash = ([BitConverter]::ToString($sha1.ComputeHash($bytes))).Replace("-", "").Substring(0, 12)
+    }
+    finally {
+        $sha1.Dispose()
+    }
+
+    return "ManualFA_$($manualTrade.Season)_$hash"
+}
+
+function Get-ManualFADraftPickOutput {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$manualPick
+    )
+
+    return [PSCustomObject][ordered]@{
+        DraftType             = "FreeAgent"
+        DraftSource           = "Manual"
+        DraftKey              = "$($manualPick.Season)_FreeAgent"
+
+        Season                = [string]$manualPick.Season
+        Round                 = [int]$manualPick.Round
+        OriginalRosterID      = [int]$manualPick.OriginalRosterID
+        PreviousOwnerRosterID = [int]$manualPick.FromRosterID
+        OwnerRosterID         = [int]$manualPick.ToRosterID
+    }
+}
+
+function New-ManualFADraftPickTradeTransaction {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$manualTrade,
+
+        [Parameter(Mandatory = $true)]
+        [string]$leagueID
+    )
+
+    $transactionID = Get-StableManualFADraftPickTradeID -manualTrade $manualTrade
+    $createdAt = ConvertTo-UnixMillisecondsFromDateString -date $manualTrade.Date
+
+    $picks = ConvertTo-SafeArray -value $manualTrade.Picks
+
+    $rosterIDs = @(
+        $picks |
+            ForEach-Object {
+                $_.FromRosterID
+                $_.ToRosterID
+            } |
+            Where-Object { $null -ne $_ } |
+            ForEach-Object { [int]$_ } |
+            Sort-Object -Unique
+    )
+
+    $draftPicks = @(
+        $picks | ForEach-Object {
+            Get-ManualFADraftPickOutput -manualPick $_
+        }
+    )
+
+    return [PSCustomObject][ordered]@{
+        TransactionID = $transactionID
+        Source        = "Manual"
+
+        Type          = "trade"
+        Status        = "complete"
+
+        LeagueID      = $leagueID
+        Season        = [string]$manualTrade.Season
+        Week          = 1
+
+        Creator       = $null
+        CreatedAt     = $createdAt
+        UpdatedAt     = $createdAt
+
+        RosterIDs     = $rosterIDs
+        Adds          = [PSCustomObject]@{}
+        Drops         = [PSCustomObject]@{}
+        DraftPicks    = $draftPicks
+        Notes         = "Manual Free Agent Draft pick trade"
+    }
+}
+
+function Add-ManualFADraftPickTradesToTransactions {
+    param(
+        [AllowNull()]
+        [array]$transactions,
+
+        [Parameter(Mandatory = $true)]
+        [string]$leagueID,
+
+        [Parameter(Mandatory = $true)]
+        [string]$season
+    )
+
+    $transactions = @(
+        ConvertTo-SafeArray -value $transactions |
+            Where-Object {
+                -not (
+                    $_.Source -eq "Manual" -and
+                    [string]$_.TransactionID -like "ManualFA_*"
+                )
+            }
+    )
+
+    foreach ($tx in $transactions) {
+        $cleanDraftPicks = @(
+            ConvertTo-SafeArray -value $tx.DraftPicks |
+                ForEach-Object { Remove-DraftPickTransactionID -draftPick $_ } |
+                Where-Object {
+                    -not (
+                        $_.DraftType -eq "FreeAgent" -and
+                        $_.DraftSource -eq "Manual"
+                    )
+                }
+        )
+
+        if ($tx.PSObject.Properties.Name -contains "DraftPicks") {
+            $tx.DraftPicks = $cleanDraftPicks
+        }
+        else {
+            $tx | Add-Member -NotePropertyName "DraftPicks" -NotePropertyValue $cleanDraftPicks
+        }
+
+        if ($tx.Source -eq "SleeperManual") {
+            $tx.Source = "Sleeper"
+        }
+    }
+
+    $manualTrades = Get-ManualFADraftPickTrades -season $season
+
+    foreach ($manualTrade in $manualTrades) {
+        $sleeperTransactionID = $null
+
+        if ($manualTrade.PSObject.Properties.Name -contains "SleeperTransactionID") {
+            $sleeperTransactionID = [string]$manualTrade.SleeperTransactionID
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($sleeperTransactionID)) {
+            $targetTransaction = $transactions |
+                Where-Object { [string]$_.TransactionID -eq $sleeperTransactionID } |
+                Select-Object -First 1
+
+            if ($targetTransaction) {
+                $manualPickOutputs = @(
+                    ConvertTo-SafeArray -value $manualTrade.Picks |
+                        ForEach-Object {
+                            Get-ManualFADraftPickOutput -manualPick $_
+                        }
+                )
+
+                $targetTransaction.DraftPicks = @(
+                    (ConvertTo-SafeArray -value $targetTransaction.DraftPicks) +
+                    $manualPickOutputs
+                )
+
+                $manualRosterIDs = @(
+                    ConvertTo-SafeArray -value $manualTrade.Picks |
+                        ForEach-Object {
+                            $_.FromRosterID
+                            $_.ToRosterID
+                        } |
+                        Where-Object { $null -ne $_ } |
+                        ForEach-Object { [int]$_ }
+                )
+
+                $targetTransaction.RosterIDs = @(
+                    @(
+                        (ConvertTo-SafeArray -value $targetTransaction.RosterIDs) +
+                        $manualRosterIDs
+                    ) |
+                        Where-Object { $null -ne $_ } |
+                        ForEach-Object { [int]$_ } |
+                        Sort-Object -Unique
+                )
+
+                $targetTransaction.Source = "SleeperManual"
+
+                continue
+            }
+
+            Write-Warning "Manual FA draft pick trade references SleeperTransactionID '$sleeperTransactionID', but no matching transaction was found in season '$season'. Creating manual fallback transaction."
+        }
+
+        $transactions += New-ManualFADraftPickTradeTransaction `
+            -manualTrade $manualTrade `
+            -leagueID $leagueID
+    }
+
+    return $transactions |
+        Sort-Object Season, Week, CreatedAt, TransactionID
+}
 
 # ===========================================================================
 # Update Utils
@@ -287,6 +703,11 @@ function Update-TransactionsCurrentSeason {
                 -weeks $weeksToFetch
         )
 
+        $remoteTransactions = Add-ManualFADraftPickTradesToTransactions `
+            -transactions $remoteTransactions `
+            -leagueID $leagueID `
+            -season $season
+
         Save-TransactionsCurrentSeason `
             -transactions $remoteTransactions `
             -Force
@@ -304,8 +725,16 @@ function Update-TransactionsCurrentSeason {
         -maxWeek $maxWeekToFetch
 
     if (-not $weeksToFetch -or $weeksToFetch.Count -eq 0) {
-        Write-Host "No transaction weeks need to be updated." -ForegroundColor DarkCyan
-        return $existingTransactions
+        Write-Host "No transaction weeks need to be updated. Applying manual FA draft pick trades only." -ForegroundColor DarkCyan
+
+        $transactionsWithManualFAPicks = Add-ManualFADraftPickTradesToTransactions `
+            -transactions $existingTransactions `
+            -leagueID $leagueID `
+            -season $season
+
+        Save-TransactionsCurrentSeason -transactions $transactionsWithManualFAPicks
+
+        return $transactionsWithManualFAPicks
     }
 
     Write-Host "Weeks to fetch: $($weeksToFetch -join ', ')" -ForegroundColor Yellow
@@ -319,6 +748,11 @@ function Update-TransactionsCurrentSeason {
         -existingTransactions $existingTransactions `
         -newTransactions $remoteTransactions `
         -weeksToReplace $weeksToFetch
+
+    $mergedTransactions = Add-ManualFADraftPickTradesToTransactions `
+        -transactions $mergedTransactions `
+        -leagueID $leagueID `
+        -season $season
 
     Save-TransactionsCurrentSeason -transactions $mergedTransactions
 
@@ -360,7 +794,25 @@ function Update-TransactionsAllSeasons {
         $historicalFile = Get-TransactionsHistoricalFilePath -season $league.season
 
         if ((Test-Path $historicalFile) -and -not $ForceHistory) {
-            Write-Host "Historical transactions for season $($league.season) already exist. Skipping." -ForegroundColor DarkGray
+            Write-Host "Historical transactions for season $($league.season) already exist. Applying manual FA draft pick trades only." -ForegroundColor DarkGray
+
+            try {
+                $transactions = Get-Content $historicalFile -Raw | ConvertFrom-Json
+                $transactions = ConvertTo-SafeArray -value $transactions
+
+                $transactions = Add-ManualFADraftPickTradesToTransactions `
+                    -transactions $transactions `
+                    -leagueID $league.league_id `
+                    -season $league.season
+
+                Save-TransactionsHistoricalSeason `
+                    -season $league.season `
+                    -transactions $transactions
+            }
+            catch {
+                Write-Warning "Could not update historical transactions for manual FA draft pick trades in season $($league.season): $_"
+            }
+
             continue
         }
 
@@ -377,6 +829,11 @@ function Update-TransactionsAllSeasons {
                 -leagueID $league.league_id `
                 -league $league
         }
+
+        $transactions = Add-ManualFADraftPickTradesToTransactions `
+            -transactions $transactions `
+            -leagueID $league.league_id `
+            -season $league.season
 
         if ($ForceHistory) {
             Save-TransactionsHistoricalSeason `
@@ -442,8 +899,7 @@ function Save-TransactionsHistoricalSeason {
         [switch]$Force
     )
 
-    $cfg = Get-Config
-    $filePath = "$($cfg.TransactionsFileHistoricalPrefix)$season$($cfg.TransactionsFileHistoricalSuffix)"
+    $filePath = Get-TransactionsHistoricalFilePath -season $season
 
     Write-Host "Saving historical transactions for $season to JSON..." -ForegroundColor Yellow
 
@@ -511,7 +967,7 @@ function Get-TransactionsLocalHistoricalSeasons {
     $cfg = Get-Config
 
     $folder = Get-TransactionsHistoricalFolder
-    $filePrefix = Split-Path $cfg.TransactionsFileHistorical -Leaf
+    $filePrefix = Split-Path $cfg.TransactionsFileHistoricalPrefix -Leaf
     $filter = "$filePrefix*$($cfg.TransactionsFileHistoricalSuffix)"
 
     if (-not (Test-Path $folder)) {
@@ -544,12 +1000,17 @@ function Get-TransactionsHistoricalFilePath {
 
     $cfg = Get-Config
 
-    return "$($cfg.TransactionsFileHistorical)$season$($cfg.TransactionsFileHistoricalSuffix)"
+    return "$($cfg.TransactionsFileHistoricalPrefix)$season$($cfg.TransactionsFileHistoricalSuffix)"
 }
 
 function Get-TransactionsHistoricalFolder {
     $cfg = Get-Config
-    return Split-Path $cfg.TransactionsFileHistorical -Parent
+
+    if ($cfg.TransactionsArchiveDir) {
+        return $cfg.TransactionsArchiveDir
+    }
+
+    return Split-Path $cfg.TransactionsFileHistoricalPrefix -Parent
 }
 
 # ===========================================================================
@@ -574,6 +1035,11 @@ function Get-TransactionsRemoteRecursive {
         $seasonData = Get-TransactionsRemoteForSeason `
             -leagueID $leagueID `
             -league $league
+
+        $seasonData = Add-ManualFADraftPickTradesToTransactions `
+            -transactions $seasonData `
+            -leagueID $leagueID `
+            -season $league.season
 
         $accumulatedData += $seasonData
 
