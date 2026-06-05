@@ -304,6 +304,7 @@ export type FreeAgentMarketStatus =
 
 export interface FreeAgentMarketInfo {
   Status: FreeAgentMarketStatus;
+  StatusDisplay: string;
   PredictionModel: FreeAgentPredictionModel;
   SalaryMode: FreeAgentSalaryMode;
   Probability: number;
@@ -585,6 +586,7 @@ export class DataService {
             IsFreeAgentDraftAvailable: false,
             FreeAgentMarketInfo: this.createFreeAgentMarketInfo(
               'Rostered',
+              'Rostered',
               'CurrentOnly',
               'Current',
               0,
@@ -593,6 +595,7 @@ export class DataService {
 
             IsFreeAgentDraftAvailableProjected: false,
             FreeAgentMarketInfoProjected: this.createFreeAgentMarketInfo(
+              'Rostered',
               'Rostered',
               'CurrentOnly',
               'Projected',
@@ -700,12 +703,14 @@ export class DataService {
       const info = isFantasyFreeAgent
         ? this.createFreeAgentMarketInfo(
             'FreeAgent',
+            'Free Agent',
             'CurrentOnly',
             salaryMode,
             1,
             'Player is currently not assigned to any fantasy team.'
           )
         : this.createFreeAgentMarketInfo(
+            'Rostered',
             'Rostered',
             model,
             salaryMode,
@@ -782,6 +787,7 @@ export class DataService {
 
         const info = this.createFreeAgentMarketInfo(
           'ProjectedCapCut',
+          'Projected Cap Cut',
           'RuleBasedAutoCut',
           salaryMode,
           1,
@@ -817,6 +823,7 @@ export class DataService {
 
   private createFreeAgentMarketInfo(
     status: FreeAgentMarketStatus,
+    statusDisplay: string,
     model: FreeAgentPredictionModel,
     salaryMode: FreeAgentSalaryMode,
     probability: number,
@@ -825,6 +832,7 @@ export class DataService {
   ): FreeAgentMarketInfo {
     return {
       Status: status,
+      StatusDisplay: statusDisplay,
       PredictionModel: model,
       SalaryMode: salaryMode,
       Probability: probability,
