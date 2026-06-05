@@ -81,6 +81,7 @@ export class PlayersPageComponent implements OnInit {
     'rank',
     'name',
     'salary',
+    'salaryProjected',
     'fantasyTeam'
   ];
 
