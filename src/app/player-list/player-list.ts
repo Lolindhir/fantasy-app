@@ -16,6 +16,7 @@ export type PlayerListColumn =
   | 'salaryProjected'
   | 'fantasyTeam'
   | 'marketStatus'
+  | 'dynamicStat'
   | 'exclude';
 
 @Component({
@@ -44,6 +45,9 @@ export class PlayerListComponent {
     'salaryProjected',
     'fantasyTeam'
   ];
+
+  @Input() dynamicColumnHeader = '';
+  @Input() dynamicColumnValueFn?: (player: Player) => string;
 
   @Input() compact = false;
   @Input() lineNumber: number | null = null;
@@ -140,5 +144,13 @@ export class PlayerListComponent {
       case 'DEF': return '#999999';
       default: return '#555555';
     }
+  }
+
+  getDynamicColumnValue(player: Player): string {
+    if (!this.dynamicColumnValueFn) {
+      return '';
+    }
+
+    return this.dynamicColumnValueFn(player);
   }
 }

@@ -27,7 +27,7 @@
         <mat-label>Position</mat-label>
         <mat-select [(ngModel)]="selectedPosition" (selectionChange)="applyFilters()">
           <mat-option value="ALL">ALL</mat-option>
-          <mat-option value="FLEX">FLEX</mat-option>
+          <mat-option value="FLEX">Flex</mat-option>
           <mat-option value="QB">QB</mat-option>
           <mat-option value="RB">RB</mat-option>
           <mat-option value="WR">WR</mat-option>
@@ -53,9 +53,9 @@
           <mat-option value="salaryDesc">Salary</mat-option>
           <mat-option value="salaryProjectedDesc">Projected Salary</mat-option>
           <mat-option value="pointsDesc">Points</mat-option>
-          <mat-option value="avgPointsDesc">Avg Points</mat-option>
+          <mat-option value="avgPointsDesc">Avg Game</mat-option>
           <mat-option value="lastYearPointsDesc">Last Season Pts.</mat-option>
-          <mat-option value="lastYearAvgPointsDesc">Last Season Avg Pts.</mat-option>
+          <mat-option value="lastYearAvgPointsDesc">Last Season Avg Game</mat-option>
           <mat-option value="ageAsc">Age ⬆</mat-option>
           <mat-option value="ageDesc">Age ⬇</mat-option>
           <mat-option value="nameAsc">Name</mat-option>
@@ -88,6 +88,8 @@
     [compact]="isMobile"
     [showProjectedMarket]="showProjectedMarket"
     [projectedAbr]="'Proj.'"
+    [dynamicColumnHeader]="dynamicColumnHeader"
+    [dynamicColumnValueFn]="getDynamicColumnValue"
   >
   </app-player-list>
 

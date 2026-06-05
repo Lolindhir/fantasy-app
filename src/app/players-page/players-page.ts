@@ -62,7 +62,7 @@ export class PlayersPageComponent implements OnInit {
   visibleCount = 100;
   visibleStep = 100;
 
-  positions: string[] = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX', 'K'];
+  positions: string[] = ['ALL', 'FLEX', 'QB', 'RB', 'WR', 'TE', 'K'];
 
   desktopColumns: PlayerListColumn[] = [
     'rank',
@@ -72,8 +72,8 @@ export class PlayersPageComponent implements OnInit {
     'team',
     'salary',
     'salaryProjected',
-    'fantasyTeam',
-    'marketStatus'
+    'dynamicStat',
+    'fantasyTeam'
   ];
 
   // Mobile: Owner statt Market
@@ -81,7 +81,7 @@ export class PlayersPageComponent implements OnInit {
     'rank',
     'name',
     'salary',
-    'salaryProjected',
+    'dynamicStat',
     'fantasyTeam'
   ];
 
@@ -110,7 +110,7 @@ export class PlayersPageComponent implements OnInit {
   get columns(): PlayerListColumn[] {
     if (this.isMobile) {
       return this.showProjectedSalary
-        ? ['rank', 'name', 'salaryProjected', 'salary', 'fantasyTeam']
+        ? ['rank', 'name', 'salaryProjected', 'dynamicStat', 'fantasyTeam']
         : this.mobileColumns;
     }
 
@@ -123,8 +123,8 @@ export class PlayersPageComponent implements OnInit {
         'team',
         'salaryProjected',
         'salary',
-        'fantasyTeam',
-        'marketStatus'
+        'dynamicStat',
+        'fantasyTeam'
       ];
     }
 
@@ -168,6 +168,60 @@ export class PlayersPageComponent implements OnInit {
 
     this.applyFilters();
   }
+
+  get dynamicColumnHeader(): string {
+    switch (this.sortOption) {
+
+      case 'salaryProjectedDesc':
+        return 'Proj.';
+
+      case 'pointsDesc':
+        return 'Pts';
+
+      case 'avgPointsDesc':
+        return 'Avg';
+
+      case 'lastYearPointsDesc':
+        return 'LS Pts';
+
+      case 'lastYearAvgPointsDesc':
+        return 'LS Avg';
+
+      case 'ageAsc':
+      case 'ageDesc':
+        return 'Age';
+
+      default:
+        return 'Age';
+    }
+  }
+
+  getDynamicColumnValue = (player: Player): string => {
+    switch (this.sortOption) {
+      
+      case 'salaryProjectedDesc':
+        return player.SalaryProjectedDisplay;
+
+      case 'pointsDesc':
+        return `${player.Stats.FantasyPointsTotal.toFixed(1)} pts`;
+
+      case 'avgPointsDesc':
+        return `${player.Stats.FantasyPointsAvgGame.toFixed(1)} pts/g`;
+
+      case 'lastYearPointsDesc':
+        return `${this.getLastYearPoints(player).toFixed(1)} pts`;
+
+      case 'lastYearAvgPointsDesc':
+        return `${this.getLastYearAvgPoints(player).toFixed(1)} pts/g`;
+
+      case 'ageAsc':
+      case 'ageDesc':
+        return `${player.Age}`;
+
+      default:
+        return `${player.Age}`;
+    }
+  };
 
   private refreshVisiblePlayers(): void {
     this.players = this.filteredPlayers.slice(0, this.visibleCount);
