@@ -940,12 +940,35 @@ foreach ($tankEntry in $tankPlayers) {
     $playerID = $sleeperEntry.player_id
     # --- Year berechnen ---
     $year = $sleeperEntry.years_exp + 1
-    # --- Age ---
-    $age = $sleeperEntry.age
     # --- Position ---
     $position = $sleeperEntry.position
     # --- Team ---
     $team = $tankEntry.team
+
+    # --- Age ---
+    $age = $null
+    if ($sleeperEntry.birth_date) {
+        try {
+            $birthDate = [datetime]::ParseExact(
+                $sleeperEntry.birth_date,
+                "yyyy-MM-dd",
+                [System.Globalization.CultureInfo]::InvariantCulture
+            )
+
+            $age = [double]([math]::Round(
+                ((Get-Date).Date - $birthDate.Date).TotalDays / 365.2425,
+                1
+            ))
+        }
+        catch {
+            $age = $null
+        }
+    }
+
+    # Spieler ohne gültiges Alter komplett ignorieren
+    if ($null -eq $age) {
+        continue
+    }
 
     # --- Bye-Week bestimmen
     $byeWeek = if ($teamByeWeek.ContainsKey($team)) { $teamByeWeek[$team] } else { 0 }
