@@ -110,7 +110,7 @@ export class PlayersPageComponent implements OnInit {
   get columns(): PlayerListColumn[] {
     if (this.isMobile) {
       return this.showProjectedSalary
-        ? ['rank', 'name', 'salaryProjected', 'fantasyTeam']
+        ? ['rank', 'name', 'salaryProjected', 'salary', 'fantasyTeam']
         : this.mobileColumns;
     }
 
