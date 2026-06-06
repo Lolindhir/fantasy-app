@@ -14,7 +14,7 @@ catch {
 # Logik
 # ===========================================================================
 
-# --- Transaktionen für alle Saisons aktualisieren ---
+#--- Transaktionen für alle Saisons aktualisieren ---
 $updatedTransactions = Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
 
 if ($updatedTransactions) {

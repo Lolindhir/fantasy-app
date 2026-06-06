@@ -4,6 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\league\TeamUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -20,13 +21,15 @@ function Get-DraftPickOutput {
         [object]$pick,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet("Rookie", "FreeAgent")]
+        [ValidateSet("Rookie", "Free_Agent")]
         [string]$draftType,
 
         [Parameter(Mandatory = $true)]
         [ValidateSet("Sleeper", "Manual")]
         [string]$draftSource,
 
+        # Bleibt als optionaler Parameter erhalten, damit bestehende Aufrufe nicht brechen.
+        # Wird aber bewusst nicht mehr ins Output-Objekt geschrieben.
         [string]$transactionID = $null
     )
 
@@ -43,35 +46,45 @@ function Get-DraftPickOutput {
 
         OriginalRosterID      = [int]$pick.roster_id
         PreviousOwnerRosterID = [int]$pick.previous_owner_id
-        OwnerRosterID         = [int]$pick.owner_id
-
-        TransactionID         = $transactionID
+        NewOwnerRosterID      = [int]$pick.owner_id
     }
 
     return $output
 }
 
-function Get-DraftPickOutputsFromSleeperTransaction {
+function Get-DraftPickOutputFromSleeper {
     param(
         [Parameter(Mandatory = $true)]
-        [object]$sleeperTransaction
+        [object]$sleeperPick
     )
 
-    $draftPicks = @()
-
-    if (-not $sleeperTransaction.draft_picks) {
-        return @()
-    }
-
-    foreach ($pick in (ConvertTo-DraftSafeArray -value $sleeperTransaction.draft_picks)) {
-        $draftPicks += Get-DraftPickOutput `
-            -pick $pick `
+    return Get-DraftPickOutput `
+            -pick $sleeperPick `
             -draftType "Rookie" `
-            -draftSource "Sleeper" `
-            -transactionID $sleeperTransaction.transaction_id
+            -draftSource "Sleeper"
+
+}
+
+function Get-DraftPickOutputFromManual {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$manualPick
+    )
+
+    # Map the manual pick to the internal standard format
+    $normalizedPick = [PSCustomObject]@{
+        season            = $manualPick.Season
+        round             = $manualPick.Round
+        roster_id         = Get-OwnerIDByName -ownerName $manualPick.Original
+        previous_owner_id = Get-OwnerIDByName -ownerName $manualPick.From
+        owner_id          = Get-OwnerIDByName -ownerName $manualPick.To
     }
 
-    return $draftPicks
+    return Get-DraftPickOutput `
+            -pick $normalizedPick `
+            -draftType "Free_Agent" `
+            -draftSource "Manual"
+
 }
 
 function ConvertTo-DraftSafeArray {

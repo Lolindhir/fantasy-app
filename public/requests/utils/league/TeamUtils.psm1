@@ -165,3 +165,18 @@ function Get-TeamsForLeague {
         Select-Object * -ExcludeProperty PlaceRegular, PlacePlayoffs, Points, PointsAgainst, Wins, Losses, Ties, Record, Streak
 }
 
+function Get-OwnerIDByName {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ownerName
+    )
+
+    $config = Get-Config
+    if ($config.OwnerIDs.ContainsKey($ownerName)) {
+        return $config.OwnerIDs[$ownerName]
+    } else {
+        Write-Error "Owner '$ownerName' not found in configuration."
+        throw "Owner '$ownerName' not found."
+    }
+
+}
