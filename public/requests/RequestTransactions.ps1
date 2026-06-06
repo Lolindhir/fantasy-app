@@ -20,5 +20,5 @@ $updatedTransactions = Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
 if ($updatedTransactions) {
     Write-Host "Transactions updated." -ForegroundColor Green
 } else {
-    Write-Host "No transaction updates required." -ForegroundColor Yellow
+    Write-Host "No transactions updated." -ForegroundColor Yellow
 }
