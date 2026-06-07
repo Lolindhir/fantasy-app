@@ -44,7 +44,7 @@ function Get-DraftPickOutput {
         Season                = $season
         Round                 = $round
 
-        OriginalRosterID      = [int]$pick.roster_id
+        OriginalOwnerRosterID = [int]$pick.roster_id
         PreviousOwnerRosterID = [int]$pick.previous_owner_id
         NewOwnerRosterID      = [int]$pick.owner_id
     }
