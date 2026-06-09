@@ -1,0 +1,29 @@
+id: metadata
+title: Metadata
+layer: manual-domain-config
+
+responsibility: >
+  Contains league-specific inputs and rules used by the PowerShell generation
+  pipeline.
+
+owns:
+  - LeagueID
+  - LeagueYear
+  - CapDeadline
+  - OwnerIDs
+  - Draft configuration
+  - draft order source rules
+
+doesNotOwn:
+  - technical paths
+  - API keys
+  - generated app output
+  - Angular display behavior
+
+relatedManualDocs:
+  - .ai-context/manual/domain.yaml
+  - .ai-context/manual/data-sources.yaml
+
+notes:
+  - JSON files do not support comments, so this sidecar file documents Metadata.json.
+  - Metadata.json is stored in public/data but is a manual input, not generated output.
