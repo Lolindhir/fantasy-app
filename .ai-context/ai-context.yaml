@@ -1,0 +1,71 @@
+schemaVersion: 1
+
+project:
+  name: fantasy-app
+  repository: Lolindhir/fantasy-app
+  frontend: Angular
+  dataGeneration: PowerShell
+  generatedDataPath: public/data
+  purpose: >
+    Static fantasy football web app that displays generated league data.
+    PowerShell scripts generate app-readable JSON files that are consumed
+    by the Angular frontend.
+
+contextModel:
+  principle: >
+    Manual architecture and domain decisions are separated from automatically
+    generated structure documentation and local file header documentation.
+
+  manualContext:
+    description: >
+      Stable, human-maintained documentation describing architecture, domain
+      meaning, source-of-truth decisions and AI guidance.
+    directory: .ai-context/manual
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+
+  fileHeaderDocs:
+    description: >
+      Human-maintained local documentation embedded in source file headers or
+      sidecar .ai-doc.yaml files. Describes the role and boundaries of one file.
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+
+  generatedContext:
+    description: >
+      Machine-generated snapshots of repository structure, extracted AI-DOC
+      headers, module dependencies and JSON data contracts.
+    directory: .ai-context/generated
+    mayBeEditedByAI: false
+    mayBeRegeneratedAutomatically: true
+
+readingOrder:
+  - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/domain.yaml
+  - .ai-context/manual/data-sources.yaml
+  - .ai-context/manual/decisions.yaml
+  - .ai-context/manual/file-header-docs.yaml
+  - .ai-context/generated/file-docs.json
+  - .ai-context/generated/generated-json-contracts.json
+
+shortContext:
+  public/data/Metadata.json: Liga-spezifische Inputs und Regeln
+  public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
+  public/data/*.json: Generierte App-Daten
+  src/app/**: Angular-Darstellung
+
+sourceOfTruthPriority:
+  - .ai-context/manual decisions
+  - public/data/Metadata.json for league-specific rules
+  - public/requests/utils/ConfigUtils.psm1 for technical generation configuration
+  - public/data/*.json for current generated app data shape
+  - src/app/** for frontend display behavior
+
+aiGuidance:
+  rules:
+    - Do not infer source-of-truth domain ownership from Angular components alone.
+    - Do not put league-specific rules into ConfigUtils.psm1 when they belong in Metadata.json.
+    - Do not treat generated JSON as manually editable source-of-truth data.
+    - Do not edit files in .ai-context/generated manually.
+    - When changing architecture, update .ai-context/manual/decisions.yaml.
+    - When changing generated data contracts, regenerate generated context documentation.
