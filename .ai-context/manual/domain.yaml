@@ -1,0 +1,110 @@
+schemaVersion: 1
+
+domain:
+  name: Fantasy Football League App
+  summary: >
+    App for displaying a custom fantasy football league with generated league,
+    team, player, standings, salary and draft-related data.
+
+coreConcepts:
+  League:
+    description: >
+      The configured fantasy football league represented by generated app data.
+
+  Team:
+    description: >
+      A fantasy team in the league. Teams are identified by generated TeamID and
+      can be mapped from league metadata and generated league data.
+
+  Player:
+    description: >
+      A football player enriched from source data and exposed to Angular through
+      generated JSON.
+
+  SalaryCap:
+    description: >
+      League-specific cap concept based on the top salary-relevant players.
+      SalaryRelevantTeamSize defines how many players count toward cap logic.
+
+  FreeAgentMarket:
+    description: >
+      Frontend-facing market model that marks players as rostered, free agents,
+      projected cap cuts or possible cap cuts.
+
+  Draft:
+    description: >
+      A league draft event. Drafts may have exact pick order for current-season
+      upcoming drafts or only round-level placeholders for future seasons.
+
+  DraftPick:
+    description: >
+      A pick belongs to a season, draft type, round and pick slot. It should
+      track both original owner and current owner.
+    importantFields:
+      - season
+      - draftType
+      - round
+      - pickNumber
+      - originalOwner
+      - currentOwner
+      - history
+
+drafts:
+  sourceOfTruth:
+    config: public/data/Metadata.json
+    generatedOutput: future generated draft JSON
+
+  currentState:
+    metadataContains:
+      - UpcomingDraftCount
+      - UpcomingDraftCountMode
+      - DraftType
+      - DraftNo
+      - Rounds
+      - OrderSource
+      - OrderMap
+      - Order
+
+  goals:
+    - Show all upcoming drafts.
+    - Show which team owns each pick.
+    - Show both current owner and original owner per pick.
+    - Support future seasons where exact order is not yet known.
+    - Preserve ownership history when possible.
+
+  currentSeasonDrafts:
+    requirement: >
+      For drafts of the current season that have not happened yet, exact pick
+      order is important.
+
+    rookieDraft:
+      orderSource: PreviousPlayoffs
+      meaning: >
+        Rookie draft order is derived from previous playoff placement using the
+        configured OrderMap as long as no authoritative Sleeper rookie draft
+        data exists.
+
+    freeAgentDraft:
+      orderSource: AllTime
+      meaning: >
+        Free agent draft order is derived from all-time standings. Metadata may
+        define ordering direction.
+
+  futureSeasonDrafts:
+    requirement: >
+      Exact order is not known yet. Round-level representation is sufficient.
+    representation:
+      - Round 1
+      - Round 2
+      - Round 3
+      - Round 4
+      - Round 5
+
+  ownership:
+    currentOwner:
+      description: The team currently owning the pick.
+    originalOwner:
+      description: The team that originally owned the pick.
+    history:
+      description: Optional but valuable ownership change history.
+      priority: bonus
