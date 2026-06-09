@@ -50,7 +50,7 @@ function Compare-Teams {
         $newTeam = $newTeams[$i]
 
         # Prüfe Top-Level Eigenschaften des Teams
-        $propsToCheck = @('TeamID','Name','Avatar','Team','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
+        $propsToCheck = @('TeamID','Name','TeamAvatar','Team','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
                 Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
