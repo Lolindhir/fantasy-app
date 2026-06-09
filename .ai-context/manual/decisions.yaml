@@ -1,0 +1,59 @@
+schemaVersion: 1
+
+decisions:
+  - id: ADR-001
+    title: Separate manual AI context from generated structure documentation
+    status: accepted
+    context: >
+      AI tools need both stable architectural intent and current repository
+      structure. Mixing both causes generated files to overwrite human decisions
+      or lets stale manual documentation describe code structure incorrectly.
+    decision: >
+      Store human-maintained architecture and domain documentation in
+      .ai-context/manual and generated repository snapshots in
+      .ai-context/generated.
+    consequences:
+      positive:
+        - AI can distinguish intent from implementation snapshot.
+        - Generated files can be recreated safely.
+        - Manual decisions remain stable across refactors.
+      negative:
+        - Requires discipline to keep manual decisions updated.
+
+  - id: ADR-002
+    title: Metadata owns league-specific rules
+    status: accepted
+    decision: >
+      League-specific inputs and rules belong in public/data/Metadata.json, not
+      in Angular and not in technical path utilities.
+    rationale: >
+      This keeps domain configuration separate from technical generation and
+      frontend rendering.
+
+  - id: ADR-003
+    title: ConfigUtils owns technical generation configuration
+    status: accepted
+    decision: >
+      public/requests/utils/ConfigUtils.psm1 owns technical paths and generation
+      configuration. It may load Metadata.json, but should not become the main
+      home for league-specific domain rules.
+    rationale: >
+      Path resolution and generation setup are technical concerns and should not
+      be mixed with league-specific rules.
+
+  - id: ADR-004
+    title: Generated JSON is the app data contract
+    status: accepted
+    decision: >
+      Angular consumes public/data JSON as app-ready read models.
+    rationale: >
+      Angular should render and interact with data, but avoid owning core
+      source-of-truth derivation logic.
+
+  - id: ADR-005
+    title: Angular owns display and frontend interaction
+    status: accepted
+    decision: >
+      Angular components and services should display, filter, sort and combine
+      generated app data. Core league rule derivation should remain in metadata
+      or the PowerShell generation pipeline when it is source-of-truth behavior.
