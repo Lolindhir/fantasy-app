@@ -1,0 +1,77 @@
+schemaVersion: 1
+
+fileHeaderDocs:
+  purpose: >
+    File header documentation describes the local responsibility of one file.
+    It complements manual architecture documentation and can be extracted into
+    generated machine-readable context.
+
+  preferredBlockName: AI-DOC
+
+  allowed:
+    - file purpose
+    - architectural layer
+    - owned responsibilities
+    - non-owned responsibilities
+    - consumed files
+    - generated files
+    - related manual docs
+    - AI warnings
+
+  notAllowed:
+    - global architecture decisions
+    - historical decision rationale
+    - generated structure snapshots
+    - domain rules that belong in Metadata.json
+
+  generation:
+    target: .ai-context/generated/file-docs.json
+    overwritePolicy: always safe to regenerate
+
+powerShellHeaderExample: |
+  <#
+  AI-DOC:
+    id: config-utils
+    title: ConfigUtils
+    layer: generation-config
+    responsibility: >
+      Provides technical paths and generation configuration for the PowerShell
+      data generation pipeline.
+    owns:
+      - generated data file paths
+      - backup paths
+      - request/generation defaults
+    doesNotOwn:
+      - Angular rendering
+      - generated JSON content as source of truth
+    relatedManualDocs:
+      - .ai-context/manual/architecture.yaml
+      - .ai-context/manual/data-sources.yaml
+  #>
+
+typeScriptHeaderExample: |
+  /*
+  AI-DOC:
+    id: angular-data-service
+    title: Angular Data Service
+    layer: frontend-data-access
+    responsibility: >
+      Loads generated app JSON and maps raw generated data into frontend-facing
+      models.
+    owns:
+      - TypeScript interfaces for generated app data
+      - frontend data loading
+      - frontend-only display enrichment
+    doesNotOwn:
+      - PowerShell data generation
+      - source-of-truth league rules
+    relatedManualDocs:
+      - .ai-context/manual/architecture.yaml
+      - .ai-context/manual/data-sources.yaml
+  */
+
+sidecarDocs:
+  description: >
+    Use sidecar .ai-doc.yaml files when the target file format does not support
+    comments, especially JSON files.
+  example: public/data/Metadata.ai-doc.yaml
