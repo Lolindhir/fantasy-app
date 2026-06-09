@@ -1,0 +1,111 @@
+schemaVersion: 1
+
+architecture:
+  summary: >
+    fantasy-app separates league/domain configuration, technical generation
+    configuration, generated app data and frontend rendering.
+
+layers:
+  - name: manual-domain-config
+    path: public/data/Metadata.json
+    responsibility: >
+      Contains league-specific inputs and rules used by the PowerShell
+      generation pipeline.
+    owns:
+      - league-specific inputs
+      - league-specific rules
+      - owner id mapping
+      - draft configuration
+    doesNotOwn:
+      - technical paths
+      - API keys
+      - Angular rendering
+      - generated app output
+
+  - name: generation-config
+    path: public/requests/utils/ConfigUtils.psm1
+    responsibility: >
+      Provides technical paths and generation configuration for the PowerShell
+      data generation pipeline. Loads Metadata.json and exposes configuration
+      to generator scripts.
+    owns:
+      - generated data file paths
+      - backup paths
+      - request/generation defaults
+      - mapping Metadata.json into generator config
+    doesNotOwn:
+      - Angular rendering
+      - generated JSON content as source of truth
+      - UI state
+
+  - name: generator-scripts
+    path: public/requests/**
+    responsibility: >
+      Fetches, transforms and enriches source data into generated JSON files
+      consumed by the Angular app.
+    owns:
+      - fetching external/source data
+      - data transformation
+      - data enrichment
+      - writing generated JSON
+    doesNotOwn:
+      - frontend presentation state
+      - manual architecture decisions
+
+  - name: generated-app-data
+    path: public/data/*.json
+    responsibility: >
+      Represents current app-readable read models consumed by Angular.
+    owns:
+      - current generated app data shape
+      - generated league/team/player/timestamp data
+    doesNotOwn:
+      - architectural decisions
+      - manually authored source-of-truth documentation
+
+  - name: frontend
+    path: src/app/**
+    responsibility: >
+      Displays generated JSON data and provides user interaction.
+    owns:
+      - rendering
+      - UI state
+      - frontend filtering
+      - frontend sorting
+      - frontend-only enrichment
+    doesNotOwn:
+      - source-of-truth league rules
+      - PowerShell data generation pipeline
+      - persisted generated JSON
+
+dataFlow:
+  - from: public/data/Metadata.json
+    to: public/requests/utils/ConfigUtils.psm1
+    purpose: Load league-specific inputs and rules.
+
+  - from: public/requests/RequestLeague.ps1
+    to: public/data/League.json
+    purpose: Generate app-readable league data.
+
+  - from: public/data/League.json
+    to: src/app/services/data-service.ts
+    purpose: Frontend League model.
+
+  - from: public/data/Players.json
+    to: src/app/services/data-service.ts
+    purpose: Frontend Player model.
+
+  - from: public/data/Teams.json
+    to: src/app/services/data-service.ts
+    purpose: Frontend NFL team model.
+
+  - from: public/data/Timestamps.json
+    to: src/app/services/data-service.ts
+    purpose: Display freshness of generated data.
+
+knownFrontendDomainLogic:
+  - path: src/app/services/data-service.ts
+    topic: FreeAgentMarketInfo / RuleBasedAutoCut
+    note: >
+      Currently computed in Angular as frontend enrichment. If it becomes
+      source-of-truth data, move it into PowerShell generation and generated JSON.
