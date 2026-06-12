@@ -676,7 +676,7 @@ function Get-Transactions {
         $transactions += ConvertTo-SafeArray -value $historical
     }
 
-    return $transactions | Sort-Object Season, Week, CreatedAt, TransactionID
+    return Get-SortedTransactions -transactions $transactions
 }
 
 function Get-TransactionsLocalForCurrentSeason {
@@ -884,7 +884,7 @@ function Get-TransactionsRemoteForWeeks {
     }
 
     # Sortieren nach Season, Week, CreatedAt, TransactionID ... absteigend, damit die neuesten Transaktionen zuerst kommen
-    $transactions = $transactions | Sort-Object Season, Week, CreatedAt, TransactionID -Descending
+    $transactions = Get-SortedTransactions -transactions $transactions
 
     Write-Host "Transactions retrieved." -ForegroundColor Yellow
 
@@ -1006,6 +1006,22 @@ function Merge-TransactionsForWeeks {
     $merged += $keptTransactions
     $merged += $newTransactions
 
-    return $merged |
-        Sort-Object Season, Week, CreatedAt, TransactionID
+    return Get-SortedTransactions -transactions $merged
+}
+
+
+# ===========================================================================
+# Allgemeine Helper
+# ===========================================================================
+
+function Get-SortedTransactions {
+    param(
+        [AllowNull()]
+        [array]$transactions
+    )
+
+    return @(
+        ConvertTo-SafeArray -value $transactions |
+            Sort-Object Season, Week, CreatedAt, TransactionID -Descending
+    )
 }

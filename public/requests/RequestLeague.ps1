@@ -128,7 +128,7 @@ try {
 
 
     # --- Transaktionen für aktuelle Saison aktualisieren ---
-    #Update-TransactionsCurrentSeason
+    $transactionsCurrentSeason = Update-TransactionsCurrentSeason
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
@@ -221,7 +221,11 @@ try {
     $playersData = Get-PlayersFromFile    
 
     # --- Top-N Spieler bestimmen ---
-    $topCount = $Global:SalaryRelevantTeamSize * $teamData.Count  # z.B. 20 relevante Spieler pro Team * Anzahl Teams
+    $topCount = [int]$SalaryRelevantTeamSize * [int]$teamData.Count  # z.B. 20 relevante Spieler pro Team * Anzahl Teams
+    if ($topCount -le 0) {
+        Write-Error "Invalid topCount for Salary Cap calculation. SalaryRelevantTeamSize=$SalaryRelevantTeamSize, TeamCount=$($teamData.Count)"
+        exit 1
+    }
 
     # Sortiere Spieler nach Salarys und SalaryProjected (absteigend)
     $topPlayers = $playersData | Sort-Object -Property Salary -Descending | Select-Object -First $topCount
@@ -246,7 +250,7 @@ try {
 
     # --- Playoff Start holen ---
     $playoffStart = $league.settings.playoff_week_start
-    Write-Host "Playoff start week: Week $lastWeek" -ForegroundColor Yellow
+    Write-Host "Playoff start week: Week $playoffStart" -ForegroundColor Yellow
 
     # --- Letzte Liga-Woche holen ---
     $lastWeek = $league.settings.last_scored_leg
