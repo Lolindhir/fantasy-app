@@ -138,7 +138,7 @@ function Get-DraftObjectProperty {
     )
 
     if (Test-DraftPropertyExists -object $object -propertyName $propertyName) {
-        return $object.$propertyName
+        return $object.PSObject.Properties[$propertyName].Value
     }
 
     return $defaultValue
@@ -506,7 +506,23 @@ function Get-SleeperDraftMap {
             $draftKey = New-DraftKey -season $season -draftType $draftType
 
             if (-not $map.ContainsKey($draftKey)) {
-                $map[$draftKey] = $draft
+                $draftToStore = $draft
+
+                $draftID = Get-DraftObjectProperty `
+                    -object $draft `
+                    -propertyName "draft_id" `
+                    -defaultValue $null
+
+                if (-not [string]::IsNullOrWhiteSpace($draftID)) {
+                    try {
+                        $draftToStore = Get-SleeperDraft -draftID $draftID
+                    }
+                    catch {
+                        Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_"
+                    }
+                }
+
+                $map[$draftKey] = $draftToStore
             }
         }
     }
@@ -573,6 +589,35 @@ function Get-DraftOrderRosterIDs {
         $ranking |
             Sort-Object @{ Expression = "Place"; Descending = $descending } |
             ForEach-Object { [int]$_.TeamID }
+    )
+}
+
+function Get-DraftOrderRosterIDsFromSleeperDraft {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$sleeperDraft
+    )
+
+    $slotToRosterID = Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "slot_to_roster_id" `
+        -defaultValue $null
+
+    if ($null -eq $slotToRosterID) {
+        return @()
+    }
+
+    $slotMap = ConvertTo-DraftHashtable -object $slotToRosterID
+
+    if ($slotMap.Count -eq 0) {
+        return @()
+    }
+
+    return @(
+        $slotMap.Keys |
+            Sort-Object { [int]$_ } |
+            ForEach-Object { [int]$slotMap[[string]$_] } |
+            Where-Object { $_ -gt 0 }
     )
 }
 
@@ -655,7 +700,7 @@ function New-ProjectedDraftPicks {
     return $picks
 }
 
-function Apply-DraftPickTrades {
+function Get-AppliedDraftPickTrades {
     param(
         [Parameter(Mandatory = $true)]
         [array]$picks,
@@ -849,21 +894,38 @@ function New-DraftOutput {
         "RoundOnly"
     }
 
-    $orderSource = if ($isCurrentSeason) {
-        [string]$draftTypeConfig.OrderSource
-    }
-    else {
-        "UnknownFuture"
-    }
+    $orderSource = "UnknownFuture"
+    $pickSource = "GeneratedFromUnknownFuture"
 
-    $teamIDs = if ($orderMode -eq "Exact") {
-        Get-DraftOrderRosterIDs `
-            -draftTypeConfig $draftTypeConfig `
-            -season $season `
-            -standings $standings
+    $teamIDs = @()
+
+    if ($orderMode -eq "Exact") {
+        $sleeperOrderRosterIDs = @()
+
+        if ($null -ne $sleeperDraft) {
+            $sleeperOrderRosterIDs = Get-DraftOrderRosterIDsFromSleeperDraft `
+                -sleeperDraft $sleeperDraft
+        }
+
+        if ($sleeperOrderRosterIDs.Count -gt 0) {
+            $teamIDs = $sleeperOrderRosterIDs
+            $orderSource = "Sleeper"
+            $pickSource = "GeneratedFromSleeperOrderAndTrades"
+        }
+        else {
+            $teamIDs = Get-DraftOrderRosterIDs `
+                -draftTypeConfig $draftTypeConfig `
+                -season $season `
+                -standings $standings
+
+            $orderSource = [string]$draftTypeConfig.OrderSource
+            $pickSource = "GeneratedFromConfiguredOrderAndTrades"
+        }
     }
     else {
-        Get-DraftTeamIDsFromLeague -league $league
+        $teamIDs = Get-DraftTeamIDsFromLeague -league $league
+        $orderSource = "UnknownFuture"
+        $pickSource = "GeneratedFromRoundOnlyAndTrades"
     }
 
     if ($teamIDs.Count -eq 0) {
@@ -881,7 +943,7 @@ function New-DraftOutput {
         -teamIDs $teamIDs `
         -orderMode $orderMode
 
-    $picks = Apply-DraftPickTrades `
+    $picks = Get-AppliedDraftPickTrades `
         -picks $picks `
         -transactions $transactions `
         -draftKey $draftKey
@@ -936,7 +998,7 @@ function New-DraftOutput {
         SleeperStatus      = $sleeperStatus
         Status             = Get-DraftStatus -sleeperDraft $sleeperDraft
 
-        PickSource         = "Projected"
+        PickSource         = $pickSource
         OrderSource        = $orderSource
         OrderMode          = $orderMode
 
