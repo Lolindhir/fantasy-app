@@ -34,7 +34,7 @@ function Save-JsonFile {
         [string]$TargetFile,
 
         # Oder Typ angeben, damit Pfad aus Config gezogen wird
-        [ValidateSet("League","Players","Teams","Schedule","Games","Standings","Transactions")]
+        [ValidateSet("League","Players","Teams","Schedule","Games","Standings","Transactions", "Drafts")]
         [string]$Type,
 
         # Array oder Objekt, das gespeichert werden soll
@@ -69,6 +69,7 @@ function Save-JsonFile {
             Games    = $config.GamesFile
             Standings = $config.StandingsFile
             Transactions = $config.TransactionsFile
+            Drafts = $config.DraftsFile
         }
 
         $TargetFile = $pathMap[$Type]

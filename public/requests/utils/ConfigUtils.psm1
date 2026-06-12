@@ -27,6 +27,10 @@ function Get-Config {
     $TransactionsArchiveDir = Join-Path $DataDir "past_seasons\Transactions"
     $TransactionsFileHistoricalPrefix = Join-Path $TransactionsArchiveDir "Transactions_"
     $TransactionsFileHistoricalSuffix = ".json"
+    $DraftsFile = Join-Path $DataDir "Drafts.json"
+    $DraftsArchiveDir = Join-Path $DataDir "past_seasons\Drafts"
+    $DraftsFileHistoricalPrefix = Join-Path $DraftsArchiveDir "Drafts_"
+    $DraftsFileHistoricalSuffix = ".json"
     $TimestampsFile = Join-Path $DataDir "Timestamps.json"
     $ErrorsFile = Join-Path $DataDir "Errors.json"
 
@@ -45,6 +49,8 @@ function Get-Config {
         $ownerIDs[$_.Name] = $_.Value
     }
 
+    $DraftsConfig = $metadataContent.Drafts
+
     return @{
         LeagueYear                       = $metadataContent.LeagueYear
         SalaryRelevantTeamSize           = $SalaryRelevantTeamSize
@@ -52,11 +58,14 @@ function Get-Config {
         LeagueID                         = $metadataContent.LeagueID
         CapDeadline                      = $metadataContent.CapDeadline
         OwnerIDs                         = $ownerIDs
+
         RapidAPIKey                      = $RapidAPIKey
         RapidAPIKeyAlt1                  = $RapidAPIKeyAlt1
         RapidAPIKeyAlt2                  = $RapidAPIKeyAlt2
+
         WeightTotal                      = $WeightTotal
         WeightGame                       = $WeightGame
+
         DataDir                          = $DataDir
         BackupDir                        = $BackupDir
         PlayersFile                      = $PlayersFile
@@ -65,11 +74,19 @@ function Get-Config {
         ScheduleFile                     = $ScheduleFile
         GamesFile                        = $GamesFile
         StandingsFile                    = $StandingsFile
+
         ManualTransactionsFile           = $ManualTransactionsFile
         TransactionsFile                 = $TransactionsFile
         TransactionsArchiveDir           = $TransactionsArchiveDir
         TransactionsFileHistoricalPrefix = $TransactionsFileHistoricalPrefix
         TransactionsFileHistoricalSuffix = $TransactionsFileHistoricalSuffix
+
+        DraftsConfig                     = $DraftsConfig
+        DraftsFile                       = $DraftsFile
+        DraftsArchiveDir                 = $DraftsArchiveDir
+        DraftsFileHistoricalPrefix       = $DraftsFileHistoricalPrefix
+        DraftsFileHistoricalSuffix       = $DraftsFileHistoricalSuffix
+
         TimestampsFile                   = $TimestampsFile
         ErrorsFile                       = $ErrorsFile
     }
