@@ -10,6 +10,8 @@ try {
     Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
@@ -129,6 +131,18 @@ try {
 
     # --- Transaktionen für aktuelle Saison aktualisieren ---
     $transactionsCurrentSeason = Update-TransactionsCurrentSeason
+    if ($transactionsCurrentSeason) {
+        Write-Host "Transactions for current season updated." -ForegroundColor Green
+    } else {
+        Write-Host "No transactions for current season generated." -ForegroundColor Yellow
+    }
+
+    # --- Upcoming Drafts aktualisieren ---
+    $drafts = Update-Drafts
+    if (-not $drafts -or @($drafts).Count -eq 0) {
+        Write-Warning "Update-Drafts returned no drafts. Falling back to local Drafts.json."
+        $drafts = Get-LeagueDraftsLocal
+    }
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
@@ -216,6 +230,9 @@ try {
         }
     }
 
+    # --- Draft Pick Keys je Team ergänzen ---
+    Write-Host "Enriching team data with draft pick keys..." -ForegroundColor Yellow
+    $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
     
     # --- Alle Spieler holen (für Salary Cap Berechnung) ---
     $playersData = Get-PlayersFromFile    

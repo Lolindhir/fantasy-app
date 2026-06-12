@@ -90,7 +90,7 @@ function Compare-Teams {
         }
 
         # Vergleiche Roster, Reserve, Taxi
-        $arraysToCompare = @('Roster','Reserve','Taxi')
+        $arraysToCompare = @('Roster','Reserve','Taxi', 'Starter', 'DraftPicks')
         foreach ($field in $arraysToCompare) {
             if (-not (Compare-Arrays $oldTeam.$field $newTeam.$field $field $oldTeam.Owner)) {
                 return $true
