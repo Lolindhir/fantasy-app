@@ -1,8 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DataService, League, FantasyTeam, AwardInStanding, Player } from '../services/data-service';
+import { DataService, League, FantasyTeam, AwardInStanding, Player, DraftPick } from '../services/data-service';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
+
+interface DraftPickDisplayGroup {
+  draftKey: string;
+  label: string;
+  count: number;
+  pickDisplays: string[];
+  sortOrder: number;
+}
 
 @Component({
   selector: 'app-overview',
@@ -76,6 +84,12 @@ export class OverviewComponent implements OnInit {
         const totalTop5 = top5Players.reduce((sum, p) => sum + p.Salary, 0);
         const totalTop5Projected = top5PlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
 
+        // Draft Picks
+        const currentSeasonDraftPickGroups = this.getCurrentSeasonDraftPickGroups(
+          t.DraftPicks ?? [],
+          league.Season
+        );
+
         return {
           team: t,
           total,
@@ -86,7 +100,8 @@ export class OverviewComponent implements OnInit {
           totalTop5Projected,
           topPlayers,
           topPlayersProjected,
-          countedPlayers: playerCount
+          countedPlayers: playerCount,
+          draftPickGroups: currentSeasonDraftPickGroups
         };
 
       }).sort((a, b) => a.total - b.total);
@@ -129,6 +144,53 @@ export class OverviewComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
+  }
+
+  private getCurrentSeasonDraftPickGroups(
+    picks: DraftPick[],
+    season: string
+  ): DraftPickDisplayGroup[] {
+    const currentSeasonPicks = picks
+      .filter(pick => pick.Season === season)
+      .sort((a, b) => {
+        const draftNoDiff = (a.Draft?.DraftNo ?? 999) - (b.Draft?.DraftNo ?? 999);
+        if (draftNoDiff !== 0) return draftNoDiff;
+
+        const roundDiff = (a.Round ?? 999) - (b.Round ?? 999);
+        if (roundDiff !== 0) return roundDiff;
+
+        return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
+      });
+
+    const groups = new Map<string, DraftPickDisplayGroup>();
+
+    for (const pick of currentSeasonPicks) {
+      const draftKey = pick.DraftKey;
+      const label =
+        pick.Draft?.DisplayDraftType ??        
+        pick.Draft?.DisplayAbrDraftKey ??
+        pick.Draft?.DisplayDraftKey ??
+        pick.DraftKey;
+
+      const sortOrder = pick.Draft?.DraftNo ?? 999;
+
+      if (!groups.has(draftKey)) {
+        groups.set(draftKey, {
+          draftKey,
+          label,
+          count: 0,
+          pickDisplays: [],
+          sortOrder
+        });
+      }
+
+      const group = groups.get(draftKey)!;
+      group.count += 1;
+      group.pickDisplays.push(pick.DisplayPick);
+    }
+
+    return [...groups.values()]
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   standingEmoji(place: number): string {

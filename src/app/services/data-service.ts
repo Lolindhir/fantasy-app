@@ -10,6 +10,73 @@ export interface DataTimestamps {
   Teams: string;
 }
 
+export interface RawDraft {
+  LeagueID: string;
+  DraftKey: string;
+  DisplayDraftKey: string;
+  DisplayAbrDraftKey: string;
+  Season: string;
+  DraftType: string;
+  DisplayDraftType: string;
+  DraftNo: number;
+  DraftSource: string;
+  SleeperDraftID: string | null;
+  SleeperStatus: string | null;
+  Status: string;
+  PickSource: string;
+  OrderSource: string;
+  OrderMode: string;
+  Settings: DraftSettings;
+  Picks: DraftPick[];
+}
+
+export interface DraftSettings {
+  Rounds: number;
+  Teams: number;
+  Type: string;
+}
+
+export interface DraftPickTradeHistoryEntry {
+  TransactionID: string;
+  Source: string;
+  CreatedAt: number;
+  CreatedDate: string;
+  DraftSource: string;
+  PreviousOwnerRosterID: number;
+  NewOwnerRosterID: number;
+}
+
+export interface DraftPick {
+  PickKey: string;
+  LeagueID: string;
+  DraftKey: string;
+  Season: string;
+  DraftType: string;
+
+  Round: number;
+  PositionInRound: number | null;
+  OverallPick: number | null;
+  DisplayPick: string;
+
+  OriginalOwnerRosterID: number;
+  CurrentOwnerRosterID: number;
+
+  WasTraded: boolean;
+  IsCurrentlyTraded: boolean;
+  TradeSource: string | null;
+  TradeHistory: DraftPickTradeHistoryEntry[];
+
+  PlayerID: string | null;
+  PlayerName: string | null;
+
+  Status: string;
+
+  SleeperPickNo: number | null;
+  SleeperPickedBy: string | null;
+
+  Draft?: RawDraft;
+}
+
 export interface PlayoffTeam {
   Place: number;
   PlaceOrdinal: string;
@@ -154,10 +221,22 @@ export interface RawFantasyTeam {
   Placements: Placements;
 
   Roster: string[];
+  Reserve: string[] | null;
+  Taxi: string[] | null;
+  Starter: string[] | null;
+
+  DraftPicks: string[];
 }
 
-export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'TeamAvatar'> {
+export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' | 'Taxi' | 'Starter' | 'DraftPicks' | 'TeamAvatar'> {
   Roster: Player[];
+  Reserve: Player[];
+  Taxi: Player[];
+  Starter: Player[];
+
+  DraftPickKeys: string[];
+  DraftPicks: DraftPick[];
+
   Avatar: string;
   Standing: number;
   Wins: number;
@@ -464,27 +543,53 @@ export class DataService {
     );
   }
 
-  getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[] }> {
+  getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[], drafts: RawDraft[] }> {
     return forkJoin({
       leagueRaw: this.http.get<RawLeague>('data/League.json'),
       playersRaw: this.http.get<RawPlayer[]>('data/Players.json'),
-      nflTeamsRaw: this.http.get<RawNFLTeam[]>('data/Teams.json')
+      nflTeamsRaw: this.http.get<RawNFLTeam[]>('data/Teams.json'),
+      draftsRaw: this.http.get<RawDraft[]>('data/Drafts.json')
     }).pipe(
-      map(({ leagueRaw, playersRaw, nflTeamsRaw }) => {
+      map(({ leagueRaw, playersRaw, nflTeamsRaw, draftsRaw }) => {
+
+        const drafts = draftsRaw ?? [];
+        const draftPickByKey = new Map<string, DraftPick>();
+        for (const draft of drafts) {
+          for (const pick of draft.Picks ?? []) {
+            draftPickByKey.set(pick.PickKey, {
+              ...pick,
+              Draft: draft
+            });
+          }
+        }
 
         const teams: FantasyTeam[] = leagueRaw.Teams.map(team => {
 
           const awards = this.ensureArray(team.Placements.Current.Awards)
             .map(a => this.mapAward(a));
 
+          const draftPickKeys = team.DraftPicks ?? [];
+          const resolvedDraftPicks = draftPickKeys
+            .map(key => draftPickByKey.get(key))
+            .filter((pick): pick is DraftPick => !!pick);
+
           return {
             ...team,
             Team: team.Team || `Team ${team.Owner}`,
             Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
+
             Roster: [],
+            Reserve: [],
+            Taxi: [],
+            Starter: [],
+
+            DraftPickKeys: draftPickKeys,
+            DraftPicks: resolvedDraftPicks,
+
             Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0
               ? team.Placements.Current.Playoffs.Place
               : team.Placements.Current.Regular.Place ?? 0,
+
             Wins: team.Placements.Current.Regular.Wins ?? 0,
             Losses: team.Placements.Current.Regular.Losses ?? 0,
             Ties: team.Placements.Current.Regular.Ties ?? 0,
@@ -614,10 +719,12 @@ export class DataService {
         });
 
         teams.forEach(team => {
-          team.Roster = this.rosterIdsToPlayers(
-            (leagueRaw.Teams.find(t => t.TeamID === team.TeamID)?.Roster) || [],
-            players
-          );
+          const rawTeam = leagueRaw.Teams.find(t => t.TeamID === team.TeamID);
+
+          team.Roster = this.rosterIdsToPlayers(rawTeam?.Roster ?? [], players);
+          team.Reserve = this.rosterIdsToPlayers(rawTeam?.Reserve ?? [], players);
+          team.Taxi = this.rosterIdsToPlayers(rawTeam?.Taxi ?? [], players);
+          team.Starter = this.rosterIdsToPlayers(rawTeam?.Starter ?? [], players);
 
           team.Roster.forEach(player => (player.TeamFantasy = team));
         });
@@ -651,7 +758,7 @@ export class DataService {
           SeasonAsNumber: +leagueRaw.Season
         };
 
-        return { league, players: playersSorted, teams };
+        return { league, players: playersSorted, teams, drafts };
       })
     );
   }

@@ -991,6 +991,7 @@ function New-DraftOutput {
 
         Season             = $season
         DraftType          = $draftType
+        DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
         DraftNo            = [int]$definition.DraftNo
 
         DraftSource        = $draftSource
