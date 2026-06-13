@@ -4,7 +4,7 @@ domain:
   name: Fantasy Football League App
   summary: >
     App for displaying a custom fantasy football league with generated league,
-    team, player, standings, salary and draft-related data.
+    team, player, standings, salary, transaction and draft-related data.
 
 coreConcepts:
   League:
@@ -15,6 +15,9 @@ coreConcepts:
     description: >
       A fantasy team in the league. Teams are identified by generated TeamID and
       can be mapped from league metadata and generated league data.
+    draftPickRelation: >
+      Team DraftPicks are stored as PickKey references in generated League.json
+      and resolved to DraftPick objects by Angular DataService.
 
   Player:
     description: >
@@ -31,28 +34,115 @@ coreConcepts:
       Frontend-facing market model that marks players as rostered, free agents,
       projected cap cuts or possible cap cuts.
 
+  Transaction:
+    description: >
+      Completed league move from Sleeper and/or manual input. Transactions can
+      affect players and draft-pick ownership.
+    importantFields:
+      - Source
+      - TransactionID
+      - Type
+      - Status
+      - Season
+      - Week
+      - CreatedAt
+      - CreatedDate
+      - RosterIDs
+      - Adds
+      - Drops
+      - DraftPicks
+      - Notes
+
   Draft:
     description: >
       A league draft event. Drafts may have exact pick order for current-season
       upcoming drafts or only round-level placeholders for future seasons.
+    importantFields:
+      - DraftKey
+      - DisplayDraftKey
+      - DisplayAbrDraftKey
+      - Season
+      - DraftType
+      - DisplayDraftType
+      - DraftNo
+      - DraftSource
+      - SleeperDraftID
+      - SleeperStatus
+      - Status
+      - PickSource
+      - OrderSource
+      - OrderMode
+      - Settings
+      - Picks
 
   DraftPick:
     description: >
-      A pick belongs to a season, draft type, round and pick slot. It should
-      track both original owner and current owner.
+      A pick belongs to a season, draft type, round and owner. It tracks both
+      original owner and current owner because transactions can transfer ownership.
     importantFields:
-      - season
-      - draftType
-      - round
-      - pickNumber
-      - originalOwner
-      - currentOwner
-      - history
+      - PickKey
+      - DraftKey
+      - Season
+      - DraftType
+      - Round
+      - PositionInRound
+      - OverallPick
+      - DisplayPick
+      - OriginalOwnerRosterID
+      - CurrentOwnerRosterID
+      - WasTraded
+      - IsCurrentlyTraded
+      - TradeSource
+      - TradeHistory
+      - Status
+
+transactions:
+  sourceOfTruth:
+    currentOutput: public/data/Transactions.json
+    manualInput: public/data/Transactions_Manual.json
+    generator: public/requests/utils/league/TransactionUtils.psm1
+    externalSource: Sleeper transactions endpoint
+
+  statusRules:
+    currentGeneratedData: completed transactions
+    pendingTransactions: >
+      Pending transactions are not generated right now because the Sleeper
+      league transactions endpoint appears to return completed transactions only
+      in the current workflow.
+
+  manualEnrichment:
+    description: >
+      Manual transactions can enrich matching Sleeper transactions through
+      SleeperTransactionID or create manual-only transaction output.
+    manualOnlyStatus: complete
+
+  currentSeasonUpdate:
+    normalMode:
+      - Load existing Transactions.json.
+      - Fetch missing weeks.
+      - Fetch current week.
+      - Fetch previous week.
+      - Replace only fetched weeks in the local data.
+      - Save only when the compare script detects semantic changes.
+    forceMode:
+      - Fetch all available weeks for the current season.
+      - Rebuild current-season output from remote/manual source data.
+      - Still allow compare-and-skip behavior when output is unchanged.
+
+  sorting:
+    canonicalOrder: newest-first
+    keys:
+      - Season
+      - Week
+      - CreatedAt
+      - TransactionID
 
 drafts:
   sourceOfTruth:
     config: public/data/Metadata.json
-    generatedOutput: future generated draft JSON
+    currentOutput: public/data/Drafts.json
+    generator: public/requests/utils/league/DraftUtils.psm1
+    teamPickMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
 
   currentState:
     metadataContains:
@@ -65,46 +155,84 @@ drafts:
       - OrderMap
       - Order
 
-  goals:
-    - Show all upcoming drafts.
-    - Show which team owns each pick.
-    - Show both current owner and original owner per pick.
-    - Support future seasons where exact order is not yet known.
-    - Preserve ownership history when possible.
+  configuredDraftTypes:
+    - draftType: Rookie
+      draftNo: 1
+      rounds: 5
+      currentSeasonOrderSource: PreviousPlayoffs
+      notes: >
+        Uses configured OrderMap based on previous playoff placement when no
+        authoritative Sleeper draft order is available.
+    - draftType: Free_Agent
+      draftNo: 2
+      rounds: 5
+      currentSeasonOrderSource: AllTime
+      notes: >
+        Uses AllTime standings with configured direction.
 
-  currentSeasonDrafts:
-    requirement: >
-      For drafts of the current season that have not happened yet, exact pick
-      order is important.
+  keyRules:
+    draftKey: "<season>_<draftType>"
+    pickKey: "<draftKey>_R<round>_OO<originalOwnerRosterID>"
 
-    rookieDraft:
-      orderSource: PreviousPlayoffs
-      meaning: >
-        Rookie draft order is derived from previous playoff placement using the
-        configured OrderMap as long as no authoritative Sleeper rookie draft
-        data exists.
-
-    freeAgentDraft:
-      orderSource: AllTime
-      meaning: >
-        Free agent draft order is derived from all-time standings. Metadata may
-        define ordering direction.
-
-  futureSeasonDrafts:
-    requirement: >
-      Exact order is not known yet. Round-level representation is sufficient.
-    representation:
-      - Round 1
-      - Round 2
-      - Round 3
-      - Round 4
-      - Round 5
+  orderModes:
+    Exact:
+      usedFor: current-season upcoming drafts
+      description: >
+        Exact position and overall pick can be generated from Sleeper draft order
+        or configured standings-based order.
+    RoundOnly:
+      usedFor: future-season drafts
+      description: >
+        Exact order is unknown. Round-level representation is sufficient.
 
   ownership:
-    currentOwner:
-      description: The team currently owning the pick.
     originalOwner:
+      field: OriginalOwnerRosterID
       description: The team that originally owned the pick.
+      invariant: Should not change after pick generation.
+    currentOwner:
+      field: CurrentOwnerRosterID
+      description: The team currently owning the pick after transactions.
+      invariant: May change when transaction draft-pick movements are applied.
     history:
+      field: TradeHistory
       description: Optional but valuable ownership change history.
-      priority: bonus
+
+  transactionIntegration:
+    description: >
+      Draft-pick ownership is updated by completed transaction DraftPicks.
+      Transactions must be updated before draft generation in RequestLeague.ps1.
+
+  teamIntegration:
+    description: >
+      Generated teams store DraftPicks as sorted PickKey references owned by
+      CurrentOwnerRosterID. Angular resolves those keys into DraftPick objects.
+
+  displayRules:
+    exactPickDisplay: "{round}.{positionInRound:00}"
+    roundOnlyDisplay: "Round {round}"
+
+  overviewRoundChips:
+    currentLocation: src/app/overview/overview.ts
+    description: >
+      Overview displays current-season draft picks grouped by team and draft.
+      Each chip stores display text, round and background color.
+    colorRule:
+      scope: all current-season draft picks visible in Overview
+      invariant: Same round must have the same color across different drafts.
+      scale: warm-to-cold HSL
+      hsl:
+        startHue: 35
+        endHue: 205
+        saturation: "55%"
+        lightness: "84%"
+    futureTarget: >
+      Move round chip color calculation into a shared frontend utility, pipe or
+      service when draft picks are shown in multiple components.
+
+notesForAIAgents:
+  - Do not collapse OriginalOwnerRosterID and CurrentOwnerRosterID into one field.
+  - Do not infer draft-pick ownership by parsing DisplayPick.
+  - Do not calculate round chip colors relative to one draft if multiple drafts are visible together.
+  - Do not add TransactionsPending.json unless a reliable pending transaction source exists.
+  - When changing draft-pick ownership logic, review transaction logic and this document together.
