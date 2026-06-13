@@ -4,11 +4,17 @@ import { SharedMaterialImports } from '../shared/shared-material-imports';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 
+interface DraftPickDisplayItem {
+  display: string;
+  round: number;
+  backgroundColor: string;
+}
+
 interface DraftPickDisplayGroup {
   draftKey: string;
   label: string;
   count: number;
-  pickDisplays: string[];
+  picks: DraftPickDisplayItem[];
   sortOrder: number;
 }
 
@@ -38,6 +44,8 @@ export class OverviewComponent implements OnInit {
       const isFinished = league.IsFinished;
       const offSeason = league.Status == "Off-Season"
       //const offSeason = true;
+      const currentSeason = league.Season;
+      const maxDisplayedDraftRound = this.getMaxDisplayedDraftRound(teams, currentSeason);
 
       // 🏆 Champion
       const champion = teams.find(t =>
@@ -87,7 +95,8 @@ export class OverviewComponent implements OnInit {
         // Draft Picks
         const currentSeasonDraftPickGroups = this.getCurrentSeasonDraftPickGroups(
           t.DraftPicks ?? [],
-          league.Season
+          currentSeason,
+          maxDisplayedDraftRound
         );
 
         return {
@@ -107,7 +116,6 @@ export class OverviewComponent implements OnInit {
       }).sort((a, b) => a.total - b.total);
 
       // 🔥 Awards
-      const currentSeason = league.Season; // z. B. "2026"
       const currentStanding = league.Standings.find(s => s.Season === currentSeason);
       // Awards aus dem Standing extrahieren oder leeres Array setzen
       const awards: AwardInStanding[] = currentStanding?.Awards
@@ -148,7 +156,8 @@ export class OverviewComponent implements OnInit {
 
   private getCurrentSeasonDraftPickGroups(
     picks: DraftPick[],
-    season: string
+    season: string,
+    maxRound: number
   ): DraftPickDisplayGroup[] {
     const currentSeasonPicks = picks
       .filter(pick => pick.Season === season)
@@ -179,18 +188,45 @@ export class OverviewComponent implements OnInit {
           draftKey,
           label,
           count: 0,
-          pickDisplays: [],
+          picks: [],
           sortOrder
         });
       }
 
       const group = groups.get(draftKey)!;
       group.count += 1;
-      group.pickDisplays.push(pick.DisplayPick);
+      group.picks.push({
+        display: pick.DisplayPick,
+        round: pick.Round,
+        backgroundColor: this.getRoundChipColor(pick.Round, maxRound)
+      });
     }
 
     return [...groups.values()]
       .sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+
+  private getMaxDisplayedDraftRound(teams: FantasyTeam[], season: string): number {
+    const rounds = teams
+      .flatMap(team => team.DraftPicks ?? [])
+      .filter(pick => pick.Season === season)
+      .map(pick => Number(pick.Round) || 0)
+      .filter(round => round > 0);
+
+    return rounds.length ? Math.max(...rounds) : 1;
+  }
+
+  private getRoundChipColor(round: number, maxRound: number): string {
+    if (!round || maxRound <= 1) {
+      return 'hsl(35, 55%, 84%)';
+    }
+
+    const ratio = (round - 1) / (maxRound - 1);
+    const startHue = 35;
+    const endHue = 205;
+    const hue = startHue + ratio * (endHue - startHue);
+
+    return `hsl(${hue}, 55%, 84%)`;
   }
 
   standingEmoji(place: number): string {
