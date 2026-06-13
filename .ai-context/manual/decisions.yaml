@@ -57,3 +57,55 @@ decisions:
       Angular components and services should display, filter, sort and combine
       generated app data. Core league rule derivation should remain in metadata
       or the PowerShell generation pipeline when it is source-of-truth behavior.
+
+  - id: ADR-006
+    title: Drafts are generated app data
+    status: accepted
+    decision: >
+      Upcoming drafts and draft picks are generated into public/data/Drafts.json.
+      The generation pipeline owns draft order, draft pick keys, display values
+      and transaction-applied current ownership.
+    rationale: >
+      Drafts are domain data, not only UI state. They must be available to
+      multiple frontend components and can be linked to transactions.
+
+  - id: ADR-007
+    title: Draft-pick ownership keeps original and current owner separately
+    status: accepted
+    decision: >
+      Draft picks keep OriginalOwnerRosterID and CurrentOwnerRosterID as separate
+      fields. Original ownership is stable; current ownership reflects applied
+      draft-pick transactions.
+    rationale: >
+      This preserves history while still allowing teams to display currently
+      owned picks.
+
+  - id: ADR-008
+    title: Transactions drive draft-pick ownership changes
+    status: accepted
+    decision: >
+      Completed transaction output is updated before draft generation and is used
+      to apply draft-pick ownership changes to generated Drafts.json.
+    rationale: >
+      Transactions are the domain event source for pick movement.
+
+  - id: ADR-009
+    title: Do not generate pending transactions without a reliable source
+    status: accepted
+    decision: >
+      Do not add TransactionsPending.json while the current Sleeper transactions
+      workflow only provides completed transaction data.
+    rationale: >
+      A generated pending file without a reliable source would imply a false
+      source of truth.
+
+  - id: ADR-010
+    title: Draft round chip colors are frontend display logic
+    status: accepted
+    decision: >
+      Overview may compute draft round chip colors locally for now, using the
+      maximum visible current-season round so same-round picks have consistent
+      colors across drafts.
+    rationale: >
+      The rule is presentation-specific. If reused by other components, it
+      should move into a shared frontend utility, pipe or service.
