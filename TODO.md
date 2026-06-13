@@ -11,7 +11,19 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ## Offen
 
+### Data Generation / Drafts
+
+- [ ] Draft-Live- und Completed-Enrichment ergänzen.
+  - Kontext: Wenn ein Sleeper-Draft läuft oder abgeschlossen ist, sollen die echten Pick-Ergebnisse über `Get-SleeperDraftPicks` geladen und auf die bestehenden Draft-Picks gemappt werden.
+  - Ziel: Pro Pick `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy` und `Status = Picked` ergänzen, ohne den stabilen `PickKey` zu verändern.
+  - Möglicher Ansatz: Funktion `Apply-SleeperDraftPickResults` ergänzen.
+
 ### Frontend
+
+- [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
+  - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
+  - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern, z. B. `src/core/models`, `src/core/services` und `src/shared`.
+  - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
 - [ ] Draft-Round-Chip-Farblogik aus `src/app/overview/overview.ts` in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
   - Kontext: Die Overview berechnet die Farben aktuell lokal.
