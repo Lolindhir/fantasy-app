@@ -162,18 +162,6 @@
           <span class="stat">{{ t.team.Roster.length }}</span>
         </div>
 
-        <div *ngFor="let draftGroup of t.draftPickGroups">
-          <div>            
-            <span class="label">📋 {{ draftGroup.label }} Picks:</span>
-            <span class="stat">{{ draftGroup.count }}</span>
-          </div>
-          <span class="stat">
-            <ng-container *ngIf="draftGroup.pickDisplays.length > 0">
-              {{ draftGroup.pickDisplays.join(', ') }}
-            </ng-container>
-          </span>
-        </div>
-
         <div>
           <span class="label">💎 Top Salary:</span>
           <span class="stat">{{ formatSalaryDollars(t.topPlayers[0].Salary, false, 1)}} ({{t.topPlayers[0].NameShort}})</span>
@@ -187,7 +175,25 @@
         <div>
           <span class="label">⚖️ Avg Salary:</span>
           <span class="stat">{{ formatSalaryDollars(t.totalAll / t.team.Roster.length, false, 1)}}</span>
-        </div>        
+        </div>
+
+        <div class="draft-picks-section" *ngIf="t.draftPickGroups.length > 0">
+          <div *ngFor="let draftGroup of t.draftPickGroups" class="draft-pick-group">
+            <div class="draft-pick-header">
+              <span class="label">📋 {{ draftGroup.label }} Picks:</span>
+              <span class="draft-pick-count">{{ draftGroup.count }}</span>
+            </div>
+
+            <div class="draft-pick-chip-row">
+              <span
+                *ngFor="let pickDisplay of draftGroup.pickDisplays"
+                class="draft-pick-chip"
+              >
+                {{ pickDisplay }}
+              </span>
+            </div>
+          </div>
+        </div>
 
         <!-- <div>
           <span class="label">Picks</span>
