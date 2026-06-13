@@ -183,13 +183,6 @@
           style="margin-top: 4px; padding-top: 5px; border-top: 1px solid rgba(0, 0, 0, 0.08);"
         >
           <div
-            class="draft-picks-title"
-            style="font-size: 0.9rem; font-weight: 500; opacity: 0.85; margin-bottom: 4px;"
-          >
-            📋 Draft Picks {{ vm.league.Season }}
-          </div>
-
-          <div
             *ngFor="let draftGroup of t.draftPickGroups"
             class="draft-pick-group"
             style="display: grid; gap: 3px;"
@@ -198,8 +191,13 @@
               class="draft-pick-header"
               style="display: flex; align-items: center; gap: 6px;"
             >
-              <span class="label">{{ draftGroup.label }}:</span>
-              <span class="stat">{{ draftGroup.count }}</span>
+              <span class="label">📋 {{ draftGroup.label }} Picks:</span>
+              <span
+                class="draft-pick-count"
+                style="font-size: 0.8rem; font-weight: 600; opacity: 0.75;"
+              >
+                {{ draftGroup.count }}
+              </span>
             </div>
 
             <div
