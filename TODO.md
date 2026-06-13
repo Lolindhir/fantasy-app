@@ -35,8 +35,8 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ## Erledigt / Archiv
 
-- [x] `CHAT_START.md` als Projektquelle hinterlegen.
-  - Kontext: Die Datei liegt hier im ChatGPT-Projekt als Quelle und muss nicht im Repository liegen.
+- [x] `CHAT_START.md` als Projektquelle und im Repository-Root hinterlegen.
+  - Kontext: Die Datei liegt sowohl hier im ChatGPT-Projekt als Quelle als auch im Repository-Root.
   - Ziel: Neue Chats sollen zuerst auf `AGENTS.md` und danach auf die `.ai-context`-Lesereihenfolge verweisen.
 
 Erledigte Einträge hier nur ablegen, wenn die Historie nützlich ist. Ansonsten können erledigte Einträge aus der offenen Liste entfernt werden.
