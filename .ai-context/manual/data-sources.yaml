@@ -8,6 +8,12 @@ dataSources:
     description: >
       Contains league-specific configuration and domain rules used by the
       PowerShell generation pipeline.
+    owns:
+      - LeagueID
+      - LeagueYear
+      - CapDeadline
+      - OwnerIDs
+      - Drafts configuration
 
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1
@@ -17,6 +23,13 @@ dataSources:
       Provides technical path resolution and generation configuration for the
       PowerShell data pipeline. Loads Metadata.json and returns the generator
       configuration object.
+    owns:
+      - DataDir
+      - generated JSON file paths
+      - transaction archive paths
+      - draft archive paths
+      - timestamp file path
+      - mapping Metadata.json values into generator config
 
   generationPipeline:
     path: public/requests
@@ -34,6 +47,34 @@ dataSources:
       architectural source of truth. Metadata.json is an exception because it is
       manually maintained domain input.
 
+  transactions:
+    path: public/data/Transactions.json
+    manualInput: public/data/Transactions_Manual.json
+    generator: public/requests/utils/league/TransactionUtils.psm1
+    category: generated-output
+    role: Completed transaction read model
+    description: >
+      Current-season transaction output used by draft generation and the app.
+      It combines Sleeper transactions with manual enrichments.
+    updateMode:
+      normal: missing weeks plus current and previous week
+      force: all available weeks for the current season
+    timestamped: true
+    backup: true
+
+  drafts:
+    path: public/data/Drafts.json
+    generator: public/requests/utils/league/DraftUtils.psm1
+    teamMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
+    category: generated-output
+    role: Draft and draft-pick read model
+    description: >
+      Generated upcoming draft data. Current-season drafts can have exact order;
+      future-season drafts may be round-only placeholders. Completed transaction
+      data is applied to derive current pick ownership.
+    timestamped: true
+    backup: true
+
   angularFrontend:
     path: src/app
     category: frontend
@@ -48,13 +89,41 @@ dataFlow:
     to: public/requests/utils/ConfigUtils.psm1
     purpose: Load league-specific inputs and rules.
 
-  - from: public/requests/RequestLeague.ps1
+  - from: public/requests/utils/ConfigUtils.psm1
+    to: public/requests/RequestLeague.ps1
+    purpose: Resolve generation paths and expose metadata-driven config.
+
+  - from: Sleeper transactions endpoint
+    to: public/data/Transactions.json
+    purpose: Fetch completed current-season transaction data.
+
+  - from: public/data/Transactions_Manual.json
+    to: public/data/Transactions.json
+    purpose: Enrich or add manual transaction output.
+
+  - from: public/data/Transactions.json
+    to: public/data/Drafts.json
+    purpose: Apply draft-pick ownership changes before generating draft output.
+
+  - from: public/data/Metadata.json
+    to: public/data/Drafts.json
+    purpose: Provide draft types, rounds and configured order rules.
+
+  - from: Sleeper drafts endpoints
+    to: public/data/Drafts.json
+    purpose: Use authoritative Sleeper draft metadata/order when available.
+
+  - from: public/data/Drafts.json
     to: public/data/League.json
-    purpose: Generate app-readable league data.
+    purpose: Add sorted draft PickKey references to generated team data.
 
   - from: public/data/League.json
     to: src/app/services/data-service.ts
-    purpose: Frontend League model.
+    purpose: Frontend League and FantasyTeam models.
+
+  - from: public/data/Drafts.json
+    to: src/app/services/data-service.ts
+    purpose: Resolve team DraftPickKeys into DraftPick objects.
 
   - from: public/data/Players.json
     to: src/app/services/data-service.ts
@@ -67,3 +136,8 @@ dataFlow:
   - from: public/data/Timestamps.json
     to: src/app/services/data-service.ts
     purpose: Display freshness of generated data.
+
+notesForAIAgents:
+  - Generated JSON should generally be changed through generation logic, not manually.
+  - Draft generation depends on current transaction output.
+  - Angular display issues should not be fixed by changing generated data contracts unless the domain shape is wrong.
