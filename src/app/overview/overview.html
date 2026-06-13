@@ -177,17 +177,37 @@
           <span class="stat">{{ formatSalaryDollars(t.totalAll / t.team.Roster.length, false, 1)}}</span>
         </div>
 
-        <div class="draft-picks-section" *ngIf="t.draftPickGroups.length > 0">
-          <div *ngFor="let draftGroup of t.draftPickGroups" class="draft-pick-group">
-            <div class="draft-pick-header">
+        <div
+          class="draft-picks-section"
+          *ngIf="t.draftPickGroups.length > 0"
+          style="margin-top: 4px; padding-top: 5px; border-top: 1px solid rgba(0, 0, 0, 0.08);"
+        >
+          <div
+            *ngFor="let draftGroup of t.draftPickGroups"
+            class="draft-pick-group"
+            style="display: grid; gap: 3px;"
+          >
+            <div
+              class="draft-pick-header"
+              style="display: flex; align-items: center; gap: 6px;"
+            >
               <span class="label">📋 {{ draftGroup.label }} Picks:</span>
-              <span class="draft-pick-count">{{ draftGroup.count }}</span>
+              <span
+                class="draft-pick-count"
+                style="font-size: 0.8rem; font-weight: 600; opacity: 0.75;"
+              >
+                {{ draftGroup.count }}
+              </span>
             </div>
 
-            <div class="draft-pick-chip-row">
+            <div
+              class="draft-pick-chip-row"
+              style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 22px;"
+            >
               <span
                 *ngFor="let pickDisplay of draftGroup.pickDisplays"
                 class="draft-pick-chip"
+                style="padding: 1px 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.07); font-size: 0.75rem; font-weight: 400; line-height: 1.35; opacity: 0.8; white-space: nowrap;"
               >
                 {{ pickDisplay }}
               </span>
