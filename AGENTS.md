@@ -32,6 +32,19 @@ Before making architecture, data model, generation or frontend changes, read:
 - Do not treat generated JSON as manually editable source-of-truth data.
 - Do not put league-specific rules into Angular unless they are frontend-only display enrichment.
 
+## Documentation routing
+
+- `AGENTS.md` is the first file agents must read before making repository changes.
+- `.ai-context` is the canonical root for AI context documentation.
+- Human-maintained AI context belongs in `.ai-context/manual`.
+- Generated AI context belongs in `.ai-context/generated` and must not be edited manually.
+- Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
+- When updating documentation:
+  - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
+  - domain rules go to `.ai-context/manual/domain.yaml`
+  - data sources and data flow go to `.ai-context/manual/data-sources.yaml`
+  - file-local documentation goes to file headers or sidecar `.ai-doc.yaml` files
+
 ## Generated files
 
 Do not manually edit generated context files under:
