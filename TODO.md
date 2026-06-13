@@ -22,7 +22,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
-  - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern, z. B. `src/core/models`, `src/core/services` und `src/shared`.
+  - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
+  - Zielstruktur prüfen:
+    - `src/core/models` für League-, Player-, Draft-, Standings- und weitere Domain-Modelle.
+    - `src/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market- und Trade-Services.
+    - `src/shared` für wiederverwendbare UI-/Material-/Frontend-Helfer.
+  - Mögliche Services prüfen: `data.service.ts`, `data-api.service.ts`, `league-mapper.service.ts`, `player-mapper.service.ts`, `draft-mapper.service.ts`, `free-agent-market.service.ts`, `trade-calculator.service.ts`.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
 - [ ] Draft-Round-Chip-Farblogik aus `src/app/overview/overview.ts` in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
