@@ -3,11 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-
 export interface DataTimestamps {
   League: string;
   Players: string;
   Teams: string;
+  Drafts: string;
 }
 
 export interface RawDraft {
@@ -52,45 +52,71 @@ export interface DraftPick {
   DraftKey: string;
   Season: string;
   DraftType: string;
-
   Round: number;
   PositionInRound: number | null;
   OverallPick: number | null;
   DisplayPick: string;
-
   OriginalOwnerRosterID: number;
   CurrentOwnerRosterID: number;
-
   WasTraded: boolean;
   IsCurrentlyTraded: boolean;
   TradeSource: string | null;
   TradeHistory: DraftPickTradeHistoryEntry[];
-
   PlayerID: string | null;
   PlayerName: string | null;
-
   Status: string;
-
   SleeperPickNo: number | null;
   SleeperPickedBy: string | null;
-
   Draft?: RawDraft;
 }
 
 export interface PlayoffTeam {
   Place: number;
   PlaceOrdinal: string;
-  TeamID: string;
+  TeamID: string | number;
   Owner: string;
-  TeamName: string;
+  TeamName: string | null;
+  PlaceType?: string;
+  Championships?: number;
+  RunnerUps?: number;
+  Thirds?: number;
+  PlaceCumulative?: number;
+  PlaceAverage?: number;
+  Placements?: number[];
 }
 
 export interface RegularSeasonTeam {
   Place: number;
   PlaceOrdinal: string;
-  TeamID: string;
+  TeamID: string | number;
   Owner: string;
-  TeamName: string;
+  TeamName: string | null;
+  NumberOfGames?: number;
+  Wins?: number;
+  Losses?: number;
+  Ties?: number;
+  Points?: number;
+  PointsAgainst?: number;
+  Record?: string | null;
+  Streak?: string | null;
+  WinPercentage?: number;
+  WinPercentageDisplay?: string;
+  WinPercentageDiffLeagueAvg?: number;
+  WinPercentageHistory?: number[];
+  PointDifference?: number;
+  PointsPerGame?: number;
+  PointsPerGameDiffLeagueAvg?: number;
+  PointsAgainstPerGame?: number;
+  PointsAgainstPerGameDiffLeagueAvg?: number;
+  LongestWinStreak?: number;
+  WinStreakScore?: number;
+  LongestLossStreak?: number;
+  LossStreakScore?: number;
+  EfficiencyScore?: number;
+  IronWillScore?: number;
+  ClutchPeakerScore?: number;
+  ImprovementScore?: number;
+  RegularSeasonWins?: number;
 }
 
 export interface AwardType {
@@ -111,14 +137,14 @@ export interface Award extends RawAward {
 }
 
 export interface AwardInStanding extends Award {
-  TeamID: string;
+  TeamID: string | number;
   Owner: string;
-  TeamName: string;
+  TeamName: string | null;
 }
 
 export interface Standing {
   Season: string;
-  Playoffs?: PlayoffTeam[];
+  Playoffs?: PlayoffTeam[] | null;
   RegularSeason: RegularSeasonTeam[];
   Awards?: AwardInStanding[];
 }
@@ -130,9 +156,10 @@ export interface RawLeague {
   Season: string;
   SeasonType: string;
   Status: string;
+  CurrentWeek?: number;
   FinalScoredWeek: number;
-  PlayoffWeek: number;
   LastLeagueWeek: number;
+  PlayoffStartWeek: number;
   TradeDeadlineWeek: number;
   CutsAllowed: boolean;
   CutsMetaText: string;
@@ -140,12 +167,18 @@ export interface RawLeague {
   WaiversMetaText: string;
   TradesOpen: boolean;
   TradesMetaText: string;
+  TotalTeams?: number;
   SalaryCap: number;
   SalaryCapProjected: number;
   CapDeadline: string;
   SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[];
   Standings: Standing[];
+  Playoffs?: unknown;
+  RosterSize?: string[];
+  ScoringType?: Record<string, number>;
+  Settings?: Record<string, unknown>;
+  LeagueIDPrevious?: string;
 }
 
 export interface League extends Omit<RawLeague, 'Teams'> {
@@ -169,8 +202,8 @@ export interface PlacementRegularSeason extends Placement {
   PointsAgainst: number;
   WinPercentage: number;
   WinPercentageDisplay: string;
-  Record: string;
-  Streak: string;
+  Record: string | null;
+  Streak: string | null;
 }
 
 export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {
@@ -185,22 +218,23 @@ export interface PlacementPlayoffsAllTime extends PlacementPlayoffs {
   Thirds: number;
   PlaceCumulative: number;
   PlaceAverage: number;
-  Placements: string[];
+  Placements: number[];
 }
 
 export interface Placements {
   Current: {
     Regular: PlacementRegularSeason;
     Playoffs?: PlacementPlayoffs;
-    Awards: Award[];
+    Awards: Award | Award[];
   };
   Previous: {
     Regular: PlacementRegularSeason;
     Playoffs?: PlacementPlayoffs;
-    Awards: Award[];
+    Awards: Award | Award[];
   };
   AllTime: {
     Regular: PlacementRegularSeasonAllTime;
+    Awards?: Award | Award[];
     Playoffs: PlacementPlayoffsAllTime;
   };
 }
@@ -212,20 +246,16 @@ export interface RawFantasyTeam {
   Team: string | null;
   TeamID: number;
   TeamAvatar?: string | null;
-
   MatchupID: number | null;
   WaiverPosition: number;
-  WaiverAdjusted: number;
+  WaiverAdjusted: number | null;
   IsCommissioner: boolean;
-
   Placements: Placements;
-
   Roster: string[];
   Reserve: string[] | null;
   Taxi: string[] | null;
   Starter: string[] | null;
-
-  DraftPicks: string[];
+  DraftPicks?: string[];
 }
 
 export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' | 'Taxi' | 'Starter' | 'DraftPicks' | 'TeamAvatar'> {
@@ -233,10 +263,8 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   Reserve: Player[];
   Taxi: Player[];
   Starter: Player[];
-
   DraftPickKeys: string[];
   DraftPicks: DraftPick[];
-
   Avatar: string;
   Standing: number;
   Wins: number;
@@ -367,19 +395,9 @@ export interface KickingStats {
   XpMissed: number;
 }
 
-export type FreeAgentPredictionModel =
-  | 'CurrentOnly'
-  | 'RuleBasedAutoCut';
-
-export type FreeAgentSalaryMode =
-  | 'Current'
-  | 'Projected';
-
-export type FreeAgentMarketStatus =
-  | 'Rostered'
-  | 'FreeAgent'
-  | 'ProjectedCapCut'
-  | 'PossibleCapCut';
+export type FreeAgentPredictionModel = 'CurrentOnly' | 'RuleBasedAutoCut';
+export type FreeAgentSalaryMode = 'Current' | 'Projected';
+export type FreeAgentMarketStatus = 'Rostered' | 'FreeAgent' | 'ProjectedCapCut' | 'PossibleCapCut';
 
 export interface FreeAgentMarketInfo {
   Status: FreeAgentMarketStatus;
@@ -388,23 +406,17 @@ export interface FreeAgentMarketInfo {
   SalaryMode: FreeAgentSalaryMode;
   Probability: number;
   Reason: string;
-
   TeamID?: number;
   TeamName?: string;
   Owner?: string;
-
   CutOrder?: number;
   SalaryRank?: number;
-
   SalaryUsed?: number;
   SalaryUsedDisplay?: string;
-
   CapLimit?: number;
   CapLimitDisplay?: string;
-
   CapBeforeCut?: number;
   CapBeforeCutDisplay?: string;
-
   CapAfterCut?: number;
   CapAfterCutDisplay?: string;
 }
@@ -451,15 +463,11 @@ export interface RawPlayer {
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
   TeamNFL: NFLTeam;
   TeamFantasy?: FantasyTeam;
-
   IsFantasyFreeAgent: boolean;
-
   IsFreeAgentDraftAvailable: boolean;
   FreeAgentMarketInfo: FreeAgentMarketInfo;
-
   IsFreeAgentDraftAvailableProjected: boolean;
   FreeAgentMarketInfoProjected: FreeAgentMarketInfo;
-
   SalaryDisplay: string;
   SalaryProjectedDisplay: string;
   Stats: PlayerStats;
@@ -488,24 +496,29 @@ export type SortField = keyof Player;
 export class DataService {
 
   private http = inject(HttpClient);
-
   private timestampsUrl = 'data/Timestamps.json';
 
   getLeagueTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ League: string }>(this.timestampsUrl).pipe(
+    return this.http.get<Pick<DataTimestamps, 'League'>>(this.timestampsUrl).pipe(
       map(ts => ts.League)
     );
   }
 
   getPlayersTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ Players: string }>(this.timestampsUrl).pipe(
+    return this.http.get<Pick<DataTimestamps, 'Players'>>(this.timestampsUrl).pipe(
       map(ts => ts.Players)
     );
   }
 
   getTeamsTimestamp(): Observable<string | undefined> {
-    return this.http.get<{ Teams: string }>(this.timestampsUrl).pipe(
+    return this.http.get<Pick<DataTimestamps, 'Teams'>>(this.timestampsUrl).pipe(
       map(ts => ts.Teams)
+    );
+  }
+
+  getDraftsTimestamp(): Observable<string | undefined> {
+    return this.http.get<Pick<DataTimestamps, 'Drafts'>>(this.timestampsUrl).pipe(
+      map(ts => ts.Drafts)
     );
   }
 
@@ -513,14 +526,15 @@ export class DataService {
     return forkJoin({
       league: this.getLeagueTimestamp(),
       players: this.getPlayersTimestamp(),
-      teams: this.getTeamsTimestamp()
+      teams: this.getTeamsTimestamp(),
+      drafts: this.getDraftsTimestamp()
     }).pipe(
-      map(({ league, players, teams }) => {
-        return [league, players, teams].reduce((a, b) => {
+      map(({ league, players, teams, drafts }) => {
+        return [league, players, teams, drafts].reduce<string | undefined>((a, b) => {
           if (a === undefined) return b;
           if (b === undefined) return a;
           return a > b ? a : b;
-        });
+        }, undefined);
       })
     );
   }
@@ -564,7 +578,6 @@ export class DataService {
         }
 
         const teams: FantasyTeam[] = leagueRaw.Teams.map(team => {
-
           const awards = this.ensureArray(team.Placements.Current.Awards)
             .map(a => this.mapAward(a));
 
@@ -577,19 +590,15 @@ export class DataService {
             ...team,
             Team: team.Team || `Team ${team.Owner}`,
             Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
-
             Roster: [],
             Reserve: [],
             Taxi: [],
             Starter: [],
-
             DraftPickKeys: draftPickKeys,
             DraftPicks: resolvedDraftPicks,
-
             Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0
               ? team.Placements.Current.Playoffs.Place
               : team.Placements.Current.Regular.Place ?? 0,
-
             Wins: team.Placements.Current.Regular.Wins ?? 0,
             Losses: team.Placements.Current.Regular.Losses ?? 0,
             Ties: team.Placements.Current.Regular.Ties ?? 0,
@@ -644,20 +653,14 @@ export class DataService {
           if (raw.InjuryDetails?.Date) {
             const rd = raw.InjuryDetails.Date;
             if (/^\d{8}$/.test(rd)) {
-              const year = rd.slice(0, 4);
-              const month = rd.slice(4, 6);
-              const day = rd.slice(6, 8);
-              raw.InjuryDetails.Date = `${year}-${month}-${day}`;
+              raw.InjuryDetails.Date = `${rd.slice(0, 4)}-${rd.slice(4, 6)}-${rd.slice(6, 8)}`;
             }
           }
 
           if (raw.InjuryDetails?.ReturnDate) {
             const rd = raw.InjuryDetails.ReturnDate;
             if (/^\d{8}$/.test(rd)) {
-              const year = rd.slice(0, 4);
-              const month = rd.slice(4, 6);
-              const day = rd.slice(6, 8);
-              raw.InjuryDetails.ReturnDate = `${year}-${month}-${day}`;
+              raw.InjuryDetails.ReturnDate = `${rd.slice(0, 4)}-${rd.slice(4, 6)}-${rd.slice(6, 8)}`;
             }
           }
 
@@ -677,7 +680,7 @@ export class DataService {
           }
 
           const currentWeek = leagueRaw.FinalScoredWeek;
-          const playoffStartWeek = leagueRaw.PlayoffWeek;
+          const playoffStartWeek = leagueRaw.PlayoffStartWeek;
           const lastWeek = leagueRaw.LastLeagueWeek;
 
           return {
@@ -685,9 +688,7 @@ export class DataService {
             Number: jerseyNumber,
             TeamNFL: nfl,
             TeamFantasy: undefined,
-
             IsFantasyFreeAgent: false,
-
             IsFreeAgentDraftAvailable: false,
             FreeAgentMarketInfo: this.createFreeAgentMarketInfo(
               'Rostered',
@@ -697,7 +698,6 @@ export class DataService {
               0,
               'Pending fantasy roster assignment.'
             ),
-
             IsFreeAgentDraftAvailableProjected: false,
             FreeAgentMarketInfoProjected: this.createFreeAgentMarketInfo(
               'Rostered',
@@ -707,7 +707,6 @@ export class DataService {
               0,
               'Pending fantasy roster assignment.'
             ),
-
             Salary: raw.Salary,
             SalaryProjected: raw.SalaryProjected,
             SalaryDisplay: this.formatSalaryDollars(raw.Salary),
@@ -730,20 +729,12 @@ export class DataService {
         });
 
         this.enrichFreeAgentMarket(players, teams, leagueRaw);
-
         teams.sort((a, b) => a.Standing - b.Standing);
-
         const playersSorted = this.sortRoster(players, sortFields);
 
         leagueRaw.Standings.forEach(standing => {
           standing.Awards?.forEach(award => {
             award.Icon = this.unicodeToEmoji(award.IconUnicode);
-          });
-
-          standing.Playoffs?.forEach(team => {
-          });
-
-          standing.RegularSeason.forEach(team => {
           });
         });
 
@@ -774,7 +765,6 @@ export class DataService {
     teams: FantasyTeam[],
     league: RawLeague
   ): void {
-
     this.applyFreeAgentPredictionModel(
       players,
       teams,
@@ -799,7 +789,6 @@ export class DataService {
     model: FreeAgentPredictionModel,
     salaryMode: FreeAgentSalaryMode
   ): void {
-
     players.forEach(player => {
       const isFantasyFreeAgent = !player.TeamFantasy;
 
@@ -843,7 +832,6 @@ export class DataService {
     league: RawLeague,
     salaryMode: FreeAgentSalaryMode
   ): void {
-
     const salaryRelevantTeamSize = league.SalaryRelevantTeamSize;
     const capLimit = salaryMode === 'Projected'
       ? (league.SalaryCapProjected ?? league.SalaryCap)
@@ -903,26 +891,20 @@ export class DataService {
             TeamID: team.TeamID,
             TeamName: team.Team ?? `Team ${team.Owner}`,
             Owner: team.Owner,
-
             CutOrder: cutOrder,
             SalaryRank: 6,
-
             SalaryUsed: salaryUsed,
             SalaryUsedDisplay: this.formatSalaryDollars(salaryUsed),
-
             CapLimit: capLimit,
             CapLimitDisplay: this.formatSalaryDollars(capLimit),
-
             CapBeforeCut: capBeforeCut,
             CapBeforeCutDisplay: this.formatSalaryDollars(capBeforeCut),
-
             CapAfterCut: currentCap,
             CapAfterCutDisplay: this.formatSalaryDollars(currentCap)
           }
         );
 
         this.setFreeAgentMarketInfo(nextCutCandidate, info, salaryMode);
-
         cutOrder++;
       }
     });
@@ -996,7 +978,6 @@ export class DataService {
 
   private prepareGameHistory(player: RawPlayer, currentWeek: number, playoffStartWeek: number, lastWeek: number): GameHistory[] {
     const existingGames = player.GameHistory ?? [];
-
     const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
     return weeks.map(week => {
@@ -1037,7 +1018,6 @@ export class DataService {
     topN: number,
     salarySelector: (player: Player) => number
   ): TopPlayersSalaryResult {
-
     if (!roster || roster.length === 0) {
       return { cap: 0, topPlayers: [] };
     }
@@ -1047,9 +1027,7 @@ export class DataService {
 
     const actualTopN = Math.min(topN, sortedRoster.length);
     const topPlayers = sortedRoster.slice(0, actualTopN);
-
-    const cap = topPlayers
-      .reduce((sum, p) => sum + salarySelector(p), 0);
+    const cap = topPlayers.reduce((sum, p) => sum + salarySelector(p), 0);
 
     return { cap, topPlayers };
   }
@@ -1066,7 +1044,6 @@ export class DataService {
     });
 
     incoming.forEach(p => newRoster.push(p));
-
     return newRoster;
   }
 
@@ -1091,5 +1068,4 @@ export class DataService {
     if (!value) return [];
     return Array.isArray(value) ? value : [value];
   }
-
 }
