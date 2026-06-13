@@ -45,6 +45,13 @@ Before making architecture, data model, generation or frontend changes, read:
   - data sources and data flow go to `.ai-context/manual/data-sources.yaml`
   - file-local documentation goes to file headers or sidecar `.ai-doc.yaml` files
 
+## Todo guidance
+
+- Open project todos are maintained in `TODO.md` at the repository root.
+- Todos must be written in German.
+- Do not create additional todo lists in `.ai-context` or `docs`.
+- Move information from `TODO.md` into `.ai-context/manual` only when it becomes a durable architecture, domain or source-of-truth decision.
+
 ## Generated files
 
 Do not manually edit generated context files under:
