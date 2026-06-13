@@ -39,6 +39,21 @@ contextModel:
     mayBeEditedByAI: false
     mayBeRegeneratedAutomatically: true
 
+  todos:
+    description: >
+      Human-maintained, mutable project task list. Todos are intentionally kept
+      outside .ai-context because they are operational tasks, not durable
+      architecture or domain decisions.
+    path: TODO.md
+    language: de
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+    rules:
+      - Store open project todos in TODO.md at the repository root.
+      - Write todos in German.
+      - Do not store mutable todo lists in .ai-context/manual.
+      - Only move todo information into .ai-context/manual when it becomes a durable architecture, domain or source-of-truth decision.
+
 readingOrder:
   - .ai-context/manual/architecture.yaml
   - .ai-context/manual/domain.yaml
@@ -53,6 +68,7 @@ shortContext:
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   src/app/**: Angular-Darstellung
+  TODO.md: Menschenlesbare offene Projektaufgaben auf Deutsch
 
 sourceOfTruthPriority:
   - .ai-context/manual decisions
@@ -60,6 +76,7 @@ sourceOfTruthPriority:
   - public/requests/utils/ConfigUtils.psm1 for technical generation configuration
   - public/data/*.json for current generated app data shape
   - src/app/** for frontend display behavior
+  - TODO.md for mutable open project tasks
 
 aiGuidance:
   rules:
@@ -69,3 +86,5 @@ aiGuidance:
     - Do not edit files in .ai-context/generated manually.
     - When changing architecture, update .ai-context/manual/decisions.yaml.
     - When changing generated data contracts, regenerate generated context documentation.
+    - Store open todos in TODO.md at the repository root and write them in German.
+    - Do not create separate todo lists in .ai-context unless explicitly requested.
