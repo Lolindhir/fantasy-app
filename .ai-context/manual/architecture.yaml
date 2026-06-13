@@ -48,6 +48,8 @@ layers:
       - data transformation
       - data enrichment
       - writing generated JSON
+      - current-season incremental update logic
+      - force rebuild logic for generated scopes
     doesNotOwn:
       - frontend presentation state
       - manual architecture decisions
@@ -58,7 +60,7 @@ layers:
       Represents current app-readable read models consumed by Angular.
     owns:
       - current generated app data shape
-      - generated league/team/player/timestamp data
+      - generated league/team/player/draft/transaction/timestamp data
     doesNotOwn:
       - architectural decisions
       - manually authored source-of-truth documentation
@@ -73,6 +75,7 @@ layers:
       - frontend filtering
       - frontend sorting
       - frontend-only enrichment
+      - component-level view models
     doesNotOwn:
       - source-of-truth league rules
       - PowerShell data generation pipeline
@@ -84,12 +87,36 @@ dataFlow:
     purpose: Load league-specific inputs and rules.
 
   - from: public/requests/RequestLeague.ps1
+    to: public/data/Transactions.json
+    purpose: >
+      Update current-season completed transactions before draft generation so
+      draft-pick ownership can be derived from transaction history.
+
+  - from: public/requests/RequestLeague.ps1
+    to: public/data/Drafts.json
+    purpose: >
+      Generate upcoming draft read models from metadata, standings, Sleeper
+      drafts and transaction-driven pick ownership.
+
+  - from: public/data/Drafts.json
+    to: public/requests/RequestLeague.ps1
+    purpose: >
+      Enrich generated League.json team objects with sorted draft pick keys
+      owned by each team.
+
+  - from: public/requests/RequestLeague.ps1
     to: public/data/League.json
     purpose: Generate app-readable league data.
 
   - from: public/data/League.json
     to: src/app/services/data-service.ts
     purpose: Frontend League model.
+
+  - from: public/data/Drafts.json
+    to: src/app/services/data-service.ts
+    purpose: >
+      Frontend draft and draft-pick model. DataService resolves team DraftPick
+      keys into DraftPick objects.
 
   - from: public/data/Players.json
     to: src/app/services/data-service.ts
@@ -109,3 +136,11 @@ knownFrontendDomainLogic:
     note: >
       Currently computed in Angular as frontend enrichment. If it becomes
       source-of-truth data, move it into PowerShell generation and generated JSON.
+
+  - path: src/app/overview/overview.ts
+    topic: Draft round chip colors
+    note: >
+      Overview currently creates a local draft-pick chip view model and computes
+      subtle warm-to-cold HSL round colors from the maximum visible current-season
+      draft round. This is display logic and should later move into a shared
+      frontend utility, pipe or service if reused by other components.
