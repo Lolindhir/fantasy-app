@@ -254,6 +254,13 @@ drafts:
       - Explicit Sleeper text/metadata can also map to Rookie, Veteran or Free_Agent.
       - Snake or linear draft format alone is not a draft-type signal.
       - Metadata order is only a fallback when Sleeper settings and text have no stronger signal.
+    classificationAssumptions: >
+      Draft type detection is intentionally heuristic because Sleeper does not expose
+      a project-owned DraftType field. The current mapping assumes that available
+      Sleeper settings, metadata text and player-pool restriction values are stable
+      enough to infer Rookie, Free_Agent or Veteran. If Sleeper changes those fields
+      or if a historical draft is misclassified, this classification logic should be
+      reviewed before changing generated data contracts.
     resultEnrichment: >
       Completed pick results are loaded through Get-SleeperDraftPicks and applied
       by Get-AppliedDraftPickResults. PickKey must remain stable.
@@ -304,3 +311,4 @@ notesForAIAgents:
   - Do not validate old completed draft settings against current Metadata rounds.
   - Do not derive historical DraftNo from the current Metadata DraftNo of the resolved draft type.
   - Do not classify historical draft type from snake/linear draft format alone.
+  - Treat historical draft type detection as heuristic unless Sleeper provides an explicit stable draft-type field.
