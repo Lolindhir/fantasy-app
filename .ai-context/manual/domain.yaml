@@ -222,8 +222,15 @@ drafts:
         not simply on snake/linear draft format.
 
   keyRules:
-    draftKey: "<season>_<draftType>"
+    currentDraftKey: "<season>_<draftType>"
+    historicalDraftKey: "<season>_D<chronologicalDraftNo>_<draftType>"
     pickKey: "<draftKey>_R<round>_OO<originalOwnerRosterID>"
+    notes: >
+      Current/upcoming/live drafts keep the compact configured key because those
+      keys are used as team DraftPick references in League.json. Historical drafts
+      include chronological DraftNo in DraftKey so multiple drafts of the same type
+      in one season remain unique. PickKey uses DraftKey as prefix and therefore
+      stays unique automatically for repeated draft types.
 
   orderModes:
     Exact:
@@ -272,22 +279,25 @@ drafts:
     numbering: >
       Historical DraftNo is assigned from the chronological completed Sleeper draft
       order within the season. It must not come from the current Metadata DraftNo
-      of the resolved draft type.
+      of the resolved draft type. Historical DraftKey uses this DraftNo to remain
+      unique when the same DraftType appears multiple times in a season.
     classificationRules:
       - Sleeper settings/player-pool restrictions are the primary classification source.
-      - Rookie-only settings map to Rookie.
-      - Veteran-only settings map to Veteran.
+      - Rookie-only settings map to Rookie only when the related setting value is active.
+      - Veteran-only settings map to Veteran only when the related setting value is active.
       - All/unrestricted/no player-pool restriction settings map to Free_Agent.
       - Explicit Sleeper text/metadata can also map to Rookie, Veteran or Free_Agent.
       - Snake or linear draft format alone is not a draft-type signal.
+      - Very high historical round counts can be used as a fallback signal for Free_Agent when no stronger type signal exists.
       - Metadata order is only a fallback when Sleeper settings and text have no stronger signal.
     classificationAssumptions: >
       Draft type detection is intentionally heuristic because Sleeper does not expose
       a project-owned DraftType field. The current mapping assumes that available
-      Sleeper settings, metadata text and player-pool restriction values are stable
-      enough to infer Rookie, Free_Agent or Veteran. If Sleeper changes those fields
-      or if a historical draft is misclassified, this classification logic should be
-      reviewed before changing generated data contracts.
+      Sleeper settings, metadata text, player-pool restriction values and unusually
+      high historical round counts are stable enough to infer Rookie, Free_Agent or
+      Veteran. If Sleeper changes those fields or if a historical draft is
+      misclassified, this classification logic should be reviewed before changing
+      generated data contracts.
     resultEnrichment: >
       Completed pick results are loaded through Get-SleeperDraftPicks and applied
       by Get-AppliedDraftPickResults. PickKey must remain stable.
@@ -360,4 +370,5 @@ notesForAIAgents:
   - Do not derive historical DraftNo from the current Metadata DraftNo of the resolved draft type.
   - Do not classify historical draft type from snake/linear draft format alone.
   - Treat historical draft type detection as heuristic unless Sleeper provides an explicit stable draft-type field.
+  - Keep historical DraftKey duplicate-safe when multiple drafts of the same DraftType exist in one season.
   - Keep LeagueActivityComponent focused on frontend view models and display; move reusable draft-pick display behavior into shared frontend code when reused further.
