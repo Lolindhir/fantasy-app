@@ -17,7 +17,10 @@ coreConcepts:
       can be mapped from league metadata and generated league data.
     draftPickRelation: >
       Team DraftPicks are stored as PickKey references in generated League.json
-      and resolved to DraftPick objects by Angular DataService.
+      and resolved to DraftPick objects by Angular DataService. Only current,
+      upcoming or live draft picks from public/data/Drafts.json should be exposed
+      this way; completed historical draft picks must not be added as current
+      team assets.
 
   Player:
     description: >
@@ -55,8 +58,8 @@ coreConcepts:
 
   Draft:
     description: >
-      A league draft event. Drafts may have exact pick order for current-season
-      upcoming drafts or only round-level placeholders for future seasons.
+      A league draft event. Current draft output may represent upcoming or live
+      drafts, while completed draft history is stored separately by season.
     importantFields:
       - DraftKey
       - DisplayDraftKey
@@ -79,6 +82,8 @@ coreConcepts:
     description: >
       A pick belongs to a season, draft type, round and owner. It tracks both
       original owner and current owner because transactions can transfer ownership.
+      Completed pick results may also contain the selected player and Sleeper pick
+      metadata.
     importantFields:
       - PickKey
       - DraftKey
@@ -94,6 +99,10 @@ coreConcepts:
       - IsCurrentlyTraded
       - TradeSource
       - TradeHistory
+      - PlayerID
+      - PlayerName
+      - SleeperPickNo
+      - SleeperPickedBy
       - Status
 
 transactions:
@@ -141,7 +150,9 @@ drafts:
   sourceOfTruth:
     config: public/data/Metadata.json
     currentOutput: public/data/Drafts.json
+    historicalOutput: public/data/past_seasons/Drafts/Drafts_<season>.json
     generator: public/requests/utils/league/DraftUtils.psm1
+    historyGenerator: public/requests/utils/league/DraftHistoryUtils.psm1
     teamPickMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
 
   currentState:
@@ -176,7 +187,7 @@ drafts:
 
   orderModes:
     Exact:
-      usedFor: current-season upcoming drafts
+      usedFor: current-season upcoming/live drafts and completed historical drafts
       description: >
         Exact position and overall pick can be generated from Sleeper draft order
         or configured standings-based order.
@@ -198,15 +209,38 @@ drafts:
       field: TradeHistory
       description: Optional but valuable ownership change history.
 
+  currentDraftOutput:
+    path: public/data/Drafts.json
+    description: >
+      Contains current, upcoming and live draft read models used by the app and
+      by League.json team DraftPick references.
+    updateMode: normal league update
+    teamIntegration: true
+
+  historicalDraftOutput:
+    path: public/data/past_seasons/Drafts/Drafts_<season>.json
+    description: >
+      Contains completed draft history by season. Historical drafts are generated
+      separately from the normal league update to avoid constantly reprocessing
+      completed drafts.
+    updateMode: weekly scheduled workflow or manual workflow_dispatch
+    teamIntegration: false
+    resultEnrichment: >
+      Completed pick results are loaded through Get-SleeperDraftPicks and applied
+      by Get-AppliedDraftPickResults. PickKey must remain stable.
+
   transactionIntegration:
     description: >
       Draft-pick ownership is updated by completed transaction DraftPicks.
-      Transactions must be updated before draft generation in RequestLeague.ps1.
+      Transactions must be updated before current draft generation in
+      RequestLeague.ps1. Historical draft generation can also read current and
+      archived transaction output to reconstruct historical ownership.
 
   teamIntegration:
     description: >
       Generated teams store DraftPicks as sorted PickKey references owned by
       CurrentOwnerRosterID. Angular resolves those keys into DraftPick objects.
+      Only public/data/Drafts.json participates in this integration.
 
   displayRules:
     exactPickDisplay: "{round}.{positionInRound:00}"
@@ -236,3 +270,5 @@ notesForAIAgents:
   - Do not calculate round chip colors relative to one draft if multiple drafts are visible together.
   - Do not add TransactionsPending.json unless a reliable pending transaction source exists.
   - When changing draft-pick ownership logic, review transaction logic and this document together.
+  - Do not merge completed draft history into public/data/Drafts.json.
+  - Do not use completed historical draft picks to enrich League.json team DraftPicks.
