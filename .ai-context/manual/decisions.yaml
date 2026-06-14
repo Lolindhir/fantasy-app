@@ -121,14 +121,14 @@ decisions:
     decision: >
       Keep public/data/Drafts.json scoped to current/upcoming/live drafts. Store
       completed draft history by season under
-      public/data/past_seasons/Drafts/Drafts_<season>.json. Historical draft
-      generation runs through public/requests/RequestDraftHistory.ps1 and the
-      weekly/manual update-draft-history workflow, not through every normal
-      league update.
+      public/data/past_seasons/Drafts/Drafts_<season>.json. The frequent
+      RequestLeague.ps1 flow only performs the restricted current/upcoming/live
+      draft update. The weekly/manual RequestDrafts.ps1 flow performs the full
+      draft refresh and also updates completed draft history.
     rationale: >
       This preserves the current team asset model, keeps the frequent league
       update lightweight and still allows completed draft results to be refreshed
-      periodically or manually when source formats change.
+      weekly or manually when source formats change.
     consequences:
       positive:
         - Completed draft history does not pollute League.json team DraftPicks.
