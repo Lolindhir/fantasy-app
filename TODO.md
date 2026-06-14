@@ -21,19 +21,30 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Frontend
 
+- [ ] `Transactions.json` im Frontend modellieren und für League Activity Moves anbinden.
+  - Kontext: `src/app/league-activity/league-activity.ts` hat im MVP einen Moves-Platzhalter, weil `Transactions.json` noch nicht im `DataService` geladen wird.
+  - Ziel: Transaction-Interfaces ergänzen und `DataService` so erweitern, dass Trades, Adds, Drops und weitere Roster Moves als expliziter Frontend-Vertrag verfügbar sind.
+  - Ziel: Moves später in League Activity als chronologische Activity-Timeline darstellen.
+  - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
+
+- [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente prüfen und ggf. auslagern.
+  - Kontext: Draft Picks werden inzwischen in `src/app/overview/overview.ts` und `src/app/league-activity/league-activity.ts` angezeigt.
+  - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
+  - Mögliche Zielstruktur: `src/app/shared/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
+
+- [ ] Draft-Round-Chip-Farblogik aus `src/app/overview/overview.ts` und `src/app/league-activity/league-activity.ts` in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
+  - Kontext: Overview und League Activity berechnen die Farben aktuell lokal mit derselben warm-zu-kalt HSL-Skala.
+  - Ziel: Alle Komponenten, die Draft Picks anzeigen, verwenden dieselbe Rundenskala.
+
 - [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
-    - `src/core/models` für League-, Player-, Draft-, Standings- und weitere Domain-Modelle.
-    - `src/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market- und Trade-Services.
+    - `src/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
+    - `src/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
     - `src/shared` für wiederverwendbare UI-/Material-/Frontend-Helfer.
-  - Mögliche Services prüfen: `data.service.ts`, `data-api.service.ts`, `league-mapper.service.ts`, `player-mapper.service.ts`, `draft-mapper.service.ts`, `free-agent-market.service.ts`, `trade-calculator.service.ts`.
+  - Mögliche Services prüfen: `data.service.ts`, `data-api.service.ts`, `league-mapper.service.ts`, `player-mapper.service.ts`, `draft-mapper.service.ts`, `transaction-mapper.service.ts`, `free-agent-market.service.ts`, `trade-calculator.service.ts`.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
-
-- [ ] Draft-Round-Chip-Farblogik aus `src/app/overview/overview.ts` in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
-  - Kontext: Die Overview berechnet die Farben aktuell lokal.
-  - Ziel: Alle Komponenten, die Draft Picks anzeigen, verwenden dieselbe Rundenskala.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
   - Kontext: Die Darstellung funktioniert, aber ein Teil des Stylings liegt aktuell inline im Template.
@@ -47,11 +58,15 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Später / Ideen
 
-- [ ] Prüfen, ob Draft-Pick-Anzeigen als wiederverwendbare UI-Komponente umgesetzt werden sollen.
-  - Kontext: Draft Picks werden vermutlich später auch außerhalb der Overview angezeigt.
-  - Ziel: Doppelte Anzeige- und Formatierungslogik vermeiden.
+- [ ] League Activity optisch mit Sleeper-Screenshots und eigener Zielvorstellung weiter verfeinern.
+  - Kontext: Der MVP zeigt Draft-Cards, Round Panels, Picks und einen Moves-Platzhalter.
+  - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
 
 ## Erledigt / Archiv
+
+- [x] League Activity MVP für Drafts & Moves im Frontend anlegen.
+  - Kontext: Der bisher deaktivierte Navigationseintrag `Drafts & Moves` sollte aktiviert werden, aber die technische Struktur sollte einen stabileren Namen bekommen.
+  - Ergebnis: Route `/league-activity`, `LeagueActivityComponent` und Navigationseintrag wurden angelegt. Der MVP zeigt current/upcoming/live Drafts aus `Drafts.json` als Draft-Cards mit Runden und Pick-Zeilen; Moves bleibt Platzhalter bis `Transactions.json` im Frontend modelliert ist.
 
 - [x] Completed-Draft-Historie separat von `Drafts.json` aufbauen.
   - Kontext: Abgeschlossene Drafts sollen nicht in `public/data/Drafts.json` gemischt werden, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
