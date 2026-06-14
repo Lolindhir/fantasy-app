@@ -136,6 +136,13 @@ dataFlow:
       Frontend current/upcoming/live draft and draft-pick model. DataService
       resolves team DraftPick keys into DraftPick objects.
 
+  - from: src/app/services/data-service.ts
+    to: src/app/league-activity/league-activity.ts
+    purpose: >
+      Provide LeagueActivityComponent with generated current/upcoming/live draft
+      data and fantasy teams for draft cards, round groups, pick ordering and
+      current/original owner display.
+
   - from: public/data/Players.json
     to: src/app/services/data-service.ts
     purpose: Frontend Player model.
@@ -158,7 +165,25 @@ knownFrontendDomainLogic:
   - path: src/app/overview/overview.ts
     topic: Draft round chip colors
     note: >
-      Overview currently creates a local draft-pick chip view model and computes
-      subtle warm-to-cold HSL round colors from the maximum visible current-season
-      draft round. This is display logic and should later move into a shared
-      frontend utility, pipe or service if reused by other components.
+      Overview creates a local draft-pick chip view model and computes subtle
+      warm-to-cold HSL round colors from the maximum visible current-season draft
+      round. This is display logic and should move into a shared frontend utility,
+      pipe or service because draft picks are now shown in more than one component.
+
+  - path: src/app/league-activity/league-activity.ts
+    topic: League Activity draft cards
+    note: >
+      LeagueActivityComponent is a frontend presentation feature for the
+      /league-activity route. It builds component-level view models from
+      DataService draft/team data, groups picks by draft round, displays current
+      owner plus "from original owner" for traded picks, and currently keeps the
+      Moves section as a placeholder until Transactions.json is modeled in the
+      frontend.
+
+  - path: src/app/league-activity/league-activity.ts
+    topic: Draft round chip colors
+    note: >
+      LeagueActivityComponent currently duplicates the warm-to-cold HSL round
+      color calculation used by Overview. This is acceptable for the MVP but
+      should be extracted into a shared frontend utility, pipe or service before
+      the draft-pick display pattern is expanded further.
