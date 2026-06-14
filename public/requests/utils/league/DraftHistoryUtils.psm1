@@ -157,6 +157,72 @@ function Get-SleeperDraftDetailOrDefault {
     }
 }
 
+function Get-DraftHistoryConfiguredRoundsFromSleeperDraft {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$sleeperDraft
+    )
+
+    $settings = Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "settings" `
+        -defaultValue $null
+
+    if ($null -ne $settings) {
+        $roundsFromSettings = Get-DraftObjectProperty `
+            -object $settings `
+            -propertyName "rounds" `
+            -defaultValue $null
+
+        if ($null -ne $roundsFromSettings -and -not [string]::IsNullOrWhiteSpace([string]$roundsFromSettings)) {
+            return [int]$roundsFromSettings
+        }
+    }
+
+    $roundsFromDraft = Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "rounds" `
+        -defaultValue $null
+
+    if ($null -ne $roundsFromDraft -and -not [string]::IsNullOrWhiteSpace([string]$roundsFromDraft)) {
+        return [int]$roundsFromDraft
+    }
+
+    return $null
+}
+
+function Test-DraftHistoryFallbackTypeAllowed {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$sleeperDraft,
+
+        [AllowNull()]
+        $fallbackDraftTypeConfig = $null
+    )
+
+    if ($null -eq $fallbackDraftTypeConfig) {
+        return $false
+    }
+
+    $sleeperDraftType = [string](Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "type" `
+        -defaultValue "")
+
+    if ($sleeperDraftType.ToLowerInvariant() -eq "snake") {
+        return $false
+    }
+
+    $sleeperRounds = Get-DraftHistoryConfiguredRoundsFromSleeperDraft -sleeperDraft $sleeperDraft
+    $fallbackRounds = [int]$fallbackDraftTypeConfig.Rounds
+
+    if ($null -ne $sleeperRounds -and $fallbackRounds -gt 0 -and [int]$sleeperRounds -ne $fallbackRounds) {
+        return $false
+    }
+
+    return $true
+}
+
 function Resolve-DraftHistoryTypeFromSleeperDraft {
     param(
         [Parameter(Mandatory = $true)]
@@ -177,7 +243,7 @@ function Resolve-DraftHistoryTypeFromSleeperDraft {
         return $draftType
     }
 
-    if ($null -ne $fallbackDraftTypeConfig) {
+    if (Test-DraftHistoryFallbackTypeAllowed -sleeperDraft $sleeperDraft -fallbackDraftTypeConfig $fallbackDraftTypeConfig) {
         return [string]$fallbackDraftTypeConfig.DraftType
     }
 
@@ -231,7 +297,7 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
             -fallbackDraftTypeConfig $fallbackDraftTypeConfig
 
         if ([string]::IsNullOrWhiteSpace($draftType)) {
-            Write-Warning "Could not resolve completed draft type for Sleeper draft '$($draft.draft_id)'. Skipping."
+            Write-Warning "Could not resolve configured completed draft type for Sleeper draft '$($draft.draft_id)'. Skipping."
             continue
         }
 
@@ -317,29 +383,10 @@ function Get-DraftHistoryRounds {
         [int]$fallbackRounds
     )
 
-    $roundsFromSettings = $null
-    $settings = Get-DraftObjectProperty `
-        -object $sleeperDraft `
-        -propertyName "settings" `
-        -defaultValue $null
-
-    if ($null -ne $settings) {
-        $roundsFromSettings = Get-DraftObjectProperty `
-            -object $settings `
-            -propertyName "rounds" `
-            -defaultValue $null
-    }
-
-    if ($null -eq $roundsFromSettings) {
-        $roundsFromSettings = Get-DraftObjectProperty `
-            -object $sleeperDraft `
-            -propertyName "rounds" `
-            -defaultValue $null
-    }
-
     $roundCandidates = @()
+    $roundsFromSettings = Get-DraftHistoryConfiguredRoundsFromSleeperDraft -sleeperDraft $sleeperDraft
 
-    if ($null -ne $roundsFromSettings -and -not [string]::IsNullOrWhiteSpace([string]$roundsFromSettings)) {
+    if ($null -ne $roundsFromSettings -and $roundsFromSettings -gt 0) {
         $roundCandidates += [int]$roundsFromSettings
     }
 
