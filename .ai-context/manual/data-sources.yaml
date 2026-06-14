@@ -67,13 +67,32 @@ dataSources:
     generator: public/requests/utils/league/DraftUtils.psm1
     teamMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
     category: generated-output
-    role: Draft and draft-pick read model
+    role: Current/upcoming/live draft and draft-pick read model
     description: >
-      Generated upcoming draft data. Current-season drafts can have exact order;
-      future-season drafts may be round-only placeholders. Completed transaction
-      data is applied to derive current pick ownership.
+      Generated current/upcoming/live draft data. Current-season drafts can have
+      exact order; future-season drafts may be round-only placeholders. Completed
+      transaction data is applied to derive current pick ownership. This file is
+      the only draft output used to enrich League.json team DraftPick references.
     timestamped: true
     backup: true
+
+  draftHistory:
+    path: public/data/past_seasons/Drafts/Drafts_<season>.json
+    generator: public/requests/utils/league/DraftHistoryUtils.psm1
+    entryPoint: public/requests/RequestDraftHistory.ps1
+    workflow: .github/workflows/update-draft-history.yml
+    category: generated-output
+    role: Completed draft history read model
+    description: >
+      Generated completed draft history by season. Historical draft files are
+      refreshed separately from the normal league update through a weekly or
+      manual workflow. They use the same draft/pick shape as Drafts.json but must
+      not be used to enrich League.json team DraftPick references.
+    updateMode:
+      normal: weekly scheduled workflow
+      force: manual workflow_dispatch with forceHistory
+    timestamped: false
+    backup: false
 
   angularFrontend:
     path: src/app
@@ -103,7 +122,7 @@ dataFlow:
 
   - from: public/data/Transactions.json
     to: public/data/Drafts.json
-    purpose: Apply draft-pick ownership changes before generating draft output.
+    purpose: Apply draft-pick ownership changes before generating current/upcoming/live draft output.
 
   - from: public/data/Metadata.json
     to: public/data/Drafts.json
@@ -115,7 +134,19 @@ dataFlow:
 
   - from: public/data/Drafts.json
     to: public/data/League.json
-    purpose: Add sorted draft PickKey references to generated team data.
+    purpose: Add sorted current/upcoming/live draft PickKey references to generated team data.
+
+  - from: Sleeper drafts endpoints
+    to: public/data/past_seasons/Drafts/Drafts_<season>.json
+    purpose: Discover completed drafts for historical seasons.
+
+  - from: Sleeper draft picks endpoint
+    to: public/data/past_seasons/Drafts/Drafts_<season>.json
+    purpose: Add completed pick results to historical draft output.
+
+  - from: public/data/Transactions.json and public/data/past_seasons/Transactions/*.json
+    to: public/data/past_seasons/Drafts/Drafts_<season>.json
+    purpose: Apply draft-pick ownership changes to completed historical draft output.
 
   - from: public/data/League.json
     to: src/app/services/data-service.ts
@@ -123,7 +154,7 @@ dataFlow:
 
   - from: public/data/Drafts.json
     to: src/app/services/data-service.ts
-    purpose: Resolve team DraftPickKeys into DraftPick objects.
+    purpose: Resolve current/upcoming/live team DraftPickKeys into DraftPick objects.
 
   - from: public/data/Players.json
     to: src/app/services/data-service.ts
@@ -141,3 +172,4 @@ notesForAIAgents:
   - Generated JSON should generally be changed through generation logic, not manually.
   - Draft generation depends on current transaction output.
   - Angular display issues should not be fixed by changing generated data contracts unless the domain shape is wrong.
+  - Completed draft history is generated separately from the normal league update and should not constantly refresh in the 10-minute workflow.
