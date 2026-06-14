@@ -278,6 +278,110 @@ function Get-DraftHistoryOrderRosterIDsFromSleeperDraft {
     return Get-DraftOrderRosterIDsFromSleeperDraft -sleeperDraft $sleeperDraft
 }
 
+function Get-DraftHistorySleeperPicks {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$sleeperDraft
+    )
+
+    $draftID = Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "draft_id" `
+        -defaultValue $null
+
+    if ([string]::IsNullOrWhiteSpace($draftID)) {
+        return @()
+    }
+
+    try {
+        return ConvertTo-DraftSafeArray -value (Get-SleeperDraftPicks -draftID $draftID)
+    }
+    catch {
+        Write-Warning "Could not load Sleeper draft picks for draft '$draftID'. Keeping generated picks without result enrichment. $_"
+        return @()
+    }
+}
+
+function Get-DraftHistoryRounds {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$sleeperDraft,
+
+        [Parameter(Mandatory = $true)]
+        [array]$sleeperPicks,
+
+        [Parameter(Mandatory = $true)]
+        [int]$teamCount,
+
+        [Parameter(Mandatory = $true)]
+        [int]$fallbackRounds
+    )
+
+    $roundsFromSettings = $null
+    $settings = Get-DraftObjectProperty `
+        -object $sleeperDraft `
+        -propertyName "settings" `
+        -defaultValue $null
+
+    if ($null -ne $settings) {
+        $roundsFromSettings = Get-DraftObjectProperty `
+            -object $settings `
+            -propertyName "rounds" `
+            -defaultValue $null
+    }
+
+    if ($null -eq $roundsFromSettings) {
+        $roundsFromSettings = Get-DraftObjectProperty `
+            -object $sleeperDraft `
+            -propertyName "rounds" `
+            -defaultValue $null
+    }
+
+    $roundCandidates = @()
+
+    if ($null -ne $roundsFromSettings -and -not [string]::IsNullOrWhiteSpace([string]$roundsFromSettings)) {
+        $roundCandidates += [int]$roundsFromSettings
+    }
+
+    $roundsFromSleeperPicks = @(
+        $sleeperPicks |
+            Where-Object { $null -ne (Get-DraftObjectProperty -object $_ -propertyName "round" -defaultValue $null) } |
+            ForEach-Object { [int](Get-DraftObjectProperty -object $_ -propertyName "round" -defaultValue 0) } |
+            Sort-Object -Descending |
+            Select-Object -First 1
+    )
+
+    if ($roundsFromSleeperPicks.Count -gt 0 -and $roundsFromSleeperPicks[0] -gt 0) {
+        $roundCandidates += [int]$roundsFromSleeperPicks[0]
+    }
+
+    if ($teamCount -gt 0) {
+        $maxPickNo = @(
+            $sleeperPicks |
+                Where-Object { $null -ne (Get-DraftObjectProperty -object $_ -propertyName "pick_no" -defaultValue $null) } |
+                ForEach-Object { [int](Get-DraftObjectProperty -object $_ -propertyName "pick_no" -defaultValue 0) } |
+                Sort-Object -Descending |
+                Select-Object -First 1
+        )
+
+        if ($maxPickNo.Count -gt 0 -and $maxPickNo[0] -gt 0) {
+            $roundCandidates += [int][Math]::Ceiling($maxPickNo[0] / $teamCount)
+        }
+    }
+
+    if ($fallbackRounds -gt 0) {
+        $roundCandidates += $fallbackRounds
+    }
+
+    $rounds = @($roundCandidates | Where-Object { $_ -gt 0 } | Sort-Object -Descending | Select-Object -First 1)
+
+    if ($rounds.Count -eq 0) {
+        return 0
+    }
+
+    return [int]$rounds[0]
+}
+
 function Get-DraftHistoryPlayerNameFromSleeperPick {
     param(
         [AllowNull()]
@@ -351,7 +455,10 @@ function Get-AppliedDraftPickResults {
         [array]$picks,
 
         [Parameter(Mandatory = $true)]
-        [object]$sleeperDraft
+        [object]$sleeperDraft,
+
+        [AllowNull()]
+        $sleeperPicks = $null
     )
 
     $draftID = Get-DraftObjectProperty `
@@ -363,12 +470,11 @@ function Get-AppliedDraftPickResults {
         return $picks
     }
 
-    try {
-        $sleeperPicks = ConvertTo-DraftSafeArray -value (Get-SleeperDraftPicks -draftID $draftID)
+    if ($null -eq $sleeperPicks) {
+        $sleeperPicks = Get-DraftHistorySleeperPicks -sleeperDraft $sleeperDraft
     }
-    catch {
-        Write-Warning "Could not load Sleeper draft picks for draft '$draftID'. Keeping generated picks without result enrichment. $_"
-        return $picks
+    else {
+        $sleeperPicks = ConvertTo-DraftSafeArray -value $sleeperPicks
     }
 
     if ($sleeperPicks.Count -eq 0) {
@@ -427,11 +533,21 @@ function New-DraftHistoryOutput {
     $draftKey = [string]$definition.DraftKey
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
-    $rounds = [int]$draftTypeConfig.Rounds
     $teamIDs = Get-DraftHistoryOrderRosterIDsFromSleeperDraft -sleeperDraft $sleeperDraft
+    $sleeperPicks = Get-DraftHistorySleeperPicks -sleeperDraft $sleeperDraft
 
     if ($teamIDs.Count -eq 0) {
         throw "No Sleeper draft order found for completed draft '$draftKey'."
+    }
+
+    $rounds = Get-DraftHistoryRounds `
+        -sleeperDraft $sleeperDraft `
+        -sleeperPicks $sleeperPicks `
+        -teamCount $teamIDs.Count `
+        -fallbackRounds ([int]$draftTypeConfig.Rounds)
+
+    if ($rounds -le 0) {
+        throw "No valid round count found for completed draft '$draftKey'."
     }
 
     $picks = New-DraftHistoryPicks `
@@ -449,7 +565,8 @@ function New-DraftHistoryOutput {
 
     $picks = Get-AppliedDraftPickResults `
         -picks $picks `
-        -sleeperDraft $sleeperDraft
+        -sleeperDraft $sleeperDraft `
+        -sleeperPicks $sleeperPicks
 
     $draftTypeSetting = [string](Get-DraftObjectProperty -object $sleeperDraft -propertyName "type" -defaultValue "linear")
 
