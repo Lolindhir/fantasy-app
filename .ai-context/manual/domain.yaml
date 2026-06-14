@@ -166,6 +166,16 @@ drafts:
       - OrderMap
       - Order
 
+  draftTypes:
+    canonical:
+      - Rookie
+      - Free_Agent
+      - Veteran
+    notes: >
+      Historical Sleeper drafts are classified from Sleeper data first. Metadata
+      is mainly a planning/configuration guide for future drafts and a current-season
+      guideline, not a validator for old completed draft settings.
+
   configuredDraftTypes:
     - draftType: Rookie
       draftNo: 1
@@ -179,7 +189,8 @@ drafts:
       rounds: 5
       currentSeasonOrderSource: AllTime
       notes: >
-        Uses AllTime standings with configured direction.
+        Uses AllTime standings with configured direction. Completed initial snake
+        drafts are classified as Free_Agent history.
 
   keyRules:
     draftKey: "<season>_<draftType>"
@@ -222,11 +233,19 @@ drafts:
   historicalDraftOutput:
     path: public/data/past_seasons/Drafts/Drafts_<season>.json
     description: >
-      Contains completed draft history by season. Historical drafts are stored
-      separately from public/data/Drafts.json, but are refreshed by the existing
-      weekly/manual RequestDrafts.ps1 full draft update.
+      Contains all completed Sleeper draft history by season. Historical drafts
+      are stored separately from public/data/Drafts.json, but are refreshed by the
+      existing weekly/manual RequestDrafts.ps1 full draft update. Historical round
+      counts and draft settings come from Sleeper; Metadata must not invalidate
+      old completed drafts when league rules change later.
     updateMode: weekly/manual RequestDrafts.ps1 flow
     teamIntegration: false
+    classificationRules:
+      - Text or metadata containing rookie maps to Rookie.
+      - Text or metadata containing free agent maps to Free_Agent.
+      - Initial snake drafts map to Free_Agent.
+      - Text or metadata containing veteran maps to Veteran.
+      - Metadata order is only a fallback when Sleeper text has no stronger signal.
     resultEnrichment: >
       Completed pick results are loaded through Get-SleeperDraftPicks and applied
       by Get-AppliedDraftPickResults. PickKey must remain stable.
@@ -274,3 +293,4 @@ notesForAIAgents:
   - When changing draft-pick ownership logic, review transaction logic and this document together.
   - Do not merge completed draft history into public/data/Drafts.json.
   - Do not use completed historical draft picks to enrich League.json team DraftPicks.
+  - Do not validate old completed draft settings against current Metadata rounds.
