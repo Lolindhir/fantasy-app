@@ -172,9 +172,10 @@ drafts:
       - Free_Agent
       - Veteran
     notes: >
-      Historical Sleeper drafts are classified from Sleeper data first. Metadata
-      is mainly a planning/configuration guide for future drafts and a current-season
-      guideline, not a validator for old completed draft settings.
+      Historical Sleeper drafts are classified from Sleeper settings and metadata
+      first. Metadata.json is mainly a planning/configuration guide for future
+      drafts and a current-season guideline, not a validator for old completed
+      draft settings.
 
   configuredDraftTypes:
     - draftType: Rookie
@@ -189,8 +190,9 @@ drafts:
       rounds: 5
       currentSeasonOrderSource: AllTime
       notes: >
-        Uses AllTime standings with configured direction. Completed initial snake
-        drafts are classified as Free_Agent history.
+        Uses AllTime standings with configured direction. Historical Free_Agent
+        classification is based on Sleeper player-pool settings or explicit text,
+        not simply on snake/linear draft format.
 
   keyRules:
     draftKey: "<season>_<draftType>"
@@ -240,12 +242,18 @@ drafts:
       old completed drafts when league rules change later.
     updateMode: weekly/manual RequestDrafts.ps1 flow
     teamIntegration: false
+    numbering: >
+      Historical DraftNo is assigned from the chronological completed Sleeper draft
+      order within the season. It must not come from the current Metadata DraftNo
+      of the resolved draft type.
     classificationRules:
-      - Text or metadata containing rookie maps to Rookie.
-      - Text or metadata containing free agent maps to Free_Agent.
-      - Initial snake drafts map to Free_Agent.
-      - Text or metadata containing veteran maps to Veteran.
-      - Metadata order is only a fallback when Sleeper text has no stronger signal.
+      - Sleeper settings/player-pool restrictions are the primary classification source.
+      - Rookie-only settings map to Rookie.
+      - Veteran-only settings map to Veteran.
+      - All/unrestricted/no player-pool restriction settings map to Free_Agent.
+      - Explicit Sleeper text/metadata can also map to Rookie, Veteran or Free_Agent.
+      - Snake or linear draft format alone is not a draft-type signal.
+      - Metadata order is only a fallback when Sleeper settings and text have no stronger signal.
     resultEnrichment: >
       Completed pick results are loaded through Get-SleeperDraftPicks and applied
       by Get-AppliedDraftPickResults. PickKey must remain stable.
@@ -294,3 +302,5 @@ notesForAIAgents:
   - Do not merge completed draft history into public/data/Drafts.json.
   - Do not use completed historical draft picks to enrich League.json team DraftPicks.
   - Do not validate old completed draft settings against current Metadata rounds.
+  - Do not derive historical DraftNo from the current Metadata DraftNo of the resolved draft type.
+  - Do not classify historical draft type from snake/linear draft format alone.
