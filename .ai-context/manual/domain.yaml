@@ -214,16 +214,18 @@ drafts:
     description: >
       Contains current, upcoming and live draft read models used by the app and
       by League.json team DraftPick references.
-    updateMode: normal league update
+    updateMode:
+      restricted: RequestLeague.ps1 frequent update
+      full: RequestDrafts.ps1 weekly/manual update
     teamIntegration: true
 
   historicalDraftOutput:
     path: public/data/past_seasons/Drafts/Drafts_<season>.json
     description: >
-      Contains completed draft history by season. Historical drafts are generated
-      separately from the normal league update to avoid constantly reprocessing
-      completed drafts.
-    updateMode: weekly scheduled workflow or manual workflow_dispatch
+      Contains completed draft history by season. Historical drafts are stored
+      separately from public/data/Drafts.json, but are refreshed by the existing
+      weekly/manual RequestDrafts.ps1 full draft update.
+    updateMode: weekly/manual RequestDrafts.ps1 flow
     teamIntegration: false
     resultEnrichment: >
       Completed pick results are loaded through Get-SleeperDraftPicks and applied
