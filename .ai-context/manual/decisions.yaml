@@ -103,12 +103,13 @@ decisions:
     title: Draft round chip colors are frontend display logic
     status: accepted
     decision: >
-      Overview may compute draft round chip colors locally for now, using the
-      maximum visible current-season round so same-round picks have consistent
-      colors across drafts.
+      Frontend components may compute draft round chip colors for display, using
+      the maximum visible round so same-round picks have consistent colors across
+      drafts within the same view.
     rationale: >
-      The rule is presentation-specific. If reused by other components, it
-      should move into a shared frontend utility, pipe or service.
+      The rule is presentation-specific. Because it is now used by multiple
+      draft-pick displays, it should move into a shared frontend utility, pipe or
+      service instead of remaining duplicated in page components.
 
   - id: ADR-011
     title: Completed draft history is stored separately from current drafts
@@ -136,3 +137,22 @@ decisions:
         - Historical draft output can use the same draft/pick contract as current drafts.
       negative:
         - Frontend views that need completed history must load historical draft files separately.
+
+  - id: ADR-012
+    title: League Activity route groups draft and move presentation
+    status: accepted
+    context: >
+      The navigation label may change over time, but the frontend needs a stable
+      feature area for current/upcoming draft assets, trades and roster movement.
+      Drafts and moves are related league activity, but drafts are structured by
+      draft and round while trades and roster moves are chronological activity.
+    decision: >
+      Use the stable route path /league-activity and LeagueActivityComponent for
+      this feature area. The initial MVP displays current/upcoming/live drafts
+      from public/data/Drafts.json and reserves the Moves section as a placeholder
+      until Transactions.json is intentionally modeled in the frontend.
+    rationale: >
+      This keeps the visible navigation label flexible while giving the codebase
+      a durable component and route name. It also avoids prematurely treating
+      Transactions.json as frontend contract before the DataService and models are
+      updated for transactions.
