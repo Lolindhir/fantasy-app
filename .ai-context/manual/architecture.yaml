@@ -95,18 +95,31 @@ dataFlow:
   - from: public/requests/RequestLeague.ps1
     to: public/data/Drafts.json
     purpose: >
-      Generate upcoming draft read models from metadata, standings, Sleeper
-      drafts and transaction-driven pick ownership.
+      Generate current/upcoming/live draft read models from metadata, standings,
+      Sleeper drafts and transaction-driven pick ownership.
 
   - from: public/data/Drafts.json
     to: public/requests/RequestLeague.ps1
     purpose: >
-      Enrich generated League.json team objects with sorted draft pick keys
-      owned by each team.
+      Enrich generated League.json team objects with sorted current/upcoming/live
+      draft pick keys owned by each team.
 
   - from: public/requests/RequestLeague.ps1
     to: public/data/League.json
     purpose: Generate app-readable league data.
+
+  - from: public/requests/RequestDraftHistory.ps1
+    to: public/data/past_seasons/Drafts/Drafts_<season>.json
+    purpose: >
+      Generate completed draft history separately from the normal league update.
+      Historical draft files are refreshed by a weekly/manual workflow and must
+      not be used to enrich League.json team DraftPicks.
+
+  - from: Sleeper draft picks endpoint
+    to: public/data/past_seasons/Drafts/Drafts_<season>.json
+    purpose: >
+      Add completed pick results such as PlayerID, PlayerName, SleeperPickNo,
+      SleeperPickedBy and Picked status to historical draft picks.
 
   - from: public/data/League.json
     to: src/app/services/data-service.ts
@@ -115,8 +128,8 @@ dataFlow:
   - from: public/data/Drafts.json
     to: src/app/services/data-service.ts
     purpose: >
-      Frontend draft and draft-pick model. DataService resolves team DraftPick
-      keys into DraftPick objects.
+      Frontend current/upcoming/live draft and draft-pick model. DataService
+      resolves team DraftPick keys into DraftPick objects.
 
   - from: public/data/Players.json
     to: src/app/services/data-service.ts
