@@ -14,7 +14,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 ### Data Generation / Drafts
 
 - [ ] Draft-Live-Enrichment für `public/data/Drafts.json` ergänzen.
-  - Kontext: Die abgeschlossene Draft-Historie wird separat über `RequestDraftHistory.ps1` und `DraftHistoryUtils.psm1` erzeugt. Für laufende Drafts im aktuellen `Drafts.json` fehlt das Ergebnis-Enrichment aber noch.
+  - Kontext: Die abgeschlossene Draft-Historie wird separat gespeichert, aber im wöchentlichen/manuellen `RequestDrafts.ps1`-Flow zusammen mit den aktuellen Drafts aktualisiert. Für laufende Drafts im aktuellen `Drafts.json` fehlt das Ergebnis-Enrichment aber noch.
   - Ziel: Wenn ein aktueller Sleeper-Draft läuft, sollen echte Pick-Ergebnisse über `Get-SleeperDraftPicks` geladen und auf die bestehenden Draft-Picks gemappt werden.
   - Ziel: Pro Pick `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy` und `Status = Picked` ergänzen, ohne den stabilen `PickKey` zu verändern.
   - Möglicher Ansatz: Die Logik aus `Get-AppliedDraftPickResults` wiederverwendbar machen oder in `DraftUtils.psm1` übernehmen.
@@ -55,7 +55,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Completed-Draft-Historie separat von `Drafts.json` aufbauen.
   - Kontext: Abgeschlossene Drafts sollen nicht in `public/data/Drafts.json` gemischt werden, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
-  - Ergebnis: `DraftHistoryUtils.psm1`, `RequestDraftHistory.ps1` und der wöchentliche/manuelle Workflow `update-draft-history.yml` erzeugen historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`.
+  - Ergebnis: `DraftHistoryUtils.psm1` erzeugt historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`; der bestehende wöchentliche/manuelle `RequestDrafts.ps1`-Flow aktualisiert Current-Drafts und Completed-History zusammen.
 
 - [x] `CHAT_START.md` als Projektquelle und im Repository-Root hinterlegen.
   - Kontext: Die Datei liegt sowohl hier im ChatGPT-Projekt als Quelle als auch im Repository-Root.
