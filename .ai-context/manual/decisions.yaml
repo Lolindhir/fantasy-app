@@ -109,3 +109,30 @@ decisions:
     rationale: >
       The rule is presentation-specific. If reused by other components, it
       should move into a shared frontend utility, pipe or service.
+
+  - id: ADR-011
+    title: Completed draft history is stored separately from current drafts
+    status: accepted
+    context: >
+      The app needs current/upcoming/live draft picks as team assets, but also
+      needs completed draft history for historical views. Mixing completed draft
+      history into public/data/Drafts.json would make old picks look like current
+      team assets because League.json team DraftPicks are derived from Drafts.json.
+    decision: >
+      Keep public/data/Drafts.json scoped to current/upcoming/live drafts. Store
+      completed draft history by season under
+      public/data/past_seasons/Drafts/Drafts_<season>.json. Historical draft
+      generation runs through public/requests/RequestDraftHistory.ps1 and the
+      weekly/manual update-draft-history workflow, not through every normal
+      league update.
+    rationale: >
+      This preserves the current team asset model, keeps the frequent league
+      update lightweight and still allows completed draft results to be refreshed
+      periodically or manually when source formats change.
+    consequences:
+      positive:
+        - Completed draft history does not pollute League.json team DraftPicks.
+        - The 10-minute league update does not constantly reprocess completed drafts.
+        - Historical draft output can use the same draft/pick contract as current drafts.
+      negative:
+        - Frontend views that need completed history must load historical draft files separately.
