@@ -42,6 +42,10 @@ export class App {
           case '/players':
             this.currentPage = 'Players';
             break;
+
+          case '/league-activity':
+            this.currentPage = 'Drafts & Moves';
+            break;
             
 
           case '/trade':
