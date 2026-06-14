@@ -37,6 +37,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add public/data/past_seasons/Drafts/**
+          git add public/data/past_seasons/Drafts/ || true
           git diff --cached --quiet || git commit -m "Draft History Update"
-          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+          git push
