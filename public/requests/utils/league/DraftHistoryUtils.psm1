@@ -122,6 +122,38 @@ function Get-SleeperDraftDetailOrDefault {
     }
 }
 
+function New-DraftHistoryDraftKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][int]$draftNo,
+        [Parameter(Mandatory = $true)][string]$draftType
+    )
+
+    return "$($season)_D$($draftNo)_$($draftType)"
+}
+
+function Get-DraftHistoryDisplayDraftKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][int]$draftNo,
+        [Parameter(Mandatory = $true)][string]$draftType
+    )
+
+    return "$season Draft $draftNo $(Get-DraftTypeDisplayName -draftType $draftType)"
+}
+
+function Get-DraftHistoryDisplayAbrDraftKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][int]$draftNo,
+        [Parameter(Mandatory = $true)][string]$draftType
+    )
+
+    $seasonText = [string]$season
+    $shortSeason = if ($seasonText.Length -ge 2) { $seasonText.Substring($seasonText.Length - 2, 2) } else { $seasonText }
+    return "$shortSeason D$draftNo $(Get-DraftTypeAbbreviation -draftType $draftType)"
+}
+
 function Get-DraftHistoryConfiguredRoundsFromSleeperDraft {
     param([Parameter(Mandatory = $true)][object]$sleeperDraft)
 
@@ -141,6 +173,21 @@ function Get-DraftHistoryConfiguredRoundsFromSleeperDraft {
     return $null
 }
 
+function Get-DraftHistoryMaxConfiguredRounds {
+    param([Parameter(Mandatory = $true)][array]$draftTypeConfigs)
+
+    $maxRounds = @(
+        $draftTypeConfigs |
+            Where-Object { $null -ne $_.Rounds -and [int]$_.Rounds -gt 0 } |
+            ForEach-Object { [int]$_.Rounds } |
+            Sort-Object -Descending |
+            Select-Object -First 1
+    )
+
+    if ($maxRounds.Count -eq 0) { return 0 }
+    return [int]$maxRounds[0]
+}
+
 function Get-DraftHistoryTextFromSleeperDraft {
     param([Parameter(Mandatory = $true)][object]$sleeperDraft)
 
@@ -152,17 +199,27 @@ function Get-DraftHistoryTextFromSleeperDraft {
         }
     }
 
-    foreach ($containerName in @("metadata", "settings")) {
-        $container = Get-DraftObjectProperty -object $sleeperDraft -propertyName $containerName -defaultValue $null
-        if ($null -ne $container) {
-            foreach ($prop in $container.PSObject.Properties) {
-                $textParts += [string]$prop.Name
-                $textParts += [string]$prop.Value
-            }
+    $metadata = Get-DraftObjectProperty -object $sleeperDraft -propertyName "metadata" -defaultValue $null
+    if ($null -ne $metadata) {
+        foreach ($prop in $metadata.PSObject.Properties) {
+            $textParts += [string]$prop.Name
+            $textParts += [string]$prop.Value
         }
     }
 
     return (($textParts | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join " ").ToLowerInvariant()
+}
+
+function Test-DraftHistoryTruthySettingValue {
+    param([AllowNull()]$value)
+
+    if ($null -eq $value) { return $false }
+
+    $text = ([string]$value).Trim().ToLowerInvariant()
+    if ([string]::IsNullOrWhiteSpace($text)) { return $false }
+    if ($text -in @("0", "false", "no", "off", "none", "null")) { return $false }
+
+    return $true
 }
 
 function Get-DraftHistorySettingsClassification {
@@ -173,20 +230,21 @@ function Get-DraftHistorySettingsClassification {
 
     foreach ($prop in $settings.PSObject.Properties) {
         $key = ([string]$prop.Name).ToLowerInvariant()
-        $value = ([string]$prop.Value).ToLowerInvariant()
-        $combined = "$key $value"
+        $value = ([string]$prop.Value).Trim().ToLowerInvariant()
+        $isTruthy = Test-DraftHistoryTruthySettingValue -value $prop.Value
 
-        if ($combined.Contains("rookie")) { return "Rookie" }
-        if ($combined.Contains("veteran")) { return "Veteran" }
+        if ($key.Contains("rookie") -and $isTruthy) { return "Rookie" }
+        if ($key.Contains("veteran") -and $isTruthy) { return "Veteran" }
 
         $looksLikePlayerRestriction = (
             $key.Contains("player") -or
             $key.Contains("restriction") -or
-            $key.Contains("pool") -or
-            $key.Contains("type")
+            $key.Contains("pool")
         )
 
         if ($looksLikePlayerRestriction) {
+            if ($value.Contains("rookie")) { return "Rookie" }
+            if ($value.Contains("veteran")) { return "Veteran" }
             if ($value -eq "all" -or $value -eq "any" -or $value -eq "none") { return "Free_Agent" }
             if ($value.Contains("unrestricted") -or $value.Contains("no restriction")) { return "Free_Agent" }
             if ($value.Contains("free agent") -or $value.Contains("free_agent") -or $value.Contains("freeagent")) { return "Free_Agent" }
@@ -205,7 +263,6 @@ function Get-DraftHistoryConfiguredDraftTypeOrDefault {
     )
 
     $configuredType = $draftTypeConfigs | Where-Object { [string]$_.DraftType -eq $draftType } | Select-Object -First 1
-
     $rounds = if ($null -ne $configuredType -and [int]$configuredType.Rounds -gt 0) { [int]$configuredType.Rounds } else { $defaultRounds }
 
     return [PSCustomObject][ordered]@{
@@ -232,6 +289,13 @@ function Resolve-DraftHistoryTypeFromSleeperDraft {
     if ($text.Contains("veteran") -or $text.Contains(" vet ")) { return "Veteran" }
     if ($text.Contains("free agent") -or $text.Contains("free_agent") -or $text.Contains("freeagent")) { return "Free_Agent" }
     if ($text.Contains("startup") -or $text.Contains("start up")) { return "Free_Agent" }
+
+    $sleeperRounds = Get-DraftHistoryConfiguredRoundsFromSleeperDraft -sleeperDraft $sleeperDraft
+    $maxConfiguredRounds = Get-DraftHistoryMaxConfiguredRounds -draftTypeConfigs $draftTypeConfigs
+
+    if ($null -ne $sleeperRounds -and $maxConfiguredRounds -gt 0 -and [int]$sleeperRounds -gt $maxConfiguredRounds) {
+        return "Free_Agent"
+    }
 
     if ($null -ne $fallbackDraftTypeConfig) { return [string]$fallbackDraftTypeConfig.DraftType }
 
@@ -276,13 +340,14 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
         if ($null -eq $rounds -or $rounds -le 0) { $rounds = 0 }
 
         $draftTypeConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault -draftType $draftType -draftTypeConfigs $draftTypeConfigs -defaultDraftNo $completedIndex -defaultRounds ([int]$rounds)
+        $draftKey = New-DraftHistoryDraftKey -season $draftSeason -draftNo $completedIndex -draftType $draftType
 
         $definitions += [PSCustomObject][ordered]@{
             LeagueID        = $leagueID
             Season          = $draftSeason
             DraftType       = $draftType
             DraftNo         = $completedIndex
-            DraftKey        = New-DraftKey -season $draftSeason -draftType $draftType
+            DraftKey        = $draftKey
             DraftTypeConfig = $draftTypeConfig
             SleeperDraft    = $draft
         }
@@ -427,6 +492,7 @@ function New-DraftHistoryOutput {
     $leagueID = [string]$definition.LeagueID
     $season = [string]$definition.Season
     $draftType = [string]$definition.DraftType
+    $draftNo = [int]$definition.DraftNo
     $draftKey = [string]$definition.DraftKey
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
@@ -447,12 +513,12 @@ function New-DraftHistoryOutput {
     return [PSCustomObject][ordered]@{
         LeagueID           = $leagueID
         DraftKey           = $draftKey
-        DisplayDraftKey    = Get-DisplayDraftKey -season $season -draftType $draftType
-        DisplayAbrDraftKey = Get-DisplayAbrDraftKey -season $season -draftType $draftType
+        DisplayDraftKey    = Get-DraftHistoryDisplayDraftKey -season $season -draftNo $draftNo -draftType $draftType
+        DisplayAbrDraftKey = Get-DraftHistoryDisplayAbrDraftKey -season $season -draftNo $draftNo -draftType $draftType
         Season             = $season
         DraftType          = $draftType
         DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
-        DraftNo            = [int]$definition.DraftNo
+        DraftNo            = $draftNo
         DraftSource        = "Sleeper"
         SleeperDraftID     = [string]$sleeperDraft.draft_id
         SleeperStatus      = [string]$sleeperDraft.status
