@@ -1,0 +1,125 @@
+@if (vm$ | async; as vm) {
+  <div class="league-activity-page">
+
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">League Activity</p>
+        <h1>Drafts & Moves</h1>
+        <p class="hero-text">
+          Current and upcoming draft assets, trades and roster movement in one place.
+        </p>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span class="summary-label">Drafts</span>
+          <strong>{{ vm.draftCount }}</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Traded Picks</span>
+          <strong>{{ vm.tradedPickCount }}</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Picked</span>
+          <strong>{{ vm.pickedCount }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="activity-tabs" aria-label="League activity sections">
+      <button class="activity-tab active" type="button">Drafts</button>
+      <button class="activity-tab" type="button" disabled>Moves</button>
+    </div>
+
+    <section class="content-grid">
+      <div class="drafts-column">
+        @if (vm.drafts.length > 0) {
+          @for (draftVm of vm.drafts; track draftVm.draft.DraftKey) {
+            <mat-card class="draft-card">
+              <mat-card-header>
+                <div mat-card-avatar class="draft-avatar">
+                  {{ draftVm.draft.DisplayDraftType.charAt(0) }}
+                </div>
+
+                <mat-card-title>
+                  {{ draftVm.draft.DisplayDraftKey }}
+                </mat-card-title>
+
+                <mat-card-subtitle>
+                  {{ draftVm.subtitle }}
+                </mat-card-subtitle>
+
+                <span class="status-pill" [class]="'status-pill ' + draftVm.statusClass">
+                  {{ draftVm.statusLabel }}
+                </span>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="draft-meta-row">
+                  <span>{{ draftVm.pickCount }} picks</span>
+                  <span>{{ draftVm.tradedPickCount }} traded</span>
+                  <span>{{ draftVm.pickedCount }} picked</span>
+                </div>
+
+                <mat-accordion class="round-accordion" multi>
+                  @for (round of draftVm.rounds; track round.round) {
+                    <mat-expansion-panel [expanded]="round.round === 1">
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>{{ round.label }}</mat-panel-title>
+                        <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
+                      </mat-expansion-panel-header>
+
+                      <div class="pick-list">
+                        @for (item of round.picks; track item.pick.PickKey) {
+                          <div class="pick-row" [style.border-left-color]="item.roundColor">
+                            <div class="pick-token" [style.background]="item.roundColor">
+                              {{ item.pick.DisplayPick }}
+                            </div>
+
+                            <div class="pick-owner">
+                              <strong>{{ item.currentOwnerName }}</strong>
+                              @if (item.isCurrentlyTraded) {
+                                <span>from {{ item.originalOwnerName }}</span>
+                              }
+                            </div>
+
+                            @if (item.pick.PlayerName) {
+                              <div class="picked-player">
+                                {{ item.pick.PlayerName }}
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </mat-expansion-panel>
+                  }
+                </mat-accordion>
+              </mat-card-content>
+            </mat-card>
+          }
+        } @else {
+          <mat-card class="empty-card">
+            <mat-card-content>
+              No current or upcoming drafts found.
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      <aside class="moves-placeholder">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Moves</mat-card-title>
+            <mat-card-subtitle>Trades and roster moves</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <p>
+              Transactions are not connected to the frontend data service yet.
+              This section is reserved for the later activity timeline.
+            </p>
+          </mat-card-content>
+        </mat-card>
+      </aside>
+    </section>
+  </div>
+}
