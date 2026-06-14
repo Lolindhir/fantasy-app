@@ -95,8 +95,9 @@ dataFlow:
   - from: public/requests/RequestLeague.ps1
     to: public/data/Drafts.json
     purpose: >
-      Generate current/upcoming/live draft read models from metadata, standings,
-      Sleeper drafts and transaction-driven pick ownership.
+      Generate the restricted current/upcoming/live draft read model for the
+      frequent league update. This path must stay lightweight and must not refresh
+      completed draft history.
 
   - from: public/data/Drafts.json
     to: public/requests/RequestLeague.ps1
@@ -108,12 +109,16 @@ dataFlow:
     to: public/data/League.json
     purpose: Generate app-readable league data.
 
-  - from: public/requests/RequestDraftHistory.ps1
+  - from: public/requests/RequestDrafts.ps1
+    to: public/data/Drafts.json
+    purpose: >
+      Run the weekly/manual full draft update for current/upcoming/live drafts.
+
+  - from: public/requests/RequestDrafts.ps1
     to: public/data/past_seasons/Drafts/Drafts_<season>.json
     purpose: >
-      Generate completed draft history separately from the normal league update.
-      Historical draft files are refreshed by a weekly/manual workflow and must
-      not be used to enrich League.json team DraftPicks.
+      Run the weekly/manual completed draft history refresh. Historical draft
+      files must not be used to enrich League.json team DraftPicks.
 
   - from: Sleeper draft picks endpoint
     to: public/data/past_seasons/Drafts/Drafts_<season>.json
