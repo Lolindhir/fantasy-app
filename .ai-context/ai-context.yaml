@@ -92,5 +92,6 @@ aiGuidance:
     - After each commit, review whether manual AI context documentation or file-local documentation should be updated based on both the committed changes and the conversation that led to the commit.
     - After each commit, review TODO.md for completed, obsolete or newly discovered tasks based on both the committed changes and the conversation that led to the commit.
     - If documentation or TODO.md changes are needed after a commit, propose the concrete changes first and ask before applying them.
-    - "After every commit, end the chat response with a visible post-commit check containing: Documentation: updated / proposal needed / no change needed; TODO.md: updated / proposal needed / no change needed."
+    - "After every commit, end the chat response with a visible post-commit check containing: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; Documentation: updated / proposal needed / no change needed; TODO.md: updated / proposal needed / no change needed."
+    - In the post-commit check, state validation as run, not run, or not applicable. Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, and JSON/YAML validity for data or AI context changes.
     - If a commit was created without being previewed or explicitly approved in the chat beforehand, summarize that commit in the chat after it is created.
