@@ -19,60 +19,36 @@ catch {
 
 function Get-DraftPickOutput {
     param(
-        [Parameter(Mandatory = $true)]
-        [object]$pick,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftType,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateSet("Sleeper", "Manual")]
-        [string]$draftSource,
-
-        # Bleibt als optionaler Parameter erhalten, damit bestehende Aufrufe nicht brechen.
-        # Wird aber bewusst nicht mehr ins Output-Objekt geschrieben.
+        [Parameter(Mandatory = $true)][object]$pick,
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][ValidateSet("Sleeper", "Manual")][string]$draftSource,
         [string]$transactionID = $null
     )
 
     $season = [string]$pick.season
     $round = [int]$pick.round
 
-    $output = [PSCustomObject][ordered]@{
+    return [PSCustomObject][ordered]@{
         DraftType             = $draftType
         DraftSource           = $draftSource
         DraftKey              = "$($season)_$($draftType)"
-
         Season                = $season
         Round                 = $round
-
         OriginalOwnerRosterID = [int]$pick.roster_id
         PreviousOwnerRosterID = [int]$pick.previous_owner_id
         NewOwnerRosterID      = [int]$pick.owner_id
     }
-
-    return $output
 }
 
 function Get-DraftPickOutputFromSleeper {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object]$sleeperPick
-    )
+    param([Parameter(Mandatory = $true)][object]$sleeperPick)
 
-    return Get-DraftPickOutput `
-            -pick $sleeperPick `
-            -draftType "Rookie" `
-            -draftSource "Sleeper"
-
+    return Get-DraftPickOutput -pick $sleeperPick -draftType "Rookie" -draftSource "Sleeper"
 }
 
 function Get-DraftPickOutputFromManual {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object]$manualPick
-    )
+    param([Parameter(Mandatory = $true)][object]$manualPick)
 
-    # Map the manual pick to the internal standard format
     $normalizedPick = [PSCustomObject]@{
         season            = $manualPick.Season
         round             = $manualPick.Round
@@ -81,27 +57,14 @@ function Get-DraftPickOutputFromManual {
         owner_id          = Get-OwnerIDByName -ownerName $manualPick.To
     }
 
-    return Get-DraftPickOutput `
-            -pick $normalizedPick `
-            -draftType "Free_Agent" `
-            -draftSource "Manual"
-
+    return Get-DraftPickOutput -pick $normalizedPick -draftType "Free_Agent" -draftSource "Manual"
 }
 
 function ConvertTo-DraftSafeArray {
-    param(
-        [AllowNull()]
-        $value
-    )
+    param([AllowNull()]$value)
 
-    if ($null -eq $value) {
-        return @()
-    }
-
-    if ($value -is [array]) {
-        return $value
-    }
-
+    if ($null -eq $value) { return @() }
+    if ($value -is [array]) { return $value }
     return @($value)
 }
 
@@ -111,30 +74,19 @@ function ConvertTo-DraftSafeArray {
 
 function Test-DraftPropertyExists {
     param(
-        [AllowNull()]
-        $object,
-
-        [Parameter(Mandatory = $true)]
-        [string]$propertyName
+        [AllowNull()]$object,
+        [Parameter(Mandatory = $true)][string]$propertyName
     )
 
-    if ($null -eq $object) {
-        return $false
-    }
-
+    if ($null -eq $object) { return $false }
     return ($object.PSObject.Properties.Name -contains $propertyName)
 }
 
 function Get-DraftObjectProperty {
     param(
-        [AllowNull()]
-        $object,
-
-        [Parameter(Mandatory = $true)]
-        [string]$propertyName,
-
-        [AllowNull()]
-        $defaultValue = $null
+        [AllowNull()]$object,
+        [Parameter(Mandatory = $true)][string]$propertyName,
+        [AllowNull()]$defaultValue = $null
     )
 
     if (Test-DraftPropertyExists -object $object -propertyName $propertyName) {
@@ -145,39 +97,24 @@ function Get-DraftObjectProperty {
 }
 
 function ConvertTo-DraftHashtable {
-    param(
-        [AllowNull()]
-        $object
-    )
+    param([AllowNull()]$object)
 
     $hash = @{}
-
-    if ($null -eq $object) {
-        return $hash
-    }
+    if ($null -eq $object) { return $hash }
 
     if ($object -is [System.Collections.IDictionary]) {
-        foreach ($key in $object.Keys) {
-            $hash[[string]$key] = $object[$key]
-        }
-
+        foreach ($key in $object.Keys) { $hash[[string]$key] = $object[$key] }
         return $hash
     }
 
-    foreach ($prop in $object.PSObject.Properties) {
-        $hash[[string]$prop.Name] = $prop.Value
-    }
-
+    foreach ($prop in $object.PSObject.Properties) { $hash[[string]$prop.Name] = $prop.Value }
     return $hash
 }
 
 function New-DraftKey {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$season,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftType
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][string]$draftType
     )
 
     return "$($season)_$($draftType)"
@@ -185,53 +122,32 @@ function New-DraftKey {
 
 function New-DraftPickKey {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$draftKey,
-
-        [Parameter(Mandatory = $true)]
-        [int]$round,
-
-        [Parameter(Mandatory = $true)]
-        [int]$originalOwnerRosterID
+        [Parameter(Mandatory = $true)][string]$draftKey,
+        [Parameter(Mandatory = $true)][int]$round,
+        [Parameter(Mandatory = $true)][int]$originalOwnerRosterID
     )
 
     return "$($draftKey)_R$($round)_OO$($originalOwnerRosterID)"
 }
 
 function Get-DraftTypeDisplayName {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$draftType
-    )
+    param([Parameter(Mandatory = $true)][string]$draftType)
 
     return (($draftType -replace "_", " ").Trim())
 }
 
 function Get-DraftTypeAbbreviation {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$draftType
-    )
+    param([Parameter(Mandatory = $true)][string]$draftType)
 
-    $parts = @(
-        $draftType -split "_" |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    )
-
-    if ($parts.Count -eq 0) {
-        return $draftType.ToUpperInvariant()
-    }
-
+    $parts = @($draftType -split "_" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($parts.Count -eq 0) { return $draftType.ToUpperInvariant() }
     return (($parts | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() }) -join "")
 }
 
 function Get-DisplayDraftKey {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$season,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftType
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][string]$draftType
     )
 
     return "$season $(Get-DraftTypeDisplayName -draftType $draftType)"
@@ -239,50 +155,27 @@ function Get-DisplayDraftKey {
 
 function Get-DisplayAbrDraftKey {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$season,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftType
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][string]$draftType
     )
 
-    $seasonText = [string]$season
-
-    $shortSeason = if ($seasonText.Length -ge 2) {
-        $seasonText.Substring($seasonText.Length - 2, 2)
-    }
-    else {
-        $seasonText
-    }
-
-    return "$shortSeason $(Get-DraftTypeAbbreviation -draftType $draftType)"
+    return "$season $(Get-DraftTypeAbbreviation -draftType $draftType)"
 }
 
 function Format-DraftDisplayPick {
     param(
-        [Parameter(Mandatory = $true)]
-        [int]$round,
-
-        [AllowNull()]
-        [Nullable[int]]$positionInRound
+        [Parameter(Mandatory = $true)][int]$round,
+        [AllowNull()][Nullable[int]]$positionInRound
     )
 
-    if ($null -eq $positionInRound) {
-        return "Round $round"
-    }
-
+    if ($null -eq $positionInRound) { return "Round $round" }
     return ("{0}.{1:00}" -f $round, $positionInRound)
 }
 
 function Get-DraftStatus {
-    param(
-        [AllowNull()]
-        $sleeperDraft
-    )
+    param([AllowNull()]$sleeperDraft)
 
-    if ($null -eq $sleeperDraft) {
-        return "Virtual"
-    }
+    if ($null -eq $sleeperDraft) { return "Virtual" }
 
     switch ([string]$sleeperDraft.status) {
         "complete"  { return "Complete" }
@@ -293,18 +186,11 @@ function Get-DraftStatus {
 }
 
 function Test-SleeperDraftComplete {
-    param(
-        [AllowNull()]
-        $sleeperDraft
-    )
+    param([AllowNull()]$sleeperDraft)
 
-    if ($null -eq $sleeperDraft) {
-        return $false
-    }
-
+    if ($null -eq $sleeperDraft) { return $false }
     return ([string]$sleeperDraft.status -eq "complete")
 }
-
 
 # ===========================================================================
 # Draft Generation: Local Data
@@ -312,9 +198,7 @@ function Test-SleeperDraftComplete {
 
 function Get-DraftJsonFileContent {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$filePath,
-
+        [Parameter(Mandatory = $true)][string]$filePath,
         [string]$description = "data"
     )
 
@@ -325,11 +209,7 @@ function Get-DraftJsonFileContent {
 
     try {
         $raw = Get-Content $filePath -Raw
-
-        if ([string]::IsNullOrWhiteSpace($raw)) {
-            return @()
-        }
-
+        if ([string]::IsNullOrWhiteSpace($raw)) { return @() }
         return $raw | ConvertFrom-Json
     }
     catch {
@@ -340,62 +220,34 @@ function Get-DraftJsonFileContent {
 
 function Get-DraftLeagueLocal {
     $config = Get-Config
-
-    return Get-DraftJsonFileContent `
-        -filePath $config.LeagueFile `
-        -description "League"
+    return Get-DraftJsonFileContent -filePath $config.LeagueFile -description "League"
 }
 
 function Get-DraftStandingsLocal {
     $config = Get-Config
-
-    return ConvertTo-DraftSafeArray -value (
-        Get-DraftJsonFileContent `
-            -filePath $config.StandingsFile `
-            -description "Standings"
-    )
+    return ConvertTo-DraftSafeArray -value (Get-DraftJsonFileContent -filePath $config.StandingsFile -description "Standings")
 }
 
 function Get-DraftTransactionsLocal {
     $config = Get-Config
-
-    return ConvertTo-DraftSafeArray -value (
-        Get-DraftJsonFileContent `
-            -filePath $config.TransactionsFile `
-            -description "Transactions"
-    )
+    return ConvertTo-DraftSafeArray -value (Get-DraftJsonFileContent -filePath $config.TransactionsFile -description "Transactions")
 }
 
 function Get-DraftTeamIDsFromLeague {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object]$league
-    )
+    param([Parameter(Mandatory = $true)][object]$league)
 
     $teams = ConvertTo-DraftSafeArray -value $league.Teams
-
-    return @(
-        $teams |
-            Where-Object { $null -ne $_.TeamID } |
-            Sort-Object TeamID |
-            ForEach-Object { [int]$_.TeamID }
-    )
+    return @($teams | Where-Object { $null -ne $_.TeamID } | Sort-Object TeamID | ForEach-Object { [int]$_.TeamID })
 }
 
 function Get-DraftStandingBySeason {
     param(
-        [Parameter(Mandatory = $true)]
-        [array]$standings,
-
-        [Parameter(Mandatory = $true)]
-        [string]$season
+        [Parameter(Mandatory = $true)][array]$standings,
+        [Parameter(Mandatory = $true)][string]$season
     )
 
-    return $standings |
-        Where-Object { [string]$_.Season -eq [string]$season } |
-        Select-Object -First 1
+    return $standings | Where-Object { [string]$_.Season -eq [string]$season } | Select-Object -First 1
 }
-
 
 # ===========================================================================
 # Draft Generation: Sleeper Mapping
@@ -403,11 +255,8 @@ function Get-DraftStandingBySeason {
 
 function Resolve-DraftTypeFromSleeperDraft {
     param(
-        [Parameter(Mandatory = $true)]
-        [object]$sleeperDraft,
-
-        [Parameter(Mandatory = $true)]
-        [array]$draftTypeConfigs
+        [Parameter(Mandatory = $true)][object]$sleeperDraft,
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs
     )
 
     $textParts = @()
@@ -419,31 +268,19 @@ function Resolve-DraftTypeFromSleeperDraft {
     }
 
     if ($sleeperDraft.metadata) {
-        foreach ($prop in $sleeperDraft.metadata.PSObject.Properties) {
-            $textParts += [string]$prop.Value
-        }
+        foreach ($prop in $sleeperDraft.metadata.PSObject.Properties) { $textParts += [string]$prop.Value }
     }
 
     $text = (($textParts | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join " ").ToLowerInvariant()
 
     if ($text -match "free[_\s-]?agent|freeagent|waiver|\bfa\b") {
-        $match = $draftTypeConfigs |
-            Where-Object { [string]$_.DraftType -eq "Free_Agent" } |
-            Select-Object -First 1
-
-        if ($match) {
-            return [string]$match.DraftType
-        }
+        $match = $draftTypeConfigs | Where-Object { [string]$_.DraftType -eq "Free_Agent" } | Select-Object -First 1
+        if ($match) { return [string]$match.DraftType }
     }
 
     if ($text -match "rookie") {
-        $match = $draftTypeConfigs |
-            Where-Object { [string]$_.DraftType -eq "Rookie" } |
-            Select-Object -First 1
-
-        if ($match) {
-            return [string]$match.DraftType
-        }
+        $match = $draftTypeConfigs | Where-Object { [string]$_.DraftType -eq "Rookie" } | Select-Object -First 1
+        if ($match) { return [string]$match.DraftType }
     }
 
     return $null
@@ -451,52 +288,33 @@ function Resolve-DraftTypeFromSleeperDraft {
 
 function Get-SleeperDraftMap {
     param(
-        [Parameter(Mandatory = $true)]
-        [array]$draftTypeConfigs,
-
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
         [string]$leagueID = (Get-Config).LeagueID
     )
 
     $map = @{}
 
-    try {
-        $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID)
-    }
+    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID) }
     catch {
         Write-Warning "Could not load Sleeper drafts. Upcoming drafts will be generated as virtual drafts. $_"
         return $map
     }
 
-    if ($sleeperDrafts.Count -eq 0) {
-        return $map
-    }
+    if ($sleeperDrafts.Count -eq 0) { return $map }
 
     $fallbackTypes = @($draftTypeConfigs | Sort-Object DraftNo)
     $draftsBySeason = $sleeperDrafts | Group-Object -Property season
 
     foreach ($seasonGroup in $draftsBySeason) {
-        $seasonDrafts = @(
-            $seasonGroup.Group |
-                Sort-Object `
-                    @{ Expression = "created"; Ascending = $true },
-                    @{ Expression = "draft_id"; Ascending = $true }
-        )
+        $seasonDrafts = @($seasonGroup.Group | Sort-Object @{ Expression = "created"; Ascending = $true }, @{ Expression = "draft_id"; Ascending = $true })
 
         for ($i = 0; $i -lt $seasonDrafts.Count; $i++) {
             $draft = $seasonDrafts[$i]
             $season = [string]$draft.season
+            if ([string]::IsNullOrWhiteSpace($season)) { $season = [string](Get-Config).LeagueYear }
 
-            if ([string]::IsNullOrWhiteSpace($season)) {
-                $season = [string](Get-Config).LeagueYear
-            }
-
-            $draftType = Resolve-DraftTypeFromSleeperDraft `
-                -sleeperDraft $draft `
-                -draftTypeConfigs $draftTypeConfigs
-
-            if ([string]::IsNullOrWhiteSpace($draftType) -and $i -lt $fallbackTypes.Count) {
-                $draftType = [string]$fallbackTypes[$i].DraftType
-            }
+            $draftType = Resolve-DraftTypeFromSleeperDraft -sleeperDraft $draft -draftTypeConfigs $draftTypeConfigs
+            if ([string]::IsNullOrWhiteSpace($draftType) -and $i -lt $fallbackTypes.Count) { $draftType = [string]$fallbackTypes[$i].DraftType }
 
             if ([string]::IsNullOrWhiteSpace($draftType)) {
                 Write-Warning "Could not resolve draft type for Sleeper draft '$($draft.draft_id)'. Skipping mapping."
@@ -504,22 +322,13 @@ function Get-SleeperDraftMap {
             }
 
             $draftKey = New-DraftKey -season $season -draftType $draftType
-
             if (-not $map.ContainsKey($draftKey)) {
                 $draftToStore = $draft
-
-                $draftID = Get-DraftObjectProperty `
-                    -object $draft `
-                    -propertyName "draft_id" `
-                    -defaultValue $null
+                $draftID = Get-DraftObjectProperty -object $draft -propertyName "draft_id" -defaultValue $null
 
                 if (-not [string]::IsNullOrWhiteSpace($draftID)) {
-                    try {
-                        $draftToStore = Get-SleeperDraft -draftID $draftID
-                    }
-                    catch {
-                        Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_"
-                    }
+                    try { $draftToStore = Get-SleeperDraft -draftID $draftID }
+                    catch { Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_" }
                 }
 
                 $map[$draftKey] = $draftToStore
@@ -530,21 +339,15 @@ function Get-SleeperDraftMap {
     return $map
 }
 
-
 # ===========================================================================
 # Draft Generation: Order and Picks
 # ===========================================================================
 
 function Get-DraftOrderRosterIDs {
     param(
-        [Parameter(Mandatory = $true)]
-        [object]$draftTypeConfig,
-
-        [Parameter(Mandatory = $true)]
-        [string]$season,
-
-        [Parameter(Mandatory = $true)]
-        [array]$standings
+        [Parameter(Mandatory = $true)][object]$draftTypeConfig,
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][array]$standings
     )
 
     $orderSource = [string]$draftTypeConfig.OrderSource
@@ -556,94 +359,47 @@ function Get-DraftOrderRosterIDs {
             $standing = Get-DraftStandingBySeason -standings $standings -season $sourceSeason
             $ranking = ConvertTo-DraftSafeArray -value $standing.Playoffs
         }
-
         "AllTime" {
             $standing = Get-DraftStandingBySeason -standings $standings -season "AllTime"
             $ranking = ConvertTo-DraftSafeArray -value $standing.Playoffs
         }
-
-        default {
-            throw "Unsupported draft order source '$orderSource' for draft type '$($draftTypeConfig.DraftType)'."
-        }
+        default { throw "Unsupported draft order source '$orderSource' for draft type '$($draftTypeConfig.DraftType)'." }
     }
 
-    if ($ranking.Count -eq 0) {
-        throw "No ranking data found for order source '$orderSource' and source season '$sourceSeason'."
-    }
+    if ($ranking.Count -eq 0) { throw "No ranking data found for order source '$orderSource' and source season '$sourceSeason'." }
 
     if (Test-DraftPropertyExists -object $draftTypeConfig -propertyName "OrderMap") {
         $orderMap = ConvertTo-DraftHashtable -object $draftTypeConfig.OrderMap
-
-        return @(
-            $ranking |
-                Where-Object { $orderMap.ContainsKey([string]$_.Place) } |
-                Sort-Object @{ Expression = { [int]$orderMap[[string]$_.Place] }; Ascending = $true } |
-                ForEach-Object { [int]$_.TeamID }
-        )
+        return @($ranking | Where-Object { $orderMap.ContainsKey([string]$_.Place) } | Sort-Object @{ Expression = { [int]$orderMap[[string]$_.Place] }; Ascending = $true } | ForEach-Object { [int]$_.TeamID })
     }
 
     $order = [string](Get-DraftObjectProperty -object $draftTypeConfig -propertyName "Order" -defaultValue "Ascending")
     $descending = ($order -eq "Descending")
 
-    return @(
-        $ranking |
-            Sort-Object @{ Expression = "Place"; Descending = $descending } |
-            ForEach-Object { [int]$_.TeamID }
-    )
+    return @($ranking | Sort-Object @{ Expression = "Place"; Descending = $descending } | ForEach-Object { [int]$_.TeamID })
 }
 
 function Get-DraftOrderRosterIDsFromSleeperDraft {
-    param(
-        [Parameter(Mandatory = $true)]
-        [object]$sleeperDraft
-    )
+    param([Parameter(Mandatory = $true)][object]$sleeperDraft)
 
-    $slotToRosterID = Get-DraftObjectProperty `
-        -object $sleeperDraft `
-        -propertyName "slot_to_roster_id" `
-        -defaultValue $null
-
-    if ($null -eq $slotToRosterID) {
-        return @()
-    }
+    $slotToRosterID = Get-DraftObjectProperty -object $sleeperDraft -propertyName "slot_to_roster_id" -defaultValue $null
+    if ($null -eq $slotToRosterID) { return @() }
 
     $slotMap = ConvertTo-DraftHashtable -object $slotToRosterID
+    if ($slotMap.Count -eq 0) { return @() }
 
-    if ($slotMap.Count -eq 0) {
-        return @()
-    }
-
-    return @(
-        $slotMap.Keys |
-            Sort-Object { [int]$_ } |
-            ForEach-Object { [int]$slotMap[[string]$_] } |
-            Where-Object { $_ -gt 0 }
-    )
+    return @($slotMap.Keys | Sort-Object { [int]$_ } | ForEach-Object { [int]$slotMap[[string]$_] } | Where-Object { $_ -gt 0 })
 }
 
 function New-ProjectedDraftPicks {
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$leagueID,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftKey,
-
-        [Parameter(Mandatory = $true)]
-        [string]$season,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftType,
-
-        [Parameter(Mandatory = $true)]
-        [int]$rounds,
-
-        [Parameter(Mandatory = $true)]
-        [array]$teamIDs,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateSet("Exact", "RoundOnly")]
-        [string]$orderMode
+        [Parameter(Mandatory = $true)][string]$leagueID,
+        [Parameter(Mandatory = $true)][string]$draftKey,
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][int]$rounds,
+        [Parameter(Mandatory = $true)][array]$teamIDs,
+        [Parameter(Mandatory = $true)][ValidateSet("Exact", "RoundOnly")][string]$orderMode
     )
 
     $picks = @()
@@ -651,7 +407,6 @@ function New-ProjectedDraftPicks {
     for ($round = 1; $round -le $rounds; $round++) {
         for ($i = 0; $i -lt $teamIDs.Count; $i++) {
             $originalOwnerRosterID = [int]$teamIDs[$i]
-
             $positionInRound = $null
             $overallPick = $null
 
@@ -661,36 +416,24 @@ function New-ProjectedDraftPicks {
             }
 
             $picks += [PSCustomObject][ordered]@{
-                PickKey               = New-DraftPickKey `
-                    -draftKey $draftKey `
-                    -round $round `
-                    -originalOwnerRosterID $originalOwnerRosterID
-
+                PickKey               = New-DraftPickKey -draftKey $draftKey -round $round -originalOwnerRosterID $originalOwnerRosterID
                 LeagueID              = $leagueID
                 DraftKey              = $draftKey
                 Season                = $season
                 DraftType             = $draftType
-
                 Round                 = $round
                 PositionInRound       = $positionInRound
                 OverallPick           = $overallPick
-                DisplayPick           = Format-DraftDisplayPick `
-                    -round $round `
-                    -positionInRound $positionInRound
-
+                DisplayPick           = Format-DraftDisplayPick -round $round -positionInRound $positionInRound
                 OriginalOwnerRosterID = $originalOwnerRosterID
                 CurrentOwnerRosterID  = $originalOwnerRosterID
-
                 WasTraded             = $false
                 IsCurrentlyTraded     = $false
                 TradeSource           = $null
                 TradeHistory          = @()
-
                 PlayerID              = $null
                 PlayerName            = $null
-
                 Status                = "Open"
-
                 SleeperPickNo         = $null
                 SleeperPickedBy       = $null
             }
@@ -702,35 +445,22 @@ function New-ProjectedDraftPicks {
 
 function Get-AppliedDraftPickTrades {
     param(
-        [Parameter(Mandatory = $true)]
-        [array]$picks,
-
-        [Parameter(Mandatory = $true)]
-        [array]$transactions,
-
-        [Parameter(Mandatory = $true)]
-        [string]$draftKey
+        [Parameter(Mandatory = $true)][array]$picks,
+        [Parameter(Mandatory = $true)][array]$transactions,
+        [Parameter(Mandatory = $true)][string]$draftKey
     )
 
     $pickByKey = @{}
-
-    foreach ($pick in $picks) {
-        $pickByKey[$pick.PickKey] = $pick
-    }
+    foreach ($pick in $picks) { $pickByKey[$pick.PickKey] = $pick }
 
     $movements = @()
 
     foreach ($transaction in $transactions) {
-        if ([string]$transaction.Status -ne "complete") {
-            continue
-        }
+        if ([string]$transaction.Status -ne "complete") { continue }
 
         $draftPicks = ConvertTo-DraftSafeArray -value $transaction.DraftPicks
-
         foreach ($draftPick in $draftPicks) {
-            if ([string]$draftPick.DraftKey -ne [string]$draftKey) {
-                continue
-            }
+            if ([string]$draftPick.DraftKey -ne [string]$draftKey) { continue }
 
             if (-not (Test-DraftPropertyExists -object $draftPick -propertyName "OriginalOwnerRosterID")) {
                 Write-Warning "Draft pick movement in transaction '$($transaction.TransactionID)' has no OriginalOwnerRosterID. Skipping."
@@ -756,10 +486,7 @@ function Get-AppliedDraftPickTrades {
     $movements = @($movements | Sort-Object CreatedAt, TransactionID)
 
     foreach ($movement in $movements) {
-        $pickKey = New-DraftPickKey `
-            -draftKey $movement.DraftKey `
-            -round $movement.Round `
-            -originalOwnerRosterID $movement.OriginalOwnerRosterID
+        $pickKey = New-DraftPickKey -draftKey $movement.DraftKey -round $movement.Round -originalOwnerRosterID $movement.OriginalOwnerRosterID
 
         if (-not $pickByKey.ContainsKey($pickKey)) {
             Write-Warning "Could not find pick '$pickKey' for transaction '$($movement.TransactionID)'."
@@ -767,12 +494,10 @@ function Get-AppliedDraftPickTrades {
         }
 
         $targetPick = $pickByKey[$pickKey]
-
         $targetPick.CurrentOwnerRosterID = [int]$movement.NewOwnerRosterID
         $targetPick.WasTraded = $true
         $targetPick.IsCurrentlyTraded = ([int]$targetPick.CurrentOwnerRosterID -ne [int]$targetPick.OriginalOwnerRosterID)
         $targetPick.TradeSource = [string]$movement.Source
-
         $targetPick.TradeHistory = @($targetPick.TradeHistory) + [PSCustomObject][ordered]@{
             TransactionID         = $movement.TransactionID
             Source                = $movement.Source
@@ -784,14 +509,10 @@ function Get-AppliedDraftPickTrades {
         }
     }
 
-    # Aktualisiere den Status der Picks basierend auf den Trades
-    foreach ($pick in $picks) {
-        $pick.IsCurrentlyTraded = ([int]$pick.CurrentOwnerRosterID -ne [int]$pick.OriginalOwnerRosterID)
-    }
+    foreach ($pick in $picks) { $pick.IsCurrentlyTraded = ([int]$pick.CurrentOwnerRosterID -ne [int]$pick.OriginalOwnerRosterID) }
 
     return $picks
 }
-
 
 # ===========================================================================
 # Draft Generation: Draft Objects
@@ -799,17 +520,10 @@ function Get-AppliedDraftPickTrades {
 
 function Get-UpcomingDraftDefinitions {
     param(
-        [Parameter(Mandatory = $true)]
-        [array]$draftTypeConfigs,
-
-        [Parameter(Mandatory = $true)]
-        [hashtable]$sleeperDraftMap,
-
-        [Parameter(Mandatory = $true)]
-        [int]$leagueYear,
-
-        [Parameter(Mandatory = $true)]
-        [int]$upcomingDraftCountPerType
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
+        [Parameter(Mandatory = $true)][hashtable]$sleeperDraftMap,
+        [Parameter(Mandatory = $true)][int]$leagueYear,
+        [Parameter(Mandatory = $true)][int]$upcomingDraftCountPerType
     )
 
     $definitions = @()
@@ -821,19 +535,12 @@ function Get-UpcomingDraftDefinitions {
 
         while ($typeDefinitions.Count -lt $upcomingDraftCountPerType) {
             $guard++
-
-            if ($guard -gt 30) {
-                throw "Upcoming draft generation guard reached for draft type '$($draftTypeConfig.DraftType)'."
-            }
+            if ($guard -gt 30) { throw "Upcoming draft generation guard reached for draft type '$($draftTypeConfig.DraftType)'." }
 
             $draftType = [string]$draftTypeConfig.DraftType
             $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType
-
             $sleeperDraft = $null
-
-            if ($sleeperDraftMap.ContainsKey($draftKey)) {
-                $sleeperDraft = $sleeperDraftMap[$draftKey]
-            }
+            if ($sleeperDraftMap.ContainsKey($draftKey)) { $sleeperDraft = $sleeperDraftMap[$draftKey] }
 
             if (-not (Test-SleeperDraftComplete -sleeperDraft $sleeperDraft)) {
                 $typeDefinitions += [PSCustomObject][ordered]@{
@@ -852,60 +559,34 @@ function Get-UpcomingDraftDefinitions {
         $definitions += $typeDefinitions
     }
 
-    return @(
-        $definitions |
-            Sort-Object `
-                @{ Expression = { [int]$_.Season }; Ascending = $true },
-                DraftNo
-    )
+    return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo)
 }
 
 function New-DraftOutput {
     param(
-        [Parameter(Mandatory = $true)]
-        [object]$definition,
-
-        [Parameter(Mandatory = $true)]
-        [object]$league,
-
-        [Parameter(Mandatory = $true)]
-        [array]$standings,
-
-        [Parameter(Mandatory = $true)]
-        [array]$transactions
+        [Parameter(Mandatory = $true)][object]$definition,
+        [Parameter(Mandatory = $true)][object]$league,
+        [Parameter(Mandatory = $true)][array]$standings,
+        [Parameter(Mandatory = $true)][array]$transactions
     )
 
     $config = Get-Config
     $leagueID = [string]$config.LeagueID
     $leagueYear = [int]$config.LeagueYear
-
     $season = [string]$definition.Season
     $draftType = [string]$definition.DraftType
     $draftKey = [string]$definition.DraftKey
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
-
     $isCurrentSeason = ([int]$season -eq $leagueYear)
-
-    $orderMode = if ($isCurrentSeason) {
-        "Exact"
-    }
-    else {
-        "RoundOnly"
-    }
-
+    $orderMode = if ($isCurrentSeason) { "Exact" } else { "RoundOnly" }
     $orderSource = "UnknownFuture"
     $pickSource = "GeneratedFromUnknownFuture"
-
     $teamIDs = @()
 
     if ($orderMode -eq "Exact") {
         $sleeperOrderRosterIDs = @()
-
-        if ($null -ne $sleeperDraft) {
-            $sleeperOrderRosterIDs = Get-DraftOrderRosterIDsFromSleeperDraft `
-                -sleeperDraft $sleeperDraft
-        }
+        if ($null -ne $sleeperDraft) { $sleeperOrderRosterIDs = Get-DraftOrderRosterIDsFromSleeperDraft -sleeperDraft $sleeperDraft }
 
         if ($sleeperOrderRosterIDs.Count -gt 0) {
             $teamIDs = $sleeperOrderRosterIDs
@@ -913,11 +594,7 @@ function New-DraftOutput {
             $pickSource = "GeneratedFromSleeperOrderAndTrades"
         }
         else {
-            $teamIDs = Get-DraftOrderRosterIDs `
-                -draftTypeConfig $draftTypeConfig `
-                -season $season `
-                -standings $standings
-
+            $teamIDs = Get-DraftOrderRosterIDs -draftTypeConfig $draftTypeConfig -season $season -standings $standings
             $orderSource = [string]$draftTypeConfig.OrderSource
             $pickSource = "GeneratedFromConfiguredOrderAndTrades"
         }
@@ -928,215 +605,106 @@ function New-DraftOutput {
         $pickSource = "GeneratedFromRoundOnlyAndTrades"
     }
 
-    if ($teamIDs.Count -eq 0) {
-        throw "No teams found for draft '$draftKey'."
-    }
+    if ($teamIDs.Count -eq 0) { throw "No teams found for draft '$draftKey'." }
 
     $rounds = [int]$draftTypeConfig.Rounds
-
-    $picks = New-ProjectedDraftPicks `
-        -leagueID $leagueID `
-        -draftKey $draftKey `
-        -season $season `
-        -draftType $draftType `
-        -rounds $rounds `
-        -teamIDs $teamIDs `
-        -orderMode $orderMode
-
-    $picks = Get-AppliedDraftPickTrades `
-        -picks $picks `
-        -transactions $transactions `
-        -draftKey $draftKey
-
-    $draftSource = if ($null -ne $sleeperDraft) {
-        "Sleeper"
-    }
-    else {
-        "Virtual"
-    }
-
-    $sleeperDraftID = if ($null -ne $sleeperDraft) {
-        [string]$sleeperDraft.draft_id
-    }
-    else {
-        $null
-    }
-
-    $sleeperStatus = if ($null -ne $sleeperDraft) {
-        [string]$sleeperDraft.status
-    }
-    else {
-        $null
-    }
-
+    $picks = New-ProjectedDraftPicks -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs -orderMode $orderMode
+    $picks = Get-AppliedDraftPickTrades -picks $picks -transactions $transactions -draftKey $draftKey
+    $draftSource = if ($null -ne $sleeperDraft) { "Sleeper" } else { "Virtual" }
+    $sleeperDraftID = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.draft_id } else { $null }
+    $sleeperStatus = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.status } else { $null }
     $draftTypeSetting = "linear"
 
     if ($null -ne $sleeperDraft) {
-        $sleeperDraftType = Get-DraftObjectProperty `
-            -object $sleeperDraft `
-            -propertyName "type" `
-            -defaultValue $null
-
-        if (-not [string]::IsNullOrWhiteSpace($sleeperDraftType)) {
-            $draftTypeSetting = [string]$sleeperDraftType
-        }
+        $sleeperDraftType = Get-DraftObjectProperty -object $sleeperDraft -propertyName "type" -defaultValue $null
+        if (-not [string]::IsNullOrWhiteSpace($sleeperDraftType)) { $draftTypeSetting = [string]$sleeperDraftType }
     }
 
     return [PSCustomObject][ordered]@{
         LeagueID           = $leagueID
-
         DraftKey           = $draftKey
         DisplayDraftKey    = Get-DisplayDraftKey -season $season -draftType $draftType
         DisplayAbrDraftKey = Get-DisplayAbrDraftKey -season $season -draftType $draftType
-
         Season             = $season
         DraftType          = $draftType
         DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
         DraftNo            = [int]$definition.DraftNo
-
         DraftSource        = $draftSource
         SleeperDraftID     = $sleeperDraftID
         SleeperStatus      = $sleeperStatus
         Status             = Get-DraftStatus -sleeperDraft $sleeperDraft
-
         PickSource         = $pickSource
         OrderSource        = $orderSource
         OrderMode          = $orderMode
-
         Settings           = [PSCustomObject][ordered]@{
             Rounds = $rounds
             Teams  = [int]$teamIDs.Count
             Type   = $draftTypeSetting
         }
-
         Picks              = @($picks)
     }
 }
-
 
 # ===========================================================================
 # Draft Generation: Save and Compare
 # ===========================================================================
 
 function ConvertTo-DraftComparableJson {
-    param(
-        [AllowNull()]
-        $value
-    )
+    param([AllowNull()]$value)
 
-    if ($null -eq $value) {
-        return $null
-    }
-
+    if ($null -eq $value) { return $null }
     return ($value | ConvertTo-Json -Depth 50 -Compress)
 }
 
 function Compare-Drafts {
-    param(
-        [AllowNull()]
-        $oldData,
-
-        [AllowNull()]
-        $newData
-    )
+    param([AllowNull()]$oldData, [AllowNull()]$newData)
 
     $oldJson = ConvertTo-DraftComparableJson -value $oldData
     $newJson = ConvertTo-DraftComparableJson -value $newData
-
     return ($oldJson -ne $newJson)
 }
 
 function Save-Drafts {
-    param(
-        [Parameter(Mandatory = $true)]
-        [array]$drafts
-    )
+    param([Parameter(Mandatory = $true)][array]$drafts)
 
     $compare = ${function:Compare-Drafts}
-
-    Save-JsonFile `
-        -Type "Drafts" `
-        -Data $drafts `
-        -CompareScript $compare `
-        -CreateBackup `
-        -UpdateTimestamp
+    Save-JsonFile -Type "Drafts" -Data $drafts -CompareScript $compare -CreateBackup -UpdateTimestamp
 }
-
 
 # ===========================================================================
 # Draft Generation: Public Update Function
 # ===========================================================================
 
 function Update-Drafts {
-    param(
-        [string]$leagueID = (Get-Config).LeagueID
-    )
+    param([string]$leagueID = (Get-Config).LeagueID)
 
     Write-Host "Update upcoming drafts..." -ForegroundColor Yellow
 
     $config = Get-Config
     $draftsConfig = $config.DraftsConfig
+    if ($null -eq $draftsConfig) { throw "Metadata Drafts configuration missing." }
 
-    if ($null -eq $draftsConfig) {
-        throw "Metadata Drafts configuration missing."
-    }
-
-    $upcomingDraftCountMode = [string](Get-DraftObjectProperty `
-        -object $draftsConfig `
-        -propertyName "UpcomingDraftCountMode" `
-        -defaultValue "PerDraftType"
-    )
-
-    if ($upcomingDraftCountMode -ne "PerDraftType") {
-        throw "Unsupported UpcomingDraftCountMode '$upcomingDraftCountMode'. Only 'PerDraftType' is supported."
-    }
+    $upcomingDraftCountMode = [string](Get-DraftObjectProperty -object $draftsConfig -propertyName "UpcomingDraftCountMode" -defaultValue "PerDraftType")
+    if ($upcomingDraftCountMode -ne "PerDraftType") { throw "Unsupported UpcomingDraftCountMode '$upcomingDraftCountMode'. Only 'PerDraftType' is supported." }
 
     $upcomingDraftCountPerType = [int]$draftsConfig.UpcomingDraftCount
+    if ($upcomingDraftCountPerType -lt 1) { throw "UpcomingDraftCount must be at least 1." }
 
-    if ($upcomingDraftCountPerType -lt 1) {
-        throw "UpcomingDraftCount must be at least 1."
-    }
-
-    $draftTypeConfigs = @(
-        ConvertTo-DraftSafeArray -value $draftsConfig.Types |
-            Sort-Object DraftNo
-    )
-
-    if ($draftTypeConfigs.Count -eq 0) {
-        throw "No draft types configured in Metadata.json."
-    }
+    $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
+    if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
 
     $league = Get-DraftLeagueLocal
     $standings = Get-DraftStandingsLocal
     $transactions = Get-DraftTransactionsLocal
-
-    $sleeperDraftMap = Get-SleeperDraftMap `
-        -draftTypeConfigs $draftTypeConfigs `
-        -leagueID $leagueID
-
-    $definitions = Get-UpcomingDraftDefinitions `
-        -draftTypeConfigs $draftTypeConfigs `
-        -sleeperDraftMap $sleeperDraftMap `
-        -leagueYear ([int]$config.LeagueYear) `
-        -upcomingDraftCountPerType $upcomingDraftCountPerType
-
+    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID
+    $definitions = Get-UpcomingDraftDefinitions -draftTypeConfigs $draftTypeConfigs -sleeperDraftMap $sleeperDraftMap -leagueYear ([int]$config.LeagueYear) -upcomingDraftCountPerType $upcomingDraftCountPerType
     $drafts = @()
 
     foreach ($definition in $definitions) {
-        $drafts += New-DraftOutput `
-            -definition $definition `
-            -league $league `
-            -standings $standings `
-            -transactions $transactions
+        $drafts += New-DraftOutput -definition $definition -league $league -standings $standings -transactions $transactions
     }
 
-    $drafts = @(
-        $drafts |
-            Sort-Object `
-                @{ Expression = { [int]$_.Season }; Ascending = $true },
-                DraftNo
-    )
-
+    $drafts = @($drafts | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo)
     Save-Drafts -drafts $drafts
 
     Write-Host "Upcoming drafts update finished." -ForegroundColor DarkCyan
