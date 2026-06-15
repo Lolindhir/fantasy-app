@@ -230,7 +230,8 @@ drafts:
       keys are used as team DraftPick references in League.json. Historical drafts
       include chronological DraftNo in DraftKey so multiple drafts of the same type
       in one season remain unique. PickKey uses DraftKey as prefix and therefore
-      stays unique automatically for repeated draft types.
+      stays unique automatically for repeated draft types. The technical D-number
+      must not leak into user-facing display fields.
 
   orderModes:
     Exact:
@@ -318,6 +319,14 @@ drafts:
   displayRules:
     exactPickDisplay: "{round}.{positionInRound:00}"
     roundOnlyDisplay: "Round {round}"
+    draftDisplayKey: >
+      User-facing draft display keys show season and draft type only, for example
+      "2024 Free Agent". Historical displays append "#2", "#3", etc. only when
+      the same DraftType occurs multiple times in the same season.
+    draftDisplayAbrKey: >
+      Abbreviated draft display keys use the full season year, for example
+      "2024 FA" instead of "24 FA". Historical abbreviated displays follow the
+      same duplicate suffix rule as full display keys.
     tradedPickOwnerDisplay: >
       Frontend draft-pick displays should show the current owner as the primary
       owner and, when IsCurrentlyTraded is true or current/original owners differ,
@@ -371,4 +380,6 @@ notesForAIAgents:
   - Do not classify historical draft type from snake/linear draft format alone.
   - Treat historical draft type detection as heuristic unless Sleeper provides an explicit stable draft-type field.
   - Keep historical DraftKey duplicate-safe when multiple drafts of the same DraftType exist in one season.
+  - Do not expose the technical historical D-number in DisplayDraftKey or DisplayAbrDraftKey.
+  - Use the full four-digit season in DisplayAbrDraftKey.
   - Keep LeagueActivityComponent focused on frontend view models and display; move reusable draft-pick display behavior into shared frontend code when reused further.
