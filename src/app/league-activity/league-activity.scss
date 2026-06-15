@@ -131,12 +131,6 @@
   border-radius: 18px;
 }
 
-.draft-card mat-card-header,
-.compact-draft-card mat-card-header {
-  position: relative;
-  padding-right: 110px;
-}
-
 .draft-avatar {
   display: flex;
   align-items: center;
@@ -146,43 +140,11 @@
   font-weight: 900;
 }
 
-.status-pill {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #e5e7eb;
-  color: #374151;
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.status-pill.compact {
-  top: 14px;
-  right: 14px;
-  padding: 5px 9px;
-  font-size: 0.68rem;
-}
-
-.status-pill.upcoming,
-.status-pill.pre-draft {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.status-pill.live,
-.status-pill.drafting {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-pill.complete,
-.status-pill.completed {
-  background: #f3f4f6;
-  color: #4b5563;
+.draft-status-inline {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: none;
 }
 
 .round-accordion {
@@ -331,23 +293,6 @@
 @media (max-width: 600px) {
   .hero-card {
     padding: 16px;
-  }
-
-  .draft-card mat-card-header,
-  .compact-draft-card mat-card-header {
-    padding-right: 0;
-  }
-
-  .status-pill,
-  .status-pill.compact {
-    position: static;
-    display: inline-flex;
-    width: fit-content;
-    margin: 10px 0 0 72px;
-  }
-
-  .compact-draft-card .status-pill.compact {
-    margin-left: 0;
   }
 
   .pick-row {
