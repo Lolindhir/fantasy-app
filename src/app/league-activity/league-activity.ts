@@ -1,13 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
-import { DataService, DraftPick, FantasyTeam, RawDraft } from '../services/data-service';
+import { DataService, DraftPick, FantasyTeam, League, RawDraft } from '../services/data-service';
 import { SharedMaterialImports } from '../shared/shared-material-imports';
+
+type LeagueActivityTab = 'drafts' | 'moves';
+
+interface TeamDisplayViewModel {
+  id: number;
+  name: string;
+  avatar: string;
+}
 
 interface DraftPickViewModel {
   pick: DraftPick;
-  currentOwnerName: string;
-  originalOwnerName: string;
+  currentOwner: TeamDisplayViewModel;
+  originalOwner: TeamDisplayViewModel;
   isCurrentlyTraded: boolean;
   roundColor: string;
 }
@@ -18,22 +26,36 @@ interface DraftRoundViewModel {
   picks: DraftPickViewModel[];
 }
 
+interface CompactRoundPickViewModel {
+  label: string;
+  color: string;
+}
+
+interface CompactOwnerPickGroupViewModel {
+  owner: TeamDisplayViewModel;
+  picks: CompactRoundPickViewModel[];
+  pickCount: number;
+  bestRound: number;
+}
+
 interface DraftViewModel {
   draft: RawDraft;
   statusLabel: string;
   statusClass: string;
-  subtitle: string;
   pickCount: number;
   tradedPickCount: number;
   pickedCount: number;
   rounds: DraftRoundViewModel[];
+  ownerPickGroups: CompactOwnerPickGroupViewModel[];
 }
 
 interface LeagueActivityViewModel {
-  drafts: DraftViewModel[];
-  nextDraft?: DraftViewModel;
+  currentSeason: string;
+  currentSeasonDrafts: DraftViewModel[];
+  upcomingDrafts: DraftViewModel[];
   draftCount: number;
   tradedPickCount: number;
+  pickCount: number;
   pickedCount: number;
 }
 
@@ -50,16 +72,25 @@ interface LeagueActivityViewModel {
 export class LeagueActivityComponent {
 
   private dataService = inject(DataService);
+  activeTab: LeagueActivityTab = 'drafts';
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
-    map(({ drafts, teams }) => this.createViewModel(drafts, teams))
+    map(({ league, drafts, teams }) => this.createViewModel(league, drafts, teams))
   );
 
-  private createViewModel(drafts: RawDraft[], teams: FantasyTeam[]): LeagueActivityViewModel {
-    const teamNameByRosterId = new Map<number, string>();
+  setActiveTab(tab: LeagueActivityTab): void {
+    this.activeTab = tab;
+  }
+
+  private createViewModel(league: League, drafts: RawDraft[], teams: FantasyTeam[]): LeagueActivityViewModel {
+    const teamByRosterId = new Map<number, TeamDisplayViewModel>();
 
     teams.forEach(team => {
-      teamNameByRosterId.set(team.TeamID, team.Team || `Team ${team.Owner}`);
+      teamByRosterId.set(team.TeamID, {
+        id: team.TeamID,
+        name: team.Team || `Team ${team.Owner}`,
+        avatar: team.Avatar
+      });
     });
 
     const maxRound = this.getMaxRound(drafts);
@@ -70,20 +101,25 @@ export class LeagueActivityComponent {
         if (seasonDiff !== 0) return seasonDiff;
         return (a.DraftNo ?? 999) - (b.DraftNo ?? 999);
       })
-      .map(draft => this.createDraftViewModel(draft, teamNameByRosterId, maxRound));
+      .map(draft => this.createDraftViewModel(draft, teamByRosterId, maxRound));
+
+    const currentSeasonDrafts = draftViewModels.filter(draft => draft.draft.Season === league.Season);
+    const upcomingDrafts = draftViewModels.filter(draft => draft.draft.Season !== league.Season);
 
     return {
-      drafts: draftViewModels,
-      nextDraft: draftViewModels[0],
+      currentSeason: league.Season,
+      currentSeasonDrafts,
+      upcomingDrafts,
       draftCount: draftViewModels.length,
       tradedPickCount: draftViewModels.reduce((sum, draft) => sum + draft.tradedPickCount, 0),
+      pickCount: draftViewModels.reduce((sum, draft) => sum + draft.pickCount, 0),
       pickedCount: draftViewModels.reduce((sum, draft) => sum + draft.pickedCount, 0)
     };
   }
 
   private createDraftViewModel(
     draft: RawDraft,
-    teamNameByRosterId: Map<number, string>,
+    teamByRosterId: Map<number, TeamDisplayViewModel>,
     maxRound: number
   ): DraftViewModel {
     const picks = [...(draft.Picks ?? [])]
@@ -96,7 +132,7 @@ export class LeagueActivityComponent {
 
         return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
       })
-      .map(pick => this.createPickViewModel(pick, teamNameByRosterId, maxRound));
+      .map(pick => this.createPickViewModel(pick, teamByRosterId, maxRound));
 
     const rounds = new Map<number, DraftPickViewModel[]>();
     picks.forEach(pick => {
@@ -122,40 +158,70 @@ export class LeagueActivityComponent {
       draft,
       statusLabel: draft.Status || draft.SleeperStatus || 'Unknown',
       statusClass: this.getStatusClass(draft.Status || draft.SleeperStatus || 'Unknown'),
-      subtitle: this.getDraftSubtitle(draft),
       pickCount: picks.length,
       tradedPickCount,
       pickedCount,
-      rounds: roundGroups
+      rounds: roundGroups,
+      ownerPickGroups: this.createOwnerPickGroups(picks)
     };
   }
 
   private createPickViewModel(
     pick: DraftPick,
-    teamNameByRosterId: Map<number, string>,
+    teamByRosterId: Map<number, TeamDisplayViewModel>,
     maxRound: number
   ): DraftPickViewModel {
     return {
       pick,
-      currentOwnerName: this.getTeamName(teamNameByRosterId, pick.CurrentOwnerRosterID),
-      originalOwnerName: this.getTeamName(teamNameByRosterId, pick.OriginalOwnerRosterID),
+      currentOwner: this.getTeamDisplay(teamByRosterId, pick.CurrentOwnerRosterID),
+      originalOwner: this.getTeamDisplay(teamByRosterId, pick.OriginalOwnerRosterID),
       isCurrentlyTraded: pick.IsCurrentlyTraded || pick.CurrentOwnerRosterID !== pick.OriginalOwnerRosterID,
       roundColor: this.getRoundColor(pick.Round, maxRound)
     };
   }
 
-  private getTeamName(teamNameByRosterId: Map<number, string>, rosterId: number): string {
-    return teamNameByRosterId.get(rosterId) ?? `Roster ${rosterId}`;
+  private createOwnerPickGroups(picks: DraftPickViewModel[]): CompactOwnerPickGroupViewModel[] {
+    const groups = new Map<number, DraftPickViewModel[]>();
+
+    picks.forEach(pick => {
+      const ownerId = pick.currentOwner.id;
+      if (!groups.has(ownerId)) {
+        groups.set(ownerId, []);
+      }
+      groups.get(ownerId)!.push(pick);
+    });
+
+    return [...groups.values()]
+      .map(ownerPicks => {
+        const sortedPicks = [...ownerPicks].sort((a, b) => {
+          const roundDiff = a.pick.Round - b.pick.Round;
+          if (roundDiff !== 0) return roundDiff;
+          return (a.pick.OverallPick ?? 9999) - (b.pick.OverallPick ?? 9999);
+        });
+
+        return {
+          owner: sortedPicks[0].currentOwner,
+          picks: sortedPicks.map(pick => ({
+            label: `R${pick.pick.Round}`,
+            color: pick.roundColor
+          })),
+          pickCount: sortedPicks.length,
+          bestRound: sortedPicks[0].pick.Round
+        };
+      })
+      .sort((a, b) => {
+        const roundDiff = a.bestRound - b.bestRound;
+        if (roundDiff !== 0) return roundDiff;
+        return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
+      });
   }
 
-  private getDraftSubtitle(draft: RawDraft): string {
-    const parts = [
-      `${draft.Settings?.Rounds ?? 0} Rounds`,
-      draft.OrderMode,
-      draft.OrderSource
-    ].filter(Boolean);
-
-    return parts.join(' · ');
+  private getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, rosterId: number): TeamDisplayViewModel {
+    return teamByRosterId.get(rosterId) ?? {
+      id: rosterId,
+      name: `Roster ${rosterId}`,
+      avatar: 'assets/default-team-avatar.png'
+    };
   }
 
   private getMaxRound(drafts: RawDraft[]): number {
