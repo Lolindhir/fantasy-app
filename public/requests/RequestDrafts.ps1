@@ -6,6 +6,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftDisplayStatusUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
+    . "$PSScriptRoot\utils\league\DraftHistoryEmptyDefinitionsFix.psm1"
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
