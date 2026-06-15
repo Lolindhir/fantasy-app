@@ -36,6 +36,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Overview und League Activity berechnen die Farben aktuell lokal mit derselben warm-zu-kalt HSL-Skala.
   - Ziel: Alle Komponenten, die Draft Picks anzeigen, verwenden dieselbe Rundenskala.
 
+- [ ] Alternative Sortierung für kompakte Upcoming-Drafts in League Activity prüfen.
+  - Kontext: Upcoming-Drafts werden aktuell nach Pick Strength sortiert: zuerst Anzahl Picks in Runde 1, dann Runde 2, dann Runde 3 usw. bis zur flexiblen Draft-Rundenzahl.
+  - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung.
+  - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
+
 - [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
