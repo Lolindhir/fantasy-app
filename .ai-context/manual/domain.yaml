@@ -112,9 +112,11 @@ coreConcepts:
       current MVP component is src/app/league-activity/league-activity.ts.
     currentMvpScope:
       - display current/upcoming/live drafts from public/data/Drafts.json
-      - group picks by draft and round
+      - group current-season picks by draft and round
+      - display non-current-season drafts compactly by current owner and owned rounds
       - show current owner as the primary owner label
       - show original owner as "from <team>" when a pick is currently traded
+      - use team avatars next to owner labels where available
       - reserve a Moves area as placeholder until Transactions.json is modeled in Angular
     doesNotOwn:
       - draft order derivation
@@ -354,10 +356,21 @@ drafts:
     currentLocation: src/app/league-activity/league-activity.ts
     route: /league-activity
     description: >
-      League Activity displays current/upcoming/live drafts as draft cards with
-      summary metrics, round expansion panels and pick rows. It uses DataService
-      draft/team data and must not derive draft order or ownership itself beyond
-      frontend view-model formatting.
+      League Activity displays current-season drafts as detailed draft cards with
+      round expansion panels and pick rows. Non-current-season drafts are shown as
+      compact upcoming draft cards grouped by current owner and owned round picks.
+      It uses DataService draft/team data and must not derive draft order or
+      ownership itself beyond frontend view-model formatting.
+    currentSeasonDisplay: >
+      Current-season drafts use detailed cards. Round panels are collapsed by
+      default. Pick rows show DisplayPick, current owner avatar/name, optional
+      "from" original-owner avatar/name for traded picks, and selected player
+      when available.
+    upcomingDisplay: >
+      Upcoming/non-current-season drafts use compact cards. Each owner row shows
+      team avatar/name and one colored round pill per owned pick. Multiple picks
+      in the same round are represented by repeated same-colored pills rather than
+      an "x2" multiplier.
     colorRule:
       scope: all draft picks visible in League Activity
       invariant: Same round should have the same color within the view.
