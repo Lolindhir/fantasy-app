@@ -4,6 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DraftDisplayStatusUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -16,6 +17,11 @@ catch {
 # ===========================================================================
 
 $drafts = Update-Drafts
+if ($drafts) {
+    $drafts = Set-DraftDisplayStatuses -drafts $drafts
+    Save-Drafts -drafts $drafts
+}
+
 $historicalDrafts = Update-DraftsHistoricalSeasons
 
 if ($drafts) {
