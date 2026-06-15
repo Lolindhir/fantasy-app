@@ -132,26 +132,36 @@ function New-DraftHistoryDraftKey {
     return "$($season)_D$($draftNo)_$($draftType)"
 }
 
+function Get-DraftHistoryDisplaySuffix {
+    param(
+        [Parameter(Mandatory = $true)][int]$typeOccurrence,
+        [Parameter(Mandatory = $true)][int]$typeCount
+    )
+
+    if ($typeCount -le 1) { return "" }
+    return " #$typeOccurrence"
+}
+
 function Get-DraftHistoryDisplayDraftKey {
     param(
         [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][int]$draftNo,
-        [Parameter(Mandatory = $true)][string]$draftType
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][int]$typeOccurrence,
+        [Parameter(Mandatory = $true)][int]$typeCount
     )
 
-    return "$season Draft $draftNo $(Get-DraftTypeDisplayName -draftType $draftType)"
+    return "$season $(Get-DraftTypeDisplayName -draftType $draftType)$(Get-DraftHistoryDisplaySuffix -typeOccurrence $typeOccurrence -typeCount $typeCount)"
 }
 
 function Get-DraftHistoryDisplayAbrDraftKey {
     param(
         [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][int]$draftNo,
-        [Parameter(Mandatory = $true)][string]$draftType
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][int]$typeOccurrence,
+        [Parameter(Mandatory = $true)][int]$typeCount
     )
 
-    $seasonText = [string]$season
-    $shortSeason = if ($seasonText.Length -ge 2) { $seasonText.Substring($seasonText.Length - 2, 2) } else { $seasonText }
-    return "$shortSeason D$draftNo $(Get-DraftTypeAbbreviation -draftType $draftType)"
+    return "$season $(Get-DraftTypeAbbreviation -draftType $draftType)$(Get-DraftHistoryDisplaySuffix -typeOccurrence $typeOccurrence -typeCount $typeCount)"
 }
 
 function Get-DraftHistoryConfiguredRoundsFromSleeperDraft {
@@ -302,6 +312,22 @@ function Resolve-DraftHistoryTypeFromSleeperDraft {
     return "Veteran"
 }
 
+function Set-DraftHistoryTypeOccurrences {
+    param([Parameter(Mandatory = $true)][array]$definitions)
+
+    foreach ($group in ($definitions | Group-Object -Property Season, DraftType)) {
+        $groupItems = @($group.Group | Sort-Object DraftNo, DraftKey)
+        $typeCount = $groupItems.Count
+
+        for ($i = 0; $i -lt $groupItems.Count; $i++) {
+            $groupItems[$i] | Add-Member -NotePropertyName TypeOccurrence -NotePropertyValue ($i + 1) -Force
+            $groupItems[$i] | Add-Member -NotePropertyName TypeCount -NotePropertyValue $typeCount -Force
+        }
+    }
+
+    return $definitions
+}
+
 function Get-SleeperCompletedDraftDefinitionsForLeague {
     param(
         [Parameter(Mandatory = $true)][object]$league,
@@ -350,8 +376,12 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
             DraftKey        = $draftKey
             DraftTypeConfig = $draftTypeConfig
             SleeperDraft    = $draft
+            TypeOccurrence  = 1
+            TypeCount       = 1
         }
     }
+
+    $definitions = Set-DraftHistoryTypeOccurrences -definitions $definitions
 
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
 }
@@ -494,6 +524,8 @@ function New-DraftHistoryOutput {
     $draftType = [string]$definition.DraftType
     $draftNo = [int]$definition.DraftNo
     $draftKey = [string]$definition.DraftKey
+    $typeOccurrence = [int]$definition.TypeOccurrence
+    $typeCount = [int]$definition.TypeCount
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
     $teamIDs = Get-DraftHistoryOrderRosterIDsFromSleeperDraft -sleeperDraft $sleeperDraft
@@ -513,8 +545,8 @@ function New-DraftHistoryOutput {
     return [PSCustomObject][ordered]@{
         LeagueID           = $leagueID
         DraftKey           = $draftKey
-        DisplayDraftKey    = Get-DraftHistoryDisplayDraftKey -season $season -draftNo $draftNo -draftType $draftType
-        DisplayAbrDraftKey = Get-DraftHistoryDisplayAbrDraftKey -season $season -draftNo $draftNo -draftType $draftType
+        DisplayDraftKey    = Get-DraftHistoryDisplayDraftKey -season $season -draftType $draftType -typeOccurrence $typeOccurrence -typeCount $typeCount
+        DisplayAbrDraftKey = Get-DraftHistoryDisplayAbrDraftKey -season $season -draftType $draftType -typeOccurrence $typeOccurrence -typeCount $typeCount
         Season             = $season
         DraftType          = $draftType
         DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
