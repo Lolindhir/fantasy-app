@@ -33,36 +33,38 @@
 }
 
 .summary-grid {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-self: end;
+  width: min(100%, 300px);
+  min-width: 0;
+  gap: 8px;
+  overflow: visible;
 }
 
 .summary-card {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 10px;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 
-  min-width: 98px;
-  padding: 11px 14px;
+  padding: 9px 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 16px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.1);
   white-space: nowrap;
 }
 
 .summary-label {
   color: #cbd5e1;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .summary-card strong {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
@@ -291,6 +293,11 @@
     grid-template-columns: 1fr;
   }
 
+  .summary-grid {
+    justify-self: stretch;
+    width: 100%;
+  }
+
   .compact-draft-grid {
     grid-template-columns: 1fr;
   }
@@ -302,8 +309,15 @@
   }
 
   .summary-card {
-    min-width: 88px;
-    padding: 10px 12px;
+    padding: 8px 9px;
+  }
+
+  .summary-label {
+    font-size: 0.64rem;
+  }
+
+  .summary-card strong {
+    font-size: 1.18rem;
   }
 
   .pick-row {
