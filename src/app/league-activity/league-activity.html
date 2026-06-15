@@ -3,8 +3,7 @@
 
     <section class="hero-card">
       <div>
-        <p class="eyebrow">League Activity</p>
-        <h1>Drafts & Moves</h1>
+        <h1>League Activity</h1>
         <p class="hero-text">
           Current and upcoming draft assets, trades and roster movement in one place.
         </p>
@@ -16,97 +15,166 @@
           <strong>{{ vm.draftCount }}</strong>
         </div>
         <div class="summary-card">
-          <span class="summary-label">Traded Picks</span>
+          <span class="summary-label">Trades</span>
           <strong>{{ vm.tradedPickCount }}</strong>
         </div>
         <div class="summary-card">
-          <span class="summary-label">Picked</span>
-          <strong>{{ vm.pickedCount }}</strong>
+          <span class="summary-label">Picks</span>
+          <strong>{{ vm.pickCount }}</strong>
         </div>
       </div>
     </section>
 
     <div class="activity-tabs" aria-label="League activity sections">
-      <button class="activity-tab active" type="button">Drafts</button>
-      <button class="activity-tab" type="button" disabled>Moves</button>
+      <button
+        class="activity-tab"
+        [class.active]="activeTab === 'drafts'"
+        type="button"
+        (click)="setActiveTab('drafts')">
+        Drafts
+      </button>
+      <button
+        class="activity-tab"
+        [class.active]="activeTab === 'moves'"
+        type="button"
+        (click)="setActiveTab('moves')">
+        Moves
+      </button>
     </div>
 
-    <section class="content-grid">
-      <div class="drafts-column">
-        @if (vm.drafts.length > 0) {
-          @for (draftVm of vm.drafts; track draftVm.draft.DraftKey) {
-            <mat-card class="draft-card">
-              <mat-card-header>
-                <div mat-card-avatar class="draft-avatar">
-                  {{ draftVm.draft.DisplayDraftType.charAt(0) }}
-                </div>
+    @if (activeTab === 'drafts') {
+      <section class="draft-section">
+        <div class="section-header">
+          <div>
+            <p class="section-eyebrow">{{ vm.currentSeason }}</p>
+            <h2>Current Season Drafts</h2>
+          </div>
+        </div>
 
-                <mat-card-title>
-                  {{ draftVm.draft.DisplayDraftKey }}
-                </mat-card-title>
+        @if (vm.currentSeasonDrafts.length > 0) {
+          <div class="drafts-column">
+            @for (draftVm of vm.currentSeasonDrafts; track draftVm.draft.DraftKey) {
+              <mat-card class="draft-card">
+                <mat-card-header>
+                  <div mat-card-avatar class="draft-avatar">
+                    {{ draftVm.draft.DisplayDraftType.charAt(0) }}
+                  </div>
 
-                <mat-card-subtitle>
-                  {{ draftVm.subtitle }}
-                </mat-card-subtitle>
+                  <mat-card-title>
+                    {{ draftVm.draft.DisplayDraftKey }}
+                  </mat-card-title>
 
-                <span class="status-pill" [class]="'status-pill ' + draftVm.statusClass">
-                  {{ draftVm.statusLabel }}
-                </span>
-              </mat-card-header>
+                  <mat-card-subtitle>
+                    {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
+                  </mat-card-subtitle>
 
-              <mat-card-content>
-                <div class="draft-meta-row">
-                  <span>{{ draftVm.pickCount }} picks</span>
-                  <span>{{ draftVm.tradedPickCount }} traded</span>
-                  <span>{{ draftVm.pickedCount }} picked</span>
-                </div>
+                  <span class="status-pill" [class]="'status-pill ' + draftVm.statusClass">
+                    {{ draftVm.statusLabel }}
+                  </span>
+                </mat-card-header>
 
-                <mat-accordion class="round-accordion" multi>
-                  @for (round of draftVm.rounds; track round.round) {
-                    <mat-expansion-panel [expanded]="round.round === 1">
-                      <mat-expansion-panel-header>
-                        <mat-panel-title>{{ round.label }}</mat-panel-title>
-                        <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
-                      </mat-expansion-panel-header>
+                <mat-card-content>
+                  <mat-accordion class="round-accordion" multi>
+                    @for (round of draftVm.rounds; track round.round) {
+                      <mat-expansion-panel>
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>{{ round.label }}</mat-panel-title>
+                          <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
+                        </mat-expansion-panel-header>
 
-                      <div class="pick-list">
-                        @for (item of round.picks; track item.pick.PickKey) {
-                          <div class="pick-row" [style.border-left-color]="item.roundColor">
-                            <div class="pick-token" [style.background]="item.roundColor">
-                              {{ item.pick.DisplayPick }}
-                            </div>
+                        <div class="pick-list">
+                          @for (item of round.picks; track item.pick.PickKey) {
+                            <div class="pick-row" [style.border-left-color]="item.roundColor">
+                              <div class="pick-token" [style.background]="item.roundColor">
+                                {{ item.pick.DisplayPick }}
+                              </div>
 
-                            <div class="pick-owner">
-                              <strong>{{ item.currentOwnerName }}</strong>
-                              @if (item.isCurrentlyTraded) {
-                                <span>from {{ item.originalOwnerName }}</span>
+                              <div class="pick-owner-line">
+                                <img class="team-avatar" [src]="item.currentOwner.avatar" alt="" />
+                                <div class="pick-owner">
+                                  <strong>{{ item.currentOwner.name }}</strong>
+                                  @if (item.isCurrentlyTraded) {
+                                    <span>
+                                      from
+                                      <img class="team-avatar tiny" [src]="item.originalOwner.avatar" alt="" />
+                                      {{ item.originalOwner.name }}
+                                    </span>
+                                  }
+                                </div>
+                              </div>
+
+                              @if (item.pick.PlayerName) {
+                                <div class="picked-player">
+                                  {{ item.pick.PlayerName }}
+                                </div>
                               }
                             </div>
-
-                            @if (item.pick.PlayerName) {
-                              <div class="picked-player">
-                                {{ item.pick.PlayerName }}
-                              </div>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </mat-expansion-panel>
-                  }
-                </mat-accordion>
-              </mat-card-content>
-            </mat-card>
-          }
+                          }
+                        </div>
+                      </mat-expansion-panel>
+                    }
+                  </mat-accordion>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
         } @else {
           <mat-card class="empty-card">
             <mat-card-content>
-              No current or upcoming drafts found.
+              No current season drafts found.
             </mat-card-content>
           </mat-card>
         }
-      </div>
+      </section>
 
-      <aside class="moves-placeholder">
+      @if (vm.upcomingDrafts.length > 0) {
+        <section class="draft-section">
+          <div class="section-header">
+            <div>
+              <p class="section-eyebrow">Future Seasons</p>
+              <h2>Upcoming Drafts</h2>
+            </div>
+          </div>
+
+          <div class="compact-draft-grid">
+            @for (draftVm of vm.upcomingDrafts; track draftVm.draft.DraftKey) {
+              <mat-card class="compact-draft-card">
+                <mat-card-header>
+                  <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
+                  <mat-card-subtitle>
+                    {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
+                  </mat-card-subtitle>
+                  <span class="status-pill compact" [class]="'status-pill compact ' + draftVm.statusClass">
+                    {{ draftVm.statusLabel }}
+                  </span>
+                </mat-card-header>
+
+                <mat-card-content>
+                  <div class="compact-owner-list">
+                    @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
+                      <div class="compact-owner-row">
+                        <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
+                        <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
+                        <div class="compact-round-list">
+                          @for (roundPick of ownerGroup.picks; track $index) {
+                            <span class="round-pill" [style.background]="roundPick.color">
+                              {{ roundPick.label }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    @if (activeTab === 'moves') {
+      <section class="moves-placeholder">
         <mat-card>
           <mat-card-header>
             <mat-card-title>Moves</mat-card-title>
@@ -119,7 +187,7 @@
             </p>
           </mat-card-content>
         </mat-card>
-      </aside>
-    </section>
+      </section>
+    }
   </div>
 }
