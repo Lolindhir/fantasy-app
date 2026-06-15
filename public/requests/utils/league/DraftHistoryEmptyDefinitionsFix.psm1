@@ -2,11 +2,10 @@
 # Draft History: Empty Definitions Fix
 # ===========================================================================
 #
-# This file intentionally overrides two DraftHistoryUtils functions after that
-# module is imported. It keeps completed draft history updates quiet for seasons
-# that have no completed drafts yet.
+# This module provides safe wrappers for completed draft history generation.
+# It handles seasons that have Sleeper drafts, but no completed drafts yet.
 
-function Set-DraftHistoryTypeOccurrences {
+function Set-DraftHistoryTypeOccurrencesSafe {
     param(
         [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
@@ -30,7 +29,7 @@ function Set-DraftHistoryTypeOccurrences {
     return $definitions
 }
 
-function Get-SleeperCompletedDraftDefinitionsForLeague {
+function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
     param(
         [Parameter(Mandatory = $true)][object]$league,
         [Parameter(Mandatory = $true)][array]$draftTypeConfigs
@@ -87,7 +86,45 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
         return @()
     }
 
-    $definitions = Set-DraftHistoryTypeOccurrences -definitions $definitions
+    $definitions = Set-DraftHistoryTypeOccurrencesSafe -definitions $definitions
 
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
+}
+
+function Update-DraftsHistoricalSeasonsSafe {
+    param(
+        [string]$leagueID = (Get-Config).LeagueID,
+        [switch]$ForceHistory
+    )
+
+    Write-Host "Update completed draft history..." -ForegroundColor Yellow
+
+    $draftTypeConfigs = Get-DraftHistoryTypeConfigs
+    $transactions = Get-DraftHistoryTransactionsAllLocal
+    $leagues = Get-LeaguesRecursive -leagueID $leagueID
+    $draftsBySeason = @{}
+
+    foreach ($league in $leagues) {
+        $season = [string]$league.season
+        if ([string]::IsNullOrWhiteSpace($season)) {
+            Write-Warning "League '$($league.league_id)' has no season. Skipping completed draft history."
+            continue
+        }
+
+        $definitions = Get-SleeperCompletedDraftDefinitionsForLeagueSafe -league $league -draftTypeConfigs $draftTypeConfigs
+        foreach ($definition in $definitions) {
+            $draftSeason = [string]$definition.Season
+            if (-not $draftsBySeason.ContainsKey($draftSeason)) { $draftsBySeason[$draftSeason] = @() }
+            $draftsBySeason[$draftSeason] += New-DraftHistoryOutput -definition $definition -transactions $transactions
+        }
+    }
+
+    foreach ($season in ($draftsBySeason.Keys | Sort-Object { [int]$_ })) {
+        $seasonDrafts = @($draftsBySeason[$season] | Sort-Object DraftNo, DraftKey)
+        Save-DraftsHistoricalSeason -season $season -drafts $seasonDrafts -Force:$ForceHistory
+    }
+
+    Write-Host "Completed draft history update finished." -ForegroundColor DarkCyan
+
+    return @($draftsBySeason.Values | ForEach-Object { $_ })
 }
