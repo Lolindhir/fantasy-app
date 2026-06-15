@@ -63,6 +63,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Später / Ideen
 
+- [ ] Aussagekräftigere Summary-Kacheln für League Activity prüfen.
+  - Kontext: Die aktuellen Kacheln für Drafts und Picks sind nur bedingt aussagekräftig, weil weit entfernte Future-Drafts und generische Pick-Anzahlen wenig Mehrwert liefern.
+  - Ziel: Summary-Kacheln sollen später stärker auf echte Aktivität, Relevanz und nächste Entscheidungen fokussieren.
+  - Potenzielle Kacheln: `Traded Picks`, `Next Draft`, `Most Active Team`, `Round 1 Moves`, `Upcoming`, `Moves`.
+  - Hinweis: Sinnvoll vor allem, sobald `Transactions.json` im Frontend modelliert ist und Moves/Trades als explizite Daten verfügbar sind.
+
 - [ ] League Activity optisch mit Sleeper-Screenshots und eigener Zielvorstellung weiter verfeinern.
   - Kontext: Der MVP zeigt Draft-Cards, Round Panels, Picks und einen Moves-Platzhalter.
   - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
