@@ -35,7 +35,7 @@ interface CompactOwnerPickGroupViewModel {
   owner: TeamDisplayViewModel;
   picks: CompactRoundPickViewModel[];
   pickCount: number;
-  bestRound: number;
+  roundCounts: number[];
 }
 
 interface DraftViewModel {
@@ -153,6 +153,7 @@ export class LeagueActivityComponent {
 
     const pickedCount = picks.filter(item => item.pick.Status === 'Picked' || !!item.pick.PlayerName).length;
     const tradedPickCount = picks.filter(item => item.isCurrentlyTraded).length;
+    const draftMaxRound = this.getDraftMaxRound(draft);
 
     return {
       draft,
@@ -162,7 +163,7 @@ export class LeagueActivityComponent {
       tradedPickCount,
       pickedCount,
       rounds: roundGroups,
-      ownerPickGroups: this.createOwnerPickGroups(picks)
+      ownerPickGroups: this.createOwnerPickGroups(picks, draftMaxRound)
     };
   }
 
@@ -180,7 +181,10 @@ export class LeagueActivityComponent {
     };
   }
 
-  private createOwnerPickGroups(picks: DraftPickViewModel[]): CompactOwnerPickGroupViewModel[] {
+  private createOwnerPickGroups(
+    picks: DraftPickViewModel[],
+    draftMaxRound: number
+  ): CompactOwnerPickGroupViewModel[] {
     const groups = new Map<number, DraftPickViewModel[]>();
 
     picks.forEach(pick => {
@@ -206,14 +210,39 @@ export class LeagueActivityComponent {
             color: pick.roundColor
           })),
           pickCount: sortedPicks.length,
-          bestRound: sortedPicks[0].pick.Round
+          roundCounts: this.getRoundCounts(sortedPicks, draftMaxRound)
         };
       })
-      .sort((a, b) => {
-        const roundDiff = a.bestRound - b.bestRound;
-        if (roundDiff !== 0) return roundDiff;
-        return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
-      });
+      .sort((a, b) => this.compareOwnerPickGroupsByPickStrength(a, b));
+  }
+
+  private getRoundCounts(picks: DraftPickViewModel[], maxRound: number): number[] {
+    const roundCounts = Array.from({ length: maxRound }, () => 0);
+
+    picks.forEach(pick => {
+      const roundIndex = pick.pick.Round - 1;
+      if (roundIndex >= 0 && roundIndex < maxRound) {
+        roundCounts[roundIndex] += 1;
+      }
+    });
+
+    return roundCounts;
+  }
+
+  private compareOwnerPickGroupsByPickStrength(
+    a: CompactOwnerPickGroupViewModel,
+    b: CompactOwnerPickGroupViewModel
+  ): number {
+    const maxRound = Math.max(a.roundCounts.length, b.roundCounts.length);
+
+    for (let index = 0; index < maxRound; index++) {
+      const diff = (b.roundCounts[index] ?? 0) - (a.roundCounts[index] ?? 0);
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+
+    return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
   }
 
   private getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, rosterId: number): TeamDisplayViewModel {
@@ -222,6 +251,15 @@ export class LeagueActivityComponent {
       name: `Roster ${rosterId}`,
       avatar: 'assets/default-team-avatar.png'
     };
+  }
+
+  private getDraftMaxRound(draft: RawDraft): number {
+    const configuredRounds = Number(draft.Settings?.Rounds) || 0;
+    const maxPickRound = (draft.Picks ?? [])
+      .map(pick => Number(pick.Round) || 0)
+      .reduce((max, round) => Math.max(max, round), 0);
+
+    return Math.max(configuredRounds, maxPickRound, 1);
   }
 
   private getMaxRound(drafts: RawDraft[]): number {
