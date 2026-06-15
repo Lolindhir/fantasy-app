@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { OverviewComponent } from './overview/overview';
-import { TeamListComponent } from './team-list/team-list';
-import { PlayersPageComponent } from './players-page/players-page';
-import { LeagueActivityComponent } from './league-activity/league-activity';
-import { TradeSimulatorComponent } from './trade-simulator/trade-simulator';
-import { AboutComponent } from './about/about';
+import { OverviewComponent } from './features/overview/overview';
+import { TeamListComponent } from './features/teams/team-list/team-list';
+import { PlayersPageComponent } from './features/players/players-page/players-page';
+import { LeagueActivityComponent } from './features/league-activity/league-activity';
+import { TradeSimulatorComponent } from './features/trade/trade-simulator/trade-simulator';
+import { AboutComponent } from './features/handbook/about';
 
 export const routes: Routes = [
   { path: '', component: OverviewComponent }, // aktuelle Startseite
