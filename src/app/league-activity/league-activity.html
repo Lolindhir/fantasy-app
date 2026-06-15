@@ -45,10 +45,7 @@
     @if (activeTab === 'drafts') {
       <section class="draft-section">
         <div class="section-header">
-          <div>
-            <p class="section-eyebrow">{{ vm.currentSeason }}</p>
-            <h2>Current Season Drafts</h2>
-          </div>
+          <h2>Current Season Drafts</h2>
         </div>
 
         @if (vm.currentSeasonDrafts.length > 0) {
@@ -65,8 +62,10 @@
                   </mat-card-title>
 
                   <mat-card-subtitle>
-                    {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
-                    <span class="draft-status-inline">· {{ $any(draftVm.draft).DisplayStatus || draftVm.statusLabel }}</span>
+                    <span class="draft-metrics">
+                      {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
+                    </span>
+                    <span class="draft-status-inline">{{ $any(draftVm.draft).DisplayStatus || draftVm.statusLabel }}</span>
                   </mat-card-subtitle>
                 </mat-card-header>
 
@@ -125,12 +124,9 @@
       </section>
 
       @if (vm.upcomingDrafts.length > 0) {
-        <section class="draft-section">
+        <section class="draft-section future-draft-section">
           <div class="section-header">
-            <div>
-              <p class="section-eyebrow">Future Seasons</p>
-              <h2>Future Drafts</h2>
-            </div>
+            <h2>Future Drafts</h2>
           </div>
 
           <div class="compact-draft-grid">
@@ -139,8 +135,10 @@
                 <mat-card-header>
                   <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
                   <mat-card-subtitle>
-                    {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
-                    <span class="draft-status-inline">· {{ $any(draftVm.draft).DisplayStatus || draftVm.statusLabel }}</span>
+                    <span class="draft-metrics">
+                      {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
+                    </span>
+                    <span class="draft-status-inline">{{ $any(draftVm.draft).DisplayStatus || draftVm.statusLabel }}</span>
                   </mat-card-subtitle>
                 </mat-card-header>
 
