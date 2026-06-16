@@ -112,31 +112,31 @@ frontendStructure:
         Target area for app-wide Angular models, services and mapper code. This
         area is intentionally prepared but not yet fully populated.
 
+    - path: src/app/core/models/fantasy.models.ts
+      responsibility: >
+        Central Angular model import surface. It currently re-exports the
+        existing model/type declarations from DataService while the frontend is
+        gradually migrated away from direct type imports from data-service.ts.
+
     - path: src/app/services/data-service.ts
       responsibility: >
         Current app-wide Angular data facade. It still contains models, HTTP
         loading, mapping/enrichment and helper logic and is the next major
         frontend refactor candidate.
 
-  compatibilityReExports:
+  removedCompatibilityReExports:
     note: >
-      The old routed component paths are retained as compatibility re-exports
-      after the feature-structure move. New code should import from
-      src/app/features/** directly. Remove these wrappers only after confirming
-      no code or documentation still depends on the old paths.
-    files:
-      - from: src/app/overview/overview.ts
-        to: src/app/features/overview/overview.ts
-      - from: src/app/team-list/team-list.ts
-        to: src/app/features/teams/team-list/team-list.ts
-      - from: src/app/players-page/players-page.ts
-        to: src/app/features/players/players-page/players-page.ts
-      - from: src/app/trade-simulator/trade-simulator.ts
-        to: src/app/features/trade/trade-simulator/trade-simulator.ts
-      - from: src/app/league-activity/league-activity.ts
-        to: src/app/features/league-activity/league-activity.ts
-      - from: src/app/about/about.ts
-        to: src/app/features/handbook/about.ts
+      The old routed component paths were temporarily retained as compatibility
+      re-exports after the feature-structure move. After repository search showed
+      no productive imports or path references to those old wrappers, the wrapper
+      files were removed. New code must import routed pages from src/app/features/**.
+    removedFiles:
+      - src/app/overview/overview.ts
+      - src/app/team-list/team-list.ts
+      - src/app/players-page/players-page.ts
+      - src/app/trade-simulator/trade-simulator.ts
+      - src/app/league-activity/league-activity.ts
+      - src/app/about/about.ts
 
 dataFlow:
   - from: public/data/Metadata.json
