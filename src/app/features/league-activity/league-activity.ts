@@ -155,11 +155,10 @@ export class LeagueActivityComponent {
     const tradedPickCount = picks.filter(item => item.isCurrentlyTraded).length;
     const draftMaxRound = this.getDraftMaxRound(draft);
     const rawStatus = draft.Status || draft.SleeperStatus || 'Unknown';
-    const displayStatus = (draft as RawDraft & { DisplayStatus?: string }).DisplayStatus;
 
     return {
       draft,
-      statusLabel: displayStatus || rawStatus,
+      statusLabel: draft.DisplayStatus || rawStatus,
       statusClass: this.getStatusClass(rawStatus),
       pickCount: picks.length,
       tradedPickCount,
