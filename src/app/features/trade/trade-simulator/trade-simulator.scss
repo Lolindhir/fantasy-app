@@ -1,0 +1,111 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.trade-container {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* Spalten */
+.trade-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Angular Material Felder */
+.full-width {
+  width: 100%;
+}
+
+/* Spieler Liste */
+.selected-players {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 8px 12px;
+  margin-top: 8px;
+
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+
+.player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .trade-container {
+    gap: 20px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .trade-container {
+    flex-direction: column;
+  }
+
+  .trade-column {
+    width: 100%;
+  }
+}
+
+// .trade-container {
+//   display: flex;
+//   gap: 40px;
+// }
+
+// .trade-column {
+//   flex: 1;
+//   min-width: 0;
+// }
+
+// /* Mobile Layout */
+// @media (max-width: 768px) {
+//   .trade-container {
+//     flex-direction: column;
+//     gap: 20px;
+//   }
+// }
+
+// mat-form-field {
+//   width: 100%;
+// }
+
+.trade-summary {
+  margin-top: 30px;
+  padding: 20px;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.positive { color: #c62828; }  // Team zahlt mehr
+.negative { color: #2e7d32; }  // Team spart
+
+.salarycap,
+.team-card {
+  width: auto;
+  max-width: 1000px;
+  margin: 1rem auto;
+}
+
+.full-width { width: 100%; }
+
+.player-name { font-weight: bold; }
+
+.positive-diff { color: red; font-weight: bold; }
+.negative-diff { color: green; font-weight: bold; }
+
+.chip-position {
+  color: white;
+  padding: 1px 4px;
+  border-radius: 7px;
+}
