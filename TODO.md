@@ -41,11 +41,6 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
-- [ ] Legacy-Kompatibilitäts-Re-Exports entfernen.
-  - Kontext: Nach dem Angular-Struktur-Refactor liegen die gerouteten Feature-Seiten unter `src/app/features/**`. Die alten Pfade wie `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` sind aktuell nur noch Re-Export-Wrapper.
-  - Ziel: Vor dem Löschen erneut prüfen, ob Code, Doku oder externe Links noch alte Imports oder Pfade verwenden.
-  - Ziel: Danach Wrapper-Dateien und leere alte Ordner entfernen.
-
 - [ ] `DataService` strukturell aufteilen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
@@ -89,6 +84,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
 
 ## Erledigt / Archiv
+
+- [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
+  - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.
+  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` wurden nach Repo-Suche ohne produktive Referenzen entfernt.
 
 - [x] Angular-Feature-Struktur vorbereiten und geroutete Seiten verschieben.
   - Kontext: Geroutete Angular-Seiten sollten von wiederverwendbaren UI-Komponenten getrennt werden.
