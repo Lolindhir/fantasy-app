@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@a
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 
-import { FantasyTeam, Player } from '../../../services/data-service';
+import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
