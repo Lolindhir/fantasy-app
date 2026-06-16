@@ -186,13 +186,29 @@ function Get-DraftStatus {
 }
 
 function Get-DraftDisplayStatus {
-    param([Parameter(Mandatory = $true)][string]$status)
+    param(
+        [Parameter(Mandatory = $true)][string]$status,
+        [AllowNull()][string]$season = $null,
+        [int]$leagueYear = 0
+    )
 
     switch ($status) {
         "PreDraft" { return "Upcoming" }
         "Drafting" { return "Live" }
         "Complete" { return "Completed" }
-        "Virtual"  { return "Future" }
+        "Virtual"  {
+            $seasonNumber = 0
+            if (
+                -not [string]::IsNullOrWhiteSpace($season) -and
+                [int]::TryParse($season, [ref]$seasonNumber) -and
+                $leagueYear -gt 0 -and
+                $seasonNumber -eq $leagueYear
+            ) {
+                return "Upcoming"
+            }
+
+            return "Future"
+        }
         default     { return $status }
     }
 }
@@ -646,7 +662,7 @@ function New-DraftOutput {
         SleeperDraftID     = $sleeperDraftID
         SleeperStatus      = $sleeperStatus
         Status             = $draftStatus
-        DisplayStatus      = Get-DraftDisplayStatus -status $draftStatus
+        DisplayStatus      = Get-DraftDisplayStatus -status $draftStatus -season $season -leagueYear $leagueYear
         PickSource         = $pickSource
         OrderSource        = $orderSource
         OrderMode          = $orderMode
