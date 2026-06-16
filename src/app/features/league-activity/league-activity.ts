@@ -155,10 +155,11 @@ export class LeagueActivityComponent {
     const tradedPickCount = picks.filter(item => item.isCurrentlyTraded).length;
     const draftMaxRound = this.getDraftMaxRound(draft);
     const rawStatus = draft.Status || draft.SleeperStatus || 'Unknown';
+    const displayStatus = (draft as RawDraft & { DisplayStatus?: string }).DisplayStatus;
 
     return {
       draft,
-      statusLabel: this.getDraftStatusDisplay(draft, rawStatus),
+      statusLabel: displayStatus || rawStatus,
       statusClass: this.getStatusClass(rawStatus),
       pickCount: picks.length,
       tradedPickCount,
@@ -283,38 +284,6 @@ export class LeagueActivityComponent {
     const hue = startHue + ratio * (endHue - startHue);
 
     return `hsl(${hue}, 55%, 84%)`;
-  }
-
-  private getDraftStatusDisplay(draft: RawDraft, rawStatus: string): string {
-    const displayStatus = (draft as RawDraft & { DisplayStatus?: string }).DisplayStatus;
-    if (displayStatus) {
-      return displayStatus;
-    }
-
-    const normalizedStatus = rawStatus.toLowerCase().replace(/[^a-z0-9]+/g, '');
-    switch (normalizedStatus) {
-      case 'predraft':
-        return 'Pre-Draft';
-      case 'virtual':
-        return 'Virtual Draft';
-      case 'drafting':
-        return 'Drafting';
-      case 'complete':
-      case 'completed':
-        return 'Completed';
-      case 'paused':
-        return 'Paused';
-      default:
-        return this.splitCamelCase(rawStatus);
-    }
-  }
-
-  private splitCamelCase(value: string): string {
-    return value
-      .replace(/_/g, ' ')
-      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 
   private getStatusClass(status: string): string {
