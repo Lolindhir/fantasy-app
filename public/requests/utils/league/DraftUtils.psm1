@@ -185,6 +185,18 @@ function Get-DraftStatus {
     }
 }
 
+function Get-DraftDisplayStatus {
+    param([Parameter(Mandatory = $true)][string]$status)
+
+    switch ($status) {
+        "PreDraft" { return "Upcoming" }
+        "Drafting" { return "Live" }
+        "Complete" { return "Completed" }
+        "Virtual"  { return "Projected" }
+        default     { return $status }
+    }
+}
+
 function Test-SleeperDraftComplete {
     param([AllowNull()]$sleeperDraft)
 
@@ -613,6 +625,7 @@ function New-DraftOutput {
     $draftSource = if ($null -ne $sleeperDraft) { "Sleeper" } else { "Virtual" }
     $sleeperDraftID = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.draft_id } else { $null }
     $sleeperStatus = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.status } else { $null }
+    $draftStatus = Get-DraftStatus -sleeperDraft $sleeperDraft
     $draftTypeSetting = "linear"
 
     if ($null -ne $sleeperDraft) {
@@ -632,7 +645,8 @@ function New-DraftOutput {
         DraftSource        = $draftSource
         SleeperDraftID     = $sleeperDraftID
         SleeperStatus      = $sleeperStatus
-        Status             = Get-DraftStatus -sleeperDraft $sleeperDraft
+        Status             = $draftStatus
+        DisplayStatus      = Get-DraftDisplayStatus -status $draftStatus
         PickSource         = $pickSource
         OrderSource        = $orderSource
         OrderMode          = $orderMode
