@@ -81,6 +81,63 @@ layers:
       - PowerShell data generation pipeline
       - persisted generated JSON
 
+frontendStructure:
+  current:
+    - path: src/app/features/**
+      responsibility: >
+        Contains routed Angular feature areas and larger domain-facing pages.
+      examples:
+        - src/app/features/overview/overview.ts
+        - src/app/features/teams/team-list/team-list.ts
+        - src/app/features/players/players-page/players-page.ts
+        - src/app/features/trade/trade-simulator/trade-simulator.ts
+        - src/app/features/league-activity/league-activity.ts
+        - src/app/features/handbook/about.ts
+
+    - path: src/app/shared/components/**
+      responsibility: >
+        Contains reusable Angular UI components that are not owned by one routed
+        feature page.
+      examples:
+        - src/app/shared/components/player-list/player-list.ts
+        - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
+
+    - path: src/app/shared/**
+      responsibility: >
+        Contains reusable frontend helpers, Material imports, shared components,
+        pipes and utility candidates.
+
+    - path: src/app/core/**
+      responsibility: >
+        Target area for app-wide Angular models, services and mapper code. This
+        area is intentionally prepared but not yet fully populated.
+
+    - path: src/app/services/data-service.ts
+      responsibility: >
+        Current app-wide Angular data facade. It still contains models, HTTP
+        loading, mapping/enrichment and helper logic and is the next major
+        frontend refactor candidate.
+
+  compatibilityReExports:
+    note: >
+      The old routed component paths are retained as compatibility re-exports
+      after the feature-structure move. New code should import from
+      src/app/features/** directly. Remove these wrappers only after confirming
+      no code or documentation still depends on the old paths.
+    files:
+      - from: src/app/overview/overview.ts
+        to: src/app/features/overview/overview.ts
+      - from: src/app/team-list/team-list.ts
+        to: src/app/features/teams/team-list/team-list.ts
+      - from: src/app/players-page/players-page.ts
+        to: src/app/features/players/players-page/players-page.ts
+      - from: src/app/trade-simulator/trade-simulator.ts
+        to: src/app/features/trade/trade-simulator/trade-simulator.ts
+      - from: src/app/league-activity/league-activity.ts
+        to: src/app/features/league-activity/league-activity.ts
+      - from: src/app/about/about.ts
+        to: src/app/features/handbook/about.ts
+
 dataFlow:
   - from: public/data/Metadata.json
     to: public/requests/utils/ConfigUtils.psm1
@@ -137,7 +194,7 @@ dataFlow:
       resolves team DraftPick keys into DraftPick objects.
 
   - from: src/app/services/data-service.ts
-    to: src/app/league-activity/league-activity.ts
+    to: src/app/features/league-activity/league-activity.ts
     purpose: >
       Provide LeagueActivityComponent with generated current/upcoming/live draft
       data and fantasy teams for draft cards, round groups, pick ordering and
@@ -162,7 +219,7 @@ knownFrontendDomainLogic:
       Currently computed in Angular as frontend enrichment. If it becomes
       source-of-truth data, move it into PowerShell generation and generated JSON.
 
-  - path: src/app/overview/overview.ts
+  - path: src/app/features/overview/overview.ts
     topic: Draft round chip colors
     note: >
       Overview creates a local draft-pick chip view model and computes subtle
@@ -170,7 +227,7 @@ knownFrontendDomainLogic:
       round. This is display logic and should move into a shared frontend utility,
       pipe or service because draft picks are now shown in more than one component.
 
-  - path: src/app/league-activity/league-activity.ts
+  - path: src/app/features/league-activity/league-activity.ts
     topic: League Activity draft cards
     note: >
       LeagueActivityComponent is a frontend presentation feature for the
@@ -180,7 +237,7 @@ knownFrontendDomainLogic:
       Moves section as a placeholder until Transactions.json is modeled in the
       frontend.
 
-  - path: src/app/league-activity/league-activity.ts
+  - path: src/app/features/league-activity/league-activity.ts
     topic: Draft round chip colors
     note: >
       LeagueActivityComponent currently duplicates the warm-to-cold HSL round
