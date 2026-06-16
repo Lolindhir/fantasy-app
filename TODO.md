@@ -49,7 +49,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 - [ ] `DataService` strukturell aufteilen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
-  - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
+  - Kontext: `src/app/core/models/fantasy.models.ts` existiert als erster zentraler Model-Importpfad, re-exportiert die Typen aber vorerst noch kompatibel aus `data-service.ts`.
+  - Ziel: Feature-Komponenten schrittweise auf `src/app/core/models/fantasy.models.ts` als Model-Importpfad umstellen.
+  - Ziel: Danach die eigentlichen Model-Deklarationen aus `data-service.ts` nach `core/models` verschieben.
+  - Ziel: App-weite Services perspektivisch in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
     - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
