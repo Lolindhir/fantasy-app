@@ -91,7 +91,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Angular-Feature-Struktur vorbereiten und geroutete Seiten verschieben.
   - Kontext: Geroutete Angular-Seiten sollten von wiederverwendbaren UI-Komponenten getrennt werden.
-  - Ergebnis: Routen zeigen auf `src/app/features/**`; `PlayerList` und `PlayerDetailDialog` liegen unter `src/app/shared/components/**`; alte Feature-Pfade bleiben vorerst als Re-Export-Wrapper erhalten.
+  - Ergebnis: Routen zeigen auf `src/app/features/**`; `PlayerList` und `PlayerDetailDialog` liegen unter `src/app/shared/components/**`; alte Compatibility-Re-Export-Wrapper wurden nach erfolgreicher Stabilisierung entfernt.
   - Validierung: Build-Workflow und manueller UI-Durchklick waren erfolgreich.
 
 - [x] League Activity MVP für Drafts & Moves im Frontend anlegen.
