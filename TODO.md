@@ -22,7 +22,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 ### Frontend
 
 - [ ] `Transactions.json` im Frontend modellieren und für League Activity Moves anbinden.
-  - Kontext: `src/app/league-activity/league-activity.ts` hat im MVP einen Moves-Platzhalter, weil `Transactions.json` noch nicht im `DataService` geladen wird.
+  - Kontext: `src/app/features/league-activity/league-activity.ts` hat im MVP einen Moves-Platzhalter, weil `Transactions.json` noch nicht im `DataService` geladen wird.
   - Ziel: Transaction-Interfaces ergänzen und `DataService` so erweitern, dass Trades, Adds, Drops und weitere Roster Moves als expliziter Frontend-Vertrag verfügbar sind.
   - Ziel: Moves später in League Activity als chronologische Activity-Timeline darstellen.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
@@ -41,16 +41,19 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
-- [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
+- [ ] Legacy-Kompatibilitäts-Re-Exports entfernen.
+  - Kontext: Nach dem Angular-Struktur-Refactor liegen die gerouteten Feature-Seiten unter `src/app/features/**`. Die alten Pfade wie `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` sind aktuell nur noch Re-Export-Wrapper.
+  - Ziel: Vor dem Löschen erneut prüfen, ob Code, Doku oder externe Links noch alte Imports oder Pfade verwenden.
+  - Ziel: Danach Wrapper-Dateien und leere alte Ordner entfernen.
+
+- [ ] `DataService` strukturell aufteilen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
-  - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; einige geroutete Feature-Einstiegspunkte re-exportieren aktuell noch alte physische Implementierungen.
+  - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
   - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
-  - Ziel: Große Feature-Komponenten physisch aus den alten Ordnern nach `src/app/features/**` verschieben, sobald der Move zuverlässig lokal oder per PR-Patch möglich ist.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
     - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
     - `src/app/core/mappers` für fachliche Mapper, falls diese von den Services getrennt werden sollen.
-    - `src/app/features` für geroutete Seiten und größere fachliche Funktionsbereiche.
     - `src/app/shared/components`, `src/app/shared/pipes` und `src/app/shared/utils` für wiederverwendbare UI-/Material-/Frontend-Helfer.
   - Mögliche Services prüfen: `data.service.ts`, `data-api.service.ts`, `league-mapper.service.ts`, `player-mapper.service.ts`, `draft-mapper.service.ts`, `transaction-mapper.service.ts`, `free-agent-market.service.ts`, `trade-calculator.service.ts`.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
@@ -83,6 +86,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
 
 ## Erledigt / Archiv
+
+- [x] Angular-Feature-Struktur vorbereiten und geroutete Seiten verschieben.
+  - Kontext: Geroutete Angular-Seiten sollten von wiederverwendbaren UI-Komponenten getrennt werden.
+  - Ergebnis: Routen zeigen auf `src/app/features/**`; `PlayerList` und `PlayerDetailDialog` liegen unter `src/app/shared/components/**`; alte Feature-Pfade bleiben vorerst als Re-Export-Wrapper erhalten.
+  - Validierung: Build-Workflow und manueller UI-Durchklick waren erfolgreich.
 
 - [x] League Activity MVP für Drafts & Moves im Frontend anlegen.
   - Kontext: Der bisher deaktivierte Navigationseintrag `Drafts & Moves` sollte aktiviert werden, aber die technische Struktur sollte einen stabileren Namen bekommen.
