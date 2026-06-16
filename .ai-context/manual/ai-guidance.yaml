@@ -1,0 +1,48 @@
+schemaVersion: 1
+
+purpose: >
+  Human-maintained AI guidance for how agents should answer questions, make
+  repository changes and report post-commit checks in this project.
+
+guidance:
+  answering:
+    - When the user asks implementation questions, option comparisons, feasibility questions or follow-up questions about specific application, frontend, data generation, script or repository behavior, inspect the relevant current repository files and AI context before answering.
+    - Ground application-specific recommendations in the current repository structure, source-of-truth rules and existing implementation.
+    - Avoid purely abstract guidance unless the user explicitly asks for general options.
+
+  sourceOfTruth:
+    - Do not infer source-of-truth domain ownership from Angular components alone.
+    - Do not put league-specific rules into ConfigUtils.psm1 when they belong in Metadata.json.
+    - Do not treat generated JSON as manually editable source-of-truth data.
+    - Do not edit files in .ai-context/generated manually.
+
+  documentation:
+    - When changing architecture, update .ai-context/manual/decisions.yaml.
+    - When changing generated data contracts, regenerate generated context documentation.
+    - Do not create separate todo lists in .ai-context unless explicitly requested.
+
+  todos:
+    - Store open todos in TODO.md at the repository root.
+    - Write todos in German.
+
+  powershell:
+    - Use Get-Verb approved verbs for PowerShell function names.
+
+  writeStrategy:
+    - For large, multi-file, move-heavy or refactor commits, use a deliberate large-change mode: summarize the intended change, identify affected files, choose the safest write strategy, and avoid uploading unnecessarily large full-file contents.
+    - Prefer small focused commits over one large commit. Split large changes into logical commits when possible, especially when moving files, restructuring folders, or changing multiple layers.
+    - For pure file moves or renames, prefer Git tree/blob/SHA-based operations when available instead of re-uploading full file contents.
+    - Preserve file content unchanged during pure moves and verify that the resulting diff represents a move, not an unintended rewrite.
+    - If a write operation is blocked or fails because of payload size, safety checks or tool limitations, do not retry the same large full-content update.
+    - Switch to a smaller patch, split commit, tree/blob/SHA-based strategy, or ask before falling back to manual instructions after a blocked write operation.
+    - Before committing large or structural changes, present a concise commit plan with affected files, intended operations, validation approach and whether documentation or TODO.md may be affected.
+
+  postCommit:
+    - After each commit, review whether manual AI context documentation or file-local documentation should be updated based on both the committed changes and the conversation that led to the commit.
+    - After each commit, review TODO.md for completed, obsolete or newly discovered tasks based on both the committed changes and the conversation that led to the commit.
+    - If documentation or TODO.md changes are needed after a commit, propose the concrete changes first and ask before applying them.
+    - If a commit was created without being previewed or explicitly approved in the chat beforehand, summarize that commit in the chat after it is created.
+    - Always end the chat response after a commit with a visible post-commit check.
+    - "The visible post-commit check must contain: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; Documentation: updated / proposal needed / no change needed; TODO.md: updated / proposal needed / no change needed."
+    - State validation as run, not run, or not applicable.
+    - Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, and JSON/YAML validity for data or AI context changes.

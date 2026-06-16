@@ -18,10 +18,11 @@ Data generation:
 Before making architecture, data model, generation or frontend changes, read:
 
 1. `.ai-context/ai-context.yaml`
-2. `.ai-context/manual/architecture.yaml`
-3. `.ai-context/manual/domain.yaml`
-4. `.ai-context/manual/data-sources.yaml`
-5. `.ai-context/manual/decisions.yaml`
+2. `.ai-context/manual/ai-guidance.yaml`
+3. `.ai-context/manual/architecture.yaml`
+4. `.ai-context/manual/domain.yaml`
+5. `.ai-context/manual/data-sources.yaml`
+6. `.ai-context/manual/decisions.yaml`
 
 ## Source-of-truth rules
 
@@ -40,6 +41,7 @@ Before making architecture, data model, generation or frontend changes, read:
 - Generated AI context belongs in `.ai-context/generated` and must not be edited manually.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
 - When updating documentation:
+  - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
   - domain rules go to `.ai-context/manual/domain.yaml`
   - data sources and data flow go to `.ai-context/manual/data-sources.yaml`

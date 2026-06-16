@@ -156,3 +156,27 @@ decisions:
       a durable component and route name. It also avoids prematurely treating
       Transactions.json as frontend contract before the DataService and models are
       updated for transactions.
+
+  - id: ADR-013
+    title: AI guidance is structured in a dedicated manual file
+    status: accepted
+    context: >
+      The aiGuidance.rules list in .ai-context/ai-context.yaml grew from a short
+      set of global reminders into a mixed collection of answering behavior,
+      source-of-truth rules, write strategies and post-commit checks.
+    decision: >
+      Keep .ai-context/ai-context.yaml as the entry point and short summary. Move
+      detailed AI working rules into .ai-context/manual/ai-guidance.yaml, grouped
+      by answering behavior, source-of-truth handling, documentation, todos,
+      PowerShell conventions, write strategy and post-commit behavior.
+    rationale: >
+      Grouped rules are easier for agents to find and apply than one long flat
+      list. The top-level context file remains concise while still pointing to
+      the full rule set.
+    consequences:
+      positive:
+        - AI guidance is less likely to be diluted by a long flat list.
+        - New guidance can be added to a specific category.
+        - AGENTS.md can point agents to the dedicated guidance file early.
+      negative:
+        - Agents must read one additional manual context file.
