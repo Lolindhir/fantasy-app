@@ -180,3 +180,18 @@ decisions:
         - AGENTS.md can point agents to the dedicated guidance file early.
       negative:
         - Agents must read one additional manual context file.
+
+  - id: ADR-014
+    title: Routed Angular feature pages live under src/app/features
+    status: accepted
+    context: >
+      The first Angular structure refactor moved routed pages away from the
+      src/app root into feature folders and moved reusable player UI into shared
+      components.
+    decision: >
+      New routed feature code belongs under src/app/features/**. Reusable UI
+      belongs under src/app/shared/components/**. The old routed paths remain
+      temporarily as compatibility re-export wrappers.
+    rationale: >
+      This keeps routed pages, shared UI and future core services separate while
+      limiting risk during the staged migration.
