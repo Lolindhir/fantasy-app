@@ -330,8 +330,9 @@ drafts:
       same duplicate suffix rule as full display keys.
     draftDisplayStatus: >
       Status is the technical generated status used by data logic. DisplayStatus
-      is the user-facing label generated from Status: PreDraft maps to Upcoming,
-      Drafting maps to Live, Complete maps to Completed, and Virtual maps to
+      is the user-facing label generated from Status and season context: PreDraft
+      maps to Upcoming, Drafting maps to Live, Complete maps to Completed,
+      current-season Virtual maps to Upcoming, and later-season Virtual maps to
       Future.
     tradedPickOwnerDisplay: >
       Frontend draft-pick displays should show the current owner as the primary
@@ -339,7 +340,7 @@ drafts:
       show the original owner as secondary "from <team>" context.
 
   overviewRoundChips:
-    currentLocation: src/app/overview/overview.ts
+    currentLocation: src/app/features/overview/overview.ts
     description: >
       Overview displays current-season draft picks grouped by team and draft.
       Each chip stores display text, round and background color.
@@ -357,7 +358,7 @@ drafts:
       service when draft picks are shown in multiple components.
 
   leagueActivityDraftCards:
-    currentLocation: src/app/league-activity/league-activity.ts
+    currentLocation: src/app/features/league-activity/league-activity.ts
     route: /league-activity
     description: >
       League Activity displays current/upcoming/live drafts as draft cards with
@@ -388,5 +389,4 @@ notesForAIAgents:
   - Keep historical DraftKey duplicate-safe when multiple drafts of the same DraftType exist in one season.
   - Do not expose the technical historical D-number in DisplayDraftKey or DisplayAbrDraftKey.
   - Use the full four-digit season in DisplayAbrDraftKey.
-  - Keep Status and DisplayStatus separate; Status is technical and DisplayStatus is user-facing.
-  - Keep LeagueActivityComponent focused on frontend view models and display; move reusable draft-pick display behavior into shared frontend code when reused further.
+  - Current-season Virtual drafts display as Upcoming, not Future.
