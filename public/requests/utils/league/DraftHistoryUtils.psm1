@@ -539,7 +539,7 @@ function New-DraftHistoryOutput {
     $picks = New-DraftHistoryPicks -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs
     $picks = Get-AppliedDraftPickTrades -picks $picks -transactions $transactions -draftKey $draftKey
     $picks = Get-AppliedDraftPickResults -picks $picks -sleeperDraft $sleeperDraft -sleeperPicks $sleeperPicks
-
+    $draftStatus = Get-DraftStatus -sleeperDraft $sleeperDraft
     $draftTypeSetting = [string](Get-DraftObjectProperty -object $sleeperDraft -propertyName "type" -defaultValue "linear")
 
     return [PSCustomObject][ordered]@{
@@ -554,7 +554,8 @@ function New-DraftHistoryOutput {
         DraftSource        = "Sleeper"
         SleeperDraftID     = [string]$sleeperDraft.draft_id
         SleeperStatus      = [string]$sleeperDraft.status
-        Status             = Get-DraftStatus -sleeperDraft $sleeperDraft
+        Status             = $draftStatus
+        DisplayStatus      = Get-DraftDisplayStatus -status $draftStatus
         PickSource         = "GeneratedFromSleeperOrderTradesAndResults"
         OrderSource        = "Sleeper"
         OrderMode          = "Exact"
