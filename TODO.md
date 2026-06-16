@@ -28,11 +28,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
 - [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente prüfen und ggf. auslagern.
-  - Kontext: Draft Picks werden inzwischen in `src/app/overview/overview.ts` und `src/app/league-activity/league-activity.ts` angezeigt.
+  - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und `src/app/features/league-activity/league-activity.ts` angezeigt.
   - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
-  - Mögliche Zielstruktur: `src/app/shared/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
+  - Mögliche Zielstruktur: `src/app/shared/components/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
 
-- [ ] Draft-Round-Chip-Farblogik aus `src/app/overview/overview.ts` und `src/app/league-activity/league-activity.ts` in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
+- [ ] Draft-Round-Chip-Farblogik aus Overview und League Activity in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
   - Kontext: Overview und League Activity berechnen die Farben aktuell lokal mit derselben warm-zu-kalt HSL-Skala.
   - Ziel: Alle Komponenten, die Draft Picks anzeigen, verwenden dieselbe Rundenskala.
 
@@ -43,11 +43,15 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [ ] `DataService` strukturell aufteilen und Angular-Struktur prüfen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
+  - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; einige geroutete Feature-Einstiegspunkte re-exportieren aktuell noch alte physische Implementierungen.
   - Ziel: Modelle und app-weite Services perspektivisch in klarere Bereiche auslagern.
+  - Ziel: Große Feature-Komponenten physisch aus den alten Ordnern nach `src/app/features/**` verschieben, sobald der Move zuverlässig lokal oder per PR-Patch möglich ist.
   - Zielstruktur prüfen:
-    - `src/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
-    - `src/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
-    - `src/shared` für wiederverwendbare UI-/Material-/Frontend-Helfer.
+    - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
+    - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
+    - `src/app/core/mappers` für fachliche Mapper, falls diese von den Services getrennt werden sollen.
+    - `src/app/features` für geroutete Seiten und größere fachliche Funktionsbereiche.
+    - `src/app/shared/components`, `src/app/shared/pipes` und `src/app/shared/utils` für wiederverwendbare UI-/Material-/Frontend-Helfer.
   - Mögliche Services prüfen: `data.service.ts`, `data-api.service.ts`, `league-mapper.service.ts`, `player-mapper.service.ts`, `draft-mapper.service.ts`, `transaction-mapper.service.ts`, `free-agent-market.service.ts`, `trade-calculator.service.ts`.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
