@@ -1,1 +1,308 @@
-<!-- Placeholder for staged overview move. The active route still uses src/app/overview. -->
+<div *ngIf="vm$ | async as vm" class="container">
+
+  <div class="headline">
+    <div>{{ vm.league.Name }}</div>
+    <img 
+          *ngIf="vm.league.Avatar" 
+          [src]="vm.league.Avatar" 
+          alt="🏈"
+        />
+    <!-- <div>{{ vm.league.Name }} 🏈 Dynasty</div> -->
+     
+  </div>
+  
+  <!-- 🧾 HEADER -->
+  <section class="header">
+    <div>
+      <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
+    </div>
+
+    <div class="header-columns">
+
+      <div class="header-info">
+
+        <div class="label">🤝 Trades:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.TradesMetaText.length > 0">
+              {{vm.league.TradesMetaText}}
+          </span>
+        </div>
+
+
+        <div class="label">📝 Waivers:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.WaiversMetaText.length > 0">
+              {{vm.league.WaiversMetaText}}
+          </span>
+        </div>      
+
+
+        <div class="label">✂️ Cuts:</div>
+        <div class="status">
+          <span>
+            {{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}
+          </span>
+          <span class="meta" *ngIf="vm.league.CutsMetaText.length > 0">
+              {{vm.league.CutsMetaText}}
+          </span>
+        </div>
+
+      </div>
+
+      <div class="header-info">
+        <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
+        <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
+
+        <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
+        <div class="status">
+          {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
+        </div>
+
+        <div></div>
+        <div>
+          <span class="meta" [ngClass]="{
+              'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
+              'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
+            }">
+              ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
+          </span>
+        </div>
+
+      </div>
+
+      <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
+        <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span style="font-size: small">until Cap Deadline</span></div>
+        <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
+      </div>
+
+    </div>    
+
+    <div *ngIf="vm.champion" class="champion">
+      🏆 {{ vm.champion.Owner }}
+      <img 
+          *ngIf="vm.champion.OwnerAvatar" 
+          [src]="vm.champion.OwnerAvatar" 
+          alt="Logo" 
+        />
+    </div>
+  </section>
+
+  <!-- 📊 Cap Space Overview -->
+  <section *ngIf="vm.offSeason">
+    <h2>Available Cap Space</h2>
+
+    <div class="cap-space-row">
+      <div></div>
+      <div class="cap-space-label">
+        {{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}
+      </div>
+      <div class="cap-space-projection">
+        {{ vm.league.IsFinished ? "📊" : "🔮"}}
+      </div>
+    </div>
+
+    <ng-container *ngFor="let t of vm.salaryByTeam">
+
+      <!-- MAIN ROW -->
+      <div class="cap-space-row cap-space-content" (click)="toggleTeam(t.team.TeamID)">
+
+        <div class="team">
+          <span class="cap-space-expand-icon">
+            {{ expandedTeamId === t.team.TeamID ? "▼" : "▶" }}
+          </span>
+          <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
+          <span class="cap-space-team-name">{{ t.team.Team }}</span>
+        </div>
+        
+        <div class="cap-space-stat"
+            [ngClass]="{
+              'positive-diff': t.total > vm.league.SalaryCap,
+              'negative-diff': t.total < vm.league.SalaryCap
+            }">
+          {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
+        </div>
+        
+        <div class="cap-space-projection">
+          {{ vm.league.SalaryCapProjected < t.totalProjected ? "🔴" : "🟢" }}
+        </div>
+
+      </div>
+
+      <!-- EXPANDED ROW -->
+      <div class="cap-space-details" *ngIf="expandedTeamId === t.team.TeamID">
+
+        <div>
+          <span class="label">{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }} Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.total, false, 1) }}</span>
+        </div>
+
+        <div>
+          <span class="label">{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }} Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalProjected, false, 1) }}</span>
+        </div>
+
+        <div>
+          <span class="label">💀 {{ vm.league.IsFinished ? "Next" : "Proj."}} Cap Space:</span>
+          <span class="stat"
+            [ngClass]="{
+              'positive-diff': t.totalProjected > vm.league.SalaryCapProjected,
+              'negative-diff': t.totalProjected < vm.league.SalaryCapProjected
+            }">{{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ vm.league.SalaryCap - t.total < vm.league.SalaryCapProjected - t.totalProjected ? "📈" : "📉" }}</span>
+        </div>
+
+        <div>
+          <span class="label">👥 Roster:</span>
+          <span class="stat">{{ t.team.Roster.length }}</span>
+        </div>
+
+        <div>
+          <span class="label">💎 Top Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.topPlayers[0].Salary, false, 1)}} ({{t.topPlayers[0].NameShort}})</span>
+        </div>
+
+        <div>
+          <span class="label">⭐ Top 5:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalTop5, false, 1)}} ({{t.totalTop5/t.totalAll * 100 | number:'1.0-0' }}% of total cap)</span>
+        </div>
+
+        <div>
+          <span class="label">⚖️ Avg Salary:</span>
+          <span class="stat">{{ formatSalaryDollars(t.totalAll / t.team.Roster.length, false, 1)}}</span>
+        </div>
+
+        <div
+          class="draft-picks-section"
+          *ngIf="t.draftPickGroups.length > 0"
+          style="margin-top: 4px; padding-top: 5px; border-top: 1px solid rgba(0, 0, 0, 0.08);"
+        >
+          <div
+            class="draft-picks-title"
+            style="font-size: 0.9rem; font-weight: 500; opacity: 0.85; margin-bottom: 4px;"
+          >
+            📋 Draft Picks {{ vm.league.Season }}
+          </div>
+
+          <div
+            *ngFor="let draftGroup of t.draftPickGroups"
+            class="draft-pick-group"
+            style="display: grid; gap: 3px;"
+          >
+            <div
+              class="draft-pick-header"
+              style="display: flex; align-items: center; gap: 6px;"
+            >
+              <span class="label">{{ draftGroup.label }}:</span>
+              <span class="stat">{{ draftGroup.count }}</span>
+            </div>
+
+            <div
+              class="draft-pick-chip-row"
+              style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 22px;"
+            >
+              <span
+                *ngFor="let pick of draftGroup.picks"
+                class="draft-pick-chip"
+                [style.background-color]="pick.backgroundColor"
+                style="padding: 1px 6px; border-radius: 999px; color: #111; border: 1px solid rgba(0, 0, 0, 0.12); font-size: 0.75rem; font-weight: 400; line-height: 1.35; opacity: 0.85; white-space: nowrap;"
+              >
+                {{ pick.display }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- <div>
+          <span class="label">Picks</span>
+          <span class="stat">{{ repeatEmojiLimited('⭐', t.team.Picks ?? 0) }}</span>
+        </div> -->
+
+      </div>
+
+    </ng-container>    
+
+  </section>
+
+  <!-- 🏆 STANDINGS -->
+  <section *ngIf="vm.league.IsFinished">
+    <h2>{{ vm.league.IsFinished ? "Season Results" : "Standings"}}</h2>
+
+    <div class="standings-wrapper">
+      <div class="podium">
+        <!-- Platz 2 -->
+        <div class="podium-item second" *ngIf="vm.league.Teams[1]">
+          <div class="owner runner-up">{{ vm.league.Teams[1].Owner }}</div>
+          <div>{{ vm.league.Teams[1].AwardsDisplay }}</div>
+          <div class="medal">🥈</div>
+        </div>
+
+        <!-- Platz 1 -->
+        <div class="podium-item first" *ngIf="vm.league.Teams[0]">
+          <div class="owner champ">{{ vm.league.Teams[0].Owner }}</div>
+          <div>{{ vm.league.Teams[0].AwardsDisplay }}</div>
+          <div class="cup">🏆</div>
+        </div>
+
+        <!-- Platz 3 -->
+        <div class="podium-item third" *ngIf="vm.league.Teams[2]">
+          <div class="owner">{{ vm.league.Teams[2].Owner }}</div>
+          <div>{{ vm.league.Teams[2].AwardsDisplay }}</div>
+          <div class="medal">🥉</div>
+        </div>      
+      </div>
+
+      <!-- Restliche Teams -->
+      <div class="rest">
+          <div *ngFor="let team of vm.league.Teams.slice(3)" class="team-row">
+            <div class="place">{{ standingEmoji(team.Standing) }}</div>
+            <div class="owner">{{ team.Owner }} <span style="font-size: smaller;">{{ team.AwardsDisplay }}</span></div>
+          </div>
+      </div>
+    </div>
+    
+  </section>
+
+  <!-- 🔥 Awards -->
+  <section class="awards" *ngIf="vm.league.IsFinished">
+    <h3>Regular Season Awards</h3>
+    <div class="awards-grid">
+      <div *ngFor="let award of vm.awards" class="award-card">
+        <div class="award-icon">{{award.Icon}}</div>
+        <div class="award-name">{{ award.Name }}</div>
+        <div class="award-owner">- {{ award.Owner }} -</div>
+        <div class="award-stat">{{ award.StatDisplay }}</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 🏛️ ALL TIME -->
+  <section class="allTime">
+    <h2>All-Time Standings</h2>
+
+    <div *ngFor="let team of vm.allTime" class="allTime-row">
+      
+      <div class="allTime-place">{{ team.Placements.AllTime.Playoffs.Place }}</div>
+
+      <div class="allTime-owner">{{ team.Owner }}</div>
+
+      <div class="allTime-awards">
+        {{ repeatEmojiLimited('🏆', team.Championships) }}
+        {{ repeatEmojiLimited('🥈', team.RunnerUps) }}
+        {{ repeatEmojiLimited('🥉', team.Thirds) }}
+        {{ repeatEmojiLimited('👑', team.RegularSeasonWins) }}
+      </div>
+
+      <div class="allTime-avg">
+        Ø🏅 = {{ team.Placements.AllTime.Playoffs.PlaceAverage }}
+      </div>
+
+    </div>
+  </section>
+
+</div>

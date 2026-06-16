@@ -1,4 +1,3 @@
-
 <!-- Spieler Template -->
 <ng-template #playerList let-players="players" let-columns="columns" let-lineNumber="lineNumber" let-team="team" let-compact="compact">
   <table mat-table [dataSource]="players" class="mat-elevation-z2 full-width">
@@ -120,7 +119,7 @@
 
 <!-- Timestamp Anzeige, auf rechter Seite mit Flexbox -->
 <div *ngIf="timestamp" class="timestamp" style="margin-bottom: 10px;">
-  <mat-icon>access_time</mat-icon>
+  <span aria-hidden="true">🕒</span>
   Updated: {{ timestamp | date:'dd.MM.yyyy, HH:mm' }}
 </div>
 
@@ -131,7 +130,6 @@
 </div> 
 
   
-
 
 
 
