@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, ViewEncapsulation, importProvidersFrom } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { Player, PointHistory, PointHistorySeason, PlayerStats } from '../../../services/data-service'; // Pfad ggf. anpassen
+import type { Player, PointHistory, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models'; // Pfad ggf. anpassen
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { CommonModule } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
