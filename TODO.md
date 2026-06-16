@@ -63,6 +63,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Später / Ideen
 
+- [ ] Rollenbasierte AI-Arbeitsmodi für fokussierte Chats prüfen.
+  - Kontext: Aktuell soll ohne expliziten Rollenmodus weiterhin die vollständige Projekt-Guidance gelten, damit keine globalen Regeln versehentlich weggefiltert werden.
+  - Idee: Später optionale Arbeitsmodi wie Architektur, Frontend, Data Generation oder AI-Kontext-Maintenance definieren, um relevante Kontextdateien und Checks gezielter zu priorisieren.
+  - Leitplanke: Arbeitsmodi dürfen globale Source-of-Truth-, Write-Strategy-, Dokumentations-, TODO- und Post-Commit-Regeln nicht deaktivieren.
+
 - [ ] Aussagekräftigere Summary-Kacheln für League Activity prüfen.
   - Kontext: Die aktuellen Kacheln für Drafts und Picks sind nur bedingt aussagekräftig, weil weit entfernte Future-Drafts und generische Pick-Anzahlen wenig Mehrwert liefern.
   - Ziel: Summary-Kacheln sollen später stärker auf echte Aktivität, Relevanz und nächste Entscheidungen fokussieren.
