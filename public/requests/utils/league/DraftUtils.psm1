@@ -192,7 +192,7 @@ function Get-DraftDisplayStatus {
         "PreDraft" { return "Upcoming" }
         "Drafting" { return "Live" }
         "Complete" { return "Completed" }
-        "Virtual"  { return "Projected" }
+        "Virtual"  { return "Future" }
         default     { return $status }
     }
 }
