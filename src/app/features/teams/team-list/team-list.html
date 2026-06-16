@@ -1,0 +1,233 @@
+
+<!-- Spieler Template -->
+<ng-template #playerList let-players="players" let-columns="columns" let-lineNumber="lineNumber" let-team="team" let-compact="compact">
+  <table mat-table [dataSource]="players" class="mat-elevation-z2 full-width">
+
+    <!-- Rang -->
+    <ng-container matColumnDef="rank">
+      <th mat-header-cell *matHeaderCellDef class="table-text"></th>
+      <td mat-cell *matCellDef="let player; let i = index" class="table-text">{{ i + 1 }}</td>
+    </ng-container>
+
+    <!-- Bild -->
+    <ng-container matColumnDef="picture">
+      <th mat-header-cell *matHeaderCellDef class="table-text"></th>
+      <td mat-cell *matCellDef="let player" class="table-text">
+        <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="40" class="clickable" (click)="openPlayerDetail(player)"/>
+      </td>
+    </ng-container>
+
+    <!-- Name -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Spieler </th>
+      <td mat-cell *matCellDef="let player" class="table-text">
+        <!-- Flex Box -->
+        <div fxLayout="column" fxLayoutAlign="none start" class="clickable" (click)="openPlayerDetail(player)">
+          <div class="player-name">{{ player.NameShort }}</div>
+          <div *ngIf="compact" fxLayout="row" fxLayoutAlign="start start">
+            <img *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="40" />
+            <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
+            <div [style.background-color]="getPositionColor(player.Position)" class="chip-position" style="display: inline-flex; margin-left: 2px; vertical-align: top;">
+              {{ player.Position }}
+            </div>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Position als Chip -->
+    <ng-container matColumnDef="position">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Position </th>
+      <td mat-cell *matCellDef="let player" class="table-text">
+        <div [style.background-color]="getPositionColor(player.Position)" class="chip-position">
+          {{ player.Position }}
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- NFL Team -->
+    <ng-container matColumnDef="team">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Team </th>
+      <td mat-cell *matCellDef="let player" class="table-text">
+        <img *ngIf="player.TeamNFL?.Logo" [src]="player.TeamNFL.Logo" alt="Logo" width="25" />
+      </td>
+    </ng-container>
+
+    <!-- Salary -->
+    <ng-container matColumnDef="salary">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Salary </th>
+      <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">{{ player.SalaryDisplay }}</td>
+    </ng-container>
+
+    <!-- SalaryProjected -->
+    <ng-container matColumnDef="salaryProjected">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> {{projectedAbr}} </th>
+      <td mat-cell *matCellDef="let player" class="table-text" class="player-salary">
+        <div fxLayout="column" fxLayoutAlign="none start">
+          <div>{{ player.SalaryProjectedDisplay }}</div>
+          <div class="player-salary-difference">
+            <span [ngClass]="{
+              'positive-diff': player.SalaryProjected - player.Salary > 0,
+              'negative-diff': player.SalaryProjected - player.Salary < 0
+            }">
+              {{ formatSalaryDollars(player.SalaryProjected - player.Salary, true, 1) }}
+            </span>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+    <!-- Fantasy Team -->
+    <ng-container matColumnDef="fantasyTeam">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Owner </th>
+      <td mat-cell *matCellDef="let player" class="table-text">
+        <img 
+          *ngIf="player.TeamFantasy?.Avatar" 
+          [src]="player.TeamFantasy.Avatar" 
+          alt="Logo" 
+          width="25"
+          matTooltip="{{ player.TeamFantasy.Owner }}" 
+          matTooltipPosition="above"
+        />
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="exclude">
+      <th mat-header-cell *matHeaderCellDef class="table-text"> Exclude </th>
+      <td mat-cell *matCellDef="let player; let i = index" class="table-text">
+        <mat-checkbox 
+          [checked]="isExcluded(team.TeamID, player.ID)" 
+          (change)="toggleExclude(team.TeamID, player.ID)"
+          [disabled]="isPlayerExcludable(player, team) === false"
+        >
+        </mat-checkbox>
+      </td>
+    </ng-container>
+
+    <!-- Header + Rows -->
+    <tr mat-header-row *matHeaderRowDef="columns" class="table-row"></tr>
+    <tr mat-row *matRowDef="let row; let i = index; columns: columns;" class="table-row"
+        [ngClass]="{
+          'cut-line': i + 1 === lineNumber,
+          'below-cut': i + 1 > lineNumber,
+          'excluded-player': isExcluded(team?.TeamID, row.ID)
+          }"
+      >
+    </tr>
+  </table>
+</ng-template>
+
+
+<!-- Timestamp Anzeige, auf rechter Seite mit Flexbox -->
+<div *ngIf="timestamp" class="timestamp" style="margin-bottom: 10px;">
+  <mat-icon>access_time</mat-icon>
+  Updated: {{ timestamp | date:'dd.MM.yyyy, HH:mm' }}
+</div>
+
+<div>
+  <mat-slide-toggle [(ngModel)]="showProjected">
+    <span style="margin-left: 10px;;">{{ showProjected ? projectedText  + ' Salaries On' : 'Toggle ' + projectedText + ' Salaries On' }}</span>
+  </mat-slide-toggle>
+</div> 
+
+  
+
+
+
+
+<!-- Salary Cap Card -->
+<mat-card class="salarycap">
+  <mat-card-header>
+    <mat-card-title>
+      League Salary Cap = {{ formatSalaryDollars(salaryCap, false, 0) }} ({{ projectedAbr }}: {{ formatSalaryDollars(salaryCapProjected, false, 0) }}) 
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    
+  </mat-card-content>
+
+  <mat-card-actions>
+    <mat-accordion>
+      <mat-expansion-panel [(expanded)]="salaryCapTopPlayersExpanded">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="player-accordion-title"> Top {{ salaryRelevantTeamSize * fantasyTeams.length }} Players of NFL</mat-panel-title>
+        </mat-expansion-panel-header>
+          <!-- Salary Cap Card -->
+          <div *ngIf="!isMobile && !showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopPlayers, columns: ['rank','picture','name','position','team','salary','salaryProjected','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: false }"></ng-container>
+          </div>
+          <div *ngIf="!isMobile && showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapProjectedTopPlayers, columns: ['rank','picture','name','position','team','salaryProjected','salary','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: false }"></ng-container>
+          </div>
+          <div *ngIf="isMobile && !showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapTopPlayers, columns: ['rank','name','salary','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: true }"></ng-container>
+          </div>
+          <div *ngIf="isMobile && showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: salaryCapProjectedTopPlayers, columns: ['rank','name','salaryProjected','fantasyTeam'], lineNumber: salaryRelevantTeamSize * fantasyTeams.length, team: null, compact: true }"></ng-container>
+          </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </mat-card-actions>
+</mat-card>
+
+
+<!-- Teams -->
+<mat-card *ngFor="let team of fantasyTeams; let i = index" class="team-card mat-elevation-z4">
+  <mat-card-header>
+    <div mat-card-avatar>
+      <img *ngIf="team.Avatar" [src]="team.Avatar" alt="Logo" width="40" />
+    </div>
+    <mat-card-title>{{ team.Team }} [{{ team.Wins }}-{{ team.Losses }}]</mat-card-title>
+    <mat-card-subtitle>
+      <span class="team-card-subtitle">Owner: {{ team.Owner }}, Points: {{ team.Points.toFixed(0) }}, Streak: {{ team.Streak }}</span>
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, false, 0) }} ({{ projectedAbr }}: {{ formatSalaryDollars(team.SalaryProjected, false, 0) }})</p>
+    <p>
+      <strong>Salary Cap Difference:</strong>
+      <span [ngClass]="{
+        'positive-diff': team.Salary - salaryCap > 0,
+        'negative-diff': team.Salary - salaryCap < 0
+      }">
+        {{ formatSalaryDollars(team.Salary - salaryCap, true, 0) }}
+      </span>
+    </p>
+    <p>
+      <strong>{{ projectedText }} Cap Difference:</strong>
+      <span [ngClass]="{
+        'positive-diff': team.SalaryProjected - salaryCapProjected > 0,
+        'negative-diff': team.SalaryProjected - salaryCapProjected < 0
+      }">
+        {{ formatSalaryDollars(team.SalaryProjected - salaryCapProjected, true, 0) }}
+      </span>
+    </p>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <mat-accordion>
+      <mat-expansion-panel [(expanded)]="teamExpandedTeam[i]">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="player-accordion-title">
+            Roster of {{ team.Team }}
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+          <!-- Team Card -->
+          <div *ngIf="!isMobile && !showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayers, columns: ['rank','picture','name','team','position','salary','salaryProjected','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: false }"></ng-container>
+          </div>
+          <div *ngIf="!isMobile && showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersProjected, columns: ['rank','picture','name','team','position','salaryProjected','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: false }"></ng-container>
+          </div>
+          <div *ngIf="isMobile && !showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayers, columns: ['rank','name','salary','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: true }"></ng-container>
+          </div>
+          <div *ngIf="isMobile && showProjected">
+            <ng-container *ngTemplateOutlet="playerList; context:{ players: team.TopPlayersProjected, columns: ['rank','name','salaryProjected','exclude'], lineNumber: getAdjustedTopPlayersCount(team), team: team, compact: true }"></ng-container>
+          </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </mat-card-actions>
+</mat-card>
