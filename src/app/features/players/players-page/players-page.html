@@ -1,0 +1,105 @@
+<div *ngIf="timestamp" class="timestamp">
+  <mat-icon>access_time</mat-icon>
+  Updated: {{ timestamp | date:'dd.MM.yyyy, HH:mm' }}
+</div>
+
+<mat-card class="players-card mat-elevation-z4">
+
+  <mat-card-header>
+    <mat-card-title>Players</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+
+    <div class="filters">
+
+      <mat-form-field appearance="outline" class="filter-field search-field">
+        <mat-label>Search</mat-label>
+        <input
+          matInput
+          [(ngModel)]="searchText"
+          (ngModelChange)="applyFilters()"
+          placeholder="Player, owner, team..."
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Position</mat-label>
+        <mat-select [(ngModel)]="selectedPosition" (selectionChange)="applyFilters()">
+          <mat-option value="ALL">ALL</mat-option>
+          <mat-option value="FLEX">Flex</mat-option>
+          <mat-option value="QB">QB</mat-option>
+          <mat-option value="RB">RB</mat-option>
+          <mat-option value="WR">WR</mat-option>
+          <mat-option value="TE">TE</mat-option>
+          <mat-option value="K">K</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Market</mat-label>
+        <mat-select [(ngModel)]="marketFilter" (selectionChange)="applyFilters()">
+          <mat-option value="all">All Players</mat-option>
+          <mat-option value="freeAgents">Free Agents</mat-option>
+          <mat-option value="rostered">Rostered</mat-option>
+          <mat-option value="available">Draft Available</mat-option>
+          <mat-option value="projectedCapCuts">Projected Cap Cuts</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Sort</mat-label>
+        <mat-select [(ngModel)]="sortOption" (selectionChange)="applyFilters()">
+          <mat-option value="salaryDesc">Salary</mat-option>
+          <mat-option value="salaryProjectedDesc">Projected Salary</mat-option>
+          <mat-option value="pointsDesc">Points</mat-option>
+          <mat-option value="avgPointsDesc">Avg Game</mat-option>
+          <mat-option value="lastYearPointsDesc">Last Season Pts.</mat-option>
+          <mat-option value="lastYearAvgPointsDesc">Last Season Avg Game</mat-option>
+          <mat-option value="ageAsc">Age ⬆</mat-option>
+          <mat-option value="ageDesc">Age ⬇</mat-option>
+          <mat-option value="nameAsc">Name</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+    </div>
+
+    <div class="toggles">
+      <mat-slide-toggle [(ngModel)]="showProjectedSalary" (change)="applyFilters()">
+        Projected Salary
+      </mat-slide-toggle>
+
+      <mat-slide-toggle [(ngModel)]="showProjectedMarket" (change)="applyFilters()">
+        Projected Market
+      </mat-slide-toggle>
+
+      <button mat-stroked-button type="button" (click)="resetFilters()">
+        Reset
+      </button>
+    </div>
+
+  </mat-card-content>
+</mat-card>
+
+<div class="players-list-wrapper">
+  <app-player-list
+    [players]="players"
+    [columns]="columns"
+    [compact]="isMobile"
+    [showProjectedMarket]="showProjectedMarket"
+    [projectedAbr]="'Proj.'"
+    [dynamicColumnHeader]="dynamicColumnHeader"
+    [dynamicColumnValueFn]="getDynamicColumnValue"
+  >
+  </app-player-list>
+
+  <div class="show-more" *ngIf="hasMorePlayers">
+    <button mat-stroked-button type="button" (click)="showMore()">
+      Show more — {{ players.length }} / {{ filteredPlayers.length }}
+    </button>
+
+    <div class="show-more-hint">
+      {{ remainingPlayersCount }} more players available
+    </div>
+  </div>
+</div>
