@@ -72,6 +72,7 @@ coreConcepts:
       - SleeperDraftID
       - SleeperStatus
       - Status
+      - DisplayStatus
       - PickSource
       - OrderSource
       - OrderMode
@@ -112,11 +113,9 @@ coreConcepts:
       current MVP component is src/app/league-activity/league-activity.ts.
     currentMvpScope:
       - display current/upcoming/live drafts from public/data/Drafts.json
-      - group current-season picks by draft and round
-      - display non-current-season drafts compactly by current owner and owned rounds
+      - group picks by draft and round
       - show current owner as the primary owner label
       - show original owner as "from <team>" when a pick is currently traded
-      - use team avatars next to owner labels where available
       - reserve a Moves area as placeholder until Transactions.json is modeled in Angular
     doesNotOwn:
       - draft order derivation
@@ -329,6 +328,11 @@ drafts:
       Abbreviated draft display keys use the full season year, for example
       "2024 FA" instead of "24 FA". Historical abbreviated displays follow the
       same duplicate suffix rule as full display keys.
+    draftDisplayStatus: >
+      Status is the technical generated status used by data logic. DisplayStatus
+      is the user-facing label generated from Status: PreDraft maps to Upcoming,
+      Drafting maps to Live, Complete maps to Completed, and Virtual maps to
+      Projected.
     tradedPickOwnerDisplay: >
       Frontend draft-pick displays should show the current owner as the primary
       owner and, when IsCurrentlyTraded is true or current/original owners differ,
@@ -356,21 +360,10 @@ drafts:
     currentLocation: src/app/league-activity/league-activity.ts
     route: /league-activity
     description: >
-      League Activity displays current-season drafts as detailed draft cards with
-      round expansion panels and pick rows. Non-current-season drafts are shown as
-      compact upcoming draft cards grouped by current owner and owned round picks.
-      It uses DataService draft/team data and must not derive draft order or
-      ownership itself beyond frontend view-model formatting.
-    currentSeasonDisplay: >
-      Current-season drafts use detailed cards. Round panels are collapsed by
-      default. Pick rows show DisplayPick, current owner avatar/name, optional
-      "from" original-owner avatar/name for traded picks, and selected player
-      when available.
-    upcomingDisplay: >
-      Upcoming/non-current-season drafts use compact cards. Each owner row shows
-      team avatar/name and one colored round pill per owned pick. Multiple picks
-      in the same round are represented by repeated same-colored pills rather than
-      an "x2" multiplier.
+      League Activity displays current/upcoming/live drafts as draft cards with
+      summary metrics, round expansion panels and pick rows. It uses DataService
+      draft/team data and must not derive draft order or ownership itself beyond
+      frontend view-model formatting.
     colorRule:
       scope: all draft picks visible in League Activity
       invariant: Same round should have the same color within the view.
@@ -395,4 +388,5 @@ notesForAIAgents:
   - Keep historical DraftKey duplicate-safe when multiple drafts of the same DraftType exist in one season.
   - Do not expose the technical historical D-number in DisplayDraftKey or DisplayAbrDraftKey.
   - Use the full four-digit season in DisplayAbrDraftKey.
+  - Keep Status and DisplayStatus separate; Status is technical and DisplayStatus is user-facing.
   - Keep LeagueActivityComponent focused on frontend view models and display; move reusable draft-pick display behavior into shared frontend code when reused further.
