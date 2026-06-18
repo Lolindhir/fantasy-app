@@ -5,6 +5,14 @@
 // compatibility; future refactors can move the declarations here without forcing
 // feature components to change their import paths again.
 
+import '../../services/data-service';
+
+declare module '../../services/data-service' {
+  interface RawDraft {
+    DisplayStatus: string;
+  }
+}
+
 export type {
   DataTimestamps,
   RawDraft,
