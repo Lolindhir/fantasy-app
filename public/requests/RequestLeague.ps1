@@ -1,4 +1,3 @@
-
 # ===========================================================================
 # 1. Imports
 # ===========================================================================
@@ -43,6 +42,7 @@ $CapDeadline = $config.CapDeadline
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
+$PlayersRelevantFile = Join-Path $config.DataDir "Players_Relevant.json"
 
 
 # ===========================================================================
@@ -234,7 +234,7 @@ try {
     Write-Host "Enriching team data with draft pick keys..." -ForegroundColor Yellow
     $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
     
-    # --- Alle Spieler holen (für Salary Cap Berechnung) ---
+    # --- Alle Spieler holen (für Salary Cap Berechnung und relevante Spielerdatei) ---
     $playersData = Get-PlayersFromFile    
 
     # --- Top-N Spieler bestimmen ---
@@ -401,6 +401,10 @@ try {
         LeagueIDPrevious        = $league.previous_league_id
     }
 
+    # --- Relevante Spielerdatei schreiben ---
+    $relevantPlayers = Get-RelevantPlayers -Players $playersData -Teams $teamData
+    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers
+
     # --- JSON schreiben ---
     $compare = & Get-Compare
     Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
@@ -413,6 +417,3 @@ catch {
     Write-Error "An error occurred: $_"
     exit 1
 }
-
-
-
