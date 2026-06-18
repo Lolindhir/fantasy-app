@@ -16,6 +16,7 @@ export class App implements OnInit {
   protected readonly title = signal('fantasy-league-custom-frontend');
   menuOpen = false;
   isScrolled = false;
+  buildInfoDetailsOpen = false;
 
   readonly loadedBuildInfo = APP_BUILD_INFO;
   readonly loadedBundleId = this.getLoadedBundleId();
@@ -81,18 +82,39 @@ export class App implements OnInit {
     return `${loadedVersion}${dateText}`;
   }
 
-  get buildInfoTitle(): string {
-    const loadedBuildDate = this.formatBuildDate(this.loadedBuildInfo.buildDate) || 'unbekannt';
-    const serverBuildDate = this.formatBuildDate(this.serverBuildInfo?.buildDate || '') || 'nicht geprüft';
-    const status = this.updateAvailable ? 'Update verfügbar' : 'Geladene App ist aktuell oder Server noch nicht neuer';
+  get buildInfoStatusLabel(): string {
+    return this.updateAvailable ? 'Update verfügbar' : 'Aktuell / Server nicht neuer';
+  }
 
+  get loadedBundleLabel(): string {
+    return this.loadedBundleId || 'unbekannt';
+  }
+
+  get loadedBuildDateLabel(): string {
+    return this.formatBuildDate(this.loadedBuildInfo.buildDate) || 'unbekannt';
+  }
+
+  get serverBundleLabel(): string {
+    return this.serverBundleId || 'nicht geprüft';
+  }
+
+  get serverBuildDateLabel(): string {
+    return this.formatBuildDate(this.serverBuildInfo?.buildDate || '') || 'nicht geprüft';
+  }
+
+  get buildInfoTitle(): string {
     return [
-      `Status: ${status}`,
-      `Geladener Bundle: ${this.loadedBundleId || 'unbekannt'}`,
-      `Geladene Build-Zeit: ${loadedBuildDate}`,
-      `Server-Bundle: ${this.serverBundleId || 'nicht geprüft'}`,
-      `Server-Build-Zeit: ${serverBuildDate}`
+      `Status: ${this.buildInfoStatusLabel}`,
+      `Geladener Bundle: ${this.loadedBundleLabel}`,
+      `Geladene Build-Zeit: ${this.loadedBuildDateLabel}`,
+      `Server-Bundle: ${this.serverBundleLabel}`,
+      `Server-Build-Zeit: ${this.serverBuildDateLabel}`
     ].join('\n');
+  }
+
+  toggleBuildInfoDetails(event: Event): void {
+    event.stopPropagation();
+    this.buildInfoDetailsOpen = !this.buildInfoDetailsOpen;
   }
 
   private loadServerBuildInfo(): void {
