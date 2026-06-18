@@ -74,17 +74,20 @@ export class App implements OnInit {
 
   get buildInfoLabel(): string {
     const loadedVersion = this.loadedBundleId || this.loadedBuildInfo.shortCommit || this.loadedBuildInfo.version;
+    const buildDate = this.formatBuildDate(this.loadedBuildInfo.buildDate);
+    const dateText = buildDate ? ` · ${buildDate}` : '';
     const updateText = this.updateAvailable ? ' · Update verfügbar' : '';
 
-    return `Build ${loadedVersion}${updateText}`;
+    return `Build ${loadedVersion}${dateText}${updateText}`;
   }
 
   get buildInfoTitle(): string {
     const loadedBundle = `Geladener Bundle: ${this.loadedBundleId || 'unbekannt'}`;
+    const loadedBuildDate = `Build-Zeit: ${this.formatBuildDate(this.loadedBuildInfo.buildDate) || 'unbekannt'}`;
     const serverBundle = `Server-Bundle: ${this.serverBundleId || 'nicht geprüft'}`;
     const fallbackInfo = `Fallback-Info: ${this.loadedBuildInfo.version} (${this.loadedBuildInfo.source})`;
 
-    return `${loadedBundle}\n${serverBundle}\n${fallbackInfo}`;
+    return `${loadedBundle}\n${loadedBuildDate}\n${serverBundle}\n${fallbackInfo}`;
   }
 
   private loadServerBundleInfo(): void {
@@ -125,5 +128,19 @@ export class App implements OnInit {
     if (end <= 0) return undefined;
 
     return afterStart.slice(0, end).slice(0, 12);
+  }
+
+  private formatBuildDate(buildDate: string): string {
+    if (!buildDate || buildDate === 'local') return '';
+
+    const date = new Date(buildDate);
+    if (Number.isNaN(date.getTime())) return buildDate;
+
+    return date.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }
