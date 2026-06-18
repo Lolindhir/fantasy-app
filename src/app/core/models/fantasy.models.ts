@@ -1,24 +1,18 @@
 // Central model import surface for Angular consumers.
 //
-// This file intentionally re-exports the current DataService model types as a
-// first migration step. The source definitions still live in data-service.ts for
-// compatibility; future refactors can move the declarations here without forcing
-// feature components to change their import paths again.
-
-import '../../services/data-service';
-
-declare module '../../services/data-service' {
-  interface RawDraft {
-    DisplayStatus: string;
-  }
-}
+// Draft model declarations already live in dedicated core model files. The other
+// model declarations are still re-exported from data-service.ts as an intermediate
+// migration step while DataService is split into smaller responsibilities.
 
 export type {
-  DataTimestamps,
   RawDraft,
   DraftSettings,
   DraftPickTradeHistoryEntry,
-  DraftPick,
+  DraftPick
+} from './draft.models';
+
+export type {
+  DataTimestamps,
   PlayoffTeam,
   RegularSeasonTeam,
   AwardType,
