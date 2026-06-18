@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DataService, League, FantasyTeam, AwardInStanding, Player, DraftPick } from '../../services/data-service';
+import { DataService } from '../../services/data-service';
+import type { AwardInStanding, DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
