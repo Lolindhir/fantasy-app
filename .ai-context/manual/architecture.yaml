@@ -110,17 +110,24 @@ frontendStructure:
     - path: src/app/core/**
       responsibility: >
         Target area for app-wide Angular models, services and mapper code. This
-        area is intentionally prepared but not yet fully populated.
+        area is being populated in staged slices while DataService is split.
+
+    - path: src/app/core/models/draft.models.ts
+      responsibility: >
+        Contains extracted Angular draft model declarations for RawDraft,
+        DraftSettings, DraftPickTradeHistoryEntry and DraftPick. These mirror the
+        generated Drafts.json read model used by DataService and draft features.
 
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
-        Central Angular model import surface. It currently re-exports the
-        existing model/type declarations from DataService while the frontend is
-        gradually migrated away from direct type imports from data-service.ts.
+        Central Angular model import surface. Draft model exports now come from
+        src/app/core/models/draft.models.ts. Remaining model/type declarations are
+        still re-exported from DataService while the frontend is gradually migrated
+        away from direct type imports from data-service.ts.
 
     - path: src/app/services/data-service.ts
       responsibility: >
-        Current app-wide Angular data facade. It still contains models, HTTP
+        Current app-wide Angular data facade. It still contains many models, HTTP
         loading, mapping/enrichment and helper logic and is the next major
         frontend refactor candidate.
 
@@ -191,7 +198,8 @@ dataFlow:
     to: src/app/services/data-service.ts
     purpose: >
       Frontend current/upcoming/live draft and draft-pick model. DataService
-      resolves team DraftPick keys into DraftPick objects.
+      resolves team DraftPick keys into DraftPick objects. Angular consumers should
+      import draft model types through src/app/core/models/fantasy.models.ts.
 
   - from: src/app/services/data-service.ts
     to: src/app/features/league-activity/league-activity.ts
