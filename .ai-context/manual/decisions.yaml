@@ -187,11 +187,13 @@ decisions:
     context: >
       The first Angular structure refactor moved routed pages away from the
       src/app root into feature folders and moved reusable player UI into shared
-      components.
+      components. Temporary compatibility re-export wrappers were used during
+      stabilization.
     decision: >
       New routed feature code belongs under src/app/features/**. Reusable UI
-      belongs under src/app/shared/components/**. The old routed paths remain
-      temporarily as compatibility re-export wrappers.
+      belongs under src/app/shared/components/**. The old routed compatibility
+      re-export wrappers were removed after build checks, manual UI validation and
+      repository search showed no productive references to the old paths.
     rationale: >
       This keeps routed pages, shared UI and future core services separate while
-      limiting risk during the staged migration.
+      avoiding permanent duplicate import paths after the staged migration.
