@@ -5,6 +5,15 @@ $BaseHref = "/fantasy-app/"
 Write-Host "Start Deployment..."
 
 $BuildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+$BuildInfoJson = @"
+{
+  "version": "deploy",
+  "commit": "deploy",
+  "shortCommit": "deploy",
+  "buildDate": "$BuildDate",
+  "source": "deploy_action.ps1"
+}
+"@
 $BuildInfoTs = @"
 export interface AppBuildInfo {
   version: string;
@@ -22,6 +31,7 @@ export const APP_BUILD_INFO: AppBuildInfo = {
   source: 'deploy_action.ps1'
 };
 "@
+Set-Content -Path "public/build-info.json" -Value $BuildInfoJson -Encoding utf8
 Set-Content -Path "src/app/core/build-info.generated.ts" -Value $BuildInfoTs -Encoding utf8
 Write-Host "Build info geschrieben: $BuildDate"
 
