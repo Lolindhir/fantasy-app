@@ -145,6 +145,39 @@ frontendStructure:
       - src/app/league-activity/league-activity.ts
       - src/app/about/about.ts
 
+buildMetadata:
+  purpose: >
+    The app shell exposes a compact build indicator so users can identify the
+    actually loaded frontend bundle and diagnose whether the published server
+    bundle is newer than the currently loaded app.
+  producer:
+    path: deploy_action.ps1
+    writes:
+      - src/app/core/build-info.generated.ts
+      - public/build-info.json
+    behavior: >
+      Before the Angular production build runs, deploy_action.ps1 writes the same
+      UTC build timestamp into the embedded Angular build info file and the
+      public server-side build-info.json file.
+  frontendConsumer:
+    path: src/app/app.ts
+    behavior: >
+      App uses the embedded APP_BUILD_INFO and loaded script bundle hash for the
+      currently running application. It then fetches cache-busted index.html and
+      build-info.json from the server to compare the published bundle/build time
+      with the loaded bundle/build time.
+  display:
+    paths:
+      - src/app/app.html
+      - src/app/app.scss
+    behavior: >
+      Desktop shows a compact fixed build label and exposes details through the
+      title tooltip. Mobile shows the same compact label in the burger menu and
+      expands a small diagnostic detail panel when tapped.
+  sourceOfTruth: >
+    Build metadata is deploy/frontend metadata only. It is not generated league
+    data and does not affect public/data app data contracts.
+
 dataFlow:
   - from: public/data/Metadata.json
     to: public/requests/utils/ConfigUtils.psm1
