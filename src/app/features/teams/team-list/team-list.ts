@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { DataService, Player, SortField } from '../../../services/data-service';
+import { DataService } from '../../../services/data-service';
+import type { Player } from '../../../core/models/fantasy.models';
 import { CommonModule } from '@angular/common';
 import { ViewEncapsulation } from '@angular/core';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
