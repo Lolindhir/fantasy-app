@@ -31,6 +31,14 @@
 
     </div>
 
+    <div
+      class="build-info desktop-build-info"
+      [class.update-available]="updateAvailable"
+      [title]="buildInfoTitle"
+    >
+      {{ buildInfoLabel }}
+    </div>
+
   </nav>
 
 
@@ -77,6 +85,14 @@
     <a routerLink="/handbook" routerLinkActive="active" (click)="menuOpen = false">
       Handbook
     </a>
+
+    <div
+      class="build-info mobile-build-info"
+      [class.update-available]="updateAvailable"
+      [title]="buildInfoTitle"
+    >
+      {{ buildInfoLabel }}
+    </div>
 
   </div>
 
