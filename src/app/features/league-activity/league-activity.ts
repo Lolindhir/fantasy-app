@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
-import { DataService, DraftPick, FantasyTeam, League, RawDraft } from '../../services/data-service';
+import { DataService } from '../../services/data-service';
+import type { DraftPick, FantasyTeam, League, RawDraft } from '../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 
 type LeagueActivityTab = 'drafts' | 'moves';
