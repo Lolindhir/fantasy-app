@@ -44,9 +44,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 - [ ] `DataService` strukturell aufteilen.
   - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
-  - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten schrittweise von dort statt direkt aus `data-service.ts`.
-  - Ziel: Die eigentlichen Model-Deklarationen aus `data-service.ts` nach `core/models` verschieben.
-  - Ziel: Die temporäre `RawDraft.DisplayStatus`-Modul-Erweiterung im Model-Barrel entfernen, sobald `RawDraft` direkt in eine echte Model-Datei verschoben oder `data-service.ts` sicher gepatcht werden kann.
+  - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
+  - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen bereits in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
+  - Ziel: Die übrigen Model-Deklarationen aus `data-service.ts` nach `core/models` verschieben.
+  - Ziel: Die temporäre `RawDraft.DisplayStatus`-DataService-Kompatibilitäts-Erweiterung im Model-Barrel entfernen, sobald `DataService` selbst auf die extrahierten Draft-Modelle umgestellt ist.
   - Ziel: App-weite Services perspektivisch in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
