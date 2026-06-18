@@ -3,7 +3,7 @@ import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/rout
 import { A11yModule } from "@angular/cdk/a11y";
 import { HostListener } from "@angular/core";
 import { filter } from "rxjs/operators";
-import { APP_BUILD_INFO, AppBuildInfo } from './core/build-info.generated';
+import { APP_BUILD_INFO } from './core/build-info.generated';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +18,8 @@ export class App implements OnInit {
   isScrolled = false;
 
   readonly loadedBuildInfo = APP_BUILD_INFO;
-  serverBuildInfo?: AppBuildInfo;
+  readonly loadedBundleId = this.getLoadedBundleId();
+  serverBundleId?: string;
   updateAvailable = false;
 
   @HostListener('window:scroll')
@@ -68,60 +69,61 @@ export class App implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadServerBuildInfo();
+    this.loadServerBundleInfo();
   }
 
   get buildInfoLabel(): string {
-    const date = this.formatBuildDate(this.loadedBuildInfo.buildDate);
-    const version = this.loadedBuildInfo.shortCommit || this.loadedBuildInfo.version;
+    const loadedVersion = this.loadedBundleId || this.loadedBuildInfo.shortCommit || this.loadedBuildInfo.version;
     const updateText = this.updateAvailable ? ' · Update verfügbar' : '';
 
-    return `Build ${date} · ${version}${updateText}`;
+    return `Build ${loadedVersion}${updateText}`;
   }
 
   get buildInfoTitle(): string {
-    const loaded = `Geladen: ${this.loadedBuildInfo.version} (${this.loadedBuildInfo.commit})`;
-    const server = this.serverBuildInfo
-      ? `Server: ${this.serverBuildInfo.version} (${this.serverBuildInfo.commit})`
-      : 'Server: nicht geprüft';
+    const loadedBundle = `Geladener Bundle: ${this.loadedBundleId || 'unbekannt'}`;
+    const serverBundle = `Server-Bundle: ${this.serverBundleId || 'nicht geprüft'}`;
+    const fallbackInfo = `Fallback-Info: ${this.loadedBuildInfo.version} (${this.loadedBuildInfo.source})`;
 
-    return `${loaded}\n${server}`;
+    return `${loadedBundle}\n${serverBundle}\n${fallbackInfo}`;
   }
 
-  private loadServerBuildInfo(): void {
-    fetch(`build-info.json?t=${Date.now()}`, { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : undefined)
-      .then((buildInfo?: AppBuildInfo) => {
-        if (!buildInfo) return;
+  private loadServerBundleInfo(): void {
+    fetch(`index.html?t=${Date.now()}`, { cache: 'no-store' })
+      .then(response => response.ok ? response.text() : undefined)
+      .then((html?: string) => {
+        if (!html) return;
 
-        this.serverBuildInfo = buildInfo;
-        this.updateAvailable = this.isDifferentBuild(buildInfo);
+        this.serverBundleId = this.extractMainBundleId(html);
+        this.updateAvailable = !!this.loadedBundleId && !!this.serverBundleId && this.loadedBundleId !== this.serverBundleId;
       })
       .catch(() => {
-        this.serverBuildInfo = undefined;
+        this.serverBundleId = undefined;
         this.updateAvailable = false;
       });
   }
 
-  private isDifferentBuild(serverBuildInfo: AppBuildInfo): boolean {
-    if (!serverBuildInfo.commit || serverBuildInfo.commit === 'local') return false;
-    if (!this.loadedBuildInfo.commit || this.loadedBuildInfo.commit === 'local') return false;
+  private getLoadedBundleId(): string | undefined {
+    const scriptSources = Array.from(document.scripts)
+      .map(script => script.src || script.getAttribute('src') || '')
+      .filter(Boolean);
 
-    return serverBuildInfo.commit !== this.loadedBuildInfo.commit;
+    for (const source of scriptSources) {
+      const bundleId = this.extractMainBundleId(source);
+      if (bundleId) return bundleId;
+    }
+
+    return undefined;
   }
 
-  private formatBuildDate(buildDate: string): string {
-    if (!buildDate || buildDate === 'local') return 'local';
+  private extractMainBundleId(source: string): string | undefined {
+    const startMarker = 'main-';
+    const start = source.indexOf(startMarker);
+    if (start < 0) return undefined;
 
-    const date = new Date(buildDate);
-    if (Number.isNaN(date.getTime())) return buildDate;
+    const afterStart = source.slice(start + startMarker.length);
+    const end = afterStart.indexOf('.js');
+    if (end <= 0) return undefined;
 
-    return date.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return afterStart.slice(0, end).slice(0, 12);
   }
 }
