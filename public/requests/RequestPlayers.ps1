@@ -192,73 +192,7 @@ function Invoke-Tank01-With-Fallback {
 }
 
 function PlayersHaveChanged($oldPlayers, $newPlayers) {
-    if (-not $oldPlayers) { return $true }
-
-    if ($oldPlayers.Count -ne $newPlayers.Count) {
-        Write-Host "Player count changed: $($oldPlayers.Count) -> $($newPlayers.Count)"
-        return $true
-    }
-
-    # sicherstellen, dass beide Listen nach ID sortiert sind
-    $oldPlayers = $oldPlayers | Sort-Object -Property ID
-    $newPlayers = $newPlayers | Sort-Object -Property ID
-
-    for ($i = 0; $i -lt $oldPlayers.Count; $i++) {
-        $old = $oldPlayers[$i]
-        $new = $newPlayers[$i]
-
-        $propsToCheck = @(
-            'ID',
-            'TankID',
-            'Name',
-            'NameFirst',
-            'NameLast',
-            'NameShort',
-            'Status',
-            'IsFreeAgent',
-            'Position',
-            'Age',
-            'Year',
-            'TeamID',
-            'TeamAbbr',
-            'ByeWeek',
-            'Number',
-            'Picture',
-            'Salary',
-            'SalaryProjected',
-            'College',
-            'HighSchool',
-            'ESPN',
-            'FantasyPros',
-            'Injured',
-            #'Injury',   #object
-            #'Ranking',   #object
-            #'Grading',   #object
-            #'PointHistory',   #object
-            #'GameHistory'   #object
-            'GamesPlayed',
-            'GamesPotential',
-            'SnapsTotal',
-            'AttemptsTotal',
-            'FantasyPointsTotal',
-            'FantasyPointsAvgGame',
-            'FantasyPointsAvgPotentialGame',
-            'FantasyPointsAvgSnap',
-            'FantasyPointsAvgAttempt',
-            'TouchdownsTotal',
-            'TouchdownsRushing',
-            'TouchdownsReceiving',
-            'TouchdownsPassing'
-        )
-        foreach ($prop in $propsToCheck) {
-            if ($old.$prop -ne $new.$prop) {
-                Write-Host "Player '$($old.Name)' property '$prop' changed: '$($old.$prop)' -> '$($new.$prop)'"
-                return $true
-            }
-        }
-    }
-
-    return $false
+    Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
 }
 
 function Convert-StringToDate($dateStr) {
@@ -564,6 +498,7 @@ function Get-SeasonPointStats {
 
 # --- Konfiguration ---
 . "$PSScriptRoot\config.ps1"
+Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 $apiKeys = @(
     $Global:RapidAPIKey,
     $Global:RapidAPIKeyAlt1,
