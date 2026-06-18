@@ -41,6 +41,32 @@ function Get-PlayersFromFile {
     }
 }
 
+function Compare-Players {
+    param(
+        [object]$OldPlayers,
+        [object]$NewPlayers
+    )
+
+    if (-not $OldPlayers) {
+        return $true
+    }
+
+    if ($OldPlayers.Count -ne $NewPlayers.Count) {
+        Write-Host "Player count changed: $($OldPlayers.Count) -> $($NewPlayers.Count)"
+        return $true
+    }
+
+    $oldPlayersJson = @($OldPlayers | Sort-Object -Property ID) | ConvertTo-Json -Depth 20 -Compress
+    $newPlayersJson = @($NewPlayers | Sort-Object -Property ID) | ConvertTo-Json -Depth 20 -Compress
+
+    if ($oldPlayersJson -ne $newPlayersJson) {
+        Write-Host "Player data changed."
+        return $true
+    }
+
+    return $false
+}
+
 function Get-NumberOrZero {
     param(
         [object]$Value
