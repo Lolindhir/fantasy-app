@@ -3,7 +3,7 @@ import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/rout
 import { A11yModule } from "@angular/cdk/a11y";
 import { HostListener } from "@angular/core";
 import { filter } from "rxjs/operators";
-import { APP_BUILD_INFO } from './core/build-info.generated';
+import { APP_BUILD_INFO, AppBuildInfo } from './core/build-info.generated';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +20,7 @@ export class App implements OnInit {
   readonly loadedBuildInfo = APP_BUILD_INFO;
   readonly loadedBundleId = this.getLoadedBundleId();
   serverBundleId?: string;
+  serverBuildInfo?: AppBuildInfo;
   updateAvailable = false;
 
   @HostListener('window:scroll')
@@ -69,40 +70,62 @@ export class App implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadServerBundleInfo();
+    this.loadServerBuildInfo();
   }
 
   get buildInfoLabel(): string {
     const loadedVersion = this.loadedBundleId || this.loadedBuildInfo.shortCommit || this.loadedBuildInfo.version;
     const buildDate = this.formatBuildDate(this.loadedBuildInfo.buildDate);
     const dateText = buildDate ? ` · ${buildDate}` : '';
-    const updateText = this.updateAvailable ? ' · Update verfügbar' : '';
 
-    return `Build ${loadedVersion}${dateText}${updateText}`;
+    return `${loadedVersion}${dateText}`;
   }
 
   get buildInfoTitle(): string {
-    const loadedBundle = `Geladener Bundle: ${this.loadedBundleId || 'unbekannt'}`;
-    const loadedBuildDate = `Build-Zeit: ${this.formatBuildDate(this.loadedBuildInfo.buildDate) || 'unbekannt'}`;
-    const serverBundle = `Server-Bundle: ${this.serverBundleId || 'nicht geprüft'}`;
-    const fallbackInfo = `Fallback-Info: ${this.loadedBuildInfo.version} (${this.loadedBuildInfo.source})`;
+    const loadedBuildDate = this.formatBuildDate(this.loadedBuildInfo.buildDate) || 'unbekannt';
+    const serverBuildDate = this.formatBuildDate(this.serverBuildInfo?.buildDate || '') || 'nicht geprüft';
+    const status = this.updateAvailable ? 'Update verfügbar' : 'Geladene App ist aktuell oder Server noch nicht neuer';
 
-    return `${loadedBundle}\n${loadedBuildDate}\n${serverBundle}\n${fallbackInfo}`;
+    return [
+      `Status: ${status}`,
+      `Geladener Bundle: ${this.loadedBundleId || 'unbekannt'}`,
+      `Geladene Build-Zeit: ${loadedBuildDate}`,
+      `Server-Bundle: ${this.serverBundleId || 'nicht geprüft'}`,
+      `Server-Build-Zeit: ${serverBuildDate}`
+    ].join('\n');
   }
 
-  private loadServerBundleInfo(): void {
-    fetch(`index.html?t=${Date.now()}`, { cache: 'no-store' })
+  private loadServerBuildInfo(): void {
+    const cacheBuster = Date.now();
+    const indexRequest = fetch(`index.html?t=${cacheBuster}`, { cache: 'no-store' })
       .then(response => response.ok ? response.text() : undefined)
-      .then((html?: string) => {
-        if (!html) return;
+      .catch(() => undefined);
 
-        this.serverBundleId = this.extractMainBundleId(html);
-        this.updateAvailable = !!this.loadedBundleId && !!this.serverBundleId && this.loadedBundleId !== this.serverBundleId;
-      })
-      .catch(() => {
-        this.serverBundleId = undefined;
-        this.updateAvailable = false;
+    const buildInfoRequest = fetch(`build-info.json?t=${cacheBuster}`, { cache: 'no-store' })
+      .then(response => response.ok ? response.json() as Promise<AppBuildInfo> : undefined)
+      .catch(() => undefined);
+
+    Promise.all([indexRequest, buildInfoRequest])
+      .then(([html, buildInfo]) => {
+        if (html) {
+          this.serverBundleId = this.extractMainBundleId(html);
+        }
+
+        if (buildInfo) {
+          this.serverBuildInfo = buildInfo;
+        }
+
+        this.updateAvailable = this.hasServerUpdate();
       });
+  }
+
+  private hasServerUpdate(): boolean {
+    const bundleChanged = !!this.loadedBundleId && !!this.serverBundleId && this.loadedBundleId !== this.serverBundleId;
+    const buildDateChanged = !!this.loadedBuildInfo.buildDate
+      && !!this.serverBuildInfo?.buildDate
+      && this.loadedBuildInfo.buildDate !== this.serverBuildInfo.buildDate;
+
+    return bundleChanged || buildDateChanged;
   }
 
   private getLoadedBundleId(): string | undefined {
