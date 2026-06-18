@@ -11,6 +11,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ## Offen
 
+### Data Generation / Infrastruktur
+
+- [ ] `Players_Relevant.json`-Pfad aus `RequestLeague.ps1` nach `ConfigUtils.psm1` verlagern.
+  - Kontext: `RequestLeague.ps1` baut den Pfad aktuell lokal über `$config.DataDir`; technische Pfade sollen zentral in `ConfigUtils.psm1` liegen.
+  - Ziel: `Get-Config` soll den Pfad als `PlayersRelevantFile` bereitstellen, damit Generatoren keine eigenen Dateipfade für generierte JSON-Ausgaben zusammensetzen müssen.
+
 ### Data Generation / Drafts
 
 - [ ] Draft-Live-Enrichment für `public/data/Drafts.json` ergänzen.
@@ -88,7 +94,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.
-  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` wurden nach Repo-Suche ohne produktive Referenzen entfernt.
+  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` wurden nach Repo-Suche ohne produktive Referenzen entfernt.
 
 - [x] Angular-Feature-Struktur vorbereiten und geroutete Seiten verschieben.
   - Kontext: Geroutete Angular-Seiten sollten von wiederverwendbaren UI-Komponenten getrennt werden.
