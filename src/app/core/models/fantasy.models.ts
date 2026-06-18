@@ -4,6 +4,14 @@
 // model declarations are still re-exported from data-service.ts as an intermediate
 // migration step while DataService is split into smaller responsibilities.
 
+import '../../services/data-service';
+
+declare module '../../services/data-service' {
+  interface RawDraft {
+    DisplayStatus: string;
+  }
+}
+
 export type {
   RawDraft,
   DraftSettings,
