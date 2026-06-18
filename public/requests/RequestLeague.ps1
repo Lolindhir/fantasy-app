@@ -403,7 +403,11 @@ try {
 
     # --- Relevante Spielerdatei schreiben ---
     $relevantPlayers = Get-RelevantPlayers -Players $playersData -Teams $teamData
-    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers
+    $comparePlayers = {
+        param($oldPlayers, $newPlayers)
+        Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
+    }
+    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers -CompareScript $comparePlayers
 
     # --- JSON schreiben ---
     $compare = & Get-Compare
