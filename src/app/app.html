@@ -86,13 +86,40 @@
       Handbook
     </a>
 
-    <div
+    <button
+      type="button"
       class="build-info mobile-build-info"
       [class.update-available]="updateAvailable"
-      [title]="buildInfoTitle"
+      [attr.aria-expanded]="buildInfoDetailsOpen"
+      (click)="toggleBuildInfoDetails($event)"
     >
       {{ buildInfoLabel }}
-    </div>
+    </button>
+
+    @if (buildInfoDetailsOpen) {
+      <div class="mobile-build-info-details" (click)="$event.stopPropagation()">
+        <div class="mobile-build-info-detail-row">
+          <span>Status</span>
+          <strong>{{ buildInfoStatusLabel }}</strong>
+        </div>
+        <div class="mobile-build-info-detail-row">
+          <span>Geladen</span>
+          <strong>{{ loadedBundleLabel }}</strong>
+        </div>
+        <div class="mobile-build-info-detail-row">
+          <span>Build-Zeit</span>
+          <strong>{{ loadedBuildDateLabel }}</strong>
+        </div>
+        <div class="mobile-build-info-detail-row">
+          <span>Server</span>
+          <strong>{{ serverBundleLabel }}</strong>
+        </div>
+        <div class="mobile-build-info-detail-row">
+          <span>Server-Zeit</span>
+          <strong>{{ serverBuildDateLabel }}</strong>
+        </div>
+      </div>
+    }
 
   </div>
 
