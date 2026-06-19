@@ -122,12 +122,25 @@ frontendStructure:
         DraftSettings, DraftPickTradeHistoryEntry and DraftPick. These mirror the
         generated Drafts.json read model used by DataService and draft features.
 
+    - path: src/app/core/models/league.models.ts
+      responsibility: >
+        Contains extracted Angular league, standing, placement, award and
+        FantasyTeam model declarations. These mirror the generated League.json
+        read model and team-enriched frontend shape while DataService migration is
+        still staged.
+
+    - path: src/app/core/models/player.models.ts
+      responsibility: >
+        Contains extracted Angular player, NFL team, player stats, game history
+        and FreeAgentMarket model declarations. These mirror the generated
+        Players.json read model plus frontend-enriched Player shape.
+
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
-        Central Angular model import surface. Draft model exports now come from
-        src/app/core/models/draft.models.ts. Remaining model/type declarations are
-        still re-exported from DataService while the frontend is gradually migrated
-        away from direct type imports from data-service.ts.
+        Central Angular model import surface. Draft, league/team and player model
+        exports now come from dedicated files under src/app/core/models. DataService
+        still contains compatible declarations until its loading and mapping logic
+        is migrated to use the extracted model files directly.
 
     - path: src/app/services/data-service.ts
       responsibility: >
