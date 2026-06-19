@@ -42,7 +42,7 @@ layers:
     path: public/requests/**
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
-      consumed by the Angular app.
+      consumed by the Angular app and AI/chat helper workflows.
     owns:
       - fetching external/source data
       - data transformation
@@ -50,6 +50,7 @@ layers:
       - writing generated JSON
       - current-season incremental update logic
       - force rebuild logic for generated scopes
+      - chunked helper exports derived from generated data
     doesNotOwn:
       - frontend presentation state
       - manual architecture decisions
@@ -57,10 +58,13 @@ layers:
   - name: generated-app-data
     path: public/data/*.json
     responsibility: >
-      Represents current app-readable read models consumed by Angular.
+      Represents current app-readable read models consumed by Angular and
+      generated helper outputs derived from those read models.
     owns:
       - current generated app data shape
       - generated league/team/player/draft/transaction/timestamp data
+      - relevant player subset output
+      - generated AI/chat helper chunk output
     doesNotOwn:
       - architectural decisions
       - manually authored source-of-truth documentation
@@ -178,10 +182,36 @@ buildMetadata:
     Build metadata is deploy/frontend metadata only. It is not generated league
     data and does not affect public/data app data contracts.
 
+generatedPlayerExports:
+  relevantPlayers:
+    path: public/data/Players_Relevant.json
+    producer: public/requests/RequestLeague.ps1
+    helper: public/requests/utils/player/PlayerUtils.psm1
+    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantFile
+    behavior: >
+      The frequent league generation flow derives a relevant player subset from
+      Players.json. Relevant players include fantasy-rostered players, young
+      prospects, players with meaningful historical production and players with a
+      high salary signal.
+  chatChunks:
+    path: public/data/chat/players-relevant
+    producer: public/requests/utils/player/PlayerChatExportUtils.psm1
+    entryPoint: public/requests/RequestLeague.ps1
+    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantChatDir
+    behavior: >
+      The chat export keeps full relevant player objects, splits them into stable
+      10-player chunk files and writes index.json with lookup metadata. It is
+      generated helper output for AI/chat workflows, not a separate manual source
+      of truth.
+
 dataFlow:
   - from: public/data/Metadata.json
     to: public/requests/utils/ConfigUtils.psm1
     purpose: Load league-specific inputs and rules.
+
+  - from: public/requests/utils/ConfigUtils.psm1
+    to: public/requests/RequestLeague.ps1
+    purpose: Resolve generated data paths, including relevant player and chat export paths.
 
   - from: public/requests/RequestLeague.ps1
     to: public/data/Transactions.json
@@ -201,6 +231,18 @@ dataFlow:
     purpose: >
       Enrich generated League.json team objects with sorted current/upcoming/live
       draft pick keys owned by each team.
+
+  - from: public/data/Players.json
+    to: public/requests/RequestLeague.ps1
+    purpose: Provide player data for salary-cap calculation and relevant-player subset generation.
+
+  - from: public/requests/RequestLeague.ps1
+    to: public/data/Players_Relevant.json
+    purpose: Generate a relevant player subset for AI/chat-friendly player analysis.
+
+  - from: public/data/Players_Relevant.json
+    to: public/data/chat/players-relevant/index.json and public/data/chat/players-relevant/players_*.json
+    purpose: Generate stable lookup metadata and 10-player chunks for AI/chat workflows.
 
   - from: public/requests/RequestLeague.ps1
     to: public/data/League.json
