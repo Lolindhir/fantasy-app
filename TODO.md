@@ -48,13 +48,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
 - [ ] `DataService` strukturell aufteilen.
-  - Kontext: `src/app/services/data-service.ts` enthält aktuell Models, HTTP-Laden, Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
+  - Kontext: `src/app/services/data-service.ts` enthält aktuell HTTP-Laden, League-/Player-/Draft-Mapping, Draft-Enrichment, Free-Agent-Marktlogik, Salary-Helfer und Trade-Helfer in einer Datei.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
   - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
-  - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen bereits in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
-  - Kontext: League-/Standing-/FantasyTeam-Modelle liegen jetzt in `src/app/core/models/league.models.ts`; Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle liegen jetzt in `src/app/core/models/player.models.ts` und werden über `fantasy.models.ts` exportiert.
-  - Ziel: `DataService` selbst auf die extrahierten Model-Dateien umstellen und die dort noch vorhandenen kompatiblen Model-Deklarationen entfernen.
-  - Ziel: Die temporäre `RawDraft.DisplayStatus`-DataService-Kompatibilitäts-Erweiterung im Model-Barrel entfernen, sobald `DataService` selbst auf die extrahierten Draft-Modelle umgestellt ist.
+  - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
+  - Kontext: League-/Standing-/FantasyTeam-Modelle liegen in `src/app/core/models/league.models.ts`; Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle liegen in `src/app/core/models/player.models.ts` und werden über `fantasy.models.ts` exportiert.
+  - Kontext: `DataService` nutzt die extrahierten Model-Dateien direkt und enthält keine lokalen Model-Deklarationen mehr.
   - Ziel: App-weite Services perspektivisch in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
