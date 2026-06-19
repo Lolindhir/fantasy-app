@@ -15,6 +15,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\player\PlayerChatExportUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -43,6 +44,7 @@ $CapDeadline = $config.CapDeadline
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
 $PlayersRelevantFile = Join-Path $config.DataDir "Players_Relevant.json"
+$PlayersRelevantChatDir = Join-Path $config.DataDir "chat\players-relevant"
 
 
 # ===========================================================================
@@ -408,6 +410,12 @@ try {
         Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
     }
     Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers -CompareScript $comparePlayers
+
+    Export-PlayersForChatChunks `
+    -Players $relevantPlayers `
+    -TargetDirectory $PlayersRelevantChatDir `
+    -ChunkSize 10 `
+    -Source "Players_Relevant.json"
 
     # --- JSON schreiben ---
     $compare = & Get-Compare
