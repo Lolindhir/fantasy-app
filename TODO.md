@@ -54,7 +54,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen bereits in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
   - Kontext: League-/Standing-/FantasyTeam-Modelle liegen jetzt in `src/app/core/models/league.models.ts`; Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle liegen jetzt in `src/app/core/models/player.models.ts` und werden über `fantasy.models.ts` exportiert.
   - Ziel: `DataService` selbst auf die extrahierten Model-Dateien umstellen und die dort noch vorhandenen kompatiblen Model-Deklarationen entfernen.
-  - Ziel: Die temporäre `RawDraft.DisplayStatus`-DataService-Kompatibilitäts-Erweiterung im Model-Barrel ist entfernt; verbleibende Duplikate betreffen noch DataService-interne kompatible Deklarationen.
+  - Ziel: Die temporäre `RawDraft.DisplayStatus`-DataService-Kompatibilitäts-Erweiterung im Model-Barrel entfernen, sobald `DataService` selbst auf die extrahierten Draft-Modelle umgestellt ist.
   - Ziel: App-weite Services perspektivisch in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
