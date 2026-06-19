@@ -1,16 +1,8 @@
 // Central model import surface for Angular consumers.
 //
 // Draft, league/team and player model declarations live in dedicated core model
-// files. DataService still contains compatible declarations while its loading and
-// mapping responsibilities are split in later refactor slices.
-
-import '../../services/data-service';
-
-declare module '../../services/data-service' {
-  interface RawDraft {
-    DisplayStatus: string;
-  }
-}
+// files. DataService imports those model declarations directly while its loading
+// and mapping responsibilities are split in later refactor slices.
 
 export type {
   RawDraft,
