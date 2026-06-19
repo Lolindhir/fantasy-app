@@ -17,6 +17,8 @@ function Get-Config {
     $DataDir = "$PSScriptRoot\..\..\data"
     $BackupDir = Join-Path $DataDir "backup"
     $PlayersFile = Join-Path $DataDir "Players.json"
+    $PlayersRelevantFile = Join-Path $DataDir "Players_Relevant.json"
+    $PlayersRelevantChatDir = Join-Path $DataDir "chat\players-relevant"
     $LeagueFile = Join-Path $DataDir "League.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
@@ -67,13 +69,16 @@ function Get-Config {
         WeightGame                       = $WeightGame
 
         DataDir                          = $DataDir
-        BackupDir                        = $BackupDir
-        PlayersFile                      = $PlayersFile
+        BackupDir                        = $BackupDir        
         LeagueFile                       = $LeagueFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
         GamesFile                        = $GamesFile
         StandingsFile                    = $StandingsFile
+
+        PlayersFile                      = $PlayersFile
+        PlayersRelevantFile              = $PlayersRelevantFile
+        PlayersRelevantChatDir           = $PlayersRelevantChatDir
 
         ManualTransactionsFile           = $ManualTransactionsFile
         TransactionsFile                 = $TransactionsFile
