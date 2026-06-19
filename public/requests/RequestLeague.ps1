@@ -43,8 +43,8 @@ $CapDeadline = $config.CapDeadline
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
-$PlayersRelevantFile = Join-Path $config.DataDir "Players_Relevant.json"
-$PlayersRelevantChatDir = Join-Path $config.DataDir "chat\players-relevant"
+$PlayersRelevantFile = $config.PlayersRelevantFile
+$PlayersRelevantChatDir = $config.PlayersRelevantChatDir
 
 
 # ===========================================================================
