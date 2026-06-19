@@ -1,16 +1,8 @@
 // Central model import surface for Angular consumers.
 //
-// Draft model declarations already live in dedicated core model files. The other
-// model declarations are still re-exported from data-service.ts as an intermediate
-// migration step while DataService is split into smaller responsibilities.
-
-import '../../services/data-service';
-
-declare module '../../services/data-service' {
-  interface RawDraft {
-    DisplayStatus: string;
-  }
-}
+// Draft, league/team and player model declarations live in dedicated core model
+// files. DataService still contains compatible declarations while its loading and
+// mapping responsibilities are split in later refactor slices.
 
 export type {
   RawDraft,
@@ -37,7 +29,10 @@ export type {
   PlacementPlayoffsAllTime,
   Placements,
   RawFantasyTeam,
-  FantasyTeam,
+  FantasyTeam
+} from './league.models';
+
+export type {
   InjuryDetails,
   RankingEntry,
   PointHistorySeason,
@@ -59,4 +54,4 @@ export type {
   NFLTeam,
   TopPlayersSalaryResult,
   SortField
-} from '../../services/data-service';
+} from './player.models';
