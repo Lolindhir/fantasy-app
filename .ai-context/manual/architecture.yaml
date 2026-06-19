@@ -126,27 +126,28 @@ frontendStructure:
       responsibility: >
         Contains extracted Angular league, standing, placement, award and
         FantasyTeam model declarations. These mirror the generated League.json
-        read model and team-enriched frontend shape while DataService migration is
-        still staged.
+        read model and team-enriched frontend shape. DataService imports these
+        declarations directly.
 
     - path: src/app/core/models/player.models.ts
       responsibility: >
         Contains extracted Angular player, NFL team, player stats, game history
         and FreeAgentMarket model declarations. These mirror the generated
-        Players.json read model plus frontend-enriched Player shape.
+        Players.json read model plus frontend-enriched Player shape. DataService
+        imports these declarations directly.
 
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
         Central Angular model import surface. Draft, league/team and player model
-        exports now come from dedicated files under src/app/core/models. DataService
-        still contains compatible declarations until its loading and mapping logic
-        is migrated to use the extracted model files directly.
+        exports come from dedicated files under src/app/core/models. Feature and
+        shared Angular consumers should import type dependencies from this barrel.
 
     - path: src/app/services/data-service.ts
       responsibility: >
-        Current app-wide Angular data facade. It still contains many models, HTTP
-        loading, mapping/enrichment and helper logic and is the next major
-        frontend refactor candidate.
+        Current app-wide Angular data facade. It imports model declarations from
+        src/app/core/models and still contains HTTP loading, mapping/enrichment and
+        helper logic. Mapper and service responsibilities are the next major
+        frontend refactor candidates.
 
   removedCompatibilityReExports:
     note: >
