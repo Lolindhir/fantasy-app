@@ -13,9 +13,9 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Data Generation / Infrastruktur
 
-- [ ] `Players_Relevant.json`-Pfad aus `RequestLeague.ps1` nach `ConfigUtils.psm1` verlagern.
-  - Kontext: `RequestLeague.ps1` baut den Pfad aktuell lokal über `$config.DataDir`; technische Pfade sollen zentral in `ConfigUtils.psm1` liegen.
-  - Ziel: `Get-Config` soll den Pfad als `PlayersRelevantFile` bereitstellen, damit Generatoren keine eigenen Dateipfade für generierte JSON-Ausgaben zusammensetzen müssen.
+- [ ] API-Key-Konfiguration aus `ConfigUtils.psm1` in GitHub Secrets bzw. Umgebungsvariablen auslagern.
+  - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch sensible API-Key-Werte.
+  - Ziel: Secrets nicht im Repository versionieren; `Get-Config` soll API-Keys bevorzugt aus Umgebungsvariablen bzw. Workflow-Secrets lesen und nur noch nicht-sensitive technische Defaults enthalten.
 
 ### Data Generation / Drafts
 
@@ -91,6 +91,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
 
 ## Erledigt / Archiv
+
+- [x] `Players_Relevant.json`- und Chat-Export-Pfade nach `ConfigUtils.psm1` verlagern.
+  - Kontext: `RequestLeague.ps1` baute den relevanten Spielerpfad und den Chat-Chunk-Zielordner ursprünglich lokal über `$config.DataDir`.
+  - Ergebnis: `Get-Config` stellt `PlayersRelevantFile` und `PlayersRelevantChatDir` bereit; `RequestLeague.ps1` nutzt diese Config-Werte für `Players_Relevant.json` und den Chat-Export unter `public/data/chat/players-relevant`.
 
 - [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.
