@@ -4,6 +4,14 @@
 // files. DataService still contains compatible declarations while its loading and
 // mapping responsibilities are split in later refactor slices.
 
+import '../../services/data-service';
+
+declare module '../../services/data-service' {
+  interface RawDraft {
+    DisplayStatus: string;
+  }
+}
+
 export type {
   RawDraft,
   DraftSettings,
