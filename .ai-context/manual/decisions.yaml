@@ -197,3 +197,30 @@ decisions:
     rationale: >
       This keeps routed pages, shared UI and future core services separate while
       avoiding permanent duplicate import paths after the staged migration.
+
+  - id: ADR-015
+    title: Relevant player chat export is generated helper output
+    status: accepted
+    context: >
+      The full generated player file is too large for practical AI/chat analysis,
+      but the app should not lose player fields or introduce a manually maintained
+      parallel data model just for chat workflows.
+    decision: >
+      Generate public/data/Players_Relevant.json from Players.json during the
+      frequent RequestLeague.ps1 flow and derive public/data/chat/players-relevant
+      from that relevant player subset. The chunk export preserves full player
+      objects, writes stable 10-player chunks and uses index.json for lookup
+      metadata. Technical output paths are owned by ConfigUtils.psm1 via
+      PlayersRelevantFile and PlayersRelevantChatDir.
+    rationale: >
+      This keeps the app data source generated and reproducible, avoids manually
+      edited helper files, and gives AI/chat workflows a small indexed entry point
+      without changing Angular's current Players.json contract.
+    consequences:
+      positive:
+        - Chat analysis can load index.json first and fetch only relevant chunks.
+        - Relevant player filtering remains generation-owned rather than frontend-owned.
+        - Chunk files preserve the generated player object shape.
+      negative:
+        - The frequent league generation flow writes additional generated helper files.
+        - Any changes to relevant-player criteria or chat index shape must be made in the generation utilities.
