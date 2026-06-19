@@ -54,6 +54,21 @@ function Add-PlayerChatLookupValue {
     }
 }
 
+function ConvertTo-OrderedPlayerChatLookup {
+    param(
+        [Parameter(Mandatory=$true)]
+        [hashtable]$Lookup
+    )
+
+    $orderedLookup = [ordered]@{}
+
+    foreach ($key in @($Lookup.Keys | Sort-Object)) {
+        $orderedLookup[$key] = @($Lookup[$key] | Sort-Object)
+    }
+
+    return $orderedLookup
+}
+
 function Compare-PlayerChatJsonData {
     param(
         [object]$OldData,
@@ -102,9 +117,9 @@ function Export-PlayersForChatChunks {
 
     $files = @()
     $playerLookup = [ordered]@{}
-    $nameLookup = @{}
-    $positionLookup = @{}
-    $teamLookup = @{}
+    $nameLookupRaw = @{}
+    $positionLookupRaw = @{}
+    $teamLookupRaw = @{}
 
     for ($chunkIndex = 0; $chunkIndex -lt $chunkCount; $chunkIndex++) {
         $startIndex = $chunkIndex * $ChunkSize
@@ -151,11 +166,11 @@ function Export-PlayersForChatChunks {
             ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
 
             foreach ($nameKey in $nameKeys) {
-                Add-PlayerChatLookupValue -Lookup $nameLookup -Key $nameKey -PlayerId $playerId
+                Add-PlayerChatLookupValue -Lookup $nameLookupRaw -Key $nameKey -PlayerId $playerId
             }
 
-            Add-PlayerChatLookupValue -Lookup $positionLookup -Key (ConvertTo-PlayerChatLookupKey $player.Position) -PlayerId $playerId
-            Add-PlayerChatLookupValue -Lookup $teamLookup -Key (ConvertTo-PlayerChatLookupKey $player.TeamAbbr) -PlayerId $playerId
+            Add-PlayerChatLookupValue -Lookup $positionLookupRaw -Key (ConvertTo-PlayerChatLookupKey $player.Position) -PlayerId $playerId
+            Add-PlayerChatLookupValue -Lookup $teamLookupRaw -Key (ConvertTo-PlayerChatLookupKey $player.TeamAbbr) -PlayerId $playerId
         }
 
         $files += [PSCustomObject]@{
@@ -166,6 +181,10 @@ function Export-PlayersForChatChunks {
             Names     = $fileNames
         }
     }
+
+    $nameLookup = ConvertTo-OrderedPlayerChatLookup -Lookup $nameLookupRaw
+    $positionLookup = ConvertTo-OrderedPlayerChatLookup -Lookup $positionLookupRaw
+    $teamLookup = ConvertTo-OrderedPlayerChatLookup -Lookup $teamLookupRaw
 
     $index = [PSCustomObject]@{
         Source         = $Source
