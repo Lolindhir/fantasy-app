@@ -1,5 +1,6 @@
 <div class="current-pick-table">
   <div class="current-pick-table-header">
+    <span>Overall</span>
     <span>Pick</span>
     <span>Player</span>
     <span>Owner</span>
@@ -9,7 +10,7 @@
 
   @for (item of orderedPicks; track item.pick.PickKey) {
     <div class="current-pick-table-row">
-      <span class="mobile-overall-cell">#{{ item.pick.OverallPick }}</span>
+      <span class="overall-cell">#{{ item.pick.OverallPick }}</span>
       <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
       <img class="mobile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
       <div class="pick-player-cell">
@@ -31,8 +32,14 @@
           <span class="open-pick-cell">Pick Open</span>
         }
       </div>
-      <div class="team-cell owner-cell">{{ item.currentOwner.name }}</div>
-      <div class="team-cell origin-cell">{{ item.originalOwner.name }}</div>
+      <div class="team-cell owner-cell">
+        <img class="team-cell-avatar" [src]="item.currentOwner.avatar" alt="" />
+        <span>{{ item.currentOwner.name }}</span>
+      </div>
+      <div class="team-cell origin-cell">
+        <img class="team-cell-avatar" [src]="item.originalOwner.avatar" alt="" />
+        <span>{{ item.originalOwner.name }}</span>
+      </div>
       <div class="status-cell">
         <span>{{ getPickStatusLabel(item) }}</span>
         @if (item.isCurrentlyTraded) {
