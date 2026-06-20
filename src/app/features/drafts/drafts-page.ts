@@ -16,7 +16,8 @@ type DraftsTab = 'current' | 'future';
     CurrentDraftsTabComponent,
     FutureDraftsTabComponent
   ],
-  templateUrl: './drafts-page.html'
+  templateUrl: './drafts-page.html',
+  styleUrl: './drafts.scss'
 })
 export class DraftsPageComponent {
   private dataService = inject(DataService);
