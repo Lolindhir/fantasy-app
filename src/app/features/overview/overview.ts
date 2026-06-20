@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DataService } from '../../services/data-service';
+import { DataService } from '../../core/services/data.service';
 import type { AwardInStanding, DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { map } from 'rxjs/operators';
