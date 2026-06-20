@@ -140,7 +140,8 @@ decisions:
 
   - id: ADR-012
     title: League Activity route groups draft and move presentation
-    status: accepted
+    status: superseded
+    supersededBy: ADR-016
     context: >
       The navigation label may change over time, but the frontend needs a stable
       feature area for current/upcoming draft assets, trades and roster movement.
@@ -152,8 +153,8 @@ decisions:
       from public/data/Drafts.json and reserves the Moves section as a placeholder
       until Transactions.json is intentionally modeled in the frontend.
     rationale: >
-      This keeps the visible navigation label flexible while giving the codebase
-      a durable component and route name. It also avoids prematurely treating
+      This kept the visible navigation label flexible while giving the codebase
+      a durable component and route name. It also avoided prematurely treating
       Transactions.json as frontend contract before the DataService and models are
       updated for transactions.
 
@@ -224,3 +225,34 @@ decisions:
       negative:
         - The frequent league generation flow writes additional generated helper files.
         - Any changes to relevant-player criteria or chat index shape must be made in the generation utilities.
+
+  - id: ADR-016
+    title: Drafts and Moves are separate routed feature areas
+    status: accepted
+    context: >
+      Drafts and moves started as one League Activity MVP. The product direction
+      now treats Drafts as a dedicated planning and draft-asset area, while Moves
+      should become the chronological activity area for trades, adds, drops and
+      roster movement. The Trade Simulator stays separate for now but may later
+      move under Moves.
+    decision: >
+      Use /drafts as the primary route for draft presentation and use a dedicated
+      DraftsComponent under src/app/features/drafts. Use /moves as the primary
+      route for transaction and roster-move presentation. Keep
+      LeagueActivityComponent as the technical component name for the Moves page
+      for now. Keep /league-activity as a compatibility redirect to /moves. Keep
+      /trade as an independent route until the Trade Simulator is intentionally
+      integrated into Moves.
+    rationale: >
+      Drafts are structured by draft, round, pick order, current owner and
+      original owner. Moves are chronological league activity and depend on
+      Transactions.json being modeled in the frontend. Separate routes avoid a
+      mixed feature page and allow each area to evolve independently.
+    consequences:
+      positive:
+        - Drafts can grow dedicated tabs, statistics and rankings without being coupled to the transaction timeline.
+        - Moves can focus on transaction modeling and chronological activity.
+        - Existing /league-activity links remain usable through a redirect.
+      negative:
+        - Shared draft-pick display logic should be extracted sooner because Drafts and Overview both render draft picks.
+        - LeagueActivityComponent has a legacy name until the Moves area is renamed or rebuilt later.
