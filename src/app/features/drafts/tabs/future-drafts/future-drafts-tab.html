@@ -34,7 +34,7 @@
                       </button>
                       <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
                         <div class="pick-origin-menu-content" (click)="$event.stopPropagation()">
-                          <strong>{{ draftVm.draft.DisplayDraftKey }} · {{ roundPick.label }}</strong>
+                          <strong>{{ roundPick.label.replace('R', 'Round ') }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
                           <span>Original: {{ roundPick.originalOwner.name }}</span>
                           @if (roundPick.isCurrentlyTraded) {
                             <span class="traded-pick-label">Traded Pick</span>
