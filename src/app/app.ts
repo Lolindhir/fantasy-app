@@ -1,7 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, HostListener, OnInit, signal } from '@angular/core';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { A11yModule } from "@angular/cdk/a11y";
-import { HostListener } from "@angular/core";
 import { filter } from "rxjs/operators";
 import { APP_BUILD_INFO, AppBuildInfo } from './core/build-info.generated';
 
@@ -41,8 +40,7 @@ export class App implements OnInit {
 
     if (clickedBurger || clickedMenu) return;
 
-    this.menuOpen = false;
-    this.buildInfoDetailsOpen = false;
+    this.closeMobileMenu();
   }
 
   currentPage = 'Overview';
@@ -131,6 +129,20 @@ export class App implements OnInit {
       `Server-Bundle: ${this.serverBundleLabel}`,
       `Server-Build-Zeit: ${this.serverBuildDateLabel}`
     ].join('\n');
+  }
+
+  toggleMobileMenu(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen = !this.menuOpen;
+
+    if (!this.menuOpen) {
+      this.buildInfoDetailsOpen = false;
+    }
+  }
+
+  closeMobileMenu(): void {
+    this.menuOpen = false;
+    this.buildInfoDetailsOpen = false;
   }
 
   toggleBuildInfoDetails(event: Event): void {
