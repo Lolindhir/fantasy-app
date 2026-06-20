@@ -1,4 +1,4 @@
-import type { DraftPick, RawDraft } from '../../../core/models/fantasy.models';
+import type { DraftPick, Player, RawDraft } from '../../../core/models/fantasy.models';
 
 export type TeamDisplayViewModel = {
   id: number;
@@ -12,6 +12,7 @@ export interface DraftPickViewModel {
   originalOwner: TeamDisplayViewModel;
   isCurrentlyTraded: boolean;
   roundColor: string;
+  selectedPlayer?: Player;
 }
 
 export interface DraftRoundViewModel {
