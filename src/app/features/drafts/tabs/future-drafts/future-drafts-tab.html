@@ -6,28 +6,21 @@
 
     <div class="compact-draft-grid">
       @for (draftVm of drafts; track draftVm.draft.DraftKey) {
-        <mat-card class="compact-draft-card">
-          <mat-card-header>
-            <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
-            <mat-card-subtitle>{{ draftVm.draft.Settings.Rounds }} Rounds - {{ draftVm.pickCount }} Picks</mat-card-subtitle>
-          </mat-card-header>
-
-          <mat-card-content>
-            <div class="compact-owner-list">
-              @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
-                <div class="compact-owner-row">
-                  <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
-                  <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
-                  <div class="compact-round-list">
-                    @for (roundPick of ownerGroup.picks; track $index) {
-                      <span class="round-pill" [style.background]="roundPick.color">{{ roundPick.label }}</span>
-                    }
-                  </div>
+        <app-draft-shell [draftVm]="draftVm" [showAvatar]="false">
+          <div class="compact-owner-list">
+            @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
+              <div class="compact-owner-row">
+                <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
+                <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
+                <div class="compact-round-list">
+                  @for (roundPick of ownerGroup.picks; track $index) {
+                    <span class="round-pill" [style.background]="roundPick.color">{{ roundPick.label }}</span>
+                  }
                 </div>
-              }
-            </div>
-          </mat-card-content>
-        </mat-card>
+              </div>
+            }
+          </div>
+        </app-draft-shell>
       }
     </div>
   </section>
