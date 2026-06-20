@@ -25,7 +25,7 @@ export class DraftsPageComponent {
   activeTab: DraftsTab = 'current';
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
-    map(({ league, drafts, teams }) => createDraftsViewModel(league, drafts, teams))
+    map(({ league, drafts, teams, players }) => createDraftsViewModel(league, drafts, teams, players))
   );
 
   selectTab(tab: DraftsTab): void {
