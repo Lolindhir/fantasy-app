@@ -43,7 +43,7 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
     SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
     SalaryCapProjected: leagueRaw.SalaryCapProjected,
     SalaryCapProjectedDisplay: formatSalaryDollars(leagueRaw.SalaryCapProjected),
-    IsFinished: leagueRaw.Status == 'Finished',
+    IsFinished: ['Finished', 'Completed'].includes(leagueRaw.Status),
     SeasonAsNumber: +leagueRaw.Season
   };
 
