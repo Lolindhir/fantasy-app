@@ -154,9 +154,10 @@
   }
 
   .current-pick-table-row {
-    grid-template-columns: 34px 58px 32px minmax(0, 1fr);
+    grid-template-columns: 34px 58px 30px minmax(0, 1fr);
     grid-template-areas: "overall pick ownerLogo player";
-    gap: 7px;
+    column-gap: 10px;
+    row-gap: 6px;
     padding: 7px 8px;
   }
 
@@ -176,6 +177,7 @@
   .mobile-owner-avatar {
     display: block;
     grid-area: ownerLogo;
+    justify-self: center;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -189,6 +191,7 @@
     align-items: center;
     min-width: 0;
     min-height: 30px;
+    padding-left: 6px;
   }
 
   .list-player-card {
