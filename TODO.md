@@ -48,7 +48,8 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
 - [ ] `DataService` strukturell aufteilen.
-  - Kontext: `src/app/services/data-service.ts` ist aktuell vor allem öffentliche App-Datenfassade und Orchestrator.
+  - Kontext: `src/app/core/services/data.service.ts` ist aktuell vor allem öffentliche App-Datenfassade und Orchestrator.
+  - Kontext: Die alte Location `src/app/services/data-service.ts` wurde entfernt; Consumer importieren `DataService` aus `src/app/core/services/data.service.ts`.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
   - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
   - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
