@@ -13,4 +13,5 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
 export class DraftShellComponent {
   @Input({ required: true }) draftVm!: DraftViewModel;
   @Input() showAvatar = true;
+  @Input() showStatus = true;
 }
