@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DataService } from '../../../services/data-service';
+import { DataService } from '../../../core/services/data.service';
 import type { FantasyTeam, League, Player, TopPlayersSalaryResult } from '../../../core/models/fantasy.models';
 import { FormsModule } from '@angular/forms';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
