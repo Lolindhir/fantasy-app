@@ -109,14 +109,19 @@ coreConcepts:
   DraftsFeature:
     description: >
       Frontend feature area for current/upcoming/live draft assets. Its primary
-      route is /drafts and its current routed component is
-      src/app/features/drafts/drafts.ts.
+      route is /drafts and its routed page aggregator is
+      src/app/features/drafts/drafts-page.ts.
     currentScope:
       - display current/upcoming/live drafts from public/data/Drafts.json
-      - group current-season picks by draft and round
+      - split current-season and future drafts into dedicated tab components
+      - show current-season drafts with draft-specific view modes: Overview, Teams and List
+      - keep Overview as the default current-draft view while the future compact/Sleeper-like design is refined
+      - show current-season Teams view as current-owner pick groups with concrete pick chips such as 2.03
+      - show current-season List view as ordered pick rows with compact mobile layout and more detailed desktop layout
+      - make current-season picks clickable in every current view, including open picks, to expose pick, owner, original owner and trade context
+      - show future drafts as compact team-owned round summaries with clickable origin popovers
       - show current owner as the primary owner label
-      - show original owner as "from <team>" when a pick is currently traded
-      - show future drafts as compact team-owned round summaries
+      - show original owner as "from <team>" or in pick popovers when a pick is currently traded
     doesNotOwn:
       - draft order derivation
       - draft-pick ownership derivation
@@ -178,61 +183,7 @@ transactions:
       - Replace only fetched weeks in the local data.
       - Save only when the compare script detects semantic changes.
     forceMode:
-      - Fetch all available weeks for the current season.
-      - Rebuild current-season output from remote/manual source data.
-      - Still allow compare-and-skip behavior when output is unchanged.
-
-  sorting:
-    canonicalOrder: newest-first
-    keys:
-      - Season
-      - Week
-      - CreatedAt
-      - TransactionID
-
-drafts:
-  sourceOfTruth:
-    config: public/data/Metadata.json
-    currentOutput: public/data/Drafts.json
-    historicalOutput: public/data/past_seasons/Drafts/Drafts_<season>.json
-    generator: public/requests/utils/league/DraftUtils.psm1
-    historyGenerator: public/requests/utils/league/DraftHistoryUtils.psm1
-    teamPickMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
-
-  currentState:
-    metadataContains:
-      - UpcomingDraftCount
-      - UpcomingDraftCountMode
-      - DraftType
-      - DraftNo
-      - Rounds
-      - OrderSource
-      - OrderMap
-      - Order
-
-  draftTypes:
-    canonical:
-      - Rookie
-      - Free_Agent
-      - Veteran
-    notes: >
-      Historical Sleeper drafts are classified from Sleeper settings and metadata
-      first. Metadata.json is mainly a planning/configuration guide for future
-      drafts and a current-season guideline, not a validator for old completed
-      draft settings.
-
-  configuredDraftTypes:
-    - draftType: Rookie
-      draftNo: 1
-      rounds: 5
-      currentSeasonOrderSource: PreviousPlayoffs
-      notes: >
-        Uses configured OrderMap based on previous playoff placement when no
-        authoritative Sleeper draft order is available.
-    - draftType: Free_Agent
-      draftNo: 2
-      rounds: 5
-      currentSeasonOrderSource: AllTime
-      notes: >
-        Uses configured OrderMap based on all-time standings when no authoritative
-        Sleeper draft order is available.
+      - Rebuild all available weeks for the current season.
+      - Fetch manual transaction enrichment.
+      - Apply manual enrichment by SleeperTransactionID where possible.
+      - Include manual-only completed transactions.
