@@ -104,6 +104,15 @@
   object-fit: contain;
 }
 
+.open-pick-cell {
+  color: #6b7280;
+  font-weight: 900;
+}
+
+.mobile-owner-avatar {
+  display: none;
+}
+
 .status-cell {
   display: flex;
   align-items: center;
@@ -132,17 +141,19 @@
 }
 
 @media (max-width: 700px) {
+  .current-pick-table {
+    gap: 6px;
+  }
+
   .current-pick-table-header {
     display: none;
   }
 
   .current-pick-table-row {
-    grid-template-columns: 74px minmax(0, 1fr);
-    grid-template-areas:
-      "pick player"
-      "pick owner"
-      "pick status";
-    gap: 4px 10px;
+    grid-template-columns: 58px minmax(0, 1fr) 32px;
+    grid-template-areas: "pick player ownerLogo";
+    gap: 8px;
+    padding: 7px 8px;
   }
 
   app-current-draft-pick-chip {
@@ -151,20 +162,61 @@
 
   .pick-player-cell {
     grid-area: player;
+    min-width: 0;
   }
 
-  .owner-cell {
-    grid-area: owner;
-    color: #6b7280;
-    font-size: 0.8rem;
+  .list-player-card {
+    grid-template-columns: minmax(0, 1fr) 30px;
+    gap: 7px;
   }
 
-  .origin-cell {
-    display: none;
+  .list-player-picture {
+    width: 30px;
+    height: 30px;
+    order: 2;
   }
 
+  .list-player-main {
+    order: 1;
+  }
+
+  .list-player-main strong {
+    font-size: 0.82rem;
+  }
+
+  .list-player-meta {
+    gap: 4px;
+    font-size: 0.7rem;
+  }
+
+  .list-player-position {
+    padding: 1px 5px;
+    font-size: 0.64rem;
+  }
+
+  .list-player-nfl-logo {
+    width: 16px;
+    height: 16px;
+  }
+
+  .open-pick-cell {
+    display: block;
+    font-size: 0.82rem;
+  }
+
+  .mobile-owner-avatar {
+    display: block;
+    grid-area: ownerLogo;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #e5e7eb;
+  }
+
+  .owner-cell,
+  .origin-cell,
   .status-cell {
-    grid-area: status;
-    font-size: 0.78rem;
+    display: none;
   }
 }
