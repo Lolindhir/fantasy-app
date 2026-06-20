@@ -37,17 +37,31 @@ body {
     height: auto;
 }
 
+app-current-drafts-tab,
+app-future-drafts-tab,
+app-draft-shell {
+  display: block;
+}
+
 app-current-drafts-tab .team-avatar,
 app-future-drafts-tab .team-avatar {
   width: 28px;
   height: 28px;
+  flex: 0 0 auto;
   border-radius: 50%;
   object-fit: cover;
+  background: #e5e7eb;
 }
 
 app-current-drafts-tab .team-avatar.tiny {
   width: 16px;
   height: 16px;
+  margin: 0 2px 0 4px;
+  vertical-align: -3px;
+}
+
+app-current-drafts-tab .pick-row {
+  grid-template-columns: 72px minmax(0, 1fr) auto;
 }
 
 app-current-drafts-tab .pick-owner-line {
@@ -61,6 +75,26 @@ app-current-drafts-tab .pick-owner {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+app-current-drafts-tab .pick-owner strong,
+app-current-drafts-tab .picked-player,
+app-future-drafts-tab .compact-team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+app-current-drafts-tab .pick-owner span {
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+app-current-drafts-tab .picked-player {
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 app-current-drafts-tab .round-accordion {
@@ -109,4 +143,23 @@ app-draft-shell mat-card-title {
 
 app-draft-shell mat-card-subtitle {
   color: #64748b;
+}
+
+@media (max-width: 600px) {
+  app-current-drafts-tab .pick-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  app-current-drafts-tab .picked-player {
+    grid-column: 2;
+  }
+
+  app-future-drafts-tab .compact-owner-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  app-future-drafts-tab .compact-round-list {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
 }
