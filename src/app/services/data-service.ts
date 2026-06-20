@@ -3,17 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+import { formatSalaryDollars, mapRawPlayerToPlayer } from '../core/mappers/player.mapper';
 import type { DraftPick, RawDraft } from '../core/models/draft.models';
 import type { Award, DataTimestamps, FantasyTeam, League, RawAward, RawLeague } from '../core/models/league.models';
 import type {
   FreeAgentMarketInfo,
   FreeAgentPredictionModel,
   FreeAgentSalaryMode,
-  GameHistory,
-  NFLTeam,
   Player,
-  PlayerStats,
-  PointHistorySeason,
   RawNFLTeam,
   RawPlayer,
   SortField,
@@ -144,108 +141,13 @@ export class DataService {
           };
         });
 
-        const seasonYear = Number(leagueRaw.Season);
-
-        const FREE_AGENT_TEAM: NFLTeam = {
-          ID: 'FA',
-          Name: 'Free Agent',
-          Abv: 'FA',
-          Logo: 'assets/logo_nfl.png'
-        };
-
-        const players: Player[] = playersRaw.map(raw => {
-          let nfl = nflTeamsRaw.find(t => t.ID === raw.TeamID)!;
-          let jerseyNumber = raw.Number;
-
-          if (raw.IsFreeAgent) {
-            nfl = FREE_AGENT_TEAM;
-            jerseyNumber = '';
-          }
-
-          const stats: PlayerStats = {
-            GamesPlayed: raw.GamesPlayed,
-            GamesPotential: raw.GamesPotential,
-            SnapsTotal: raw.SnapsTotal,
-            AttemptsTotal: raw.AttemptsTotal,
-            FantasyPointsTotal: raw.FantasyPointsTotal,
-            FantasyPointsAvgGame: raw.FantasyPointsAvgGame,
-            FantasyPointsAvgPotentialGame: raw.FantasyPointsAvgPotentialGame,
-            FantasyPointsAvgSnap: raw.FantasyPointsAvgSnap,
-            FantasyPointsAvgAttempt: raw.FantasyPointsAvgAttempt,
-            TouchdownsTotal: raw.TouchdownsTotal,
-            TouchdownsPassing: raw.TouchdownsPassing,
-            TouchdownsReceiving: raw.TouchdownsReceiving,
-            TouchdownsRushing: raw.TouchdownsRushing,
-            Ranking: raw.Ranking,
-            PointHistory: raw.PointHistory
-          };
-
-          if (raw.InjuryDetails?.Date) {
-            const rd = raw.InjuryDetails.Date;
-            if (/^\d{8}$/.test(rd)) {
-              raw.InjuryDetails.Date = `${rd.slice(0, 4)}-${rd.slice(4, 6)}-${rd.slice(6, 8)}`;
-            }
-          }
-
-          if (raw.InjuryDetails?.ReturnDate) {
-            const rd = raw.InjuryDetails.ReturnDate;
-            if (/^\d{8}$/.test(rd)) {
-              raw.InjuryDetails.ReturnDate = `${rd.slice(0, 4)}-${rd.slice(4, 6)}-${rd.slice(6, 8)}`;
-            }
-          }
-
-          if (stats?.PointHistory) {
-            const mapping = {
-              SeasonMinus1: seasonYear - 1,
-              SeasonMinus2: seasonYear - 2,
-              SeasonMinus3: seasonYear - 3
-            } as const;
-
-            (Object.entries(stats.PointHistory) as [keyof typeof stats.PointHistory, PointHistorySeason | undefined][])
-              .forEach(([key, season]) => {
-                if (season) {
-                  season.Season = mapping[key];
-                }
-              });
-          }
-
-          const currentWeek = leagueRaw.FinalScoredWeek;
-          const playoffStartWeek = leagueRaw.PlayoffStartWeek;
-          const lastWeek = leagueRaw.LastLeagueWeek;
-
-          return {
-            ...raw,
-            Number: jerseyNumber,
-            TeamNFL: nfl,
-            TeamFantasy: undefined,
-            IsFantasyFreeAgent: false,
-            IsFreeAgentDraftAvailable: false,
-            FreeAgentMarketInfo: this.createFreeAgentMarketInfo(
-              'Rostered',
-              'Rostered',
-              'CurrentOnly',
-              'Current',
-              0,
-              'Pending fantasy roster assignment.'
-            ),
-            IsFreeAgentDraftAvailableProjected: false,
-            FreeAgentMarketInfoProjected: this.createFreeAgentMarketInfo(
-              'Rostered',
-              'Rostered',
-              'CurrentOnly',
-              'Projected',
-              0,
-              'Pending fantasy roster assignment.'
-            ),
-            Salary: raw.Salary,
-            SalaryProjected: raw.SalaryProjected,
-            SalaryDisplay: this.formatSalaryDollars(raw.Salary),
-            SalaryProjectedDisplay: this.formatSalaryDollars(raw.SalaryProjected),
-            NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,
-            Stats: stats,
-            GameHistoryFull: this.prepareGameHistory(raw, currentWeek, playoffStartWeek, lastWeek)
-          };
-        });
+        const players: Player[] = playersRaw.map(raw => mapRawPlayerToPlayer(raw, {
+          nflTeams: nflTeamsRaw,
+          seasonYear: Number(leagueRaw.Season),
+          currentWeek: leagueRaw.FinalScoredWeek,
+          playoffStartWeek: leagueRaw.PlayoffStartWeek,
+          lastWeek: leagueRaw.LastLeagueWeek
+        }));
 
         teams.forEach(team => {
           const rawTeam = leagueRaw.Teams.find(t => t.TeamID === team.TeamID);
@@ -272,9 +174,9 @@ export class DataService {
           ...leagueRaw,
           Teams: teams,
           SalaryCap: leagueRaw.SalaryCap,
-          SalaryCapDisplay: this.formatSalaryDollars(leagueRaw.SalaryCap),
+          SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
           SalaryCapProjected: leagueRaw.SalaryCapProjected,
-          SalaryCapProjectedDisplay: this.formatSalaryDollars(leagueRaw.SalaryCapProjected),
+          SalaryCapProjectedDisplay: formatSalaryDollars(leagueRaw.SalaryCapProjected),
           IsFinished: leagueRaw.Status == 'Finished',
           SeasonAsNumber: +leagueRaw.Season
         };
@@ -424,13 +326,13 @@ export class DataService {
             CutOrder: cutOrder,
             SalaryRank: 6,
             SalaryUsed: salaryUsed,
-            SalaryUsedDisplay: this.formatSalaryDollars(salaryUsed),
+            SalaryUsedDisplay: formatSalaryDollars(salaryUsed),
             CapLimit: capLimit,
-            CapLimitDisplay: this.formatSalaryDollars(capLimit),
+            CapLimitDisplay: formatSalaryDollars(capLimit),
             CapBeforeCut: capBeforeCut,
-            CapBeforeCutDisplay: this.formatSalaryDollars(capBeforeCut),
+            CapBeforeCutDisplay: formatSalaryDollars(capBeforeCut),
             CapAfterCut: currentCap,
-            CapAfterCutDisplay: this.formatSalaryDollars(currentCap)
+            CapAfterCutDisplay: formatSalaryDollars(currentCap)
           }
         );
 
@@ -480,16 +382,6 @@ export class DataService {
     player.IsFreeAgentDraftAvailable = isAvailable;
   }
 
-  private formatSalaryDollars(amount: number): string {
-    if (amount >= 1_000_000) {
-      return `$${(amount / 1_000_000).toFixed(1)} Mio.`;
-    } else if (amount >= 1_000) {
-      return `$${(amount / 1_000_000).toFixed(2)} Mio.`;
-    } else {
-      return `$0.0 Mio.`;
-    }
-  }
-
   private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
     return roster.sort((a, b) => {
       for (const field of sortFields) {
@@ -503,43 +395,6 @@ export class DataService {
       }
 
       return a.ID.localeCompare(b.ID);
-    });
-  }
-
-  private prepareGameHistory(player: RawPlayer, currentWeek: number, playoffStartWeek: number, lastWeek: number): GameHistory[] {
-    const existingGames = player.GameHistory ?? [];
-    const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
-
-    return weeks.map(week => {
-      const existing = existingGames.find(g => g.GameDetails.Week === week);
-      if (existing) return existing;
-
-      return {
-        GameID: '',
-        TeamID: '',
-        TeamAbv: '',
-        GameDetails: {
-          Week: week,
-          WeekFinal: false,
-          WeekPlayoff: week >= playoffStartWeek && week <= lastWeek,
-          WeekScored: week <= lastWeek,
-          Date: '',
-          Home: '-',
-          HomeID: '',
-          Away: '-',
-          AwayID: '',
-          HomePoints: 0,
-          AwayPoints: 0
-        },
-        FantasyPoints: 0,
-        SnapCount: 0,
-        SnapPercentage: 0,
-        Attempts: 0,
-        Passing: undefined,
-        Rushing: undefined,
-        Receiving: undefined,
-        Kicking: undefined
-      } as GameHistory;
     });
   }
 
