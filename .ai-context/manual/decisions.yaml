@@ -236,13 +236,13 @@ decisions:
       roster movement. The Trade Simulator stays separate for now but may later
       move under Moves.
     decision: >
-      Use /drafts as the primary route for draft presentation and use a dedicated
-      DraftsComponent under src/app/features/drafts. Use /moves as the primary
-      route for transaction and roster-move presentation. Keep
-      LeagueActivityComponent as the technical component name for the Moves page
-      for now. Keep /league-activity as a compatibility redirect to /moves. Keep
-      /trade as an independent route until the Trade Simulator is intentionally
-      integrated into Moves.
+      Use /drafts as the primary route for draft presentation and use
+      DraftsPageComponent under src/app/features/drafts/drafts-page.ts as the
+      routed page aggregator. Use /moves as the primary route for transaction and
+      roster-move presentation. Keep LeagueActivityComponent as the technical
+      component name for the Moves page for now. Keep /league-activity as a
+      compatibility redirect to /moves. Keep /trade as an independent route until
+      the Trade Simulator is intentionally integrated into Moves.
     rationale: >
       Drafts are structured by draft, round, pick order, current owner and
       original owner. Moves are chronological league activity and depend on
@@ -256,3 +256,33 @@ decisions:
       negative:
         - Shared draft-pick display logic should be extracted sooner because Drafts and Overview both render draft picks.
         - LeagueActivityComponent has a legacy name until the Moves area is renamed or rebuilt later.
+
+  - id: ADR-017
+    title: Current Drafts use draft-specific view modes
+    status: accepted
+    context: >
+      Current-season drafts need multiple planning views: the existing round-based
+      overview, a team-owned pick view similar to Future Drafts but with concrete
+      pick labels, and a simple ordered list/table. Different drafts may need
+      different active views at the same time.
+    decision: >
+      Keep Current Drafts as a tab inside the Drafts feature, but let each draft
+      card manage its own view mode: Overview, Teams or List. Use Overview as the
+      default view and preserve the existing round accordion there until the final
+      compact/Sleeper-like overview is designed. Teams and List derive their first
+      implementation from the existing round-based draft view model. Current picks
+      are clickable in every view, including open picks, and show a compact menu
+      with pick, owner, original owner and trade context.
+    rationale: >
+      Draft-specific view state matches how current drafts are reviewed and avoids
+      forcing all drafts into one global display mode. Keeping the first Teams and
+      List implementation derived from the existing draftVm.rounds avoids changing
+      generated contracts or central mapper behavior while the UI is still being
+      refined.
+    consequences:
+      positive:
+        - Each current draft can be inspected in the most useful view independently.
+        - Open and picked picks expose the same ownership and trade context.
+        - The Overview redesign can happen later without blocking Teams/List.
+      negative:
+        - Current Teams/List grouping logic is temporarily component-local and should later move into the central Drafts view model.
