@@ -3,6 +3,7 @@ function Get-Config {
     # League Settings
     $SalaryRelevantTeamSize = 20
     $MaxTransactionWeek = 20
+    $LeagueStatusSeasonStartBufferDays = 7
 
     # RapidAPI-Key für Tank01
     $RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
@@ -57,6 +58,7 @@ function Get-Config {
         LeagueYear                       = $metadataContent.LeagueYear
         SalaryRelevantTeamSize           = $SalaryRelevantTeamSize
         MaxTransactionWeek               = $MaxTransactionWeek
+        LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
         LeagueID                         = $metadataContent.LeagueID
         CapDeadline                      = $metadataContent.CapDeadline
         OwnerIDs                         = $ownerIDs
