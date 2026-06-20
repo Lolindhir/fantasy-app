@@ -43,6 +43,11 @@ app-draft-shell {
   display: block;
 }
 
+app-draft-shell .draft-shell,
+app-future-drafts-tab app-draft-shell {
+  width: 100%;
+}
+
 app-current-drafts-tab .team-avatar,
 app-future-drafts-tab .team-avatar {
   width: 28px;
@@ -102,8 +107,20 @@ app-current-drafts-tab .round-accordion {
   margin-top: 14px;
 }
 
+app-future-drafts-tab .compact-owner-list,
+app-future-drafts-tab .compact-owner-row,
+app-future-drafts-tab .compact-round-list {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 app-future-drafts-tab .compact-owner-row {
-  grid-template-columns: 28px minmax(110px, 1fr) minmax(0, 2fr);
+  grid-template-columns: 28px minmax(0, 140px) minmax(0, 1fr);
+}
+
+app-future-drafts-tab .compact-team-name {
+  display: block;
+  min-width: 0;
 }
 
 app-future-drafts-tab .compact-round-list {
