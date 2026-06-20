@@ -3,8 +3,7 @@
     @for (round of draftVm.rounds; track round.round) {
       <div
         class="draft-board-row"
-        [style.grid-template-columns]="gridTemplateColumns"
-        [style.min-width.px]="gridMinWidth">
+        [style.--column-count]="columnCount">
         @for (item of round.picks; track item.pick.PickKey) {
           <button
             class="draft-pick-tile"
