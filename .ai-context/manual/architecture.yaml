@@ -136,6 +136,14 @@ frontendStructure:
         Players.json read model plus frontend-enriched Player shape. DataService
         imports these declarations directly.
 
+    - path: src/app/core/mappers/player.mapper.ts
+      responsibility: >
+        Pure frontend mapper for RawPlayer to Player transformation. It owns
+        deterministic per-player mapping such as NFL/free-agent team assignment,
+        injury date normalization, player stats assembly, point-history season
+        labels, salary display text, NameShort fallback and padded game history.
+        It does not own FreeAgentMarket simulation across fantasy teams.
+
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
         Central Angular model import surface. Draft, league/team and player model
@@ -145,9 +153,10 @@ frontendStructure:
     - path: src/app/services/data-service.ts
       responsibility: >
         Current app-wide Angular data facade. It imports model declarations from
-        src/app/core/models and still contains HTTP loading, mapping/enrichment and
-        helper logic. Mapper and service responsibilities are the next major
-        frontend refactor candidates.
+        src/app/core/models, delegates RawPlayer-to-Player mapping to
+        src/app/core/mappers/player.mapper.ts, and still contains HTTP loading,
+        team/draft mapping, FreeAgentMarket enrichment and helper logic. Service
+        responsibilities are the next major frontend refactor candidates.
 
   removedCompatibilityReExports:
     note: >
@@ -298,8 +307,12 @@ dataFlow:
       current/original owner display.
 
   - from: public/data/Players.json
+    to: src/app/core/mappers/player.mapper.ts
+    purpose: Map generated RawPlayer records into frontend Player objects.
+
+  - from: src/app/core/mappers/player.mapper.ts
     to: src/app/services/data-service.ts
-    purpose: Frontend Player model.
+    purpose: Provide mapped Player objects before fantasy roster assignment and FreeAgentMarket enrichment.
 
   - from: public/data/Teams.json
     to: src/app/services/data-service.ts
