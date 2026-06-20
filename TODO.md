@@ -34,9 +34,14 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
 - [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente prüfen und ggf. auslagern.
-  - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und `src/app/features/drafts/drafts.ts` angezeigt.
+  - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und im Drafts-Feature unter `src/app/features/drafts/**` angezeigt.
   - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
   - Mögliche Zielstruktur: `src/app/shared/components/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
+
+- [ ] Current-Draft-Team- und Listen-Gruppierungen ins zentrale Drafts-ViewModel ziehen.
+  - Kontext: Die Current-Draft-Teams- und Listen-Sichten leiten ihre Pick-Gruppierungen und Sortierungen im ersten Wurf komponentennah aus `draftVm.rounds` ab.
+  - Ziel: `orderedPicks` und eine Current-spezifische Owner-Pick-Gruppierung in `drafts-view.models.ts` und `drafts-view-model.mapper.ts` zentralisieren.
+  - Hinweis: Die Source of Truth bleibt `public/data/Drafts.json`; es geht nur um ein stabileres Angular-ViewModel für die Darstellung.
 
 - [ ] Draft-Round-Chip-Farblogik aus Overview und Drafts in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
   - Kontext: Overview und Drafts berechnen die Farben aktuell lokal mit derselben warm-zu-kalt HSL-Skala.
