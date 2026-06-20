@@ -23,11 +23,11 @@ export class CurrentDraftOverviewViewComponent {
   }
 
   get gridTemplateColumns(): string {
-    return `repeat(${this.columnCount}, minmax(64px, 1fr))`;
+    return `repeat(${this.columnCount}, minmax(52px, 56px))`;
   }
 
   get gridMinWidth(): number {
-    return this.columnCount * 72;
+    return this.columnCount * 56;
   }
 
   openPlayerDetail(player: Player, event?: Event): void {
