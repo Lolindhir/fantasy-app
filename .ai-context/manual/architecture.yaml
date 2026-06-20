@@ -111,6 +111,17 @@ frontendStructure:
         Contains reusable frontend helpers, Material imports, shared components,
         pipes and utility candidates.
 
+    - path: src/app/shared/utils/player-sort.util.ts
+      responsibility: >
+        Reusable frontend utility for deterministic Player sorting by selected
+        player fields and stable ID fallback.
+
+    - path: src/app/shared/utils/trade-calculator.util.ts
+      responsibility: >
+        Reusable frontend utility for roster salary calculations and trade roster
+        projection. DataService keeps thin compatibility delegates while consumer
+        code can move to the utility directly.
+
     - path: src/app/core/**
       responsibility: >
         Target area for app-wide Angular models, services and mapper code. This
@@ -178,8 +189,8 @@ frontendStructure:
         mapping to src/app/core/mappers/player.mapper.ts, delegates RawLeague/team
         and draft-pick mapping to src/app/core/mappers/league.mapper.ts, delegates
         FreeAgentMarket enrichment to src/app/core/services/free-agent-market.service.ts,
-        and still contains sorting plus salary/trade helper logic. Remaining helper
-        responsibilities are the next frontend refactor candidates.
+        uses shared utilities for Player sorting and salary/trade calculations,
+        and mainly remains as app-facing facade/orchestrator.
 
   removedCompatibilityReExports:
     note: >
@@ -353,6 +364,14 @@ dataFlow:
   - from: src/app/services/data-service.ts
     to: src/app/core/services/free-agent-market.service.ts
     purpose: Enrich mapped Player objects with current and projected FreeAgentMarket metadata.
+
+  - from: src/app/services/data-service.ts
+    to: src/app/shared/utils/player-sort.util.ts
+    purpose: Sort mapped Player objects for DataService consumers.
+
+  - from: src/app/services/data-service.ts
+    to: src/app/shared/utils/trade-calculator.util.ts
+    purpose: Delegate public salary and trade roster calculations to reusable utilities.
 
   - from: public/data/Timestamps.json
     to: src/app/core/services/data-api.service.ts
