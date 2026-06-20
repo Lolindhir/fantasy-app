@@ -1,0 +1,18 @@
+schemaVersion: 1
+
+routing:
+  drafts:
+    route: /drafts
+    component: src/app/features/drafts/drafts.ts
+    purpose: Dedicated routed page for current-season and future draft pick presentation.
+  moves:
+    route: /moves
+    component: src/app/features/league-activity/league-activity.ts
+    purpose: Placeholder routed page for future chronological league activity and roster moves.
+  compatibility:
+    - from: /league-activity
+      to: /moves
+      reason: Preserve old links after splitting the previous combined League Activity route.
+  tradeSimulator:
+    currentRoute: /trade
+    futureDirection: May later be integrated into Moves when that feature area is expanded.
