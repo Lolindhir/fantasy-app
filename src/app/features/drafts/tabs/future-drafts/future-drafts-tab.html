@@ -6,7 +6,7 @@
 
     <div class="compact-draft-grid">
       @for (draftVm of drafts; track draftVm.draft.DraftKey) {
-        <app-draft-shell [draftVm]="draftVm" [showAvatar]="false">
+        <app-draft-shell [draftVm]="draftVm" [showAvatar]="false" [showStatus]="false">
           <div class="compact-owner-list">
             @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
               <div class="compact-owner-row">
