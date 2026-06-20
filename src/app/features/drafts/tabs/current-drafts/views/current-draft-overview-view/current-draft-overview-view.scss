@@ -1,0 +1,145 @@
+.pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pick-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-left: 6px solid transparent;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.pick-token {
+  padding: 7px 8px;
+  border: none;
+  border-radius: 10px;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 900;
+  text-align: center;
+  cursor: pointer;
+}
+
+.pick-owner-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-avatar {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.team-avatar.tiny {
+  width: 16px;
+  height: 16px;
+  margin: 0 3px;
+  vertical-align: middle;
+}
+
+.pick-owner,
+.pick-result {
+  min-width: 0;
+  color: #1f2937;
+}
+
+.pick-owner strong,
+.pick-result strong,
+.pick-result span {
+  overflow: hidden;
+  display: block;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick-owner span {
+  overflow: hidden;
+  display: block;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick-info-menu-content {
+  display: flex;
+  min-width: 210px;
+  max-width: 280px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  color: #1f2937;
+  font-size: 0.84rem;
+}
+
+.pick-info-menu-content > strong {
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.picked-player {
+  font-weight: 900;
+}
+
+.open-pick-label,
+.traded-pick-label {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.traded-pick-label {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.pick-info-team-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.pick-info-avatar {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.pick-info-team-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .pick-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .pick-result {
+    grid-column: 2;
+  }
+}
