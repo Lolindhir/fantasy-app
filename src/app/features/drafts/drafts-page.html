@@ -1,0 +1,37 @@
+@if (vm$ | async; as vm) {
+  <div class="drafts-page">
+    <section class="hero-card">
+      <h1 class="summary-title">Drafts</h1>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span class="summary-label">Drafts</span>
+          <strong>{{ vm.draftCount }}</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Traded</span>
+          <strong>{{ vm.tradedPickCount }}</strong>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Picks</span>
+          <strong>{{ vm.pickCount }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <nav class="draft-tab-nav" aria-label="Draft sections">
+      <button type="button" [class.active]="activeTab === 'current'" (click)="selectTab('current')">
+        Current
+      </button>
+      <button type="button" [class.active]="activeTab === 'future'" (click)="selectTab('future')">
+        Future
+      </button>
+    </nav>
+
+    @if (activeTab === 'current') {
+      <app-current-drafts-tab [drafts]="vm.currentSeasonDrafts" />
+    } @else {
+      <app-future-drafts-tab [drafts]="vm.futureDrafts" />
+    }
+  </div>
+}

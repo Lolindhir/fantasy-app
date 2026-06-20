@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { OverviewComponent } from './features/overview/overview';
 import { TeamListComponent } from './features/teams/team-list/team-list';
 import { PlayersPageComponent } from './features/players/players-page/players-page';
-import { DraftsComponent } from './features/drafts/drafts';
+import { DraftsPageComponent } from './features/drafts/drafts-page';
 import { LeagueActivityComponent } from './features/league-activity/league-activity';
 import { TradeSimulatorComponent } from './features/trade/trade-simulator/trade-simulator';
 import { AboutComponent } from './features/handbook/about';
@@ -11,7 +11,7 @@ export const routes: Routes = [
   { path: '', component: OverviewComponent },
   { path: 'teams', component: TeamListComponent },
   { path: 'players', component: PlayersPageComponent },
-  { path: 'drafts', component: DraftsComponent },
+  { path: 'drafts', component: DraftsPageComponent },
   { path: 'moves', component: LeagueActivityComponent },
   { path: 'league-activity', redirectTo: 'moves', pathMatch: 'full' },
   { path: 'trade', component: TradeSimulatorComponent },

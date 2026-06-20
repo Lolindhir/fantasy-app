@@ -1,0 +1,88 @@
+.draft-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.drafts-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.draft-card,
+.empty-card {
+  border-radius: 18px;
+}
+
+.draft-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e1f24;
+  color: white;
+  font-weight: 900;
+}
+
+.round-block {
+  margin-top: 16px;
+}
+
+.round-block h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.pick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pick-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-left: 6px solid transparent;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.pick-token {
+  padding: 7px 8px;
+  border-radius: 10px;
+  text-align: center;
+  color: #1f2937;
+  font-weight: 900;
+}
+
+.pick-owner-name,
+.picked-player {
+  overflow: hidden;
+  color: #1f2937;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick-origin {
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .pick-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
