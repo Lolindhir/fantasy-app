@@ -7,44 +7,37 @@
     <div class="drafts-column">
       @for (draftVm of drafts; track draftVm.draft.DraftKey) {
         <app-draft-shell [draftVm]="draftVm">
-          <mat-accordion class="round-accordion" multi>
-            @for (round of draftVm.rounds; track round.round) {
-              <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                  <mat-panel-title>{{ round.label }}</mat-panel-title>
-                  <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
-                </mat-expansion-panel-header>
+          <div class="current-view-tabs" aria-label="Current draft views">
+            <button
+              class="current-view-tab"
+              type="button"
+              [class.active]="getActiveView(draftVm.draft.DraftKey) === 'overview'"
+              (click)="selectView(draftVm.draft.DraftKey, 'overview')">
+              Overview
+            </button>
+            <button
+              class="current-view-tab"
+              type="button"
+              [class.active]="getActiveView(draftVm.draft.DraftKey) === 'teams'"
+              (click)="selectView(draftVm.draft.DraftKey, 'teams')">
+              Teams
+            </button>
+            <button
+              class="current-view-tab"
+              type="button"
+              [class.active]="getActiveView(draftVm.draft.DraftKey) === 'list'"
+              (click)="selectView(draftVm.draft.DraftKey, 'list')">
+              List
+            </button>
+          </div>
 
-                <div class="pick-list">
-                  @for (item of round.picks; track item.pick.PickKey) {
-                    <div class="pick-row" [style.border-left-color]="item.roundColor">
-                      <div class="pick-token" [style.background]="item.roundColor">
-                        {{ item.pick.DisplayPick }}
-                      </div>
-
-                      <div class="pick-owner-line">
-                        <img class="team-avatar" [src]="item.currentOwner.avatar" alt="" />
-                        <div class="pick-owner">
-                          <strong>{{ item.currentOwner.name }}</strong>
-                          @if (item.isCurrentlyTraded) {
-                            <span>
-                              from
-                              <img class="team-avatar tiny" [src]="item.originalOwner.avatar" alt="" />
-                              {{ item.originalOwner.name }}
-                            </span>
-                          }
-                        </div>
-                      </div>
-
-                      @if (item.pick.PlayerName) {
-                        <div class="picked-player">{{ item.pick.PlayerName }}</div>
-                      }
-                    </div>
-                  }
-                </div>
-              </mat-expansion-panel>
-            }
-          </mat-accordion>
+          @if (getActiveView(draftVm.draft.DraftKey) === 'overview') {
+            <app-current-draft-overview-view [draftVm]="draftVm" />
+          } @else if (getActiveView(draftVm.draft.DraftKey) === 'teams') {
+            <app-current-draft-team-view [draftVm]="draftVm" />
+          } @else {
+            <app-current-draft-list-view [draftVm]="draftVm" />
+          }
         </app-draft-shell>
       }
     </div>
