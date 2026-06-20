@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import type { Player } from '../../../../../../core/models/fantasy.models';
 import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
 import { CurrentDraftPickChipComponent } from '../../components/current-draft-pick-chip/current-draft-pick-chip';
@@ -9,7 +9,7 @@ import type { DraftPickViewModel, DraftViewModel } from '../../../../models/draf
 @Component({
   selector: 'app-current-draft-list-view',
   standalone: true,
-  imports: [CommonModule, CurrentDraftPickChipComponent],
+  imports: [CommonModule, MatDialogModule, CurrentDraftPickChipComponent],
   templateUrl: './current-draft-list-view.html',
   styleUrl: './current-draft-list-view.scss'
 })
