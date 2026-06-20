@@ -23,6 +23,8 @@ export interface DraftRoundViewModel {
 export interface CompactRoundPickViewModel {
   label: string;
   color: string;
+  originalOwner: TeamDisplayViewModel;
+  isCurrentlyTraded: boolean;
 }
 
 export interface CompactOwnerPickGroupViewModel {
