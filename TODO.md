@@ -47,27 +47,20 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
-- [ ] `DataService` strukturell aufteilen.
+- [ ] `DataService` als schmale App-Datenfassade überprüfen und bei Bedarf weiter stabilisieren.
   - Kontext: `src/app/core/services/data.service.ts` ist aktuell vor allem öffentliche App-Datenfassade und Orchestrator.
   - Kontext: Die alte Location `src/app/services/data-service.ts` wurde entfernt; Consumer importieren `DataService` aus `src/app/core/services/data.service.ts`.
-  - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
-  - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
-  - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
-  - Kontext: League-/Standing-/FantasyTeam-Modelle liegen in `src/app/core/models/league.models.ts`; Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle liegen in `src/app/core/models/player.models.ts` und werden über `fantasy.models.ts` exportiert.
+  - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist umgesetzt; geroutete Feature-Seiten liegen unter `src/app/features/**`, wiederverwendbare UI-Komponenten unter `src/app/shared/components/**`.
+  - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data.service.ts`.
+  - Kontext: Draft-Modelle liegen in `src/app/core/models/draft.models.ts`, League-/Standing-/FantasyTeam-Modelle in `src/app/core/models/league.models.ts`, Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle in `src/app/core/models/player.models.ts`.
   - Kontext: `src/app/core/services/data-api.service.ts` enthält das HTTP-Laden der generierten JSON-Dateien und Timestamps.
   - Kontext: `src/app/core/mappers/league.mapper.ts` enthält die reine `RawLeague`-/`RawFantasyTeam`-/DraftPick-zu-`League`/`FantasyTeam`-Transformation inklusive Team-Roster-Zuweisung.
   - Kontext: `src/app/core/mappers/player.mapper.ts` enthält die reine `RawPlayer`-zu-`Player`-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping.
   - Kontext: `src/app/core/services/free-agent-market.service.ts` enthält die FreeAgentMarket-/RuleBasedAutoCut-Logik für Current- und Projected-Salary-Modi.
   - Kontext: `src/app/shared/utils/player-sort.util.ts` enthält die wiederverwendbare Player-Sortierung.
   - Kontext: `src/app/shared/utils/trade-calculator.util.ts` enthält wiederverwendbare Salary- und Trade-Roster-Berechnungen.
-  - Kontext: `DataService` nutzt die extrahierten Model-Dateien, den DataApiService, den League-Mapper, den Player-Mapper, den FreeAgentMarket-Service und Shared Utils direkt.
-  - Ziel: DataService perspektivisch als schmale App-Datenfassade stabilisieren oder bei Bedarf in kleinere Facades zerlegen.
-  - Ziel: Danach weitere app-weite Services in klarere Bereiche auslagern.
-  - Zielstruktur prüfen:
-    - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
-    - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
-    - `src/app/core/mappers` für fachliche Mapper, falls diese von den Services getrennt werden sollen.
-    - `src/app/shared/components`, `src/app/shared/pipes` und `src/app/shared/utils` für wiederverwendbare UI-/Material-/Frontend-Helfer.
+  - Ziel: Prüfen, ob Consumer künftig direkt die Shared Utils nutzen sollen, damit die Kompatibilitäts-Delegates in `DataService` entfallen können.
+  - Ziel: Prüfen, ob `DataService` dauerhaft als App-Datenfassade benannt bleibt oder später klarer als `FantasyDataService`/`DataFacade` bezeichnet werden soll.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
@@ -75,6 +68,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Template sauberer halten und Styling zentralisieren.
 
 ### Dokumentation / AI-Kontext
+
+- [ ] Fehlenden generierten AI-Kontext klären.
+  - Kontext: `.ai-context/ai-context.yaml` verweist in der Lesereihenfolge auf `.ai-context/generated/file-docs.json` und `.ai-context/generated/generated-json-contracts.json`.
+  - Kontext: Diese generierten Kontextdateien sind aktuell nicht im Repository abrufbar.
+  - Ziel: Entweder die generierten Dateien über den vorgesehenen Generator erzeugen und committen oder die Lesereihenfolge/Guidance so anpassen, dass fehlende Generated-Kontextdateien ausdrücklich optional sind.
+  - Hinweis: Dateien unter `.ai-context/generated` dürfen nicht manuell gepflegt werden.
 
 - [ ] Leichten Validierungscheck oder CI-Check ergänzen, der parallele AI-Kontext-Doku unter `docs/ai-context/**` verhindert.
   - Kontext: AI-Kontext-Dokumentation soll ausschließlich unter `.ai-context` liegen.
@@ -105,7 +104,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.
-  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts` und `src/app/about/about.ts` wurden nach Repo-Suche ohne produktive Referenzen entfernt.
+  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts`, `src/app/about/about.ts`, `src/app/player-list/player-list.ts` und `src/app/player-detail-dialog/player-detail-dialog.ts` wurden nach Build-/Testbestätigung und Repo-Suche ohne produktive Referenzen entfernt.
+
+- [x] Alte Komponenten-Specs aus den früheren Root-Locations entfernen.
+  - Kontext: Nach dem Angular-Struktur-Refactor lagen noch alte `.spec.ts`-Dateien in früheren Root-Locations und importierten lokale Wrapper, die nicht mehr produktiv genutzt wurden.
+  - Ergebnis: Alte Specs für Team List, About, Overview, Players Page, Trade Simulator, Player List und Player Detail Dialog wurden entfernt.
 
 - [x] Angular-Feature-Struktur vorbereiten und geroutete Seiten verschieben.
   - Kontext: Geroutete Angular-Seiten sollten von wiederverwendbaren UI-Komponenten getrennt werden.
