@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { SharedMaterialImports } from '../../../../shared/shared-material-imports';
-import { DraftShellComponent } from '../../components/draft-shell/draft-shell';
 import type { DraftViewModel } from '../../models/drafts-view.models';
 
 @Component({
@@ -9,8 +8,7 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
   standalone: true,
   imports: [
     CommonModule,
-    SharedMaterialImports,
-    DraftShellComponent
+    SharedMaterialImports
   ],
   templateUrl: './future-drafts-tab.html',
   styleUrl: './future-drafts-tab.scss'
