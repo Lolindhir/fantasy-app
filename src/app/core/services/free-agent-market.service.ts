@@ -8,6 +8,7 @@ import type {
   FreeAgentSalaryMode,
   Player
 } from '../models/player.models';
+import { calculateTopPlayersSalary } from '../../shared/utils/trade-calculator.util';
 
 @Injectable({
   providedIn: 'root'
@@ -94,11 +95,11 @@ export class FreeAgentMarketService {
     teams.forEach(team => {
       let simulatedRoster = [...team.Roster];
 
-      let currentCap = this.calculateTopPlayersSalary(
+      let currentCap = calculateTopPlayersSalary(
         simulatedRoster,
         salaryRelevantTeamSize,
         salarySelector
-      );
+      ).cap;
 
       if (currentCap <= capLimit) {
         return;
@@ -124,11 +125,11 @@ export class FreeAgentMarketService {
           player => player.ID !== nextCutCandidate.ID
         );
 
-        currentCap = this.calculateTopPlayersSalary(
+        currentCap = calculateTopPlayersSalary(
           simulatedRoster,
           salaryRelevantTeamSize,
           salarySelector
-        );
+        ).cap;
 
         const info = this.createFreeAgentMarketInfo(
           'ProjectedCapCut',
@@ -158,21 +159,6 @@ export class FreeAgentMarketService {
         cutOrder++;
       }
     });
-  }
-
-  private calculateTopPlayersSalary(
-    roster: Player[],
-    topN: number,
-    salarySelector: (player: Player) => number
-  ): number {
-    if (!roster || roster.length === 0) {
-      return 0;
-    }
-
-    return [...roster]
-      .sort((a, b) => salarySelector(b) - salarySelector(a))
-      .slice(0, Math.min(topN, roster.length))
-      .reduce((sum, player) => sum + salarySelector(player), 0);
   }
 
   private createFreeAgentMarketInfo(
