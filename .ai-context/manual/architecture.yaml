@@ -144,6 +144,13 @@ frontendStructure:
         labels, salary display text, NameShort fallback and padded game history.
         It does not own FreeAgentMarket simulation across fantasy teams.
 
+    - path: src/app/core/services/free-agent-market.service.ts
+      responsibility: >
+        App-wide Angular service for FreeAgentMarket enrichment and the
+        RuleBasedAutoCut prediction model. It owns cross-entity market simulation
+        across Player, FantasyTeam and League context, including current and
+        projected salary modes.
+
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
         Central Angular model import surface. Draft, league/team and player model
@@ -154,9 +161,10 @@ frontendStructure:
       responsibility: >
         Current app-wide Angular data facade. It imports model declarations from
         src/app/core/models, delegates RawPlayer-to-Player mapping to
-        src/app/core/mappers/player.mapper.ts, and still contains HTTP loading,
-        team/draft mapping, FreeAgentMarket enrichment and helper logic. Service
-        responsibilities are the next major frontend refactor candidates.
+        src/app/core/mappers/player.mapper.ts, delegates FreeAgentMarket enrichment
+        to src/app/core/services/free-agent-market.service.ts, and still contains
+        HTTP loading, team/draft mapping and helper logic. Remaining service
+        responsibilities are the next frontend refactor candidates.
 
   removedCompatibilityReExports:
     note: >
@@ -314,6 +322,10 @@ dataFlow:
     to: src/app/services/data-service.ts
     purpose: Provide mapped Player objects before fantasy roster assignment and FreeAgentMarket enrichment.
 
+  - from: src/app/services/data-service.ts
+    to: src/app/core/services/free-agent-market.service.ts
+    purpose: Enrich mapped Player objects with current and projected FreeAgentMarket metadata.
+
   - from: public/data/Teams.json
     to: src/app/services/data-service.ts
     purpose: Frontend NFL team model.
@@ -323,7 +335,7 @@ dataFlow:
     purpose: Display freshness of generated data.
 
 knownFrontendDomainLogic:
-  - path: src/app/services/data-service.ts
+  - path: src/app/core/services/free-agent-market.service.ts
     topic: FreeAgentMarketInfo / RuleBasedAutoCut
     note: >
       Currently computed in Angular as frontend enrichment. If it becomes
