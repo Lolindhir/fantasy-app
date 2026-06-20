@@ -1,0 +1,22 @@
+<mat-card class="draft-shell">
+  <mat-card-header>
+    @if (showAvatar) {
+      <div mat-card-avatar class="draft-avatar">
+        {{ draftVm.draft.DisplayDraftType.charAt(0) }}
+      </div>
+    }
+
+    <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
+
+    <mat-card-subtitle>
+      <span class="draft-metrics">
+        {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
+      </span>
+      <span class="draft-status-inline">{{ draftVm.statusLabel }}</span>
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <ng-content />
+  </mat-card-content>
+</mat-card>
