@@ -5,13 +5,7 @@
       <span class="current-team-name">{{ ownerGroup.owner.name }}</span>
       <div class="current-pick-chip-list">
         @for (item of ownerGroup.picks; track item.pick.PickKey) {
-          <button
-            class="current-pick-chip"
-            [class.traded-pick]="item.isCurrentlyTraded"
-            [style.background]="item.roundColor"
-            type="button">
-            {{ item.pick.DisplayPick }}
-          </button>
+          <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
         }
       </div>
     </div>
