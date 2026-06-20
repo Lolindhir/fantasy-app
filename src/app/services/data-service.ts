@@ -2,9 +2,10 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { formatSalaryDollars, mapRawPlayerToPlayer } from '../core/mappers/player.mapper';
-import type { DraftPick, RawDraft } from '../core/models/draft.models';
-import type { Award, DataTimestamps, FantasyTeam, League, RawAward, RawLeague } from '../core/models/league.models';
+import { mapRawLeagueData } from '../core/mappers/league.mapper';
+import { mapRawPlayerToPlayer } from '../core/mappers/player.mapper';
+import type { RawDraft } from '../core/models/draft.models';
+import type { DataTimestamps, FantasyTeam, League } from '../core/models/league.models';
 import type {
   Player,
   SortField,
@@ -78,55 +79,6 @@ export class DataService {
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[], drafts: RawDraft[] }> {
     return this.dataApiService.getLeagueData().pipe(
       map(({ leagueRaw, playersRaw, nflTeamsRaw, draftsRaw }) => {
-
-        const drafts = draftsRaw ?? [];
-        const draftPickByKey = new Map<string, DraftPick>();
-        for (const draft of drafts) {
-          for (const pick of draft.Picks ?? []) {
-            draftPickByKey.set(pick.PickKey, {
-              ...pick,
-              Draft: draft
-            });
-          }
-        }
-
-        const teams: FantasyTeam[] = leagueRaw.Teams.map(team => {
-          const awards = this.ensureArray(team.Placements.Current.Awards)
-            .map(a => this.mapAward(a));
-
-          const draftPickKeys = team.DraftPicks ?? [];
-          const resolvedDraftPicks = draftPickKeys
-            .map(key => draftPickByKey.get(key))
-            .filter((pick): pick is DraftPick => !!pick);
-
-          return {
-            ...team,
-            Team: team.Team || `Team ${team.Owner}`,
-            Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
-            Roster: [],
-            Reserve: [],
-            Taxi: [],
-            Starter: [],
-            DraftPickKeys: draftPickKeys,
-            DraftPicks: resolvedDraftPicks,
-            Standing: team.Placements.Current.Playoffs?.Place && team.Placements.Current.Playoffs.Place > 0
-              ? team.Placements.Current.Playoffs.Place
-              : team.Placements.Current.Regular.Place ?? 0,
-            Wins: team.Placements.Current.Regular.Wins ?? 0,
-            Losses: team.Placements.Current.Regular.Losses ?? 0,
-            Ties: team.Placements.Current.Regular.Ties ?? 0,
-            Points: team.Placements.Current.Regular.Points ?? 0,
-            PointsAgainst: team.Placements.Current.Regular.PointsAgainst ?? 0,
-            Streak: team.Placements.Current.Regular.Streak ?? '',
-            Record: team.Placements.Current.Regular.Record ?? '',
-            Championships: team.Placements.AllTime.Playoffs.Championships ?? 0,
-            RunnerUps: team.Placements.AllTime.Playoffs.RunnerUps ?? 0,
-            Thirds: team.Placements.AllTime.Playoffs.Thirds ?? 0,
-            RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0,
-            AwardsDisplay: awards.map(a => a.Icon).join('')
-          };
-        });
-
         const players: Player[] = playersRaw.map(raw => mapRawPlayerToPlayer(raw, {
           nflTeams: nflTeamsRaw,
           seasonYear: Number(leagueRaw.Season),
@@ -135,47 +87,18 @@ export class DataService {
           lastWeek: leagueRaw.LastLeagueWeek
         }));
 
-        teams.forEach(team => {
-          const rawTeam = leagueRaw.Teams.find(t => t.TeamID === team.TeamID);
-
-          team.Roster = this.rosterIdsToPlayers(rawTeam?.Roster ?? [], players);
-          team.Reserve = this.rosterIdsToPlayers(rawTeam?.Reserve ?? [], players);
-          team.Taxi = this.rosterIdsToPlayers(rawTeam?.Taxi ?? [], players);
-          team.Starter = this.rosterIdsToPlayers(rawTeam?.Starter ?? [], players);
-
-          team.Roster.forEach(player => (player.TeamFantasy = team));
+        const { league, teams, drafts } = mapRawLeagueData({
+          leagueRaw,
+          draftsRaw,
+          players
         });
 
         this.freeAgentMarketService.enrich(players, teams, leagueRaw);
-        teams.sort((a, b) => a.Standing - b.Standing);
         const playersSorted = this.sortRoster(players, sortFields);
-
-        leagueRaw.Standings.forEach(standing => {
-          standing.Awards?.forEach(award => {
-            award.Icon = this.unicodeToEmoji(award.IconUnicode);
-          });
-        });
-
-        const league: League = {
-          ...leagueRaw,
-          Teams: teams,
-          SalaryCap: leagueRaw.SalaryCap,
-          SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
-          SalaryCapProjected: leagueRaw.SalaryCapProjected,
-          SalaryCapProjectedDisplay: formatSalaryDollars(leagueRaw.SalaryCapProjected),
-          IsFinished: leagueRaw.Status == 'Finished',
-          SeasonAsNumber: +leagueRaw.Season
-        };
 
         return { league, players: playersSorted, teams, drafts };
       })
     );
-  }
-
-  private rosterIdsToPlayers(rosterIds: string[], allPlayers: Player[]): Player[] {
-    return rosterIds
-      .map(pid => allPlayers.find(p => p.ID === pid))
-      .filter((p): p is Player => !!p);
   }
 
   private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
@@ -226,27 +149,5 @@ export class DataService {
 
     incoming.forEach(p => newRoster.push(p));
     return newRoster;
-  }
-
-  private unicodeToEmoji(unicode: string): string {
-    return unicode
-      .split(' ')
-      .map(code => String.fromCodePoint(parseInt(code, 16)))
-      .join('');
-  }
-
-  private mapAward(raw: RawAward): Award {
-    return {
-      Name: raw.Name,
-      Type: raw.Type,
-      IconUnicode: raw.IconUnicode,
-      StatDisplay: raw.StatDisplay,
-      Icon: this.unicodeToEmoji(raw.IconUnicode)
-    };
-  }
-
-  private ensureArray<T>(value: T | T[] | null | undefined): T[] {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
   }
 }
