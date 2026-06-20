@@ -10,6 +10,9 @@
 <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
   <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
     <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+    @if (item.pick.OverallPick !== null) {
+      <span class="pick-overall-label">Overall #{{ item.pick.OverallPick }}</span>
+    }
     @if (item.pick.PlayerName) {
       <span class="picked-player">{{ item.pick.PlayerName }}</span>
     } @else {
