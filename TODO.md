@@ -38,6 +38,15 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
   - Mögliche Zielstruktur: `src/app/shared/components/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
 
+- [ ] Current-Draft-Pick-Popover und Player-Mini-Card als gemeinsame UI-Komponente prüfen.
+  - Kontext: `CurrentDraftPickChipComponent` und `CurrentDraftOverviewViewComponent` enthalten sehr ähnliche Popover-Inhalte für Pick, Overall, Player, Owner, Original Owner und Traded Pick.
+  - Ziel: Popover-Content und Player-Mini-Card wiederverwenden, ohne die unterschiedlichen Trigger (`PickChip` vs. Overview-Kachel) zu koppeln.
+
+- [ ] Draft-Card-Header und Metrikzeile zwischen Current und Future vereinheitlichen.
+  - Kontext: Current Drafts nutzen `DraftShellComponent`, Future Drafts rendern `mat-card` inklusive Header und Metrikzeile direkt in `future-drafts-tab.html`.
+  - Kontext: Beide zeigen inzwischen `Rounds · Typ · Traded Picks` auf Basis von `draftVm.draft.Settings.Type`.
+  - Ziel: Header-/Metrik-Logik entweder vollständig über `DraftShellComponent` oder über ein gemeinsames Draft-Card-Metrics-ViewModel abbilden.
+
 - [ ] Current-Draft-Team- und Listen-Gruppierungen ins zentrale Drafts-ViewModel ziehen.
   - Kontext: Die Current-Draft-Teams- und Listen-Sichten leiten ihre Pick-Gruppierungen und Sortierungen im ersten Wurf komponentennah aus `draftVm.rounds` ab.
   - Ziel: `orderedPicks` und eine Current-spezifische Owner-Pick-Gruppierung in `drafts-view.models.ts` und `drafts-view-model.mapper.ts` zentralisieren.
@@ -67,6 +76,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Prüfen, ob Consumer künftig direkt die Shared Utils nutzen sollen, damit die Kompatibilitäts-Delegates in `DataService` entfallen können.
   - Ziel: Prüfen, ob `DataService` dauerhaft als App-Datenfassade benannt bleibt oder später klarer als `FantasyDataService`/`DataFacade` bezeichnet werden soll.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
+
+- [ ] Unbenutzte Hilfslogik im Drafts-Feature bereinigen.
+  - Kontext: `CurrentDraftPickChipComponent.statusLabel` wird aktuell nicht im Template verwendet.
+  - Ziel: Unbenutzte Getter/Hilfslogik entfernen oder bei Bedarf in eine gemeinsame Draft-Pick-Status-Utility verschieben.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
   - Kontext: Die Darstellung funktioniert, aber ein Teil des Stylings liegt aktuell inline im Template.
@@ -135,7 +148,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Hinweis: Diese Architektur wurde später durch getrennte `/drafts`- und `/moves`-Routen abgelöst.
 
 - [x] Completed-Draft-Historie separat von `Drafts.json` aufbauen.
-  - Kontext: Abgeschlossene Drafts sollen nicht in `public/data/Drafts.json` gemischt werden, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
+  - Kontext: `Drafts.json` bleibt auf aktuelle/kommende/live Drafts beschränkt, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
   - Ergebnis: `DraftHistoryUtils.psm1` erzeugt historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`; der bestehende wöchentliche/manuelle `RequestDrafts.ps1`-Flow aktualisiert Current-Drafts und Completed-History zusammen.
 
 - [x] `CHAT_START.md` als Projektquelle und im Repository-Root hinterlegen.
