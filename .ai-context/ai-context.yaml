@@ -74,11 +74,12 @@ shortContext:
   src/app/core/models/league.models.ts: Extrahierte Angular-League-, Standings- und FantasyTeam-Modelle
   src/app/core/models/player.models.ts: Extrahierte Angular-Player-, NFLTeam-, Stats- und FreeAgentMarket-Modelle
   src/app/core/models/fantasy.models.ts: Zentraler Angular-Model-Importpfad für Draft-, League- und Player-Modelle aus core/models
+  src/app/core/mappers/league.mapper.ts: Reine RawLeague-/RawFantasyTeam-/DraftPick-zu-League/FantasyTeam-Transformation inklusive Team-Roster-Zuweisung
   src/app/core/mappers/player.mapper.ts: Reine RawPlayer-zu-Player-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping
   src/app/core/services/data-api.service.ts: App-weite Angular-HTTP-Fassade für generierte JSON-Dateien und Timestamps
   src/app/core/services/free-agent-market.service.ts: FreeAgentMarket- und RuleBasedAutoCut-Enrichment über Player, FantasyTeams und League-Kontext
   src/app/core/**: Zielbereich für app-weite Models, Services und Mapper
-  src/app/services/data-service.ts: Aktuelle Angular-Datenfassade; nutzt Core-Modelle, DataApiService, Player-Mapper und FreeAgentMarket-Service direkt, enthält aber noch Team-/Draft-Mapping und Helper-Logik
+  src/app/services/data-service.ts: Aktuelle Angular-Datenfassade; nutzt Core-Modelle, DataApiService, League-Mapper, Player-Mapper und FreeAgentMarket-Service direkt, enthält aber noch Sortier-, Salary- und Trade-Helferlogik
   TODO.md: Menschenlesbare offene Projektaufgaben auf Deutsch
 
 sourceOfTruthPriority:
