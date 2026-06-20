@@ -1,0 +1,30 @@
+<button
+  class="current-pick-chip"
+  [class.traded-pick]="item.isCurrentlyTraded"
+  [style.background]="item.roundColor"
+  [matMenuTriggerFor]="pickInfoMenu"
+  type="button">
+  {{ item.pick.DisplayPick }}
+</button>
+
+<mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
+  <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
+    <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+    @if (item.pick.PlayerName) {
+      <span class="picked-player">{{ item.pick.PlayerName }}</span>
+    } @else {
+      <span class="open-pick-label">Open Pick</span>
+    }
+    <span class="pick-info-team-line">
+      <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
+      <span>Owner: {{ item.currentOwner.name }}</span>
+    </span>
+    <span class="pick-info-team-line">
+      <img class="pick-info-avatar" [src]="item.originalOwner.avatar" alt="" />
+      <span>Original: {{ item.originalOwner.name }}</span>
+    </span>
+    @if (item.isCurrentlyTraded) {
+      <span class="traded-pick-label">Traded Pick</span>
+    }
+  </div>
+</mat-menu>
