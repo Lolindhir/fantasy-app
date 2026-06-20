@@ -109,11 +109,11 @@ frontendStructure:
     - path: src/app/features/drafts/tabs/current-drafts/**
       responsibility: >
         Current-season draft presentation. Each draft card owns its active view
-        mode and can render Overview, Teams or List. Overview keeps the round
-        accordion as the current default. Teams groups concrete picks by current
-        owner. List renders picks in draft order with compact mobile and more
-        detailed desktop layout. Pick chips open compact popovers for both open
-        and picked selections.
+        mode and can render Overview, Teams or List. Overview renders a compact
+        draft-board grid where rows are rounds and columns are positions in the
+        round. Teams groups concrete picks by current owner. List renders picks in
+        draft order with compact mobile and more detailed desktop layout. Pick
+        tiles/chips open compact popovers for both open and picked selections.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
@@ -189,13 +189,13 @@ routing:
     - path: /teams
       component: src/app/features/teams/team-list/team-list.ts
     - path: /players
-      component: src/app/features/players/players-page/players-page.ts
+      component: src/app/features/players/players-page.ts
     - path: /drafts
       component: src/app/features/drafts/drafts-page.ts
     - path: /moves
       component: src/app/features/league-activity/league-activity.ts
     - path: /trade
-      component: src/app/features/trade/trade-simulator/trade-simulator.ts
+      component: src/app/features/trade/trade-simulator.ts
     - path: /handbook
       component: src/app/features/handbook/about.ts
   compatibilityRedirects:
@@ -256,9 +256,9 @@ dataFlow:
   - from: src/app/core/services/data.service.ts
     to: src/app/features/drafts/drafts-page.ts
     purpose: >
-      Provide DraftsPageComponent with generated current/upcoming/live draft data
-      and fantasy teams for Current/Future draft tabs, round groups, pick ordering
-      and current/original owner display.
+      Provide DraftsPageComponent with generated current/upcoming/live draft data,
+      player data and fantasy teams for Current/Future draft tabs, round groups,
+      pick ordering, selected-player display and current/original owner display.
 
   - from: public/data/Transactions.json
     to: src/app/features/league-activity/league-activity.ts
@@ -328,11 +328,12 @@ knownFrontendDomainLogic:
     topic: Draft pick display, round chip colors and current-draft view grouping
     note: >
       The Drafts feature builds component-level view models from DataService
-      draft/team data, groups picks for current and future draft views, displays
-      current owner plus original owner/trade context and duplicates the HSL round
-      color calculation used by Overview. The Current Drafts Teams/List first
-      implementation derives grouping from draftVm.rounds; this should later move
-      into the central Drafts view model.
+      draft/team/player data, groups picks for current and future draft views,
+      displays current owner plus original owner/trade context and duplicates the
+      HSL round color calculation used by Overview. Current Drafts Overview renders
+      a compact square-tile draft board from draftVm.rounds; Teams/List still
+      derive grouping from draftVm.rounds and should later move into the central
+      Drafts view model.
 
   - path: src/app/features/league-activity/league-activity.ts
     topic: Moves placeholder
