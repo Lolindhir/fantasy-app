@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
-import { SharedMaterialImports } from '../../../../../../shared/shared-material-imports';
+import { CurrentDraftPickChipComponent } from '../../components/current-draft-pick-chip/current-draft-pick-chip';
 import type { DraftPickViewModel, DraftViewModel, TeamDisplayViewModel } from '../../../../models/drafts-view.models';
 
 type CurrentOwnerPickGroup = {
@@ -13,7 +12,7 @@ type CurrentOwnerPickGroup = {
 @Component({
   selector: 'app-current-draft-team-view',
   standalone: true,
-  imports: [CommonModule, MatMenuModule, SharedMaterialImports],
+  imports: [CommonModule, CurrentDraftPickChipComponent],
   templateUrl: './current-draft-team-view.html',
   styleUrl: './current-draft-team-view.scss'
 })
@@ -36,10 +35,6 @@ export class CurrentDraftTeamViewComponent {
         pickCount: picks.length
       }))
       .sort((a, b) => this.compareOwnerPickGroupsByStrength(a, b));
-  }
-
-  getPickStatusLabel(item: DraftPickViewModel): string {
-    return item.pick.PlayerName || item.pick.Status === 'Picked' ? 'Picked' : 'Open Pick';
   }
 
   private get orderedPicks(): DraftPickViewModel[] {
