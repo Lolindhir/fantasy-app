@@ -136,6 +136,13 @@ frontendStructure:
         Players.json read model plus frontend-enriched Player shape. DataService
         imports these declarations directly.
 
+    - path: src/app/core/mappers/league.mapper.ts
+      responsibility: >
+        Pure frontend mapper for RawLeague, RawFantasyTeam and RawDraft data into
+        League, FantasyTeam and draft-pick-enriched team structures. It owns
+        deterministic team defaults, DraftPick key resolution, team roster
+        assignment, standing/award display mapping and League object assembly.
+
     - path: src/app/core/mappers/player.mapper.ts
       responsibility: >
         Pure frontend mapper for RawPlayer to Player transformation. It owns
@@ -168,9 +175,10 @@ frontendStructure:
         Current app-wide Angular data facade. It imports model declarations from
         src/app/core/models, loads generated JSON through
         src/app/core/services/data-api.service.ts, delegates RawPlayer-to-Player
-        mapping to src/app/core/mappers/player.mapper.ts, delegates FreeAgentMarket
-        enrichment to src/app/core/services/free-agent-market.service.ts, and still
-        contains team/draft mapping plus helper logic. Remaining mapping/helper
+        mapping to src/app/core/mappers/player.mapper.ts, delegates RawLeague/team
+        and draft-pick mapping to src/app/core/mappers/league.mapper.ts, delegates
+        FreeAgentMarket enrichment to src/app/core/services/free-agent-market.service.ts,
+        and still contains sorting plus salary/trade helper logic. Remaining helper
         responsibilities are the next frontend refactor candidates.
 
   removedCompatibilityReExports:
@@ -312,11 +320,16 @@ dataFlow:
     purpose: Provide typed raw League, Player, NFL team, Draft and Timestamp data to the app data facade.
 
   - from: public/data/Drafts.json
+    to: src/app/core/mappers/league.mapper.ts
+    purpose: Resolve generated DraftPick keys into draft-pick-enriched FantasyTeam structures.
+
+  - from: public/data/League.json
+    to: src/app/core/mappers/league.mapper.ts
+    purpose: Map generated RawLeague and RawFantasyTeam records into frontend League and FantasyTeam objects.
+
+  - from: src/app/core/mappers/league.mapper.ts
     to: src/app/services/data-service.ts
-    purpose: >
-      Frontend current/upcoming/live draft and draft-pick model. DataService
-      resolves team DraftPick keys into DraftPick objects. Angular consumers should
-      import draft model types through src/app/core/models/fantasy.models.ts.
+    purpose: Provide mapped League, FantasyTeam and Draft objects to the app data facade.
 
   - from: src/app/services/data-service.ts
     to: src/app/features/league-activity/league-activity.ts
@@ -330,8 +343,12 @@ dataFlow:
     purpose: Map generated RawPlayer records into frontend Player objects.
 
   - from: src/app/core/mappers/player.mapper.ts
+    to: src/app/core/mappers/league.mapper.ts
+    purpose: Provide mapped Player objects for fantasy team roster assignment.
+
+  - from: src/app/core/mappers/player.mapper.ts
     to: src/app/services/data-service.ts
-    purpose: Provide mapped Player objects before fantasy roster assignment and FreeAgentMarket enrichment.
+    purpose: Provide mapped Player objects before FreeAgentMarket enrichment and sorting.
 
   - from: src/app/services/data-service.ts
     to: src/app/core/services/free-agent-market.service.ts
