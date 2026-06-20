@@ -353,6 +353,14 @@ try {
     Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
     $tradesOpen = [int]$league.settings.disable_trades -eq 0
+    $tradeDeadlineWeek = [int]$league.settings.trade_deadline
+    $leagueWeekForTradeDeadline = $currentWeek
+    if ($leagueWeekForTradeDeadline -le 0) {
+        $leagueWeekForTradeDeadline = $finalWeek
+    }
+    if ($tradeDeadlineWeek -gt 0 -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
+        $tradesOpen = $false
+    }
     Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
     $tradesMetaText = ""
 
