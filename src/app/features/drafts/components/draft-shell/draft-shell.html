@@ -12,7 +12,9 @@
       <span class="draft-metrics">
         {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.pickCount }} Picks · {{ draftVm.tradedPickCount }} Traded
       </span>
-      <span class="draft-status-inline">{{ draftVm.statusLabel }}</span>
+      @if (showStatus) {
+        <span class="draft-status-inline">{{ draftVm.statusLabel }}</span>
+      }
     </mat-card-subtitle>
   </mat-card-header>
 
