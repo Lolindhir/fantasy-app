@@ -5,7 +5,6 @@
     <span>Player</span>
     <span>Owner</span>
     <span>Original</span>
-    <span>Status</span>
   </div>
 
   @for (item of orderedPicks; track item.pick.PickKey) {
@@ -39,12 +38,6 @@
       <div class="team-cell origin-cell">
         <img class="team-cell-avatar" [src]="item.originalOwner.avatar" alt="" />
         <span>{{ item.originalOwner.name }}</span>
-      </div>
-      <div class="status-cell">
-        <span>{{ getPickStatusLabel(item) }}</span>
-        @if (item.isCurrentlyTraded) {
-          <span class="traded-dot-label">Traded</span>
-        }
       </div>
     </div>
   }
