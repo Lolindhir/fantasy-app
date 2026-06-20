@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { SharedMaterialImports } from '../../../../../shared/shared-material-imports';
-import type { DraftPickViewModel, DraftViewModel } from '../../../models/drafts-view.models';
+import { SharedMaterialImports } from '../../../../../../shared/shared-material-imports';
+import type { DraftPickViewModel, DraftViewModel } from '../../../../models/drafts-view.models';
 
 @Component({
   selector: 'app-current-draft-overview-view',
