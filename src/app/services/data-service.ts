@@ -13,6 +13,11 @@ import type {
 } from '../core/models/player.models';
 import { DataApiService } from '../core/services/data-api.service';
 import { FreeAgentMarketService } from '../core/services/free-agent-market.service';
+import { sortPlayers } from '../shared/utils/player-sort.util';
+import {
+  calculateTopPlayersSalary,
+  getRosterAfterTrade
+} from '../shared/utils/trade-calculator.util';
 
 @Injectable({
   providedIn: 'root'
@@ -94,27 +99,11 @@ export class DataService {
         });
 
         this.freeAgentMarketService.enrich(players, teams, leagueRaw);
-        const playersSorted = this.sortRoster(players, sortFields);
+        const playersSorted = sortPlayers(players, sortFields);
 
         return { league, players: playersSorted, teams, drafts };
       })
     );
-  }
-
-  private sortRoster(roster: Player[], sortFields: SortField[]): Player[] {
-    return roster.sort((a, b) => {
-      for (const field of sortFields) {
-        if (field === 'Salary' || field === 'SalaryProjected' || field === 'Age' || field === 'Year') {
-          const diff = (b[field] as number) - (a[field] as number);
-          if (diff !== 0) return diff;
-        } else {
-          const cmp = String(a[field]).localeCompare(String(b[field]), 'en', { sensitivity: 'base' });
-          if (cmp !== 0) return cmp;
-        }
-      }
-
-      return a.ID.localeCompare(b.ID);
-    });
   }
 
   calculateTopPlayersSalary(
@@ -122,18 +111,7 @@ export class DataService {
     topN: number,
     salarySelector: (player: Player) => number
   ): TopPlayersSalaryResult {
-    if (!roster || roster.length === 0) {
-      return { cap: 0, topPlayers: [] };
-    }
-
-    const sortedRoster = [...roster]
-      .sort((a, b) => salarySelector(b) - salarySelector(a));
-
-    const actualTopN = Math.min(topN, sortedRoster.length);
-    const topPlayers = sortedRoster.slice(0, actualTopN);
-    const cap = topPlayers.reduce((sum, p) => sum + salarySelector(p), 0);
-
-    return { cap, topPlayers };
+    return calculateTopPlayersSalary(roster, topN, salarySelector);
   }
 
   getRosterAfterTrade(
@@ -141,13 +119,6 @@ export class DataService {
     outgoing: Player[],
     incoming: Player[]
   ): Player[] {
-    let newRoster = [...currentRoster];
-
-    outgoing.forEach(p => {
-      newRoster = newRoster.filter(x => x.ID !== p.ID);
-    });
-
-    incoming.forEach(p => newRoster.push(p));
-    return newRoster;
+    return getRosterAfterTrade(currentRoster, outgoing, incoming);
   }
 }
