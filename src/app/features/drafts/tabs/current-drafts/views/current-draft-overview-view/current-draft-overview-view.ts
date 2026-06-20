@@ -1,20 +1,43 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-import { SharedMaterialImports } from '../../../../../../shared/shared-material-imports';
-import type { DraftPickViewModel, DraftViewModel } from '../../../../models/drafts-view.models';
+import type { Player } from '../../../../../../core/models/fantasy.models';
+import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
+import type { DraftViewModel } from '../../../../models/drafts-view.models';
 
 @Component({
   selector: 'app-current-draft-overview-view',
   standalone: true,
-  imports: [CommonModule, MatMenuModule, SharedMaterialImports],
+  imports: [CommonModule, MatDialogModule, MatMenuModule],
   templateUrl: './current-draft-overview-view.html',
   styleUrl: './current-draft-overview-view.scss'
 })
 export class CurrentDraftOverviewViewComponent {
+  private dialog = inject(MatDialog);
+
   @Input({ required: true }) draftVm!: DraftViewModel;
 
-  getPickStatusLabel(item: DraftPickViewModel): string {
-    return item.pick.PlayerName || item.pick.Status === 'Picked' ? 'Picked' : 'Open Pick';
+  get columnCount(): number {
+    return Math.max(...this.draftVm.rounds.map(round => round.picks.length), 1);
+  }
+
+  get gridTemplateColumns(): string {
+    return `repeat(${this.columnCount}, minmax(64px, 1fr))`;
+  }
+
+  get gridMinWidth(): number {
+    return this.columnCount * 72;
+  }
+
+  openPlayerDetail(player: Player, event?: Event): void {
+    event?.stopPropagation();
+
+    this.dialog.open(PlayerDetailDialogComponent, {
+      data: player,
+      width: '800px',
+      maxHeight: '90vh',
+      panelClass: 'player-dialog'
+    });
   }
 }
