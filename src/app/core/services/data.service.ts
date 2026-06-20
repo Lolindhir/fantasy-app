@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 import { mapRawLeagueData } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import type { RawDraft } from '../models/draft.models';
-import type { DataTimestamps, FantasyTeam, League } from '../models/league.models';
+import type { FantasyTeam, League } from '../models/league.models';
 import type {
   Player,
   SortField,
