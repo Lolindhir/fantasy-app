@@ -51,8 +51,13 @@ export class App implements OnInit {
             this.currentPage = 'Players';
             break;
 
+          case '/drafts':
+            this.currentPage = 'Drafts';
+            break;
+
+          case '/moves':
           case '/league-activity':
-            this.currentPage = 'Drafts & Moves';
+            this.currentPage = 'Moves';
             break;
             
 
