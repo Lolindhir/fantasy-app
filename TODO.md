@@ -48,23 +48,24 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
 - [ ] `DataService` strukturell aufteilen.
-  - Kontext: `src/app/services/data-service.ts` enthält aktuell League-/Team-/Draft-Mapping, Draft-Enrichment, Salary-Helfer und Trade-Helfer in einer Datei.
+  - Kontext: `src/app/services/data-service.ts` enthält aktuell noch Sortier-, Salary- und Trade-Helferlogik sowie die öffentliche App-Datenfassade.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
   - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
   - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
   - Kontext: League-/Standing-/FantasyTeam-Modelle liegen in `src/app/core/models/league.models.ts`; Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle liegen in `src/app/core/models/player.models.ts` und werden über `fantasy.models.ts` exportiert.
   - Kontext: `src/app/core/services/data-api.service.ts` enthält das HTTP-Laden der generierten JSON-Dateien und Timestamps.
+  - Kontext: `src/app/core/mappers/league.mapper.ts` enthält die reine `RawLeague`-/`RawFantasyTeam`-/DraftPick-zu-`League`/`FantasyTeam`-Transformation inklusive Team-Roster-Zuweisung.
   - Kontext: `src/app/core/mappers/player.mapper.ts` enthält die reine `RawPlayer`-zu-`Player`-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping.
   - Kontext: `src/app/core/services/free-agent-market.service.ts` enthält die FreeAgentMarket-/RuleBasedAutoCut-Logik für Current- und Projected-Salary-Modi.
-  - Kontext: `DataService` nutzt die extrahierten Model-Dateien, den DataApiService, den Player-Mapper und den FreeAgentMarket-Service direkt.
-  - Ziel: Als nächsten Slice League-/Team-/Draft-Mapping weiter aus `DataService` herauslösen.
+  - Kontext: `DataService` nutzt die extrahierten Model-Dateien, den DataApiService, den League-Mapper, den Player-Mapper und den FreeAgentMarket-Service direkt.
+  - Ziel: Als nächsten Slice Sortier-, Salary- und Trade-Helferlogik weiter aus `DataService` herauslösen.
   - Ziel: Danach weitere app-weite Services in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
     - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
     - `src/app/core/mappers` für fachliche Mapper, falls diese von den Services getrennt werden sollen.
     - `src/app/shared/components`, `src/app/shared/pipes` und `src/app/shared/utils` für wiederverwendbare UI-/Material-/Frontend-Helfer.
-  - Mögliche Services prüfen: `data.service.ts`, `league-mapper.service.ts`, `draft-mapper.service.ts`, `transaction-mapper.service.ts`, `trade-calculator.service.ts`.
+  - Mögliche Services prüfen: `data.service.ts`, `transaction-mapper.service.ts`, `trade-calculator.service.ts`, `player-sort.util.ts` oder vergleichbare Utilities.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
@@ -115,7 +116,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Completed-Draft-Historie separat von `Drafts.json` aufbauen.
   - Kontext: Abgeschlossene Drafts sollen nicht in `public/data/Drafts.json` gemischt werden, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
-  - Ergebnis: `DraftHistoryUtils.psm1` erzeugt historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`; der bestehende wöchentliche/manuelle `RequestDrafts.psm1`-Flow aktualisiert Current-Drafts und Completed-History zusammen.
+  - Ergebnis: `DraftHistoryUtils.psm1` erzeugt historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`; der bestehende wöchentliche/manuelle `RequestDrafts.ps1`-Flow aktualisiert Current-Drafts und Completed-History zusammen.
 
 - [x] `CHAT_START.md` als Projektquelle und im Repository-Root hinterlegen.
   - Kontext: Die Datei liegt sowohl hier im ChatGPT-Projekt als Quelle als auch im Repository-Root.
