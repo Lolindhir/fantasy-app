@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { MatMenuModule } from '@angular/material/menu';
 import { SharedMaterialImports } from '../../../../shared/shared-material-imports';
 import type { DraftViewModel } from '../../models/drafts-view.models';
 
@@ -8,6 +9,7 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
   standalone: true,
   imports: [
     CommonModule,
+    MatMenuModule,
     SharedMaterialImports
   ],
   templateUrl: './future-drafts-tab.html',
