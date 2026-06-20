@@ -7,7 +7,7 @@
 .current-pick-table-header,
 .current-pick-table-row {
   display: grid;
-  grid-template-columns: 74px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) minmax(90px, 0.65fr);
+  grid-template-columns: 58px 74px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) minmax(90px, 0.65fr);
   gap: 10px;
   align-items: center;
 }
@@ -26,8 +26,11 @@
   background: #f8fafc;
 }
 
-.mobile-overall-cell {
-  display: none;
+.overall-cell {
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
 }
 
 .pick-player-cell,
@@ -117,6 +120,28 @@
   display: none;
 }
 
+.team-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 7px;
+}
+
+.team-cell-avatar {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.team-cell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status-cell {
   display: flex;
   align-items: center;
@@ -161,13 +186,9 @@
     padding: 7px 8px;
   }
 
-  .mobile-overall-cell {
-    display: block;
+  .overall-cell {
     grid-area: overall;
-    color: #6b7280;
     font-size: 0.72rem;
-    font-weight: 900;
-    text-align: center;
   }
 
   app-current-draft-pick-chip {
