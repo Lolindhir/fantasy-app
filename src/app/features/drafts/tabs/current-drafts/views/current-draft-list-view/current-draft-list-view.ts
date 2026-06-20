@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import type { Player } from '../../../../../../core/models/fantasy.models';
+import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
 import { CurrentDraftPickChipComponent } from '../../components/current-draft-pick-chip/current-draft-pick-chip';
 import type { DraftPickViewModel, DraftViewModel } from '../../../../models/drafts-view.models';
 
@@ -11,6 +14,8 @@ import type { DraftPickViewModel, DraftViewModel } from '../../../../models/draf
   styleUrl: './current-draft-list-view.scss'
 })
 export class CurrentDraftListViewComponent {
+  private dialog = inject(MatDialog);
+
   @Input({ required: true }) draftVm!: DraftViewModel;
 
   get orderedPicks(): DraftPickViewModel[] {
@@ -21,6 +26,15 @@ export class CurrentDraftListViewComponent {
 
   getPickStatusLabel(item: DraftPickViewModel): string {
     return item.pick.PlayerName || item.pick.Status === 'Picked' ? 'Picked' : 'Open';
+  }
+
+  openPlayerDetail(player: Player): void {
+    this.dialog.open(PlayerDetailDialogComponent, {
+      data: player,
+      width: '800px',
+      maxHeight: '90vh',
+      panelClass: 'player-dialog'
+    });
   }
 
   private comparePicksByDraftOrder(a: DraftPickViewModel, b: DraftPickViewModel): number {
