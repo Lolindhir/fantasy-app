@@ -11,8 +11,20 @@
     <div class="current-pick-table-row">
       <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
       <div class="pick-player-cell">
-        @if (item.pick.PlayerName) {
-          <strong>{{ item.pick.PlayerName }}</strong>
+        @if (item.selectedPlayer) {
+          <button class="list-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer)">
+            <img class="list-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+            <span class="list-player-main">
+              <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
+              <span class="list-player-meta">
+                <span class="list-player-position">{{ item.selectedPlayer.Position }}</span>
+                @if (item.selectedPlayer.TeamNFL?.Logo) {
+                  <img class="list-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
+                }
+                <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
+              </span>
+            </span>
+          </button>
         } @else {
           <span>Open Pick</span>
         }
