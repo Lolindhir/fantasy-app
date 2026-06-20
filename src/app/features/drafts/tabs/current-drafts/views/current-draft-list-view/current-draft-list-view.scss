@@ -26,6 +26,10 @@
   background: #f8fafc;
 }
 
+.mobile-overall-cell {
+  display: none;
+}
+
 .pick-player-cell,
 .team-cell,
 .status-cell {
@@ -150,14 +154,33 @@
   }
 
   .current-pick-table-row {
-    grid-template-columns: 58px minmax(0, 1fr) 32px;
-    grid-template-areas: "pick player ownerLogo";
-    gap: 8px;
+    grid-template-columns: 34px 58px 32px minmax(0, 1fr);
+    grid-template-areas: "overall pick ownerLogo player";
+    gap: 7px;
     padding: 7px 8px;
+  }
+
+  .mobile-overall-cell {
+    display: block;
+    grid-area: overall;
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-align: center;
   }
 
   app-current-draft-pick-chip {
     grid-area: pick;
+  }
+
+  .mobile-owner-avatar {
+    display: block;
+    grid-area: ownerLogo;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #e5e7eb;
   }
 
   .pick-player-cell {
@@ -202,16 +225,6 @@
   .open-pick-cell {
     display: block;
     font-size: 0.82rem;
-  }
-
-  .mobile-owner-avatar {
-    display: block;
-    grid-area: ownerLogo;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #e5e7eb;
   }
 
   .owner-cell,
