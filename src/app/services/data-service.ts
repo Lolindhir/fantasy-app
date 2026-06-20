@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { forkJoin, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { formatSalaryDollars, mapRawPlayerToPlayer } from '../core/mappers/player.mapper';
@@ -8,11 +7,10 @@ import type { DraftPick, RawDraft } from '../core/models/draft.models';
 import type { Award, DataTimestamps, FantasyTeam, League, RawAward, RawLeague } from '../core/models/league.models';
 import type {
   Player,
-  RawNFLTeam,
-  RawPlayer,
   SortField,
   TopPlayersSalaryResult
 } from '../core/models/player.models';
+import { DataApiService } from '../core/services/data-api.service';
 import { FreeAgentMarketService } from '../core/services/free-agent-market.service';
 
 @Injectable({
@@ -20,43 +18,37 @@ import { FreeAgentMarketService } from '../core/services/free-agent-market.servi
 })
 export class DataService {
 
-  private http = inject(HttpClient);
+  private dataApiService = inject(DataApiService);
   private freeAgentMarketService = inject(FreeAgentMarketService);
-  private timestampsUrl = 'data/Timestamps.json';
 
   getLeagueTimestamp(): Observable<string | undefined> {
-    return this.http.get<Pick<DataTimestamps, 'League'>>(this.timestampsUrl).pipe(
+    return this.dataApiService.getTimestamps().pipe(
       map(ts => ts.League)
     );
   }
 
   getPlayersTimestamp(): Observable<string | undefined> {
-    return this.http.get<Pick<DataTimestamps, 'Players'>>(this.timestampsUrl).pipe(
+    return this.dataApiService.getTimestamps().pipe(
       map(ts => ts.Players)
     );
   }
 
   getTeamsTimestamp(): Observable<string | undefined> {
-    return this.http.get<Pick<DataTimestamps, 'Teams'>>(this.timestampsUrl).pipe(
+    return this.dataApiService.getTimestamps().pipe(
       map(ts => ts.Teams)
     );
   }
 
   getDraftsTimestamp(): Observable<string | undefined> {
-    return this.http.get<Pick<DataTimestamps, 'Drafts'>>(this.timestampsUrl).pipe(
+    return this.dataApiService.getTimestamps().pipe(
       map(ts => ts.Drafts)
     );
   }
 
   getLatestTimestamp(): Observable<string | undefined> {
-    return forkJoin({
-      league: this.getLeagueTimestamp(),
-      players: this.getPlayersTimestamp(),
-      teams: this.getTeamsTimestamp(),
-      drafts: this.getDraftsTimestamp()
-    }).pipe(
-      map(({ league, players, teams, drafts }) => {
-        return [league, players, teams, drafts].reduce<string | undefined>((a, b) => {
+    return this.dataApiService.getTimestamps().pipe(
+      map(ts => {
+        return [ts.League, ts.Players, ts.Teams, ts.Drafts].reduce<string | undefined>((a, b) => {
           if (a === undefined) return b;
           if (b === undefined) return a;
           return a > b ? a : b;
@@ -84,12 +76,7 @@ export class DataService {
   }
 
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[], drafts: RawDraft[] }> {
-    return forkJoin({
-      leagueRaw: this.http.get<RawLeague>('data/League.json'),
-      playersRaw: this.http.get<RawPlayer[]>('data/Players.json'),
-      nflTeamsRaw: this.http.get<RawNFLTeam[]>('data/Teams.json'),
-      draftsRaw: this.http.get<RawDraft[]>('data/Drafts.json')
-    }).pipe(
+    return this.dataApiService.getLeagueData().pipe(
       map(({ leagueRaw, playersRaw, nflTeamsRaw, draftsRaw }) => {
 
         const drafts = draftsRaw ?? [];
