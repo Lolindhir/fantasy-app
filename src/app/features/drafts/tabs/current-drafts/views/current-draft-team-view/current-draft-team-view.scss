@@ -1,0 +1,73 @@
+.current-team-owner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.current-team-owner-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    "avatar team"
+    "picks picks";
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.team-avatar {
+  grid-area: avatar;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.current-team-name {
+  grid-area: team;
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-pick-chip-list {
+  grid-area: picks;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+.current-pick-chip {
+  position: relative;
+  min-width: 40px;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #1f2937;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.current-pick-chip.traded-pick::after {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid white;
+  border-radius: 999px;
+  background: #1e3a8a;
+  content: '';
+}
