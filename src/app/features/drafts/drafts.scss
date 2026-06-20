@@ -5,11 +5,9 @@
 }
 
 .hero-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 300px);
-  gap: 12px;
+  display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
 
   padding: 10px 12px;
   border: 1px solid rgba(96, 165, 250, 0.18);
@@ -20,20 +18,9 @@
   color: white;
 }
 
-.summary-title {
-  margin: 0;
-  color: #cbd5e1;
-  font-size: 0.86rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  justify-self: end;
   width: min(100%, 300px);
   min-width: 0;
   gap: 8px;
@@ -252,11 +239,10 @@
 
 @media (max-width: 900px) {
   .hero-card {
-    grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .summary-grid {
-    justify-self: stretch;
     width: 100%;
   }
 
