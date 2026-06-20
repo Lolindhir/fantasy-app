@@ -7,7 +7,7 @@
 .current-pick-table-header,
 .current-pick-table-row {
   display: grid;
-  grid-template-columns: 58px 74px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) minmax(90px, 0.65fr);
+  grid-template-columns: 58px 74px minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
   align-items: center;
 }
@@ -34,8 +34,7 @@
 }
 
 .pick-player-cell,
-.team-cell,
-.status-cell {
+.team-cell {
   overflow: hidden;
   color: #1f2937;
   font-size: 0.86rem;
@@ -142,33 +141,6 @@
   white-space: nowrap;
 }
 
-.status-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.traded-dot-label {
-  position: relative;
-  padding-left: 10px;
-  color: #1e3a8a;
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.traded-dot-label::before {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #1e3a8a;
-  content: '';
-  transform: translateY(-50%);
-}
-
 @media (max-width: 700px) {
   .current-pick-table {
     gap: 6px;
@@ -270,8 +242,7 @@
   }
 
   .owner-cell,
-  .origin-cell,
-  .status-cell {
+  .origin-cell {
     display: none;
   }
 }
