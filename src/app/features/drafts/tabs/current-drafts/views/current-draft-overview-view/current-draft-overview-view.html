@@ -12,7 +12,7 @@
             [class.open]="!item.selectedPlayer"
             [matMenuTriggerFor]="pickInfoMenu"
             type="button">
-            <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
+            <span class="tile-pick-label" [style.background]="item.roundColor">{{ item.pick.DisplayPick }}</span>
 
             @if (item.selectedPlayer) {
               <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
