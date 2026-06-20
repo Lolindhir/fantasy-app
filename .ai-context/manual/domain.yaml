@@ -106,20 +106,36 @@ coreConcepts:
       - SleeperPickedBy
       - Status
 
-  LeagueActivity:
+  DraftsFeature:
     description: >
-      Frontend feature area for current/upcoming/live draft assets and later
-      trades and roster moves. Its stable route is /league-activity and its
-      current MVP component is src/app/features/league-activity/league-activity.ts.
-    currentMvpScope:
+      Frontend feature area for current/upcoming/live draft assets. Its primary
+      route is /drafts and its current routed component is
+      src/app/features/drafts/drafts.ts.
+    currentScope:
       - display current/upcoming/live drafts from public/data/Drafts.json
-      - group picks by draft and round
+      - group current-season picks by draft and round
       - show current owner as the primary owner label
       - show original owner as "from <team>" when a pick is currently traded
-      - reserve a Moves area as placeholder until Transactions.json is modeled in Angular
+      - show future drafts as compact team-owned round summaries
     doesNotOwn:
       - draft order derivation
       - draft-pick ownership derivation
+      - transaction source-of-truth logic
+      - generated JSON contracts
+
+  MovesFeature:
+    description: >
+      Frontend feature area for chronological league activity such as trades,
+      adds, drops and roster movement. Its primary route is /moves. The current
+      technical component is still src/app/features/league-activity/league-activity.ts
+      and currently acts as a placeholder until Transactions.json is modeled in
+      Angular.
+    currentScope:
+      - reserve a Moves page as placeholder until Transactions.json is modeled in Angular
+      - keep /league-activity as compatibility redirect to /moves
+      - keep /trade separate until the Trade Simulator is intentionally integrated into Moves
+    doesNotOwn:
+      - draft presentation
       - transaction source-of-truth logic
       - generated JSON contracts
 
@@ -140,12 +156,12 @@ transactions:
   frontendStatus:
     currentState: >
       Transactions.json exists as generated output but is not yet modeled or
-      loaded by Angular DataService. LeagueActivityComponent therefore keeps the
-      Moves section as a placeholder instead of rendering transaction data.
+      loaded by Angular DataService. Moves therefore remains a placeholder instead
+      of rendering transaction data.
     target: >
       When Moves are implemented, add explicit transaction interfaces and a
       frontend mapping/loading path before rendering trades, waiver moves, adds or
-      drops in the League Activity timeline.
+      drops in the Moves timeline.
 
   manualEnrichment:
     description: >
