@@ -1,0 +1,108 @@
+.current-pick-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.current-pick-table-header,
+.current-pick-table-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr) minmax(90px, 0.65fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.current-pick-table-header {
+  padding: 0 10px;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.current-pick-table-row {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.pick-player-cell,
+.team-cell,
+.status-cell {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick-player-cell span,
+.origin-cell {
+  color: #6b7280;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.traded-dot-label {
+  position: relative;
+  padding-left: 10px;
+  color: #1e3a8a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.traded-dot-label::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #1e3a8a;
+  content: '';
+  transform: translateY(-50%);
+}
+
+@media (max-width: 700px) {
+  .current-pick-table-header {
+    display: none;
+  }
+
+  .current-pick-table-row {
+    grid-template-columns: 74px minmax(0, 1fr);
+    grid-template-areas:
+      "pick player"
+      "pick owner"
+      "pick status";
+    gap: 4px 10px;
+  }
+
+  app-current-draft-pick-chip {
+    grid-area: pick;
+  }
+
+  .pick-player-cell {
+    grid-area: player;
+  }
+
+  .owner-cell {
+    grid-area: owner;
+    color: #6b7280;
+    font-size: 0.8rem;
+  }
+
+  .origin-cell {
+    display: none;
+  }
+
+  .status-cell {
+    grid-area: status;
+    font-size: 0.78rem;
+  }
+}
