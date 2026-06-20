@@ -9,8 +9,8 @@ layers:
   - name: manual-domain-config
     path: public/data/Metadata.json
     responsibility: >
-      Contains league-specific inputs and rules used by the PowerShell
-      generation pipeline.
+      Contains league-specific inputs and rules used by the PowerShell generation
+      pipeline.
     owns:
       - league-specific inputs
       - league-specific rules
@@ -18,7 +18,7 @@ layers:
       - draft configuration
     doesNotOwn:
       - technical paths
-      - API keys
+      - runtime credentials
       - Angular rendering
       - generated app output
 
@@ -26,8 +26,8 @@ layers:
     path: public/requests/utils/ConfigUtils.psm1
     responsibility: >
       Provides technical paths and generation configuration for the PowerShell
-      data generation pipeline. Loads Metadata.json and exposes configuration
-      to generator scripts.
+      data generation pipeline. Loads Metadata.json and exposes configuration to
+      generator scripts.
     owns:
       - generated data file paths
       - backup paths
@@ -94,9 +94,28 @@ frontendStructure:
         - src/app/features/overview/overview.ts
         - src/app/features/teams/team-list/team-list.ts
         - src/app/features/players/players-page/players-page.ts
-        - src/app/features/trade/trade-simulator/trade-simulator.ts
+        - src/app/features/drafts/drafts.ts
         - src/app/features/league-activity/league-activity.ts
+        - src/app/features/trade/trade-simulator/trade-simulator.ts
         - src/app/features/handbook/about.ts
+
+    - path: src/app/features/drafts/drafts.ts
+      responsibility: >
+        Routed Drafts page for current-season and future draft-pick presentation.
+        It consumes generated Drafts.json through DataService, groups current
+        picks by draft and round, displays current/original owner information and
+        summarizes future team-owned picks.
+
+    - path: src/app/features/league-activity/league-activity.ts
+      responsibility: >
+        Routed Moves page implementation for /moves. The technical component name
+        is intentionally still LeagueActivityComponent for now. It is a placeholder
+        until Transactions.json is modeled and loaded in the frontend.
+
+    - path: src/app/features/trade/trade-simulator/trade-simulator.ts
+      responsibility: >
+        Routed Trade Simulator page. It remains independent under /trade until it
+        is intentionally integrated into Moves.
 
     - path: src/app/shared/components/**
       responsibility: >
@@ -127,152 +146,47 @@ frontendStructure:
         Target area for app-wide Angular models, services and mapper code. This
         area is being populated in staged slices while DataService is split.
 
-    - path: src/app/core/models/draft.models.ts
-      responsibility: >
-        Contains extracted Angular draft model declarations for RawDraft,
-        DraftSettings, DraftPickTradeHistoryEntry and DraftPick. These mirror the
-        generated Drafts.json read model used by DataService and draft features.
-
-    - path: src/app/core/models/league.models.ts
-      responsibility: >
-        Contains extracted Angular league, standing, placement, award and
-        FantasyTeam model declarations. These mirror the generated League.json
-        read model and team-enriched frontend shape. DataService imports these
-        declarations directly.
-
-    - path: src/app/core/models/player.models.ts
-      responsibility: >
-        Contains extracted Angular player, NFL team, player stats, game history
-        and FreeAgentMarket model declarations. These mirror the generated
-        Players.json read model plus frontend-enriched Player shape. DataService
-        imports these declarations directly.
-
-    - path: src/app/core/mappers/league.mapper.ts
-      responsibility: >
-        Pure frontend mapper for RawLeague, RawFantasyTeam and RawDraft data into
-        League, FantasyTeam and draft-pick-enriched team structures. It owns
-        deterministic team defaults, DraftPick key resolution, team roster
-        assignment, standing/award display mapping and League object assembly.
-
-    - path: src/app/core/mappers/player.mapper.ts
-      responsibility: >
-        Pure frontend mapper for RawPlayer to Player transformation. It owns
-        deterministic per-player mapping such as NFL/free-agent team assignment,
-        injury date normalization, player stats assembly, point-history season
-        labels, salary display text, NameShort fallback and padded game history.
-        It does not own FreeAgentMarket simulation across fantasy teams.
-
-    - path: src/app/core/services/data.service.ts
-      responsibility: >
-        Current app-wide Angular data facade. It imports model declarations from
-        src/app/core/models, loads generated JSON through
-        src/app/core/services/data-api.service.ts, delegates RawPlayer-to-Player
-        mapping to src/app/core/mappers/player.mapper.ts, delegates RawLeague/team
-        and draft-pick mapping to src/app/core/mappers/league.mapper.ts, delegates
-        FreeAgentMarket enrichment to src/app/core/services/free-agent-market.service.ts,
-        uses shared utilities for Player sorting and salary/trade calculations,
-        and mainly remains as app-facing facade/orchestrator. This replaced the old
-        src/app/services/data-service.ts location.
-
-    - path: src/app/core/services/data-api.service.ts
-      responsibility: >
-        App-wide Angular HTTP facade for generated JSON files and timestamps. It
-        owns HttpClient access to public/data read-model files and returns typed raw
-        data to DataService.
-
-    - path: src/app/core/services/free-agent-market.service.ts
-      responsibility: >
-        App-wide Angular service for FreeAgentMarket enrichment and the
-        RuleBasedAutoCut prediction model. It owns cross-entity market simulation
-        across Player, FantasyTeam and League context, including current and
-        projected salary modes.
-
     - path: src/app/core/models/fantasy.models.ts
       responsibility: >
         Central Angular model import surface. Draft, league/team and player model
         exports come from dedicated files under src/app/core/models. Feature and
         shared Angular consumers should import type dependencies from this barrel.
 
-  removedCompatibilityReExports:
-    note: >
-      The old routed component paths and reusable shared-component root paths were
-      temporarily retained as compatibility re-exports after the feature-structure
-      move. After build/test validation and repository search showed no productive
-      references to the old paths, the wrappers and stale old-location specs were
-      removed. New code must import routed pages from src/app/features/** and
-      reusable UI from src/app/shared/components/**.
-    removedFiles:
-      - src/app/overview/overview.ts
-      - src/app/team-list/team-list.ts
-      - src/app/players-page/players-page.ts
-      - src/app/trade-simulator/trade-simulator.ts
-      - src/app/league-activity/league-activity.ts
-      - src/app/about/about.ts
-      - src/app/player-list/player-list.ts
-      - src/app/player-detail-dialog/player-detail-dialog.ts
-    removedSpecFiles:
-      - src/app/team-list/team-list.spec.ts
-      - src/app/about/about.spec.ts
-      - src/app/overview/overview.spec.ts
-      - src/app/players-page/players-page.spec.ts
-      - src/app/trade-simulator/trade-simulator.spec.ts
-      - src/app/player-list/player-list.spec.ts
-      - src/app/player-detail-dialog/player-detail-dialog.spec.ts
+    - path: src/app/core/services/data-api.service.ts
+      responsibility: >
+        App-wide Angular HTTP facade for generated JSON files and timestamps. It
+        owns HttpClient access to public/data read-model files and returns typed
+        raw data to DataService.
 
-buildMetadata:
-  purpose: >
-    The app shell exposes a compact build indicator so users can identify the
-    actually loaded frontend bundle and diagnose whether the published server
-    bundle is newer than the currently loaded app.
-  producer:
-    path: deploy_action.ps1
-    writes:
-      - src/app/core/build-info.generated.ts
-      - public/build-info.json
-    behavior: >
-      Before the Angular production build runs, deploy_action.ps1 writes the same
-      UTC build timestamp into the embedded Angular build info file and the
-      public server-side build-info.json file.
-  frontendConsumer:
-    path: src/app/app.ts
-    behavior: >
-      App uses the embedded APP_BUILD_INFO and loaded script bundle hash for the
-      currently running application. It then fetches cache-busted index.html and
-      build-info.json from the server to compare the published bundle/build time
-      with the loaded bundle/build time.
-  display:
-    paths:
-      - src/app/app.html
-      - src/app/app.scss
-    behavior: >
-      Desktop shows a compact fixed build label and exposes details through the
-      title tooltip. Mobile shows the same compact label in the burger menu and
-      expands a small diagnostic detail panel when tapped.
-  sourceOfTruth: >
-    Build metadata is deploy/frontend metadata only. It is not generated league
-    data and does not affect public/data app data contracts.
+    - path: src/app/core/services/data.service.ts
+      responsibility: >
+        Current app-wide Angular data facade. It imports model declarations from
+        src/app/core/models, loads generated JSON through DataApiService, delegates
+        mapping to core mappers, delegates FreeAgentMarket enrichment to
+        FreeAgentMarketService, uses shared utilities for Player sorting and
+        salary/trade calculations, and mainly remains as app-facing
+        facade/orchestrator.
 
-generatedPlayerExports:
-  relevantPlayers:
-    path: public/data/Players_Relevant.json
-    producer: public/requests/RequestLeague.ps1
-    helper: public/requests/utils/player/PlayerUtils.psm1
-    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantFile
-    behavior: >
-      The frequent league generation flow derives a relevant player subset from
-      Players.json. Relevant players include fantasy-rostered players, young
-      prospects, players with meaningful historical production and players with a
-      high salary signal.
-  chatChunks:
-    path: public/data/chat/players-relevant
-    producer: public/requests/utils/player/PlayerChatExportUtils.psm1
-    entryPoint: public/requests/RequestLeague.ps1
-    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantChatDir
-    behavior: >
-      The chat export keeps full relevant player objects, splits them into stable
-      10-player chunk files and writes index.json with lookup metadata. It is
-      generated helper output for AI/chat workflows, not a separate manual source
-      of truth.
+routing:
+  primaryRoutes:
+    - path: /
+      component: src/app/features/overview/overview.ts
+    - path: /teams
+      component: src/app/features/teams/team-list/team-list.ts
+    - path: /players
+      component: src/app/features/players/players-page/players-page.ts
+    - path: /drafts
+      component: src/app/features/drafts/drafts.ts
+    - path: /moves
+      component: src/app/features/league-activity/league-activity.ts
+    - path: /trade
+      component: src/app/features/trade/trade-simulator/trade-simulator.ts
+    - path: /handbook
+      component: src/app/features/handbook/about.ts
+  compatibilityRedirects:
+    - from: /league-activity
+      to: /moves
+      reason: Preserve old links after splitting the previous combined League Activity feature.
 
 dataFlow:
   - from: public/data/Metadata.json
@@ -302,38 +216,15 @@ dataFlow:
       Enrich generated League.json team objects with sorted current/upcoming/live
       draft pick keys owned by each team.
 
-  - from: public/data/Players.json
-    to: public/requests/RequestLeague.ps1
-    purpose: Provide player data for salary-cap calculation and relevant-player subset generation.
-
-  - from: public/requests/RequestLeague.ps1
-    to: public/data/Players_Relevant.json
-    purpose: Generate a relevant player subset for AI/chat-friendly player analysis.
-
-  - from: public/data/Players_Relevant.json
-    to: public/data/chat/players-relevant/index.json and public/data/chat/players-relevant/players_*.json
-    purpose: Generate stable lookup metadata and 10-player chunks for AI/chat workflows.
-
-  - from: public/requests/RequestLeague.ps1
-    to: public/data/League.json
-    purpose: Generate app-readable league data.
-
   - from: public/requests/RequestDrafts.ps1
     to: public/data/Drafts.json
-    purpose: >
-      Run the weekly/manual full draft update for current/upcoming/live drafts.
+    purpose: Run the weekly/manual full draft update for current/upcoming/live drafts.
 
   - from: public/requests/RequestDrafts.ps1
     to: public/data/past_seasons/Drafts/Drafts_<season>.json
     purpose: >
       Run the weekly/manual completed draft history refresh. Historical draft
       files must not be used to enrich League.json team DraftPicks.
-
-  - from: Sleeper draft picks endpoint
-    to: public/data/past_seasons/Drafts/Drafts_<season>.json
-    purpose: >
-      Add completed pick results such as PlayerID, PlayerName, SleeperPickNo,
-      SleeperPickedBy and Picked status to historical draft picks.
 
   - from: public/data/League.json, public/data/Players.json, public/data/Teams.json, public/data/Drafts.json
     to: src/app/core/services/data-api.service.ts
@@ -347,48 +238,61 @@ dataFlow:
     to: src/app/core/mappers/league.mapper.ts
     purpose: Resolve generated DraftPick keys into draft-pick-enriched FantasyTeam structures.
 
-  - from: public/data/League.json
-    to: src/app/core/mappers/league.mapper.ts
-    purpose: Map generated RawLeague and RawFantasyTeam records into frontend League and FantasyTeam objects.
-
-  - from: src/app/core/mappers/league.mapper.ts
-    to: src/app/core/services/data.service.ts
-    purpose: Provide mapped League, FantasyTeam and Draft objects to the app data facade.
-
   - from: src/app/core/services/data.service.ts
-    to: src/app/features/league-activity/league-activity.ts
+    to: src/app/features/drafts/drafts.ts
     purpose: >
-      Provide LeagueActivityComponent with generated current/upcoming/live draft
-      data and fantasy teams for draft cards, round groups, pick ordering and
+      Provide DraftsComponent with generated current/upcoming/live draft data and
+      fantasy teams for draft cards, round groups, pick ordering and
       current/original owner display.
 
-  - from: public/data/Players.json
-    to: src/app/core/mappers/player.mapper.ts
-    purpose: Map generated RawPlayer records into frontend Player objects.
+  - from: public/data/Transactions.json
+    to: src/app/features/league-activity/league-activity.ts
+    status: planned
+    purpose: >
+      Future Moves timeline input after Transactions.json is intentionally modeled
+      in DataApiService/DataService and frontend transaction interfaces.
 
-  - from: src/app/core/mappers/player.mapper.ts
-    to: src/app/core/mappers/league.mapper.ts
-    purpose: Provide mapped Player objects for fantasy team roster assignment.
+buildMetadata:
+  purpose: >
+    The app shell exposes a compact build indicator so users can identify the
+    actually loaded frontend bundle and diagnose whether the published server
+    bundle is newer than the currently loaded app.
+  producer:
+    path: deploy_action.ps1
+    writes:
+      - src/app/core/build-info.generated.ts
+      - public/build-info.json
+  frontendConsumer:
+    path: src/app/app.ts
+  display:
+    paths:
+      - src/app/app.html
+      - src/app/app.scss
+  sourceOfTruth: >
+    Build metadata is deploy/frontend metadata only. It is not generated league
+    data and does not affect public/data app data contracts.
 
-  - from: src/app/core/mappers/player.mapper.ts
-    to: src/app/core/services/data.service.ts
-    purpose: Provide mapped Player objects before FreeAgentMarket enrichment and sorting.
-
-  - from: src/app/core/services/data.service.ts
-    to: src/app/core/services/free-agent-market.service.ts
-    purpose: Enrich mapped Player objects with current and projected FreeAgentMarket metadata.
-
-  - from: src/app/core/services/data.service.ts
-    to: src/app/shared/utils/player-sort.util.ts
-    purpose: Sort mapped Player objects for DataService consumers.
-
-  - from: src/app/core/services/data.service.ts
-    to: src/app/shared/utils/trade-calculator.util.ts
-    purpose: Delegate public salary and trade roster calculations to reusable utilities.
-
-  - from: public/data/Timestamps.json
-    to: src/app/core/services/data-api.service.ts
-    purpose: Load generated data freshness timestamps.
+generatedPlayerExports:
+  relevantPlayers:
+    path: public/data/Players_Relevant.json
+    producer: public/requests/RequestLeague.ps1
+    helper: public/requests/utils/player/PlayerUtils.psm1
+    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantFile
+    behavior: >
+      The frequent league generation flow derives a relevant player subset from
+      Players.json. Relevant players include fantasy-rostered players, young
+      prospects, players with meaningful historical production and players with a
+      high salary signal.
+  chatChunks:
+    path: public/data/chat/players-relevant
+    producer: public/requests/utils/player/PlayerChatExportUtils.psm1
+    entryPoint: public/requests/RequestLeague.ps1
+    pathSource: public/requests/utils/ConfigUtils.psm1::PlayersRelevantChatDir
+    behavior: >
+      The chat export keeps full relevant player objects, splits them into stable
+      10-player chunk files and writes index.json with lookup metadata. It is
+      generated helper output for AI/chat workflows, not a separate manual source
+      of truth.
 
 knownFrontendDomainLogic:
   - path: src/app/core/services/free-agent-market.service.ts
@@ -405,20 +309,18 @@ knownFrontendDomainLogic:
       round. This is display logic and should move into a shared frontend utility,
       pipe or service because draft picks are now shown in more than one component.
 
-  - path: src/app/features/league-activity/league-activity.ts
-    topic: League Activity draft cards
+  - path: src/app/features/drafts/drafts.ts
+    topic: Draft pick display and round chip colors
     note: >
-      LeagueActivityComponent is a frontend presentation feature for the
-      /league-activity route. It builds component-level view models from
-      DataService draft/team data, groups picks by draft and round, displays current
-      owner plus "from original owner" for traded picks, and currently keeps the
-      Moves section as a placeholder until Transactions.json is modeled in the
-      frontend.
+      DraftsComponent builds component-level view models from DataService
+      draft/team data, groups picks by draft and round, displays current owner
+      plus "from original owner" for traded picks, and duplicates the HSL round
+      color calculation used by Overview. The shared draft-pick display pattern
+      should be extracted before it expands further.
 
   - path: src/app/features/league-activity/league-activity.ts
-    topic: Draft round chip colors
+    topic: Moves placeholder
     note: >
-      LeagueActivityComponent currently duplicates the warm-to-cold HSL round
-      color calculation used by Overview. This is acceptable for the MVP but
-      should be extracted into a shared frontend utility, pipe or service before
-      the draft-pick display pattern is expanded further.
+      LeagueActivityComponent is currently the routed Moves page implementation.
+      It intentionally remains a placeholder until Transactions.json is modeled
+      and loaded in the frontend.
