@@ -1,0 +1,68 @@
+<mat-accordion class="round-accordion" multi>
+  @for (round of draftVm.rounds; track round.round) {
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ round.label }}</mat-panel-title>
+        <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="pick-list">
+        @for (item of round.picks; track item.pick.PickKey) {
+          <div class="pick-row" [style.border-left-color]="item.roundColor">
+            <button
+              class="pick-token"
+              [style.background]="item.roundColor"
+              [matMenuTriggerFor]="pickInfoMenu"
+              type="button">
+              {{ item.pick.DisplayPick }}
+            </button>
+
+            <div class="pick-owner-line">
+              <img class="team-avatar" [src]="item.currentOwner.avatar" alt="" />
+              <div class="pick-owner">
+                <strong>{{ item.currentOwner.name }}</strong>
+                @if (item.isCurrentlyTraded) {
+                  <span>
+                    from
+                    <img class="team-avatar tiny" [src]="item.originalOwner.avatar" alt="" />
+                    {{ item.originalOwner.name }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="pick-result">
+              @if (item.pick.PlayerName) {
+                <strong>{{ item.pick.PlayerName }}</strong>
+              } @else {
+                <span>Open Pick</span>
+              }
+            </div>
+
+            <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
+              <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
+                <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+                @if (item.pick.PlayerName) {
+                  <span class="picked-player">{{ item.pick.PlayerName }}</span>
+                } @else {
+                  <span class="open-pick-label">Open Pick</span>
+                }
+                <span class="pick-info-team-line">
+                  <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
+                  <span>Owner: {{ item.currentOwner.name }}</span>
+                </span>
+                <span class="pick-info-team-line">
+                  <img class="pick-info-avatar" [src]="item.originalOwner.avatar" alt="" />
+                  <span>Original: {{ item.originalOwner.name }}</span>
+                </span>
+                @if (item.isCurrentlyTraded) {
+                  <span class="traded-pick-label">Traded Pick</span>
+                }
+              </div>
+            </mat-menu>
+          </div>
+        }
+      </div>
+    </mat-expansion-panel>
+  }
+</mat-accordion>
