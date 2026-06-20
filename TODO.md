@@ -48,7 +48,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Falls die Pick-Strength-Sortierung nicht intuitiv genug ist, später einen klar beschrifteten Sortiermodus oder Toggle prüfen.
 
 - [ ] `DataService` strukturell aufteilen.
-  - Kontext: `src/app/services/data-service.ts` enthält aktuell noch Sortier-, Salary- und Trade-Helferlogik sowie die öffentliche App-Datenfassade.
+  - Kontext: `src/app/services/data-service.ts` ist aktuell vor allem öffentliche App-Datenfassade und Orchestrator.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist vorbereitet; geroutete Feature-Seiten liegen inzwischen unter `src/app/features/**`.
   - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data-service.ts`.
   - Kontext: Draft-Modelle (`RawDraft`, `DraftSettings`, `DraftPickTradeHistoryEntry`, `DraftPick`) liegen in `src/app/core/models/draft.models.ts` und werden über `fantasy.models.ts` exportiert.
@@ -57,15 +57,16 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: `src/app/core/mappers/league.mapper.ts` enthält die reine `RawLeague`-/`RawFantasyTeam`-/DraftPick-zu-`League`/`FantasyTeam`-Transformation inklusive Team-Roster-Zuweisung.
   - Kontext: `src/app/core/mappers/player.mapper.ts` enthält die reine `RawPlayer`-zu-`Player`-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping.
   - Kontext: `src/app/core/services/free-agent-market.service.ts` enthält die FreeAgentMarket-/RuleBasedAutoCut-Logik für Current- und Projected-Salary-Modi.
-  - Kontext: `DataService` nutzt die extrahierten Model-Dateien, den DataApiService, den League-Mapper, den Player-Mapper und den FreeAgentMarket-Service direkt.
-  - Ziel: Als nächsten Slice Sortier-, Salary- und Trade-Helferlogik weiter aus `DataService` herauslösen.
+  - Kontext: `src/app/shared/utils/player-sort.util.ts` enthält die wiederverwendbare Player-Sortierung.
+  - Kontext: `src/app/shared/utils/trade-calculator.util.ts` enthält wiederverwendbare Salary- und Trade-Roster-Berechnungen.
+  - Kontext: `DataService` nutzt die extrahierten Model-Dateien, den DataApiService, den League-Mapper, den Player-Mapper, den FreeAgentMarket-Service und Shared Utils direkt.
+  - Ziel: DataService perspektivisch als schmale App-Datenfassade stabilisieren oder bei Bedarf in kleinere Facades zerlegen.
   - Ziel: Danach weitere app-weite Services in klarere Bereiche auslagern.
   - Zielstruktur prüfen:
     - `src/app/core/models` für League-, Player-, Draft-, Transaction-, Standings- und weitere Domain-Modelle.
     - `src/app/core/services` für app-weite Daten-, Mapping-, Draft-, Player-, Market-, Transaction- und Trade-Services.
     - `src/app/core/mappers` für fachliche Mapper, falls diese von den Services getrennt werden sollen.
     - `src/app/shared/components`, `src/app/shared/pipes` und `src/app/shared/utils` für wiederverwendbare UI-/Material-/Frontend-Helfer.
-  - Mögliche Services prüfen: `data.service.ts`, `transaction-mapper.service.ts`, `trade-calculator.service.ts`, `player-sort.util.ts` oder vergleichbare Utilities.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
