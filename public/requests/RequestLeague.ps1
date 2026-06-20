@@ -40,6 +40,7 @@ catch {
 $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
+$LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
@@ -336,7 +337,16 @@ try {
     }
 
     # Status setzen, Offenheit von Trades, Cuts, Waivers prüfen
-    $status = "Active"
+    $status = Resolve-LeagueStatus `
+        -League $league `
+        -Drafts $drafts `
+        -Schedule $schedule `
+        -LeagueYear ([int]$config.LeagueYear) `
+        -CapDeadline $CapDeadline `
+        -FinalScoredWeek $finalWeek `
+        -PlayoffStartWeek $playoffStart `
+        -SeasonStartBufferDays $LeagueStatusSeasonStartBufferDays
+
     $cutsAllowed = $true
     $cutsMetaText = ""
     $waiversOpen = [int]$league.settings.disable_adds -eq 0
@@ -344,20 +354,14 @@ try {
     $waiversMetaText = ""
     $tradesOpen = [int]$league.settings.disable_trades -eq 0
     Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
-    $tradesMetaText = "" 
-    switch($league.status){
-        "complete" {
-            $status = "Finished"
-            $cutsAllowed = $false
-            $waiversOpen = $false
-            $tradesOpen = $false
-        } 
-        "pre_draft" {$status = "Off-Season"} 
-        "off_season" { $status = "Pre-Season" } 
-        "in_season" {$status = "In-Season"} 
-        "playoffs" {$status = "In Playoffs"}
-        default {$status = "Active"} 
+    $tradesMetaText = ""
+
+    if ($status -eq "Completed") {
+        $cutsAllowed = $false
+        $waiversOpen = $false
+        $tradesOpen = $false
     }
+
     Write-Host "League is in status '$status'." -ForegroundColor Yellow
     Write-Host "Waivers open: $waiversOpen | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
     
