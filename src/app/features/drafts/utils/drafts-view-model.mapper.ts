@@ -141,7 +141,9 @@ function createOwnerPickGroups(
         owner: sortedPicks[0].currentOwner,
         picks: sortedPicks.map(pick => ({
           label: `R${pick.pick.Round}`,
-          color: pick.roundColor
+          color: pick.roundColor,
+          originalOwner: pick.originalOwner,
+          isCurrentlyTraded: pick.isCurrentlyTraded
         })),
         pickCount: sortedPicks.length,
         roundCounts: getRoundCounts(sortedPicks, draftMaxRound)
