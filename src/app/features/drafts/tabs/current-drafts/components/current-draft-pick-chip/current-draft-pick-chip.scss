@@ -27,8 +27,8 @@
 
 .pick-info-menu-content {
   display: flex;
-  min-width: 210px;
-  max-width: 280px;
+  min-width: 220px;
+  max-width: 300px;
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
@@ -51,8 +51,71 @@
   font-weight: 900;
 }
 
-.picked-player {
+.picked-player-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picked-player-card:hover {
+  background: #eef2ff;
+}
+
+.picked-player-picture {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.picked-player-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.picked-player-main strong {
+  overflow: hidden;
+  font-size: 0.86rem;
   font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picked-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.picked-player-position {
+  padding: 2px 5px;
+  border-radius: 7px;
+  background: #1f2937;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.picked-player-nfl-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .open-pick-label,
