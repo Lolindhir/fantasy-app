@@ -162,6 +162,18 @@ frontendStructure:
         labels, salary display text, NameShort fallback and padded game history.
         It does not own FreeAgentMarket simulation across fantasy teams.
 
+    - path: src/app/core/services/data.service.ts
+      responsibility: >
+        Current app-wide Angular data facade. It imports model declarations from
+        src/app/core/models, loads generated JSON through
+        src/app/core/services/data-api.service.ts, delegates RawPlayer-to-Player
+        mapping to src/app/core/mappers/player.mapper.ts, delegates RawLeague/team
+        and draft-pick mapping to src/app/core/mappers/league.mapper.ts, delegates
+        FreeAgentMarket enrichment to src/app/core/services/free-agent-market.service.ts,
+        uses shared utilities for Player sorting and salary/trade calculations,
+        and mainly remains as app-facing facade/orchestrator. This replaced the old
+        src/app/services/data-service.ts location.
+
     - path: src/app/core/services/data-api.service.ts
       responsibility: >
         App-wide Angular HTTP facade for generated JSON files and timestamps. It
@@ -180,17 +192,6 @@ frontendStructure:
         Central Angular model import surface. Draft, league/team and player model
         exports come from dedicated files under src/app/core/models. Feature and
         shared Angular consumers should import type dependencies from this barrel.
-
-    - path: src/app/services/data-service.ts
-      responsibility: >
-        Current app-wide Angular data facade. It imports model declarations from
-        src/app/core/models, loads generated JSON through
-        src/app/core/services/data-api.service.ts, delegates RawPlayer-to-Player
-        mapping to src/app/core/mappers/player.mapper.ts, delegates RawLeague/team
-        and draft-pick mapping to src/app/core/mappers/league.mapper.ts, delegates
-        FreeAgentMarket enrichment to src/app/core/services/free-agent-market.service.ts,
-        uses shared utilities for Player sorting and salary/trade calculations,
-        and mainly remains as app-facing facade/orchestrator.
 
   removedCompatibilityReExports:
     note: >
@@ -327,7 +328,7 @@ dataFlow:
     purpose: Load generated raw JSON read models through Angular HttpClient.
 
   - from: src/app/core/services/data-api.service.ts
-    to: src/app/services/data-service.ts
+    to: src/app/core/services/data.service.ts
     purpose: Provide typed raw League, Player, NFL team, Draft and Timestamp data to the app data facade.
 
   - from: public/data/Drafts.json
@@ -339,10 +340,10 @@ dataFlow:
     purpose: Map generated RawLeague and RawFantasyTeam records into frontend League and FantasyTeam objects.
 
   - from: src/app/core/mappers/league.mapper.ts
-    to: src/app/services/data-service.ts
+    to: src/app/core/services/data.service.ts
     purpose: Provide mapped League, FantasyTeam and Draft objects to the app data facade.
 
-  - from: src/app/services/data-service.ts
+  - from: src/app/core/services/data.service.ts
     to: src/app/features/league-activity/league-activity.ts
     purpose: >
       Provide LeagueActivityComponent with generated current/upcoming/live draft
@@ -358,18 +359,18 @@ dataFlow:
     purpose: Provide mapped Player objects for fantasy team roster assignment.
 
   - from: src/app/core/mappers/player.mapper.ts
-    to: src/app/services/data-service.ts
+    to: src/app/core/services/data.service.ts
     purpose: Provide mapped Player objects before FreeAgentMarket enrichment and sorting.
 
-  - from: src/app/services/data-service.ts
+  - from: src/app/core/services/data.service.ts
     to: src/app/core/services/free-agent-market.service.ts
     purpose: Enrich mapped Player objects with current and projected FreeAgentMarket metadata.
 
-  - from: src/app/services/data-service.ts
+  - from: src/app/core/services/data.service.ts
     to: src/app/shared/utils/player-sort.util.ts
     purpose: Sort mapped Player objects for DataService consumers.
 
-  - from: src/app/services/data-service.ts
+  - from: src/app/core/services/data.service.ts
     to: src/app/shared/utils/trade-calculator.util.ts
     purpose: Delegate public salary and trade roster calculations to reusable utilities.
 
