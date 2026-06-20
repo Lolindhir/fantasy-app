@@ -22,14 +22,6 @@ export class CurrentDraftOverviewViewComponent {
     return Math.max(...this.draftVm.rounds.map(round => round.picks.length), 1);
   }
 
-  get gridTemplateColumns(): string {
-    return `repeat(${this.columnCount}, minmax(52px, 56px))`;
-  }
-
-  get gridMinWidth(): number {
-    return this.columnCount * 56;
-  }
-
   openPlayerDetail(player: Player, event?: Event): void {
     event?.stopPropagation();
 
