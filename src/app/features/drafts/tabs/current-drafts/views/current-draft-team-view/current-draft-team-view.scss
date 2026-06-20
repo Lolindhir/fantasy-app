@@ -6,11 +6,9 @@
 
 .current-team-owner-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  grid-template-areas:
-    "avatar team"
-    "picks picks";
-  gap: 8px;
+  grid-template-columns: 32px minmax(130px, 220px) minmax(0, 1fr);
+  grid-template-areas: "avatar team picks";
+  gap: 10px;
   align-items: center;
   padding: 9px 10px;
   border-radius: 12px;
@@ -19,8 +17,8 @@
 
 .team-avatar {
   grid-area: avatar;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   background: #e5e7eb;
@@ -39,10 +37,10 @@
 .current-pick-chip-list {
   grid-area: picks;
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 5px;
-  padding-top: 2px;
 }
 
 .current-pick-chip {
@@ -70,4 +68,23 @@
   border-radius: 999px;
   background: #1e3a8a;
   content: '';
+}
+
+@media (max-width: 700px) {
+  .current-team-owner-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar team"
+      "picks picks";
+    gap: 8px;
+  }
+
+  .team-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .current-pick-chip-list {
+    padding-top: 2px;
+  }
 }
