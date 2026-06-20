@@ -13,8 +13,20 @@
     @if (item.pick.OverallPick !== null) {
       <span class="pick-overall-label">Overall #{{ item.pick.OverallPick }}</span>
     }
-    @if (item.pick.PlayerName) {
-      <span class="picked-player">{{ item.pick.PlayerName }}</span>
+    @if (item.selectedPlayer) {
+      <button class="picked-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer, $event)">
+        <img class="picked-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+        <span class="picked-player-main">
+          <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
+          <span class="picked-player-meta">
+            <span class="picked-player-position">{{ item.selectedPlayer.Position }}</span>
+            @if (item.selectedPlayer.TeamNFL?.Logo) {
+              <img class="picked-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
+            }
+            <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
+          </span>
+        </span>
+      </button>
     } @else {
       <span class="open-pick-label">Open Pick</span>
     }
