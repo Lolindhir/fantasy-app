@@ -1,0 +1,30 @@
+<div class="current-pick-table">
+  <div class="current-pick-table-header">
+    <span>Pick</span>
+    <span>Player</span>
+    <span>Owner</span>
+    <span>Original</span>
+    <span>Status</span>
+  </div>
+
+  @for (item of orderedPicks; track item.pick.PickKey) {
+    <div class="current-pick-table-row">
+      <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
+      <div class="pick-player-cell">
+        @if (item.pick.PlayerName) {
+          <strong>{{ item.pick.PlayerName }}</strong>
+        } @else {
+          <span>Open Pick</span>
+        }
+      </div>
+      <div class="team-cell owner-cell">{{ item.currentOwner.name }}</div>
+      <div class="team-cell origin-cell">{{ item.originalOwner.name }}</div>
+      <div class="status-cell">
+        <span>{{ getPickStatusLabel(item) }}</span>
+        @if (item.isCurrentlyTraded) {
+          <span class="traded-dot-label">Traded</span>
+        }
+      </div>
+    </div>
+  }
+</div>
