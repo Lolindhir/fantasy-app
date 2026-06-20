@@ -1,0 +1,45 @@
+<section class="draft-section">
+  <div class="section-header">
+    <h2>Current Season Drafts</h2>
+  </div>
+
+  @if (drafts.length > 0) {
+    <div class="drafts-column">
+      @for (draftVm of drafts; track draftVm.draft.DraftKey) {
+        <mat-card class="draft-card">
+          <mat-card-header>
+            <div mat-card-avatar class="draft-avatar">{{ draftVm.draft.DisplayDraftType.charAt(0) }}</div>
+            <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
+            <mat-card-subtitle>{{ draftVm.draft.Settings.Rounds }} Rounds - {{ draftVm.pickCount }} Picks</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            @for (round of draftVm.rounds; track round.round) {
+              <div class="round-block">
+                <h3>{{ round.label }}</h3>
+                <div class="pick-list">
+                  @for (item of round.picks; track item.pick.PickKey) {
+                    <div class="pick-row" [style.border-left-color]="item.roundColor">
+                      <span class="pick-token" [style.background]="item.roundColor">{{ item.pick.DisplayPick }}</span>
+                      <span class="pick-owner-name">{{ item.currentOwner.name }}</span>
+                      @if (item.isCurrentlyTraded) {
+                        <span class="pick-origin">from {{ item.originalOwner.name }}</span>
+                      }
+                      @if (item.pick.PlayerName) {
+                        <span class="picked-player">{{ item.pick.PlayerName }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  } @else {
+    <mat-card class="empty-card">
+      <mat-card-content>No current season drafts found.</mat-card-content>
+    </mat-card>
+  }
+</section>
