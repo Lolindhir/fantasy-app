@@ -195,10 +195,12 @@ frontendStructure:
 
   removedCompatibilityReExports:
     note: >
-      The old routed component paths were temporarily retained as compatibility
-      re-exports after the feature-structure move. After repository search showed
-      no productive imports or path references to those old wrappers, the wrapper
-      files were removed. New code must import routed pages from src/app/features/**.
+      The old routed component paths and reusable shared-component root paths were
+      temporarily retained as compatibility re-exports after the feature-structure
+      move. After build/test validation and repository search showed no productive
+      references to the old paths, the wrappers and stale old-location specs were
+      removed. New code must import routed pages from src/app/features/** and
+      reusable UI from src/app/shared/components/**.
     removedFiles:
       - src/app/overview/overview.ts
       - src/app/team-list/team-list.ts
@@ -206,6 +208,16 @@ frontendStructure:
       - src/app/trade-simulator/trade-simulator.ts
       - src/app/league-activity/league-activity.ts
       - src/app/about/about.ts
+      - src/app/player-list/player-list.ts
+      - src/app/player-detail-dialog/player-detail-dialog.ts
+    removedSpecFiles:
+      - src/app/team-list/team-list.spec.ts
+      - src/app/about/about.spec.ts
+      - src/app/overview/overview.spec.ts
+      - src/app/players-page/players-page.spec.ts
+      - src/app/trade-simulator/trade-simulator.spec.ts
+      - src/app/player-list/player-list.spec.ts
+      - src/app/player-detail-dialog/player-detail-dialog.spec.ts
 
 buildMetadata:
   purpose: >
@@ -398,7 +410,7 @@ knownFrontendDomainLogic:
     note: >
       LeagueActivityComponent is a frontend presentation feature for the
       /league-activity route. It builds component-level view models from
-      DataService draft/team data, groups picks by draft round, displays current
+      DataService draft/team data, groups picks by draft and round, displays current
       owner plus "from original owner" for traded picks, and currently keeps the
       Moves section as a placeholder until Transactions.json is modeled in the
       frontend.
