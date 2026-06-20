@@ -1,4 +1,4 @@
-import type { DraftPick, FantasyTeam, League, RawDraft } from '../../../core/models/fantasy.models';
+import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
 import type {
   CompactOwnerPickGroupViewModel,
   DraftPickViewModel,
@@ -11,14 +11,16 @@ import type {
 export function createDraftsViewModel(
   league: League,
   drafts: RawDraft[],
-  teams: FantasyTeam[]
+  teams: FantasyTeam[],
+  players: Player[] = []
 ): DraftsViewModel {
   const teamByRosterId = createTeamDisplayMap(teams);
+  const playerById = createPlayerMap(players);
   const maxRound = getMaxRound(drafts);
 
   const draftViewModels = [...drafts]
     .sort(compareDraftsBySeasonAndNumber)
-    .map(draft => createDraftViewModel(draft, teamByRosterId, maxRound));
+    .map(draft => createDraftViewModel(draft, teamByRosterId, playerById, maxRound));
 
   return {
     currentSeason: league.Season,
@@ -45,6 +47,16 @@ function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayView
   return teamByRosterId;
 }
 
+function createPlayerMap(players: Player[]): Map<string, Player> {
+  const playerById = new Map<string, Player>();
+
+  players.forEach(player => {
+    playerById.set(player.ID, player);
+  });
+
+  return playerById;
+}
+
 function compareDraftsBySeasonAndNumber(a: RawDraft, b: RawDraft): number {
   const seasonDiff = Number(a.Season) - Number(b.Season);
   if (seasonDiff !== 0) return seasonDiff;
@@ -54,11 +66,12 @@ function compareDraftsBySeasonAndNumber(a: RawDraft, b: RawDraft): number {
 function createDraftViewModel(
   draft: RawDraft,
   teamByRosterId: Map<number, TeamDisplayViewModel>,
+  playerById: Map<string, Player>,
   maxRound: number
 ): DraftViewModel {
   const picks = [...(draft.Picks ?? [])]
     .sort(comparePicksByDraftOrder)
-    .map(pick => createPickViewModel(pick, teamByRosterId, maxRound));
+    .map(pick => createPickViewModel(pick, teamByRosterId, playerById, maxRound));
 
   const pickedCount = picks.filter(item => item.pick.Status === 'Picked' || !!item.pick.PlayerName).length;
   const rawStatus = draft.Status || draft.SleeperStatus || 'Unknown';
@@ -88,6 +101,7 @@ function comparePicksByDraftOrder(a: DraftPick, b: DraftPick): number {
 function createPickViewModel(
   pick: DraftPick,
   teamByRosterId: Map<number, TeamDisplayViewModel>,
+  playerById: Map<string, Player>,
   maxRound: number
 ): DraftPickViewModel {
   return {
@@ -95,7 +109,8 @@ function createPickViewModel(
     currentOwner: getTeamDisplay(teamByRosterId, pick.CurrentOwnerRosterID),
     originalOwner: getTeamDisplay(teamByRosterId, pick.OriginalOwnerRosterID),
     isCurrentlyTraded: pick.IsCurrentlyTraded || pick.CurrentOwnerRosterID !== pick.OriginalOwnerRosterID,
-    roundColor: getRoundColor(pick.Round, maxRound)
+    roundColor: getRoundColor(pick.Round, maxRound),
+    selectedPlayer: pick.PlayerID ? playerById.get(pick.PlayerID) : undefined
   };
 }
 
