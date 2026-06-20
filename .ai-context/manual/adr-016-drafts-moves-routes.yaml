@@ -1,0 +1,17 @@
+schemaVersion: 1
+
+adr:
+  id: ADR-016
+  title: Separate Drafts and Moves routes
+  status: accepted
+  supersedes:
+    - ADR-012
+  decision: >
+    Drafts and Moves are separate routed feature areas. Drafts use /drafts and
+    src/app/features/drafts. Moves use /moves and keep LeagueActivityComponent as
+    the technical component for now. /league-activity redirects to /moves for
+    compatibility. /trade stays separate until the trade simulator is explicitly
+    integrated into Moves later.
+  rationale: >
+    Drafts are pick- and round-oriented. Moves are chronological league activity.
+    Keeping them separate lets each feature grow independently.
