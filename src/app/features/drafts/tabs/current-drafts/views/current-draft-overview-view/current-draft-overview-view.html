@@ -1,68 +1,66 @@
-<mat-accordion class="round-accordion" multi>
-  @for (round of draftVm.rounds; track round.round) {
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>{{ round.label }}</mat-panel-title>
-        <mat-panel-description>{{ round.picks.length }} picks</mat-panel-description>
-      </mat-expansion-panel-header>
-
-      <div class="pick-list">
+<div class="draft-board-scroll">
+  <div class="draft-board">
+    @for (round of draftVm.rounds; track round.round) {
+      <div
+        class="draft-board-row"
+        [style.grid-template-columns]="gridTemplateColumns"
+        [style.min-width.px]="gridMinWidth">
         @for (item of round.picks; track item.pick.PickKey) {
-          <div class="pick-row" [style.border-left-color]="item.roundColor">
-            <button
-              class="pick-token"
-              [style.background]="item.roundColor"
-              [matMenuTriggerFor]="pickInfoMenu"
-              type="button">
-              {{ item.pick.DisplayPick }}
-            </button>
+          <button
+            class="draft-pick-tile"
+            [class.picked]="item.selectedPlayer"
+            [class.open]="!item.selectedPlayer"
+            [matMenuTriggerFor]="pickInfoMenu"
+            type="button">
+            <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
 
-            <div class="pick-owner-line">
-              <img class="team-avatar" [src]="item.currentOwner.avatar" alt="" />
-              <div class="pick-owner">
-                <strong>{{ item.currentOwner.name }}</strong>
-                @if (item.isCurrentlyTraded) {
-                  <span>
-                    from
-                    <img class="team-avatar tiny" [src]="item.originalOwner.avatar" alt="" />
-                    {{ item.originalOwner.name }}
+            @if (item.selectedPlayer) {
+              <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+              <span class="tile-position-chip">{{ item.selectedPlayer.Position }}</span>
+              <img class="tile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
+            } @else {
+              <img class="tile-open-owner-logo" [src]="item.currentOwner.avatar" alt="" />
+            }
+          </button>
+
+          <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
+            <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
+              <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+              @if (item.pick.OverallPick !== null) {
+                <span class="pick-overall-label">Overall #{{ item.pick.OverallPick }}</span>
+              }
+              @if (item.selectedPlayer) {
+                <button class="picked-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer, $event)">
+                  <img class="picked-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+                  <span class="picked-player-main">
+                    <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
+                    <span class="picked-player-meta">
+                      <span class="picked-player-position">{{ item.selectedPlayer.Position }}</span>
+                      @if (item.selectedPlayer.TeamNFL?.Logo) {
+                        <img class="picked-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
+                      }
+                      <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
+                    </span>
                   </span>
-                }
-              </div>
-            </div>
-
-            <div class="pick-result">
-              @if (item.pick.PlayerName) {
-                <strong>{{ item.pick.PlayerName }}</strong>
+                </button>
               } @else {
-                <span>Pick Open</span>
+                <span class="open-pick-label">Pick Open</span>
+              }
+              <span class="pick-info-team-line">
+                <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
+                <span>Owner: {{ item.currentOwner.name }}</span>
+              </span>
+              <span class="pick-info-team-line">
+                <img class="pick-info-avatar" [src]="item.originalOwner.avatar" alt="" />
+                <span>Original: {{ item.originalOwner.name }}</span>
+              </span>
+              @if (item.isCurrentlyTraded) {
+                <span class="traded-pick-label">Traded Pick</span>
               }
             </div>
-
-            <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
-              <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
-                <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
-                @if (item.pick.PlayerName) {
-                  <span class="picked-player">{{ item.pick.PlayerName }}</span>
-                } @else {
-                  <span class="open-pick-label">Pick Open</span>
-                }
-                <span class="pick-info-team-line">
-                  <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
-                  <span>Owner: {{ item.currentOwner.name }}</span>
-                </span>
-                <span class="pick-info-team-line">
-                  <img class="pick-info-avatar" [src]="item.originalOwner.avatar" alt="" />
-                  <span>Original: {{ item.originalOwner.name }}</span>
-                </span>
-                @if (item.isCurrentlyTraded) {
-                  <span class="traded-pick-label">Traded Pick</span>
-                }
-              </div>
-            </mat-menu>
-          </div>
+          </mat-menu>
         }
       </div>
-    </mat-expansion-panel>
-  }
-</mat-accordion>
+    }
+  </div>
+</div>
