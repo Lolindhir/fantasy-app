@@ -24,9 +24,23 @@
                   <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
                   <div class="compact-round-list">
                     @for (roundPick of ownerGroup.picks; track $index) {
-                      <span class="round-pill" [style.background]="roundPick.color">
+                      <button
+                        class="round-pill"
+                        [class.traded-pick]="roundPick.isCurrentlyTraded"
+                        [style.background]="roundPick.color"
+                        [matMenuTriggerFor]="pickOriginMenu"
+                        type="button">
                         {{ roundPick.label }}
-                      </span>
+                      </button>
+                      <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
+                        <div class="pick-origin-menu-content" (click)="$event.stopPropagation()">
+                          <strong>{{ draftVm.draft.DisplayDraftKey }} · {{ roundPick.label }}</strong>
+                          <span>Original: {{ roundPick.originalOwner.name }}</span>
+                          @if (roundPick.isCurrentlyTraded) {
+                            <span class="traded-pick-label">Traded Pick</span>
+                          }
+                        </div>
+                      </mat-menu>
                     }
                   </div>
                 </div>
