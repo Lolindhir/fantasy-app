@@ -1,84 +1,93 @@
-.pick-list {
+.draft-board-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.draft-board {
   display: flex;
+  min-width: 100%;
   flex-direction: column;
-  gap: 10px;
-}
-
-.pick-row {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-  padding: 10px 12px;
-  border-left: 6px solid transparent;
-  border-radius: 14px;
-  background: #f8fafc;
-}
-
-.pick-token {
-  padding: 7px 8px;
-  border: none;
-  border-radius: 10px;
-  color: #1f2937;
-  font: inherit;
-  font-weight: 900;
-  text-align: center;
-  cursor: pointer;
-}
-
-.pick-owner-line {
-  display: flex;
-  min-width: 0;
-  align-items: center;
   gap: 8px;
 }
 
-.team-avatar {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
+.draft-board-row {
+  display: grid;
+  gap: 7px;
+}
+
+.draft-pick-tile {
+  position: relative;
+  display: flex;
+  min-height: 98px;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1f2937;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.draft-pick-tile:hover {
+  background: #f8fafc;
+}
+
+.tile-pick-label {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  color: rgba(31, 41, 55, 0.58);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.tile-open-owner-logo {
+  width: 44px;
+  height: 44px;
+  opacity: 0.72;
+  object-fit: contain;
+}
+
+.tile-player-picture {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.tile-position-chip {
+  position: absolute;
+  left: 7px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: #1f2937;
+  color: white;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.tile-owner-avatar {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid white;
   border-radius: 50%;
   object-fit: cover;
   background: #e5e7eb;
 }
 
-.team-avatar.tiny {
-  width: 16px;
-  height: 16px;
-  margin: 0 3px;
-  vertical-align: middle;
-}
-
-.pick-owner,
-.pick-result {
-  min-width: 0;
-  color: #1f2937;
-}
-
-.pick-owner strong,
-.pick-result strong,
-.pick-result span {
-  overflow: hidden;
-  display: block;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pick-owner span {
-  overflow: hidden;
-  display: block;
-  color: #6b7280;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .pick-info-menu-content {
   display: flex;
-  min-width: 210px;
-  max-width: 280px;
+  min-width: 220px;
+  max-width: 300px;
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
@@ -91,8 +100,81 @@
   font-weight: 900;
 }
 
-.picked-player {
+.pick-overall-label {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 0.74rem;
   font-weight: 900;
+}
+
+.picked-player-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picked-player-card:hover {
+  background: #eef2ff;
+}
+
+.picked-player-picture {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.picked-player-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.picked-player-main strong {
+  overflow: hidden;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picked-player-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.picked-player-position {
+  padding: 2px 5px;
+  border-radius: 7px;
+  background: #1f2937;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.picked-player-nfl-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }
 
 .open-pick-label,
@@ -135,11 +217,47 @@
 }
 
 @media (max-width: 700px) {
-  .pick-row {
-    grid-template-columns: 64px minmax(0, 1fr);
+  .draft-board {
+    gap: 6px;
   }
 
-  .pick-result {
-    grid-column: 2;
+  .draft-board-row {
+    gap: 6px;
+  }
+
+  .draft-pick-tile {
+    min-height: 82px;
+    padding: 16px 5px 7px;
+    border-radius: 11px;
+  }
+
+  .tile-pick-label {
+    top: 6px;
+    right: 6px;
+    font-size: 0.68rem;
+  }
+
+  .tile-open-owner-logo {
+    width: 38px;
+    height: 38px;
+  }
+
+  .tile-player-picture {
+    width: 40px;
+    height: 40px;
+  }
+
+  .tile-position-chip {
+    left: 5px;
+    bottom: 6px;
+    padding: 1px 5px;
+    font-size: 0.6rem;
+  }
+
+  .tile-owner-avatar {
+    right: 5px;
+    bottom: 5px;
+    width: 18px;
+    height: 18px;
   }
 }
