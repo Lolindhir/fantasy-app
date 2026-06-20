@@ -29,6 +29,22 @@ export class App implements OnInit {
     this.isScrolled = window.scrollY > 10;
   }
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.menuOpen) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const clickedBurger = target.closest('.floating-burger');
+    const clickedMenu = target.closest('.mobile-menu');
+
+    if (clickedBurger || clickedMenu) return;
+
+    this.menuOpen = false;
+    this.buildInfoDetailsOpen = false;
+  }
+
   currentPage = 'Overview';
 
   constructor(private router: Router) {
