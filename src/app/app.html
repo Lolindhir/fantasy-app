@@ -53,7 +53,7 @@
   <button
     class="floating-burger"
     [class.scrolled]="isScrolled"
-    (click)="menuOpen = !menuOpen"
+    (click)="toggleMobileMenu($event)"
   >
     ☰ 
     @if (!isScrolled) {
@@ -65,32 +65,32 @@
 
   <div class="mobile-menu" [class.open]="menuOpen">
 
-    <a routerLink="/" routerLinkActive="active" (click)="menuOpen = false" 
+    <a routerLink="/" routerLinkActive="active" (click)="closeMobileMenu()" 
       [routerLinkActiveOptions]="{ exact: true }">
       Overview
     </a>
 
-    <a routerLink="/teams" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/teams" routerLinkActive="active" (click)="closeMobileMenu()">
       Teams
     </a>
 
-    <a routerLink="/players" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/players" routerLinkActive="active" (click)="closeMobileMenu()">
       Players
     </a>
     
-    <a routerLink="/drafts" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/drafts" routerLinkActive="active" (click)="closeMobileMenu()">
       Drafts
     </a>
 
-    <a routerLink="/moves" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/moves" routerLinkActive="active" (click)="closeMobileMenu()">
       Moves
     </a>
 
-    <a routerLink="/trade" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/trade" routerLinkActive="active" (click)="closeMobileMenu()">
       Trade Simulator
     </a>
 
-    <a routerLink="/handbook" routerLinkActive="active" (click)="menuOpen = false">
+    <a routerLink="/handbook" routerLinkActive="active" (click)="closeMobileMenu()">
       Handbook
     </a>
 
