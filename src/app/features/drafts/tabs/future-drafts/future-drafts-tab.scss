@@ -1,0 +1,77 @@
+.draft-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.compact-draft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.compact-draft-card {
+  border-radius: 18px;
+}
+
+.compact-owner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.compact-owner-row {
+  display: grid;
+  grid-template-columns: 28px minmax(105px, 1fr) minmax(0, 1.35fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.team-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.compact-team-name {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-round-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.round-pill {
+  min-width: 28px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  color: #1f2937;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .compact-draft-grid {
+    grid-template-columns: 1fr;
+  }
+}
