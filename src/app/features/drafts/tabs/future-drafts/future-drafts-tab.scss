@@ -28,15 +28,19 @@
 
 .compact-owner-row {
   display: grid;
-  grid-template-columns: 28px minmax(105px, 1fr) minmax(0, 1.35fr);
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    "avatar team"
+    "picks picks";
   gap: 8px;
   align-items: center;
-  padding: 7px 8px;
+  padding: 9px 10px;
   border-radius: 12px;
   background: #f8fafc;
 }
 
 .team-avatar {
+  grid-area: avatar;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -45,19 +49,22 @@
 }
 
 .compact-team-name {
+  grid-area: team;
   overflow: hidden;
   color: #1f2937;
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .compact-round-list {
+  grid-area: picks;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 5px;
+  padding-top: 2px;
 }
 
 .round-pill {
