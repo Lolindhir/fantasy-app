@@ -144,6 +144,12 @@ frontendStructure:
         labels, salary display text, NameShort fallback and padded game history.
         It does not own FreeAgentMarket simulation across fantasy teams.
 
+    - path: src/app/core/services/data-api.service.ts
+      responsibility: >
+        App-wide Angular HTTP facade for generated JSON files and timestamps. It
+        owns HttpClient access to public/data read-model files and returns typed raw
+        data to DataService.
+
     - path: src/app/core/services/free-agent-market.service.ts
       responsibility: >
         App-wide Angular service for FreeAgentMarket enrichment and the
@@ -160,10 +166,11 @@ frontendStructure:
     - path: src/app/services/data-service.ts
       responsibility: >
         Current app-wide Angular data facade. It imports model declarations from
-        src/app/core/models, delegates RawPlayer-to-Player mapping to
-        src/app/core/mappers/player.mapper.ts, delegates FreeAgentMarket enrichment
-        to src/app/core/services/free-agent-market.service.ts, and still contains
-        HTTP loading, team/draft mapping and helper logic. Remaining service
+        src/app/core/models, loads generated JSON through
+        src/app/core/services/data-api.service.ts, delegates RawPlayer-to-Player
+        mapping to src/app/core/mappers/player.mapper.ts, delegates FreeAgentMarket
+        enrichment to src/app/core/services/free-agent-market.service.ts, and still
+        contains team/draft mapping plus helper logic. Remaining mapping/helper
         responsibilities are the next frontend refactor candidates.
 
   removedCompatibilityReExports:
@@ -296,9 +303,13 @@ dataFlow:
       Add completed pick results such as PlayerID, PlayerName, SleeperPickNo,
       SleeperPickedBy and Picked status to historical draft picks.
 
-  - from: public/data/League.json
+  - from: public/data/League.json, public/data/Players.json, public/data/Teams.json, public/data/Drafts.json
+    to: src/app/core/services/data-api.service.ts
+    purpose: Load generated raw JSON read models through Angular HttpClient.
+
+  - from: src/app/core/services/data-api.service.ts
     to: src/app/services/data-service.ts
-    purpose: Frontend League model.
+    purpose: Provide typed raw League, Player, NFL team, Draft and Timestamp data to the app data facade.
 
   - from: public/data/Drafts.json
     to: src/app/services/data-service.ts
@@ -326,13 +337,9 @@ dataFlow:
     to: src/app/core/services/free-agent-market.service.ts
     purpose: Enrich mapped Player objects with current and projected FreeAgentMarket metadata.
 
-  - from: public/data/Teams.json
-    to: src/app/services/data-service.ts
-    purpose: Frontend NFL team model.
-
   - from: public/data/Timestamps.json
-    to: src/app/services/data-service.ts
-    purpose: Display freshness of generated data.
+    to: src/app/core/services/data-api.service.ts
+    purpose: Load generated data freshness timestamps.
 
 knownFrontendDomainLogic:
   - path: src/app/core/services/free-agent-market.service.ts
