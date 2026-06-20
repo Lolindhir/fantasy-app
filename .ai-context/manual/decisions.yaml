@@ -261,28 +261,30 @@ decisions:
     title: Current Drafts use draft-specific view modes
     status: accepted
     context: >
-      Current-season drafts need multiple planning views: the existing round-based
+      Current-season drafts need multiple planning views: a compact draft-board
       overview, a team-owned pick view similar to Future Drafts but with concrete
       pick labels, and a simple ordered list/table. Different drafts may need
       different active views at the same time.
     decision: >
       Keep Current Drafts as a tab inside the Drafts feature, but let each draft
       card manage its own view mode: Overview, Teams or List. Use Overview as the
-      default view and preserve the existing round accordion there until the final
-      compact/Sleeper-like overview is designed. Teams and List derive their first
-      implementation from the existing round-based draft view model. Current picks
-      are clickable in every view, including open picks, and show a compact menu
-      with pick, owner, original owner and trade context.
+      default view and render it as a compact Sleeper-like draft board where rows
+      are rounds and columns are positions in the round. Overview tiles are square
+      and mobile-compact; open picks show the current owner's fantasy team logo,
+      while picked tiles show the selected player's image and position plus the
+      current owner's fantasy team logo as context. Teams and List derive their
+      first implementation from the existing draftVm.rounds. Current picks are
+      clickable in every view, including open picks, and show a compact menu with
+      pick, owner, original owner, selected-player and trade context.
     rationale: >
       Draft-specific view state matches how current drafts are reviewed and avoids
-      forcing all drafts into one global display mode. Keeping the first Teams and
-      List implementation derived from the existing draftVm.rounds avoids changing
-      generated contracts or central mapper behavior while the UI is still being
-      refined.
+      forcing all drafts into one global display mode. The compact board gives the
+      default Overview a scan-friendly draft-room layout without changing generated
+      contracts or source-of-truth derivation.
     consequences:
       positive:
         - Each current draft can be inspected in the most useful view independently.
         - Open and picked picks expose the same ownership and trade context.
-        - The Overview redesign can happen later without blocking Teams/List.
+        - Overview provides a dense mobile-friendly board for quick draft scanning.
       negative:
         - Current Teams/List grouping logic is temporarily component-local and should later move into the central Drafts view model.
