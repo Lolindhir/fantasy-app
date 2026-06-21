@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import type { RawDraft } from '../models/draft.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
@@ -70,7 +71,9 @@ export class DataApiService {
   }
 
   getPastDraftsRaw(path: string): Observable<RawDraft[]> {
-    return this.http.get<RawDraft[]>(this.normalizeDataPath(path));
+    return this.http.get<RawDraft[] | RawDraft>(this.normalizeDataPath(path)).pipe(
+      map(drafts => Array.isArray(drafts) ? drafts : [drafts])
+    );
   }
 
   getLeagueData(): Observable<LeagueDataLoadResult> {
