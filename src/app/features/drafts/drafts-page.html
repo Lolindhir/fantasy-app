@@ -1,24 +1,5 @@
 @if (vm$ | async; as vm) {
   <div class="drafts-page">
-    <!--
-    <section class="hero-card">
-      <div class="summary-grid">
-        <div class="summary-card">
-          <span class="summary-label">Drafts</span>
-          <strong>{{ vm.draftCount }}</strong>
-        </div>
-        <div class="summary-card">
-          <span class="summary-label">Traded</span>
-          <strong>{{ vm.tradedPickCount }}</strong>
-        </div>
-        <div class="summary-card">
-          <span class="summary-label">Picks</span>
-          <strong>{{ vm.pickCount }}</strong>
-        </div>
-      </div>
-    </section>
-    -->
-
     <div class="activity-tabs" aria-label="Draft sections">
       <button
         class="activity-tab"
@@ -34,12 +15,21 @@
         (click)="selectTab('future')">
         Future
       </button>
+      <button
+        class="activity-tab"
+        type="button"
+        [class.active]="activeTab === 'past'"
+        (click)="selectTab('past')">
+        Past
+      </button>
     </div>
 
     @if (activeTab === 'current') {
       <app-current-drafts-tab [drafts]="vm.currentSeasonDrafts" />
-    } @else {
+    } @else if (activeTab === 'future') {
       <app-future-drafts-tab [drafts]="vm.futureDrafts" />
+    } @else {
+      <app-past-drafts-tab [league]="vm.league" [teams]="vm.teams" [players]="vm.players" />
     }
   </div>
 }
