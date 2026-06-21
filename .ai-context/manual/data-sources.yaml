@@ -143,7 +143,6 @@ dataSources:
   draftHistory:
     path: public/data/past_seasons/Drafts/Drafts_<season>.json
     generator: public/requests/utils/league/DraftHistoryUtils.psm1
-    ownerEnrichment: public/requests/utils/league/DraftHistorySleeperPickOwnerUtils.psm1
     entryPoint: public/requests/RequestDrafts.ps1
     workflow: .github/workflows/update-drafts.yml
     category: generated-output
@@ -154,11 +153,11 @@ dataSources:
       They use the same draft/pick shape as Drafts.json but must not be used to
       enrich League.json team DraftPick references. Completed historical pick
       results and final current pick ownership are enriched from Sleeper draft
-      picks; transactions remain the ownership source for current/upcoming draft
-      assets, not the primary owner source for completed draft history.
-      RequestDrafts.ps1 refreshes the central PastSeasonsIndex.json manifest
-      after the history update; the index utility writes the manifest only when
-      the semantic resource listing changes.
+      picks in DraftHistoryUtils.psm1; transactions remain the ownership source
+      for current/upcoming draft assets, not the primary owner source for
+      completed draft history. RequestDrafts.ps1 refreshes the central
+      PastSeasonsIndex.json manifest after the history update; the index utility
+      writes the manifest only when the semantic resource listing changes.
     updateMode:
       normal: weekly scheduled RequestDrafts workflow
       manual: workflow_dispatch on the RequestDrafts workflow
