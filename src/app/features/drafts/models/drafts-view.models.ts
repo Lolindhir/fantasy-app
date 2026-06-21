@@ -12,6 +12,9 @@ export interface DraftPickViewModel {
   originalOwner: TeamDisplayViewModel;
   isCurrentlyTraded: boolean;
   roundColor: string;
+  isPicked: boolean;
+  selectedPlayerName?: string;
+  selectedPlayerPosition?: string;
   selectedPlayer?: Player;
 }
 
