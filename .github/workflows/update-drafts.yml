@@ -36,4 +36,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add public/data/**
           git diff --cached --quiet || git commit -m "Drafts Update"
-          git push origin HEAD:main
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
