@@ -72,7 +72,7 @@ shortContext:
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
-  public/requests/utils/league/DraftHistoryTradeRepairUtils.psm1: Post-Processing für historische Drafts; normalisiert Pick-Trade-Besitz aus historischen Transaktionen inklusive Sleeper-Startup-Picks, die als Rookie-Picks geliefert werden
+  public/requests/utils/league/DraftHistorySleeperPickOwnerUtils.psm1: Completed-Draft-Enrichment, das den finalen Pick-Besitzer aus Sleeper-Draft-Picks ableitet; Transactions bleiben für Current/Upcoming-Pick-Trades relevant
   src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle, zukünftige und historische Drafts; lädt Past Drafts über PastSeasonsIndex.json
