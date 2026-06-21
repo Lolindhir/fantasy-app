@@ -29,7 +29,27 @@
     } @else if (activeTab === 'future') {
       <app-future-drafts-tab [drafts]="vm.futureDrafts" />
     } @else {
-      <app-current-drafts-tab [drafts]="vm.pastDrafts" />
+      <section class="draft-section past-draft-section">
+        @if (vm.pastSeasons.length > 0) {
+          <mat-form-field appearance="outline" class="past-season-select">
+            <mat-label>Season</mat-label>
+            <mat-select [value]="vm.selectedPastSeason" (selectionChange)="selectPastSeason($event.value)">
+              @for (season of vm.pastSeasons; track season.Season) {
+                <mat-option [value]="season.Season">{{ season.Season }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <app-current-drafts-tab
+            [drafts]="vm.pastDrafts"
+            [sectionTitle]="'Past Drafts ' + vm.selectedPastSeason"
+            emptyMessage="No past drafts found for this season." />
+        } @else {
+          <mat-card class="empty-card">
+            <mat-card-content>No past draft seasons found.</mat-card-content>
+          </mat-card>
+        }
+      </section>
     }
   </div>
 }
