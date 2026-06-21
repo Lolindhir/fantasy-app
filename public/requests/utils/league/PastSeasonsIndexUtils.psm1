@@ -14,14 +14,24 @@ catch {
 # Past Seasons Index
 # ===========================================================================
 
+function ConvertTo-NormalizedFullPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $separator = [System.IO.Path]::DirectorySeparatorChar
+    $normalizedPath = $Path -replace '[\\/]', [string]$separator
+    return [System.IO.Path]::GetFullPath($normalizedPath)
+}
+
 function ConvertTo-PastSeasonIndexWebPath {
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
         [Parameter(Mandatory = $true)][hashtable]$Config
     )
 
-    $dataDir = [System.IO.Path]::GetFullPath([string]$Config.DataDir)
-    $fullPath = [System.IO.Path]::GetFullPath($FilePath)
+    $dataDir = ConvertTo-NormalizedFullPath -Path ([string]$Config.DataDir)
+    $fullPath = ConvertTo-NormalizedFullPath -Path $FilePath
 
     if (-not $dataDir.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
         $dataDir = "$dataDir$([System.IO.Path]::DirectorySeparatorChar)"
