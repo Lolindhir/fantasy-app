@@ -28,4 +28,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add public/data/PastSeasonsIndex.json
           git diff --cached --quiet || git commit -m "Past Seasons Index Update"
-          git push origin HEAD:main
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
