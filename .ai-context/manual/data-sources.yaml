@@ -148,9 +148,10 @@ dataSources:
       Generated completed draft history by season. Historical draft files are
       refreshed as part of the weekly/manual RequestDrafts.ps1 full draft update.
       They use the same draft/pick shape as Drafts.json but must not be used to
-      enrich League.json team DraftPick references. When the generated past-season
-      files change in the working tree, RequestDrafts.ps1 refreshes the central
-      PastSeasonsIndex.json manifest.
+      enrich League.json team DraftPick references. RequestDrafts.ps1 refreshes
+      the central PastSeasonsIndex.json manifest after the history update; the
+      index utility writes the manifest only when the semantic resource listing
+      changes.
     updateMode:
       normal: weekly scheduled RequestDrafts workflow
       manual: workflow_dispatch on the RequestDrafts workflow
@@ -180,7 +181,7 @@ dataSources:
       - Standings
       - Teams
     updateMode:
-      automatic: Requested from scripts after detected past-season file changes.
+      automatic: Requested by request scripts after potential past-season file updates; written only when the semantic resource manifest changes.
       manual: workflow_dispatch on the Update Past Seasons Index workflow.
     timestamped: false
     backup: false
