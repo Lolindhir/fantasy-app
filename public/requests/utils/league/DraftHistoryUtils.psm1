@@ -491,6 +491,7 @@ function Get-AppliedDraftPickResults {
     foreach ($sleeperPick in $sleeperPicks) {
         $pickNo = Get-DraftObjectProperty -object $sleeperPick -propertyName "pick_no" -defaultValue $null
         $playerID = Get-DraftObjectProperty -object $sleeperPick -propertyName "player_id" -defaultValue $null
+        $pickOwnerRosterID = Get-DraftObjectProperty -object $sleeperPick -propertyName "roster_id" -defaultValue $null
         if ($null -eq $pickNo -or [string]::IsNullOrWhiteSpace([string]$pickNo)) { continue }
 
         $overallPick = [int]$pickNo
@@ -502,6 +503,17 @@ function Get-AppliedDraftPickResults {
         $targetPick = $pickByOverall[$overallPick]
         $targetPick.SleeperPickNo = $overallPick
         $targetPick.SleeperPickedBy = [string](Get-DraftObjectProperty -object $sleeperPick -propertyName "picked_by" -defaultValue $null)
+
+        if ($null -ne $pickOwnerRosterID -and -not [string]::IsNullOrWhiteSpace([string]$pickOwnerRosterID)) {
+            $targetPick.CurrentOwnerRosterID = [string]$pickOwnerRosterID
+            $isTraded = ([string]$targetPick.OriginalOwnerRosterID -ne [string]$targetPick.CurrentOwnerRosterID)
+            $targetPick.WasTraded = $isTraded
+            $targetPick.IsCurrentlyTraded = $isTraded
+
+            if ($isTraded -and [string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) {
+                $targetPick.TradeSource = "SleeperDraftPick"
+            }
+        }
 
         if ($null -ne $playerID -and -not [string]::IsNullOrWhiteSpace([string]$playerID)) {
             $targetPick.PlayerID = [string]$playerID
