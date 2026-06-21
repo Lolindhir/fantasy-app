@@ -77,7 +77,7 @@ function Get-PastSeasonResourceFiles {
                     ResourceKey = $resourceKey
                     FilePath = $_.FullName
                     Path = ConvertTo-PastSeasonIndexWebPath -FilePath $_.FullName -Config $Config
-                    UpdatedAt = $_.LastWriteTimeUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                    ContentHash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash
                 }
             }
     )
@@ -116,7 +116,8 @@ function New-PastSeasonsIndex {
             $resources[$resourceKey] = [PSCustomObject][ordered]@{
                 Path = ConvertTo-PastSeasonIndexWebPath -FilePath $expectedPath -Config $Config
                 Exists = $null -ne $existingFile
-                UpdatedAt = if ($existingFile) { $existingFile.UpdatedAt } else { $null }
+                ContentHash = if ($existingFile) { $existingFile.ContentHash } else { $null }
+                UpdatedAt = $null
             }
         }
 
@@ -129,6 +130,61 @@ function New-PastSeasonsIndex {
     return [PSCustomObject][ordered]@{
         GeneratedAt = $null
         Seasons = @($seasonEntries)
+    }
+}
+
+function Get-PastSeasonsIndexResourceEntry {
+    param(
+        [AllowNull()]$Index,
+        [Parameter(Mandatory = $true)][string]$Season,
+        [Parameter(Mandatory = $true)][string]$ResourceKey
+    )
+
+    if ($null -eq $Index -or $null -eq $Index.Seasons) { return $null }
+
+    $seasonEntry = @($Index.Seasons) |
+        Where-Object { [string]$_.Season -eq $Season } |
+        Select-Object -First 1
+
+    if ($null -eq $seasonEntry -or $null -eq $seasonEntry.Resources) { return $null }
+
+    if ($seasonEntry.Resources.PSObject.Properties.Name -notcontains $ResourceKey) { return $null }
+
+    return $seasonEntry.Resources.$ResourceKey
+}
+
+function Set-PastSeasonsIndexStableMetadata {
+    param(
+        [Parameter(Mandatory = $true)]$Index,
+        [AllowNull()]$OldIndex
+    )
+
+    $now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+    foreach ($seasonEntry in @($Index.Seasons)) {
+        foreach ($resourceProperty in $seasonEntry.Resources.PSObject.Properties) {
+            $resourceKey = [string]$resourceProperty.Name
+            $resource = $resourceProperty.Value
+
+            if (-not $resource.Exists) {
+                $resource.UpdatedAt = $null
+                continue
+            }
+
+            $oldResource = Get-PastSeasonsIndexResourceEntry `
+                -Index $OldIndex `
+                -Season ([string]$seasonEntry.Season) `
+                -ResourceKey $resourceKey
+
+            if ($oldResource -and
+                $oldResource.ContentHash -eq $resource.ContentHash -and
+                -not [string]::IsNullOrWhiteSpace([string]$oldResource.UpdatedAt)) {
+                $resource.UpdatedAt = $oldResource.UpdatedAt
+            }
+            else {
+                $resource.UpdatedAt = $now
+            }
+        }
     }
 }
 
@@ -159,6 +215,8 @@ function Save-PastSeasonsIndex {
             $oldIndex = $raw | ConvertFrom-Json
         }
     }
+
+    Set-PastSeasonsIndexStableMetadata -Index $Index -OldIndex $oldIndex
 
     $oldComparable = ConvertTo-PastSeasonsIndexComparableJson -Index $oldIndex
     $newComparable = ConvertTo-PastSeasonsIndexComparableJson -Index $Index
