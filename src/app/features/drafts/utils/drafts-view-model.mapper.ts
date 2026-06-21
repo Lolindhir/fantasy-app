@@ -14,13 +14,7 @@ export function createDraftsViewModel(
   teams: FantasyTeam[],
   players: Player[] = []
 ): DraftsViewModel {
-  const teamByRosterId = createTeamDisplayMap(teams);
-  const playerById = createPlayerMap(players);
-  const maxRound = getMaxRound(drafts);
-
-  const draftViewModels = [...drafts]
-    .sort(compareDraftsBySeasonAndNumber)
-    .map(draft => createDraftViewModel(draft, teamByRosterId, playerById, maxRound));
+  const draftViewModels = createDraftViewModels(drafts, teams, players);
 
   return {
     currentSeason: league.Season,
@@ -31,6 +25,20 @@ export function createDraftsViewModel(
     pickCount: draftViewModels.reduce((sum, draft) => sum + draft.pickCount, 0),
     pickedCount: draftViewModels.reduce((sum, draft) => sum + draft.pickedCount, 0)
   };
+}
+
+export function createDraftViewModels(
+  drafts: RawDraft[],
+  teams: FantasyTeam[],
+  players: Player[] = []
+): DraftViewModel[] {
+  const teamByRosterId = createTeamDisplayMap(teams);
+  const playerById = createPlayerMap(players);
+  const maxRound = getMaxRound(drafts);
+
+  return [...drafts]
+    .sort(compareDraftsBySeasonAndNumber)
+    .map(draft => createDraftViewModel(draft, teamByRosterId, playerById, maxRound));
 }
 
 function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayViewModel> {
@@ -73,7 +81,7 @@ function createDraftViewModel(
     .sort(comparePicksByDraftOrder)
     .map(pick => createPickViewModel(pick, teamByRosterId, playerById, maxRound));
 
-  const pickedCount = picks.filter(item => item.pick.Status === 'Picked' || !!item.pick.PlayerName).length;
+  const pickedCount = picks.filter(item => item.isPicked).length;
   const rawStatus = draft.Status || draft.SleeperStatus || 'Unknown';
 
   return {
@@ -104,13 +112,19 @@ function createPickViewModel(
   playerById: Map<string, Player>,
   maxRound: number
 ): DraftPickViewModel {
+  const selectedPlayer = pick.PlayerID ? playerById.get(pick.PlayerID) : undefined;
+  const selectedPlayerName = selectedPlayer?.NameShort || selectedPlayer?.Name || pick.PlayerName || undefined;
+
   return {
     pick,
     currentOwner: getTeamDisplay(teamByRosterId, pick.CurrentOwnerRosterID),
     originalOwner: getTeamDisplay(teamByRosterId, pick.OriginalOwnerRosterID),
     isCurrentlyTraded: pick.IsCurrentlyTraded || pick.CurrentOwnerRosterID !== pick.OriginalOwnerRosterID,
     roundColor: getRoundColor(pick.Round, maxRound),
-    selectedPlayer: pick.PlayerID ? playerById.get(pick.PlayerID) : undefined
+    isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!selectedPlayer,
+    selectedPlayerName,
+    selectedPlayerPosition: selectedPlayer?.Position,
+    selectedPlayer
   };
 }
 
