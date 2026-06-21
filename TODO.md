@@ -33,6 +33,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Moves später als chronologische Activity-Timeline darstellen.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
+- [ ] Past Drafts im Frontend auf Basis von `PastSeasonsIndex.json` ergänzen.
+  - Kontext: `PastSeasonsIndex.json` soll verfügbare historische Season-Ressourcen wie Drafts, Transactions, Players, Games, Schedule, Standings und Teams auffindbar machen.
+  - Ziel: In `/drafts` einen dritten Reiter `Past` ergänzen, dort Seasons aus dem Index per Dropdown wählen und die historische Draft-Datei der ausgewählten Season laden.
+  - Ziel: Past-Draft-Cards analog Current Drafts mit Overview, Teams und List darstellen.
+  - Hinweis: Historische Draft-Dateien bleiben getrennt von `Drafts.json` und dürfen nicht als aktuelle Team-Assets interpretiert werden.
+
 - [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente prüfen und ggf. auslagern.
   - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und im Drafts-Feature unter `src/app/features/drafts/**` angezeigt.
   - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
