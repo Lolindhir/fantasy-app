@@ -11,11 +11,25 @@ catch {
 }
 
 # ===========================================================================
+# Funktionen
+# ===========================================================================
+
+function Invoke-PastSeasonsIndexRefresh {
+    Write-Host "Refreshing PastSeasonsIndex.json..." -ForegroundColor Yellow
+    & "$PSScriptRoot\RequestPastSeasonsIndex.ps1"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "RequestPastSeasonsIndex.ps1 failed with exit code $LASTEXITCODE."
+    }
+}
+
+# ===========================================================================
 # Logik
 # ===========================================================================
 
 #--- Transaktionen für alle Saisons aktualisieren ---
 $updatedTransactions = Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
+Invoke-PastSeasonsIndexRefresh
 
 if ($updatedTransactions) {
     Write-Host "Transactions updated." -ForegroundColor Green
