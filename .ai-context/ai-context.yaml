@@ -71,40 +71,11 @@ shortContext:
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
-  public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen und Schreiben des Index-Manifests
+  public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
+  src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle, zukünftige und historische Drafts; lädt Past Drafts über PastSeasonsIndex.json
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete Draft-Cards mit kompaktem Draft-Board-Overview, Teams- und List-Sicht sowie Pick-Popovers für Current und Past Drafts
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen und Herkunfts-Popovers
   src/app/features/league-activity/league-activity.ts: Technische Moves-Seite für spätere Transaktionen und Roster Moves
   src/app/shared/**: Wiederverwendbare Angular-Bausteine
-  src/app/shared/utils/player-sort.util.ts: Wiederverwendbare Player-Sortierung für Angular-Player-Listen
-  src/app/shared/utils/trade-calculator.util.ts: Wiederverwendbare Salary- und Trade-Roster-Berechnungen
-  src/app/core/models/draft.models.ts: Extrahierte Angular-Draft-Modelle für RawDraft, DraftPick und DraftSettings
-  src/app/core/models/league.models.ts: Extrahierte Angular-League-, Standings- und FantasyTeam-Modelle
-  src/app/core/models/player.models.ts: Extrahierte Angular-Player-, NFLTeam-, Stats- und FreeAgentMarket-Modelle
-  src/app/core/models/fantasy.models.ts: Zentraler Angular-Model-Importpfad für Draft-, League- und Player-Modelle aus core/models
-  src/app/core/mappers/league.mapper.ts: Reine RawLeague-/RawFantasyTeam-/DraftPick-zu-League/FantasyTeam-Transformation inklusive Team-Roster-Zuweisung
-  src/app/core/mappers/player.mapper.ts: Reine RawPlayer-zu-Player-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping
-  src/app/core/services/data.service.ts: Aktuelle Angular-Datenfassade; lädt Current/Future-Daten und Past Drafts über DataApiService
-  src/app/core/services/data-api.service.ts: App-weite Angular-HTTP-Fassade für generierte JSON-Dateien, Timestamps, PastSeasonsIndex.json und historische Draft-Dateien
-  src/app/core/services/free-agent-market.service.ts: FreeAgentMarket- und RuleBasedAutoCut-Enrichment über Player, FantasyTeams und League-Kontext
-  src/app/core/**: Zielbereich für app-weite Models, Services und Mapper
-  TODO.md: Menschenlesbare offene Projektaufgaben auf Deutsch
-
-sourceOfTruthPriority:
-  - .ai-context/manual decisions
-  - public/data/Metadata.json for league-specific rules
-  - public/requests/utils/ConfigUtils.psm1 for technical generation configuration
-  - public/data/*.json for current generated app data shape
-  - src/app/** for frontend display behavior
-  - TODO.md for mutable open project tasks
-
-aiGuidance:
-  summary:
-    - Ground application-specific answers in the current repository state.
-    - Respect source-of-truth ownership for metadata, generation config, generated data and Angular display.
-    - Keep mutable project todos in TODO.md and durable decisions in .ai-context/manual.
-    - Use safe write strategies for large, move-heavy or structural changes.
-    - Always post a visible post-commit check after committing.
-  detailedRules: .ai-context/manual/ai-guidance.yaml
