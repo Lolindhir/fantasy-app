@@ -18,8 +18,8 @@ function Invoke-PastSeasonsIndexRefresh {
     Write-Host "Refreshing PastSeasonsIndex.json..." -ForegroundColor Yellow
     & "$PSScriptRoot\RequestPastSeasonsIndex.ps1"
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "RequestPastSeasonsIndex.ps1 failed with exit code $LASTEXITCODE."
+    if (-not $?) {
+        throw "RequestPastSeasonsIndex.ps1 failed."
     }
 }
 
