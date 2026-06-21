@@ -27,13 +27,74 @@ function Get-Config {
     $StandingsFile = Join-Path $DataDir "Standings.json"
     $ManualTransactionsFile = Join-Path $DataDir "Transactions_Manual.json"
     $TransactionsFile = Join-Path $DataDir "Transactions.json"
-    $TransactionsArchiveDir = Join-Path $DataDir "past_seasons\Transactions"
+
+    $PastSeasonsDir = Join-Path $DataDir "past_seasons"
+    $PastSeasonsIndexFile = Join-Path $DataDir "PastSeasonsIndex.json"
+
+    $TransactionsArchiveDir = Join-Path $PastSeasonsDir "Transactions"
     $TransactionsFileHistoricalPrefix = Join-Path $TransactionsArchiveDir "Transactions_"
     $TransactionsFileHistoricalSuffix = ".json"
     $DraftsFile = Join-Path $DataDir "Drafts.json"
-    $DraftsArchiveDir = Join-Path $DataDir "past_seasons\Drafts"
+    $DraftsArchiveDir = Join-Path $PastSeasonsDir "Drafts"
     $DraftsFileHistoricalPrefix = Join-Path $DraftsArchiveDir "Drafts_"
     $DraftsFileHistoricalSuffix = ".json"
+
+    $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
+    $PastSeasonPlayersFileHistoricalSuffix = ".json"
+    $PastSeasonGamesFileHistoricalPrefix = Join-Path $PastSeasonsDir "Games_"
+    $PastSeasonGamesFileHistoricalSuffix = ".json"
+    $PastSeasonScheduleFileHistoricalPrefix = Join-Path $PastSeasonsDir "Schedule_"
+    $PastSeasonScheduleFileHistoricalSuffix = ".json"
+    $PastSeasonStandingsFileHistoricalPrefix = Join-Path $PastSeasonsDir "Standings_"
+    $PastSeasonStandingsFileHistoricalSuffix = ".json"
+    $PastSeasonTeamsFileHistoricalPrefix = Join-Path $PastSeasonsDir "Teams_"
+    $PastSeasonTeamsFileHistoricalSuffix = ".json"
+
+    $PastSeasonResources = @(
+        @{
+            Key = "Drafts"
+            Directory = $DraftsArchiveDir
+            Prefix = "Drafts_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Transactions"
+            Directory = $TransactionsArchiveDir
+            Prefix = "Transactions_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Players"
+            Directory = $PastSeasonsDir
+            Prefix = "Players_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Games"
+            Directory = $PastSeasonsDir
+            Prefix = "Games_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Schedule"
+            Directory = $PastSeasonsDir
+            Prefix = "Schedule_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Standings"
+            Directory = $PastSeasonsDir
+            Prefix = "Standings_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Teams"
+            Directory = $PastSeasonsDir
+            Prefix = "Teams_"
+            Suffix = ".json"
+        }
+    )
+
     $TimestampsFile = Join-Path $DataDir "Timestamps.json"
     $ErrorsFile = Join-Path $DataDir "Errors.json"
 
@@ -71,7 +132,7 @@ function Get-Config {
         WeightGame                       = $WeightGame
 
         DataDir                          = $DataDir
-        BackupDir                        = $BackupDir        
+        BackupDir                        = $BackupDir
         LeagueFile                       = $LeagueFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
@@ -93,6 +154,20 @@ function Get-Config {
         DraftsArchiveDir                 = $DraftsArchiveDir
         DraftsFileHistoricalPrefix       = $DraftsFileHistoricalPrefix
         DraftsFileHistoricalSuffix       = $DraftsFileHistoricalSuffix
+
+        PastSeasonsDir                              = $PastSeasonsDir
+        PastSeasonsIndexFile                        = $PastSeasonsIndexFile
+        PastSeasonPlayersFileHistoricalPrefix       = $PastSeasonPlayersFileHistoricalPrefix
+        PastSeasonPlayersFileHistoricalSuffix       = $PastSeasonPlayersFileHistoricalSuffix
+        PastSeasonGamesFileHistoricalPrefix         = $PastSeasonGamesFileHistoricalPrefix
+        PastSeasonGamesFileHistoricalSuffix         = $PastSeasonGamesFileHistoricalSuffix
+        PastSeasonScheduleFileHistoricalPrefix      = $PastSeasonScheduleFileHistoricalPrefix
+        PastSeasonScheduleFileHistoricalSuffix      = $PastSeasonScheduleFileHistoricalSuffix
+        PastSeasonStandingsFileHistoricalPrefix     = $PastSeasonStandingsFileHistoricalPrefix
+        PastSeasonStandingsFileHistoricalSuffix     = $PastSeasonStandingsFileHistoricalSuffix
+        PastSeasonTeamsFileHistoricalPrefix         = $PastSeasonTeamsFileHistoricalPrefix
+        PastSeasonTeamsFileHistoricalSuffix         = $PastSeasonTeamsFileHistoricalSuffix
+        PastSeasonResources                         = $PastSeasonResources
 
         TimestampsFile                   = $TimestampsFile
         ErrorsFile                       = $ErrorsFile
