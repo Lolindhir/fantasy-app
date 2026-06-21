@@ -70,7 +70,7 @@ export class DataApiService {
   }
 
   getPastDraftsRaw(path: string): Observable<RawDraft[]> {
-    return this.http.get<RawDraft[]>(path);
+    return this.http.get<RawDraft[]>(this.normalizeDataPath(path));
   }
 
   getLeagueData(): Observable<LeagueDataLoadResult> {
@@ -80,5 +80,21 @@ export class DataApiService {
       nflTeamsRaw: this.getNflTeamsRaw(),
       draftsRaw: this.getDraftsRaw()
     });
+  }
+
+  private normalizeDataPath(path: string): string {
+    const normalizedPath = path.replace(/\\/g, '/');
+    const publicDataMarker = '/public/data/';
+    const publicDataIndex = normalizedPath.indexOf(publicDataMarker);
+
+    if (publicDataIndex >= 0) {
+      return `data/${normalizedPath.slice(publicDataIndex + publicDataMarker.length)}`;
+    }
+
+    if (normalizedPath.startsWith('public/data/')) {
+      return normalizedPath.slice('public/'.length);
+    }
+
+    return normalizedPath.startsWith('/') ? normalizedPath.slice(1) : normalizedPath;
   }
 }
