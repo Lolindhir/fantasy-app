@@ -13,6 +13,32 @@ export interface LeagueDataLoadResult {
   draftsRaw: RawDraft[];
 }
 
+export interface PastSeasonResourceIndex {
+  Path: string | null;
+  Exists: boolean;
+  ContentHash?: string | null;
+  UpdatedAt?: string | null;
+}
+
+export interface PastSeasonIndexEntry {
+  Season: string;
+  Resources: {
+    [resourceKey: string]: PastSeasonResourceIndex | undefined;
+    Drafts?: PastSeasonResourceIndex;
+    Transactions?: PastSeasonResourceIndex;
+    Players?: PastSeasonResourceIndex;
+    Games?: PastSeasonResourceIndex;
+    Schedule?: PastSeasonResourceIndex;
+    Standings?: PastSeasonResourceIndex;
+    Teams?: PastSeasonResourceIndex;
+  };
+}
+
+export interface PastSeasonsIndex {
+  GeneratedAt: string | null;
+  Seasons: PastSeasonIndexEntry[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -37,6 +63,14 @@ export class DataApiService {
 
   getDraftsRaw(): Observable<RawDraft[]> {
     return this.http.get<RawDraft[]>('data/Drafts.json');
+  }
+
+  getPastSeasonsIndex(): Observable<PastSeasonsIndex> {
+    return this.http.get<PastSeasonsIndex>('data/PastSeasonsIndex.json');
+  }
+
+  getPastDraftsRaw(path: string): Observable<RawDraft[]> {
+    return this.http.get<RawDraft[]>(path);
   }
 
   getLeagueData(): Observable<LeagueDataLoadResult> {
