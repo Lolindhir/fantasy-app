@@ -91,6 +91,13 @@ export class DataApiService {
       return `data/${normalizedPath.slice(publicDataIndex + publicDataMarker.length)}`;
     }
 
+    const dataMarker = '/data/';
+    const dataIndex = normalizedPath.lastIndexOf(dataMarker);
+
+    if (dataIndex >= 0) {
+      return `data/${normalizedPath.slice(dataIndex + dataMarker.length)}`;
+    }
+
     if (normalizedPath.startsWith('public/data/')) {
       return normalizedPath.slice('public/'.length);
     }
