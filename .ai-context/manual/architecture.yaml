@@ -101,19 +101,23 @@ frontendStructure:
 
     - path: src/app/features/drafts/drafts-page.ts
       responsibility: >
-        Routed Drafts page aggregator for current-season and future draft-pick
-        presentation. It consumes generated draft data through DataService via the
-        Drafts view-model mapper and delegates rendering to Current Drafts and
-        Future Drafts tab components.
+        Routed Drafts page aggregator for current-season, future and past draft
+        presentation. It consumes current/future draft data from Drafts.json and
+        discovers historical draft seasons through PastSeasonsIndex.json before
+        loading the selected season's historical Drafts resource. It maps all
+        loaded draft lists through the Drafts view-model mapper and delegates
+        current/past rendering to reusable Current Drafts card views while Future
+        Drafts keeps its compact team-owned summary view.
 
     - path: src/app/features/drafts/tabs/current-drafts/**
       responsibility: >
-        Current-season draft presentation. Each draft card owns its active view
-        mode and can render Overview, Teams or List. Overview renders a compact
-        draft-board grid where rows are rounds and columns are positions in the
-        round. Teams groups concrete picks by current owner. List renders picks in
-        draft order with compact mobile and more detailed desktop layout. Pick
-        tiles/chips open compact popovers for both open and picked selections.
+        Reusable current-style draft-card presentation used for current-season and
+        past completed drafts. Each draft card owns its active view mode and can
+        render Overview, Teams or List. Overview renders a compact draft-board grid
+        where rows are rounds and columns are positions in the round. Teams groups
+        concrete picks by current owner. List renders picks in draft order with
+        compact mobile and more detailed desktop layout. Pick tiles/chips open
+        compact popovers for both open and picked selections.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
@@ -170,8 +174,9 @@ frontendStructure:
     - path: src/app/core/services/data-api.service.ts
       responsibility: >
         App-wide Angular HTTP facade for generated JSON files and timestamps. It
-        owns HttpClient access to public/data read-model files and returns typed
-        raw data to DataService.
+        owns HttpClient access to public/data read-model files, PastSeasonsIndex.json
+        and selected historical Drafts resources, and returns typed raw data to
+        DataService.
 
     - path: src/app/core/services/data.service.ts
       responsibility: >
@@ -241,13 +246,17 @@ dataFlow:
       Run the weekly/manual completed draft history refresh. Historical draft
       files must not be used to enrich League.json team DraftPicks.
 
-  - from: public/data/League.json, public/data/Players.json, public/data/Teams.json, public/data/Drafts.json
+  - from: public/data/League.json, public/data/Players.json, public/data/Teams.json, public/data/Drafts.json, public/data/PastSeasonsIndex.json
     to: src/app/core/services/data-api.service.ts
-    purpose: Load generated raw JSON read models through Angular HttpClient.
+    purpose: Load generated raw JSON read models and the historical-season navigation manifest through Angular HttpClient.
+
+  - from: public/data/past_seasons/Drafts/Drafts_<season>.json
+    to: src/app/core/services/data-api.service.ts
+    purpose: Load the selected historical Drafts resource when the Past Drafts tab selects a season from PastSeasonsIndex.json.
 
   - from: src/app/core/services/data-api.service.ts
     to: src/app/core/services/data.service.ts
-    purpose: Provide typed raw League, Player, NFL team, Draft and Timestamp data to the app data facade.
+    purpose: Provide typed raw League, Player, NFL team, current/future Draft, PastSeasonsIndex and selected historical Draft data to the app data facade.
 
   - from: public/data/Drafts.json
     to: src/app/core/mappers/league.mapper.ts
@@ -257,8 +266,9 @@ dataFlow:
     to: src/app/features/drafts/drafts-page.ts
     purpose: >
       Provide DraftsPageComponent with generated current/upcoming/live draft data,
-      player data and fantasy teams for Current/Future draft tabs, round groups,
-      pick ordering, selected-player display and current/original owner display.
+      PastSeasonsIndex.json, selected historical draft data, player data and
+      fantasy teams for Current/Future/Past draft tabs, round groups, pick ordering,
+      selected-player display and current/original owner display.
 
   - from: public/data/Transactions.json
     to: src/app/features/league-activity/league-activity.ts
@@ -325,13 +335,13 @@ knownFrontendDomainLogic:
       pipe or service because draft picks are now shown in more than one component.
 
   - path: src/app/features/drafts/**
-    topic: Draft pick display, round chip colors and current-draft view grouping
+    topic: Draft pick display, round chip colors and current/past draft view grouping
     note: >
       The Drafts feature builds component-level view models from DataService
-      draft/team/player data, groups picks for current and future draft views,
+      draft/team/player data, groups picks for current, future and past draft views,
       displays current owner plus original owner/trade context and duplicates the
-      HSL round color calculation used by Overview. Current Drafts Overview renders
-      a compact square-tile draft board from draftVm.rounds; Teams/List still
+      HSL round color calculation used by Overview. Current and Past Drafts Overview
+      render compact square-tile draft boards from draftVm.rounds; Teams/List still
       derive grouping from draftVm.rounds and should later move into the central
       Drafts view model.
 
