@@ -25,6 +25,8 @@ type CurrentDraftView = 'overview' | 'teams' | 'list';
 })
 export class CurrentDraftsTabComponent {
   @Input({ required: true }) drafts: DraftViewModel[] = [];
+  @Input() sectionTitle = 'Current Season Drafts';
+  @Input() emptyMessage = 'No current season drafts found.';
 
   activeViewByDraftKey: { [draftKey: string]: CurrentDraftView } = {};
 
