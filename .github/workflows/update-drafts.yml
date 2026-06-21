@@ -19,7 +19,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,4 +35,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add public/data/**
           git diff --cached --quiet || git commit -m "Drafts Update"
-          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+          git push origin HEAD:${{ github.ref_name }}
