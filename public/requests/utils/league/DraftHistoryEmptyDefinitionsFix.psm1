@@ -91,6 +91,47 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
 }
 
+function ConvertTo-DraftHistoryNumericOwnerIdSafe {
+    param(
+        [AllowNull()]$value,
+        [ref]$changed
+    )
+
+    if ($null -eq $value) { return $value }
+    if ([string]::IsNullOrWhiteSpace([string]$value)) { return $value }
+
+    $numericValue = [int]$value
+
+    if (-not ($value -is [int] -or $value -is [long])) {
+        $changed.Value = $true
+    }
+
+    return $numericValue
+}
+
+function Normalize-DraftHistoryOwnerIdsSafe {
+    param([Parameter(Mandatory = $true)][array]$drafts)
+
+    $changed = $false
+
+    foreach ($draft in $drafts) {
+        foreach ($pick in (ConvertTo-DraftSafeArray -value $draft.Picks)) {
+            $pick.OriginalOwnerRosterID = ConvertTo-DraftHistoryNumericOwnerIdSafe -value $pick.OriginalOwnerRosterID -changed ([ref]$changed)
+            $pick.CurrentOwnerRosterID = ConvertTo-DraftHistoryNumericOwnerIdSafe -value $pick.CurrentOwnerRosterID -changed ([ref]$changed)
+
+            foreach ($tradeEntry in (ConvertTo-DraftSafeArray -value $pick.TradeHistory)) {
+                $tradeEntry.PreviousOwnerRosterID = ConvertTo-DraftHistoryNumericOwnerIdSafe -value $tradeEntry.PreviousOwnerRosterID -changed ([ref]$changed)
+                $tradeEntry.NewOwnerRosterID = ConvertTo-DraftHistoryNumericOwnerIdSafe -value $tradeEntry.NewOwnerRosterID -changed ([ref]$changed)
+            }
+        }
+    }
+
+    return [PSCustomObject][ordered]@{
+        Drafts  = $drafts
+        Changed = $changed
+    }
+}
+
 function Update-DraftsHistoricalSeasonsSafe {
     param(
         [string]$leagueID = (Get-Config).LeagueID,
@@ -121,7 +162,8 @@ function Update-DraftsHistoricalSeasonsSafe {
 
     foreach ($season in ($draftsBySeason.Keys | Sort-Object { [int]$_ })) {
         $seasonDrafts = @($draftsBySeason[$season] | Sort-Object DraftNo, DraftKey)
-        Save-DraftsHistoricalSeason -season $season -drafts $seasonDrafts -Force:$ForceHistory
+        $normalization = Normalize-DraftHistoryOwnerIdsSafe -drafts $seasonDrafts
+        Save-DraftsHistoricalSeason -season $season -drafts @($normalization.Drafts) -Force:($ForceHistory -or $normalization.Changed)
     }
 
     Write-Host "Completed draft history update finished." -ForegroundColor DarkCyan
