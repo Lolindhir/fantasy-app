@@ -1,0 +1,473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StonedLack Podcast Extraction Schema",
+  "type": "object",
+  "required": [
+    "metadata",
+    "artifacts",
+    "entities",
+    "takes"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "episode_id",
+        "source_name",
+        "created_date",
+        "language"
+      ],
+      "properties": {
+        "episode_id": {
+          "type": "string",
+          "description": "Stable ID, e.g. sl_0571"
+        },
+        "episode_number": {
+          "type": [
+            "integer",
+            "string",
+            "null"
+          ]
+        },
+        "episode_title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_name": {
+          "type": "string",
+          "default": "StonedLack"
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "youtube_transcript",
+            "manual_transcript",
+            "podcast_transcript",
+            "other"
+          ]
+        },
+        "published_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "processed_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "language": {
+          "type": "string"
+        },
+        "primary_topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "raw_transcript_path",
+        "markdown_note_path",
+        "json_data_path"
+      ],
+      "properties": {
+        "raw_transcript_path": {
+          "type": "string"
+        },
+        "markdown_note_path": {
+          "type": "string"
+        },
+        "json_data_path": {
+          "type": "string"
+        },
+        "raw_transcript_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_transcript_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repo_root_relative": {
+          "type": "boolean",
+          "description": "True if paths are relative to repo root."
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entity_id",
+          "canonical_name",
+          "entity_type",
+          "entity_confidence"
+        ],
+        "properties": {
+          "entity_id": {
+            "type": "string"
+          },
+          "canonical_name": {
+            "type": "string"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "player",
+              "team",
+              "coach",
+              "league_format",
+              "strategy",
+              "concept",
+              "source",
+              "unknown"
+            ]
+          },
+          "position": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "team": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "college": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transcript_mentions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verification_status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "partially_verified",
+              "unverified",
+              "not_applicable"
+            ]
+          },
+          "verification_sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "accessed_at": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "entity_confidence": {
+            "type": "string",
+            "enum": [
+              "very_high",
+              "high",
+              "medium",
+              "low",
+              "very_low"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "takes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "take_id",
+          "episode_id",
+          "speaker",
+          "take_type",
+          "entity_refs",
+          "fantasy_context",
+          "sentiment",
+          "conviction",
+          "summary",
+          "extractor_confidence"
+        ],
+        "properties": {
+          "take_id": {
+            "type": "string"
+          },
+          "episode_id": {
+            "type": "string"
+          },
+          "speaker": {
+            "type": "string",
+            "enum": [
+              "Lack",
+              "Stony",
+              "both",
+              "unknown"
+            ]
+          },
+          "take_type": {
+            "type": "string",
+            "enum": [
+              "player_evaluation",
+              "ranking",
+              "tier",
+              "sleeper",
+              "buy",
+              "sell",
+              "hold",
+              "fade",
+              "watchlist",
+              "trade_strategy",
+              "draft_strategy",
+              "rookie_draft_value",
+              "redraft_value",
+              "bestball_value",
+              "dynasty_value",
+              "injury_reaction",
+              "depth_chart_projection",
+              "role_projection",
+              "coaching_scheme",
+              "news_reaction",
+              "market_adp",
+              "format_note",
+              "league_settings_note",
+              "meta_strategy",
+              "uncertainty",
+              "other"
+            ]
+          },
+          "take_origin": {
+            "type": "string",
+            "enum": [
+              "explicit",
+              "implicit",
+              "extractor_inference"
+            ]
+          },
+          "entity_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fantasy_context": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "dynasty",
+                "rookie_draft",
+                "startup",
+                "redraft",
+                "bestball",
+                "waiver",
+                "trade",
+                "devy",
+                "general_fantasy",
+                "real_football",
+                "unknown"
+              ]
+            }
+          },
+          "league_format_context": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "PPR",
+                "half_PPR",
+                "standard",
+                "superflex",
+                "1QB",
+                "TE_premium",
+                "return_yards",
+                "IDP",
+                "bestball",
+                "deep_rosters",
+                "taxi_squad",
+                "unknown"
+              ]
+            }
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "very_positive",
+              "positive",
+              "mixed",
+              "cautious",
+              "negative",
+              "very_negative",
+              "neutral"
+            ]
+          },
+          "conviction": {
+            "type": "string",
+            "enum": [
+              "very_high",
+              "high",
+              "medium",
+              "low",
+              "very_low"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "reach",
+              "buy",
+              "sell",
+              "hold",
+              "fade",
+              "avoid",
+              "watch",
+              "stash",
+              "handcuff",
+              "trade_for",
+              "trade_away",
+              "do_not_overpay",
+              "no_action",
+              "unknown"
+            ]
+          },
+          "time_horizon": {
+            "type": "string",
+            "enum": [
+              "immediate",
+              "early_season",
+              "full_season",
+              "long_term",
+              "multi_year",
+              "unknown"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "supporting_arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format_notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "timestamp_start": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "timestamp_end": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "chapter": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "quote",
+                    "paraphrase",
+                    "summary"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "extractor_confidence": {
+            "type": "string",
+            "enum": [
+              "very_high",
+              "high",
+              "medium",
+              "low",
+              "very_low"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rankings": {
+      "type": "array"
+    },
+    "tiers": {
+      "type": "array"
+    },
+    "strategy_notes": {
+      "type": "array"
+    },
+    "uncertainties": {
+      "type": "array"
+    }
+  }
+}
