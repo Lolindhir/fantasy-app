@@ -73,8 +73,8 @@ shortContext:
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen und Schreiben des Index-Manifests
   src/app/features/**: Geroutete Angular-Feature-Seiten
-  src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle und zukünftige Draft-Picks
-  src/app/features/drafts/tabs/current-drafts/**: Current-Drafts-UI mit draft-spezifischem kompaktem Draft-Board-Overview, Teams- und List-Sicht sowie Pick-Popovers
+  src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle, zukünftige und historische Drafts; lädt Past Drafts über PastSeasonsIndex.json
+  src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete Draft-Cards mit kompaktem Draft-Board-Overview, Teams- und List-Sicht sowie Pick-Popovers für Current und Past Drafts
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen und Herkunfts-Popovers
   src/app/features/league-activity/league-activity.ts: Technische Moves-Seite für spätere Transaktionen und Roster Moves
   src/app/shared/**: Wiederverwendbare Angular-Bausteine
@@ -86,8 +86,8 @@ shortContext:
   src/app/core/models/fantasy.models.ts: Zentraler Angular-Model-Importpfad für Draft-, League- und Player-Modelle aus core/models
   src/app/core/mappers/league.mapper.ts: Reine RawLeague-/RawFantasyTeam-/DraftPick-zu-League/FantasyTeam-Transformation inklusive Team-Roster-Zuweisung
   src/app/core/mappers/player.mapper.ts: Reine RawPlayer-zu-Player-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping
-  src/app/core/services/data.service.ts: Aktuelle Angular-Datenfassade; nutzt Core-Modelle, DataApiService, League-Mapper, Player-Mapper, FreeAgentMarket-Service und Shared Utils direkt
-  src/app/core/services/data-api.service.ts: App-weite Angular-HTTP-Fassade für generierte JSON-Dateien und Timestamps
+  src/app/core/services/data.service.ts: Aktuelle Angular-Datenfassade; lädt Current/Future-Daten und Past Drafts über DataApiService
+  src/app/core/services/data-api.service.ts: App-weite Angular-HTTP-Fassade für generierte JSON-Dateien, Timestamps, PastSeasonsIndex.json und historische Draft-Dateien
   src/app/core/services/free-agent-market.service.ts: FreeAgentMarket- und RuleBasedAutoCut-Enrichment über Player, FantasyTeams und League-Kontext
   src/app/core/**: Zielbereich für app-weite Models, Services und Mapper
   TODO.md: Menschenlesbare offene Projektaufgaben auf Deutsch
