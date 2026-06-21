@@ -45,8 +45,10 @@ function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayView
   const teamByRosterId = new Map<number, TeamDisplayViewModel>();
 
   teams.forEach(team => {
-    teamByRosterId.set(team.TeamID, {
-      id: team.TeamID,
+    const rosterId = normalizeRosterId(team.TeamID);
+
+    teamByRosterId.set(rosterId, {
+      id: rosterId,
       name: team.Team || `Team ${team.Owner}`,
       avatar: team.Avatar
     });
@@ -114,12 +116,14 @@ function createPickViewModel(
 ): DraftPickViewModel {
   const selectedPlayer = pick.PlayerID ? playerById.get(pick.PlayerID) : undefined;
   const selectedPlayerName = selectedPlayer?.NameShort || selectedPlayer?.Name || pick.PlayerName || undefined;
+  const currentOwnerRosterId = normalizeRosterId(pick.CurrentOwnerRosterID);
+  const originalOwnerRosterId = normalizeRosterId(pick.OriginalOwnerRosterID);
 
   return {
     pick,
-    currentOwner: getTeamDisplay(teamByRosterId, pick.CurrentOwnerRosterID),
-    originalOwner: getTeamDisplay(teamByRosterId, pick.OriginalOwnerRosterID),
-    isCurrentlyTraded: pick.IsCurrentlyTraded || pick.CurrentOwnerRosterID !== pick.OriginalOwnerRosterID,
+    currentOwner: getTeamDisplay(teamByRosterId, currentOwnerRosterId),
+    originalOwner: getTeamDisplay(teamByRosterId, originalOwnerRosterId),
+    isCurrentlyTraded: pick.IsCurrentlyTraded || currentOwnerRosterId !== originalOwnerRosterId,
     roundColor: getRoundColor(pick.Round, maxRound),
     isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!selectedPlayer,
     selectedPlayerName,
@@ -206,12 +210,19 @@ function compareOwnerPickGroupsByPickStrength(
   return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
 }
 
-function getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, rosterId: number): TeamDisplayViewModel {
-  return teamByRosterId.get(rosterId) ?? {
-    id: rosterId,
-    name: `Roster ${rosterId}`,
+function getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, rosterId: number | string): TeamDisplayViewModel {
+  const normalizedRosterId = normalizeRosterId(rosterId);
+
+  return teamByRosterId.get(normalizedRosterId) ?? {
+    id: normalizedRosterId,
+    name: `Roster ${normalizedRosterId}`,
     avatar: 'assets/default-team-avatar.png'
   };
+}
+
+function normalizeRosterId(rosterId: number | string | null | undefined): number {
+  const normalized = Number(rosterId);
+  return Number.isFinite(normalized) ? normalized : 0;
 }
 
 function getDraftMaxRound(draft: RawDraft): number {
