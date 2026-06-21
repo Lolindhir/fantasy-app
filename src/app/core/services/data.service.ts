@@ -16,7 +16,7 @@ import {
   calculateTopPlayersSalary,
   getRosterAfterTrade
 } from '../../shared/utils/trade-calculator.util';
-import { DataApiService } from './data-api.service';
+import { DataApiService, type PastSeasonsIndex } from './data-api.service';
 import { FreeAgentMarketService } from './free-agent-market.service';
 
 @Injectable({
@@ -79,6 +79,14 @@ export class DataService {
     return this.getLeagueWithPlayers(sortFields).pipe(
       map(res => res.league)
     );
+  }
+
+  getPastSeasonsIndex(): Observable<PastSeasonsIndex> {
+    return this.dataApiService.getPastSeasonsIndex();
+  }
+
+  getPastDraftsRaw(path: string): Observable<RawDraft[]> {
+    return this.dataApiService.getPastDraftsRaw(path);
   }
 
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<{ league: League, players: Player[], teams: FantasyTeam[], drafts: RawDraft[] }> {
