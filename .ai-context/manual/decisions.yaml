@@ -288,3 +288,33 @@ decisions:
         - Overview provides a dense mobile-friendly board for quick draft scanning.
       negative:
         - Current Teams/List grouping logic is temporarily component-local and should later move into the central Drafts view model.
+
+  - id: ADR-018
+    title: Past season files are discoverable through a central generated index
+    status: accepted
+    context: >
+      Historical season data is stored in generated files under
+      public/data/past_seasons, with some resources in nested folders such as
+      Drafts and Transactions and other resources directly under the past_seasons
+      root. A static Angular app cannot list folders at runtime, but Past Drafts
+      and later historical views need to discover available seasons and resource
+      paths without hard-coded year lists.
+    decision: >
+      Generate public/data/PastSeasonsIndex.json as a central flexible navigation
+      manifest for historical season resources. ConfigUtils.psm1 owns the index
+      output path and the configured resource path patterns through
+      PastSeasonResources. RequestPastSeasonsIndex.ps1 is the request entry point,
+      and PastSeasonsIndexUtils.psm1 owns the scan and write logic. A manual
+      update-past-seasons-index workflow can rebuild the index on demand.
+    rationale: >
+      A single manifest scales better than one index per historical resource and
+      gives Angular one stable entry point for Past Drafts and future historical
+      views. Keeping it generated avoids manually maintained file lists.
+    consequences:
+      positive:
+        - Angular can load one manifest and then fetch only the selected season/resource file.
+        - Additional resources such as Players, Games, Schedule, Standings or Teams can be added via config without changing index logic.
+        - The manifest is reusable for AI workflows that need to navigate historical data.
+      negative:
+        - Historical data generators must refresh the index after changing past-season files or rely on the manual workflow.
+        - PastSeasonsIndex.json is a navigation manifest and must not be treated as the historical data source of truth.
