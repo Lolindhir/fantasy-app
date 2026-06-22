@@ -132,6 +132,90 @@ function Normalize-DraftHistoryOwnerIdsSafe {
     }
 }
 
+function Add-DraftHistoryTradeHistorySafe {
+    param(
+        [Parameter(Mandatory = $true)][array]$drafts,
+        [Parameter(Mandatory = $true)][array]$transactions
+    )
+
+    $confirmedDraftsByKey = @{}
+    foreach ($draft in $drafts) {
+        $draftID = [string]$draft.SleeperDraftID
+        if ([string]::IsNullOrWhiteSpace($draftID)) { continue }
+
+        try { $tradedPicks = ConvertTo-DraftSafeArray -value (Get-SleeperDraftTradedPicks -draftID $draftID) }
+        catch { Write-Warning "Could not load draft traded picks for '$($draft.DraftKey)'. $_"; continue }
+
+        foreach ($tradedPick in $tradedPicks) {
+            $season = [string](Get-DraftObjectProperty -object $tradedPick -propertyName "season" -defaultValue $draft.Season)
+            $round = Get-DraftObjectProperty -object $tradedPick -propertyName "round" -defaultValue $null
+            $originalOwnerRosterID = Get-DraftObjectProperty -object $tradedPick -propertyName "roster_id" -defaultValue $null
+            if ([string]::IsNullOrWhiteSpace($season) -or $null -eq $round -or $null -eq $originalOwnerRosterID) { continue }
+
+            $key = "$season|$([int]$round)|$([int]$originalOwnerRosterID)"
+            if (-not $confirmedDraftsByKey.ContainsKey($key)) { $confirmedDraftsByKey[$key] = @() }
+            if (-not (@($confirmedDraftsByKey[$key]) -contains $draft.DraftKey)) {
+                $confirmedDraftsByKey[$key] = @($confirmedDraftsByKey[$key]) + [string]$draft.DraftKey
+            }
+        }
+    }
+
+    foreach ($draft in $drafts) {
+        $pickByKey = @{}
+        foreach ($pick in (ConvertTo-DraftSafeArray -value $draft.Picks)) {
+            $key = "$($pick.Season)|$([int]$pick.Round)|$([int]$pick.OriginalOwnerRosterID)"
+            if ($confirmedDraftsByKey.ContainsKey($key) -and @($confirmedDraftsByKey[$key]).Count -eq 1 -and @($confirmedDraftsByKey[$key])[0] -eq [string]$draft.DraftKey) {
+                $pickByKey[$key] = $pick
+            }
+        }
+
+        foreach ($transaction in $transactions) {
+            if ([string]$transaction.Status -ne "complete") { continue }
+
+            foreach ($draftPick in (ConvertTo-DraftSafeArray -value $transaction.DraftPicks)) {
+                $season = Get-DraftObjectProperty -object $draftPick -propertyName "Season" -defaultValue $null
+                $round = Get-DraftObjectProperty -object $draftPick -propertyName "Round" -defaultValue $null
+                $originalOwnerRosterID = Get-DraftObjectProperty -object $draftPick -propertyName "OriginalOwnerRosterID" -defaultValue $null
+                if ($null -eq $season -or $null -eq $round -or $null -eq $originalOwnerRosterID) { continue }
+
+                $key = "$season|$([int]$round)|$([int]$originalOwnerRosterID)"
+                if (-not $pickByKey.ContainsKey($key)) { continue }
+
+                $targetPick = $pickByKey[$key]
+                $history = @(ConvertTo-DraftSafeArray -value $targetPick.TradeHistory)
+                $alreadyExists = $false
+
+                foreach ($entry in $history) {
+                    if ([string]$entry.TransactionID -eq [string]$transaction.TransactionID -and [int]$entry.PreviousOwnerRosterID -eq [int]$draftPick.PreviousOwnerRosterID -and [int]$entry.NewOwnerRosterID -eq [int]$draftPick.NewOwnerRosterID) {
+                        $alreadyExists = $true
+                    }
+                }
+
+                if (-not $alreadyExists) {
+                    $history += [PSCustomObject][ordered]@{
+                        TransactionID         = [string]$transaction.TransactionID
+                        Source                = [string]$transaction.Source
+                        CreatedAt             = [Int64]$transaction.CreatedAt
+                        CreatedDate           = [string]$transaction.CreatedDate
+                        DraftSource           = [string]$draftPick.DraftSource
+                        PreviousOwnerRosterID = [int]$draftPick.PreviousOwnerRosterID
+                        NewOwnerRosterID      = [int]$draftPick.NewOwnerRosterID
+                    }
+                }
+
+                $targetPick.TradeHistory = @($history | Sort-Object CreatedAt, TransactionID)
+                if ($targetPick.TradeHistory.Count -gt 0) {
+                    $targetPick.WasTraded = $true
+                    $targetPick.IsCurrentlyTraded = ([int]$targetPick.CurrentOwnerRosterID -ne [int]$targetPick.OriginalOwnerRosterID)
+                    if ([string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) { $targetPick.TradeSource = "SleeperTransaction" }
+                }
+            }
+        }
+    }
+
+    return $drafts
+}
+
 function Update-DraftsHistoricalSeasonsSafe {
     param(
         [string]$leagueID = (Get-Config).LeagueID,
@@ -162,6 +246,7 @@ function Update-DraftsHistoricalSeasonsSafe {
 
     foreach ($season in ($draftsBySeason.Keys | Sort-Object { [int]$_ })) {
         $seasonDrafts = @($draftsBySeason[$season] | Sort-Object DraftNo, DraftKey)
+        $seasonDrafts = Add-DraftHistoryTradeHistorySafe -drafts $seasonDrafts -transactions $transactions
         $normalization = Normalize-DraftHistoryOwnerIdsSafe -drafts $seasonDrafts
         Save-DraftsHistoricalSeason -season $season -drafts @($normalization.Drafts) -Force:($ForceHistory -or $normalization.Changed)
     }
