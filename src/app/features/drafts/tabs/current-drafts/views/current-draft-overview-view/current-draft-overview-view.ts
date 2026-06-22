@@ -49,9 +49,10 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
       const teamName = pickItems[index]?.currentOwner.name;
       if (!teamName) return;
 
-      let teamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
-      if (!teamNameElement) {
-        teamNameElement = this.renderer.createElement('span');
+      const existingTeamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
+      const teamNameElement = existingTeamNameElement ?? this.renderer.createElement('span') as HTMLElement;
+
+      if (!existingTeamNameElement) {
         this.renderer.addClass(teamNameElement, 'tile-team-name');
         this.renderer.appendChild(tile, teamNameElement);
       }
