@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, Input, Renderer2, inject } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import type { Player } from '../../../../../../core/models/fantasy.models';
@@ -13,13 +13,19 @@ import type { DraftViewModel } from '../../../../models/drafts-view.models';
   templateUrl: './current-draft-overview-view.html',
   styleUrl: './current-draft-overview-view.scss'
 })
-export class CurrentDraftOverviewViewComponent {
+export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
   private dialog = inject(MatDialog);
+  private hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+  private renderer = inject(Renderer2);
 
   @Input({ required: true }) draftVm!: DraftViewModel;
 
   get columnCount(): number {
     return Math.max(...this.draftVm.rounds.map(round => round.picks.length), 1);
+  }
+
+  ngAfterViewChecked(): void {
+    this.renderTileTeamNames();
   }
 
   openPlayerDetail(player: Player, event?: Event): void {
@@ -30,6 +36,30 @@ export class CurrentDraftOverviewViewComponent {
       width: '800px',
       maxHeight: '90vh',
       panelClass: 'player-dialog'
+    });
+  }
+
+  private renderTileTeamNames(): void {
+    const pickItems = this.draftVm.rounds.flatMap(round => round.picks);
+    const pickTiles = Array.from(
+      this.hostElement.nativeElement.querySelectorAll<HTMLElement>('.draft-pick-tile')
+    );
+
+    pickTiles.forEach((tile, index) => {
+      const teamName = pickItems[index]?.currentOwner.name;
+      if (!teamName) return;
+
+      const existingTeamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
+      const teamNameElement = existingTeamNameElement ?? this.renderer.createElement('span') as HTMLElement;
+
+      if (!existingTeamNameElement) {
+        this.renderer.addClass(teamNameElement, 'tile-team-name');
+        this.renderer.appendChild(tile, teamNameElement);
+      }
+
+      if (teamNameElement.textContent !== teamName) {
+        this.renderer.setProperty(teamNameElement, 'textContent', teamName);
+      }
     });
   }
 }
