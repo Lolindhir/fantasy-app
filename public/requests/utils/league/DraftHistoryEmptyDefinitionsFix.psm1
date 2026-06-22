@@ -109,7 +109,7 @@ function ConvertTo-DraftHistoryNumericOwnerIdSafe {
     return $numericValue
 }
 
-function Normalize-DraftHistoryOwnerIdsSafe {
+function ConvertTo-DraftHistoryNumericOwnerIdsSafe {
     param([Parameter(Mandatory = $true)][array]$drafts)
 
     $changed = $false
@@ -247,8 +247,8 @@ function Update-DraftsHistoricalSeasonsSafe {
     foreach ($season in ($draftsBySeason.Keys | Sort-Object { [int]$_ })) {
         $seasonDrafts = @($draftsBySeason[$season] | Sort-Object DraftNo, DraftKey)
         $seasonDrafts = Add-DraftHistoryTradeHistorySafe -drafts $seasonDrafts -transactions $transactions
-        $normalization = Normalize-DraftHistoryOwnerIdsSafe -drafts $seasonDrafts
-        Save-DraftsHistoricalSeason -season $season -drafts @($normalization.Drafts) -Force:($ForceHistory -or $normalization.Changed)
+        $normalization = ConvertTo-DraftHistoryNumericOwnerIdsSafe -drafts $seasonDrafts
+        Save-DraftsHistoricalSeason -season $season -drafts @($normalization.Drafts) -Force:$ForceHistory
     }
 
     Write-Host "Completed draft history update finished." -ForegroundColor DarkCyan
