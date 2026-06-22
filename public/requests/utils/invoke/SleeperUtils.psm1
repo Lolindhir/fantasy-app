@@ -215,6 +215,28 @@ function Get-SleeperDraftPicks {
     return $draftPicksData
 }
 
+function Get-SleeperDraftTradedPicks {
+    param (
+        [string]$draftID
+    )
+
+    Write-Host "Get Sleeper Traded Picks for Draft $draftID..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/draft/$draftID/traded_picks"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $tradedPicksData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper traded picks data for draft $draftID."
+        throw $_
+    }
+
+    Write-Host "Sleeper Draft Traded Picks found." -ForegroundColor Yellow
+
+    return $tradedPicksData
+}
+
 function Get-SleeperTradedPicks {
     param (
         [string]$leagueID = (Get-Config).LeagueID
