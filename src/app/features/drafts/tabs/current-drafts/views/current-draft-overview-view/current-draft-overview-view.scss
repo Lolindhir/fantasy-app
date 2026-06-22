@@ -21,6 +21,7 @@
   position: relative;
   display: flex;
   aspect-ratio: 1 / 1;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 16px 5px 7px;
@@ -42,7 +43,7 @@
   top: 5px;
   right: 5px;
   color: rgba(31, 41, 55, 0.72);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -59,6 +60,23 @@
   height: 42px;
   object-fit: cover;
   object-position: top center;
+}
+
+.tile-team-name {
+  max-width: calc(100% - 8px);
+  margin-top: 2px;
+  overflow: hidden;
+  color: rgba(31, 41, 55, 0.78);
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 0.9;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draft-pick-tile.picked .tile-team-name {
+  max-width: calc(100% - 28px);
 }
 
 .tile-position-chip {
@@ -237,7 +255,7 @@
   .tile-pick-label {
     top: 3px;
     right: 3px;
-    font-size: 0.54rem;
+    font-size: 0.6rem;
   }
 
   .tile-open-owner-logo {
@@ -249,6 +267,11 @@
   .tile-player-picture {
     width: 28px;
     height: 28px;
+  }
+
+  .tile-team-name {
+    margin-top: 1px;
+    font-size: 0.44rem;
   }
 
   .tile-position-chip {
