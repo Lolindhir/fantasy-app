@@ -17,6 +17,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch sensible Zugangswerte.
   - Ziel: Sensible Werte nicht im Repository versionieren; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch nicht-sensitive technische Defaults enthalten.
 
+- [ ] `PastSeasonsIndex.json`-Aktualisierung nur auf relevante Pfad-/Existenzänderungen prüfen.
+  - Kontext: Der Index aktualisiert aktuell auch bei geänderten `ContentHash`-Werten historischer Ressourcen, obwohl sich die sichtbaren Pfade nicht ändern.
+  - Ziel: Prüfen, ob für die Angular-Navigation ein Vergleich auf relevante Pfade und `Exists` ausreicht, während Hash-/UpdatedAt-Metadaten optional bleiben oder anders behandelt werden.
+  - Hinweis: Nur ändern, wenn dadurch keine nützliche Freshness-/Debug-Information verloren geht.
+
 ### Data Generation / Drafts
 
 - [ ] Draft-Live-Enrichment für `public/data/Drafts.json` ergänzen.
