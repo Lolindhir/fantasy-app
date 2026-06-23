@@ -8,7 +8,6 @@ import type {
   TeamDisplayViewModel
 } from '../models/drafts-view.models';
 
-type TeamDisplayWithAbbr = TeamDisplayViewModel & { abbr: string };
 type TeamWithAbbr = FantasyTeam & { TeamAbbr?: string | null };
 
 export function createDraftsViewModel(
@@ -52,7 +51,7 @@ function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayView
     const teamWithAbbr = team as TeamWithAbbr;
     const teamName = team.Team || `Team ${team.Owner}`;
 
-    const teamDisplay: TeamDisplayWithAbbr = {
+    const teamDisplay: TeamDisplayViewModel = {
       id: rosterId,
       name: teamName,
       abbr: teamWithAbbr.TeamAbbr || teamName,
@@ -224,6 +223,7 @@ function getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, roste
   return teamByRosterId.get(normalizedRosterId) ?? {
     id: normalizedRosterId,
     name: `Roster ${normalizedRosterId}`,
+    abbr: `R${normalizedRosterId}`,
     avatar: 'assets/default-team-avatar.png'
   };
 }
