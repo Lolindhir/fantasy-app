@@ -19,7 +19,12 @@
         <span class="picked-player-main">
           <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
           <span class="picked-player-meta">
-            <span class="picked-player-position">{{ item.selectedPlayer.Position }}</span>
+            <span
+              class="picked-player-position"
+              [style.background-color]="item.selectedPlayer.Position | positionColor"
+            >
+              {{ item.selectedPlayer.Position }}
+            </span>
             @if (item.selectedPlayer.TeamNFL?.Logo) {
               <img class="picked-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
             }
