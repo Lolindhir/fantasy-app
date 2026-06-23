@@ -47,8 +47,8 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
     );
 
     pickTiles.forEach((tile, index) => {
-      const teamName = pickItems[index]?.currentOwner.name;
-      if (!teamName) return;
+      const teamLabel = this.getTeamAbbreviation(pickItems[index]?.currentOwner.name);
+      if (!teamLabel) return;
 
       const existingTeamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
       const teamNameElement = existingTeamNameElement ?? this.renderer.createElement('span') as HTMLElement;
@@ -58,9 +58,23 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
         this.renderer.appendChild(tile, teamNameElement);
       }
 
-      if (teamNameElement.textContent !== teamName) {
-        this.renderer.setProperty(teamNameElement, 'textContent', teamName);
+      if (teamNameElement.textContent !== teamLabel) {
+        this.renderer.setProperty(teamNameElement, 'textContent', teamLabel);
       }
     });
+  }
+
+  private getTeamAbbreviation(teamName: string | undefined): string {
+    if (!teamName) return '';
+
+    const words = teamName
+      .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+      .split(/[\s-]+/)
+      .filter(Boolean);
+
+    if (words.length === 0) return '';
+    if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+
+    return words.map(word => word[0]).join('').slice(0, 3).toUpperCase();
   }
 }
