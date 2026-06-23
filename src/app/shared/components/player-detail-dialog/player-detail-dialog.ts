@@ -1,16 +1,17 @@
-import { Component, Inject, OnInit, ViewEncapsulation, importProvidersFrom } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import type { Player, PointHistory, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models'; // Pfad ggf. anpassen
-import { SharedMaterialImports } from '../../shared-material-imports';
 import { CommonModule } from '@angular/common';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartOptions } from 'chart.js';
-import { Chart, Filler, BarController, BarElement, LineController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend } from 'chart.js';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatTableModule } from '@angular/material/table';
+import { Component, Inject, OnInit, ViewEncapsulation } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
+import { Chart, Filler, BarController, BarElement, LineController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend } from 'chart.js';
+import type { ChartConfiguration, ChartOptions } from 'chart.js';
+
+import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
+import { PositionColorPipe } from '../../pipes/position-color.pipe';
+import { SharedMaterialImports } from '../../shared-material-imports';
 
 // Registrierung
 Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarController, BarElement, Title, Tooltip, Legend);
@@ -21,14 +22,14 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
   encapsulation: ViewEncapsulation.None,
   imports: [
     CommonModule,
-    //BaseChartDirective,
     MatDialogModule,
     MatTabsModule,
     MatTableModule,
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    SharedMaterialImports
+    SharedMaterialImports,
+    PositionColorPipe
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
@@ -129,12 +130,4 @@ export class PlayerDetailDialogComponent implements OnInit {
     // Filtert undefined raus
     return seasons.filter((s): s is PointHistorySeason => !!s);
   }
-
-  // getDefinedSeasons(hist: PointHistory | undefined): PointHistorySeason[] {
-  //   if (!hist) return [];
-  //   return [hist.SeasonMinus1, hist.SeasonMinus2, hist.SeasonMinus3].filter(
-  //     (s): s is PointHistorySeason => !!s
-  //   );
-  // }
-
 }
