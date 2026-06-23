@@ -50,7 +50,7 @@ function Compare-Teams {
         $newTeam = $newTeams[$i]
 
         # Prüfe Top-Level Eigenschaften des Teams
-        $propsToCheck = @('TeamID','Name','TeamAvatar','Team','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
+        $propsToCheck = @('TeamID','Name','TeamAvatar','Team','TeamAbbr','OwnerID','Owner','OwnerAvatar','Points','IsCommissioner','PlacePlayoffs','PlaceRegular','Wins','Losses','Ties','Record','Streak','MatchupID','WaiverPosition','WaiverAdjusted')
         foreach ($prop in $propsToCheck) {
             if ($oldTeam.$prop -ne $newTeam.$prop) {
                 Write-Host "Team '$($oldTeam.Owner)' property '$prop' changed: '$($oldTeam.$prop)' -> '$($newTeam.$prop)'"
@@ -101,6 +101,61 @@ function Compare-Teams {
     return $false
 }
 
+function ConvertTo-TeamAbbreviation {
+    param (
+        [AllowNull()][string]$TeamName,
+        [AllowNull()]$TeamID
+    )
+
+    $fallbackNumber = 0
+    $fallback = if ([int]::TryParse([string]$TeamID, [ref]$fallbackNumber)) { "T{0:D2}" -f $fallbackNumber } else { "TBD" }
+
+    if ([string]::IsNullOrWhiteSpace($TeamName)) {
+        return $fallback
+    }
+
+    $normalized = $TeamName.Trim()
+    $normalized = $normalized -creplace '(\p{Lu}+)(\p{Lu}\p{Ll})', '$1 $2'
+    $normalized = $normalized -creplace '([\p{Ll}\p{N}])(\p{Lu})', '$1 $2'
+    $normalized = $normalized -replace '[^\p{L}\p{N}]+', ' '
+    $normalized = $normalized.Trim()
+
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return $fallback
+    }
+
+    $stopWords = @('team', 'the')
+    $nameParts = @($normalized -split '\s+' | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and $_.ToLowerInvariant() -notin $stopWords
+    })
+
+    if ($nameParts.Count -eq 0) {
+        return $fallback
+    }
+
+    if ($nameParts.Count -eq 1) {
+        $part = [string]$nameParts[0]
+        $length = [Math]::Min(3, $part.Length)
+        $abbr = $part.Substring(0, $length)
+        return $abbr.Substring(0, 1).ToUpperInvariant() + $abbr.Substring(1).ToLowerInvariant()
+    }
+
+    if ($nameParts.Count -eq 2) {
+        $firstPart = [string]$nameParts[0]
+        $secondPart = [string]$nameParts[1]
+        $firstLength = [Math]::Min(2, $firstPart.Length)
+        $prefix = $firstPart.Substring(0, $firstLength)
+        $prefix = $prefix.Substring(0, 1).ToUpperInvariant() + $prefix.Substring(1).ToLowerInvariant()
+        return $prefix + $secondPart.Substring(0, 1).ToUpperInvariant()
+    }
+
+    $initials = $nameParts |
+        Select-Object -First 3 |
+        ForEach-Object { ([string]$_).Substring(0, 1).ToUpperInvariant() }
+
+    return [string]::Join('', $initials)
+}
+
 function Get-Teams {
     param (
         [string]$leagueID = (Get-Config).LeagueID
@@ -124,12 +179,14 @@ function Get-Teams {
             # Punkte berechnen als Double
             $points = [double]($roster.settings.fpts + ($roster.settings.fpts_decimal / 100))
             $pointsAgainst = [double]($roster.settings.fpts_against + ($roster.settings.fpts_against_decimal / 100))
+            $teamName = $member.metadata.team_name
 
             $teamData += [PSCustomObject]@{
                 Owner          = $member.display_name
                 OwnerID        = $member.user_id
                 OwnerAvatar    = $ownerAvatar
-                Team           = $member.metadata.team_name
+                Team           = $teamName
+                TeamAbbr       = ConvertTo-TeamAbbreviation -TeamName $teamName -TeamID $roster.roster_id
                 TeamID         = $roster.roster_id
                 TeamAvatar     = $member.metadata.avatar
                 PlaceRegular   = 0 # wird später berechnet
