@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 
 import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
+import { PositionColorPipe } from '../../pipes/position-color.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -24,7 +25,8 @@ export type PlayerListColumn =
   standalone: true,
   imports: [
     CommonModule,
-    SharedMaterialImports
+    SharedMaterialImports,
+    PositionColorPipe
   ],
   templateUrl: './player-list.html',
   styleUrls: ['./player-list.scss'],
@@ -128,22 +130,10 @@ export class PlayerListComponent {
 
   formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
     if (amount >= 0) {
-      return `${plus ? '+ ' : ''}$${(amount / 1_000_000).toFixed(afterPoint)} Mio.`;
+      return (plus ? '+ ' : '') + '$' + (amount / 1_000_000).toFixed(afterPoint) + ' Mio.';
     }
 
-    return `- $${(-amount / 1_000_000).toFixed(afterPoint)} Mio.`;
-  }
-
-  getPositionColor(position: string): string {
-    switch (position) {
-      case 'WR': return '#337ccaff';
-      case 'QB': return '#e24a4dff';
-      case 'TE': return '#f28e2c';
-      case 'K': return '#ab46bbff';
-      case 'RB': return '#27998fff';
-      case 'DEF': return '#999999';
-      default: return '#555555';
-    }
+    return '- $' + (-amount / 1_000_000).toFixed(afterPoint) + ' Mio.';
   }
 
   getDynamicColumnValue(player: Player): string {
