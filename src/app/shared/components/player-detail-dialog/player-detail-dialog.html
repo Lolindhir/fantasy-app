@@ -27,7 +27,16 @@
 
           <div class="dialog-team">
             <img *ngIf="player.TeamNFL.Logo" [src]="player.TeamNFL.Logo" alt="Logo" class="dialog-team-logo" />
-            <span>{{ player.TeamNFL.Name }} ({{ player.Position }} - 👕{{ player.Number }})</span>
+            <span class="dialog-team-line">
+              <span>{{ player.TeamNFL.Name }}</span>
+              <span
+                class="dialog-position-chip"
+                [style.background-color]="player.Position | positionColor"
+              >
+                {{ player.Position }}
+              </span>
+              <span>👕{{ player.Number }}</span>
+            </span>
           </div>
 
           <div class="dialog-player-details">
