@@ -3,13 +3,14 @@ import { Component, Input, inject } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import type { Player } from '../../../../../../core/models/fantasy.models';
 import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
+import { PositionColorPipe } from '../../../../../../shared/pipes/position-color.pipe';
 import { CurrentDraftPickChipComponent } from '../../components/current-draft-pick-chip/current-draft-pick-chip';
 import type { DraftPickViewModel, DraftViewModel } from '../../../../models/drafts-view.models';
 
 @Component({
   selector: 'app-current-draft-list-view',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, CurrentDraftPickChipComponent],
+  imports: [CommonModule, MatDialogModule, CurrentDraftPickChipComponent, PositionColorPipe],
   templateUrl: './current-draft-list-view.html',
   styleUrl: './current-draft-list-view.scss'
 })
