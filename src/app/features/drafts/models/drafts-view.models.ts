@@ -3,6 +3,7 @@ import type { DraftPick, Player, RawDraft } from '../../../core/models/fantasy.m
 export type TeamDisplayViewModel = {
   id: number;
   name: string;
+  abbr: string;
   avatar: string;
 };
 
