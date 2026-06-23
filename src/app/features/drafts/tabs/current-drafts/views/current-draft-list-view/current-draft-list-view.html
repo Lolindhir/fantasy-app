@@ -11,7 +11,10 @@
     <div class="current-pick-table-row">
       <span class="overall-cell">#{{ item.pick.OverallPick }}</span>
       <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
-      <img class="mobile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
+      <span class="mobile-owner-badge">
+        <img class="mobile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
+        <span class="mobile-owner-abbr">{{ item.currentOwner.abbr }}</span>
+      </span>
       <div class="pick-player-cell">
         @if (item.selectedPlayer) {
           <button class="list-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer)">
