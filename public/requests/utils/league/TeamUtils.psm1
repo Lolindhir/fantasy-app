@@ -156,6 +156,23 @@ function ConvertTo-TeamAbbreviation {
     return [string]::Join('', $initials)
 }
 
+function Resolve-TeamDisplayName {
+    param (
+        [AllowNull()][string]$TeamName,
+        [AllowNull()][string]$OwnerName
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($TeamName)) {
+        return $TeamName.Trim()
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($OwnerName)) {
+        return "Team $($OwnerName.Trim())"
+    }
+
+    return $null
+}
+
 function Get-Teams {
     param (
         [string]$leagueID = (Get-Config).LeagueID
@@ -179,7 +196,7 @@ function Get-Teams {
             # Punkte berechnen als Double
             $points = [double]($roster.settings.fpts + ($roster.settings.fpts_decimal / 100))
             $pointsAgainst = [double]($roster.settings.fpts_against + ($roster.settings.fpts_against_decimal / 100))
-            $teamName = $member.metadata.team_name
+            $teamName = Resolve-TeamDisplayName -TeamName $member.metadata.team_name -OwnerName $member.display_name
 
             $teamData += [PSCustomObject]@{
                 Owner          = $member.display_name
