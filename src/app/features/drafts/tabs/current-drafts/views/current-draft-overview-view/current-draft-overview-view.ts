@@ -47,7 +47,7 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
     );
 
     pickTiles.forEach((tile, index) => {
-      const teamLabel = this.getTeamAbbreviation(pickItems[index]?.currentOwner.name);
+      const teamLabel = (pickItems[index]?.currentOwner as { abbr?: string } | undefined)?.abbr;
       if (!teamLabel) return;
 
       const existingTeamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
@@ -62,19 +62,5 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
         this.renderer.setProperty(teamNameElement, 'textContent', teamLabel);
       }
     });
-  }
-
-  private getTeamAbbreviation(teamName: string | undefined): string {
-    if (!teamName) return '';
-
-    const words = teamName
-      .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-      .split(/[\s-]+/)
-      .filter(Boolean);
-
-    if (words.length === 0) return '';
-    if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
-
-    return words.map(word => word[0]).join('').slice(0, 3).toUpperCase();
   }
 }
