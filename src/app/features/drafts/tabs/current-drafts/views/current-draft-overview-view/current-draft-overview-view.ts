@@ -47,7 +47,10 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
     );
 
     pickTiles.forEach((tile, index) => {
-      const teamLabel = (pickItems[index]?.currentOwner as { abbr?: string } | undefined)?.abbr;
+      const pickItem = pickItems[index];
+      const teamLabel = pickItem?.selectedPlayer
+        ? pickItem.selectedPlayer.NameShort || pickItem.selectedPlayer.Name || pickItem.pick.PlayerName
+        : (pickItem?.currentOwner as { abbr?: string } | undefined)?.abbr;
       if (!teamLabel) return;
 
       const existingTeamNameElement = tile.querySelector<HTMLElement>('.tile-team-name');
