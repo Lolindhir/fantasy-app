@@ -115,7 +115,15 @@
   font-weight: 900;
 }
 
+.mobile-owner-badge {
+  display: none;
+}
+
 .mobile-owner-avatar {
+  display: none;
+}
+
+.mobile-owner-abbr {
   display: none;
 }
 
@@ -151,9 +159,9 @@
   }
 
   .current-pick-table-row {
-    grid-template-columns: 34px 58px 30px minmax(0, 1fr);
+    grid-template-columns: 34px 58px 58px minmax(0, 1fr);
     grid-template-areas: "overall pick ownerLogo player";
-    column-gap: 10px;
+    column-gap: 8px;
     row-gap: 6px;
     padding: 7px 8px;
   }
@@ -167,15 +175,35 @@
     grid-area: pick;
   }
 
+  .mobile-owner-badge {
+    display: flex;
+    grid-area: ownerLogo;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    gap: 4px;
+  }
+
   .mobile-owner-avatar {
     display: block;
-    grid-area: ownerLogo;
-    justify-self: center;
     width: 30px;
     height: 30px;
+    flex: 0 0 auto;
     border-radius: 50%;
     object-fit: cover;
     background: #e5e7eb;
+  }
+
+  .mobile-owner-abbr {
+    display: inline-block;
+    min-width: 0;
+    overflow: hidden;
+    color: #1f2937;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .pick-player-cell {
