@@ -8,6 +8,9 @@ import type {
   TeamDisplayViewModel
 } from '../models/drafts-view.models';
 
+type TeamDisplayWithAbbr = TeamDisplayViewModel & { abbr: string };
+type TeamWithAbbr = FantasyTeam & { TeamAbbr?: string | null };
+
 export function createDraftsViewModel(
   league: League,
   drafts: RawDraft[],
@@ -46,12 +49,17 @@ function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayView
 
   teams.forEach(team => {
     const rosterId = normalizeRosterId(team.TeamID);
+    const teamWithAbbr = team as TeamWithAbbr;
+    const teamName = team.Team || `Team ${team.Owner}`;
 
-    teamByRosterId.set(rosterId, {
+    const teamDisplay: TeamDisplayWithAbbr = {
       id: rosterId,
-      name: team.Team || `Team ${team.Owner}`,
+      name: teamName,
+      abbr: teamWithAbbr.TeamAbbr || teamName,
       avatar: team.Avatar
-    });
+    };
+
+    teamByRosterId.set(rosterId, teamDisplay);
   });
 
   return teamByRosterId;
@@ -237,21 +245,24 @@ function getDraftMaxRound(draft: RawDraft): number {
 function getMaxRound(drafts: RawDraft[]): number {
   const rounds = drafts
     .flatMap(draft => draft.Picks ?? [])
-    .map(pick => Number(pick.Round) || 0)
-    .filter(round => round > 0);
+    .map(pick => Number(pick.Round) || 0);
 
-  return rounds.length ? Math.max(...rounds) : 1;
-}
-
-function getRoundColor(round: number, maxRound: number): string {
-  if (!round || maxRound <= 1) return 'hsl(35, 55%, 84%)';
-
-  const ratio = (round - 1) / (maxRound - 1);
-  const hue = 35 + ratio * (205 - 35);
-
-  return `hsl(${hue}, 55%, 84%)`;
+  return Math.max(...rounds, 1);
 }
 
 function getStatusClass(status: string): string {
-  return status.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const normalizedStatus = status.toLowerCase();
+
+  if (['complete', 'completed', 'closed'].includes(normalizedStatus)) return 'completed';
+  if (['live', 'drafting'].includes(normalizedStatus)) return 'live';
+  if (['pre_draft', 'upcoming'].includes(normalizedStatus)) return 'upcoming';
+  return 'unknown';
+}
+
+function getRoundColor(round: number, maxRound: number): string {
+  const denominator = Math.max(maxRound - 1, 1);
+  const progress = Math.max(round - 1, 0) / denominator;
+  const hue = 25 + progress * 150;
+
+  return `hsl(${hue}, 70%, 84%)`;
 }
