@@ -9,7 +9,7 @@
             class="draft-pick-tile"
             [class.picked]="item.selectedPlayer"
             [class.open]="!item.selectedPlayer"
-            [style.background]="item.selectedPlayer ? (item.selectedPlayer.Position | positionColor) : item.roundColor"
+            [ngStyle]="item.selectedPlayer ? (item.selectedPlayer.Position | positionStyle) : { background: item.roundColor }"
             [matMenuTriggerFor]="pickInfoMenu"
             type="button">
             <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
@@ -18,7 +18,7 @@
               <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
               <span
                 class="tile-position-chip"
-                [style.background-color]="item.selectedPlayer.Position | positionColor"
+                [ngStyle]="item.selectedPlayer.Position | positionStyle"
               >
                 {{ item.selectedPlayer.Position }}
               </span>
@@ -42,7 +42,7 @@
                     <span class="picked-player-meta">
                       <span
                         class="picked-player-position"
-                        [style.background-color]="item.selectedPlayer.Position | positionColor"
+                        [ngStyle]="item.selectedPlayer.Position | positionStyle"
                       >
                         {{ item.selectedPlayer.Position }}
                       </span>
