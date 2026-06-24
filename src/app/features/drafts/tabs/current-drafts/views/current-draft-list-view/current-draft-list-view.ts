@@ -19,6 +19,13 @@ export class CurrentDraftListViewComponent {
 
   @Input({ required: true }) draftVm!: DraftViewModel;
 
+  get isCompletedDraft(): boolean {
+    const draft = this.draftVm?.draft;
+    return draft?.Status === 'Complete'
+      || draft?.DisplayStatus === 'Completed'
+      || draft?.SleeperStatus === 'complete';
+  }
+
   get orderedPicks(): DraftPickViewModel[] {
     return this.draftVm.rounds
       .flatMap(round => round.picks)
