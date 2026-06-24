@@ -130,13 +130,17 @@ function createPickViewModel(
     pick,
     currentOwner: getTeamDisplay(teamByRosterId, currentOwnerRosterId),
     originalOwner: getTeamDisplay(teamByRosterId, originalOwnerRosterId),
-    isCurrentlyTraded: pick.IsCurrentlyTraded || currentOwnerRosterId !== originalOwnerRosterId,
+    isCurrentlyTraded: wasPickTraded(pick),
     roundColor: getRoundColor(pick.Round, maxRound),
     isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!selectedPlayer,
     selectedPlayerName,
     selectedPlayerPosition: selectedPlayer?.Position,
     selectedPlayer
   };
+}
+
+function wasPickTraded(pick: DraftPick): boolean {
+  return pick.WasTraded || pick.TradeHistory.length > 0;
 }
 
 function createRoundGroups(picks: DraftPickViewModel[]): DraftRoundViewModel[] {
