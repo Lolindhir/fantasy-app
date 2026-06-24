@@ -10,7 +10,7 @@ import { Chart, Filler, BarController, BarElement, LineController, LineElement, 
 import type { ChartConfiguration, ChartOptions } from 'chart.js';
 
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
-import { PositionColorPipe } from '../../pipes/position-color.pipe';
+import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 
 // Registrierung
@@ -29,7 +29,7 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatChipsModule,
     MatIconModule,
     SharedMaterialImports,
-    PositionColorPipe
+    PositionStylePipe
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
