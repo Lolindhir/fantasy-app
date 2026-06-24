@@ -16,12 +16,6 @@
 
             @if (item.selectedPlayer) {
               <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
-              <span
-                class="tile-position-chip"
-                [ngStyle]="item.selectedPlayer.Position | positionStyle"
-              >
-                {{ item.selectedPlayer.Position }}
-              </span>
               <img class="tile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
             } @else {
               <img class="tile-open-owner-logo" [src]="item.currentOwner.avatar" alt="" />
