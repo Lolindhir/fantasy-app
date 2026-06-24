@@ -38,6 +38,9 @@ guidance:
   powershell:
     - Use Get-Verb approved verbs for PowerShell function names.
 
+  frontend:
+    - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
+
   ruleManagement:
     - When adding or changing AI guidance rules, review whether the guidance still belongs in the current section, should be moved to another section, should start a new section, or should be split into a separate manual file.
     - If a guidance section becomes too broad, mixed or hard to scan, propose a content or physical split instead of continuing to append unrelated rules.
