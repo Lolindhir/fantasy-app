@@ -3,11 +3,11 @@ export type PositionColorKey = 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DEF';
 export const DEFAULT_POSITION_COLOR = '#555555';
 
 export const POSITION_COLORS: Readonly<Record<PositionColorKey, string>> = {
-  QB: '#e24a4dff',
-  RB: '#27998fff',
-  WR: '#337ccaff',
-  TE: '#f28e2c',
-  K: '#ab46bbff',
+  QB: '#EF74A2',
+  RB: '#90F2CB',
+  WR: '#56C9F8',
+  TE: '#FEAE59',
+  K: '#B6B9FF',
   DEF: '#999999'
 };
 
