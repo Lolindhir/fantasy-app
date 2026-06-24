@@ -1,7 +1,7 @@
 <button
   class="current-pick-chip"
   [class.traded-pick]="item.isCurrentlyTraded"
-  [style.background]="usePickedPositionColor && item.selectedPlayer ? (item.selectedPlayer.Position | positionColor) : item.roundColor"
+  [ngStyle]="usePickedPositionColor && item.selectedPlayer ? (item.selectedPlayer.Position | positionStyle) : { background: item.roundColor }"
   [matMenuTriggerFor]="pickInfoMenu"
   type="button">
   {{ item.pick.DisplayPick }}
@@ -21,7 +21,7 @@
           <span class="picked-player-meta">
             <span
               class="picked-player-position"
-              [style.background-color]="item.selectedPlayer.Position | positionColor"
+              [ngStyle]="item.selectedPlayer.Position | positionStyle"
             >
               {{ item.selectedPlayer.Position }}
             </span>
