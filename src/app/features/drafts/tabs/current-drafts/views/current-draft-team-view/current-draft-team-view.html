@@ -5,7 +5,7 @@
       <span class="current-team-name">{{ ownerGroup.owner.name }}</span>
       <div class="current-pick-chip-list">
         @for (item of ownerGroup.picks; track item.pick.PickKey) {
-          <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
+          <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" [usePickedPositionColor]="true" />
         }
       </div>
     </div>
