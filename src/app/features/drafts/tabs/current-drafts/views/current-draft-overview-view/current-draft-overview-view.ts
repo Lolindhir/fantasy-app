@@ -4,13 +4,13 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import type { Player } from '../../../../../../core/models/fantasy.models';
 import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
-import { PositionColorPipe } from '../../../../../../shared/pipes/position-color.pipe';
+import { PositionStylePipe } from '../../../../../../shared/pipes/position-style.pipe';
 import type { DraftViewModel } from '../../../../models/drafts-view.models';
 
 @Component({
   selector: 'app-current-draft-overview-view',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatMenuModule, PositionColorPipe],
+  imports: [CommonModule, MatDialogModule, MatMenuModule, PositionStylePipe],
   templateUrl: './current-draft-overview-view.html',
   styleUrl: './current-draft-overview-view.scss'
 })
