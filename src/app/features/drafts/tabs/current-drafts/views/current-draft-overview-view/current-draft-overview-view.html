@@ -9,7 +9,7 @@
             class="draft-pick-tile"
             [class.picked]="item.selectedPlayer"
             [class.open]="!item.selectedPlayer"
-            [style.background]="item.roundColor"
+            [style.background]="item.selectedPlayer ? (item.selectedPlayer.Position | positionColor) : item.roundColor"
             [matMenuTriggerFor]="pickInfoMenu"
             type="button">
             <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
