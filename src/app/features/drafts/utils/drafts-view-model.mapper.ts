@@ -140,7 +140,7 @@ function createPickViewModel(
 }
 
 function wasPickTraded(pick: DraftPick): boolean {
-  return pick.WasTraded || pick.TradeHistory.length > 0;
+  return (pick.TradeHistory?.length ?? 0) > 0;
 }
 
 function createRoundGroups(picks: DraftPickViewModel[]): DraftRoundViewModel[] {
