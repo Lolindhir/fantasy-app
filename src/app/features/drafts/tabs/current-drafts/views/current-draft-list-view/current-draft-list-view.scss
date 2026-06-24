@@ -157,7 +157,7 @@
   }
 
   .current-pick-table-row {
-    grid-template-columns: 34px 58px 70px minmax(0, 1fr);
+    grid-template-columns: 30px 64px 82px minmax(0, 1fr);
     grid-template-areas: "overall pick ownerLogo player";
     column-gap: 8px;
     row-gap: 6px;
@@ -165,7 +165,7 @@
   }
 
   .current-pick-table-row.completed-draft {
-    grid-template-columns: 34px 58px minmax(0, 1fr) 70px;
+    grid-template-columns: 30px 64px minmax(0, 1fr) 82px;
     grid-template-areas: "overall pick player ownerLogo";
   }
 
@@ -213,7 +213,7 @@
     display: flex;
     grid-area: player;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     min-width: 0;
     min-height: 30px;
     padding-left: 0;
@@ -224,9 +224,9 @@
     width: 100%;
     height: 100%;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 7px;
-    text-align: center;
+    text-align: left;
   }
 
   .list-player-picture {
@@ -265,11 +265,11 @@
   .open-pick-cell {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
     height: 100%;
     font-size: 0.82rem;
-    text-align: center;
+    text-align: left;
   }
 
   .owner-cell,
