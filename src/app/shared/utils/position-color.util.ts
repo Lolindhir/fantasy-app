@@ -6,7 +6,7 @@ export interface PositionColorStyle {
 }
 
 export const DEFAULT_POSITION_COLOR = '#555555';
-export const DEFAULT_POSITION_TEXT_COLOR = '#FFFFFF';
+export const DEFAULT_POSITION_TEXT_COLOR = '#000000';
 
 export const DEFAULT_POSITION_COLOR_STYLE: PositionColorStyle = {
   'background-color': DEFAULT_POSITION_COLOR,
@@ -14,12 +14,12 @@ export const DEFAULT_POSITION_COLOR_STYLE: PositionColorStyle = {
 };
 
 export const POSITION_COLOR_STYLES: Readonly<Record<PositionColorKey, PositionColorStyle>> = {
-  QB: { 'background-color': '#EC5F95', color: '#101A33' },
-  RB: { 'background-color': '#70E8B8', color: '#101A33' },
-  WR: { 'background-color': '#28BDF3', color: '#101A33' },
-  TE: { 'background-color': '#F99C3E', color: '#101A33' },
-  K: { 'background-color': '#9FA4FF', color: '#101A33' },
-  DEF: { 'background-color': '#999999', color: '#FFFFFF' }
+  QB: { 'background-color': '#EC5F95', color: DEFAULT_POSITION_TEXT_COLOR },
+  RB: { 'background-color': '#70E8B8', color: DEFAULT_POSITION_TEXT_COLOR },
+  WR: { 'background-color': '#28BDF3', color: DEFAULT_POSITION_TEXT_COLOR },
+  TE: { 'background-color': '#F99C3E', color: DEFAULT_POSITION_TEXT_COLOR },
+  K: { 'background-color': '#9FA4FF', color: DEFAULT_POSITION_TEXT_COLOR },
+  DEF: { 'background-color': '#999999', color: DEFAULT_POSITION_TEXT_COLOR }
 };
 
 export const POSITION_COLORS = Object.fromEntries(
