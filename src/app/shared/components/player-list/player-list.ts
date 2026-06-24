@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 
 import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
-import { PositionColorPipe } from '../../pipes/position-color.pipe';
+import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -26,7 +26,7 @@ export type PlayerListColumn =
   imports: [
     CommonModule,
     SharedMaterialImports,
-    PositionColorPipe
+    PositionStylePipe
   ],
   templateUrl: './player-list.html',
   styleUrls: ['./player-list.scss'],
