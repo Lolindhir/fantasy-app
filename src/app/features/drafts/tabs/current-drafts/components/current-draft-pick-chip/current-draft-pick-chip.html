@@ -1,7 +1,7 @@
 <button
   class="current-pick-chip"
   [class.traded-pick]="item.isCurrentlyTraded"
-  [style.background]="item.roundColor"
+  [style.background]="usePickedPositionColor && item.selectedPlayer ? (item.selectedPlayer.Position | positionColor) : item.roundColor"
   [matMenuTriggerFor]="pickInfoMenu"
   type="button">
   {{ item.pick.DisplayPick }}
