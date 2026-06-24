@@ -14,7 +14,7 @@ export const DEFAULT_POSITION_COLOR_STYLE: PositionColorStyle = {
 };
 
 export const POSITION_COLOR_STYLES: Readonly<Record<PositionColorKey, PositionColorStyle>> = {
-  QB: { 'background-color': '#EC5F95', color: DEFAULT_POSITION_TEXT_COLOR },
+  QB: { 'background-color': '#EF74A2', color: DEFAULT_POSITION_TEXT_COLOR },
   RB: { 'background-color': '#70E8B8', color: DEFAULT_POSITION_TEXT_COLOR },
   WR: { 'background-color': '#28BDF3', color: DEFAULT_POSITION_TEXT_COLOR },
   TE: { 'background-color': '#F99C3E', color: DEFAULT_POSITION_TEXT_COLOR },
