@@ -19,6 +19,7 @@ export class CurrentDraftPickChipComponent {
 
   @Input({ required: true }) draftVm!: DraftViewModel;
   @Input({ required: true }) item!: DraftPickViewModel;
+  @Input() usePickedPositionColor = false;
 
   get statusLabel(): string {
     return this.item.pick.PlayerName || this.item.pick.Status === 'Picked' ? 'Picked' : 'Open Pick';
