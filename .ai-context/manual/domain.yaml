@@ -120,14 +120,15 @@ coreConcepts:
       - show draft-card metrics for current, past and future drafts as Rounds, Settings.Type such as Linear/Snake, and Traded Picks
       - show current-season and past drafts with draft-specific view modes: Overview, Teams and List
       - show Overview as the default current/past draft view using a compact draft-board grid where rows are rounds and columns are pick positions in the round
-      - render Overview pick tiles as square, mobile-compact cells with DisplayPick, current-owner logo for open picks, selected-player image/position for picked picks and current-owner logo as tile context
+      - render Overview pick tiles as square, mobile-compact cells with DisplayPick, current-owner logo for open picks, selected-player image for picked picks and current-owner logo as tile context; player position is shown in the pick popover, not directly on the tile
       - show current-season and past Teams view as current-owner pick groups with concrete pick chips such as 2.03
       - show current-season and past List view as ordered pick rows with compact mobile layout and more detailed desktop layout
       - make current-season and past picks clickable in every current/past view, including open picks, to expose pick, owner, original owner and trade context
       - use PlayerName as a fallback display value for completed historical picks when PlayerID cannot be resolved against current Players.json
-      - show future drafts as compact team-owned round summaries with clickable origin popovers
-      - show current owner as the primary owner label
-      - show original owner as "from <team>" or in pick popovers when a pick is currently traded
+      - show future drafts as compact team-owned round summaries with clickable shared pick popovers in a future-compatible mode
+      - show current owner as the primary owner label in pick popovers
+      - show original owner as "from <team>" only when current owner differs from original owner
+      - allow the Traded Pick badge to indicate trade-history context independently from whether the pick is currently owned by the original owner
     doesNotOwn:
       - draft order derivation
       - draft-pick ownership derivation
