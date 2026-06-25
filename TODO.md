@@ -24,11 +24,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Data Generation / Drafts
 
-- [ ] Draft-Live-Enrichment für `public/data/Drafts.json` ergänzen.
-  - Kontext: Die abgeschlossene Draft-Historie wird separat gespeichert, aber im wöchentlichen/manuellen `RequestDrafts.ps1`-Flow zusammen mit den aktuellen Drafts aktualisiert. Für laufende Drafts im aktuellen `Drafts.json` fehlt das Ergebnis-Enrichment aber noch.
-  - Ziel: Wenn ein aktueller Sleeper-Draft läuft, sollen echte Pick-Ergebnisse über `Get-SleeperDraftPicks` geladen und auf die bestehenden Draft-Picks gemappt werden.
-  - Ziel: Pro Pick `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy` und `Status = Picked` ergänzen, ohne den stabilen `PickKey` zu verändern.
-  - Möglicher Ansatz: Die Logik aus `Get-AppliedDraftPickResults` wiederverwendbar machen oder in `DraftUtils.psm1` übernehmen.
+- [ ] Draft-Live-Enrichment für `public/data/Drafts.json` bei nächstem laufenden Sleeper-Draft validieren.
+  - Kontext: Die technische Live-Enrichment-Logik für aktuelle Drafts ist implementiert; ein echter laufender Sleeper-Draft wurde damit aber noch nicht praktisch geprüft.
+  - Ziel: Bei einem laufenden Sleeper-Draft kontrollieren, ob `Drafts.json` echte Pick-Ergebnisse korrekt setzt.
+  - Zu prüfen: `Status = Picked`, `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy`, stabile `PickKey` und korrekte Frontend-Darstellung.
 
 ### Frontend
 
@@ -38,29 +37,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Moves später als chronologische Activity-Timeline darstellen.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
-- [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente weiter prüfen.
-  - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und im Drafts-Feature unter `src/app/features/drafts/**` angezeigt.
-  - Kontext: Der Popover-Content für Current, Past und Future Draft Picks ist inzwischen zentralisiert.
-  - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` weiterhin prüfen, damit Trigger wie Current-Pick-Chip, Overview-Kachel und Future-Round-Pill nicht dauerhaft auseinanderlaufen.
-  - Mögliche Zielstruktur: `src/app/shared/components/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
-
-- [ ] Gemeinsames Draft-Pick-Popover neutral benennen und ggf. verschieben.
-  - Kontext: `CurrentDraftPickPopoverComponent` wird inzwischen von Current/Past Drafts und Future Drafts genutzt, liegt aber technisch noch unter `src/app/features/drafts/tabs/current-drafts/components/current-draft-pick-popover/**`.
-  - Ziel: Komponente neutral benennen und in einen gemeinsamen Drafts-Komponentenbereich verschieben, z. B. `src/app/features/drafts/components/draft-pick-popover/**`, ohne die Trigger-Komponenten zu koppeln.
-
-- [ ] Draft-Card-Header und Metrikzeile zwischen Current und Future vereinheitlichen.
-  - Kontext: Current Drafts nutzen `DraftShellComponent`, Future Drafts rendern `mat-card` inklusive Header und Metrikzeile direkt in `future-drafts-tab.html`.
-  - Kontext: Beide zeigen inzwischen `Rounds · Typ · Traded Picks` auf Basis von `draftVm.draft.Settings.Type`.
-  - Ziel: Header-/Metrik-Logik entweder vollständig über `DraftShellComponent` oder über ein gemeinsames Draft-Card-Metrics-ViewModel abbilden.
-
-- [ ] Current-Draft-Team- und Listen-Gruppierungen ins zentrale Drafts-ViewModel ziehen.
-  - Kontext: Die Current-Draft-Teams- und Listen-Sichten leiten ihre Pick-Gruppierungen und Sortierungen im ersten Wurf komponentennah aus `draftVm.rounds` ab.
-  - Ziel: `orderedPicks` und eine Current-spezifische Owner-Pick-Gruppierung in `drafts-view.models.ts` und `drafts-view-model.mapper.ts` zentralisieren.
-  - Hinweis: Die Source of Truth bleibt `public/data/Drafts.json`; es geht nur um ein stabileres Angular-ViewModel für die Darstellung.
-
-- [ ] Draft-Round-Chip-Farblogik aus Overview und Drafts in eine gemeinsame Frontend-Utility, Pipe oder einen Service auslagern.
-  - Kontext: Overview und Drafts berechnen die Farben aktuell lokal mit derselben warm-zu-kalt HSL-Skala.
-  - Ziel: Alle Komponenten, die Draft Picks anzeigen, verwenden dieselbe Rundenskala.
+- [ ] Draft-Pick-Trigger-Darstellung weiter vereinheitlichen.
+  - Kontext: Der Popover-Content ist inzwischen als `DraftPickPopoverComponent` zentralisiert und liegt unter `src/app/features/drafts/components/draft-pick-popover/**`.
+  - Kontext: Die Overview-Kachel ist als `DraftPickCardComponent` wiederverwendbar, während Current-Pick-Chip und Future-Round-Pill weiterhin eigene Trigger-Darstellungen sind.
+  - Ziel: Prüfen, ob Pick-Token/Trigger für Current-Pick-Chip, Future-Round-Pill und ggf. Overview-Card weiter zusammengeführt werden sollten, ohne die unterschiedlichen Darstellungsgrößen zu erzwingen.
 
 - [ ] Alternative Sortierung für kompakte Future-Drafts in Drafts prüfen.
   - Kontext: Future-Drafts werden aktuell nach Pick Strength sortiert: zuerst Anzahl Picks in Runde 1, dann Runde 2, dann Runde 3 usw. bis zur flexiblen Draft-Rundenzahl.
@@ -121,6 +101,30 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Später prüfen, ob und wie der Trade Simulator als Tool oder Subbereich unter Moves aufgeht.
 
 ## Erledigt / Archiv
+
+- [x] Draft-ViewModel-Service für die Drafts-Route ergänzen.
+  - Kontext: `DraftsPageComponent` sollte ViewModel-Erzeugung nicht direkt über Mapper-Funktionen orchestrieren.
+  - Ergebnis: `DraftsViewModelService` kapselt die Drafts-ViewModel-Erzeugung und delegiert an die reinen Mapper.
+
+- [x] Current-Draft-Team- und Listen-Gruppierungen ins zentrale Drafts-ViewModel ziehen.
+  - Kontext: Teams- und Listen-Sichten leiteten Gruppierungen und Sortierungen zunächst komponentennah aus `draftVm.rounds` ab.
+  - Ergebnis: `DraftViewModel` enthält `orderedPicks` und `currentOwnerPickGroups`; die Komponenten rendern diese Felder direkt.
+
+- [x] Draft-Pick-Overview-Kachel als wiederverwendbare UI-Komponente extrahieren.
+  - Kontext: Die Overview-Kachel enthielt Markup, Position-Farben, Popover-Trigger und ein nachträgliches DOM-Rendering des Kontextlabels direkt in der Overview-View.
+  - Ergebnis: `DraftPickCardComponent` kapselt die Overview-Pick-Kachel inklusive Popover-Trigger und Kontextlabel; die Overview-View rendert nur noch das Board-Grid.
+
+- [x] Draft-Round-Chip-Farblogik aus Overview und Drafts in eine gemeinsame Frontend-Utility auslagern.
+  - Kontext: Overview und Drafts berechneten Draft-Round-Farben lokal und leicht unterschiedlich.
+  - Ergebnis: `getDraftRoundColor` und `getDraftStatusClass` liegen in `src/app/shared/utils/draft-ui.util.ts`; Overview und Drafts verwenden dieselbe Rundenskala.
+
+- [x] Gemeinsames Draft-Pick-Popover neutral benennen und verschieben.
+  - Kontext: Das frühere `CurrentDraftPickPopoverComponent` wurde von Current/Past Drafts und Future Drafts genutzt, lag aber technisch unter dem Current-Drafts-Pfad.
+  - Ergebnis: `DraftPickPopoverComponent` liegt unter `src/app/features/drafts/components/draft-pick-popover/**` und wird von Current/Past/Future-Draft-Triggern verwendet.
+
+- [x] Draft-Card-Header und Metrikzeile zwischen Current/Past und Future vereinheitlichen.
+  - Kontext: Current/Past Drafts nutzten `DraftShellComponent`, Future Drafts renderten `mat-card` inklusive Header und Metrikzeile direkt.
+  - Ergebnis: Future Drafts rendern jetzt ebenfalls `DraftShellComponent`; Header und Metrikzeile kommen zentral aus der Shell.
 
 - [x] Current-Draft-Pick-Popover und Player-Mini-Card als gemeinsame UI-Komponente prüfen.
   - Kontext: `CurrentDraftPickChipComponent`, `CurrentDraftOverviewViewComponent` und Future-Draft-Round-Pills nutzten ähnliche Popover-Inhalte für Pick, Overall, Player, Owner, Original Owner und Traded Pick.
