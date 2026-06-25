@@ -120,8 +120,10 @@ frontendStructure:
         Contains reusable Drafts feature UI building blocks shared by current,
         past and future draft views. DraftShellComponent owns the common draft
         card header and metric line, DraftPickCardComponent owns the compact
-        Overview pick tile, and DraftPickPopoverComponent owns shared pick detail
-        popover content for full concrete picks and compact future round picks.
+        Overview pick tile, DraftPickTriggerComponent owns shared compact token
+        trigger mechanics for concrete pick chips and future round pills, and
+        DraftPickPopoverComponent owns shared pick detail popover content for full
+        concrete picks and compact future round picks.
 
     - path: src/app/features/drafts/tabs/current-drafts/**
       responsibility: >
@@ -133,14 +135,16 @@ frontendStructure:
         orderedPicks from the central DraftViewModel with compact mobile and more
         detailed desktop layout. Pick tiles/chips open the shared draft pick
         popover for open/picked state, owner, original-owner, selected-player and
-        trade context.
+        trade context. CurrentDraftPickChipComponent remains a wrapper around the
+        shared DraftPickTriggerComponent for current/past pick-chip use cases.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
         Future draft presentation. It uses DraftShellComponent for the shared
         draft card header and metric line, renders team-owned round summaries,
-        marks traded/non-own picks with a dot and opens the shared draft pick
-        popover in a future-compatible mode for pick ownership context.
+        marks traded/non-own picks with a dot through DraftPickTriggerComponent
+        and opens the shared draft pick popover in a future-compatible mode for
+        pick ownership context.
 
     - path: src/app/features/league-activity/league-activity.ts
       responsibility: >
