@@ -35,14 +35,17 @@
     } @else {
       <span class="open-pick-label">Pick Open</span>
     }
-    <span class="pick-info-team-line">
+    <span class="pick-info-owner-line">
       <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
-      <span>Owner: {{ item.currentOwner.name }}</span>
+      <span>{{ item.currentOwner.name }}</span>
     </span>
-    <span class="pick-info-team-line">
-      <img class="pick-info-avatar" [src]="item.originalOwner.avatar" alt="" />
-      <span>Original: {{ item.originalOwner.name }}</span>
-    </span>
+    @if (item.currentOwner.id !== item.originalOwner.id) {
+      <span class="pick-info-from-line">
+        <span>(from</span>
+        <img class="pick-info-from-avatar" [src]="item.originalOwner.avatar" alt="" />
+        <span>{{ item.originalOwner.name }})</span>
+      </span>
+    }
     @if (item.isCurrentlyTraded) {
       <span class="traded-pick-label">Traded Pick</span>
     }
