@@ -1,12 +1,5 @@
-<button
-  class="current-pick-chip"
-  [class.traded-pick]="item.isCurrentlyTraded"
-  [ngStyle]="usePickedPositionColor && item.selectedPlayer ? (item.selectedPlayer.Position | positionStyle) : { background: item.roundColor }"
-  [matMenuTriggerFor]="pickInfoMenu"
-  type="button">
-  {{ item.pick.DisplayPick }}
-</button>
-
-<mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
-  <app-draft-pick-popover [draftVm]="draftVm" [item]="item" />
-</mat-menu>
+<app-draft-pick-trigger
+  [draftVm]="draftVm"
+  [item]="item"
+  variant="chip"
+  [usePickedPositionColor]="usePickedPositionColor" />
