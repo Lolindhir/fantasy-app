@@ -127,7 +127,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Current-Draft-Pick-Popover und Player-Mini-Card als gemeinsame UI-Komponente prüfen.
   - Kontext: `CurrentDraftPickChipComponent`, `CurrentDraftOverviewViewComponent` und Future-Draft-Round-Pills nutzten ähnliche Popover-Inhalte für Pick, Overall, Player, Owner, Original Owner und Traded Pick.
-  - Ergebnis: `CurrentDraftPickPopoverComponent` rendert den gemeinsamen Popover-Content für vollständige Current/Past-Picks und kompakte Future-Picks. Trigger bleiben in den jeweiligen Komponenten getrennt.
+  - Ergebnis: Der gemeinsame Popover-Content liegt inzwischen in `DraftPickPopoverComponent` und unterstützt vollständige Current/Past-Picks sowie kompakte Future-Picks. Die kompakte Trigger-Mechanik wurde später zusätzlich in `DraftPickTriggerComponent` zentralisiert.
 
 - [x] Unbenutzte Hilfslogik im Drafts-Feature bereinigen.
   - Kontext: `CurrentDraftPickChipComponent.statusLabel` wurde nicht im Template verwendet.
