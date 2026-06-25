@@ -7,7 +7,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftDisplayStatusUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftSnakeOrderRepairUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -31,13 +31,13 @@ function Invoke-PastSeasonsIndexRefresh {
 # Logik
 # ===========================================================================
 
-$drafts = Update-DraftsWithSnakeOrderRepair
+$drafts = Update-DraftsOrderAware
 if ($drafts) {
     $drafts = Set-DraftDisplayStatuses -drafts $drafts
     Save-Drafts -drafts $drafts
 }
 
-$historicalDrafts = Update-DraftsHistoricalSeasonsWithSnakeOrderRepair
+$historicalDrafts = Update-DraftsHistoricalSeasonsSafeOrderAware
 Invoke-PastSeasonsIndexRefresh
 
 if ($drafts) {
