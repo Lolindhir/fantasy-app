@@ -1,0 +1,22 @@
+<button
+  class="draft-pick-tile"
+  [class.picked]="hasSelectedPlayer"
+  [class.open]="!hasSelectedPlayer"
+  [ngStyle]="item.selectedPlayer ? (item.selectedPlayer.Position | positionStyle) : { background: item.roundColor }"
+  [matMenuTriggerFor]="pickInfoMenu"
+  type="button">
+  <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
+
+  @if (item.selectedPlayer) {
+    <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+    <img class="tile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
+  } @else {
+    <img class="tile-open-owner-logo" [src]="item.currentOwner.avatar" alt="" />
+  }
+
+  <span class="tile-team-name">{{ tileContextLabel }}</span>
+</button>
+
+<mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
+  <app-current-draft-pick-popover [draftVm]="draftVm" [item]="item" />
+</mat-menu>
