@@ -38,6 +38,10 @@ export class CurrentDraftPickPopoverComponent {
     return this.item?.selectedPlayer;
   }
 
+  get showOpenPickLabel(): boolean {
+    return !!this.item && !this.selectedPlayer;
+  }
+
   get currentOwnerDisplay(): TeamDisplayViewModel | undefined {
     return this.item?.currentOwner ?? this.currentOwner;
   }
