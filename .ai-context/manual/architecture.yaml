@@ -112,26 +112,35 @@ frontendStructure:
         presentation. It consumes current/future draft data from Drafts.json and
         discovers historical draft seasons through PastSeasonsIndex.json before
         loading the selected season's historical Drafts resource. It maps all
-        loaded draft lists through the Drafts view-model mapper and delegates
-        current/past rendering to reusable Current Drafts card views while Future
-        Drafts keeps its compact team-owned summary view.
+        loaded draft lists through DraftsViewModelService and delegates rendering
+        to reusable current/past and future Draft tab components.
+
+    - path: src/app/features/drafts/components/**
+      responsibility: >
+        Contains reusable Drafts feature UI building blocks shared by current,
+        past and future draft views. DraftShellComponent owns the common draft
+        card header and metric line, DraftPickCardComponent owns the compact
+        Overview pick tile, and DraftPickPopoverComponent owns shared pick detail
+        popover content for full concrete picks and compact future round picks.
 
     - path: src/app/features/drafts/tabs/current-drafts/**
       responsibility: >
         Reusable current-style draft-card presentation used for current-season and
         past completed drafts. Each draft card owns its active view mode and can
         render Overview, Teams or List. Overview renders a compact draft-board grid
-        where rows are rounds and columns are positions in the round. Teams groups
-        concrete picks by current owner. List renders picks in draft order with
-        compact mobile and more detailed desktop layout. Pick tiles/chips open a
-        reusable compact pick popover for open/picked state, owner, original-owner,
-        selected-player and trade context.
+        where rows are rounds and columns are positions in the round. Teams uses
+        current-owner pick groups from the central DraftViewModel. List renders
+        orderedPicks from the central DraftViewModel with compact mobile and more
+        detailed desktop layout. Pick tiles/chips open the shared draft pick
+        popover for open/picked state, owner, original-owner, selected-player and
+        trade context.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
-        Future draft presentation. It renders team-owned round summaries, marks
-        traded/non-own picks with a dot and opens the shared compact pick popover
-        in a future-compatible mode for pick ownership context.
+        Future draft presentation. It uses DraftShellComponent for the shared
+        draft card header and metric line, renders team-owned round summaries,
+        marks traded/non-own picks with a dot and opens the shared draft pick
+        popover in a future-compatible mode for pick ownership context.
 
     - path: src/app/features/league-activity/league-activity.ts
       responsibility: >
@@ -156,6 +165,12 @@ frontendStructure:
       responsibility: >
         Contains reusable frontend helpers, Material imports, shared components,
         pipes and utility candidates.
+
+    - path: src/app/shared/utils/draft-ui.util.ts
+      responsibility: >
+        Reusable frontend utility for draft-specific presentation helpers such as
+        round-based chip colors and normalized draft status classes. It owns only
+        UI display mapping and must not derive draft order or ownership.
 
     - path: src/app/shared/utils/player-sort.util.ts
       responsibility: >
