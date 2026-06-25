@@ -1,4 +1,5 @@
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
+import { getDraftRoundColor, getDraftStatusClass } from '../../../shared/utils/draft-ui.util';
 import type {
   CompactOwnerPickGroupViewModel,
   CurrentOwnerPickGroupViewModel,
@@ -97,7 +98,7 @@ function createDraftViewModel(
   return {
     draft,
     statusLabel: draft.DisplayStatus || rawStatus,
-    statusClass: getStatusClass(rawStatus),
+    statusClass: getDraftStatusClass(rawStatus),
     pickCount: orderedPicks.length,
     tradedPickCount: orderedPicks.filter(item => item.isCurrentlyTraded).length,
     pickedCount,
@@ -138,7 +139,7 @@ function createPickViewModel(
     currentOwner: getTeamDisplay(teamByRosterId, currentOwnerRosterId),
     originalOwner: getTeamDisplay(teamByRosterId, originalOwnerRosterId),
     isCurrentlyTraded: wasPickTraded(pick),
-    roundColor: getRoundColor(pick.Round, maxRound),
+    roundColor: getDraftRoundColor(pick.Round, maxRound),
     isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!selectedPlayer,
     selectedPlayerName,
     selectedPlayerPosition: selectedPlayer?.Position,
@@ -298,21 +299,4 @@ function getMaxRound(drafts: RawDraft[]): number {
     .map(pick => Number(pick.Round) || 0);
 
   return Math.max(...rounds, 1);
-}
-
-function getStatusClass(status: string): string {
-  const normalizedStatus = status.toLowerCase();
-
-  if (['complete', 'completed', 'closed'].includes(normalizedStatus)) return 'completed';
-  if (['live', 'drafting'].includes(normalizedStatus)) return 'live';
-  if (['pre_draft', 'upcoming'].includes(normalizedStatus)) return 'upcoming';
-  return 'unknown';
-}
-
-function getRoundColor(round: number, maxRound: number): string {
-  const denominator = Math.max(maxRound - 1, 1);
-  const progress = Math.max(round - 1, 0) / denominator;
-  const hue = 25 + progress * 150;
-
-  return `hsl(${hue}, 70%, 84%)`;
 }
