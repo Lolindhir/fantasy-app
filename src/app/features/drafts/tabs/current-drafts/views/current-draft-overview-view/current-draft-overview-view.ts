@@ -1,21 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewChecked, Component, ElementRef, Input, Renderer2, inject } from '@angular/core';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-import type { Player } from '../../../../../../core/models/fantasy.models';
-import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
 import { PositionStylePipe } from '../../../../../../shared/pipes/position-style.pipe';
+import { CurrentDraftPickPopoverComponent } from '../../components/current-draft-pick-popover/current-draft-pick-popover';
 import type { DraftViewModel } from '../../../../models/drafts-view.models';
 
 @Component({
   selector: 'app-current-draft-overview-view',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatMenuModule, PositionStylePipe],
+  imports: [CommonModule, MatMenuModule, PositionStylePipe, CurrentDraftPickPopoverComponent],
   templateUrl: './current-draft-overview-view.html',
   styleUrl: './current-draft-overview-view.scss'
 })
 export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
-  private dialog = inject(MatDialog);
   private hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
   private renderer = inject(Renderer2);
 
@@ -27,17 +24,6 @@ export class CurrentDraftOverviewViewComponent implements AfterViewChecked {
 
   ngAfterViewChecked(): void {
     this.renderTileTeamNames();
-  }
-
-  openPlayerDetail(player: Player, event?: Event): void {
-    event?.stopPropagation();
-
-    this.dialog.open(PlayerDetailDialogComponent, {
-      data: player,
-      width: '800px',
-      maxHeight: '90vh',
-      panelClass: 'player-dialog'
-    });
   }
 
   private renderTileTeamNames(): void {
