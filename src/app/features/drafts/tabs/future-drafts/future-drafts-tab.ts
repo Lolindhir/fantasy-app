@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
 import { SharedMaterialImports } from '../../../../shared/shared-material-imports';
+import { CurrentDraftPickPopoverComponent } from '../current-drafts/components/current-draft-pick-popover/current-draft-pick-popover';
 import type { DraftViewModel } from '../../models/drafts-view.models';
 
 @Component({
@@ -10,7 +11,8 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
   imports: [
     CommonModule,
     MatMenuModule,
-    SharedMaterialImports
+    SharedMaterialImports,
+    CurrentDraftPickPopoverComponent
   ],
   templateUrl: './future-drafts-tab.html',
   styleUrl: './future-drafts-tab.scss'
