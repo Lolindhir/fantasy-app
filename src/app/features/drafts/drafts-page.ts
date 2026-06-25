@@ -5,9 +5,9 @@ import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { DataService } from '../../core/services/data.service';
 import type { PastSeasonIndexEntry } from '../../core/services/data-api.service';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
+import { DraftsViewModelService } from './services/drafts-view-model.service';
 import { CurrentDraftsTabComponent } from './tabs/current-drafts/current-drafts-tab';
 import { FutureDraftsTabComponent } from './tabs/future-drafts/future-drafts-tab';
-import { createDraftsViewModel, createDraftViewModels } from './utils/drafts-view-model.mapper';
 
 
 type DraftsTab = 'current' | 'future' | 'past';
@@ -26,6 +26,7 @@ type DraftsTab = 'current' | 'future' | 'past';
 })
 export class DraftsPageComponent {
   private dataService = inject(DataService);
+  private draftsViewModelService = inject(DraftsViewModelService);
   private selectedPastSeasonSubject = new BehaviorSubject<string | null>(null);
 
   activeTab: DraftsTab = 'current';
@@ -61,7 +62,7 @@ export class DraftsPageComponent {
       }
 
       return this.dataService.getPastDraftsRaw(draftsPath).pipe(
-        map(drafts => createDraftViewModels(drafts, leagueData.teams, leagueData.players)),
+        map(drafts => this.draftsViewModelService.createDraftViewModels(drafts, leagueData.teams, leagueData.players)),
         catchError(() => of([]))
       );
     }),
@@ -75,7 +76,12 @@ export class DraftsPageComponent {
     this.pastDrafts$
   ]).pipe(
     map(([leagueData, pastSeasons, selectedSeason, pastDrafts]) => {
-      const draftVm = createDraftsViewModel(leagueData.league, leagueData.drafts, leagueData.teams, leagueData.players);
+      const draftVm = this.draftsViewModelService.createDraftsViewModel(
+        leagueData.league,
+        leagueData.drafts,
+        leagueData.teams,
+        leagueData.players
+      );
       const resolvedPastSeason = selectedSeason ?? pastSeasons[0]?.Season ?? null;
 
       return {
