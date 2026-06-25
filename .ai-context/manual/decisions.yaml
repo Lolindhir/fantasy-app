@@ -254,7 +254,7 @@ decisions:
         - Moves can focus on transaction modeling and chronological activity.
         - Existing /league-activity links remain usable through a redirect.
       negative:
-        - Shared draft-pick display logic should be extracted sooner because Drafts and Overview both render draft picks.
+        - Shared draft-pick popover content is centralized, but remaining trigger and pick-token presentation should still be reviewed across Drafts and Overview.
         - LeagueActivityComponent has a legacy name until the Moves area is renamed or rebuilt later.
 
   - id: ADR-017
@@ -271,11 +271,13 @@ decisions:
       default view and render it as a compact Sleeper-like draft board where rows
       are rounds and columns are positions in the round. Overview tiles are square
       and mobile-compact; open picks show the current owner's fantasy team logo,
-      while picked tiles show the selected player's image and position plus the
-      current owner's fantasy team logo as context. Teams and List derive their
-      first implementation from the existing draftVm.rounds. Current picks are
-      clickable in every view, including open picks, and show a compact menu with
-      pick, owner, original owner, selected-player and trade context.
+      while picked tiles show the selected player's image plus the current owner's
+      fantasy team logo as context. Player position and fuller pick details are
+      shown in the reusable pick popover rather than directly on the Overview tile.
+      Teams and List derive their first implementation from the existing
+      draftVm.rounds. Current picks are clickable in every view, including open
+      picks, and show a compact menu with pick, owner, original owner,
+      selected-player and trade context.
     rationale: >
       Draft-specific view state matches how current drafts are reviewed and avoids
       forcing all drafts into one global display mode. The compact board gives the
