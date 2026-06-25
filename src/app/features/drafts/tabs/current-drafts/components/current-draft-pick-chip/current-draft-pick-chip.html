@@ -8,46 +8,5 @@
 </button>
 
 <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
-  <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
-    <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
-    @if (item.pick.OverallPick !== null) {
-      <span class="pick-overall-label">Overall #{{ item.pick.OverallPick }}</span>
-    }
-    @if (item.selectedPlayer) {
-      <button class="picked-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer, $event)">
-        <img class="picked-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
-        <span class="picked-player-main">
-          <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
-          <span class="picked-player-meta">
-            <span
-              class="picked-player-position"
-              [ngStyle]="item.selectedPlayer.Position | positionStyle"
-            >
-              {{ item.selectedPlayer.Position }}
-            </span>
-            @if (item.selectedPlayer.TeamNFL?.Logo) {
-              <img class="picked-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
-            }
-            <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
-          </span>
-        </span>
-      </button>
-    } @else {
-      <span class="open-pick-label">Pick Open</span>
-    }
-    <span class="pick-info-owner-line">
-      <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
-      <span>{{ item.currentOwner.name }}</span>
-    </span>
-    @if (item.currentOwner.id !== item.originalOwner.id) {
-      <span class="pick-info-from-line">
-        <span>(from</span>
-        <img class="pick-info-from-avatar" [src]="item.originalOwner.avatar" alt="" />
-        <span>{{ item.originalOwner.name }})</span>
-      </span>
-    }
-    @if (item.isCurrentlyTraded) {
-      <span class="traded-pick-label">Traded Pick</span>
-    }
-  </div>
+  <app-current-draft-pick-popover [draftVm]="draftVm" [item]="item" />
 </mat-menu>
