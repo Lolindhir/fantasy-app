@@ -25,6 +25,12 @@ export interface DraftRoundViewModel {
   picks: DraftPickViewModel[];
 }
 
+export interface CurrentOwnerPickGroupViewModel {
+  owner: TeamDisplayViewModel;
+  picks: DraftPickViewModel[];
+  pickCount: number;
+}
+
 export interface CompactRoundPickViewModel {
   label: string;
   color: string;
@@ -46,7 +52,9 @@ export interface DraftViewModel {
   pickCount: number;
   tradedPickCount: number;
   pickedCount: number;
+  orderedPicks: DraftPickViewModel[];
   rounds: DraftRoundViewModel[];
+  currentOwnerPickGroups: CurrentOwnerPickGroupViewModel[];
   ownerPickGroups: CompactOwnerPickGroupViewModel[];
 }
 
