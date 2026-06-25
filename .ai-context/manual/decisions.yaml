@@ -103,13 +103,14 @@ decisions:
     title: Draft round chip colors are frontend display logic
     status: accepted
     decision: >
-      Frontend components may compute draft round chip colors for display, using
-      the maximum visible round so same-round picks have consistent colors across
-      drafts within the same view.
+      Draft round chip and tile colors are frontend-only display logic and are
+      centralized in src/app/shared/utils/draft-ui.util.ts through
+      getDraftRoundColor. Draft status display classes are normalized in the same
+      utility through getDraftStatusClass.
     rationale: >
-      The rule is presentation-specific. Because it is now used by multiple
-      draft-pick displays, it should move into a shared frontend utility, pipe or
-      service instead of remaining duplicated in page components.
+      The color and status-class mapping is presentation-specific. Centralizing it
+      keeps Overview and Drafts displays visually consistent without moving draft
+      order, ownership or source-of-truth derivation into Angular UI components.
 
   - id: ADR-011
     title: Completed draft history is stored separately from current drafts
@@ -254,11 +255,11 @@ decisions:
         - Moves can focus on transaction modeling and chronological activity.
         - Existing /league-activity links remain usable through a redirect.
       negative:
-        - Shared draft-pick popover content is centralized, but remaining trigger and pick-token presentation should still be reviewed across Drafts and Overview.
+        - Shared pick detail content is centralized, but remaining trigger and pick-token presentation can still be reviewed across Drafts and Overview.
         - LeagueActivityComponent has a legacy name until the Moves area is renamed or rebuilt later.
 
   - id: ADR-017
-    title: Current Drafts use draft-specific view modes
+    title: Current drafts have draft-scoped view modes
     status: accepted
     context: >
       Current-season drafts need multiple planning views: a compact draft-board
@@ -272,12 +273,11 @@ decisions:
       are rounds and columns are positions in the round. Overview tiles are square
       and mobile-compact; open picks show the current owner's fantasy team logo,
       while picked tiles show the selected player's image plus the current owner's
-      fantasy team logo as context. Player position and fuller pick details are
-      shown in the reusable pick popover rather than directly on the Overview tile.
-      Teams and List derive their first implementation from the existing
-      draftVm.rounds. Current picks are clickable in every view, including open
-      picks, and show a compact menu with pick, owner, original owner,
-      selected-player and trade context.
+      fantasy team logo as context. DraftPickCardComponent owns the Overview pick
+      tile presentation. Player position and fuller pick details are shown in
+      DraftPickPopoverComponent rather than directly on the Overview tile. Teams
+      and List render orderedPicks and currentOwnerPickGroups from the central
+      DraftViewModel instead of rebuilding that structure locally.
     rationale: >
       Draft-specific view state matches how current drafts are reviewed and avoids
       forcing all drafts into one global display mode. The compact board gives the
@@ -288,8 +288,9 @@ decisions:
         - Each current draft can be inspected in the most useful view independently.
         - Open and picked picks expose the same ownership and trade context.
         - Overview provides a dense mobile-friendly board for quick draft scanning.
+        - Teams and List share stable view-model fields with other Drafts views.
       negative:
-        - Current Teams/List grouping logic is temporarily component-local and should later move into the central Drafts view model.
+        - Pick trigger components remain separate where their size and visual context differ.
 
   - id: ADR-018
     title: Past season files are discoverable through a central generated index
@@ -320,3 +321,30 @@ decisions:
       negative:
         - Historical data generators must refresh the index after changing past-season files or rely on the manual workflow.
         - PastSeasonsIndex.json is a navigation manifest and must not be treated as the historical data source of truth.
+
+  - id: ADR-019
+    title: Draft presentation uses feature-local shared components
+    status: accepted
+    context: >
+      Current, past and future draft views share header metrics, pick detail
+      popover content and some pick presentation concepts, but they still need
+      different routed tab layouts and trigger sizes.
+    decision: >
+      Keep reusable Draft-specific UI under src/app/features/drafts/components/**.
+      Use DraftShellComponent for shared draft card header and metrics,
+      DraftPickPopoverComponent for shared pick detail popover content, and
+      DraftPickCardComponent for the reusable Overview pick tile. Keep generic
+      app-wide UI under src/app/shared/components/** and keep draft-only helpers
+      such as draft round colors in shared frontend utilities when they are used
+      outside the Drafts feature.
+    rationale: >
+      Draft UI is reused across multiple Drafts tabs but is still domain-specific
+      to the Drafts feature. Keeping it feature-local avoids making shared app UI
+      too domain-heavy while preventing duplicated Current/Future/Past Draft code.
+    consequences:
+      positive:
+        - Current, past and future drafts use one header/metric source.
+        - Pick detail content is centralized while trigger shapes can remain appropriate to each view.
+        - Overview and Drafts route colors can share one frontend utility without changing generated data.
+      negative:
+        - Future generic reuse outside Drafts would require intentionally moving components to src/app/shared/components.
