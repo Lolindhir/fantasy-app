@@ -144,7 +144,7 @@ try {
     # --- Upcoming Drafts aktualisieren ---
     $drafts = Update-DraftsOrderAware
     if (-not $drafts -or @($drafts).Count -eq 0) {
-        Write-Warning "Update-Drafts returned no drafts. Falling back to local Drafts.json."
+        Write-Warning "Update-DraftsOrderAware returned no drafts. Falling back to local Drafts.json."
         $drafts = Get-LeagueDraftsLocal
     }
 
