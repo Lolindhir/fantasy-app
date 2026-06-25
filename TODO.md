@@ -37,11 +37,6 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Moves später als chronologische Activity-Timeline darstellen.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
-- [ ] Draft-Pick-Trigger-Darstellung weiter vereinheitlichen.
-  - Kontext: Der Popover-Content ist inzwischen als `DraftPickPopoverComponent` zentralisiert und liegt unter `src/app/features/drafts/components/draft-pick-popover/**`.
-  - Kontext: Die Overview-Kachel ist als `DraftPickCardComponent` wiederverwendbar, während Current-Pick-Chip und Future-Round-Pill weiterhin eigene Trigger-Darstellungen sind.
-  - Ziel: Prüfen, ob Pick-Token/Trigger für Current-Pick-Chip, Future-Round-Pill und ggf. Overview-Card weiter zusammengeführt werden sollten, ohne die unterschiedlichen Darstellungsgrößen zu erzwingen.
-
 - [ ] Alternative Sortierung für kompakte Future-Drafts in Drafts prüfen.
   - Kontext: Future-Drafts werden aktuell nach Pick Strength sortiert: zuerst Anzahl Picks in Runde 1, dann Runde 2, dann Runde 3 usw. bis zur flexiblen Draft-Rundenzahl.
   - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung, sobald eine verlässliche Reihenfolge verfügbar ist.
@@ -101,6 +96,10 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Später prüfen, ob und wie der Trade Simulator als Tool oder Subbereich unter Moves aufgeht.
 
 ## Erledigt / Archiv
+
+- [x] Draft-Pick-Trigger-Darstellung weiter vereinheitlichen.
+  - Kontext: Current-Pick-Chip und Future-Round-Pill duplizierten Button-, traded-dot- und Popover-Trigger-Logik.
+  - Ergebnis: `DraftPickTriggerComponent` kapselt die gemeinsame Trigger-Mechanik und bietet Varianten für `chip` und `round-pill`. `CurrentDraftPickChipComponent` bleibt als Wrapper für bestehende Current/Past-Views erhalten; Future-Round-Pills nutzen den Trigger direkt. Die Overview-Kachel bleibt wegen ihrer eigenständigen Card-Darstellung in `DraftPickCardComponent`.
 
 - [x] Draft-ViewModel-Service für die Drafts-Route ergänzen.
   - Kontext: `DraftsPageComponent` sollte ViewModel-Erzeugung nicht direkt über Mapper-Funktionen orchestrieren.
