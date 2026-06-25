@@ -1,38 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Component, Input } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import type { Player } from '../../../../../../core/models/fantasy.models';
-import { PlayerDetailDialogComponent } from '../../../../../../shared/components/player-detail-dialog/player-detail-dialog';
 import { PositionStylePipe } from '../../../../../../shared/pipes/position-style.pipe';
 import type { DraftPickViewModel, DraftViewModel } from '../../../../models/drafts-view.models';
+import { CurrentDraftPickPopoverComponent } from '../current-draft-pick-popover/current-draft-pick-popover';
 
 @Component({
   selector: 'app-current-draft-pick-chip',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatMenuModule, PositionStylePipe],
+  imports: [CommonModule, MatMenuModule, PositionStylePipe, CurrentDraftPickPopoverComponent],
   templateUrl: './current-draft-pick-chip.html',
   styleUrl: './current-draft-pick-chip.scss'
 })
 export class CurrentDraftPickChipComponent {
-  private dialog = inject(MatDialog);
-
   @Input({ required: true }) draftVm!: DraftViewModel;
   @Input({ required: true }) item!: DraftPickViewModel;
   @Input() usePickedPositionColor = false;
-
-  get statusLabel(): string {
-    return this.item.pick.PlayerName || this.item.pick.Status === 'Picked' ? 'Picked' : 'Open Pick';
-  }
-
-  openPlayerDetail(player: Player, event?: Event): void {
-    event?.stopPropagation();
-
-    this.dialog.open(PlayerDetailDialogComponent, {
-      data: player,
-      width: '800px',
-      maxHeight: '90vh',
-      panelClass: 'player-dialog'
-    });
-  }
 }
