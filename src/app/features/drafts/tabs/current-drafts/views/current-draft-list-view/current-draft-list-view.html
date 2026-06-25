@@ -7,7 +7,7 @@
     <span>Original</span>
   </div>
 
-  @for (item of orderedPicks; track item.pick.PickKey) {
+  @for (item of draftVm.orderedPicks; track item.pick.PickKey) {
     <div class="current-pick-table-row" [class.completed-draft]="isCompletedDraft">
       <span class="overall-cell">#{{ item.pick.OverallPick }}</span>
       <app-current-draft-pick-chip [draftVm]="draftVm" [item]="item" />
