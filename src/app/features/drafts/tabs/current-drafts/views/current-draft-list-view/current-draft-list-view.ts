@@ -26,12 +26,6 @@ export class CurrentDraftListViewComponent {
       || draft?.SleeperStatus === 'complete';
   }
 
-  get orderedPicks(): DraftPickViewModel[] {
-    return this.draftVm.rounds
-      .flatMap(round => round.picks)
-      .sort((a, b) => this.comparePicksByDraftOrder(a, b));
-  }
-
   getPickStatusLabel(item: DraftPickViewModel): string {
     return item.pick.PlayerName || item.pick.Status === 'Picked' ? 'Picked' : 'Open';
   }
@@ -43,15 +37,5 @@ export class CurrentDraftListViewComponent {
       maxHeight: '90vh',
       panelClass: 'player-dialog'
     });
-  }
-
-  private comparePicksByDraftOrder(a: DraftPickViewModel, b: DraftPickViewModel): number {
-    const roundDiff = (a.pick.Round ?? 999) - (b.pick.Round ?? 999);
-    if (roundDiff !== 0) return roundDiff;
-
-    const positionDiff = (a.pick.PositionInRound ?? 999) - (b.pick.PositionInRound ?? 999);
-    if (positionDiff !== 0) return positionDiff;
-
-    return (a.pick.OverallPick ?? 9999) - (b.pick.OverallPick ?? 9999);
   }
 }
