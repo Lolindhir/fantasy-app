@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { DataService } from '../../core/services/data.service';
 import type { AwardInStanding, DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
+import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
 import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 
@@ -199,7 +200,7 @@ export class OverviewComponent implements OnInit {
       group.picks.push({
         display: pick.DisplayPick,
         round: pick.Round,
-        backgroundColor: this.getRoundChipColor(pick.Round, maxRound)
+        backgroundColor: getDraftRoundColor(pick.Round, maxRound)
       });
     }
 
@@ -215,19 +216,6 @@ export class OverviewComponent implements OnInit {
       .filter(round => round > 0);
 
     return rounds.length ? Math.max(...rounds) : 1;
-  }
-
-  private getRoundChipColor(round: number, maxRound: number): string {
-    if (!round || maxRound <= 1) {
-      return 'hsl(35, 55%, 84%)';
-    }
-
-    const ratio = (round - 1) / (maxRound - 1);
-    const startHue = 35;
-    const endHue = 205;
-    const hue = startHue + ratio * (endHue - startHue);
-
-    return `hsl(${hue}, 55%, 84%)`;
   }
 
   standingEmoji(place: number): string {
