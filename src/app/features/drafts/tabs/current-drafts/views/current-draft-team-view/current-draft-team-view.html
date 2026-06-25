@@ -1,5 +1,5 @@
 <div class="current-team-owner-list">
-  @for (ownerGroup of ownerPickGroups; track ownerGroup.owner.id) {
+  @for (ownerGroup of draftVm.currentOwnerPickGroups; track ownerGroup.owner.id) {
     <div class="current-team-owner-row">
       <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
       <span class="current-team-name">{{ ownerGroup.owner.name }}</span>
