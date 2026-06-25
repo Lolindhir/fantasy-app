@@ -117,15 +117,17 @@ coreConcepts:
       - display completed past drafts from public/data/past_seasons/Drafts/Drafts_<season>.json discovered through public/data/PastSeasonsIndex.json
       - split current-season, future and past drafts into dedicated top-level tabs
       - let the Past tab choose available seasons from PastSeasonsIndex.json via dropdown and load the selected season's historical Drafts resource
-      - show draft-card metrics for current, past and future drafts as Rounds, Settings.Type such as Linear/Snake, and Traded Picks
+      - map draft presentation data through DraftsViewModelService and the central Drafts view-model mapper
+      - show draft-card metrics for current, past and future drafts through DraftShellComponent as Rounds, Settings.Type such as Linear/Snake, and Traded Picks
       - show current-season and past drafts with draft-specific view modes: Overview, Teams and List
       - show Overview as the default current/past draft view using a compact draft-board grid where rows are rounds and columns are pick positions in the round
-      - render Overview pick tiles as square, mobile-compact cells with DisplayPick, current-owner logo for open picks, selected-player image for picked picks and current-owner logo as tile context; player position is shown in the pick popover, not directly on the tile
-      - show current-season and past Teams view as current-owner pick groups with concrete pick chips such as 2.03
-      - show current-season and past List view as ordered pick rows with compact mobile layout and more detailed desktop layout
-      - make current-season and past picks clickable in every current/past view, including open picks, to expose pick, owner, original owner and trade context
+      - render Overview pick tiles through DraftPickCardComponent as square, mobile-compact cells with DisplayPick, current-owner logo for open picks, selected-player image for picked picks and current-owner logo as tile context; player position is shown in the pick popover, not directly on the tile
+      - show current-season and past Teams view from currentOwnerPickGroups in the central DraftViewModel as current-owner pick groups with concrete pick chips such as 2.03
+      - show current-season and past List view from orderedPicks in the central DraftViewModel as ordered pick rows with compact mobile layout and more detailed desktop layout
+      - make current-season and past picks clickable in every current/past view, including open picks, to expose pick, owner, original owner and trade context through DraftPickPopoverComponent
       - use PlayerName as a fallback display value for completed historical picks when PlayerID cannot be resolved against current Players.json
-      - show future drafts as compact team-owned round summaries with clickable shared pick popovers in a future-compatible mode
+      - show future drafts as compact team-owned round summaries inside DraftShellComponent with clickable shared pick popovers in a future-compatible mode
+      - use src/app/shared/utils/draft-ui.util.ts for shared draft round colors and draft status display classes
       - show current owner as the primary owner label in pick popovers
       - show original owner as "from <team>" only when current owner differs from original owner
       - allow the Traded Pick badge to indicate trade-history context independently from whether the pick is currently owned by the original owner
