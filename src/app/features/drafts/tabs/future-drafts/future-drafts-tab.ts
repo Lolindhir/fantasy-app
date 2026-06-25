@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { SharedMaterialImports } from '../../../../shared/shared-material-imports';
 import { DraftPickPopoverComponent } from '../../components/draft-pick-popover/draft-pick-popover';
 import { DraftShellComponent } from '../../components/draft-shell/draft-shell';
 import type { DraftViewModel } from '../../models/drafts-view.models';
@@ -12,7 +11,6 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
   imports: [
     CommonModule,
     MatMenuModule,
-    SharedMaterialImports,
     DraftPickPopoverComponent,
     DraftShellComponent
   ],
