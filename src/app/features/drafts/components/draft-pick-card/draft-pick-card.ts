@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { PositionStylePipe } from '../../../shared/pipes/position-style.pipe';
-import { CurrentDraftPickPopoverComponent } from '../../drafts/tabs/current-drafts/components/current-draft-pick-popover/current-draft-pick-popover';
-import type { DraftPickViewModel, DraftViewModel } from '../../drafts/models/drafts-view.models';
+import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
+import { CurrentDraftPickPopoverComponent } from '../../tabs/current-drafts/components/current-draft-pick-popover/current-draft-pick-popover';
+import type { DraftPickViewModel, DraftViewModel } from '../../models/drafts-view.models';
 
 @Component({
   selector: 'app-draft-pick-card',
