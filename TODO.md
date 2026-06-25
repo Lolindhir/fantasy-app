@@ -38,14 +38,15 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Moves später als chronologische Activity-Timeline darstellen.
   - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
 
-- [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente prüfen und ggf. auslagern.
+- [ ] Draft-Pick-Anzeige als wiederverwendbare UI-Komponente weiter prüfen.
   - Kontext: Draft Picks werden inzwischen in `src/app/features/overview/overview.ts` und im Drafts-Feature unter `src/app/features/drafts/**` angezeigt.
-  - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` vermeiden doppelte Template-/ViewModel-Logik.
+  - Kontext: Der Popover-Content für Current, Past und Future Draft Picks ist inzwischen zentralisiert.
+  - Ziel: Gemeinsame Darstellung für Pick-Token, Current Owner und `from Original Owner` weiterhin prüfen, damit Trigger wie Current-Pick-Chip, Overview-Kachel und Future-Round-Pill nicht dauerhaft auseinanderlaufen.
   - Mögliche Zielstruktur: `src/app/shared/components/draft-pick-chip` oder ein ähnlicher Shared-UI-Baustein.
 
-- [ ] Current-Draft-Pick-Popover und Player-Mini-Card als gemeinsame UI-Komponente prüfen.
-  - Kontext: `CurrentDraftPickChipComponent` und `CurrentDraftOverviewViewComponent` enthalten sehr ähnliche Popover-Inhalte für Pick, Overall, Player, Owner, Original Owner und Traded Pick.
-  - Ziel: Popover-Content und Player-Mini-Card wiederverwenden, ohne die unterschiedlichen Trigger (`PickChip` vs. Overview-Kachel) zu koppeln.
+- [ ] Gemeinsames Draft-Pick-Popover neutral benennen und ggf. verschieben.
+  - Kontext: `CurrentDraftPickPopoverComponent` wird inzwischen von Current/Past Drafts und Future Drafts genutzt, liegt aber technisch noch unter `src/app/features/drafts/tabs/current-drafts/components/current-draft-pick-popover/**`.
+  - Ziel: Komponente neutral benennen und in einen gemeinsamen Drafts-Komponentenbereich verschieben, z. B. `src/app/features/drafts/components/draft-pick-popover/**`, ohne die Trigger-Komponenten zu koppeln.
 
 - [ ] Draft-Card-Header und Metrikzeile zwischen Current und Future vereinheitlichen.
   - Kontext: Current Drafts nutzen `DraftShellComponent`, Future Drafts rendern `mat-card` inklusive Header und Metrikzeile direkt in `future-drafts-tab.html`.
@@ -81,10 +82,6 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Prüfen, ob Consumer künftig direkt die Shared Utils nutzen sollen, damit die Kompatibilitäts-Delegates in `DataService` entfallen können.
   - Ziel: Prüfen, ob `DataService` dauerhaft als App-Datenfassade benannt bleibt oder später klarer als `FantasyDataService`/`DataFacade` bezeichnet werden soll.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
-
-- [ ] Unbenutzte Hilfslogik im Drafts-Feature bereinigen.
-  - Kontext: `CurrentDraftPickChipComponent.statusLabel` wird aktuell nicht im Template verwendet.
-  - Ziel: Unbenutzte Getter/Hilfslogik entfernen oder bei Bedarf in eine gemeinsame Draft-Pick-Status-Utility verschieben.
 
 - [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
   - Kontext: Die Darstellung funktioniert, aber ein Teil des Stylings liegt aktuell inline im Template.
@@ -124,6 +121,14 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Später prüfen, ob und wie der Trade Simulator als Tool oder Subbereich unter Moves aufgeht.
 
 ## Erledigt / Archiv
+
+- [x] Current-Draft-Pick-Popover und Player-Mini-Card als gemeinsame UI-Komponente prüfen.
+  - Kontext: `CurrentDraftPickChipComponent`, `CurrentDraftOverviewViewComponent` und Future-Draft-Round-Pills nutzten ähnliche Popover-Inhalte für Pick, Overall, Player, Owner, Original Owner und Traded Pick.
+  - Ergebnis: `CurrentDraftPickPopoverComponent` rendert den gemeinsamen Popover-Content für vollständige Current/Past-Picks und kompakte Future-Picks. Trigger bleiben in den jeweiligen Komponenten getrennt.
+
+- [x] Unbenutzte Hilfslogik im Drafts-Feature bereinigen.
+  - Kontext: `CurrentDraftPickChipComponent.statusLabel` wurde nicht im Template verwendet.
+  - Ergebnis: Der ungenutzte Getter wurde beim Umstellen auf das gemeinsame Draft-Pick-Popover entfernt.
 
 - [x] Past Drafts im Frontend auf Basis von `PastSeasonsIndex.json` ergänzen.
   - Kontext: `PastSeasonsIndex.json` macht verfügbare historische Season-Ressourcen auffindbar.
