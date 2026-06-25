@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
-import { DraftPickPopoverComponent } from '../../components/draft-pick-popover/draft-pick-popover';
+import { DraftPickTriggerComponent } from '../../components/draft-pick-trigger/draft-pick-trigger';
 import { DraftShellComponent } from '../../components/draft-shell/draft-shell';
 import type { DraftViewModel } from '../../models/drafts-view.models';
 
@@ -10,8 +9,7 @@ import type { DraftViewModel } from '../../models/drafts-view.models';
   standalone: true,
   imports: [
     CommonModule,
-    MatMenuModule,
-    DraftPickPopoverComponent,
+    DraftPickTriggerComponent,
     DraftShellComponent
   ],
   templateUrl: './future-drafts-tab.html',
