@@ -105,7 +105,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Draft-Pick-Trigger-Darstellung weiter vereinheitlichen.
   - Kontext: Current-Pick-Chip und Future-Round-Pill duplizierten Button-, traded-dot- und Popover-Trigger-Logik.
-  - Ergebnis: `DraftPickTriggerComponent` kapselt die gemeinsame Trigger-Mechanik und bietet Varianten für `chip` und `round-pill`. `CurrentDraftPickComponent` bleibt als Wrapper für bestehende Current/Past-Views erhalten; Future-Round-Pills nutzen den Trigger direkt. Die Overview-Kachel bleibt wegen ihrer eigenständigen Card-Darstellung in `DraftPickCardComponent`.
+  - Ergebnis: `DraftPickTriggerComponent` kapselt die gemeinsame Trigger-Mechanik und bietet Varianten für `chip` und `round-pill`. `CurrentDraftPickChipComponent` bleibt als Wrapper für bestehende Current/Past-Views erhalten; Future-Round-Pills nutzen den Trigger direkt. Die Overview-Kachel bleibt wegen ihrer eigenständigen Card-Darstellung in `DraftPickCardComponent`.
 
 - [x] Draft-ViewModel-Service für die Drafts-Route ergänzen.
   - Kontext: `DraftsPageComponent` sollte ViewModel-Erzeugung nicht direkt über Mapper-Funktionen orchestrieren.
