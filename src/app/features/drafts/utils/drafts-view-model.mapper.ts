@@ -1,6 +1,7 @@
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
 import type {
   CompactOwnerPickGroupViewModel,
+  CurrentOwnerPickGroupViewModel,
   DraftPickViewModel,
   DraftRoundViewModel,
   DraftsViewModel,
@@ -86,22 +87,24 @@ function createDraftViewModel(
   playerById: Map<string, Player>,
   maxRound: number
 ): DraftViewModel {
-  const picks = [...(draft.Picks ?? [])]
+  const orderedPicks = [...(draft.Picks ?? [])]
     .sort(comparePicksByDraftOrder)
     .map(pick => createPickViewModel(pick, teamByRosterId, playerById, maxRound));
 
-  const pickedCount = picks.filter(item => item.isPicked).length;
+  const pickedCount = orderedPicks.filter(item => item.isPicked).length;
   const rawStatus = draft.Status || draft.SleeperStatus || 'Unknown';
 
   return {
     draft,
     statusLabel: draft.DisplayStatus || rawStatus,
     statusClass: getStatusClass(rawStatus),
-    pickCount: picks.length,
-    tradedPickCount: picks.filter(item => item.isCurrentlyTraded).length,
+    pickCount: orderedPicks.length,
+    tradedPickCount: orderedPicks.filter(item => item.isCurrentlyTraded).length,
     pickedCount,
-    rounds: createRoundGroups(picks),
-    ownerPickGroups: createOwnerPickGroups(picks, getDraftMaxRound(draft))
+    orderedPicks,
+    rounds: createRoundGroups(orderedPicks),
+    currentOwnerPickGroups: createCurrentOwnerPickGroups(orderedPicks),
+    ownerPickGroups: createOwnerPickGroups(orderedPicks, getDraftMaxRound(draft))
   };
 }
 
@@ -113,6 +116,10 @@ function comparePicksByDraftOrder(a: DraftPick, b: DraftPick): number {
   if (positionDiff !== 0) return positionDiff;
 
   return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
+}
+
+function comparePickViewModelsByDraftOrder(a: DraftPickViewModel, b: DraftPickViewModel): number {
+  return comparePicksByDraftOrder(a.pick, b.pick);
 }
 
 function createPickViewModel(
@@ -161,6 +168,49 @@ function createRoundGroups(picks: DraftPickViewModel[]): DraftRoundViewModel[] {
     }));
 }
 
+function createCurrentOwnerPickGroups(picks: DraftPickViewModel[]): CurrentOwnerPickGroupViewModel[] {
+  const groups = new Map<number, DraftPickViewModel[]>();
+
+  picks.forEach(pick => {
+    const ownerId = pick.currentOwner.id;
+    if (!groups.has(ownerId)) groups.set(ownerId, []);
+    groups.get(ownerId)!.push(pick);
+  });
+
+  return [...groups.values()]
+    .map(ownerPicks => {
+      const sortedPicks = [...ownerPicks].sort(comparePickViewModelsByDraftOrder);
+
+      return {
+        owner: sortedPicks[0].currentOwner,
+        picks: sortedPicks,
+        pickCount: sortedPicks.length
+      };
+    })
+    .sort(compareCurrentOwnerPickGroupsByPickStrength);
+}
+
+function compareCurrentOwnerPickGroupsByPickStrength(
+  a: CurrentOwnerPickGroupViewModel,
+  b: CurrentOwnerPickGroupViewModel
+): number {
+  const maxPickCount = Math.max(a.picks.length, b.picks.length);
+
+  for (let index = 0; index < maxPickCount; index++) {
+    const aPick = a.picks[index];
+    const bPick = b.picks[index];
+
+    if (!aPick && bPick) return 1;
+    if (aPick && !bPick) return -1;
+    if (!aPick || !bPick) continue;
+
+    const pickDiff = comparePickViewModelsByDraftOrder(aPick, bPick);
+    if (pickDiff !== 0) return pickDiff;
+  }
+
+  return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
+}
+
 function createOwnerPickGroups(
   picks: DraftPickViewModel[],
   draftMaxRound: number
@@ -175,11 +225,7 @@ function createOwnerPickGroups(
 
   return [...groups.values()]
     .map(ownerPicks => {
-      const sortedPicks = [...ownerPicks].sort((a, b) => {
-        const roundDiff = a.pick.Round - b.pick.Round;
-        if (roundDiff !== 0) return roundDiff;
-        return (a.pick.OverallPick ?? 9999) - (b.pick.OverallPick ?? 9999);
-      });
+      const sortedPicks = [...ownerPicks].sort(comparePickViewModelsByDraftOrder);
 
       return {
         owner: sortedPicks[0].currentOwner,
