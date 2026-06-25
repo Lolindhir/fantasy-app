@@ -1,0 +1,18 @@
+<button
+  class="draft-pick-trigger"
+  [class.chip]="variant === 'chip'"
+  [class.round-pill]="variant === 'round-pill'"
+  [class.traded-pick]="isTradedPick"
+  [ngStyle]="usePositionColor ? (selectedPlayerPosition | positionStyle) : { background: roundColor }"
+  [matMenuTriggerFor]="pickInfoMenu"
+  type="button">
+  {{ label }}
+</button>
+
+<mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
+  <app-draft-pick-popover
+    [draftVm]="draftVm"
+    [item]="item"
+    [compactPick]="compactPick"
+    [currentOwner]="currentOwner" />
+</mat-menu>
