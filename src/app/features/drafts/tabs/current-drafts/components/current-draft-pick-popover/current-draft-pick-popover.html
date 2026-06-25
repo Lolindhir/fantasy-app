@@ -1,42 +1,44 @@
 <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
-  <strong>{{ item.pick.DisplayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
-  @if (item.pick.OverallPick !== null) {
-    <span class="pick-overall-label">Overall #{{ item.pick.OverallPick }}</span>
+  <strong>{{ displayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+  @if (overallPick !== null) {
+    <span class="pick-overall-label">Overall #{{ overallPick }}</span>
   }
-  @if (item.selectedPlayer) {
-    <button class="picked-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer, $event)">
-      <img class="picked-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+  @if (selectedPlayer) {
+    <button class="picked-player-card" type="button" (click)="openPlayerDetail(selectedPlayer, $event)">
+      <img class="picked-player-picture" [src]="selectedPlayer.Picture" alt="" />
       <span class="picked-player-main">
-        <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
+        <strong>{{ selectedPlayer.NameShort || selectedPlayer.Name }}</strong>
         <span class="picked-player-meta">
           <span
             class="picked-player-position"
-            [ngStyle]="item.selectedPlayer.Position | positionStyle"
+            [ngStyle]="selectedPlayer.Position | positionStyle"
           >
-            {{ item.selectedPlayer.Position }}
+            {{ selectedPlayer.Position }}
           </span>
-          @if (item.selectedPlayer.TeamNFL?.Logo) {
-            <img class="picked-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
+          @if (selectedPlayer.TeamNFL?.Logo) {
+            <img class="picked-player-nfl-logo" [src]="selectedPlayer.TeamNFL.Logo" alt="" />
           }
-          <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
+          <span>{{ selectedPlayer.TeamNFL?.Abv }}</span>
         </span>
       </span>
     </button>
   } @else {
     <span class="open-pick-label">Pick Open</span>
   }
-  <span class="pick-info-owner-line">
-    <img class="pick-info-avatar" [src]="item.currentOwner.avatar" alt="" />
-    <span>{{ item.currentOwner.name }}</span>
-  </span>
-  @if (item.currentOwner.id !== item.originalOwner.id) {
-    <span class="pick-info-from-line">
-      <span>(from</span>
-      <img class="pick-info-from-avatar" [src]="item.originalOwner.avatar" alt="" />
-      <span>{{ item.originalOwner.name }})</span>
+  @if (currentOwnerDisplay) {
+    <span class="pick-info-owner-line">
+      <img class="pick-info-avatar" [src]="currentOwnerDisplay.avatar" alt="" />
+      <span>{{ currentOwnerDisplay.name }}</span>
     </span>
   }
-  @if (item.isCurrentlyTraded) {
+  @if (showOriginalOwner && originalOwnerDisplay) {
+    <span class="pick-info-from-line">
+      <span>(from</span>
+      <img class="pick-info-from-avatar" [src]="originalOwnerDisplay.avatar" alt="" />
+      <span>{{ originalOwnerDisplay.name }})</span>
+    </span>
+  }
+  @if (isTradedPick) {
     <span class="traded-pick-label">Traded Pick</span>
   }
 </div>
