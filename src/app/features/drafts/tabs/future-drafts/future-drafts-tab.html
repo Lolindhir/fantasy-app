@@ -33,16 +33,10 @@
                         {{ roundPick.label }}
                       </button>
                       <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
-                        <div class="pick-origin-menu-content" (click)="$event.stopPropagation()">
-                          <strong>{{ roundPick.label.replace('R', 'Round ') }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
-                          <span class="pick-origin-team-line">
-                            <img class="pick-origin-avatar" src="{{ roundPick.originalOwner.avatar }}" />
-                            <span>Original: {{ roundPick.originalOwner.name }}</span>
-                          </span>
-                          @if (roundPick.isCurrentlyTraded) {
-                            <span class="traded-pick-label">Traded Pick</span>
-                          }
-                        </div>
+                        <app-current-draft-pick-popover
+                          [draftVm]="draftVm"
+                          [compactPick]="roundPick"
+                          [currentOwner]="ownerGroup.owner" />
                       </mat-menu>
                     }
                   </div>
