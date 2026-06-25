@@ -301,85 +301,144 @@ try {
         $sortedGames = $schedule | Sort-Object { $_.gameID }
 
         foreach ($game in $sortedGames) {
-            if (-not $game.gameDetails.week) { continue }
-
-            $week = [int]$game.gameDetails.week
-
-            if ($game.gameDetails.gameStatus -eq "Completed") {
-                if ($week -gt $finalWeek) { $finalWeek = $week }
-                if ($week -gt $currentWeek) { $currentWeek = $week + 1 }
+            # Nur Spiele zählen, die NICHT mit "Final" beginnen (also z.B. "Scheduled", "In Progress", etc.)
+            if ($game.gameStatus -notmatch '^Final') {
+                # Woche extrahieren
+                if ($game.gameWeek -match 'Week (\d+)') {
+                    $currentWeek = [int]$matches[1]
+                    Write-Host "-> Found first non-final game: $($game.gameID) (Week $currentWeek)" -ForegroundColor Yellow
+                } else {
+                    Write-Warning "Could not parse gameWeek for $($game.gameID): $($game.gameWeek)"
+                }
+                break
             }
         }
 
-        # Fallback: Wenn noch keine Games completed sind, Woche 1
-        if ($currentWeek -eq 0) { $currentWeek = 1 }
+        # Wenn alle Spiele "Final" sind (oder "Final/OT"), letzte bekannte Woche nehmen
+        if (-not $currentWeek -and $sortedGames.Count -gt 0) {
+            if ($sortedGames[-1].gameWeek -match 'Week (\d+)') {
+                $finalWeek = [int]$matches[1]
+                Write-Host "All games final. Defaulting to last known week" -ForegroundColor DarkGray
+            }
+        } else {
+            $finalWeek = $currentWeek - 1
+        }
 
-        # Deckelung auf letzte Liga-Woche
-        if ($currentWeek -gt $lastWeek) { $currentWeek = $lastWeek }
+        # Wenn die finale Woche größer als die letzte gewertete Woche ist, setzen wir sie auf diese
+        if ($finalWeek -gt $lastWeek) {
+            $finalWeek = $lastWeek
+            Write-Host "Adjusting final week to last scored week: Week $finalWeek" -ForegroundColor DarkGray
+        }
     }
 
-    # --- Ligaobjekt bauen ---
-    $leagueOutput = [ordered]@{
-        LeagueID                  = $league.league_id
-        Name                      = $league.name
-        Avatar                    = Get-SleeperAvatarUrl $league.avatar
-        Season                    = $league.season
-        SeasonType                = $league.season_type
-        Status                    = Get-LeagueStatus `
-                                        -leagueStatus $league.status `
-                                        -leagueSeason ([int]$league.season) `
-                                        -currentYear ([int]$config.LeagueYear) `
-                                        -seasonStartBufferDays ([int]$LeagueStatusSeasonStartBufferDays)
-        FinalScoredWeek           = $finalWeek
-        CurrentWeek               = $currentWeek
-        LastLeagueWeek            = $lastWeek
-        PlayoffStartWeek          = $playoffStart
-        TradeDeadlineWeek         = $league.settings.trade_deadline
-        RosterSize                = $league.roster_positions
-        TotalTeams                = $league.total_rosters
-        SalaryCap                 = $salaryCapTotal
-        SalaryCapProjected        = $salaryCapProjected
-        SalaryCapFantasy          = 200
-        SalaryCapProjectedFantasy = 200
-        CapDeadline               = $CapDeadline
-        SalaryRelevantTeamSize    = $SalaryRelevantTeamSize
-
-        WaiversOpen               = Test-LeagueWaiversOpen `
-                                        -leagueStatus $league.status `
-                                        -finalScoredWeek $finalWeek `
-                                        -lastLeagueWeek $lastWeek
-        WaiversMetaText           = Get-LeagueWaiversMetaText `
-                                        -leagueStatus $league.status `
-                                        -finalScoredWeek $finalWeek `
-                                        -lastLeagueWeek $lastWeek
-        TradesOpen                = Test-LeagueTradesOpen `
-                                        -leagueStatus $league.status `
-                                        -currentWeek $currentWeek `
-                                        -tradeDeadlineWeek $league.settings.trade_deadline
-        TradesMetaText            = Get-LeagueTradesMetaText `
-                                        -leagueStatus $league.status `
-                                        -currentWeek $currentWeek `
-                                        -tradeDeadlineWeek $league.settings.trade_deadline
-        CutsAllowed               = Test-LeagueCutsAllowed `
-                                        -leagueStatus $league.status `
-                                        -capDeadline $CapDeadline
-        CutsMetaText              = Get-LeagueCutsMetaText `
-                                        -leagueStatus $league.status `
-                                        -capDeadline $CapDeadline
-        Teams                     = $teamData
-        Standings                 = $standings
+    if ($finalWeek -ge 0) {
+        Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
+    } else {
+        Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
-    # --- JSON speichern mit Vergleich ---
-    Save-JsonFile -Type "League" -Data $leagueOutput -CompareScript (Get-Compare) -CreateBackup -UpdateTimestamp
+    # Status setzen, Offenheit von Trades, Cuts, Waivers prüfen
+    $status = Resolve-LeagueStatus `
+        -League $league `
+        -Drafts $drafts `
+        -Schedule $schedule `
+        -LeagueYear ([int]$config.LeagueYear) `
+        -CapDeadline $CapDeadline `
+        -FinalScoredWeek $finalWeek `
+        -PlayoffStartWeek $playoffStart `
+        -SeasonStartBufferDays $LeagueStatusSeasonStartBufferDays
 
-    # --- Relevante Spielerdatei und Chat-Export aktualisieren ---
-    $relevantPlayers = Get-RelevantPlayers -players $playersData -leagueTeams $teamData
-    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers
-    Export-PlayerChatChunks -Players $relevantPlayers -OutputDir $PlayersRelevantChatDir
+    $cutsAllowed = $true
+    $cutsMetaText = ""
+    $waiversOpen = [int]$league.settings.disable_adds -eq 0
+    Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
+    $waiversMetaText = ""
+    $tradesOpen = [int]$league.settings.disable_trades -eq 0
+    $tradeDeadlineWeek = [int]$league.settings.trade_deadline
+    $leagueWeekForTradeDeadline = $currentWeek
+    if ($leagueWeekForTradeDeadline -le 0) {
+        $leagueWeekForTradeDeadline = $finalWeek
+    }
+    if ($tradeDeadlineWeek -gt 0 -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
+        $tradesOpen = $false
+    }
+    Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
+    $tradesMetaText = ""
+
+    if ($status -eq "Completed") {
+        $cutsAllowed = $false
+        $waiversOpen = $false
+        $tradesOpen = $false
+    }
+
+    Write-Host "League is in status '$status'." -ForegroundColor Yellow
+    Write-Host "Waivers open: $waiversOpen | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
+    
+
+    # Ermitteln, wann die Waivers sind
+
+    # Waiver Wire Reihenfolge ermitteln
+
+    # Draft Reihenfolge ermitteln
+
+
+    # --- League JSON vorbereiten ---
+    $leagueAsJson = @()
+    $leagueAsJson += [PSCustomObject]@{
+        LeagueID                = $league.league_id
+        Name                    = $league.name
+        Avatar                  = Get-SleeperAvatar($league.avatar)
+        Season                  = $league.season
+        SeasonType              = $league.season_type
+        Status                  = $status
+        CurrentWeek             = $currentWeek
+        FinalScoredWeek         = $finalWeek
+        LastLeagueWeek          = $lastWeek
+        PlayoffStartWeek        = $playoffStart
+        TradeDeadlineWeek       = $league.settings.trade_deadline
+        CutsAllowed             = $cutsAllowed
+        CutsMetaText            = $cutsMetaText
+        WaiversOpen             = $waiversOpen
+        WaiversMetaText         = $waiversMetaText
+        TradesOpen              = $tradesOpen
+        TradesMetaText          = $tradesMetaText
+        TotalTeams              = $league.total_rosters
+        SalaryCap               = $salaryCapTotal
+        SalaryCapProjected      = $salaryCapProjected
+        CapDeadline             = $CapDeadline
+        SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
+        Teams                   = $teamData
+        Standings               = $standings
+        Playoffs                = $playoffs
+        RosterSize              = $league.roster_positions
+        ScoringType             = $league.scoring_settings
+        Settings                = $league.settings
+        LeagueIDPrevious        = $league.previous_league_id
+    }
+
+    # --- Relevante Spielerdatei schreiben ---
+    $relevantPlayers = Get-RelevantPlayers -Players $playersData -Teams $teamData
+    $comparePlayers = {
+        param($oldPlayers, $newPlayers)
+        Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
+    }
+    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers -CompareScript $comparePlayers
+
+    Export-PlayersForChatChunks `
+    -Players $relevantPlayers `
+    -TargetDirectory $PlayersRelevantChatDir `
+    -ChunkSize 10 `
+    -Source "Players_Relevant.json"
+
+    # --- JSON schreiben ---
+    $compare = & Get-Compare
+    Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
+
+    # --- Fertig ---
+    exit 0
 
 }
 catch {
-    Write-Error "Fehler beim Aktualisieren der League-Daten: $_"
+    Write-Error "An error occurred: $_"
     exit 1
 }
