@@ -5,26 +5,7 @@
         class="draft-board-row"
         [style.--column-count]="columnCount">
         @for (item of round.picks; track item.pick.PickKey) {
-          <button
-            class="draft-pick-tile"
-            [class.picked]="item.selectedPlayer"
-            [class.open]="!item.selectedPlayer"
-            [ngStyle]="item.selectedPlayer ? (item.selectedPlayer.Position | positionStyle) : { background: item.roundColor }"
-            [matMenuTriggerFor]="pickInfoMenu"
-            type="button">
-            <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
-
-            @if (item.selectedPlayer) {
-              <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
-              <img class="tile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
-            } @else {
-              <img class="tile-open-owner-logo" [src]="item.currentOwner.avatar" alt="" />
-            }
-          </button>
-
-          <mat-menu #pickInfoMenu="matMenu" class="current-pick-info-menu">
-            <app-current-draft-pick-popover [draftVm]="draftVm" [item]="item" />
-          </mat-menu>
+          <app-draft-pick-card [draftVm]="draftVm" [item]="item" />
         }
       </div>
     }
