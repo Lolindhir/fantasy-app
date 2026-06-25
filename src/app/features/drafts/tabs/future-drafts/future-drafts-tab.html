@@ -14,20 +14,11 @@
                 <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
                 <div class="compact-round-list">
                   @for (roundPick of ownerGroup.picks; track $index) {
-                    <button
-                      class="round-pill"
-                      [class.traded-pick]="roundPick.isCurrentlyTraded"
-                      [style.background]="roundPick.color"
-                      [matMenuTriggerFor]="pickOriginMenu"
-                      type="button">
-                      {{ roundPick.label }}
-                    </button>
-                    <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
-                      <app-draft-pick-popover
-                        [draftVm]="draftVm"
-                        [compactPick]="roundPick"
-                        [currentOwner]="ownerGroup.owner" />
-                    </mat-menu>
+                    <app-draft-pick-trigger
+                      [draftVm]="draftVm"
+                      [compactPick]="roundPick"
+                      [currentOwner]="ownerGroup.owner"
+                      variant="round-pill" />
                   }
                 </div>
               </div>
