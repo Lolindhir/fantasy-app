@@ -23,7 +23,9 @@
       </span>
     </button>
   } @else {
-    <span class="open-pick-label">Pick Open</span>
+    @if (showOpenPickLabel) {
+      <span class="open-pick-label">Pick Open</span>
+    }
   }
   @if (currentOwnerDisplay; as owner) {
     <span class="pick-info-owner-line">
