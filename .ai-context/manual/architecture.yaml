@@ -123,14 +123,15 @@ frontendStructure:
         render Overview, Teams or List. Overview renders a compact draft-board grid
         where rows are rounds and columns are positions in the round. Teams groups
         concrete picks by current owner. List renders picks in draft order with
-        compact mobile and more detailed desktop layout. Pick tiles/chips open
-        compact popovers for both open and picked selections.
+        compact mobile and more detailed desktop layout. Pick tiles/chips open a
+        reusable compact pick popover for open/picked state, owner, original-owner,
+        selected-player and trade context.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
         Future draft presentation. It renders team-owned round summaries, marks
-        traded/non-own picks with a dot and opens compact origin popovers for
-        pick ownership context.
+        traded/non-own picks with a dot and opens the shared compact pick popover
+        in a future-compatible mode for pick ownership context.
 
     - path: src/app/features/league-activity/league-activity.ts
       responsibility: >
