@@ -6,45 +6,34 @@
 
     <div class="compact-draft-grid">
       @for (draftVm of drafts; track draftVm.draft.DraftKey) {
-        <mat-card class="compact-draft-card">
-          <mat-card-header>
-            <mat-card-title>{{ draftVm.draft.DisplayDraftKey }}</mat-card-title>
-            <mat-card-subtitle>
-              <span class="draft-metrics">
-                {{ draftVm.draft.Settings.Rounds }} Rounds · {{ draftVm.draft.Settings.Type | titlecase }} · {{ draftVm.tradedPickCount }} Traded Picks
-              </span>
-            </mat-card-subtitle>
-          </mat-card-header>
-
-          <mat-card-content>
-            <div class="compact-owner-list">
-              @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
-                <div class="compact-owner-row">
-                  <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
-                  <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
-                  <div class="compact-round-list">
-                    @for (roundPick of ownerGroup.picks; track $index) {
-                      <button
-                        class="round-pill"
-                        [class.traded-pick]="roundPick.isCurrentlyTraded"
-                        [style.background]="roundPick.color"
-                        [matMenuTriggerFor]="pickOriginMenu"
-                        type="button">
-                        {{ roundPick.label }}
-                      </button>
-                      <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
-                        <app-draft-pick-popover
-                          [draftVm]="draftVm"
-                          [compactPick]="roundPick"
-                          [currentOwner]="ownerGroup.owner" />
-                      </mat-menu>
-                    }
-                  </div>
+        <app-draft-shell [draftVm]="draftVm" [showStatus]="false">
+          <div class="compact-owner-list">
+            @for (ownerGroup of draftVm.ownerPickGroups; track ownerGroup.owner.id) {
+              <div class="compact-owner-row">
+                <img class="team-avatar" [src]="ownerGroup.owner.avatar" alt="" />
+                <span class="compact-team-name">{{ ownerGroup.owner.name }}</span>
+                <div class="compact-round-list">
+                  @for (roundPick of ownerGroup.picks; track $index) {
+                    <button
+                      class="round-pill"
+                      [class.traded-pick]="roundPick.isCurrentlyTraded"
+                      [style.background]="roundPick.color"
+                      [matMenuTriggerFor]="pickOriginMenu"
+                      type="button">
+                      {{ roundPick.label }}
+                    </button>
+                    <mat-menu #pickOriginMenu="matMenu" class="draft-pick-origin-menu">
+                      <app-draft-pick-popover
+                        [draftVm]="draftVm"
+                        [compactPick]="roundPick"
+                        [currentOwner]="ownerGroup.owner" />
+                    </mat-menu>
+                  }
                 </div>
-              }
-            </div>
-          </mat-card-content>
-        </mat-card>
+              </div>
+            }
+          </div>
+        </app-draft-shell>
       }
     </div>
   </section>
