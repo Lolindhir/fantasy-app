@@ -6,6 +6,14 @@
 # Snake drafts reverse the base owner order in even rounds; linear drafts keep
 # the base owner order for every round.
 
+try {
+    Import-Module "$PSScriptRoot\DraftPickResultUtils.psm1" -ErrorAction Stop -Force
+}
+catch {
+    Write-Error "Fehler beim Laden der Module: $_"
+    throw $_
+}
+
 function Get-DraftTypeSettingFromSleeperDraftOrDefault {
     param([AllowNull()]$sleeperDraft)
 
@@ -143,6 +151,15 @@ function New-DraftOutputOrderAware {
     $rounds = [int]$draftTypeConfig.Rounds
     $picks = New-ProjectedDraftPicksOrderAware -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs -orderMode $orderMode -draftTypeSetting $draftTypeSetting
     $picks = Get-AppliedDraftPickTrades -picks $picks -transactions $transactions -draftKey $draftKey
+
+    if ($null -ne $sleeperDraft -and $orderMode -eq "Exact") {
+        $sleeperPicks = Get-DraftSleeperPicksSafe -sleeperDraft $sleeperDraft
+        if ($sleeperPicks.Count -gt 0) {
+            $picks = Get-AppliedDraftPickResults -picks $picks -sleeperDraft $sleeperDraft -sleeperPicks $sleeperPicks
+            $pickSource = "GeneratedFromSleeperOrderTradesAndResults"
+        }
+    }
+
     $draftSource = if ($null -ne $sleeperDraft) { "Sleeper" } else { "Virtual" }
     $sleeperDraftID = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.draft_id } else { $null }
     $sleeperStatus = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.status } else { $null }
@@ -241,7 +258,7 @@ function New-DraftHistoryOutputOrderAware {
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
     $teamIDs = Get-DraftHistoryOrderRosterIDsFromSleeperDraft -sleeperDraft $sleeperDraft
-    $sleeperPicks = Get-DraftHistorySleeperPicks -sleeperDraft $sleeperDraft
+    $sleeperPicks = Get-DraftSleeperPicksSafe -sleeperDraft $sleeperDraft
     $draftTypeSetting = Get-DraftTypeSettingFromSleeperDraftOrDefault -sleeperDraft $sleeperDraft
 
     if ($teamIDs.Count -eq 0) { throw "No Sleeper draft order found for completed draft '$draftKey'." }
