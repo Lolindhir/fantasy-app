@@ -3,8 +3,7 @@ import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import { DataService } from '../../core/services/data.service';
-import { AllTimeRegularSeasonStandingsComponent } from '../../shared/components/all-time-regular-season-standings/all-time-regular-season-standings';
-import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
+import { AllTimeOverviewComponent } from '../../shared/components/all-time-overview/all-time-overview';
 import { AwardLegendComponent } from '../../shared/components/award-legend/award-legend';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
@@ -23,8 +22,7 @@ import {
   imports: [
     CommonModule,
     LeagueLegacySummaryComponent,
-    AllTimeStandingsComponent,
-    AllTimeRegularSeasonStandingsComponent,
+    AllTimeOverviewComponent,
     AwardLegendComponent,
     CurrentStandingsComponent,
     SeasonArchiveComponent
