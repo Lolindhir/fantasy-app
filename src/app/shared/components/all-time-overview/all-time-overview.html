@@ -1,0 +1,41 @@
+<section class="all-time-overview">
+  <h2>All-Time Standings</h2>
+
+  <div class="all-time-tabs" role="tablist" aria-label="All-Time Standings">
+    <button
+      type="button"
+      class="all-time-tab"
+      [class.active]="activeTab === 'overall'"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'overall'"
+      (click)="selectTab('overall')"
+    >
+      Overall
+    </button>
+
+    <button
+      type="button"
+      class="all-time-tab"
+      [class.active]="activeTab === 'regularSeason'"
+      role="tab"
+      [attr.aria-selected]="activeTab === 'regularSeason'"
+      (click)="selectTab('regularSeason')"
+    >
+      Regular Season
+    </button>
+  </div>
+
+  <div class="all-time-tab-content">
+    <app-all-time-standings
+      *ngIf="activeTab === 'overall'"
+      [standings]="overallStandings"
+      title="Overall"
+    ></app-all-time-standings>
+
+    <app-all-time-regular-season-standings
+      *ngIf="activeTab === 'regularSeason'"
+      [standings]="regularSeasonStandings"
+      title="Regular Season"
+    ></app-all-time-regular-season-standings>
+  </div>
+</section>
