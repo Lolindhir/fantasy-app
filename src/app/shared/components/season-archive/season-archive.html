@@ -11,61 +11,10 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <section class="season-block">
-        <h3>Playoff Results</h3>
-
-        <div class="standings-wrapper">
-          <div class="podium">
-            <div class="podium-item second" *ngIf="runnerUp(season) as runnerUpRow">
-              <div class="owner runner-up">{{ runnerUpRow.owner }}</div>
-              <div class="owner-awards">
-                <span
-                  *ngFor="let award of awardsForOwner(season, runnerUpRow.owner)"
-                  [matTooltip]="award.tooltip"
-                >{{ award.icon }}</span>
-              </div>
-              <div class="medal">🥈</div>
-            </div>
-
-            <div class="podium-item first" *ngIf="champion(season) as championRow">
-              <div class="owner champ">{{ championRow.owner }}</div>
-              <div class="owner-awards">
-                <span
-                  *ngFor="let award of awardsForOwner(season, championRow.owner)"
-                  [matTooltip]="award.tooltip"
-                >{{ award.icon }}</span>
-              </div>
-              <div class="cup">🏆</div>
-            </div>
-
-            <div class="podium-item third" *ngIf="thirdPlace(season) as thirdPlaceRow">
-              <div class="owner">{{ thirdPlaceRow.owner }}</div>
-              <div class="owner-awards">
-                <span
-                  *ngFor="let award of awardsForOwner(season, thirdPlaceRow.owner)"
-                  [matTooltip]="award.tooltip"
-                >{{ award.icon }}</span>
-              </div>
-              <div class="medal">🥉</div>
-            </div>
-          </div>
-
-          <div class="rest">
-            <div *ngFor="let row of remainingPlayoffResults(season)" class="team-row">
-              <div class="place">{{ placeEmoji(row.place) }}</div>
-              <div class="owner">
-                {{ row.owner }}
-                <span class="owner-awards">
-                  <span
-                    *ngFor="let award of awardsForOwner(season, row.owner)"
-                    [matTooltip]="award.tooltip"
-                  >{{ award.icon }}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <app-season-results
+        [results]="playoffResultsViewModel(season)"
+        title="Playoff Results"
+      ></app-season-results>
 
       <section class="season-block regular-season-block">
         <h3>Regular Season Standings</h3>
