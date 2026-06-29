@@ -109,10 +109,11 @@ frontendStructure:
 
     - path: src/app/features/standings/standings-page.ts
       responsibility: >
-        Routed Standings page for current standings, last season results and
-        all-time standings. It loads league/team data through DataService, builds
-        standing view models with league-standings-view.util.ts and delegates
-        current standings, result and all-time rendering to shared components.
+        Routed Standings page for Hall of Fame / League Legacy, all-time overall
+        and regular-season standings, award legend, current standings and season
+        archive. It loads league/team data through DataService, builds frontend
+        standing and legacy view models with league-standings-view.util.ts and
+        delegates rendering to shared components.
 
     - path: src/app/features/drafts/drafts-page.ts
       responsibility: >
@@ -168,16 +169,24 @@ frontendStructure:
     - path: src/app/shared/components/**
       responsibility: >
         Contains reusable Angular UI components that are not owned by one routed
-        feature page. CurrentStandingsComponent renders current standing rows;
-        SeasonResultsComponent renders previous-season result podium and remaining
-        placements; AllTimeStandingsComponent renders all-time placement rows for
-        Overview and the Standings route.
+        feature page. LeagueLegacySummaryComponent renders Hall-of-Fame highlight
+        cards; AwardLegendComponent renders historical award explanations;
+        CurrentStandingsComponent renders current standing rows;
+        AllTimeStandingsComponent renders all-time overall placement rows;
+        AllTimeRegularSeasonStandingsComponent renders all-time regular-season
+        rows; SeasonArchiveComponent renders season-level playoff results, awards
+        and regular-season standings; SeasonResultsComponent remains available for
+        previous-season podium rendering in Overview.
       examples:
         - src/app/shared/components/player-list/player-list.ts
         - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
+        - src/app/shared/components/league-legacy-summary/league-legacy-summary.ts
+        - src/app/shared/components/award-legend/award-legend.ts
         - src/app/shared/components/current-standings/current-standings.ts
-        - src/app/shared/components/season-results/season-results.ts
         - src/app/shared/components/all-time-standings/all-time-standings.ts
+        - src/app/shared/components/all-time-regular-season-standings/all-time-regular-season-standings.ts
+        - src/app/shared/components/season-archive/season-archive.ts
+        - src/app/shared/components/season-results/season-results.ts
 
     - path: src/app/shared/**
       responsibility: >
@@ -188,9 +197,10 @@ frontendStructure:
       responsibility: >
         Reusable frontend ViewModel utility for league standing presentation. It
         builds current standing rows, previous-season result podium/rows, previous
-        champion, current-season awards and all-time standing rows. It owns only
-        presentation mapping and must not become the source of truth for generated
-        league standings.
+        champion, current-season awards, all-time overall rows, all-time regular
+        season rows, frontend Hall-of-Fame/legacy highlights, award legend items
+        and season history rows. It owns only presentation mapping and must not
+        become the source of truth for generated league standings.
 
     - path: src/app/shared/utils/draft-ui.util.ts
       responsibility: >
