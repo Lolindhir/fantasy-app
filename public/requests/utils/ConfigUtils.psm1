@@ -114,6 +114,11 @@ function Get-Config {
     }
 
     $DraftsConfig = $metadataContent.Drafts
+    $LeagueTimeZone = if ($metadataContent.PSObject.Properties.Name -contains "LeagueTimeZone") {
+        [string]$metadataContent.LeagueTimeZone
+    } else {
+        "UTC"
+    }
 
     return @{
         LeagueYear                       = $metadataContent.LeagueYear
@@ -122,6 +127,7 @@ function Get-Config {
         LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
         LeagueID                         = $metadataContent.LeagueID
         CapDeadline                      = $metadataContent.CapDeadline
+        LeagueTimeZone                   = $LeagueTimeZone
         OwnerIDs                         = $ownerIDs
 
         RapidAPIKey                      = $RapidAPIKey
