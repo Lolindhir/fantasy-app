@@ -5,7 +5,7 @@
 
 .regular-row {
   display: grid;
-  grid-template-columns: 15px minmax(120px, 1fr) 12ch 12ch;
+  grid-template-columns: 15px minmax(0, 1fr) 11ch 11ch;
   align-items: center;
   padding: 3px;
   padding-left: 15px;
@@ -21,9 +21,16 @@
   font-weight: bold;
 }
 
+.regular-owner {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .regular-record {
   justify-self: end;
-  width: 12ch;
+  width: 11ch;
   opacity: 0.85;
   font-size: 0.9em;
   text-align: right;
@@ -32,7 +39,7 @@
 
 .regular-diff {
   justify-self: end;
-  width: 12ch;
+  width: 11ch;
   opacity: 0.7;
   font-size: 0.9em;
   font-weight: 700;
