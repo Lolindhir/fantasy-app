@@ -8,11 +8,11 @@ import { AllTimeStandingsComponent } from '../../shared/components/all-time-stan
 import { AwardLegendComponent } from '../../shared/components/award-legend/award-legend';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
-import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
+import { SeasonArchiveComponent } from '../../shared/components/season-archive/season-archive';
 import {
   buildCurrentStandings,
   buildLeagueLegacy,
-  buildSeasonResults
+  buildSeasonHistory
 } from '../../shared/utils/league-standings-view.util';
 
 @Component({
@@ -25,7 +25,7 @@ import {
     AllTimeRegularSeasonStandingsComponent,
     AwardLegendComponent,
     CurrentStandingsComponent,
-    SeasonResultsComponent
+    SeasonArchiveComponent
   ],
   templateUrl: './standings-page.html',
   styleUrl: './standings-page.scss'
@@ -41,7 +41,7 @@ export class StandingsPageComponent {
         league,
         legacy,
         currentStandings: buildCurrentStandings(league, teams),
-        seasonResults: buildSeasonResults(teams)
+        seasonHistory: buildSeasonHistory(league)
       };
     })
   );
