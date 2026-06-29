@@ -5,7 +5,7 @@
 
 .regular-row {
   display: grid;
-  grid-template-columns: 15px minmax(120px, 1fr) max-content minmax(90px, 120px);
+  grid-template-columns: 15px minmax(120px, 1fr) 12ch 12ch;
   align-items: center;
   padding: 3px;
   padding-left: 15px;
@@ -22,15 +22,21 @@
 }
 
 .regular-record {
+  justify-self: end;
+  width: 12ch;
   opacity: 0.85;
   font-size: 0.9em;
+  text-align: right;
   white-space: nowrap;
 }
 
 .regular-diff {
   justify-self: end;
+  width: 12ch;
   opacity: 0.7;
   font-size: 0.9em;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
 }
