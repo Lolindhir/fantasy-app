@@ -4,6 +4,7 @@ import { map } from 'rxjs/operators';
 
 import type { DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
 import { DataService } from '../../core/services/data.service';
+import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
 import {
@@ -36,7 +37,8 @@ interface DeadlineDisplayInfo {
   selector: 'app-overview',
   imports: [
     CommonModule,
-    SharedMaterialImports
+    SharedMaterialImports,
+    SeasonResultsComponent
   ],
   standalone: true,
   templateUrl: './overview.html',
