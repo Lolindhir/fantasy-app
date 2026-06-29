@@ -1,4 +1,4 @@
-import type { AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
+import type { Award, AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
 
 export interface CurrentStandingRow {
   team: FantasyTeam;
@@ -8,6 +8,7 @@ export interface CurrentStandingRow {
 export interface SeasonResultTeam {
   team: FantasyTeam;
   place: number;
+  awardsDisplay: string;
 }
 
 export interface SeasonResultsViewModel {
@@ -47,7 +48,8 @@ export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel
   const resultTeams = [...teams]
     .map(team => ({
       team,
-      place: team.Placements.Previous.Playoffs?.Place ?? team.Placements.Previous.Regular.Place
+      place: team.Placements.Previous.Playoffs?.Place ?? team.Placements.Previous.Regular.Place,
+      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards)
     }))
     .sort((a, b) => a.place - b.place);
 
@@ -87,4 +89,22 @@ export function getCurrentSeasonAwards(league: League): AwardInStanding[] {
   return currentStanding?.Awards
     ? currentStanding.Awards.map(award => ({ ...award }))
     : [];
+}
+
+function formatAwardsDisplay(awards: Award | Award[] | null | undefined): string {
+  return ensureArray(awards)
+    .map(award => award.Icon || unicodeToEmoji(award.IconUnicode))
+    .join('');
+}
+
+function ensureArray<T>(value: T | T[] | null | undefined): T[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function unicodeToEmoji(unicode: string): string {
+  return unicode
+    .split(' ')
+    .map(code => String.fromCodePoint(parseInt(code, 16)))
+    .join('');
 }
