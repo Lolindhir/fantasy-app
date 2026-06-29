@@ -13,14 +13,14 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Data Generation / Infrastruktur
 
-- [ ] Zugangsdaten-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
-  - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch sensible Zugangswerte.
-  - Ziel: Sensible Werte nicht im Repository versionieren; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch nicht-sensitive technische Defaults enthalten.
+- [ ] Laufzeit-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
+  - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch nicht-öffentliche Laufzeitwerte.
+  - Ziel: Nicht-öffentliche Werte nicht im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
 
 - [ ] `CapDeadlineBufferDays` sauber über `ConfigUtils.psm1` bereitstellen.
   - Kontext: `CapDeadlineBufferDays` liegt als liga-spezifische Regel in `Metadata.json`, wird aber aktuell in `RequestLeague.ps1` direkt aus `Metadata.json` gelesen.
-  - Grund: `ConfigUtils.psm1` enthält derzeit sensible Zugangswerte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
-  - Ziel: Nach Auslagerung der Zugangsdaten soll `Get-Config` den Wert aus `Metadata.json` laden und als Teil der Generator-Konfiguration bereitstellen.
+  - Grund: `ConfigUtils.psm1` enthält derzeit noch nicht-öffentliche Laufzeitwerte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
+  - Ziel: Nach Auslagerung der Laufzeitwerte soll `Get-Config` den Wert aus `Metadata.json` laden und als Teil der Generator-Konfiguration bereitstellen.
 
 - [ ] `PastSeasonsIndex.json`-Aktualisierung nur auf relevante Pfad-/Existenzänderungen prüfen.
   - Kontext: Der Index aktualisiert aktuell auch bei geänderten `ContentHash`-Werten historischer Ressourcen, obwohl sich die sichtbaren Pfade nicht ändern.
@@ -46,6 +46,14 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: `CutsAllowed` wird aktuell wie bisher grundsätzlich auf `true` gesetzt und nur bei `Completed` geschlossen.
   - Ziel: Herausfinden, ob Sleeper ein verlässliches Feld für Cut-/Roster-Move-Sperren liefert und dieses datengetrieben anbinden.
   - Hinweis: `CutsAllowed` darf nicht aus `League.Phase` abgeleitet werden; insbesondere `Cap Check` ist nur ein Prozessstatus, keine eigenständige Cut-Source-of-Truth.
+
+### Data Generation / League History
+
+- [ ] Hall-of-Fame-/Legacy-Auswertungen generatorseitig modellieren.
+  - Kontext: Die Standings-Route erzeugt Hall-of-Fame-Highlights, Award-Legende, All-Time-Regular-Season und Season-Archive aktuell bewusst als Frontend-Prototyp in `league-standings-view.util.ts`.
+  - Ziel: Nach Stabilisierung der UI und Datenform prüfen, welche Teile als stabiler Generated-Data-Contract nach `League.json` oder in eine eigene generierte History-/Legacy-Datei wandern sollen.
+  - Kandidaten: Legacy-Highlights (`Champ of Champs`, `Regular Season King`, `Podium Machine`, `Award Collector`), Award-Legende, Season-History-Readmodel, All-Time-Regular-Season-Readmodel.
+  - Hinweis: Angular darf diese Werte vorläufig als Frontend-ViewModel ableiten; langfristige source-of-truth-nahe Historienauswertungen sollten aber generatorseitig entstehen.
 
 ### Frontend
 
