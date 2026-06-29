@@ -94,6 +94,7 @@ export interface RawLeague {
   Season: string;
   SeasonType: string;
   Status: string;
+  Phase: string;
   CurrentWeek?: number;
   FinalScoredWeek: number;
   LastLeagueWeek: number;
