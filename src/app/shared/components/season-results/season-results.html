@@ -5,19 +5,19 @@
     <div class="podium">
       <div class="podium-item second" *ngIf="resultsVm.runnerUp as runnerUp">
         <div class="owner runner-up">{{ runnerUp.team.Owner }}</div>
-        <div>{{ runnerUp.team.AwardsDisplay }}</div>
+        <div>{{ runnerUp.awardsDisplay }}</div>
         <div class="medal">🥈</div>
       </div>
 
       <div class="podium-item first" *ngIf="resultsVm.champion as champion">
         <div class="owner champ">{{ champion.team.Owner }}</div>
-        <div>{{ champion.team.AwardsDisplay }}</div>
+        <div>{{ champion.awardsDisplay }}</div>
         <div class="cup">🏆</div>
       </div>
 
       <div class="podium-item third" *ngIf="resultsVm.thirdPlace as thirdPlace">
         <div class="owner">{{ thirdPlace.team.Owner }}</div>
-        <div>{{ thirdPlace.team.AwardsDisplay }}</div>
+        <div>{{ thirdPlace.awardsDisplay }}</div>
         <div class="medal">🥉</div>
       </div>
     </div>
@@ -27,7 +27,7 @@
         <div class="place">{{ placeEmoji(result.place) }}</div>
         <div class="owner">
           {{ result.team.Owner }}
-          <span class="owner-awards">{{ result.team.AwardsDisplay }}</span>
+          <span class="owner-awards">{{ result.awardsDisplay }}</span>
         </div>
       </div>
     </div>
