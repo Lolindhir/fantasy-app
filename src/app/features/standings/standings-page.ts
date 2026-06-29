@@ -13,7 +13,8 @@ import { buildDetailedAwardLegend } from '../../shared/utils/award-legend-view.u
 import {
   buildCurrentStandings,
   buildLeagueLegacy,
-  buildSeasonHistory
+  buildSeasonHistory,
+  type SeasonHistoryViewModel
 } from '../../shared/utils/league-standings-view.util';
 
 @Component({
@@ -45,8 +46,21 @@ export class StandingsPageComponent {
         league,
         legacy,
         currentStandings: buildCurrentStandings(league, teams),
-        seasonHistory: buildSeasonHistory(league)
+        seasonHistory: filterArchivedSeasons(buildSeasonHistory(league), String(league.Season))
       };
     })
   );
+}
+
+function filterArchivedSeasons(
+  history: SeasonHistoryViewModel,
+  currentSeason: string
+): SeasonHistoryViewModel {
+  return {
+    seasons: history.seasons.filter(season =>
+      season.season !== currentSeason
+      && /^\d{4}$/.test(season.season)
+      && !!season.champion
+    )
+  };
 }
