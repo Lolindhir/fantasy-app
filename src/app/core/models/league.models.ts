@@ -218,5 +218,5 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   RunnerUps: number;
   Thirds: number;
   RegularSeasonWins: number;
-  AwardsDisplay: string;
+  CurrentAwardsDisplay: string;
 }
