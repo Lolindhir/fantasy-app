@@ -1,0 +1,36 @@
+:host {
+  display: block;
+}
+
+.regular-row {
+  display: grid;
+  grid-template-columns: 32px 1fr max-content max-content max-content;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  margin: 2px;
+  border-radius: 8px;
+  background: linear-gradient(to right, #eff2f5, #e2e8f0);
+}
+
+.regular-header {
+  font-weight: bold;
+  opacity: 0.75;
+  background: transparent;
+}
+
+.regular-place,
+.regular-owner {
+  font-weight: bold;
+}
+
+@media (max-width: 520px) {
+  .regular-row {
+    grid-template-columns: 28px 1fr max-content;
+  }
+
+  .regular-row > :nth-child(4),
+  .regular-row > :nth-child(5) {
+    display: none;
+  }
+}
