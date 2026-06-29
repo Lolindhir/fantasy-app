@@ -4,10 +4,9 @@
   <mat-accordion multi>
     <mat-expansion-panel *ngFor="let season of vm.seasons">
       <mat-expansion-panel-header>
-        <mat-panel-title>{{ season.season }} Season</mat-panel-title>
+        <mat-panel-title>{{ season.season }}</mat-panel-title>
         <mat-panel-description>
           <span *ngIf="season.champion">🏆 {{ season.champion.owner }}</span>
-          <span *ngIf="season.regularSeasonWinner">👑 {{ season.regularSeasonWinner.owner }}</span>
         </mat-panel-description>
       </mat-expansion-panel-header>
 
