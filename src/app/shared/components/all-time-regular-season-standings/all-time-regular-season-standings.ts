@@ -26,6 +26,10 @@ export class AllTimeRegularSeasonStandingsComponent {
     return row.points - row.pointsAgainst;
   }
 
+  pointDifferentialEmoji(row: AllTimeRegularSeasonStandingRow): string {
+    return this.pointDifferential(row) >= 0 ? '🔺' : '🔻';
+  }
+
   private formatWinPercentageDisplay(winPercentage: number | null | undefined): string {
     if (winPercentage === null || winPercentage === undefined) return '';
 
