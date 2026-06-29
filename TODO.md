@@ -80,6 +80,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Die Darstellung funktioniert, aber ein Teil des Stylings liegt aktuell inline im Template.
   - Ziel: Template sauberer halten und Styling zentralisieren.
 
+- [ ] Deadline-Anzeige im Overview allgemein statt Cap-Deadline-spezifisch modellieren.
+  - Kontext: Die Overview-Header-Deadline nutzt aktuell `League.CapDeadline` und den festen Text `until Cap Deadline`.
+  - Ziel: Deadline-Datum und Anzeige-Label allgemein modellieren, z. B. als `DeadlineDate`/`DeadlineLabel` oder als Liste von Deadlines, damit später auch andere League-Deadlines angezeigt werden können.
+  - Hinweis: Die aktuelle Restzeitanzeige mit Tagen bzw. unter 24 Stunden mit Stunden/Minuten beibehalten.
+
 ### Dokumentation / AI-Kontext
 
 - [ ] Fehlenden generierten AI-Kontext klären.
