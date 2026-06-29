@@ -13,4 +13,5 @@ import type { AllTimeRegularSeasonStandingRow } from '../../utils/league-standin
 export class AllTimeRegularSeasonStandingsComponent {
   @Input({ required: true }) standings: AllTimeRegularSeasonStandingRow[] | null | undefined;
   @Input() title = 'All-Time Regular Season';
+  @Input() showTitle = true;
 }
