@@ -11,7 +11,10 @@
     </div>
 
     <div class="regular-points">
-      {{ row.points | number:'1.0-2' }} Pts
+      <span>{{ row.points | number:'1.0-2' }} Pts</span>
+      <span class="regular-diff">
+        Δ {{ pointDifferential(row) >= 0 ? '+' : '' }}{{ pointDifferential(row) | number:'1.0-2' }}
+      </span>
     </div>
   </div>
 </section>
