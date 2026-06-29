@@ -1,0 +1,57 @@
+<section class="season-archive" *ngIf="history as vm">
+  <h2>Season Archive</h2>
+
+  <mat-accordion multi>
+    <mat-expansion-panel *ngFor="let season of vm.seasons">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ season.season }} Season</mat-panel-title>
+        <mat-panel-description>
+          <span *ngIf="season.champion">🏆 {{ season.champion.owner }}</span>
+          <span *ngIf="season.regularSeasonWinner">👑 {{ season.regularSeasonWinner.owner }}</span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="season-grid">
+        <section class="season-block">
+          <h3>Playoff Results</h3>
+          <div *ngFor="let row of season.playoffResults" class="season-row">
+            <span class="place">{{ row.placeOrdinal }}</span>
+            <span class="owner">{{ row.owner }}</span>
+          </div>
+        </section>
+
+        <section class="season-block">
+          <h3>Awards</h3>
+          <div class="season-awards">
+            <span
+              *ngFor="let award of season.awards"
+              class="season-award"
+              [matTooltip]="award.tooltip"
+            >
+              <span>{{ award.icon }}</span>
+              <span>{{ award.owner }}</span>
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <section class="season-block regular-season-block">
+        <h3>Regular Season Standings</h3>
+
+        <div class="regular-row regular-header">
+          <div>#</div>
+          <div>Owner</div>
+          <div>Record</div>
+          <div>Points</div>
+        </div>
+
+        <div *ngFor="let row of season.regularSeasonStandings" class="regular-row">
+          <div class="place">{{ row.place }}</div>
+          <div class="owner">{{ row.owner }}</div>
+          <div>{{ row.record }}</div>
+          <div>{{ row.points | number:'1.0-2' }}</div>
+        </div>
+      </section>
+    </mat-expansion-panel>
+  </mat-accordion>
+</section>
