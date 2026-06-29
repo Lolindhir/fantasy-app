@@ -26,7 +26,9 @@ export class SeasonArchiveComponent {
       .map(row => ({
         team: { Owner: row.owner },
         place: row.place,
-        awardsDisplay: ''
+        awardsDisplay: this.awardsForOwner(season, row.owner)
+          .map(award => award.icon)
+          .join('')
       }))
       .sort((a, b) => a.place - b.place);
 
