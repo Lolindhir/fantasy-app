@@ -78,7 +78,7 @@
 
       <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
         <div class="deadline">⏱️ {{ vm.deadlineInfo.displayText }} <span class="deadline-label">until Cap Deadline</span></div>
-        <div class="deadline-text">({{ vm.league.CapDeadline.slice(8, 10) }}.{{ vm.league.CapDeadline.slice(5, 7) }}.{{ vm.league.CapDeadline.slice(0, 4) }}, {{ vm.league.LeagueTimeZone || "UTC" }})</div>
+        <div class="deadline-text">({{ vm.league.CapDeadline.slice(8, 10) }}.{{ vm.league.CapDeadline.slice(5, 7) }}.{{ vm.league.CapDeadline.slice(0, 4) }} {{ vm.league.CapDeadline.length > 10 ? vm.league.CapDeadline.slice(11, 19) : "23:59:59" }}, {{ vm.league.LeagueTimeZone || "UTC" }})</div>
       </div>
 
     </div>    
