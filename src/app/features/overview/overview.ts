@@ -2,10 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
-import type { AwardInStanding, DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
+import type { DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
 import { DataService } from '../../core/services/data.service';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
+import {
+  buildAllTimeStandings,
+  buildCurrentStandings,
+  buildSeasonResults,
+  getCurrentSeasonAwards,
+  getPreviousChampion
+} from '../../shared/utils/league-standings-view.util';
 
 interface DraftPickDisplayItem {
   display: string;
@@ -48,28 +55,20 @@ export class OverviewComponent {
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
-      const isFinished = league.IsFinished;
       const offSeason = league.Status === 'Off-Season';
       const currentSeason = league.Season;
       const maxDisplayedDraftRound = this.getMaxDisplayedDraftRound(teams, currentSeason);
 
-      // 🏆 Champion
-      const champion = teams.find(t =>
-        t.Placements.Previous.Playoffs?.Place === 1
-      );
-
-      // 📊 Standings
-      const standings = [...teams].map(t => ({
-        ...t,
-        DisplayPlace: isFinished
-          ? t.Placements.Previous.Playoffs?.Place ?? t.Placements.Previous.Regular.Place
-          : t.Standing
-      })).sort((a, b) => a.DisplayPlace - b.DisplayPlace);
-
-      // 🏛️ All-Time
-      const allTime = [...teams].sort((a, b) =>
-        a.Placements.AllTime.Playoffs.Place - b.Placements.AllTime.Playoffs.Place
-      );
+      // 🏆 Champion / Standings / Results
+      const champion = getPreviousChampion(teams);
+      const currentStandings = buildCurrentStandings(league, teams);
+      const standings = currentStandings.map(row => ({
+        ...row.team,
+        DisplayPlace: row.displayPlace
+      }));
+      const seasonResults = buildSeasonResults(teams);
+      const allTimeStandings = buildAllTimeStandings(teams);
+      const allTime = allTimeStandings.map(row => row.team);
 
       // 💰 Salary je Team
       const salaryByTeam = teams.map(t => {
@@ -122,13 +121,7 @@ export class OverviewComponent {
       }).sort((a, b) => a.total - b.total);
 
       // 🔥 Awards
-      const currentStanding = league.Standings.find(s => s.Season === currentSeason);
-      // Awards aus dem Standing extrahieren oder leeres Array setzen
-      const awards: AwardInStanding[] = currentStanding?.Awards
-        ? currentStanding.Awards.map(a => ({
-            ...a,
-          }))
-        : [];
+      const awards = getCurrentSeasonAwards(league);
 
       // ⏱️ Deadline
       const deadline = this.parseDeadline(league.CapDeadline);
@@ -143,8 +136,11 @@ export class OverviewComponent {
       return {
         league,
         champion,
+        currentStandings,
         standings,
+        seasonResults,
         allTime,
+        allTimeStandings,
         salaryByTeam,
         awards,
         deadlineDisplay,
