@@ -6,7 +6,7 @@ export interface CurrentStandingRow {
 }
 
 export interface SeasonResultTeam {
-  team: FantasyTeam;
+  team: Pick<FantasyTeam, 'Owner'>;
   place: number;
   awardsDisplay: string;
 }
@@ -367,7 +367,7 @@ function buildAwardCollectorHighlight(
       const count = awardCounts.get(teamId) ?? { count: 0, types: new Set<string>() };
 
       count.count += 1;
-      count.types.add(award.Type?.Name || award.Name);
+      count.types.add(award.Name);
       awardCounts.set(teamId, count);
     }
   }
@@ -399,11 +399,12 @@ function buildAwardCollectorHighlight(
 }
 
 function mapSeasonHistoryAward(award: AwardInStanding): SeasonHistoryAwardItem {
-  const displayText = award.Type?.DisplayText || award.Name;
-  const tooltipParts = [displayText, award.Owner, award.StatDisplay].filter(Boolean);
+  const displayText = award.Name;
+  const typeText = award.Type?.DisplayText || award.Type?.Name;
+  const tooltipParts = [displayText, typeText, award.Owner, award.StatDisplay].filter(Boolean);
 
   return {
-    key: award.Type?.Name || award.Name,
+    key: award.Name,
     icon: award.Icon || unicodeToEmoji(award.IconUnicode),
     name: award.Name,
     displayText,
