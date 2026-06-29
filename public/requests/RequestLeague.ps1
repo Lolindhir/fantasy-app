@@ -41,6 +41,7 @@ catch {
 $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
+$LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = 3
 $LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
 
@@ -78,7 +79,7 @@ function Get-Compare {
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
             'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
-            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize',
+            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
 
@@ -427,6 +428,7 @@ try {
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
         CapDeadline             = $CapDeadline
+        LeagueTimeZone          = $LeagueTimeZone
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
         Teams                   = $teamData
         Standings               = $standings
