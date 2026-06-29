@@ -1,22 +1,19 @@
 :host {
   display: block;
+  margin-bottom: 20px;
 }
 
 .regular-row {
   display: grid;
-  grid-template-columns: 32px 1fr max-content max-content max-content;
+  grid-template-columns: 15px 1fr 2fr 80px;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
+  padding: 3px;
+  padding-left: 15px;
   margin: 2px;
-  border-radius: 8px;
+  margin-left: 10px;
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
-}
-
-.regular-header {
-  font-weight: bold;
-  opacity: 0.75;
-  background: transparent;
+  border-radius: 8px;
+  gap: 10px;
 }
 
 .regular-place,
@@ -24,13 +21,11 @@
   font-weight: bold;
 }
 
-@media (max-width: 520px) {
-  .regular-row {
-    grid-template-columns: 28px 1fr max-content;
-  }
+.regular-record {
+  font-size: 18px;
+}
 
-  .regular-row > :nth-child(4),
-  .regular-row > :nth-child(5) {
-    display: none;
-  }
+.regular-points {
+  opacity: 0.7;
+  font-size: 0.9em;
 }
