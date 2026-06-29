@@ -2,13 +2,6 @@
   display: block;
 }
 
-.season-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-top: 10px;
-}
-
 .season-block {
   display: flex;
   flex-direction: column;
@@ -19,19 +12,43 @@
   margin: 8px 0 4px;
 }
 
-.season-row,
+.standings-wrapper {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.rest {
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.team-row,
 .regular-row {
   display: grid;
-  grid-template-columns: 56px 1fr max-content max-content;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
+  padding: 0.5rem 0.75rem;
   border-radius: 8px;
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
 }
 
-.season-row {
-  grid-template-columns: 56px 1fr;
+.team-row {
+  grid-template-columns: 40px 1fr;
+}
+
+.regular-row {
+  grid-template-columns: 56px 1fr max-content max-content;
 }
 
 .regular-header {
@@ -40,25 +57,70 @@
   background: transparent;
 }
 
-.place,
-.owner {
+.place {
+  font-size: 1.25rem;
   font-weight: bold;
 }
 
-.season-awards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.medal {
+  font-size: 2rem;
 }
 
-.season-award {
-  display: inline-flex;
+.cup {
+  font-size: 3rem;
+}
+
+.podium-item {
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: linear-gradient(to right, #eff2f5, #e2e8f0);
-  font-size: 0.85rem;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  padding: 8px;
+}
+
+.first {
+  height: 130px;
+  background: linear-gradient(to top, #d4af37, #f7e27d);
+}
+
+.second {
+  height: 110px;
+  background: linear-gradient(to top, #c0c0c0, #e0e0e0);
+}
+
+.third {
+  height: 90px;
+  background: linear-gradient(to top, #cd7f32, #e6a15c);
+}
+
+.owner {
+  font-weight: bold;
+  font-size: large;
+  text-align: center;
+}
+
+.owner.runner-up {
+  padding-top: 0.65rem;
+}
+
+.owner.champ {
+  font-size: larger;
+  padding-top: 0.75rem;
+}
+
+.owner-awards {
+  display: inline-flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  font-size: smaller;
+}
+
+.regular-owner {
+  text-align: left;
 }
 
 .regular-season-block {
@@ -66,6 +128,15 @@
 }
 
 @media (max-width: 520px) {
+  .podium {
+    gap: 0.25rem;
+  }
+
+  .podium-item {
+    min-width: 68px;
+    padding: 6px;
+  }
+
   .regular-row {
     grid-template-columns: 40px 1fr max-content;
   }
