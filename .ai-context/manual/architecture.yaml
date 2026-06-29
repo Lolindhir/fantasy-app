@@ -112,7 +112,7 @@ frontendStructure:
         Routed Standings page for current standings, last season results and
         all-time standings. It loads league/team data through DataService, builds
         standing view models with league-standings-view.util.ts and delegates
-        reusable result/all-time rendering to shared components.
+        current standings, result and all-time rendering to shared components.
 
     - path: src/app/features/drafts/drafts-page.ts
       responsibility: >
@@ -168,12 +168,14 @@ frontendStructure:
     - path: src/app/shared/components/**
       responsibility: >
         Contains reusable Angular UI components that are not owned by one routed
-        feature page. SeasonResultsComponent renders previous-season result podium
-        and remaining placements; AllTimeStandingsComponent renders all-time
-        placement rows for Overview and the Standings route.
+        feature page. CurrentStandingsComponent renders current standing rows;
+        SeasonResultsComponent renders previous-season result podium and remaining
+        placements; AllTimeStandingsComponent renders all-time placement rows for
+        Overview and the Standings route.
       examples:
         - src/app/shared/components/player-list/player-list.ts
         - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
+        - src/app/shared/components/current-standings/current-standings.ts
         - src/app/shared/components/season-results/season-results.ts
         - src/app/shared/components/all-time-standings/all-time-standings.ts
 
