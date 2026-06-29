@@ -29,7 +29,7 @@ interface DraftPickDisplayGroup {
   ],
   standalone: true,
   templateUrl: './overview.html',
-  styleUrls: ['./overview.scss', './overview-cleanup.scss']
+  styleUrl: './overview.scss'
 })
 export class OverviewComponent {
 
