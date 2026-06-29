@@ -13,6 +13,7 @@ import type { SeasonResultsViewModel } from '../../utils/league-standings-view.u
 export class SeasonResultsComponent {
   @Input({ required: true }) results!: SeasonResultsViewModel | null | undefined;
   @Input() title = 'Season Results';
+  @Input() showTitle = true;
 
   placeEmoji(place: number): string {
     switch (place) {
