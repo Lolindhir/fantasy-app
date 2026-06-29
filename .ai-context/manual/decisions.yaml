@@ -355,3 +355,30 @@ decisions:
         - Overview and Drafts route colors can share one frontend utility without changing generated data.
       negative:
         - Future generic reuse outside Drafts would require intentionally moving components to src/app/shared/components.
+
+  - id: ADR-020
+    title: Season awards remain in Standings.json
+    status: accepted
+    context: >
+      Season awards are derived from regular-season standings, playoff results
+      and previous-season standings. A separate Awards.json file was considered,
+      but awards are season-history data rather than independent current league
+      assets.
+    decision: >
+      Keep generated season awards as part of each season object in
+      public/data/Standings.json. Do not introduce a standalone Awards.json for
+      this contract. League.json may temporarily embed standings and team
+      placement awards for current frontend compatibility, but Standings.json is
+      the intended generated owner for season-level award history.
+    rationale: >
+      Awards are meaningful together with the season standings that produced
+      them. Keeping them in Standings.json avoids a fragmented history model and
+      keeps future Hall-of-Fame, legacy and season-archive read models anchored to
+      one season-history source.
+    consequences:
+      positive:
+        - Season archive and award history can consume one standings/history contract.
+        - No additional Awards.json navigation or synchronization path is needed.
+        - Future generator-side legacy summaries can derive from Standings.json.
+      negative:
+        - Frontend refactors that currently read awards through League.json still need a migration path to load Standings.json directly.
