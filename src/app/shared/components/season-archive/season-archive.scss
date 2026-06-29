@@ -17,34 +17,51 @@
   margin: 8px 0 4px;
 }
 
-.standings-wrapper {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto;
+.awards {
+  padding: 1px;
+  margin-top: 12px;
 }
 
-.podium {
+.awards-grid {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-end;
-  gap: 0.5rem;
-  margin: 1rem 0;
+  gap: 12px;
 }
 
-.rest {
-  margin: 1rem 0;
+.award-card {
+  flex: 0 0 140px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
-.team-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  background: linear-gradient(to right, #eff2f5, #e2e8f0);
+.award-icon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.award-name {
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.award-owner {
+  font-size: 1rem;
+  text-align: center;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.award-stat {
+  font-size: 0.75rem;
+  color: #999;
+  text-align: center;
 }
 
 .regular-row {
@@ -67,57 +84,10 @@
   font-size: 1.25rem;
 }
 
-.medal {
-  font-size: 2rem;
-}
-
-.cup {
-  font-size: 3rem;
-}
-
-.podium-item {
-  min-width: 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 8px 8px 0 0;
-  padding: 8px;
-}
-
-.first {
-  height: 130px;
-  background: linear-gradient(to top, #d4af37, #f7e27d);
-}
-
-.second {
-  height: 110px;
-  background: linear-gradient(to top, #c0c0c0, #e0e0e0);
-}
-
-.third {
-  height: 90px;
-  background: linear-gradient(to top, #cd7f32, #e6a15c);
-}
-
 .owner {
   font-weight: bold;
   font-size: large;
   text-align: center;
-}
-
-.owner.runner-up {
-  padding-top: 0.65rem;
-}
-
-.owner.champ {
-  font-size: larger;
-  padding-top: 0.75rem;
-}
-
-.owner-awards {
-  display: inline;
-  font-size: smaller;
 }
 
 .regular-owner {
