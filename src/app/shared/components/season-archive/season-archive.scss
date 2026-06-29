@@ -1,0 +1,76 @@
+:host {
+  display: block;
+}
+
+.season-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.season-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.season-block h3 {
+  margin: 8px 0 4px;
+}
+
+.season-row,
+.regular-row {
+  display: grid;
+  grid-template-columns: 56px 1fr max-content max-content;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: linear-gradient(to right, #eff2f5, #e2e8f0);
+}
+
+.season-row {
+  grid-template-columns: 56px 1fr;
+}
+
+.regular-header {
+  font-weight: bold;
+  opacity: 0.75;
+  background: transparent;
+}
+
+.place,
+.owner {
+  font-weight: bold;
+}
+
+.season-awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.season-award {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #eff2f5, #e2e8f0);
+  font-size: 0.85rem;
+}
+
+.regular-season-block {
+  margin-top: 12px;
+}
+
+@media (max-width: 520px) {
+  .regular-row {
+    grid-template-columns: 40px 1fr max-content;
+  }
+
+  .regular-row > :nth-child(4) {
+    display: none;
+  }
+}
