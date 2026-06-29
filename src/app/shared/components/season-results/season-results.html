@@ -1,0 +1,35 @@
+<section *ngIf="results as resultsVm">
+  <h2>{{ title }}</h2>
+
+  <div class="standings-wrapper">
+    <div class="podium">
+      <div class="podium-item second" *ngIf="resultsVm.runnerUp as runnerUp">
+        <div class="owner runner-up">{{ runnerUp.team.Owner }}</div>
+        <div>{{ runnerUp.team.AwardsDisplay }}</div>
+        <div class="medal">🥈</div>
+      </div>
+
+      <div class="podium-item first" *ngIf="resultsVm.champion as champion">
+        <div class="owner champ">{{ champion.team.Owner }}</div>
+        <div>{{ champion.team.AwardsDisplay }}</div>
+        <div class="cup">🏆</div>
+      </div>
+
+      <div class="podium-item third" *ngIf="resultsVm.thirdPlace as thirdPlace">
+        <div class="owner">{{ thirdPlace.team.Owner }}</div>
+        <div>{{ thirdPlace.team.AwardsDisplay }}</div>
+        <div class="medal">🥉</div>
+      </div>
+    </div>
+
+    <div class="rest">
+      <div *ngFor="let result of resultsVm.remainingTeams" class="team-row">
+        <div class="place">{{ placeEmoji(result.place) }}</div>
+        <div class="owner">
+          {{ result.team.Owner }}
+          <span class="owner-awards">{{ result.team.AwardsDisplay }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
