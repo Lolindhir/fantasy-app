@@ -131,7 +131,7 @@ export class OverviewComponent {
         : [];
 
       // ⏱️ Deadline
-      const deadline = new Date(league.CapDeadline);
+      const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
       const now = new Date();
       const msLeft = deadline.getTime() - now.getTime();
@@ -214,6 +214,14 @@ export class OverviewComponent {
       .filter(round => round > 0);
 
     return rounds.length ? Math.max(...rounds) : 1;
+  }
+
+  private parseDeadline(deadlineValue: string): Date {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(deadlineValue)) {
+      return new Date(`${deadlineValue}T23:59:59Z`);
+    }
+
+    return new Date(deadlineValue);
   }
 
   private formatDeadlineCountdown(msLeft: number): string {
