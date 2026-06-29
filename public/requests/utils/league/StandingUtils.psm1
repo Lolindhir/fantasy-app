@@ -512,6 +512,15 @@ function Get-Awards {
         return $awards
     }
 
+    $hasCompletedRegularSeasonGame = @($regularSeasonStandings | Where-Object {
+        ([int]($_.Wins) + [int]($_.Losses) + [int]($_.Ties)) -gt 0
+    }).Count -gt 0
+
+    if(-not $hasCompletedRegularSeasonGame){
+        Write-Host "No completed regular season games found. Skipping awards." -ForegroundColor Cyan
+        return $awards
+    }
+
     #===================================#
     # Unabhängige Regular Season Awards #
     #===================================#
