@@ -41,7 +41,21 @@ catch {
 $LeagueID = $config.LeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
+$CapDeadlineBufferDays = 3
 $LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
+
+try {
+    $metadataPath = Join-Path $config.DataDir "Metadata.json"
+    if (Test-Path $metadataPath) {
+        $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
+        if ($metadataContent.PSObject.Properties.Name -contains "CapDeadlineBufferDays") {
+            $CapDeadlineBufferDays = [int]$metadataContent.CapDeadlineBufferDays
+        }
+    }
+}
+catch {
+    Write-Warning "Could not read CapDeadlineBufferDays from Metadata.json. Falling back to 3 days. $_"
+}
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
@@ -62,7 +76,7 @@ function Get-Compare {
 
         # Top-Level
         $propsToCheck = @(
-            'LeagueID','Name','Avatar','Season','SeasonType','Status',
+            'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
             'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
@@ -337,17 +351,7 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
-    # Status setzen, Offenheit von Trades, Cuts, Waivers prüfen
-    $status = Resolve-LeagueStatus `
-        -League $league `
-        -Drafts $drafts `
-        -Schedule $schedule `
-        -LeagueYear ([int]$config.LeagueYear) `
-        -CapDeadline $CapDeadline `
-        -FinalScoredWeek $finalWeek `
-        -PlayoffStartWeek $playoffStart `
-        -SeasonStartBufferDays $LeagueStatusSeasonStartBufferDays
-
+    # Offenheit von Trades, Cuts, Waivers prüfen
     $cutsAllowed = $true
     $cutsMetaText = ""
     $waiversOpen = [int]$league.settings.disable_adds -eq 0
@@ -365,13 +369,33 @@ try {
     Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
     $tradesMetaText = ""
 
+    # Status und optionale Status-Phase setzen
+    $statusState = Resolve-LeagueStatusState `
+        -League $league `
+        -Drafts $drafts `
+        -Schedule $schedule `
+        -LeagueYear ([int]$config.LeagueYear) `
+        -CapDeadline $CapDeadline `
+        -CapDeadlineBufferDays $CapDeadlineBufferDays `
+        -TradesOpen $tradesOpen `
+        -FinalScoredWeek $finalWeek `
+        -PlayoffStartWeek $playoffStart `
+        -SeasonStartBufferDays $LeagueStatusSeasonStartBufferDays
+
+    $status = [string]$statusState.Status
+    $phase = [string]$statusState.Phase
+
+    if ($phase -eq "Cap Check") {
+        $cutsAllowed = $false
+    }
+
     if ($status -eq "Completed") {
         $cutsAllowed = $false
         $waiversOpen = $false
         $tradesOpen = $false
     }
 
-    Write-Host "League is in status '$status'." -ForegroundColor Yellow
+    Write-Host "League is in status '$status' with phase '$phase'." -ForegroundColor Yellow
     Write-Host "Waivers open: $waiversOpen | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
     
 
@@ -391,6 +415,7 @@ try {
         Season                  = $league.season
         SeasonType              = $league.season_type
         Status                  = $status
+        Phase                   = $phase
         CurrentWeek             = $currentWeek
         FinalScoredWeek         = $finalWeek
         LastLeagueWeek          = $lastWeek
