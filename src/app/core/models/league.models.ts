@@ -110,6 +110,7 @@ export interface RawLeague {
   SalaryCap: number;
   SalaryCapProjected: number;
   CapDeadline: string;
+  LeagueTimeZone?: string;
   SalaryRelevantTeamSize: number;
   Teams: RawFantasyTeam[];
   Standings: Standing[];
