@@ -59,6 +59,20 @@ function Test-LeagueDeadlineReached {
     return (Get-Date).Date -ge $deadlineDate
 }
 
+function Test-LeagueCapDeadlineBufferOpen {
+    param(
+        [AllowNull()][string]$Deadline,
+        [int]$BufferDays = 3
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Deadline)) { return $false }
+
+    $deadlineDate = ([datetime]::Parse($Deadline)).Date
+    $bufferEndDate = $deadlineDate.AddDays($BufferDays)
+
+    return (Get-Date).Date -le $bufferEndDate
+}
+
 function Test-LeagueSeasonWindowStarted {
     param(
         [AllowNull()][array]$Schedule,
@@ -84,18 +98,136 @@ function Test-LeagueSeasonWindowStarted {
     return (Get-Date).ToUniversalTime() -ge $seasonWindowStartUtc
 }
 
+function Get-CurrentSeasonDrafts {
+    param(
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
+
+    return @($Drafts | Where-Object { [int]$_.Season -eq $LeagueYear })
+}
+
 function Test-CurrentSeasonDraftOpen {
     param(
         [Parameter(Mandatory = $true)][array]$Drafts,
         [Parameter(Mandatory = $true)][int]$LeagueYear
     )
 
-    $openDrafts = @($Drafts | Where-Object {
-        [int]$_.Season -eq $LeagueYear -and
+    $openDrafts = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
         [string]$_.Status -in @("Virtual", "PreDraft", "Drafting")
     })
 
     return $openDrafts.Count -gt 0
+}
+
+function Test-CurrentSeasonDraftsComplete {
+    param(
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
+
+    $currentSeasonDrafts = Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear
+    if ($currentSeasonDrafts.Count -eq 0) { return $false }
+
+    $incompleteDrafts = @($currentSeasonDrafts | Where-Object { [string]$_.Status -ne "Complete" })
+    return $incompleteDrafts.Count -eq 0
+}
+
+function Test-CurrentSeasonDraftStarted {
+    param(
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
+
+    $startedDrafts = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
+        [string]$_.Status -in @("Drafting", "Complete")
+    })
+
+    return $startedDrafts.Count -gt 0
+}
+
+function Test-CurrentSeasonDraftStartTimeSet {
+    param(
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
+
+    # TODO: Verify the exact Sleeper draft start-time field before using it as
+    # the Draft-Season / Pre Draft transition. Drafts.json does not expose a
+    # stable draft start time yet, so this intentionally stays false for now.
+    return $false
+}
+
+function New-LeagueStatusState {
+    param(
+        [Parameter(Mandatory = $true)][string]$Status,
+        [AllowNull()][string]$Phase = ""
+    )
+
+    if ($null -eq $Phase) { $Phase = "" }
+
+    return [PSCustomObject][ordered]@{
+        Status = $Status
+        Phase  = $Phase
+    }
+}
+
+function Resolve-LeagueStatusState {
+    param(
+        [Parameter(Mandatory = $true)][object]$League,
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [AllowNull()][array]$Schedule,
+        [Parameter(Mandatory = $true)][int]$LeagueYear,
+        [AllowNull()][string]$CapDeadline,
+        [int]$CapDeadlineBufferDays = 3,
+        [bool]$TradesOpen = $true,
+        [int]$FinalScoredWeek = 0,
+        [int]$PlayoffStartWeek = 0,
+        [int]$SeasonStartBufferDays = 7
+    )
+
+    $sleeperStatus = [string]$League.status
+
+    if ($sleeperStatus -eq "complete") { return New-LeagueStatusState -Status "Completed" }
+
+    if ($sleeperStatus -eq "playoffs" -or ($PlayoffStartWeek -gt 0 -and $FinalScoredWeek -ge $PlayoffStartWeek)) {
+        return New-LeagueStatusState -Status "Playoffs"
+    }
+
+    $seasonWindowStarted = Test-LeagueSeasonWindowStarted -Schedule $Schedule -DaysBeforeFirstGame $SeasonStartBufferDays
+    $hasOpenCurrentDrafts = Test-CurrentSeasonDraftOpen -Drafts $Drafts -LeagueYear $LeagueYear
+    $allCurrentDraftsComplete = Test-CurrentSeasonDraftsComplete -Drafts $Drafts -LeagueYear $LeagueYear
+    $currentSeasonDraftStarted = Test-CurrentSeasonDraftStarted -Drafts $Drafts -LeagueYear $LeagueYear
+    $currentSeasonDraftStartTimeSet = Test-CurrentSeasonDraftStartTimeSet -Drafts $Drafts -LeagueYear $LeagueYear
+
+    if ($allCurrentDraftsComplete) {
+        if (-not $seasonWindowStarted) { return New-LeagueStatusState -Status "Pre-Season" }
+        return New-LeagueStatusState -Status "In-Season"
+    }
+
+    if ($hasOpenCurrentDrafts -and $currentSeasonDraftStarted) {
+        return New-LeagueStatusState -Status "Draft-Season" -Phase "In Draft"
+    }
+
+    if ($TradesOpen -and (Test-LeagueCapDeadlineBufferOpen -Deadline $CapDeadline -BufferDays $CapDeadlineBufferDays)) {
+        return New-LeagueStatusState -Status "Off-Season" -Phase "Cap Deadline Open"
+    }
+
+    if ($hasOpenCurrentDrafts -and -not $TradesOpen) {
+        return New-LeagueStatusState -Status "Off-Season" -Phase "Cap Check"
+    }
+
+    if ($hasOpenCurrentDrafts -and $TradesOpen -and -not $currentSeasonDraftStartTimeSet) {
+        return New-LeagueStatusState -Status "Off-Season" -Phase "Post Cap Check"
+    }
+
+    if ($hasOpenCurrentDrafts -and $TradesOpen -and $currentSeasonDraftStartTimeSet) {
+        return New-LeagueStatusState -Status "Draft-Season" -Phase "Pre Draft"
+    }
+
+    if (-not $seasonWindowStarted) { return New-LeagueStatusState -Status "Pre-Season" }
+
+    return New-LeagueStatusState -Status "In-Season"
 }
 
 function Resolve-LeagueStatus {
@@ -110,17 +242,15 @@ function Resolve-LeagueStatus {
         [int]$SeasonStartBufferDays = 7
     )
 
-    $sleeperStatus = [string]$League.status
+    $state = Resolve-LeagueStatusState `
+        -League $League `
+        -Drafts $Drafts `
+        -Schedule $Schedule `
+        -LeagueYear $LeagueYear `
+        -CapDeadline $CapDeadline `
+        -FinalScoredWeek $FinalScoredWeek `
+        -PlayoffStartWeek $PlayoffStartWeek `
+        -SeasonStartBufferDays $SeasonStartBufferDays
 
-    if ($sleeperStatus -eq "complete") { return "Completed" }
-
-    if ($sleeperStatus -eq "playoffs" -or ($PlayoffStartWeek -gt 0 -and $FinalScoredWeek -ge $PlayoffStartWeek)) {
-        return "Playoffs"
-    }
-
-    if (-not (Test-LeagueDeadlineReached -Deadline $CapDeadline)) { return "Off-Season" }
-    if (Test-CurrentSeasonDraftOpen -Drafts $Drafts -LeagueYear $LeagueYear) { return "Draft-Season" }
-    if (-not (Test-LeagueSeasonWindowStarted -Schedule $Schedule -DaysBeforeFirstGame $SeasonStartBufferDays)) { return "Pre-Season" }
-
-    return "In-Season"
+    return $state.Status
 }
