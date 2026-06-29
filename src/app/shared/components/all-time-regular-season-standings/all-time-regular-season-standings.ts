@@ -19,7 +19,11 @@ export class AllTimeRegularSeasonStandingsComponent {
     const quote = row.winPercentageDisplay
       || this.formatWinPercentageDisplay(row.team.Placements.AllTime.Regular.WinPercentage);
 
-    return quote ? `${row.record} 📊 ${quote}` : row.record;
+    return quote ? `${row.record} (${quote})` : row.record;
+  }
+
+  pointDifferential(row: AllTimeRegularSeasonStandingRow): number {
+    return row.points - row.pointsAgainst;
   }
 
   private formatWinPercentageDisplay(winPercentage: number | null | undefined): string {
