@@ -1,4 +1,21 @@
 <div class="standings-page" *ngIf="vm$ | async as vm">
+  <app-league-legacy-summary
+    [highlights]="vm.legacy.highlights"
+  ></app-league-legacy-summary>
+
+  <app-all-time-standings
+    [standings]="vm.legacy.overallStandings"
+    title="All-Time Overall"
+  ></app-all-time-standings>
+
+  <app-all-time-regular-season-standings
+    [standings]="vm.legacy.regularSeasonStandings"
+  ></app-all-time-regular-season-standings>
+
+  <app-award-legend
+    [awards]="vm.legacy.awardLegend"
+  ></app-award-legend>
+
   <app-current-standings
     [standings]="vm.currentStandings"
   ></app-current-standings>
@@ -7,8 +24,4 @@
     [results]="vm.seasonResults"
     title="Last Season Results"
   ></app-season-results>
-
-  <app-all-time-standings
-    [standings]="vm.allTimeStandings"
-  ></app-all-time-standings>
 </div>
