@@ -4,6 +4,7 @@ import { map } from 'rxjs/operators';
 
 import { DataService } from '../../core/services/data.service';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
+import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import {
   buildAllTimeStandings,
@@ -16,6 +17,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    CurrentStandingsComponent,
     SeasonResultsComponent,
     AllTimeStandingsComponent
   ],
