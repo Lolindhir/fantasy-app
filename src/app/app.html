@@ -13,6 +13,10 @@
         Teams
       </a>
 
+      <a routerLink="/standings" routerLinkActive="active">
+        Standings
+      </a>
+
       <a routerLink="/players" routerLinkActive="active">
         Players
       </a>
@@ -55,7 +59,7 @@
     [class.scrolled]="isScrolled"
     (click)="toggleMobileMenu($event)"
   >
-    ☰ 
+    &#9776;
     @if (!isScrolled) {
       <span style="margin-left: 15px; font-size: medium;">{{ currentPage }}</span>
     }
@@ -72,6 +76,10 @@
 
     <a routerLink="/teams" routerLinkActive="active" (click)="closeMobileMenu()">
       Teams
+    </a>
+
+    <a routerLink="/standings" routerLinkActive="active" (click)="closeMobileMenu()">
+      Standings
     </a>
 
     <a routerLink="/players" routerLinkActive="active" (click)="closeMobileMenu()">
