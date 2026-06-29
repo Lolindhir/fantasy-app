@@ -21,6 +21,10 @@ interface DraftPickDisplayGroup {
   sortOrder: number;
 }
 
+interface DeadlineDisplayInfo {
+  displayText: string;
+}
+
 @Component({
   selector: 'app-overview',
   imports: [
@@ -132,10 +136,9 @@ export class OverviewComponent {
       const now = new Date();
       const msLeft = deadline.getTime() - now.getTime();
 
-      const deadlineInfo = msLeft > 0 ? {
-        days: Math.floor(msLeft / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((msLeft / (1000 * 60 * 60)) % 24)
-      } : null;
+      const deadlineInfo: DeadlineDisplayInfo | null = msLeft > 0
+        ? { displayText: this.formatDeadlineCountdown(msLeft) }
+        : null;
 
       return {
         league,
@@ -211,6 +214,31 @@ export class OverviewComponent {
       .filter(round => round > 0);
 
     return rounds.length ? Math.max(...rounds) : 1;
+  }
+
+  private formatDeadlineCountdown(msLeft: number): string {
+    const minuteMs = 1000 * 60;
+    const hourMs = minuteMs * 60;
+    const dayMs = hourMs * 24;
+
+    if (msLeft >= dayMs) {
+      const days = Math.floor(msLeft / dayMs);
+      return `${days} ${days === 1 ? 'day' : 'days'}`;
+    }
+
+    const totalMinutes = Math.max(1, Math.floor(msLeft / minuteMs));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours === 0) {
+      return `${minutes} min`;
+    }
+
+    if (minutes === 0) {
+      return `${hours} h`;
+    }
+
+    return `${hours} h ${minutes} min`;
   }
 
   standingEmoji(place: number): string {
