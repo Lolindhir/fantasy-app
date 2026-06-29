@@ -69,7 +69,7 @@ function mapRawFantasyTeamToFantasyTeam(
   team: RawFantasyTeam,
   draftPickByKey: Map<string, DraftPick>
 ): FantasyTeam {
-  const awards = ensureArray(team.Placements.Current.Awards)
+  const currentAwards = ensureArray(team.Placements.Current.Awards)
     .map(award => mapAward(award));
 
   const draftPickKeys = team.DraftPicks ?? [];
@@ -101,7 +101,7 @@ function mapRawFantasyTeamToFantasyTeam(
     RunnerUps: team.Placements.AllTime.Playoffs.RunnerUps ?? 0,
     Thirds: team.Placements.AllTime.Playoffs.Thirds ?? 0,
     RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0,
-    AwardsDisplay: awards.map(award => award.Icon).join('')
+    CurrentAwardsDisplay: currentAwards.map(award => award.Icon).join('')
   };
 }
 
