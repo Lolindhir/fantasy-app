@@ -14,4 +14,21 @@ export class AllTimeRegularSeasonStandingsComponent {
   @Input({ required: true }) standings: AllTimeRegularSeasonStandingRow[] | null | undefined;
   @Input() title = 'All-Time Regular Season';
   @Input() showTitle = true;
+
+  recordWithQuote(row: AllTimeRegularSeasonStandingRow): string {
+    const quote = row.winPercentageDisplay || this.calculateWinPercentageDisplay(row);
+
+    return quote ? `${row.record} 📊 ${quote}` : row.record;
+  }
+
+  private calculateWinPercentageDisplay(row: AllTimeRegularSeasonStandingRow): string {
+    const games = row.wins + row.losses + row.ties;
+    if (games <= 0) return '';
+
+    const winPercentage = (row.wins + row.ties * 0.5) / games;
+
+    return winPercentage
+      .toFixed(3)
+      .replace(/^0/, '');
+  }
 }
