@@ -51,7 +51,8 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [ ] Hall-of-Fame-/Legacy-Auswertungen generatorseitig modellieren.
   - Kontext: Die Standings-Route erzeugt Hall-of-Fame-Highlights, Award-Legende, All-Time-Regular-Season und Season-Archive aktuell bewusst als Frontend-Prototyp in `league-standings-view.util.ts`.
-  - Ziel: Nach Stabilisierung der UI und Datenform prüfen, welche Teile als stabiler Generated-Data-Contract nach `League.json` oder in eine eigene generierte History-/Legacy-Datei wandern sollen.
+  - Entscheidung: Season-Awards bleiben dauerhaft Teil von `Standings.json`; es soll kein eigenständiges `Awards.json` für diesen Contract entstehen.
+  - Ziel: Nach Stabilisierung der UI und Datenform prüfen, welche Legacy-/History-Readmodels generatorseitig aus `Standings.json` abgeleitet und ggf. als eigener Legacy-/History-Contract bereitgestellt werden sollen.
   - Kandidaten: Legacy-Highlights (`Champ of Champs`, `Regular Season King`, `Podium Machine`, `Award Collector`), Award-Legende, Season-History-Readmodel, All-Time-Regular-Season-Readmodel.
   - Hinweis: Angular darf diese Werte vorläufig als Frontend-ViewModel ableiten; langfristige source-of-truth-nahe Historienauswertungen sollten aber generatorseitig entstehen.
 
