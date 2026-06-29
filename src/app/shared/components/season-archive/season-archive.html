@@ -11,29 +11,61 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <div class="season-grid">
-        <section class="season-block">
-          <h3>Playoff Results</h3>
-          <div *ngFor="let row of season.playoffResults" class="season-row">
-            <span class="place">{{ row.placeOrdinal }}</span>
-            <span class="owner">{{ row.owner }}</span>
-          </div>
-        </section>
+      <section class="season-block">
+        <h3>Playoff Results</h3>
 
-        <section class="season-block">
-          <h3>Awards</h3>
-          <div class="season-awards">
-            <span
-              *ngFor="let award of season.awards"
-              class="season-award"
-              [matTooltip]="award.tooltip"
-            >
-              <span>{{ award.icon }}</span>
-              <span>{{ award.owner }}</span>
-            </span>
+        <div class="standings-wrapper">
+          <div class="podium">
+            <div class="podium-item second" *ngIf="runnerUp(season) as runnerUpRow">
+              <div class="owner runner-up">{{ runnerUpRow.owner }}</div>
+              <div class="owner-awards">
+                <span
+                  *ngFor="let award of awardsForOwner(season, runnerUpRow.owner)"
+                  [matTooltip]="award.tooltip"
+                >{{ award.icon }}</span>
+              </div>
+              <div class="medal">🥈</div>
+            </div>
+
+            <div class="podium-item first" *ngIf="champion(season) as championRow">
+              <div class="owner champ">{{ championRow.owner }}</div>
+              <div class="owner-awards">
+                <span
+                  *ngFor="let award of awardsForOwner(season, championRow.owner)"
+                  [matTooltip]="award.tooltip"
+                >{{ award.icon }}</span>
+              </div>
+              <div class="cup">🏆</div>
+            </div>
+
+            <div class="podium-item third" *ngIf="thirdPlace(season) as thirdPlaceRow">
+              <div class="owner">{{ thirdPlaceRow.owner }}</div>
+              <div class="owner-awards">
+                <span
+                  *ngFor="let award of awardsForOwner(season, thirdPlaceRow.owner)"
+                  [matTooltip]="award.tooltip"
+                >{{ award.icon }}</span>
+              </div>
+              <div class="medal">🥉</div>
+            </div>
           </div>
-        </section>
-      </div>
+
+          <div class="rest">
+            <div *ngFor="let row of remainingPlayoffResults(season)" class="team-row">
+              <div class="place">{{ placeEmoji(row.place) }}</div>
+              <div class="owner">
+                {{ row.owner }}
+                <span class="owner-awards">
+                  <span
+                    *ngFor="let award of awardsForOwner(season, row.owner)"
+                    [matTooltip]="award.tooltip"
+                  >{{ award.icon }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section class="season-block regular-season-block">
         <h3>Regular Season Standings</h3>
@@ -47,7 +79,7 @@
 
         <div *ngFor="let row of season.regularSeasonStandings" class="regular-row">
           <div class="place">{{ row.place }}</div>
-          <div class="owner">{{ row.owner }}</div>
+          <div class="owner regular-owner">{{ row.owner }}</div>
           <div>{{ row.record }}</div>
           <div>{{ row.points | number:'1.0-2' }}</div>
         </div>
