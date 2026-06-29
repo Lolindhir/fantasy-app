@@ -234,29 +234,8 @@
     </div>
   </section>
 
-
-  <!-- 🏛️ ALL TIME -->
-  <section class="allTime">
-    <h2>All-Time Standings</h2>
-
-    <div *ngFor="let team of vm.allTime" class="allTime-row">
-      
-      <div class="allTime-place">{{ team.Placements.AllTime.Playoffs.Place }}</div>
-
-      <div class="allTime-owner">{{ team.Owner }}</div>
-
-      <div class="allTime-awards">
-        {{ repeatEmojiLimited('🏆', team.Championships) }}
-        {{ repeatEmojiLimited('🥈', team.RunnerUps) }}
-        {{ repeatEmojiLimited('🥉', team.Thirds) }}
-        {{ repeatEmojiLimited('👑', team.RegularSeasonWins) }}
-      </div>
-
-      <div class="allTime-avg">
-        Ø🏅 = {{ team.Placements.AllTime.Playoffs.PlaceAverage }}
-      </div>
-
-    </div>
-  </section>
+  <app-all-time-standings
+    [standings]="vm.allTimeStandings"
+  ></app-all-time-standings>
 
 </div>
