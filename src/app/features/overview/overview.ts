@@ -220,9 +220,17 @@ export class OverviewComponent {
     const minuteMs = 1000 * 60;
     const hourMs = minuteMs * 60;
     const dayMs = hourMs * 24;
+    const dayHourThresholdMs = dayMs * 4;
 
     if (msLeft >= dayMs) {
-      const days = Math.floor(msLeft / dayMs);
+      const totalHours = Math.floor(msLeft / hourMs);
+      const days = Math.floor(totalHours / 24);
+      const hours = totalHours % 24;
+
+      if (msLeft < dayHourThresholdMs) {
+        return `${days} ${days === 1 ? 'day' : 'days'} ${hours} h`;
+      }
+
       return `${days} ${days === 1 ? 'day' : 'days'}`;
     }
 
