@@ -76,10 +76,14 @@ shortContext:
   public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; reichert completed Pick-Ergebnisse und CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
   src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
   src/app/features/**: Geroutete Angular-Feature-Seiten
+  src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Current Standings, Last Season Results und All-Time Standings; nutzt gemeinsame Standing-ViewModels und Shared-Komponenten
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle, zukünftige und historische Drafts; lädt Past Drafts über PastSeasonsIndex.json
   src/app/features/drafts/components/**: Wiederverwendbare Draft-UI-Bausteine wie DraftShell, DraftPickCard, DraftPickTrigger und DraftPickPopover
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete current-style Draft-Cards für Current und Past mit Overview, Teams und List; nutzen zentrale Draft-ViewModels und gemeinsame Draft-UI-Komponenten
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen, DraftShell-Header, gemeinsamem DraftPickTrigger und gemeinsamem DraftPickPopover
+  src/app/shared/components/season-results/season-results.ts: Wiederverwendbare Season-Results-Komponente für vorherige Saisonergebnisse, Podium und Restplatzierungen
+  src/app/shared/components/all-time-standings/all-time-standings.ts: Wiederverwendbare All-Time-Standings-Komponente für Overview und Standings-Route
+  src/app/shared/utils/league-standings-view.util.ts: Gemeinsame Frontend-ViewModel-Utility für Current Standings, Season Results, Champion, Awards und All-Time Standings
   src/app/shared/utils/draft-ui.util.ts: Gemeinsame Frontend-Utility für Draft-Round-Farben und Draft-Status-Klassen
   src/app/features/league-activity/league-activity.ts: Technische Moves-Seite für spätere Transaktionen und Roster Moves
   src/app/shared/**: Wiederverwendbare Angular-Bausteine
