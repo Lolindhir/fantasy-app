@@ -15,6 +15,19 @@
         [showTitle]="false"
       ></app-season-results>
 
+      <section class="awards season-block" *ngIf="season.awards.length > 0">
+        <h3>Regular Season Awards</h3>
+
+        <div class="awards-grid">
+          <div *ngFor="let award of season.awards" class="award-card">
+            <div class="award-icon">{{ award.icon }}</div>
+            <div class="award-name">{{ award.name }}</div>
+            <div class="award-owner">- {{ award.owner }} -</div>
+            <div class="award-stat">{{ award.statDisplay }}</div>
+          </div>
+        </div>
+      </section>
+
       <section class="season-block regular-season-block">
         <h3>Regular Season Standings</h3>
 
