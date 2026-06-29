@@ -1,5 +1,5 @@
 <section class="all-time" *ngIf="standings as rows">
-  <h2>{{ title }}</h2>
+  <h2 *ngIf="showTitle">{{ title }}</h2>
 
   <div *ngFor="let row of rows" class="all-time-row">
     <div class="all-time-place">{{ row.place }}</div>
