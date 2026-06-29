@@ -1,0 +1,24 @@
+<section class="legacy" *ngIf="highlights as rows">
+  <div class="legacy-title">
+    <span class="legacy-title-icon">🏛️</span>
+    <div>
+      <h2>Hall of Fame</h2>
+      <div class="legacy-subtitle">League Legacy</div>
+    </div>
+  </div>
+
+  <div class="legacy-grid">
+    <article
+      *ngFor="let item of rows"
+      class="legacy-card"
+      [matTooltip]="item.reason"
+    >
+      <div class="legacy-icon">{{ item.icon }}</div>
+      <div class="legacy-content">
+        <div class="legacy-label">{{ item.title }}</div>
+        <div class="legacy-owner">{{ item.owner }}</div>
+        <div class="legacy-value">{{ item.valueDisplay }}</div>
+      </div>
+    </article>
+  </div>
+</section>
