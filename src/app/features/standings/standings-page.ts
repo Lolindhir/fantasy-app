@@ -9,6 +9,7 @@ import { AwardLegendComponent } from '../../shared/components/award-legend/award
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
 import { SeasonArchiveComponent } from '../../shared/components/season-archive/season-archive';
+import { buildDetailedAwardLegend } from '../../shared/utils/award-legend-view.util';
 import {
   buildCurrentStandings,
   buildLeagueLegacy,
@@ -35,7 +36,10 @@ export class StandingsPageComponent {
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }) => {
-      const legacy = buildLeagueLegacy(league, teams);
+      const legacy = {
+        ...buildLeagueLegacy(league, teams),
+        awardLegend: buildDetailedAwardLegend(league)
+      };
 
       return {
         league,
