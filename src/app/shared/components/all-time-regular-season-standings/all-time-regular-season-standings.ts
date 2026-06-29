@@ -16,16 +16,14 @@ export class AllTimeRegularSeasonStandingsComponent {
   @Input() showTitle = true;
 
   recordWithQuote(row: AllTimeRegularSeasonStandingRow): string {
-    const quote = row.winPercentageDisplay || this.calculateWinPercentageDisplay(row);
+    const quote = row.winPercentageDisplay
+      || this.formatWinPercentageDisplay(row.team.Placements.AllTime.Regular.WinPercentage);
 
     return quote ? `${row.record} 📊 ${quote}` : row.record;
   }
 
-  private calculateWinPercentageDisplay(row: AllTimeRegularSeasonStandingRow): string {
-    const games = row.wins + row.losses + row.ties;
-    if (games <= 0) return '';
-
-    const winPercentage = (row.wins + row.ties * 0.5) / games;
+  private formatWinPercentageDisplay(winPercentage: number | null | undefined): string {
+    if (winPercentage === null || winPercentage === undefined) return '';
 
     return winPercentage
       .toFixed(3)
