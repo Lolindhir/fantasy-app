@@ -17,6 +17,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch sensible Zugangswerte.
   - Ziel: Sensible Werte nicht im Repository versionieren; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch nicht-sensitive technische Defaults enthalten.
 
+- [ ] `CapDeadlineBufferDays` sauber über `ConfigUtils.psm1` bereitstellen.
+  - Kontext: `CapDeadlineBufferDays` liegt als liga-spezifische Regel in `Metadata.json`, wird aber aktuell in `RequestLeague.ps1` direkt aus `Metadata.json` gelesen.
+  - Grund: `ConfigUtils.psm1` enthält derzeit sensible Zugangswerte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
+  - Ziel: Nach Auslagerung der Zugangsdaten soll `Get-Config` den Wert aus `Metadata.json` laden und als Teil der Generator-Konfiguration bereitstellen.
+
 - [ ] `PastSeasonsIndex.json`-Aktualisierung nur auf relevante Pfad-/Existenzänderungen prüfen.
   - Kontext: Der Index aktualisiert aktuell auch bei geänderten `ContentHash`-Werten historischer Ressourcen, obwohl sich die sichtbaren Pfade nicht ändern.
   - Ziel: Prüfen, ob für die Angular-Navigation ein Vergleich auf relevante Pfade und `Exists` ausreicht, während Hash-/UpdatedAt-Metadaten optional bleiben oder anders behandelt werden.
@@ -28,6 +33,19 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Die technische Live-Enrichment-Logik für aktuelle Drafts ist implementiert; ein echter laufender Sleeper-Draft wurde damit aber noch nicht praktisch geprüft.
   - Ziel: Bei einem laufenden Sleeper-Draft kontrollieren, ob `Drafts.json` echte Pick-Ergebnisse korrekt setzt.
   - Zu prüfen: `Status = Picked`, `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy`, stabile `PickKey` und korrekte Frontend-Darstellung.
+
+- [ ] Draft-Startzeit aus Sleeper prüfen und in `Drafts.json` übernehmen.
+  - Kontext: `League.Phase = "Pre Draft"` ist im Status-/Phase-Resolver vorbereitet, aber die DraftStartTime-Prüfung ist aktuell bewusst als TODO-Platzhalter deaktiviert.
+  - Ziel: Klären, welches Sleeper-Draft-Feld die geplante Startzeit zuverlässig liefert, z. B. aus dem Draft-Detail-Endpunkt.
+  - Ziel: Danach ein stabiles App-Feld in `Drafts.json` ergänzen und die Transition `Draft-Season / Pre Draft` datengetrieben aktivieren.
+  - Hinweis: Nicht nur gegen `DisplayStatus` prüfen; die Startzeit soll als eigener generierter Contract verfügbar sein.
+
+### Data Generation / League Status
+
+- [ ] Sleeper-Feld für `CutsAllowed` bzw. Move-/Cut-Sperre prüfen.
+  - Kontext: `CutsAllowed` wird aktuell wie bisher grundsätzlich auf `true` gesetzt und nur bei `Completed` geschlossen.
+  - Ziel: Herausfinden, ob Sleeper ein verlässliches Feld für Cut-/Roster-Move-Sperren liefert und dieses datengetrieben anbinden.
+  - Hinweis: `CutsAllowed` darf nicht aus `League.Phase` abgeleitet werden; insbesondere `Cap Check` ist nur ein Prozessstatus, keine eigenständige Cut-Source-of-Truth.
 
 ### Frontend
 
