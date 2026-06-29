@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { DataService } from '../../core/services/data.service';
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { map } from 'rxjs/operators';
+
 import type { AwardInStanding, DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
+import { DataService } from '../../core/services/data.service';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
-import { map } from 'rxjs/operators';
-import { CommonModule } from '@angular/common';
 
 interface DraftPickDisplayItem {
   display: string;
@@ -30,12 +31,12 @@ interface DraftPickDisplayGroup {
   templateUrl: './overview.html',
   styleUrl: './overview.scss'
 })
-export class OverviewComponent implements OnInit {
+export class OverviewComponent {
 
   private dataService = inject(DataService);
   expandedTeamId: number | null = null;
 
-  toggleTeam(teamId: number) {
+  toggleTeam(teamId: number): void {
     this.expandedTeamId =
       this.expandedTeamId === teamId ? null : teamId;
   }
@@ -44,8 +45,7 @@ export class OverviewComponent implements OnInit {
     map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
 
       const isFinished = league.IsFinished;
-      const offSeason = league.Status == "Off-Season"
-      //const offSeason = true;
+      const offSeason = league.Status === 'Off-Season';
       const currentSeason = league.Season;
       const maxDisplayedDraftRound = this.getMaxDisplayedDraftRound(teams, currentSeason);
 
@@ -151,11 +151,6 @@ export class OverviewComponent implements OnInit {
     })
   );
 
-  constructor() {}
-
-  ngOnInit(): void {
-  }
-
   private getCurrentSeasonDraftPickGroups(
     picks: DraftPick[],
     season: string,
@@ -178,7 +173,7 @@ export class OverviewComponent implements OnInit {
     for (const pick of currentSeasonPicks) {
       const draftKey = pick.DraftKey;
       const label =
-        pick.Draft?.DisplayDraftType ??        
+        pick.Draft?.DisplayDraftType ??
         pick.Draft?.DisplayAbrDraftKey ??
         pick.Draft?.DisplayDraftKey ??
         pick.DraftKey;
