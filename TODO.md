@@ -72,13 +72,19 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: `src/app/core/services/free-agent-market.service.ts` enthält die FreeAgentMarket-/RuleBasedAutoCut-Logik für Current- und Projected-Salary-Modi.
   - Kontext: `src/app/shared/utils/player-sort.util.ts` enthält die wiederverwendbare Player-Sortierung.
   - Kontext: `src/app/shared/utils/trade-calculator.util.ts` enthält wiederverwendbare Salary- und Trade-Roster-Berechnungen.
+  - Kontext: `src/app/shared/utils/league-standings-view.util.ts` enthält wiederverwendbare ViewModel-Logik für Current Standings, Season Results, Previous-Season-Awards und All-Time Standings.
   - Ziel: Prüfen, ob Consumer künftig direkt die Shared Utils nutzen sollen, damit die Kompatibilitäts-Delegates in `DataService` entfallen können.
   - Ziel: Prüfen, ob `DataService` dauerhaft als App-Datenfassade benannt bleibt oder später klarer als `FantasyDataService`/`DataFacade` bezeichnet werden soll.
   - Optional: Import-Aliases wie `@core/*`, `@shared/*` und `@app/*` prüfen.
 
-- [ ] Prüfen, ob die Inline-Styles der Draft-Pick-Chips aus dem Overview-Template nach `overview.scss` verschoben werden sollen.
-  - Kontext: Die Darstellung funktioniert, aber ein Teil des Stylings liegt aktuell inline im Template.
-  - Ziel: Template sauberer halten und Styling zentralisieren.
+- [ ] Dynamische Farbbindung der Overview-Draft-Pick-Chips prüfen.
+  - Kontext: Die statischen Draft-Pick-Chip-Styles liegen inzwischen in `overview.scss`; im Template bleibt nur die dynamische Hintergrundfarbe per `[style.background-color]="pick.backgroundColor"`.
+  - Ziel: Prüfen, ob diese Binding-Lösung bewusst beibehalten wird oder ob die Farbe später über CSS-Klassen bzw. CSS Custom Properties modelliert werden soll.
+
+- [ ] Overview-Cap-/Awards-Blöcke als nächste UI-Slices prüfen.
+  - Kontext: Standings, Season Results und All-Time Standings wurden aus der Overview in gemeinsame ViewModels bzw. Shared-Komponenten ausgelagert.
+  - Kontext: `overview.scss` enthält weiterhin Cap-Space-, Deadline- und Regular-Season-Awards-Styles direkt in der Overview.
+  - Ziel: Bei weiterem Overview-Refactor prüfen, ob Cap Space, Deadline und Awards eigene Komponenten/ViewModels bekommen sollen.
 
 - [ ] Deadline-Anzeige im Overview allgemein statt Cap-Deadline-spezifisch modellieren.
   - Kontext: Die Overview-Header-Deadline nutzt aktuell `League.CapDeadline` und den festen Text `until Cap Deadline`.
