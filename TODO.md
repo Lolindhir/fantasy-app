@@ -55,6 +55,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kandidaten: Legacy-Highlights (`Champ of Champs`, `Regular Season King`, `Podium Machine`, `Award Collector`), Award-Legende, Season-History-Readmodel, All-Time-Regular-Season-Readmodel.
   - Hinweis: Angular darf diese Werte vorläufig als Frontend-ViewModel ableiten; langfristige source-of-truth-nahe Historienauswertungen sollten aber generatorseitig entstehen.
 
+- [ ] `WinPercentageDisplay` für All-Time Regular Season generatorseitig erzeugen.
+  - Kontext: All-Time-Regular-Season-Daten enthalten aktuell `WinPercentage`, aber kein `WinPercentageDisplay`.
+  - Kontext: Die Frontend-Anzeige nutzt vorläufig `WinPercentageDisplay`, falls vorhanden, und formatiert sonst das vorhandene numerische `WinPercentage` als Fallback.
+  - Ziel: Der Generator soll für `Placements.AllTime.Regular` dasselbe Display-Feld erzeugen wie bei anderen Regular-Season-Platzierungen, damit Angular kein Display-Fallback mehr benötigt.
+
 ### Frontend
 
 - [ ] `Transactions.json` im Frontend modellieren und für Moves anbinden.
@@ -177,7 +182,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ergebnis: Der gemeinsame Popover-Content liegt inzwischen in `DraftPickPopoverComponent` und unterstützt vollständige Current/Past-Picks sowie kompakte Future-Picks. Die kompakte Trigger-Mechanik wurde später zusätzlich in `DraftPickTriggerComponent` zentralisiert.
 
 - [x] Unbenutzte Hilfslogik im Drafts-Feature bereinigen.
-  - Kontext: `CurrentDraftPickChipComponent.statusLabel` wurde nicht im Template verwendet.
+  - Kontext: `CurrentDraftPickComponent.statusLabel` wurde nicht im Template verwendet.
   - Ergebnis: Der ungenutzte Getter wurde beim Umstellen auf das gemeinsame Draft-Pick-Popover entfernt.
 
 - [x] Past Drafts im Frontend auf Basis von `PastSeasonsIndex.json` ergänzen.
