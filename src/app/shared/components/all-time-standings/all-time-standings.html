@@ -1,0 +1,20 @@
+<section class="all-time" *ngIf="standings as rows">
+  <h2>{{ title }}</h2>
+
+  <div *ngFor="let row of rows" class="all-time-row">
+    <div class="all-time-place">{{ row.place }}</div>
+
+    <div class="all-time-owner">{{ row.owner }}</div>
+
+    <div class="all-time-awards">
+      {{ repeatEmojiLimited('🏆', row.championships) }}
+      {{ repeatEmojiLimited('🥈', row.runnerUps) }}
+      {{ repeatEmojiLimited('🥉', row.thirds) }}
+      {{ repeatEmojiLimited('👑', row.regularSeasonWins) }}
+    </div>
+
+    <div class="all-time-avg">
+      Ø🏅 = {{ row.placeAverage }}
+    </div>
+  </div>
+</section>
