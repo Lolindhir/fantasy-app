@@ -59,7 +59,6 @@ export interface LeagueLegacyHighlight {
   icon: string;
   title: string;
   owner: string;
-  team?: FantasyTeam;
   valueDisplay: string;
   reason: string;
 }
@@ -69,6 +68,49 @@ export interface LeagueLegacyViewModel {
   overallStandings: AllTimeStandingRow[];
   regularSeasonStandings: AllTimeRegularSeasonStandingRow[];
   awardLegend: AwardLegendItem[];
+}
+
+export interface SeasonHistoryPlayoffRow {
+  place: number;
+  placeOrdinal: string;
+  owner: string;
+  teamName: string | null;
+}
+
+export interface SeasonHistoryRegularSeasonRow {
+  place: number;
+  placeOrdinal: string;
+  owner: string;
+  teamName: string | null;
+  record: string;
+  points: number;
+  pointsAgainst: number;
+  winPercentageDisplay: string;
+}
+
+export interface SeasonHistoryAwardItem {
+  key: string;
+  icon: string;
+  name: string;
+  displayText: string;
+  owner: string;
+  teamName: string | null;
+  statDisplay: string;
+  tooltip: string;
+  order: number;
+}
+
+export interface SeasonHistorySeasonViewModel {
+  season: string;
+  champion?: SeasonHistoryPlayoffRow;
+  regularSeasonWinner?: SeasonHistoryRegularSeasonRow;
+  playoffResults: SeasonHistoryPlayoffRow[];
+  regularSeasonStandings: SeasonHistoryRegularSeasonRow[];
+  awards: SeasonHistoryAwardItem[];
+}
+
+export interface SeasonHistoryViewModel {
+  seasons: SeasonHistorySeasonViewModel[];
 }
 
 export function buildCurrentStandings(
@@ -202,6 +244,52 @@ export function buildLeagueLegacy(
   };
 }
 
+export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
+  const seasons = [...(league.Standings ?? [])]
+    .map(standing => {
+      const playoffResults = [...(standing.Playoffs ?? [])]
+        .sort((a, b) => a.Place - b.Place)
+        .map(row => ({
+          place: row.Place,
+          placeOrdinal: row.PlaceOrdinal,
+          owner: row.Owner,
+          teamName: row.TeamName
+        }));
+
+      const regularSeasonStandings = [...(standing.RegularSeason ?? [])]
+        .sort((a, b) => a.Place - b.Place)
+        .map(row => ({
+          place: row.Place,
+          placeOrdinal: row.PlaceOrdinal,
+          owner: row.Owner,
+          teamName: row.TeamName,
+          record: row.Record ?? formatRecord(row.Wins ?? 0, row.Losses ?? 0, row.Ties ?? 0),
+          points: row.Points ?? 0,
+          pointsAgainst: row.PointsAgainst ?? 0,
+          winPercentageDisplay: row.WinPercentageDisplay ?? ''
+        }));
+
+      const awards = [...(standing.Awards ?? [])]
+        .sort((a, b) =>
+          (a.Type?.Order ?? 999) - (b.Type?.Order ?? 999)
+          || a.Name.localeCompare(b.Name)
+        )
+        .map(award => mapSeasonHistoryAward(award));
+
+      return {
+        season: standing.Season,
+        champion: playoffResults.find(row => row.place === 1),
+        regularSeasonWinner: regularSeasonStandings.find(row => row.place === 1),
+        playoffResults,
+        regularSeasonStandings,
+        awards
+      };
+    })
+    .sort((a, b) => Number(b.season) - Number(a.season));
+
+  return { seasons };
+}
+
 export function getPreviousChampion(teams: FantasyTeam[]): FantasyTeam | undefined {
   return teams.find(team => team.Placements.Previous.Playoffs?.Place === 1);
 }
@@ -232,7 +320,6 @@ function buildLegacyHighlights(
       icon: '🏆',
       title: 'Champ of Champs',
       owner: champOfChamps.owner,
-      team: champOfChamps.team,
       valueDisplay: '#1 Overall',
       reason: 'Best all-time overall placement'
     });
@@ -244,7 +331,6 @@ function buildLegacyHighlights(
       icon: '👑',
       title: 'Regular Season King',
       owner: regularSeasonKing.owner,
-      team: regularSeasonKing.team,
       valueDisplay: '#1 Regular Season',
       reason: 'Best all-time regular-season table'
     });
@@ -258,8 +344,7 @@ function buildLegacyHighlights(
       icon: '🥇',
       title: 'Podium Machine',
       owner: podiumMachine.owner,
-      team: podiumMachine.team,
-      valueDisplay: `${podiums} Podiums`,
+      valueDisplay: `${podiums} Podium${podiums === 1 ? '' : 's'}`,
       reason: 'Most top-3 playoff finishes'
     });
   }
@@ -308,9 +393,25 @@ function buildAwardCollectorHighlight(
     icon: '🎖️',
     title: 'Award Collector',
     owner: team?.Owner ?? `Team ${teamId}`,
-    team,
     valueDisplay: `${stats.count} Awards`,
     reason: 'Most historical season awards'
+  };
+}
+
+function mapSeasonHistoryAward(award: AwardInStanding): SeasonHistoryAwardItem {
+  const displayText = award.Type?.DisplayText || award.Name;
+  const tooltipParts = [displayText, award.Owner, award.StatDisplay].filter(Boolean);
+
+  return {
+    key: award.Type?.Name || award.Name,
+    icon: award.Icon || unicodeToEmoji(award.IconUnicode),
+    name: award.Name,
+    displayText,
+    owner: award.Owner,
+    teamName: award.TeamName,
+    statDisplay: award.StatDisplay,
+    tooltip: tooltipParts.join(' • '),
+    order: award.Type?.Order ?? 999
   };
 }
 
