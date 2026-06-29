@@ -385,10 +385,6 @@ try {
     $status = [string]$statusState.Status
     $phase = [string]$statusState.Phase
 
-    if ($phase -eq "Cap Check") {
-        $cutsAllowed = $false
-    }
-
     if ($status -eq "Completed") {
         $cutsAllowed = $false
         $waiversOpen = $false
