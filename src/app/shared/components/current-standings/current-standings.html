@@ -1,0 +1,25 @@
+<section class="current-standings" *ngIf="standings as rows">
+  <h2>{{ title }}</h2>
+
+  <div class="standing-row standing-header">
+    <div>Place</div>
+    <div>Team</div>
+    <div>Record</div>
+    <div>Points</div>
+  </div>
+
+  <div *ngFor="let row of rows" class="standing-row">
+    <div class="standing-place">{{ row.displayPlace }}</div>
+
+    <div class="standing-team">
+      <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
+      <div>
+        <div class="standing-team-name">{{ row.team.Team }}</div>
+        <div class="standing-owner">{{ row.team.Owner }}</div>
+      </div>
+    </div>
+
+    <div>{{ row.team.Record }}</div>
+    <div>{{ row.team.Points | number:'1.0-2' }}</div>
+  </div>
+</section>
