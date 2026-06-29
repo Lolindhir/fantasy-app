@@ -8,11 +8,13 @@ import { AwardLegendComponent } from '../../shared/components/award-legend/award
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
 import { SeasonArchiveComponent } from '../../shared/components/season-archive/season-archive';
+import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { buildDetailedAwardLegend } from '../../shared/utils/award-legend-view.util';
 import {
   buildCurrentStandings,
   buildLeagueLegacy,
   buildSeasonHistory,
+  buildSeasonResults,
   type SeasonHistoryViewModel
 } from '../../shared/utils/league-standings-view.util';
 
@@ -25,6 +27,7 @@ import {
     AllTimeOverviewComponent,
     AwardLegendComponent,
     CurrentStandingsComponent,
+    SeasonResultsComponent,
     SeasonArchiveComponent
   ],
   templateUrl: './standings-page.html',
@@ -44,6 +47,7 @@ export class StandingsPageComponent {
         league,
         legacy,
         currentStandings: buildCurrentStandings(league, teams),
+        lastSeasonResults: buildSeasonResults(teams),
         seasonHistory: filterArchivedSeasons(buildSeasonHistory(league), String(league.Season))
       };
     })
