@@ -77,7 +77,7 @@
       </div>
 
       <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
-        <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span style="font-size: small">until Cap Deadline</span></div>
+        <div class="deadline">⏱️ {{ vm.deadlineInfo.days }} days <span class="deadline-label">until Cap Deadline</span></div>
         <div class="deadline-text">({{ vm.deadlineDisplay }})</div>
       </div>
 
@@ -179,37 +179,25 @@
         <div
           class="draft-picks-section"
           *ngIf="t.draftPickGroups.length > 0"
-          style="margin-top: 4px; padding-top: 5px; border-top: 1px solid rgba(0, 0, 0, 0.08);"
         >
-          <div
-            class="draft-picks-title"
-            style="font-size: 0.9rem; font-weight: 500; opacity: 0.85; margin-bottom: 4px;"
-          >
+          <div class="draft-picks-title">
             📋 Draft Picks {{ vm.league.Season }}
           </div>
 
           <div
             *ngFor="let draftGroup of t.draftPickGroups"
             class="draft-pick-group"
-            style="display: grid; gap: 3px;"
           >
-            <div
-              class="draft-pick-header"
-              style="display: flex; align-items: center; gap: 6px;"
-            >
+            <div class="draft-pick-header">
               <span class="label">{{ draftGroup.label }}:</span>
               <span class="stat">{{ draftGroup.count }}</span>
             </div>
 
-            <div
-              class="draft-pick-chip-row"
-              style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 22px;"
-            >
+            <div class="draft-pick-chip-row">
               <span
                 *ngFor="let pick of draftGroup.picks"
                 class="draft-pick-chip"
                 [style.background-color]="pick.backgroundColor"
-                style="padding: 1px 6px; border-radius: 999px; color: #111; border: 1px solid rgba(0, 0, 0, 0.12); font-size: 0.75rem; font-weight: 400; line-height: 1.35; opacity: 0.85; white-space: nowrap;"
               >
                 {{ pick.display }}
               </span>
@@ -260,7 +248,7 @@
       <div class="rest">
           <div *ngFor="let team of vm.league.Teams.slice(3)" class="team-row">
             <div class="place">{{ standingEmoji(team.Standing) }}</div>
-            <div class="owner">{{ team.Owner }} <span style="font-size: smaller;">{{ team.AwardsDisplay }}</span></div>
+            <div class="owner">{{ team.Owner }} <span class="owner-awards">{{ team.AwardsDisplay }}</span></div>
           </div>
       </div>
     </div>
