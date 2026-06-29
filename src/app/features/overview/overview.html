@@ -216,44 +216,10 @@
 
   </section>
 
-  <!-- 🏆 STANDINGS -->
-  <section *ngIf="vm.league.IsFinished">
-    <h2>{{ vm.league.IsFinished ? "Season Results" : "Standings"}}</h2>
-
-    <div class="standings-wrapper">
-      <div class="podium">
-        <!-- Platz 2 -->
-        <div class="podium-item second" *ngIf="vm.league.Teams[1]">
-          <div class="owner runner-up">{{ vm.league.Teams[1].Owner }}</div>
-          <div>{{ vm.league.Teams[1].AwardsDisplay }}</div>
-          <div class="medal">🥈</div>
-        </div>
-
-        <!-- Platz 1 -->
-        <div class="podium-item first" *ngIf="vm.league.Teams[0]">
-          <div class="owner champ">{{ vm.league.Teams[0].Owner }}</div>
-          <div>{{ vm.league.Teams[0].AwardsDisplay }}</div>
-          <div class="cup">🏆</div>
-        </div>
-
-        <!-- Platz 3 -->
-        <div class="podium-item third" *ngIf="vm.league.Teams[2]">
-          <div class="owner">{{ vm.league.Teams[2].Owner }}</div>
-          <div>{{ vm.league.Teams[2].AwardsDisplay }}</div>
-          <div class="medal">🥉</div>
-        </div>      
-      </div>
-
-      <!-- Restliche Teams -->
-      <div class="rest">
-          <div *ngFor="let team of vm.league.Teams.slice(3)" class="team-row">
-            <div class="place">{{ standingEmoji(team.Standing) }}</div>
-            <div class="owner">{{ team.Owner }} <span class="owner-awards">{{ team.AwardsDisplay }}</span></div>
-          </div>
-      </div>
-    </div>
-    
-  </section>
+  <app-season-results
+    *ngIf="vm.league.IsFinished"
+    [results]="vm.seasonResults"
+  ></app-season-results>
 
   <!-- 🔥 Awards -->
   <section class="awards" *ngIf="vm.league.IsFinished">
