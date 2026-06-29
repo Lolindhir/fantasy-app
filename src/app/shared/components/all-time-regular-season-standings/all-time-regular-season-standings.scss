@@ -5,7 +5,7 @@
 
 .regular-row {
   display: grid;
-  grid-template-columns: 15px 1fr 2fr 80px;
+  grid-template-columns: 15px minmax(120px, 1fr) max-content minmax(190px, 1fr);
   align-items: center;
   padding: 3px;
   padding-left: 15px;
@@ -24,9 +24,18 @@
 .regular-record {
   opacity: 0.85;
   font-size: 0.9em;
+  white-space: nowrap;
 }
 
 .regular-points {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 8px;
   opacity: 0.7;
   font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.regular-diff {
+  font-weight: 700;
 }
