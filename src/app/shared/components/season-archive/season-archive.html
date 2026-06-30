@@ -31,19 +31,10 @@
       <section class="season-block regular-season-block">
         <h3>Regular Season Standings</h3>
 
-        <div class="regular-row regular-header">
-          <div>#</div>
-          <div>Owner</div>
-          <div>Record</div>
-          <div>Points</div>
-        </div>
-
-        <div *ngFor="let row of season.regularSeasonStandings" class="regular-row">
-          <div class="place">{{ row.place }}</div>
-          <div class="owner regular-owner">{{ row.owner }}</div>
-          <div>{{ row.record }}</div>
-          <div>{{ row.points | number:'1.0-2' }}</div>
-        </div>
+        <app-regular-season-standings-list
+          [standings]="season.regularSeasonStandings"
+          [showTitle]="false"
+        ></app-regular-season-standings-list>
       </section>
     </mat-expansion-panel>
   </mat-accordion>
