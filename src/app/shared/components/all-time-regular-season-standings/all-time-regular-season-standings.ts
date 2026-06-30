@@ -1,12 +1,15 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
+import {
+  RegularSeasonStandingsListComponent,
+  type RegularSeasonStandingListRow
+} from '../regular-season-standings-list/regular-season-standings-list';
 import type { AllTimeRegularSeasonStandingRow } from '../../utils/league-standings-view.util';
 
 @Component({
   selector: 'app-all-time-regular-season-standings',
   standalone: true,
-  imports: [CommonModule],
+  imports: [RegularSeasonStandingsListComponent],
   templateUrl: './all-time-regular-season-standings.html',
   styleUrl: './all-time-regular-season-standings.scss'
 })
@@ -15,26 +18,15 @@ export class AllTimeRegularSeasonStandingsComponent {
   @Input() title = 'All-Time Regular Season';
   @Input() showTitle = true;
 
-  recordWithQuote(row: AllTimeRegularSeasonStandingRow): string {
-    const quote = row.winPercentageDisplay
-      || this.formatWinPercentageDisplay(row.team.Placements.AllTime.Regular.WinPercentage);
-
-    return quote ? `${row.record} (${quote})` : row.record;
-  }
-
-  pointDifferential(row: AllTimeRegularSeasonStandingRow): number {
-    return row.points - row.pointsAgainst;
-  }
-
-  pointDifferentialEmoji(row: AllTimeRegularSeasonStandingRow): string {
-    return this.pointDifferential(row) >= 0 ? '🔺' : '🔻';
-  }
-
-  private formatWinPercentageDisplay(winPercentage: number | null | undefined): string {
-    if (winPercentage === null || winPercentage === undefined) return '';
-
-    return winPercentage
-      .toFixed(3)
-      .replace(/^0/, '');
+  regularSeasonRows(): RegularSeasonStandingListRow[] | null | undefined {
+    return this.standings?.map(row => ({
+      place: row.place,
+      owner: row.owner,
+      record: row.record,
+      points: row.points,
+      pointsAgainst: row.pointsAgainst,
+      winPercentageDisplay: row.winPercentageDisplay,
+      winPercentage: row.team.Placements.AllTime.Regular.WinPercentage
+    }));
   }
 }
