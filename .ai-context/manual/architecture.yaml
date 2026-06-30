@@ -172,10 +172,12 @@ frontendStructure:
         feature page. LeagueLegacySummaryComponent renders Hall-of-Fame highlight
         cards; CurrentStandingsComponent renders current standing rows;
         AllTimeStandingsComponent renders all-time overall placement rows;
-        AllTimeRegularSeasonStandingsComponent renders all-time regular-season
-        rows; SeasonArchiveComponent renders season-level playoff results, awards
-        and regular-season standings; SeasonResultsComponent remains available for
-        previous-season podium rendering in Overview.
+        AllTimeRegularSeasonStandingsComponent wraps the shared compact
+        RegularSeasonStandingsListComponent for all-time regular-season rows;
+        SeasonArchiveComponent renders season-level playoff results, awards and
+        regular-season standings and reuses the same regular-season list;
+        SeasonResultsComponent remains available for previous-season podium
+        rendering in Overview.
       examples:
         - src/app/shared/components/player-list/player-list.ts
         - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
@@ -183,6 +185,7 @@ frontendStructure:
         - src/app/shared/components/current-standings/current-standings.ts
         - src/app/shared/components/all-time-standings/all-time-standings.ts
         - src/app/shared/components/all-time-regular-season-standings/all-time-regular-season-standings.ts
+        - src/app/shared/components/regular-season-standings-list/regular-season-standings-list.ts
         - src/app/shared/components/season-archive/season-archive.ts
         - src/app/shared/components/season-results/season-results.ts
 
