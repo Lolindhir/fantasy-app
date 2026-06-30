@@ -1,17 +1,5 @@
-<section class="all-time-regular" *ngIf="standings as rows">
-  <h2 *ngIf="showTitle">{{ title }}</h2>
-
-  <div *ngFor="let row of rows" class="regular-row">
-    <div class="regular-place">{{ row.place }}</div>
-
-    <div class="regular-owner">{{ row.owner }}</div>
-
-    <div class="regular-record">
-      {{ recordWithQuote(row) }}
-    </div>
-
-    <div class="regular-diff">
-      {{ pointDifferentialEmoji(row) }} {{ pointDifferential(row) >= 0 ? '+' : '' }}{{ pointDifferential(row) | number:'1.0-2' }}
-    </div>
-  </div>
-</section>
+<app-regular-season-standings-list
+  [standings]="regularSeasonRows()"
+  [title]="title"
+  [showTitle]="showTitle"
+></app-regular-season-standings-list>
