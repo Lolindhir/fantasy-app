@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.regular-row {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr) 11ch 11ch;
+  align-items: center;
+  padding: 3px 3px 3px 15px;
+  margin: 2px 2px 2px 10px;
+  border-radius: 8px;
+  gap: 10px;
+}
+
+.regular-place,
+.regular-owner {
+  font-weight: bold;
+}
+
+.regular-owner {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regular-record,
+.regular-diff {
+  justify-self: end;
+  width: 11ch;
+  font-size: 0.9em;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.regular-record {
+  opacity: 0.85;
+}
+
+.regular-diff {
+  opacity: 0.7;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
