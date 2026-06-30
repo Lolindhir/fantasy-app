@@ -113,119 +113,104 @@ export interface SeasonHistoryViewModel {
   seasons: SeasonHistorySeasonViewModel[];
 }
 
-export function buildCurrentStandings(
-  league: League,
-  teams: FantasyTeam[]
-): CurrentStandingRow[] {
-  return [...teams]
+export function buildCurrentStandings(league: League, teams: FantasyTeam[]): CurrentStandingRow[] {
+  const currentStanding = league.Standings.find(standing => standing.Season === league.Season);
+  const placeByTeamId = new Map(
+    currentStanding?.Overall.map(row => [String(row.TeamID), row.Place]) ?? []
+  );
+
+  return teams
     .map(team => ({
       team,
-      displayPlace: league.IsFinished
-        ? team.Placements.Previous.Playoffs?.Place ?? team.Placements.Previous.Regular.Place
-        : team.Standing
+      displayPlace: placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Overall?.Place ?? 999
     }))
     .sort((a, b) => a.displayPlace - b.displayPlace);
 }
 
 export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel {
-  const resultTeams = [...teams]
+  const allResults = teams
     .map(team => ({
       team,
-      place: team.Placements.Previous.Playoffs?.Place ?? team.Placements.Previous.Regular.Place,
+      place: team.Placements.Previous.Playoffs?.Place ?? 999,
       awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards)
     }))
     .sort((a, b) => a.place - b.place);
 
   return {
-    teams: resultTeams,
-    champion: resultTeams[0],
-    runnerUp: resultTeams[1],
-    thirdPlace: resultTeams[2],
-    remainingTeams: resultTeams.slice(3)
+    teams: allResults,
+    champion: allResults[0],
+    runnerUp: allResults[1],
+    thirdPlace: allResults[2],
+    remainingTeams: allResults.slice(3)
   };
 }
 
 export function buildAllTimeStandings(teams: FantasyTeam[]): AllTimeStandingRow[] {
-  return [...teams]
-    .sort((a, b) =>
-      a.Placements.AllTime.Playoffs.Place - b.Placements.AllTime.Playoffs.Place
-    )
+  return teams
+    .filter(team => team.Placements.AllTime.Playoffs.Place < 999)
     .map(team => ({
       team,
       place: team.Placements.AllTime.Playoffs.Place,
       owner: team.Owner,
-      championships: team.Championships,
-      runnerUps: team.RunnerUps,
-      thirds: team.Thirds,
-      regularSeasonWins: team.RegularSeasonWins,
+      championships: team.Placements.AllTime.Playoffs.Championships,
+      runnerUps: team.Placements.AllTime.Playoffs.RunnerUps,
+      thirds: team.Placements.AllTime.Playoffs.Thirds,
+      regularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins,
       placeAverage: team.Placements.AllTime.Playoffs.PlaceAverage
-    }));
+    }))
+    .sort((a, b) => a.place - b.place);
 }
 
-export function buildAllTimeRegularSeasonStandings(
-  teams: FantasyTeam[]
-): AllTimeRegularSeasonStandingRow[] {
-  return [...teams]
-    .sort((a, b) =>
-      a.Placements.AllTime.Regular.Place - b.Placements.AllTime.Regular.Place
-    )
+export function buildAllTimeRegularSeasonStandings(teams: FantasyTeam[]): AllTimeRegularSeasonStandingRow[] {
+  return teams
+    .filter(team => team.Placements.AllTime.Regular.Place < 999)
     .map(team => {
       const regular = team.Placements.AllTime.Regular;
-      const wins = regular.Wins ?? 0;
-      const losses = regular.Losses ?? 0;
-      const ties = regular.Ties ?? 0;
 
       return {
         team,
         place: regular.Place,
         owner: team.Owner,
-        wins,
-        losses,
-        ties,
-        record: formatRecord(wins, losses, ties),
-        points: regular.Points ?? 0,
-        pointsAgainst: regular.PointsAgainst ?? 0,
+        wins: regular.Wins,
+        losses: regular.Losses,
+        ties: regular.Ties,
+        record: formatRecord(regular.Wins, regular.Losses, regular.Ties),
+        points: regular.Points,
+        pointsAgainst: regular.PointsAgainst,
         winPercentageDisplay: regular.WinPercentageDisplay ?? '',
-        regularSeasonWins: regular.RegularSeasonWins ?? 0
+        regularSeasonWins: regular.RegularSeasonWins
       };
-    });
+    })
+    .sort((a, b) => a.place - b.place);
 }
 
 export function buildAwardLegend(league: League): AwardLegendItem[] {
-  const legendByKey = new Map<string, AwardLegendItem>();
+  const legend = new Map<string, AwardLegendItem>();
 
   for (const standing of league.Standings ?? []) {
     for (const award of standing.Awards ?? []) {
-      const key = award.Type?.Name || award.Name;
-      const displayText = award.Type?.DisplayText || award.Name;
-      const existing = legendByKey.get(key);
-
-      if (existing) {
-        existing.occurrences += 1;
-        existing.tooltip = buildAwardTooltip(existing.displayText, existing.occurrences);
-        continue;
-      }
-
-      legendByKey.set(key, {
+      const key = award.Type?.Key || award.Name;
+      const existing = legend.get(key);
+      const item = existing ?? {
         key,
         icon: award.Icon || unicodeToEmoji(award.IconUnicode),
-        name: award.Name,
-        displayText,
-        tooltip: buildAwardTooltip(displayText, 1),
+        name: award.Type?.DisplayText || award.Name,
+        displayText: award.Type?.DisplayText || award.Name,
+        tooltip: buildAwardTooltip(award.Type?.DisplayText || award.Name, 0),
         order: award.Type?.Order ?? 999,
-        occurrences: 1
-      });
+        occurrences: 0
+      };
+
+      item.occurrences += 1;
+      item.tooltip = buildAwardTooltip(item.displayText, item.occurrences);
+      legend.set(key, item);
     }
   }
 
-  return [...legendByKey.values()]
-    .sort((a, b) => a.order - b.order || a.displayText.localeCompare(b.displayText));
+  return [...legend.values()].sort((a, b) => a.order - b.order || a.displayText.localeCompare(b.displayText));
 }
 
-export function buildLeagueLegacy(
-  league: League,
-  teams: FantasyTeam[]
-): LeagueLegacyViewModel {
+export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueLegacyViewModel {
   const overallStandings = buildAllTimeStandings(teams);
   const regularSeasonStandings = buildAllTimeRegularSeasonStandings(teams);
   const awardLegend = buildAwardLegend(league);
@@ -263,7 +248,7 @@ export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
           placeOrdinal: row.PlaceOrdinal,
           owner: row.Owner,
           teamName: row.TeamName,
-          record: row.Record ?? formatRecord(row.Wins ?? 0, row.Losses ?? 0, row.Ties ?? 0),
+          record: formatRecord(row.Wins ?? 0, row.Losses ?? 0, row.Ties ?? 0),
           points: row.Points ?? 0,
           pointsAgainst: row.PointsAgainst ?? 0,
           winPercentageDisplay: row.WinPercentageDisplay ?? ''
