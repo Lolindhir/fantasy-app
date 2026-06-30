@@ -116,13 +116,13 @@ export interface SeasonHistoryViewModel {
 export function buildCurrentStandings(league: League, teams: FantasyTeam[]): CurrentStandingRow[] {
   const currentStanding = league.Standings.find(standing => standing.Season === league.Season);
   const placeByTeamId = new Map(
-    currentStanding?.Overall.map(row => [String(row.TeamID), row.Place]) ?? []
+    currentStanding?.RegularSeason.map(row => [String(row.TeamID), row.Place]) ?? []
   );
 
   return teams
     .map(team => ({
       team,
-      displayPlace: placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Overall?.Place ?? 999
+      displayPlace: placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Regular.Place ?? 999
     }))
     .sort((a, b) => a.displayPlace - b.displayPlace);
 }
@@ -189,7 +189,7 @@ export function buildAwardLegend(league: League): AwardLegendItem[] {
 
   for (const standing of league.Standings ?? []) {
     for (const award of standing.Awards ?? []) {
-      const key = award.Type?.Key || award.Name;
+      const key = award.Type?.Name || award.Name;
       const existing = legend.get(key);
       const item = existing ?? {
         key,
