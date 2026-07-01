@@ -34,6 +34,17 @@ interface DeadlineDisplayInfo {
   displayText: string;
 }
 
+interface CapCheckSummary {
+  title: string;
+  summaryText: string;
+  detailText: string;
+  allCompliant: boolean;
+}
+
+interface SalaryTeamSummary {
+  total: number;
+}
+
 @Component({
   selector: 'app-overview',
   imports: [
@@ -124,6 +135,10 @@ export class OverviewComponent {
 
       }).sort((a, b) => a.total - b.total);
 
+      const capCheckSummary = offSeason && league.Phase === 'Cap Check'
+        ? this.buildCapCheckSummary(league, salaryByTeam)
+        : null;
+
       // 🔥 Awards
       const awards = getCurrentSeasonAwards(league);
 
@@ -146,6 +161,7 @@ export class OverviewComponent {
         allTime,
         allTimeStandings,
         salaryByTeam,
+        capCheckSummary,
         awards,
         deadlineDisplay,
         deadlineInfo,
@@ -153,6 +169,33 @@ export class OverviewComponent {
       };
     })
   );
+
+  private buildCapCheckSummary(
+    league: League,
+    salaryByTeam: SalaryTeamSummary[]
+  ): CapCheckSummary {
+    const overCapTeams = salaryByTeam.filter(team => team.total > league.SalaryCap);
+    const compliantTeams = salaryByTeam.length - overCapTeams.length;
+
+    if (overCapTeams.length === 0) {
+      return {
+        title: '✅ Cap Check bestanden',
+        summaryText: 'Alle Teams sind unter dem Salary Cap.',
+        detailText: `${compliantTeams} von ${salaryByTeam.length} Teams compliant`,
+        allCompliant: true
+      };
+    }
+
+    const worstOverage = Math.max(...overCapTeams.map(team => team.total - league.SalaryCap));
+    const teamLabel = overCapTeams.length === 1 ? 'Team muss' : 'Teams müssen';
+
+    return {
+      title: '🚨 Cap Check offen',
+      summaryText: `${overCapTeams.length} ${teamLabel} noch Cap freimachen.`,
+      detailText: `${compliantTeams} compliant · größter Fehlbetrag ${this.formatSalaryDollars(worstOverage, false, 1)}`,
+      allCompliant: false
+    };
+  }
 
   private getCurrentSeasonDraftPickGroups(
     picks: DraftPick[],
@@ -306,7 +349,7 @@ export class OverviewComponent {
         // Primär: Salary, Sekundär: SalaryProjected
         const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
         if (diff !== 0) return diff;
-        return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
+        return (b.SalaryProjected ?? 0) - (a.Salary ?? 0);
       }
     });
     return sorted;
