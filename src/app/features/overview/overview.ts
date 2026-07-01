@@ -179,20 +179,20 @@ export class OverviewComponent {
 
     if (overCapTeams.length === 0) {
       return {
-        title: '✅ Cap Check bestanden',
-        summaryText: 'Alle Teams sind unter dem Salary Cap.',
-        detailText: `${compliantTeams} von ${salaryByTeam.length} Teams compliant`,
+        title: '✅ Cap Check Passed',
+        summaryText: 'All teams are under the salary cap.',
+        detailText: `${compliantTeams} of ${salaryByTeam.length} teams compliant`,
         allCompliant: true
       };
     }
 
     const worstOverage = Math.max(...overCapTeams.map(team => team.total - league.SalaryCap));
-    const teamLabel = overCapTeams.length === 1 ? 'Team muss' : 'Teams müssen';
+    const teamLabel = overCapTeams.length === 1 ? 'team still needs' : 'teams still need';
 
     return {
-      title: '🚨 Cap Check offen',
-      summaryText: `${overCapTeams.length} ${teamLabel} noch Cap freimachen.`,
-      detailText: `${compliantTeams} compliant · größter Fehlbetrag ${this.formatSalaryDollars(worstOverage, false, 1)}`,
+      title: '🚨 Cap Check Open',
+      summaryText: `${overCapTeams.length} ${teamLabel} to clear cap.`,
+      detailText: `${compliantTeams} compliant · largest overage ${this.formatSalaryDollars(worstOverage, false, 1)}`,
       allCompliant: false
     };
   }
