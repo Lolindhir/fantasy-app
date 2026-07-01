@@ -78,7 +78,7 @@ function Get-Compare {
         # Top-Level
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
-            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek','TotalTeams',
+            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
@@ -358,7 +358,20 @@ try {
     $waiversOpen = [int]$league.settings.disable_adds -eq 0
     Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
+    $tradeReviewDays = if ($null -ne $league.settings.trade_review_days) { [int]$league.settings.trade_review_days } else { 0 }
     $tradesOpen = [int]$league.settings.disable_trades -eq 0
+    $tradesMetaTextParts = @()
+
+    if (-not $tradesOpen) {
+        $tradesMetaTextParts += "Disabled in Sleeper"
+    }
+
+    if ($tradeReviewDays -gt 0) {
+        $tradesOpen = $false
+        $tradeReviewDaysLabel = if ($tradeReviewDays -eq 1) { "1 day" } else { "$tradeReviewDays days" }
+        $tradesMetaTextParts += "Commissioner Review: $tradeReviewDaysLabel"
+    }
+
     $tradeDeadlineWeek = [int]$league.settings.trade_deadline
     $leagueWeekForTradeDeadline = $currentWeek
     if ($leagueWeekForTradeDeadline -le 0) {
@@ -366,9 +379,12 @@ try {
     }
     if ($tradeDeadlineWeek -gt 0 -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
         $tradesOpen = $false
+        $tradesMetaTextParts += "Trade Deadline reached"
     }
-    Write-Host "Trades disabled per settings: $(!$tradesOpen)" -ForegroundColor Yellow
-    $tradesMetaText = ""
+
+    $tradesMetaText = $tradesMetaTextParts -join " | "
+    Write-Host "Trade review days: $tradeReviewDays" -ForegroundColor Yellow
+    Write-Host "Trades open: $tradesOpen | Trades meta: $tradesMetaText" -ForegroundColor Yellow
 
     # Status und optionale Status-Phase setzen
     $statusState = Resolve-LeagueStatusState `
@@ -418,6 +434,7 @@ try {
         LastLeagueWeek          = $lastWeek
         PlayoffStartWeek        = $playoffStart
         TradeDeadlineWeek       = $league.settings.trade_deadline
+        TradeReviewDays         = $tradeReviewDays
         CutsAllowed             = $cutsAllowed
         CutsMetaText            = $cutsMetaText
         WaiversOpen             = $waiversOpen
