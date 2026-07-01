@@ -100,6 +100,7 @@ export interface RawLeague {
   LastLeagueWeek: number;
   PlayoffStartWeek: number;
   TradeDeadlineWeek: number;
+  TradeReviewDays: number;
   CutsAllowed: boolean;
   CutsMetaText: string;
   WaiversOpen: boolean;
