@@ -368,8 +368,7 @@ try {
 
     if ($tradeReviewDays -gt 0) {
         $tradesOpen = $false
-        $tradeReviewDaysLabel = if ($tradeReviewDays -eq 1) { "1 day" } else { "$tradeReviewDays days" }
-        $tradesMetaTextParts += "Commissioner Review: $tradeReviewDaysLabel"
+        $tradesMetaTextParts += "Trades will be declined by Commissioner Review"
     }
 
     $tradeDeadlineWeek = [int]$league.settings.trade_deadline
