@@ -55,16 +55,12 @@
 }
 
 .header-status-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: max-content 1fr;
 }
 
 .header-status-row {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  column-gap: 10px;
-  align-items: center;
+  display: contents;
 }
 
 .label {
@@ -72,13 +68,19 @@
 }
 
 .status {
+  min-width: 0;
   white-space: nowrap;
 }
 
-.status-info-icon {
-  margin-left: 4px;
-  font-size: 0.8em;
-  opacity: 0.75;
+.status > span:first-child {
+  white-space: nowrap;
+}
+
+.status .meta {
+  display: inline;
+  margin-left: 3px;
+  overflow-wrap: normal;
+  line-height: normal;
 }
 
 .meta {
