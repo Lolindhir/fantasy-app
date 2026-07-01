@@ -47,7 +47,7 @@
 
 .header-info {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   column-gap: 10px;
   align-items: center;
   font-size: 1rem;
@@ -59,7 +59,19 @@
 }
 
 .status {
+  min-width: 0;
+  white-space: normal;
+}
+
+.status > span:first-child {
   white-space: nowrap;
+}
+
+.status .meta {
+  display: block;
+  margin-left: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .meta {
