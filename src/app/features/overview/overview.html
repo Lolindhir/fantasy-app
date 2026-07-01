@@ -95,6 +95,16 @@
 
   <!-- 📊 Cap Space Overview -->
   <section *ngIf="vm.offSeason">
+    <section
+      *ngIf="vm.capCheckSummary as capCheck"
+      class="cap-check-summary-card"
+      [class.cap-check-summary-card--passed]="capCheck.allCompliant"
+    >
+      <div class="cap-check-summary-title">{{ capCheck.title }}</div>
+      <div class="cap-check-summary-text">{{ capCheck.summaryText }}</div>
+      <div class="cap-check-summary-detail">{{ capCheck.detailText }}</div>
+    </section>
+
     <h2>Available Cap Space</h2>
 
     <div class="cap-space-row">
