@@ -19,38 +19,45 @@
 
     <div class="header-columns">
 
-      <div class="header-info">
+      <div class="header-info header-status-list">
 
-        <div class="label">🤝 Trades:</div>
-        <div class="status">
-          <span>
-            {{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}
-          </span>
-          <span class="meta" *ngIf="vm.league.TradesMetaText.length > 0">
-              {{vm.league.TradesMetaText}}
-          </span>
+        <div
+          class="header-status-row"
+          [matTooltip]="vm.league.TradesMetaText"
+          [matTooltipDisabled]="vm.league.TradesMetaText.length === 0"
+          matTooltipPosition="above"
+        >
+          <div class="label">🤝 Trades:</div>
+          <div class="status">
+            <span>{{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}</span>
+            <span class="status-info-icon" *ngIf="vm.league.TradesMetaText.length > 0">ℹ️</span>
+          </div>
         </div>
 
+        <div
+          class="header-status-row"
+          [matTooltip]="vm.league.WaiversMetaText"
+          [matTooltipDisabled]="vm.league.WaiversMetaText.length === 0"
+          matTooltipPosition="above"
+        >
+          <div class="label">📝 Waivers:</div>
+          <div class="status">
+            <span>{{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}</span>
+            <span class="status-info-icon" *ngIf="vm.league.WaiversMetaText.length > 0">ℹ️</span>
+          </div>
+        </div>
 
-        <div class="label">📝 Waivers:</div>
-        <div class="status">
-          <span>
-            {{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}
-          </span>
-          <span class="meta" *ngIf="vm.league.WaiversMetaText.length > 0">
-              {{vm.league.WaiversMetaText}}
-          </span>
-        </div>      
-
-
-        <div class="label">✂️ Cuts:</div>
-        <div class="status">
-          <span>
-            {{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}
-          </span>
-          <span class="meta" *ngIf="vm.league.CutsMetaText.length > 0">
-              {{vm.league.CutsMetaText}}
-          </span>
+        <div
+          class="header-status-row"
+          [matTooltip]="vm.league.CutsMetaText"
+          [matTooltipDisabled]="vm.league.CutsMetaText.length === 0"
+          matTooltipPosition="above"
+        >
+          <div class="label">✂️ Cuts:</div>
+          <div class="status">
+            <span>{{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}</span>
+            <span class="status-info-icon" *ngIf="vm.league.CutsMetaText.length > 0">ℹ️</span>
+          </div>
         </div>
 
       </div>
