@@ -349,7 +349,7 @@ export class OverviewComponent {
         // Primär: Salary, Sekundär: SalaryProjected
         const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
         if (diff !== 0) return diff;
-        return (b.SalaryProjected ?? 0) - (a.Salary ?? 0);
+        return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
       }
     });
     return sorted;
