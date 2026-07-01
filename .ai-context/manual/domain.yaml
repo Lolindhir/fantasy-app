@@ -21,6 +21,7 @@ coreConcepts:
       - LastLeagueWeek
       - PlayoffStartWeek
       - TradeDeadlineWeek
+      - TradeReviewDays
       - CutsAllowed
       - WaiversOpen
       - TradesOpen
@@ -36,6 +37,12 @@ coreConcepts:
       Off-Season phases Cap Deadline Open, Cap Check and Post Cap Check, plus
       Draft-Season phases Pre Draft and In Draft. Phase must not be treated as a
       source of truth for unrelated move permissions such as CutsAllowed.
+    tradeOpennessRules: >
+      TradesOpen represents whether trades are freely open from a league-process
+      perspective, not merely whether Sleeper allows users to submit trade offers.
+      A positive Sleeper trade_review_days value means trades are under
+      commissioner review and therefore not freely open. TradeReviewDays exposes
+      that Sleeper setting in the generated League.json contract.
 
   Team:
     description: >
