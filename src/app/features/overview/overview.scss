@@ -47,11 +47,24 @@
 
 .header-info {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: max-content 1fr;
   column-gap: 10px;
   align-items: center;
   font-size: 1rem;
   margin-bottom: 10px;
+}
+
+.header-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-status-row {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 10px;
+  align-items: center;
 }
 
 .label {
@@ -59,19 +72,13 @@
 }
 
 .status {
-  min-width: 0;
-  white-space: normal;
-}
-
-.status > span:first-child {
   white-space: nowrap;
 }
 
-.status .meta {
-  display: block;
-  margin-left: 0;
-  overflow-wrap: anywhere;
-  line-height: 1.2;
+.status-info-icon {
+  margin-left: 4px;
+  font-size: 0.8em;
+  opacity: 0.75;
 }
 
 .meta {
