@@ -58,5 +58,5 @@ export interface DraftPick {
   Status: string;
   SleeperPickNo: number | null;
   SleeperPickedBy: string | null;
-  Draft: RawDraft | undefined;
+  Draft?: RawDraft;
 }
