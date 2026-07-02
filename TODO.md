@@ -14,12 +14,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 ### Data Generation / Infrastruktur
 
 - [ ] Laufzeit-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
-  - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration, aber auch nicht-öffentliche Laufzeitwerte.
-  - Ziel: Nicht-öffentliche Werte nicht im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
+  - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration sowie laufzeitabhängige Werte.
+  - Ziel: Laufzeitabhängige Werte nicht direkt im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
 
 - [ ] `CapDeadlineBufferDays` sauber über `ConfigUtils.psm1` bereitstellen.
   - Kontext: `CapDeadlineBufferDays` liegt als liga-spezifische Regel in `Metadata.json`, wird aber aktuell in `RequestLeague.ps1` direkt aus `Metadata.json` gelesen.
-  - Grund: `ConfigUtils.psm1` enthält derzeit noch nicht-öffentliche Laufzeitwerte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
+  - Grund: `ConfigUtils.psm1` enthält derzeit noch laufzeitabhängige Werte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
   - Ziel: Nach Auslagerung der Laufzeitwerte soll `Get-Config` den Wert aus `Metadata.json` laden und als Teil der Generator-Konfiguration bereitstellen.
 
 - [ ] `PastSeasonsIndex.json`-Aktualisierung nur auf relevante Pfad-/Existenzänderungen prüfen.
@@ -33,12 +33,6 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Die technische Live-Enrichment-Logik für aktuelle Drafts ist implementiert; ein echter laufender Sleeper-Draft wurde damit aber noch nicht praktisch geprüft.
   - Ziel: Bei einem laufenden Sleeper-Draft kontrollieren, ob `Drafts.json` echte Pick-Ergebnisse korrekt setzt.
   - Zu prüfen: `Status = Picked`, `PlayerID`, `PlayerName`, `SleeperPickNo`, `SleeperPickedBy`, stabile `PickKey` und korrekte Frontend-Darstellung.
-
-- [ ] Draft-Startzeit aus Sleeper prüfen und in `Drafts.json` übernehmen.
-  - Kontext: `League.Phase = "Pre Draft"` ist im Status-/Phase-Resolver vorbereitet, aber die DraftStartTime-Prüfung ist aktuell bewusst als TODO-Platzhalter deaktiviert.
-  - Ziel: Klären, welches Sleeper-Draft-Feld die geplante Startzeit zuverlässig liefert, z. B. aus dem Draft-Detail-Endpunkt.
-  - Ziel: Danach ein stabiles App-Feld in `Drafts.json` ergänzen und die Transition `Draft-Season / Pre Draft` datengetrieben aktivieren.
-  - Hinweis: Nicht nur gegen `DisplayStatus` prüfen; die Startzeit soll als eigener generierter Contract verfügbar sein.
 
 ### Data Generation / League Status
 
@@ -149,6 +143,9 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Später prüfen, ob und wie der Trade Simulator als Tool oder Subbereich unter Moves aufgeht.
 
 ## Erledigt / Archiv
+
+- [x] Draft-Startzeit aus Sleeper prüfen und in `Drafts.json` übernehmen.
+  - Ergebnis: `Drafts.json` bekommt für aktuelle Sleeper-Drafts `SleeperStartTime` aus `start_time` und `DraftStartTimeUtc` als UTC-ISO-Wert. `League.Phase = "Pre Draft"` nutzt diese generierte Startzeit jetzt datengetrieben.
 
 - [x] Draft-Pick-Trigger-Darstellung weiter vereinheitlichen.
   - Kontext: Current-Pick-Chip und Future-Round-Pill duplizierten Button-, traded-dot- und Popover-Trigger-Logik.
