@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
-import type { DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
+import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../core/models/fantasy.models';
 import { DataService } from '../../core/services/data.service';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
@@ -41,6 +41,14 @@ interface CapCheckSummary {
   allCompliant: boolean;
 }
 
+interface DraftSeasonSummaryCard {
+  rookieSummary: string;
+  freeAgentSummary: string;
+  statusBadge: string;
+  statusText: string;
+  statusClass: 'live' | 'upcoming' | 'completed';
+}
+
 interface SalaryTeamSummary {
   total: number;
 }
@@ -68,9 +76,10 @@ export class OverviewComponent {
   }
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
-    map(({ league, teams }: { league: League; teams: FantasyTeam[] }) => {
+    map(({ league, teams, drafts }: { league: League; teams: FantasyTeam[]; drafts: RawDraft[] }) => {
 
       const offSeason = league.Status === 'Off-Season';
+      const draftSeason = league.Status === 'Draft-Season';
       const currentSeason = league.Season;
       const maxDisplayedDraftRound = this.getMaxDisplayedDraftRound(teams, currentSeason);
 
@@ -139,6 +148,8 @@ export class OverviewComponent {
         ? this.buildCapCheckSummary(league, salaryByTeam)
         : null;
 
+      const draftSummaryCard = this.buildDraftSeasonSummaryCard(drafts, currentSeason, draftSeason);
+
       // 🔥 Awards
       const awards = getCurrentSeasonAwards(league);
 
@@ -162,10 +173,12 @@ export class OverviewComponent {
         allTimeStandings,
         salaryByTeam,
         capCheckSummary,
+        draftSummaryCard,
         awards,
         deadlineDisplay,
         deadlineInfo,
-        offSeason
+        offSeason,
+        draftSeason
       };
     })
   );
@@ -195,6 +208,123 @@ export class OverviewComponent {
       detailText: `${compliantTeams} compliant · largest overage ${this.formatSalaryDollars(worstOverage, false, 1)}`,
       allCompliant: false
     };
+  }
+
+  private buildDraftSeasonSummaryCard(
+    drafts: RawDraft[],
+    season: string,
+    draftSeason: boolean
+  ): DraftSeasonSummaryCard | null {
+    if (!draftSeason) return null;
+
+    const seasonDrafts = drafts
+      .filter(draft => draft.Season === season)
+      .sort((a, b) => a.DraftNo - b.DraftNo);
+
+    if (seasonDrafts.length === 0) return null;
+
+    const rookieDraft = seasonDrafts.find(draft => draft.DraftType === 'Rookie');
+    const freeAgentDraft = seasonDrafts.find(draft => draft.DraftType === 'Free_Agent');
+    const primaryDraft = this.getPrimaryDraft(seasonDrafts, rookieDraft, freeAgentDraft);
+    const statusClass = this.getDraftSummaryStatusClass(primaryDraft);
+
+    return {
+      rookieSummary: this.formatDraftPickSummary(rookieDraft, 'Rookie Draft'),
+      freeAgentSummary: this.formatDraftStatusSummary(freeAgentDraft, 'Free Agent Draft'),
+      statusBadge: `${primaryDraft.DisplayDraftType} ${this.formatDraftSummaryStatus(statusClass)}`,
+      statusText: this.formatDraftSummaryStatusText(primaryDraft, statusClass),
+      statusClass
+    };
+  }
+
+  private getPrimaryDraft(
+    drafts: RawDraft[],
+    rookieDraft: RawDraft | undefined,
+    freeAgentDraft: RawDraft | undefined
+  ): RawDraft {
+    const liveDraft = drafts.find(draft => this.isDraftLive(draft));
+    if (liveDraft) return liveDraft;
+
+    const openDraft = drafts.find(draft => this.getOpenDraftPicks(draft).length > 0);
+    if (openDraft) return openDraft;
+
+    return rookieDraft ?? freeAgentDraft ?? drafts[0];
+  }
+
+  private formatDraftPickSummary(draft: RawDraft | undefined, label: string): string {
+    if (!draft) return `${label}: Not scheduled`;
+
+    const total = draft.Picks.length;
+    const selected = draft.Picks.filter(pick => this.isDraftPickSelected(pick)).length;
+    const remaining = total - selected;
+
+    return `${label}: ${total} picks · ${selected} selected · ${remaining} remaining`;
+  }
+
+  private formatDraftStatusSummary(draft: RawDraft | undefined, label: string): string {
+    if (!draft) return `${label}: Not scheduled`;
+
+    return `${label}: ${draft.DisplayStatus}`;
+  }
+
+  private formatDraftSummaryStatus(statusClass: DraftSeasonSummaryCard['statusClass']): string {
+    switch (statusClass) {
+      case 'live': return 'Live';
+      case 'completed': return 'Completed';
+      default: return 'Upcoming';
+    }
+  }
+
+  private formatDraftSummaryStatusText(
+    draft: RawDraft,
+    statusClass: DraftSeasonSummaryCard['statusClass']
+  ): string {
+    const nextPick = this.getOpenDraftPicks(draft)[0];
+
+    if (statusClass === 'completed') {
+      return 'Draft completed';
+    }
+
+    if (!nextPick) {
+      return 'No open picks remaining';
+    }
+
+    if (statusClass === 'live') {
+      return `Pick ${nextPick.DisplayPick} is on the clock`;
+    }
+
+    return `Pick ${nextPick.DisplayPick} is up first`;
+  }
+
+  private getDraftSummaryStatusClass(draft: RawDraft): DraftSeasonSummaryCard['statusClass'] {
+    if (this.isDraftLive(draft)) return 'live';
+
+    return this.getOpenDraftPicks(draft).length > 0 ? 'upcoming' : 'completed';
+  }
+
+  private isDraftLive(draft: RawDraft): boolean {
+    const status = draft.Status?.toLowerCase() ?? '';
+    const displayStatus = draft.DisplayStatus?.toLowerCase() ?? '';
+    const sleeperStatus = draft.SleeperStatus?.toLowerCase() ?? '';
+
+    return status === 'live'
+      || status === 'in_draft'
+      || status === 'indraft'
+      || displayStatus === 'live'
+      || sleeperStatus === 'drafting';
+  }
+
+  private getOpenDraftPicks(draft: RawDraft): DraftPick[] {
+    return draft.Picks
+      .filter(pick => !this.isDraftPickSelected(pick))
+      .sort((a, b) => (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999));
+  }
+
+  private isDraftPickSelected(pick: DraftPick): boolean {
+    return pick.Status === 'Picked'
+      || !!pick.PlayerID
+      || !!pick.PlayerName
+      || pick.SleeperPickNo !== null;
   }
 
   private getCurrentSeasonDraftPickGroups(
