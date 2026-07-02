@@ -10,8 +10,8 @@ export interface RawDraft {
   DraftSource: string;
   SleeperDraftID: string | null;
   SleeperStatus: string | null;
-  SleeperStartTime: number | null;
-  DraftStartTimeUtc: string | null;
+  SleeperStartTime: number | null | undefined;
+  DraftStartTimeUtc: string | null | undefined;
   Status: string;
   DisplayStatus: string;
   PickSource: string;
@@ -58,5 +58,5 @@ export interface DraftPick {
   Status: string;
   SleeperPickNo: number | null;
   SleeperPickedBy: string | null;
-  Draft?: RawDraft;
+  Draft: RawDraft | undefined;
 }
