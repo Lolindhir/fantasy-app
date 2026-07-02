@@ -104,6 +104,8 @@ coreConcepts:
       - DraftSource
       - SleeperDraftID
       - SleeperStatus
+      - SleeperStartTime
+      - DraftStartTimeUtc
       - Status
       - DisplayStatus
       - PickSource
@@ -111,11 +113,12 @@ coreConcepts:
       - OrderMode
       - Settings
       - Picks
-    pendingFields: >
-      A stable draft start-time field is not part of the generated Drafts.json
-      contract yet. The exact Sleeper field still needs to be verified before the
-      League Phase transition to Draft-Season / Pre Draft can be made
-      data-driven.
+    startTimeRules: >
+      SleeperStartTime is the raw Sleeper draft start_time timestamp in
+      milliseconds when present. DraftStartTimeUtc is the generated UTC ISO value
+      derived from it. A current-season draft with a start time can move the
+      League Phase from Off-Season / Post Cap Check to Draft-Season / Pre Draft
+      once trades are freely open and the draft has not started yet.
 
   DraftPick:
     description: >
