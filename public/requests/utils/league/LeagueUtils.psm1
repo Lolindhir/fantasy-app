@@ -211,6 +211,10 @@ function Resolve-LeagueStatusState {
         return New-LeagueStatusState -Status "Draft-Season" -Phase "In Draft"
     }
 
+    if ($hasOpenCurrentDrafts -and $TradesOpen -and $currentSeasonDraftStartTimeSet) {
+        return New-LeagueStatusState -Status "Draft-Season" -Phase "Pre Draft"
+    }
+
     if ($TradesOpen -and (Test-LeagueCapDeadlineBufferOpen -Deadline $CapDeadline -BufferDays $CapDeadlineBufferDays)) {
         return New-LeagueStatusState -Status "Off-Season" -Phase "Cap Deadline Open"
     }
@@ -221,10 +225,6 @@ function Resolve-LeagueStatusState {
 
     if ($hasOpenCurrentDrafts -and $TradesOpen -and -not $currentSeasonDraftStartTimeSet) {
         return New-LeagueStatusState -Status "Off-Season" -Phase "Post Cap Check"
-    }
-
-    if ($hasOpenCurrentDrafts -and $TradesOpen -and $currentSeasonDraftStartTimeSet) {
-        return New-LeagueStatusState -Status "Draft-Season" -Phase "Pre Draft"
     }
 
     if (-not $seasonWindowStarted) { return New-LeagueStatusState -Status "Pre-Season" }
