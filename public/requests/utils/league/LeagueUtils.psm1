@@ -152,10 +152,12 @@ function Test-CurrentSeasonDraftStartTimeSet {
         [Parameter(Mandatory = $true)][int]$LeagueYear
     )
 
-    # TODO: Verify the exact Sleeper draft start-time field before using it as
-    # the Draft-Season / Pre Draft transition. Drafts.json does not expose a
-    # stable draft start time yet, so this intentionally stays false for now.
-    return $false
+    $draftsWithStartTime = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_.DraftStartTimeUtc) -or
+        ($null -ne $_.SleeperStartTime -and -not [string]::IsNullOrWhiteSpace([string]$_.SleeperStartTime))
+    })
+
+    return $draftsWithStartTime.Count -gt 0
 }
 
 function New-LeagueStatusState {
