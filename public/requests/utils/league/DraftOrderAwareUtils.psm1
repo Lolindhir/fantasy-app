@@ -163,6 +163,14 @@ function New-DraftOutputOrderAware {
     $draftSource = if ($null -ne $sleeperDraft) { "Sleeper" } else { "Virtual" }
     $sleeperDraftID = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.draft_id } else { $null }
     $sleeperStatus = if ($null -ne $sleeperDraft) { [string]$sleeperDraft.status } else { $null }
+    $sleeperStartTime = $null
+    $draftStartTimeUtc = $null
+    if ($null -ne $sleeperDraft -and $null -ne $sleeperDraft.start_time -and [string]$sleeperDraft.start_time -ne "") {
+        $sleeperStartTime = [int64]$sleeperDraft.start_time
+        if ($sleeperStartTime -gt 0) {
+            $draftStartTimeUtc = [DateTimeOffset]::FromUnixTimeMilliseconds($sleeperStartTime).UtcDateTime.ToString("o")
+        }
+    }
     $draftStatus = Get-DraftStatus -sleeperDraft $sleeperDraft
 
     return [PSCustomObject][ordered]@{
@@ -177,6 +185,8 @@ function New-DraftOutputOrderAware {
         DraftSource        = $draftSource
         SleeperDraftID     = $sleeperDraftID
         SleeperStatus      = $sleeperStatus
+        SleeperStartTime   = $sleeperStartTime
+        DraftStartTimeUtc  = $draftStartTimeUtc
         Status             = $draftStatus
         DisplayStatus      = Get-DraftDisplayStatus -status $draftStatus -season $season -leagueYear $leagueYear
         PickSource         = $pickSource
