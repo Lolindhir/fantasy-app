@@ -108,6 +108,38 @@
     </div>
   </section>
 
+  <section *ngIf="vm.draftSummaryCard as draftSummary" class="draft-season-summary-card">
+    <div class="draft-summary-icon">🎓</div>
+
+    <div class="draft-summary-content">
+      <h2>Draft Season</h2>
+
+      <div class="draft-summary-line">
+        <span class="draft-summary-line-icon">👥</span>
+        <span>{{ draftSummary.rookieSummary }}</span>
+      </div>
+
+      <div class="draft-summary-line">
+        <span class="draft-summary-line-icon">🗓️</span>
+        <span>{{ draftSummary.freeAgentSummary }}</span>
+      </div>
+    </div>
+
+    <div class="draft-summary-action-row">
+      <span
+        class="draft-summary-status-pill"
+        [class.draft-summary-status-pill--live]="draftSummary.statusClass === 'live'"
+        [class.draft-summary-status-pill--upcoming]="draftSummary.statusClass === 'upcoming'"
+        [class.draft-summary-status-pill--completed]="draftSummary.statusClass === 'completed'"
+      >
+        <span class="draft-summary-status-dot"></span>
+        {{ draftSummary.statusBadge }}
+      </span>
+      <span class="draft-summary-action-text">{{ draftSummary.statusText }}</span>
+      <span class="draft-summary-chevron">›</span>
+    </div>
+  </section>
+
   <!-- 📊 Cap Space Overview -->
   <section *ngIf="vm.offSeason">
     <section
