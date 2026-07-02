@@ -10,6 +10,8 @@ export interface RawDraft {
   DraftSource: string;
   SleeperDraftID: string | null;
   SleeperStatus: string | null;
+  SleeperStartTime: number | null;
+  DraftStartTimeUtc: string | null;
   Status: string;
   DisplayStatus: string;
   PickSource: string;
