@@ -123,6 +123,112 @@
   }
 }
 
+.draft-season-summary-card {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 14px 12px;
+  margin: 12px 5px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.draft-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  font-size: 1.8rem;
+}
+
+.draft-summary-content {
+  min-width: 0;
+}
+
+.draft-summary-content h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.draft-summary-line {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.draft-summary-line-icon {
+  text-align: center;
+  opacity: 0.8;
+}
+
+.draft-summary-action-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.draft-summary-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.draft-summary-status-pill--live {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.draft-summary-status-pill--upcoming {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.draft-summary-status-pill--completed {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.draft-summary-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.draft-summary-action-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.draft-summary-chevron {
+  color: #475569;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
 .cap-check-summary-card {
   display: grid;
   gap: 4px;
