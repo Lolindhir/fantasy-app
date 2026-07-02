@@ -8,6 +8,8 @@
 
 try {
     Import-Module "$PSScriptRoot\DraftPickResultUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\DraftCompareUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -231,7 +233,8 @@ function Update-DraftsOrderAware {
     }
 
     $drafts = @($drafts | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo)
-    Save-Drafts -drafts $drafts
+    $compare = ${function:Compare-DraftsFieldBased}
+    Save-JsonFile -Type "Drafts" -Data $drafts -CompareScript $compare -CreateBackup -UpdateTimestamp
 
     Write-Host "Upcoming drafts update finished." -ForegroundColor DarkCyan
 
