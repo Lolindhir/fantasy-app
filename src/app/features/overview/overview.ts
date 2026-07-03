@@ -49,6 +49,34 @@ interface DraftSeasonSummaryCard {
   statusClass: 'live' | 'upcoming' | 'completed';
 }
 
+interface DraftSeasonDraftRow {
+  name: string;
+  rounds: string;
+  status: string;
+  statusClass: 'live' | 'upcoming' | 'completed';
+}
+
+interface DraftCapitalRow {
+  team: FantasyTeam;
+  teamName: string;
+  rookieCount: number;
+  freeAgentCount: number;
+  bestPick: string;
+}
+
+interface DraftPickOverviewRow {
+  displayPick: string;
+  owner: string;
+  playerDisplay: string | null;
+}
+
+interface DraftSeasonDashboard {
+  drafts: DraftSeasonDraftRow[];
+  draftCapital: DraftCapitalRow[];
+  nextPicks: DraftPickOverviewRow[];
+  recentPicks: DraftPickOverviewRow[];
+}
+
 interface SalaryTeamSummary {
   total: number;
 }
@@ -149,6 +177,7 @@ export class OverviewComponent {
         : null;
 
       const draftSummaryCard = this.buildDraftSeasonSummaryCard(drafts, currentSeason, draftSeason);
+      const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, currentSeason, draftSeason);
 
       // 🔥 Awards
       const awards = getCurrentSeasonAwards(league);
@@ -174,6 +203,7 @@ export class OverviewComponent {
         salaryByTeam,
         capCheckSummary,
         draftSummaryCard,
+        draftSeasonDashboard,
         awards,
         deadlineDisplay,
         deadlineInfo,
@@ -217,9 +247,7 @@ export class OverviewComponent {
   ): DraftSeasonSummaryCard | null {
     if (!draftSeason) return null;
 
-    const seasonDrafts = drafts
-      .filter(draft => draft.Season === season)
-      .sort((a, b) => a.DraftNo - b.DraftNo);
+    const seasonDrafts = this.getSeasonDrafts(drafts, season);
 
     if (seasonDrafts.length === 0) return null;
 
@@ -235,6 +263,101 @@ export class OverviewComponent {
       statusText: this.formatDraftSummaryStatusText(primaryDraft, statusClass),
       statusClass
     };
+  }
+
+  private buildDraftSeasonDashboard(
+    drafts: RawDraft[],
+    teams: FantasyTeam[],
+    season: string,
+    draftSeason: boolean
+  ): DraftSeasonDashboard | null {
+    if (!draftSeason) return null;
+
+    const seasonDrafts = this.getSeasonDrafts(drafts, season);
+    if (seasonDrafts.length === 0) return null;
+
+    const rookieDraft = seasonDrafts.find(draft => draft.DraftType === 'Rookie');
+    const freeAgentDraft = seasonDrafts.find(draft => draft.DraftType === 'Free_Agent');
+    const primaryDraft = this.getPrimaryDraft(seasonDrafts, rookieDraft, freeAgentDraft);
+    const teamById = this.buildTeamById(teams);
+
+    return {
+      drafts: seasonDrafts.map(draft => this.buildDraftSeasonDraftRow(draft)),
+      draftCapital: this.buildDraftCapitalRows(teams, season),
+      nextPicks: this.getOpenDraftPicks(primaryDraft)
+        .slice(0, 3)
+        .map(pick => this.buildDraftPickOverviewRow(pick, teamById, false)),
+      recentPicks: this.getSelectedDraftPicks(primaryDraft)
+        .slice(0, 2)
+        .map(pick => this.buildDraftPickOverviewRow(pick, teamById, true))
+    };
+  }
+
+  private getSeasonDrafts(drafts: RawDraft[], season: string): RawDraft[] {
+    return drafts
+      .filter(draft => draft.Season === season)
+      .sort((a, b) => a.DraftNo - b.DraftNo);
+  }
+
+  private buildDraftSeasonDraftRow(draft: RawDraft): DraftSeasonDraftRow {
+    const statusClass = this.getDraftSummaryStatusClass(draft);
+
+    return {
+      name: `${draft.DisplayDraftType} Draft`,
+      rounds: `${draft.Settings.Rounds} rounds`,
+      status: this.formatDraftSummaryStatus(statusClass),
+      statusClass
+    };
+  }
+
+  private buildDraftCapitalRows(teams: FantasyTeam[], season: string): DraftCapitalRow[] {
+    return teams
+      .map(team => {
+        const currentSeasonPicks = team.DraftPicks.filter(pick => pick.Season === season);
+        const bestPick = [...currentSeasonPicks]
+          .filter(pick => pick.OverallPick !== null)
+          .sort((a, b) => {
+            const draftNoDiff = (a.Draft?.DraftNo ?? 999) - (b.Draft?.DraftNo ?? 999);
+            if (draftNoDiff !== 0) return draftNoDiff;
+            return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
+          })[0];
+
+        return {
+          team,
+          teamName: team.Team ?? team.Owner,
+          rookieCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Rookie').length,
+          freeAgentCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Free_Agent').length,
+          bestPick: bestPick ? this.formatBestDraftPick(bestPick) : '—'
+        };
+      })
+      .sort((a, b) => {
+        const totalDiff = (b.rookieCount + b.freeAgentCount) - (a.rookieCount + a.freeAgentCount);
+        if (totalDiff !== 0) return totalDiff;
+        return a.teamName.localeCompare(b.teamName);
+      });
+  }
+
+  private formatBestDraftPick(pick: DraftPick): string {
+    const prefix = pick.DraftType === 'Free_Agent' ? 'FA' : 'R';
+    return `${prefix} ${pick.DisplayPick}`;
+  }
+
+  private buildDraftPickOverviewRow(
+    pick: DraftPick,
+    teamById: Map<number, FantasyTeam>,
+    includePlayer: boolean
+  ): DraftPickOverviewRow {
+    const owner = teamById.get(pick.CurrentOwnerRosterID);
+
+    return {
+      displayPick: pick.DisplayPick,
+      owner: owner?.Team ?? owner?.Owner ?? `Team ${pick.CurrentOwnerRosterID}`,
+      playerDisplay: includePlayer ? pick.PlayerName ?? 'Selected' : null
+    };
+  }
+
+  private buildTeamById(teams: FantasyTeam[]): Map<number, FantasyTeam> {
+    return new Map(teams.map(team => [team.TeamID, team]));
   }
 
   private getPrimaryDraft(
@@ -318,6 +441,12 @@ export class OverviewComponent {
     return draft.Picks
       .filter(pick => !this.isDraftPickSelected(pick))
       .sort((a, b) => (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999));
+  }
+
+  private getSelectedDraftPicks(draft: RawDraft): DraftPick[] {
+    return draft.Picks
+      .filter(pick => this.isDraftPickSelected(pick))
+      .sort((a, b) => (b.SleeperPickNo ?? b.OverallPick ?? 0) - (a.SleeperPickNo ?? a.OverallPick ?? 0));
   }
 
   private isDraftPickSelected(pick: DraftPick): boolean {
