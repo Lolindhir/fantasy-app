@@ -276,10 +276,21 @@ export class OverviewComponent {
     const total = draft.Picks.length;
     const selected = draft.Picks.filter(pick => this.isDraftPickSelected(pick)).length;
     const remaining = total - selected;
+    const details = [
+      `${draft.Settings.Rounds} rounds`,
+      `${total} picks`,
+      `${selected} selected`,
+      `${remaining} remaining`
+    ];
+    const startDisplay = this.formatDraftStartTime(draft);
+
+    if (startDisplay) {
+      details.push(`starts ${startDisplay}`);
+    }
 
     return {
       name: `${draft.DisplayDraftType} Draft`,
-      details: `${draft.Settings.Rounds} rounds · ${total} picks · ${selected} selected · ${remaining} remaining`,
+      details: details.join(' · '),
       status: this.formatDraftSummaryStatus(statusClass),
       statusClass
     };
@@ -485,6 +496,30 @@ export class OverviewComponent {
       .filter(round => round > 0);
 
     return rounds.length ? Math.max(...rounds) : 1;
+  }
+
+  private formatDraftStartTime(draft: RawDraft): string | null {
+    const startTime = this.getDraftStartDate(draft);
+    if (!startTime) return null;
+
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(startTime);
+  }
+
+  private getDraftStartDate(draft: RawDraft): Date | null {
+    const rawStart = draft.DraftStartTimeUtc ?? draft.SleeperStartTime;
+    if (rawStart === null || rawStart === undefined || rawStart === '') return null;
+
+    const startTime = typeof rawStart === 'number'
+      ? new Date(rawStart)
+      : new Date(rawStart);
+
+    return Number.isNaN(startTime.getTime()) ? null : startTime;
   }
 
   private parseDeadline(deadlineValue: string): Date {
