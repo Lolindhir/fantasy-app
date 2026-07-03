@@ -71,11 +71,14 @@ jobs:
     steps:
       - name: Write machine-readable workflow result
         shell: pwsh
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: |
           New-Item -ItemType Directory -Path ".ai-workflow" -Force | Out-Null
 
-          $buildResult = '${{ needs.build.result }}'
-          $deployResult = '${{ needs.deploy.result }}'
+          $buildResult = $env:BUILD_RESULT
+          $deployResult = $env:DEPLOY_RESULT
 
           if ($buildResult -eq 'success' -and $deployResult -eq 'success') {
             $conclusion = 'success'
@@ -88,13 +91,13 @@ jobs:
           $result = [ordered]@{
             schemaVersion = 1
             type = 'deploy-workflow-result'
-            workflow = '${{ github.workflow }}'
-            runId = '${{ github.run_id }}'
-            runAttempt = '${{ github.run_attempt }}'
-            commit = '${{ github.sha }}'
-            shortCommit = '${{ github.sha }}'.Substring(0, 7)
-            ref = '${{ github.ref }}'
-            event = '${{ github.event_name }}'
+            workflow = $env:GITHUB_WORKFLOW
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            commit = $env:GITHUB_SHA
+            shortCommit = $env:GITHUB_SHA.Substring(0, 7)
+            ref = $env:GITHUB_REF
+            event = $env:GITHUB_EVENT_NAME
             build = $buildResult
             deploy = $deployResult
             conclusion = $conclusion
@@ -103,12 +106,12 @@ jobs:
 
           $result | ConvertTo-Json -Depth 10 | Set-Content ".ai-workflow/workflow-result.json" -Encoding utf8
 
-          "## Deploy result" >> $env:GITHUB_STEP_SUMMARY
-          "" >> $env:GITHUB_STEP_SUMMARY
-          "- Commit: `${{ github.sha }}`" >> $env:GITHUB_STEP_SUMMARY
-          "- Build: `$buildResult`" >> $env:GITHUB_STEP_SUMMARY
-          "- Deploy: `$deployResult`" >> $env:GITHUB_STEP_SUMMARY
-          "- Conclusion: `$conclusion`" >> $env:GITHUB_STEP_SUMMARY
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## Deploy result"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Commit: $env:GITHUB_SHA"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Build: $buildResult"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Deploy: $deployResult"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Conclusion: $conclusion"
 
       - name: Upload AI-readable workflow result
         uses: actions/upload-artifact@v4
