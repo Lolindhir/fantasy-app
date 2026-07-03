@@ -62,6 +62,7 @@ readingOrder:
   - .ai-context/manual/decisions.yaml
   - .ai-context/manual/routing.yaml
   - .ai-context/manual/file-header-docs.yaml
+  - .ai-context/manual/ci-diagnostics.yaml
   - .ai-context/generated/file-docs.json
   - .ai-context/generated/generated-json-contracts.json
 
@@ -74,6 +75,8 @@ shortContext:
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
   public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; berücksichtigt Sleeper draft type linear/snake bei der OriginalOwner-Reihenfolge für exakte aktuelle und historische Drafts
   public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; reichert completed Pick-Ergebnisse und CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
+  deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und .ai-workflow/deploy-script-result.json als transiente CI-Diagnose
+  .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive
