@@ -42,6 +42,12 @@ guidance:
     - Keep visible frontend UI copy in English by default, including Angular templates and presentation ViewModel strings. Only use German in frontend UI when the user explicitly requests a German-only UI element or when displaying generated/user-provided data that is already German.
     - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
 
+  ciDeployment:
+    - After commits to main, check the Pages deployment result for the committed SHA whenever possible.
+    - Prefer machine-readable diagnostics from .ai-workflow/deploy-script-result.json and build.log when they are available.
+    - If CI status or diagnostics cannot be read through the available tools, state that limitation explicitly in the visible post-commit check.
+    - Do not commit local .ai-workflow diagnostics; they are transient CI/helper output.
+
   ruleManagement:
     - When adding or changing AI guidance rules, review whether the guidance still belongs in the current section, should be moved to another section, should start a new section, or should be split into a separate manual file.
     - If a guidance section becomes too broad, mixed or hard to scan, propose a content or physical split instead of continuing to append unrelated rules.
@@ -63,5 +69,6 @@ guidance:
     - If a commit was created without being previewed or explicitly approved in the chat beforehand, summarize that commit in the chat after it is created.
     - Always end the chat response after a commit with a visible post-commit check.
     - "The visible post-commit check must contain: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; AI guidance rules: updated / proposal needed / no change needed; Documentation: updated / proposal needed / no change needed; TODO.md: updated / proposal needed / no change needed."
+    - Include deploy status in the visible post-commit check when a commit could trigger deployment.
     - State validation as run, not run, or not applicable.
-    - Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, and JSON/YAML validity for data or AI context changes.
+    - Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, JSON/YAML validity for data or AI context changes, and deploy status for commits to main.
