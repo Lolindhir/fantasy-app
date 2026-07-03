@@ -117,7 +117,7 @@ export interface RawLeague {
   Standings: Standing[];
   Playoffs?: unknown;
   RosterSize?: string[];
-  ScoringType?: Record<string, number>;
+  ScoringType?: Record<string, unknown>;
   Settings?: Record<string, unknown>;
   LeagueIDPrevious?: string;
 }
@@ -185,6 +185,7 @@ export interface RawFantasyTeam {
   OwnerID: string;
   OwnerAvatar: string;
   Team: string | null;
+  TeamAbbr: string | null;
   TeamID: number;
   TeamAvatar?: string | null;
   MatchupID: number | null;

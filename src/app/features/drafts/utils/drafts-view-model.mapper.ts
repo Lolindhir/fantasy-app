@@ -10,8 +10,6 @@ import type {
   TeamDisplayViewModel
 } from '../models/drafts-view.models';
 
-type TeamWithAbbr = FantasyTeam & { TeamAbbr?: string | null };
-
 export function createDraftsViewModel(
   league: League,
   drafts: RawDraft[],
@@ -50,13 +48,12 @@ function createTeamDisplayMap(teams: FantasyTeam[]): Map<number, TeamDisplayView
 
   teams.forEach(team => {
     const rosterId = normalizeRosterId(team.TeamID);
-    const teamWithAbbr = team as TeamWithAbbr;
     const teamName = team.Team || `Team ${team.Owner}`;
 
     const teamDisplay: TeamDisplayViewModel = {
       id: rosterId,
       name: teamName,
-      abbr: teamWithAbbr.TeamAbbr || teamName,
+      abbr: team.TeamAbbr || teamName,
       avatar: team.Avatar
     };
 
