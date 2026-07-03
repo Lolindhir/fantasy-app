@@ -2,9 +2,9 @@
 
   <!-- 🧾 HEADER -->
   <section class="header">
-    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start;">
-      <div style="min-width: 0;">
-        <div style="font-size: 2.05rem; font-weight: 800; line-height: 1.05; margin-bottom: 10px;">{{ vm.league.Name }}</div>
+    <div class="header-main">
+      <div class="header-content">
+        <div class="league-title">{{ vm.league.Name }}</div>
         <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
 
         <div class="header-columns">
@@ -91,9 +91,9 @@
 
       <img
         *ngIf="vm.league.Avatar"
+        class="league-logo"
         [src]="vm.league.Avatar"
         alt="League logo"
-        style="width: clamp(88px, 24vw, 125px); height: clamp(88px, 24vw, 125px); border-radius: 35%; object-fit: cover; justify-self: end;"
       />
     </div>
 
