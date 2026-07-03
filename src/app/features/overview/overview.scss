@@ -126,10 +126,33 @@
     margin: auto;
   }
 
+  .header-main {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .header-content {
+    max-width: 585px;
+  }
+
   .header-columns {
     flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
+    column-gap: 40px;
+  }
+
+  .league-logo {
+    align-self: stretch;
+    box-sizing: border-box;
+    width: 180px;
+    height: auto;
+    min-height: 150px;
+    padding-left: 18px;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    object-fit: contain;
+    object-position: center;
   }
 }
 
