@@ -16,6 +16,8 @@ import {
   getPreviousChampion
 } from '../../shared/utils/league-standings-view.util';
 
+type DraftSeasonStatusClass = 'live' | 'upcoming' | 'completed';
+
 interface DraftPickDisplayItem {
   display: string;
   round: number;
@@ -41,19 +43,11 @@ interface CapCheckSummary {
   allCompliant: boolean;
 }
 
-interface DraftSeasonSummaryCard {
-  rookieSummary: string;
-  freeAgentSummary: string;
-  statusBadge: string;
-  statusText: string;
-  statusClass: 'live' | 'upcoming' | 'completed';
-}
-
 interface DraftSeasonDraftRow {
   name: string;
-  rounds: string;
+  details: string;
   status: string;
-  statusClass: 'live' | 'upcoming' | 'completed';
+  statusClass: DraftSeasonStatusClass;
 }
 
 interface DraftCapitalRow {
@@ -176,7 +170,6 @@ export class OverviewComponent {
         ? this.buildCapCheckSummary(league, salaryByTeam)
         : null;
 
-      const draftSummaryCard = this.buildDraftSeasonSummaryCard(drafts, currentSeason, draftSeason);
       const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, currentSeason, draftSeason);
 
       // 🔥 Awards
@@ -202,7 +195,6 @@ export class OverviewComponent {
         allTimeStandings,
         salaryByTeam,
         capCheckSummary,
-        draftSummaryCard,
         draftSeasonDashboard,
         awards,
         deadlineDisplay,
@@ -237,31 +229,6 @@ export class OverviewComponent {
       summaryText: `${overCapTeams.length} ${teamLabel} to clear cap.`,
       detailText: `${compliantTeams} compliant · largest overage ${this.formatSalaryDollars(worstOverage, false, 1)}`,
       allCompliant: false
-    };
-  }
-
-  private buildDraftSeasonSummaryCard(
-    drafts: RawDraft[],
-    season: string,
-    draftSeason: boolean
-  ): DraftSeasonSummaryCard | null {
-    if (!draftSeason) return null;
-
-    const seasonDrafts = this.getSeasonDrafts(drafts, season);
-
-    if (seasonDrafts.length === 0) return null;
-
-    const rookieDraft = seasonDrafts.find(draft => draft.DraftType === 'Rookie');
-    const freeAgentDraft = seasonDrafts.find(draft => draft.DraftType === 'Free_Agent');
-    const primaryDraft = this.getPrimaryDraft(seasonDrafts, rookieDraft, freeAgentDraft);
-    const statusClass = this.getDraftSummaryStatusClass(primaryDraft);
-
-    return {
-      rookieSummary: this.formatDraftPickSummary(rookieDraft, 'Rookie Draft'),
-      freeAgentSummary: this.formatDraftStatusSummary(freeAgentDraft, 'Free Agent Draft'),
-      statusBadge: `${primaryDraft.DisplayDraftType} ${this.formatDraftSummaryStatus(statusClass)}`,
-      statusText: this.formatDraftSummaryStatusText(primaryDraft, statusClass),
-      statusClass
     };
   }
 
@@ -301,10 +268,13 @@ export class OverviewComponent {
 
   private buildDraftSeasonDraftRow(draft: RawDraft): DraftSeasonDraftRow {
     const statusClass = this.getDraftSummaryStatusClass(draft);
+    const total = draft.Picks.length;
+    const selected = draft.Picks.filter(pick => this.isDraftPickSelected(pick)).length;
+    const remaining = total - selected;
 
     return {
       name: `${draft.DisplayDraftType} Draft`,
-      rounds: `${draft.Settings.Rounds} rounds`,
+      details: `${draft.Settings.Rounds} rounds · ${total} picks · ${selected} selected · ${remaining} remaining`,
       status: this.formatDraftSummaryStatus(statusClass),
       statusClass
     };
@@ -374,23 +344,7 @@ export class OverviewComponent {
     return rookieDraft ?? freeAgentDraft ?? drafts[0];
   }
 
-  private formatDraftPickSummary(draft: RawDraft | undefined, label: string): string {
-    if (!draft) return `${label}: Not scheduled`;
-
-    const total = draft.Picks.length;
-    const selected = draft.Picks.filter(pick => this.isDraftPickSelected(pick)).length;
-    const remaining = total - selected;
-
-    return `${label}: ${total} picks · ${selected} selected · ${remaining} remaining`;
-  }
-
-  private formatDraftStatusSummary(draft: RawDraft | undefined, label: string): string {
-    if (!draft) return `${label}: Not scheduled`;
-
-    return `${label}: ${draft.DisplayStatus}`;
-  }
-
-  private formatDraftSummaryStatus(statusClass: DraftSeasonSummaryCard['statusClass']): string {
+  private formatDraftSummaryStatus(statusClass: DraftSeasonStatusClass): string {
     switch (statusClass) {
       case 'live': return 'Live';
       case 'completed': return 'Completed';
@@ -398,28 +352,7 @@ export class OverviewComponent {
     }
   }
 
-  private formatDraftSummaryStatusText(
-    draft: RawDraft,
-    statusClass: DraftSeasonSummaryCard['statusClass']
-  ): string {
-    const nextPick = this.getOpenDraftPicks(draft)[0];
-
-    if (statusClass === 'completed') {
-      return 'Draft completed';
-    }
-
-    if (!nextPick) {
-      return 'No open picks remaining';
-    }
-
-    if (statusClass === 'live') {
-      return `Pick ${nextPick.DisplayPick} is on the clock`;
-    }
-
-    return `Pick ${nextPick.DisplayPick} is up first`;
-  }
-
-  private getDraftSummaryStatusClass(draft: RawDraft): DraftSeasonSummaryCard['statusClass'] {
+  private getDraftSummaryStatusClass(draft: RawDraft): DraftSeasonStatusClass {
     if (this.isDraftLive(draft)) return 'live';
 
     return this.getOpenDraftPicks(draft).length > 0 ? 'upcoming' : 'completed';
