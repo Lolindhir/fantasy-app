@@ -1,109 +1,108 @@
 <div *ngIf="vm$ | async as vm" class="container">
 
-  <div class="headline">
-    <div>{{ vm.league.Name }}</div>
-    <img 
-          *ngIf="vm.league.Avatar" 
-          [src]="vm.league.Avatar" 
-          alt="🏈"
-        />
-    <!-- <div>{{ vm.league.Name }} 🏈 Dynasty</div> -->
-
-  </div>
-
   <!-- 🧾 HEADER -->
   <section class="header">
-    <div>
-      <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start;">
+      <div style="min-width: 0;">
+        <div style="font-size: 2.05rem; font-weight: 800; line-height: 1.05; margin-bottom: 10px;">{{ vm.league.Name }}</div>
+        <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
+
+        <div class="header-columns">
+
+          <div class="header-info">
+
+            <div
+              class="label"
+              [matTooltip]="vm.league.TradesMetaText"
+              [matTooltipDisabled]="vm.league.TradesMetaText.length === 0"
+              matTooltipPosition="above"
+            >🤝 Trades:</div>
+            <div
+              class="status"
+              [matTooltip]="vm.league.TradesMetaText"
+              [matTooltipDisabled]="vm.league.TradesMetaText.length === 0"
+              matTooltipPosition="above"
+            >
+              <span>{{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}</span><span *ngIf="vm.league.TradesMetaText.length > 0"> ℹ️</span>
+            </div>
+
+
+            <div
+              class="label"
+              [matTooltip]="vm.league.WaiversMetaText"
+              [matTooltipDisabled]="vm.league.WaiversMetaText.length === 0"
+              matTooltipPosition="above"
+            >📝 Waivers:</div>
+            <div
+              class="status"
+              [matTooltip]="vm.league.WaiversMetaText"
+              [matTooltipDisabled]="vm.league.WaiversMetaText.length === 0"
+              matTooltipPosition="above"
+            >
+              <span>{{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}</span><span *ngIf="vm.league.WaiversMetaText.length > 0"> ℹ️</span>
+            </div>
+
+
+            <div
+              class="label"
+              [matTooltip]="vm.league.CutsMetaText"
+              [matTooltipDisabled]="vm.league.CutsMetaText.length === 0"
+              matTooltipPosition="above"
+            >✂️ Cuts:</div>
+            <div
+              class="status"
+              [matTooltip]="vm.league.CutsMetaText"
+              [matTooltipDisabled]="vm.league.CutsMetaText.length === 0"
+              matTooltipPosition="above"
+            >
+              <span>{{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}</span><span *ngIf="vm.league.CutsMetaText.length > 0"> ℹ️</span>
+            </div>
+
+          </div>
+
+          <div class="header-info">
+            <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
+            <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
+
+            <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
+            <div class="status">
+              {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
+            </div>
+
+            <div></div>
+            <div>
+              <span class="meta" [ngClass]="{
+                  'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
+                  'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
+                }">
+                  ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
+              </span>
+            </div>
+
+          </div>
+
+          <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
+            <div class="deadline">⏱️ {{ vm.deadlineInfo.displayText }} <span class="deadline-label">until Cap Deadline</span></div>
+            <div class="deadline-text">({{ vm.league.CapDeadline.slice(8, 10) }}.{{ vm.league.CapDeadline.slice(5, 7) }}.{{ vm.league.CapDeadline.slice(0, 4) }}, {{ vm.league.LeagueTimeZone || "UTC" }})</div>
+          </div>
+
+        </div>
+      </div>
+
+      <img
+        *ngIf="vm.league.Avatar"
+        [src]="vm.league.Avatar"
+        alt="League logo"
+        style="width: clamp(88px, 24vw, 125px); height: clamp(88px, 24vw, 125px); border-radius: 35%; object-fit: cover; justify-self: end;"
+      />
     </div>
-
-    <div class="header-columns">
-
-      <div class="header-info">
-
-        <div
-          class="label"
-          [matTooltip]="vm.league.TradesMetaText"
-          [matTooltipDisabled]="vm.league.TradesMetaText.length === 0"
-          matTooltipPosition="above"
-        >🤝 Trades:</div>
-        <div
-          class="status"
-          [matTooltip]="vm.league.TradesMetaText"
-          [matTooltipDisabled]="vm.league.TradesMetaText.length === 0"
-          matTooltipPosition="above"
-        >
-          <span>{{ vm.league.TradesOpen ? "🟢 Open" : "🔴 Closed" }}</span><span *ngIf="vm.league.TradesMetaText.length > 0"> ℹ️</span>
-        </div>
-
-
-        <div
-          class="label"
-          [matTooltip]="vm.league.WaiversMetaText"
-          [matTooltipDisabled]="vm.league.WaiversMetaText.length === 0"
-          matTooltipPosition="above"
-        >📝 Waivers:</div>
-        <div
-          class="status"
-          [matTooltip]="vm.league.WaiversMetaText"
-          [matTooltipDisabled]="vm.league.WaiversMetaText.length === 0"
-          matTooltipPosition="above"
-        >
-          <span>{{ vm.league.WaiversOpen ? "🟢 Open" : "🔴 Closed" }}</span><span *ngIf="vm.league.WaiversMetaText.length > 0"> ℹ️</span>
-        </div>      
-
-
-        <div
-          class="label"
-          [matTooltip]="vm.league.CutsMetaText"
-          [matTooltipDisabled]="vm.league.CutsMetaText.length === 0"
-          matTooltipPosition="above"
-        >✂️ Cuts:</div>
-        <div
-          class="status"
-          [matTooltip]="vm.league.CutsMetaText"
-          [matTooltipDisabled]="vm.league.CutsMetaText.length === 0"
-          matTooltipPosition="above"
-        >
-          <span>{{ vm.league.CutsAllowed ? "🟢 Allowed" : "🔴 Locked" }}</span><span *ngIf="vm.league.CutsMetaText.length > 0"> ℹ️</span>
-        </div>
-
-      </div>
-
-      <div class="header-info">
-        <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
-        <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
-
-        <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
-        <div class="status">
-          {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
-        </div>
-
-        <div></div>
-        <div>
-          <span class="meta" [ngClass]="{
-              'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
-              'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
-            }">
-              ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
-          </span>
-        </div>
-
-      </div>
-
-      <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
-        <div class="deadline">⏱️ {{ vm.deadlineInfo.displayText }} <span class="deadline-label">until Cap Deadline</span></div>
-        <div class="deadline-text">({{ vm.league.CapDeadline.slice(8, 10) }}.{{ vm.league.CapDeadline.slice(5, 7) }}.{{ vm.league.CapDeadline.slice(0, 4) }}, {{ vm.league.LeagueTimeZone || "UTC" }})</div>
-      </div>
-
-    </div>    
 
     <div *ngIf="vm.champion" class="champion">
       🏆 {{ vm.champion.Owner }}
-      <img 
-          *ngIf="vm.champion.OwnerAvatar" 
-          [src]="vm.champion.OwnerAvatar" 
-          alt="Logo" 
+      <img
+          *ngIf="vm.champion.OwnerAvatar"
+          [src]="vm.champion.OwnerAvatar"
+          alt="Logo"
         />
     </div>
   </section>
@@ -209,7 +208,7 @@
           <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
           <span class="cap-space-team-name">{{ t.team.Team }}</span>
         </div>
-        
+
         <div class="cap-space-stat"
             [ngClass]="{
               'positive-diff': t.total > vm.league.SalaryCap,
@@ -217,7 +216,7 @@
             }">
           {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
         </div>
-        
+
         <div class="cap-space-projection">
           {{ vm.league.SalaryCapProjected < t.totalProjected ? "🔴" : "🟢" }}
         </div>
@@ -302,7 +301,7 @@
 
       </div>
 
-    </ng-container>    
+    </ng-container>
 
   </section>
 
