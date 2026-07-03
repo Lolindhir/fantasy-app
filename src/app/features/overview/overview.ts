@@ -58,8 +58,14 @@ interface DraftCapitalRow {
   bestPick: string;
 }
 
+interface DraftPickOverviewEntry {
+  draft: RawDraft;
+  pick: DraftPick;
+}
+
 interface DraftPickOverviewRow {
   displayPick: string;
+  draftLabel: string;
   owner: string;
   playerDisplay: string | null;
 }
@@ -243,20 +249,17 @@ export class OverviewComponent {
     const seasonDrafts = this.getSeasonDrafts(drafts, season);
     if (seasonDrafts.length === 0) return null;
 
-    const rookieDraft = seasonDrafts.find(draft => draft.DraftType === 'Rookie');
-    const freeAgentDraft = seasonDrafts.find(draft => draft.DraftType === 'Free_Agent');
-    const primaryDraft = this.getPrimaryDraft(seasonDrafts, rookieDraft, freeAgentDraft);
     const teamById = this.buildTeamById(teams);
 
     return {
       drafts: seasonDrafts.map(draft => this.buildDraftSeasonDraftRow(draft)),
       draftCapital: this.buildDraftCapitalRows(teams, season),
-      nextPicks: this.getOpenDraftPicks(primaryDraft)
+      nextPicks: this.getNextDraftPickEntries(seasonDrafts)
         .slice(0, 3)
-        .map(pick => this.buildDraftPickOverviewRow(pick, teamById, false)),
-      recentPicks: this.getSelectedDraftPicks(primaryDraft)
+        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, false)),
+      recentPicks: this.getRecentDraftPickEntries(seasonDrafts)
         .slice(0, 2)
-        .map(pick => this.buildDraftPickOverviewRow(pick, teamById, true))
+        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, true))
     };
   }
 
@@ -314,6 +317,7 @@ export class OverviewComponent {
 
   private buildDraftPickOverviewRow(
     pick: DraftPick,
+    draft: RawDraft,
     teamById: Map<number, FantasyTeam>,
     includePlayer: boolean
   ): DraftPickOverviewRow {
@@ -321,27 +325,50 @@ export class OverviewComponent {
 
     return {
       displayPick: pick.DisplayPick,
+      draftLabel: this.formatDraftOverviewLabel(draft),
       owner: owner?.Team ?? owner?.Owner ?? `Team ${pick.CurrentOwnerRosterID}`,
       playerDisplay: includePlayer ? pick.PlayerName ?? 'Selected' : null
     };
+  }
+
+  private formatDraftOverviewLabel(draft: RawDraft): string {
+    return `${draft.DisplayDraftType} Draft`;
   }
 
   private buildTeamById(teams: FantasyTeam[]): Map<number, FantasyTeam> {
     return new Map(teams.map(team => [team.TeamID, team]));
   }
 
-  private getPrimaryDraft(
-    drafts: RawDraft[],
-    rookieDraft: RawDraft | undefined,
-    freeAgentDraft: RawDraft | undefined
-  ): RawDraft {
-    const liveDraft = drafts.find(draft => this.isDraftLive(draft));
-    if (liveDraft) return liveDraft;
+  private getNextDraftPickEntries(drafts: RawDraft[]): DraftPickOverviewEntry[] {
+    return drafts
+      .flatMap(draft => this.getOpenDraftPicks(draft).map(pick => ({ draft, pick })))
+      .sort((a, b) => this.compareNextDraftPickEntries(a, b));
+  }
 
-    const openDraft = drafts.find(draft => this.getOpenDraftPicks(draft).length > 0);
-    if (openDraft) return openDraft;
+  private getRecentDraftPickEntries(drafts: RawDraft[]): DraftPickOverviewEntry[] {
+    return drafts
+      .flatMap(draft => this.getSelectedDraftPicks(draft).map(pick => ({ draft, pick })))
+      .sort((a, b) => this.compareRecentDraftPickEntries(a, b));
+  }
 
-    return rookieDraft ?? freeAgentDraft ?? drafts[0];
+  private compareNextDraftPickEntries(a: DraftPickOverviewEntry, b: DraftPickOverviewEntry): number {
+    const liveDiff = Number(this.isDraftLive(b.draft)) - Number(this.isDraftLive(a.draft));
+    if (liveDiff !== 0) return liveDiff;
+
+    const draftNoDiff = (a.draft.DraftNo ?? 999) - (b.draft.DraftNo ?? 999);
+    if (draftNoDiff !== 0) return draftNoDiff;
+
+    return (a.pick.OverallPick ?? 9999) - (b.pick.OverallPick ?? 9999);
+  }
+
+  private compareRecentDraftPickEntries(a: DraftPickOverviewEntry, b: DraftPickOverviewEntry): number {
+    const liveDiff = Number(this.isDraftLive(b.draft)) - Number(this.isDraftLive(a.draft));
+    if (liveDiff !== 0) return liveDiff;
+
+    const draftNoDiff = (b.draft.DraftNo ?? 0) - (a.draft.DraftNo ?? 0);
+    if (draftNoDiff !== 0) return draftNoDiff;
+
+    return (b.pick.SleeperPickNo ?? b.pick.OverallPick ?? 0) - (a.pick.SleeperPickNo ?? a.pick.OverallPick ?? 0);
   }
 
   private formatDraftSummaryStatus(statusClass: DraftSeasonStatusClass): string {
