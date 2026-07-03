@@ -48,6 +48,7 @@ interface DraftSeasonDraftRow {
   details: string;
   status: string;
   statusClass: DraftSeasonStatusClass;
+  startDisplay: string | null;
 }
 
 interface DraftCapitalRow {
@@ -284,15 +285,12 @@ export class OverviewComponent {
     ];
     const startDisplay = this.formatDraftStartTime(draft);
 
-    if (startDisplay) {
-      details.push(`starts ${startDisplay}`);
-    }
-
     return {
       name: `${draft.DisplayDraftType} Draft`,
       details: details.join(' · '),
       status: this.formatDraftSummaryStatus(statusClass),
-      statusClass
+      statusClass,
+      startDisplay
     };
   }
 
