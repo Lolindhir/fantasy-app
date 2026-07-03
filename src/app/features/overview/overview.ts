@@ -65,7 +65,6 @@ interface DraftPickOverviewEntry {
 
 interface DraftPickOverviewRow {
   displayPick: string;
-  draftLabel: string;
   owner: string;
   playerDisplay: string | null;
 }
@@ -324,15 +323,14 @@ export class OverviewComponent {
     const owner = teamById.get(pick.CurrentOwnerRosterID);
 
     return {
-      displayPick: pick.DisplayPick,
-      draftLabel: this.formatDraftOverviewLabel(draft),
+      displayPick: this.formatDraftPickOverviewChip(draft, pick),
       owner: owner?.Team ?? owner?.Owner ?? `Team ${pick.CurrentOwnerRosterID}`,
       playerDisplay: includePlayer ? pick.PlayerName ?? 'Selected' : null
     };
   }
 
-  private formatDraftOverviewLabel(draft: RawDraft): string {
-    return `${draft.DisplayDraftType} Draft`;
+  private formatDraftPickOverviewChip(draft: RawDraft, pick: DraftPick): string {
+    return `${draft.DisplayDraftType} ${pick.DisplayPick}`;
   }
 
   private buildTeamById(teams: FantasyTeam[]): Map<number, FantasyTeam> {
