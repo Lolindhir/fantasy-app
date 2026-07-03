@@ -9,38 +9,58 @@ ciDiagnostics:
     diagnosticsDir: .ai-workflow
     buildLog: .ai-workflow/build.log
     scriptResult: .ai-workflow/deploy-script-result.json
+    workflowResult: .ai-workflow/workflow-result.json
     stepSummary: GitHub Actions GITHUB_STEP_SUMMARY
 
+  commitStatus:
+    context: deploy/result
+    owner: .github/workflows/deploy.yml workflow-result job
+    source: GitHub commit status API
+    states:
+      success: Build and Pages deployment completed successfully.
+      failure: Build or Pages deployment failed.
+      error: Build or Pages deployment was cancelled or could not produce a normal result.
+    descriptionFormat: build=<build-result> deploy=<deploy-result> conclusion=<workflow-conclusion>
+
   ownership:
-    generator: deploy_action.ps1
+    generator: deploy_action.ps1 and .github/workflows/deploy.yml
     category: transient-ci-helper-output
     committed: false
     gitignore: .gitignore
 
   resultSchema:
-    schemaVersion: 1
-    type: deploy-script-result
-    fields:
-      - conclusion
-      - stage
-      - message
-      - buildExitCode
-      - commit
-      - shortCommit
-      - buildLog
-      - generatedAtUtc
+    deployScriptResult:
+      schemaVersion: 1
+      type: deploy-script-result
+      fields:
+        - conclusion
+        - stage
+        - message
+        - buildExitCode
+        - commit
+        - shortCommit
+        - buildLog
+        - generatedAtUtc
+    workflowResult:
+      schemaVersion: 1
+      type: deploy-workflow-result
+      fields:
+        - workflow
+        - runId
+        - runAttempt
+        - commit
+        - shortCommit
+        - ref
+        - event
+        - build
+        - deploy
+        - conclusion
+        - generatedAtUtc
 
   agentUsage:
-    - After a commit that can start a site build, check available CI status for the committed SHA.
-    - Prefer deploy-script-result.json and build.log when those files are available through CI output.
+    - After a commit that can start a site build, first check the deploy/result commit status for the committed SHA.
+    - Use deploy/result as the primary machine-readable result when workflow runs are not directly listable through the available tools.
+    - Prefer workflow-result.json, deploy-script-result.json and build.log when those files are available through CI artifacts.
     - Use the GitHub Actions step summary as a human-readable fallback when artifacts are not available.
-    - Treat cancelled runs as a separate state because later commits can cancel older runs.
-    - If the current tools cannot access run status, summaries or artifacts, say so explicitly instead of assuming success.
-
-  limitation:
-    currentWorkflow: >
-      .github/workflows/deploy.yml does not yet upload .ai-workflow as a workflow
-      artifact because repository tool writes to that workflow file were blocked
-      during the setup conversation. The deploy script still writes diagnostics in
-      the runner workspace and mirrors the deploy result into the GitHub step
-      summary.
+    - Treat cancelled runs as a separate state when the workflow result is available; commit status represents cancellation as error because GitHub commit statuses only allow success, failure, error or pending.
+    - If the current tools cannot access commit status, run status, summaries or artifacts, say so explicitly instead of assuming success.
