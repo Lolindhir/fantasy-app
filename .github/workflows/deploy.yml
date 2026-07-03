@@ -37,6 +37,15 @@ jobs:
         shell: pwsh
         run: ./deploy_action.ps1
 
+      - name: Upload deploy diagnostics artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-script-diagnostics-${{ github.sha }}
+          path: .ai-workflow
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -53,3 +62,57 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  workflow-result:
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    if: ${{ always() }}
+
+    steps:
+      - name: Write machine-readable workflow result
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path ".ai-workflow" -Force | Out-Null
+
+          $buildResult = '${{ needs.build.result }}'
+          $deployResult = '${{ needs.deploy.result }}'
+
+          if ($buildResult -eq 'success' -and $deployResult -eq 'success') {
+            $conclusion = 'success'
+          } elseif ($buildResult -eq 'cancelled' -or $deployResult -eq 'cancelled') {
+            $conclusion = 'cancelled'
+          } else {
+            $conclusion = 'failure'
+          }
+
+          $result = [ordered]@{
+            schemaVersion = 1
+            type = 'deploy-workflow-result'
+            workflow = '${{ github.workflow }}'
+            runId = '${{ github.run_id }}'
+            runAttempt = '${{ github.run_attempt }}'
+            commit = '${{ github.sha }}'
+            shortCommit = '${{ github.sha }}'.Substring(0, 7)
+            ref = '${{ github.ref }}'
+            event = '${{ github.event_name }}'
+            build = $buildResult
+            deploy = $deployResult
+            conclusion = $conclusion
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+          }
+
+          $result | ConvertTo-Json -Depth 10 | Set-Content ".ai-workflow/workflow-result.json" -Encoding utf8
+
+          "## Deploy result" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "- Commit: `${{ github.sha }}`" >> $env:GITHUB_STEP_SUMMARY
+          "- Build: `$buildResult`" >> $env:GITHUB_STEP_SUMMARY
+          "- Deploy: `$deployResult`" >> $env:GITHUB_STEP_SUMMARY
+          "- Conclusion: `$conclusion`" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload AI-readable workflow result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-workflow-result-${{ github.sha }}
+          path: .ai-workflow/workflow-result.json
+          retention-days: 14
