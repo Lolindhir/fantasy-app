@@ -43,8 +43,9 @@ guidance:
     - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
 
   ciDeployment:
-    - After commits to main, check the Pages deployment result for the committed SHA whenever possible.
-    - Prefer machine-readable diagnostics from .ai-workflow/deploy-script-result.json and build.log when they are available.
+    - After commits to main, check the deploy/result commit status for the committed SHA whenever possible.
+    - Treat deploy/result as the primary machine-readable deployed-build result when workflow runs are not directly listable through the available tools.
+    - Prefer machine-readable diagnostics from .ai-workflow/workflow-result.json, .ai-workflow/deploy-script-result.json and build.log when they are available through CI artifacts.
     - If CI status or diagnostics cannot be read through the available tools, state that limitation explicitly in the visible post-commit check.
     - Do not commit local .ai-workflow diagnostics; they are transient CI/helper output.
 
