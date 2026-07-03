@@ -108,45 +108,15 @@
     </div>
   </section>
 
-  <section *ngIf="vm.draftSummaryCard as draftSummary" class="draft-season-summary-card">
-    <div class="draft-summary-icon">🎓</div>
-
-    <div class="draft-summary-content">
-      <div class="draft-summary-line">
-        <span class="draft-summary-line-icon">👥</span>
-        <span>{{ draftSummary.rookieSummary }}</span>
-      </div>
-
-      <div class="draft-summary-line">
-        <span class="draft-summary-line-icon">🗓️</span>
-        <span>{{ draftSummary.freeAgentSummary }}</span>
-      </div>
-    </div>
-
-    <div class="draft-summary-action-row">
-      <span
-        class="draft-summary-status-pill"
-        [class.draft-summary-status-pill--live]="draftSummary.statusClass === 'live'"
-        [class.draft-summary-status-pill--upcoming]="draftSummary.statusClass === 'upcoming'"
-        [class.draft-summary-status-pill--completed]="draftSummary.statusClass === 'completed'"
-      >
-        <span class="draft-summary-status-dot"></span>
-        {{ draftSummary.statusBadge }}
-      </span>
-      <span class="draft-summary-action-text">{{ draftSummary.statusText }}</span>
-      <span class="draft-summary-chevron">›</span>
-    </div>
-  </section>
-
   <ng-container *ngIf="vm.draftSeasonDashboard as draftDashboard">
     <section class="draft-dashboard-card">
-      <h2>Active / Upcoming Drafts</h2>
+      <h2>Drafts {{ vm.league.Season }} Season</h2>
 
       <div class="draft-status-list">
         <div *ngFor="let draft of draftDashboard.drafts" class="draft-status-row">
           <div>
             <div class="draft-status-name">{{ draft.name }}</div>
-            <div class="draft-status-rounds">{{ draft.rounds }}</div>
+            <div class="draft-status-rounds">{{ draft.details }}</div>
           </div>
           <span
             class="draft-status-pill"
@@ -239,7 +209,7 @@
           <img *ngIf="t.team.Avatar" [src]="t.team.Avatar" />
           <span class="cap-space-team-name">{{ t.team.Team }}</span>
         </div>
-
+        
         <div class="cap-space-stat"
             [ngClass]="{
               'positive-diff': t.total > vm.league.SalaryCap,
@@ -247,7 +217,7 @@
             }">
           {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
         </div>
-
+        
         <div class="cap-space-projection">
           {{ vm.league.SalaryCapProjected < t.totalProjected ? "🔴" : "🟢" }}
         </div>
