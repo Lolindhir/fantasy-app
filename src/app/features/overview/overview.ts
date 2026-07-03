@@ -66,6 +66,7 @@ interface DraftPickOverviewEntry {
 interface DraftPickOverviewRow {
   displayPick: string;
   owner: string;
+  ownerAbbr: string;
   ownerAvatar: string | null;
   ownerFallback: string;
   playerDisplay: string | null;
@@ -328,6 +329,7 @@ export class OverviewComponent {
     return {
       displayPick: this.formatDraftPickOverviewChip(draft, pick),
       owner: ownerName,
+      ownerAbbr: owner?.TeamAbbr ?? this.formatOwnerFallback(ownerName),
       ownerAvatar: owner?.Avatar ?? null,
       ownerFallback: this.formatOwnerFallback(ownerName),
       playerDisplay: includePlayer ? pick.PlayerName ?? 'Selected' : null
