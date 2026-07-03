@@ -11,6 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  statuses: write
 
 concurrency:
   group: "pages"
@@ -74,6 +75,7 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path ".ai-workflow" -Force | Out-Null
 
@@ -106,12 +108,41 @@ jobs:
 
           $result | ConvertTo-Json -Depth 10 | Set-Content ".ai-workflow/workflow-result.json" -Encoding utf8
 
+          if ($conclusion -eq 'success') {
+            $statusState = 'success'
+          } elseif ($conclusion -eq 'cancelled') {
+            $statusState = 'error'
+          } else {
+            $statusState = 'failure'
+          }
+
+          $statusDescription = "build=$buildResult deploy=$deployResult conclusion=$conclusion"
+          if ($statusDescription.Length -gt 140) {
+            $statusDescription = $statusDescription.Substring(0, 140)
+          }
+
+          $statusBody = @{
+            state = $statusState
+            target_url = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            description = $statusDescription
+            context = 'deploy/result'
+          } | ConvertTo-Json -Depth 10
+
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+
+          Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/statuses/$env:GITHUB_SHA" -Headers $headers -ContentType 'application/json' -Body $statusBody | Out-Null
+
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## Deploy result"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Commit: $env:GITHUB_SHA"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Build: $buildResult"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Deploy: $deployResult"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Conclusion: $conclusion"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Commit status: deploy/result = $statusState"
 
       - name: Upload AI-readable workflow result
         uses: actions/upload-artifact@v4
