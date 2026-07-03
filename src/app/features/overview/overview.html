@@ -136,7 +136,11 @@
         <div class="pick-overview-label">Next Picks</div>
         <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-          <span class="pick-overview-owner">{{ pick.owner }}</span>
+          <span class="pick-overview-main">{{ pick.owner }}</span>
+          <span class="pick-overview-team-logo" [title]="pick.owner">
+            <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+            <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+          </span>
         </div>
       </div>
 
@@ -144,8 +148,11 @@
         <div class="pick-overview-label">Recent Picks</div>
         <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-          <span class="pick-overview-owner">{{ pick.owner }}</span>
-          <span class="pick-overview-player">— {{ pick.playerDisplay }}</span>
+          <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
+          <span class="pick-overview-team-logo" [title]="pick.owner">
+            <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+            <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+          </span>
         </div>
       </div>
     </section>
