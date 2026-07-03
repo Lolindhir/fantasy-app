@@ -137,9 +137,12 @@
         <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
           <span class="pick-overview-main">{{ pick.owner }}</span>
-          <span class="pick-overview-team-logo" [title]="pick.owner">
-            <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
-            <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+          <span class="pick-overview-team-lockup" [title]="pick.owner">
+            <span class="pick-overview-team-logo">
+              <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+              <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+            </span>
+            <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
           </span>
         </div>
       </div>
@@ -149,9 +152,12 @@
         <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
           <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
-          <span class="pick-overview-team-logo" [title]="pick.owner">
-            <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
-            <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+          <span class="pick-overview-team-lockup" [title]="pick.owner">
+            <span class="pick-overview-team-logo">
+              <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+              <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+            </span>
+            <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
           </span>
         </div>
       </div>
