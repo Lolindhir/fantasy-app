@@ -27,6 +27,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Ziel: Prüfen, ob für die Angular-Navigation ein Vergleich auf relevante Pfade und `Exists` ausreicht, während Hash-/UpdatedAt-Metadaten optional bleiben oder anders behandelt werden.
   - Hinweis: Nur ändern, wenn dadurch keine nützliche Freshness-/Debug-Information verloren geht.
 
+- [ ] Backup-Daten aus `public/data/backup` herausziehen und versioniert im Repo behalten.
+  - Kontext: `public` soll nur Dateien enthalten, die die Angular-App zur Laufzeit ausliefert oder lädt.
+  - Kontext: Backups werden aktuell über `ConfigUtils.psm1` unter `public/data/backup` erzeugt und vom Cleanup-Workflow `.github/workflows/clean-backups.yml` bereinigt.
+  - Ziel: Backups in einen sichtbaren Repo-Root-Ordner wie `data-backup/` verschieben, weiterhin versionieren und für manuelle Nutzung verfügbar halten.
+  - Mit anpassen: `ConfigUtils.psm1`, `.github/workflows/clean-backups.yml`, betroffene Update-Workflows mit `git add public/data/** data-backup/**` und ggf. Deploy-Absicherung.
+
 ### Data Generation / Drafts
 
 - [ ] Draft-Live-Enrichment für `public/data/Drafts.json` bei nächstem laufenden Sleeper-Draft validieren.
