@@ -9,6 +9,7 @@ ciDiagnostics:
     diagnosticsDir: .ai-workflow
     buildLog: .ai-workflow/build.log
     scriptResult: .ai-workflow/deploy-script-result.json
+    stepSummary: GitHub Actions GITHUB_STEP_SUMMARY
 
   ownership:
     generator: deploy_action.ps1
@@ -32,5 +33,14 @@ ciDiagnostics:
   agentUsage:
     - After a commit that can start a site build, check available CI status for the committed SHA.
     - Prefer deploy-script-result.json and build.log when those files are available through CI output.
+    - Use the GitHub Actions step summary as a human-readable fallback when artifacts are not available.
     - Treat cancelled runs as a separate state because later commits can cancel older runs.
-    - If the current tools cannot access run status or artifacts, say so explicitly instead of assuming success.
+    - If the current tools cannot access run status, summaries or artifacts, say so explicitly instead of assuming success.
+
+  limitation:
+    currentWorkflow: >
+      .github/workflows/deploy.yml does not yet upload .ai-workflow as a workflow
+      artifact because repository tool writes to that workflow file were blocked
+      during the setup conversation. The deploy script still writes diagnostics in
+      the runner workspace and mirrors the deploy result into the GitHub step
+      summary.
