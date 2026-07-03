@@ -138,6 +138,71 @@
     </div>
   </section>
 
+  <ng-container *ngIf="vm.draftSeasonDashboard as draftDashboard">
+    <section class="draft-dashboard-card">
+      <h2>Active / Upcoming Drafts</h2>
+
+      <div class="draft-status-list">
+        <div *ngFor="let draft of draftDashboard.drafts" class="draft-status-row">
+          <div>
+            <div class="draft-status-name">{{ draft.name }}</div>
+            <div class="draft-status-rounds">{{ draft.rounds }}</div>
+          </div>
+          <span
+            class="draft-status-pill"
+            [class.draft-status-pill--live]="draft.statusClass === 'live'"
+            [class.draft-status-pill--upcoming]="draft.statusClass === 'upcoming'"
+            [class.draft-status-pill--completed]="draft.statusClass === 'completed'"
+          >
+            {{ draft.status }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="draft-dashboard-card">
+      <h2>Draft Capital</h2>
+
+      <div class="draft-capital-header">
+        <span>Team</span>
+        <span>Rookie</span>
+        <span>FA</span>
+        <span>Best Pick</span>
+      </div>
+
+      <div *ngFor="let row of draftDashboard.draftCapital" class="draft-capital-row">
+        <div class="draft-capital-team">
+          <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
+          <span>{{ row.teamName }}</span>
+        </div>
+        <div class="draft-capital-count">{{ row.rookieCount }}</div>
+        <div class="draft-capital-count">{{ row.freeAgentCount }}</div>
+        <div class="draft-capital-best">{{ row.bestPick }}</div>
+      </div>
+    </section>
+
+    <section class="draft-dashboard-card">
+      <h2>Next / Recent Picks</h2>
+
+      <div class="pick-overview-block">
+        <div class="pick-overview-label">Next Picks</div>
+        <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row">
+          <span class="pick-overview-chip">{{ pick.displayPick }}</span>
+          <span class="pick-overview-owner">{{ pick.owner }}</span>
+        </div>
+      </div>
+
+      <div class="pick-overview-block" *ngIf="draftDashboard.recentPicks.length > 0">
+        <div class="pick-overview-label">Recent Picks</div>
+        <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row">
+          <span class="pick-overview-chip">{{ pick.displayPick }}</span>
+          <span class="pick-overview-owner">{{ pick.owner }}</span>
+          <span class="pick-overview-player">— {{ pick.playerDisplay }}</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
   <!-- 📊 Cap Space Overview -->
   <section *ngIf="vm.offSeason">
     <section
