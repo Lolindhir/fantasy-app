@@ -126,8 +126,8 @@
             >
               {{ draft.status }}
             </span>
-            <div *ngIf="draft.startDisplay" class="draft-status-start">
-              {{ draft.startDisplay }}
+            <div *ngIf="draft.startDisplay || draft.statusClass === 'upcoming'" class="draft-status-start">
+              {{ draft.startDisplay || 'not scheduled' }}
             </div>
           </div>
         </div>
