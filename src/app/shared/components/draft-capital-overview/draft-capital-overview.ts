@@ -6,6 +6,7 @@ import type { DraftPick, FantasyTeam, League, RawDraft } from '../../../core/mod
 import { DataService } from '../../../core/services/data.service';
 import {
   compareDraftPickCollectionsByStrength,
+  compareDraftPicksBySlotAcrossDrafts,
   getBestDraftPick,
   getDraftCapitalAbbreviation
 } from '../../utils/draft-capital.util';
@@ -28,8 +29,8 @@ interface DraftCapitalRow {
   teamAbbr: string;
   draftCounts: DraftCapitalCount[];
   bestPick: string;
-  bestAvailablePick: string;
-  hasBestAvailablePick: boolean;
+  secondaryPick: string;
+  hasSecondaryPick: boolean;
   sortPicks: DraftPick[];
 }
 
@@ -38,6 +39,7 @@ interface DraftCapitalViewModel {
   gridTemplate: string;
   isMediumCountMode: boolean;
   isWideCountMode: boolean;
+  showSecondBestPick: boolean;
   rows: DraftCapitalRow[];
 }
 
@@ -76,8 +78,14 @@ interface DraftCapitalViewModel {
           <span class="draft-capital-header-short">Best<br />Pick</span>
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
-          <span class="draft-capital-header-full">Best Open<br />Pick</span>
-          <span class="draft-capital-header-short">Best<br />Open</span>
+          <ng-container *ngIf="vm.showSecondBestPick; else bestOpenPickHeader">
+            <span class="draft-capital-header-full">Second Best<br />Pick</span>
+            <span class="draft-capital-header-short">2nd Best</span>
+          </ng-container>
+          <ng-template #bestOpenPickHeader>
+            <span class="draft-capital-header-full">Best Open<br />Pick</span>
+            <span class="draft-capital-header-short">Best<br />Open</span>
+          </ng-template>
         </span>
       </div>
 
@@ -97,9 +105,11 @@ interface DraftCapitalViewModel {
         >{{ draftCount.count }}</div>
         <div class="draft-capital-cell draft-capital-cell--pick draft-capital-pick-chip draft-capital-pick-chip--best">{{ row.bestPick }}</div>
         <div
-          class="draft-capital-cell draft-capital-cell--pick draft-capital-pick-chip draft-capital-pick-chip--available"
-          [class.draft-capital-pick-chip--empty]="!row.hasBestAvailablePick"
-        >{{ row.bestAvailablePick }}</div>
+          class="draft-capital-cell draft-capital-cell--pick draft-capital-pick-chip"
+          [class.draft-capital-pick-chip--best]="vm.showSecondBestPick"
+          [class.draft-capital-pick-chip--available]="!vm.showSecondBestPick"
+          [class.draft-capital-pick-chip--empty]="!row.hasSecondaryPick"
+        >{{ row.secondaryPick }}</div>
       </div>
     </section>
   `,
@@ -321,13 +331,19 @@ export class DraftCapitalOverviewComponent {
           fullLabel: draft.DisplayDraftKey
         };
       });
-      const rows = this.buildRows(teams, seasonDrafts, columns);
+      const draftKeys = new Set(columns.map(column => column.draftKey));
+      const seasonPicks = teams
+        .flatMap(team => team.DraftPicks ?? [])
+        .filter(pick => pick.Season === league.Season && draftKeys.has(pick.DraftKey));
+      const showSecondBestPick = !seasonPicks.some(pick => this.isDraftPickMade(pick));
+      const rows = this.buildRows(teams, seasonDrafts, columns, showSecondBestPick);
 
       return {
         columns,
         gridTemplate: this.buildGridTemplate(columns.length),
         isMediumCountMode: columns.length > 2 && columns.length <= 4,
         isWideCountMode: columns.length <= 2,
+        showSecondBestPick,
         rows
       } satisfies DraftCapitalViewModel;
     })
@@ -342,7 +358,8 @@ export class DraftCapitalOverviewComponent {
   private buildRows(
     teams: FantasyTeam[],
     drafts: RawDraft[],
-    columns: DraftCapitalColumn[]
+    columns: DraftCapitalColumn[],
+    showSecondBestPick: boolean
   ): DraftCapitalRow[] {
     const season = drafts[0]?.Season ?? '';
     const draftByKey = new Map(drafts.map(draft => [draft.DraftKey, draft]));
@@ -354,9 +371,9 @@ export class DraftCapitalOverviewComponent {
         const sortPicks = (team.DraftPicks ?? [])
           .filter(pick => pick.Season === season && draftKeys.has(pick.DraftKey));
         const bestPick = getBestDraftPick(sortPicks);
-        const bestAvailablePick = getBestDraftPick(
-          sortPicks.filter(pick => this.isDraftPickAvailable(pick))
-        );
+        const secondaryPick = showSecondBestPick
+          ? this.getSecondBestDraftPick(sortPicks)
+          : getBestDraftPick(sortPicks.filter(pick => this.isDraftPickAvailable(pick)));
 
         return {
           team,
@@ -367,8 +384,8 @@ export class DraftCapitalOverviewComponent {
             count: sortPicks.filter(pick => pick.DraftKey === column.draftKey).length
           })),
           bestPick: bestPick ? this.formatBestPick(bestPick, draftByKey) : '—',
-          bestAvailablePick: bestAvailablePick ? this.formatBestPick(bestAvailablePick, draftByKey) : '—',
-          hasBestAvailablePick: !!bestAvailablePick,
+          secondaryPick: secondaryPick ? this.formatBestPick(secondaryPick, draftByKey) : '—',
+          hasSecondaryPick: !!secondaryPick,
           sortPicks
         };
       })
@@ -401,6 +418,17 @@ export class DraftCapitalOverviewComponent {
       && !pick.PlayerID
       && !pick.PlayerName
       && pick.SleeperPickNo === null;
+  }
+
+  private isDraftPickMade(pick: DraftPick): boolean {
+    return pick.Status === 'Picked'
+      || !!pick.PlayerID
+      || !!pick.PlayerName
+      || pick.SleeperPickNo !== null;
+  }
+
+  private getSecondBestDraftPick(picks: DraftPick[]): DraftPick | null {
+    return [...picks].sort(compareDraftPicksBySlotAcrossDrafts)[1] ?? null;
   }
 
   private getTeamAbbreviation(team: FantasyTeam): string {
