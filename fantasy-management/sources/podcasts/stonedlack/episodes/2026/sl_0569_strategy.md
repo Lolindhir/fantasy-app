@@ -1,75 +1,75 @@
-# StonedLack 569 - Strategy, format and reuse notes
+# StonedLack 569 – Strategie-, Format- und Wiederverwendungsnotizen
 
-Status: source perspective only. No current league-data verification.
+Status: StonedLack-Quellenperspektive. Keine Prüfung gegen aktuelle Ligadaten.
 
-## Rookie-draft strategy
+## Rookie-Draft-Strategie
 
-StonedLack argues against drafting immediately after the NFL Draft. The hosts emphasize that there is little upside in starting before injuries, signings, training-camp reports and further role context become available.
+StonedLack argumentiert gegen Rookie Drafts direkt nach dem NFL Draft. Die Hosts betonen, dass wenig Upside darin liegt, sofort zu draften, bevor Verletzungen, Signings, Training-Camp-Berichte und weitere Rolleninformationen bekannt sind.
 
-## WR over late RB logic
+## WR-over-late-RB-Logik
 
-A repeated theme is that this class has many WR darts with plausible field paths and many RBs with weak capital or unclear routes to touches. StonedLack therefore leans toward WRs in the middle and late rookie rounds unless the RB has a particularly strong role argument.
+Ein wiederkehrendes Thema: Diese Klasse hat viele WR-Darts mit plausiblen Wegen aufs Feld und viele RBs mit schwachem Draft Capital oder unklaren Touch-Pfaden. StonedLack tendiert deshalb in mittleren und späten Rookie-Runden eher zu WRs, sofern der RB nicht ein besonders klares Rollenargument hat.
 
-Preferred WR bet types:
+Bevorzugte WR-Bet-Typen:
 
-- WR2 path next to an established alpha: Antonio Williams, Jordan Tyson.
-- Open depth chart path: Chris Bell, Chris Brazzell.
-- Day-two capital with beatable veteran competition: Malachi Fields, Savian Thomas.
-- Contender landing spot plus useful profile: Skyler Bell.
+- WR2-Pfad neben etabliertem Alpha: Antonio Williams, Jordan Tyson.
+- Offene Depth Chart: Chris Bell, Chris Brazzell.
+- Day-Two-Capital mit schlagbarer Veteranenkonkurrenz: Malachi Fields, Savian Thomas.
+- Contender-Landing-Spot plus nützliches Profil: Skyler Bell.
 
-RB caution types:
+RB-Caution-Typen:
 
-- Low-capital backs who need injuries and may not make or hold the active roster.
-- Backup RBs behind elite or expensive starters where replacement would likely become a committee.
-- RBs whose only argument is positional scarcity rather than role clarity.
+- Low-Capital-Backs, die Verletzungen brauchen und eventuell keinen stabilen aktiven Roster-Spot halten.
+- Backup-RBs hinter Elite- oder teuren Startern, bei denen ein Ausfall wahrscheinlich durch Komitee ersetzt würde.
+- RBs, deren Hauptargument nur Positionsknappheit statt Rollenqualität ist.
 
-## Redraft versus dynasty
+## Redraft vs Dynasty
 
-Bad offensive environments matter heavily in redraft. StonedLack is cautious on Jeremy Love for 2026 and on Browns/Jets rookies for immediate use. In dynasty, talent plus investment can still justify strong rookie-draft cost.
+Schlechte Offense-Umfelder zählen im Redraft stark. StonedLack ist vorsichtig bei Jeremy Love für 2026 sowie bei Browns-/Jets-Rookies für sofortige Nutzung. In Dynasty können Talent plus Investment trotzdem starke Rookie-Draft-Kosten rechtfertigen.
 
-Examples:
+Beispiele:
 
-- Jeremy Love: still 1.01 dynasty, but weak 2026 redraft setup.
-- Browns WRs: poor redraft context, but dynasty value remains because of investment and long-term role.
-- Chris Bell: poor team context, but dynasty opportunity is strong.
-- Price: both dynasty and redraft interest because immediate role is unusually strong.
+- Jeremy Love: weiterhin 1.01 in Dynasty, aber schwaches 2026-Redraft-Setup.
+- Browns-WRs: schlechter Redraft-Kontext, aber Dynasty-Wert bleibt wegen Investment und langfristiger Rolle.
+- Chris Bell: schlechtes Teamumfeld, aber starke Dynasty-Opportunity.
+- Price: Dynasty- und Redraft-Interesse, weil die Sofortrolle ungewöhnlich stark ist.
 
-## Tight-end handling
+## Tight-End-Handling
 
-The episode repeatedly distinguishes real-football TE value from fantasy value. Many teams appear to want blocking/Y tight ends. That can improve an offense without creating useful fantasy volume.
+Die Folge trennt wiederholt Real-Football-TE-Wert von Fantasy-Wert. Viele Teams suchen offenbar Blocking-/Y-Tight-Ends. Das kann einer Offense helfen, ohne brauchbares Fantasy-Volumen zu erzeugen.
 
-Caution bucket:
+Caution Bucket:
 
 - Eli Stowers
 - Max Klare
 - Marlin Klein
 - Oscar Delp
-- other day-two blocking profiles
+- weitere Day-Two-Blocking-Profile
 
-## Format-dependent notes
+## Formatabhängige Notizen
 
-- Return scoring improves the usefulness of players like Savian Thomas and Barion Brown.
-- Superflex and 2QB formats make deep quarterbacks more relevant, but this episode does not give an aggressive QB-draft signal.
-- 2TE formats require extra attention, but StonedLack still warns against taking real-football TEs as if they are guaranteed fantasy producers.
+- Return-Scoring erhöht die Relevanz von Spielern wie Savian Thomas und Barion Brown.
+- Superflex- und 2QB-Formate machen tiefe Quarterbacks relevanter, aber diese Folge gibt kein aggressives QB-Draft-Signal.
+- 2TE-Formate erhöhen TE-Aufmerksamkeit, aber StonedLack warnt trotzdem davor, Real-Football-TEs automatisch wie garantierte Fantasy-Produzenten zu behandeln.
 
-## Mighty Giants reuse
+## Mighty-Giants-Reuse
 
-Use this extraction as source input for:
+Diese Extraktion ist nützlich für:
 
-- 2026 rookie-board construction.
-- WR dart tiering after the top tier.
-- RB scarcity and fade analysis.
-- Redraft-versus-dynasty split on Love, Price, Browns WRs, Jets pass catchers and Dolphins WRs.
-- Later cross-source comparison with other podcasts or rankings.
+- Aufbau eines 2026 Rookie Boards.
+- WR-Dart-Tiering nach dem Top-Tier.
+- RB-Scarcity- und RB-Fade-Abwägung.
+- Redraft-vs-Dynasty-Split bei Love, Price, Browns-WRs, Jets-Passfängern und Dolphins-WRs.
+- Cross-Source-Vergleich mit anderen Podcasts oder Rankings.
 
-Do not use this extraction alone as a final decision source. For Mighty Giants decisions, combine it with current roster, pick ownership, league format, salary/cap state and current external context where value matters.
+Nicht alleine als finale Entscheidungsquelle nutzen. Für Mighty-Giants-Entscheidungen immer mit aktuellem Roster, Pick Ownership, Ligaformat, Salary-/Cap-State und aktuellem externem Kontext kombinieren.
 
-## Completeness gate for future import
+## Vollständigkeits-Gate
 
-Before this episode is treated as fully normalized knowledge, the repo should have:
+Diese Episode gilt erst als vollständig normalisierte Wissensbasis, wenn:
 
-1. Full raw transcript stored unchanged or split into verbatim parts.
-2. Episode note with overview, entities, rankings, team notes and strategy notes.
-3. Episode JSON linking all take IDs.
-4. Atomic takes for each meaningful player, ranking, role, fade, sleeper and uncertainty.
-5. Current knowledge rollups only after take coverage is complete enough.
+1. das vollständige Rohtranskript als geordnete Parts nachvollziehbar ist,
+2. die Episode Note und Begleitdateien in Deutsch lesbar sind,
+3. Episode JSON alle sauberen Take-IDs referenziert,
+4. wichtige Spieler-, Ranking-, Rollen-, Fade-, Sleeper- und Unsicherheitssignale als atomare Takes vorliegen,
+5. Current Views aus diesen normalisierten Takes abgeleitet sind.
