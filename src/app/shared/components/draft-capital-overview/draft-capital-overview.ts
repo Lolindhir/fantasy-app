@@ -12,7 +12,8 @@ import {
 
 interface DraftCapitalColumn {
   draftKey: string;
-  label: string;
+  mobileLabel: string;
+  desktopLabel: string;
   fullLabel: string;
 }
 
@@ -35,6 +36,8 @@ interface DraftCapitalRow {
 interface DraftCapitalViewModel {
   columns: DraftCapitalColumn[];
   gridTemplate: string;
+  isMediumCountMode: boolean;
+  isWideCountMode: boolean;
   rows: DraftCapitalRow[];
 }
 
@@ -43,7 +46,12 @@ interface DraftCapitalViewModel {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <section *ngIf="vm$ | async as vm" class="draft-dashboard-card">
+    <section
+      *ngIf="vm$ | async as vm"
+      class="draft-dashboard-card"
+      [class.draft-capital--medium-counts]="vm.isMediumCountMode"
+      [class.draft-capital--wide-counts]="vm.isWideCountMode"
+    >
       <h2>Draft Capital</h2>
 
       <div
@@ -55,13 +63,20 @@ interface DraftCapitalViewModel {
           *ngFor="let column of vm.columns"
           class="draft-capital-cell draft-capital-cell--numeric"
           [title]="column.fullLabel"
-        >{{ column.label }}</span>
+        >
+          <span class="draft-capital-column-label draft-capital-column-label--mobile">
+            {{ column.mobileLabel }}
+          </span>
+          <span class="draft-capital-column-label draft-capital-column-label--desktop">
+            {{ column.desktopLabel }}
+          </span>
+        </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
           <span class="draft-capital-header-full">Best Pick</span>
           <span class="draft-capital-header-short">Best</span>
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
-          <span class="draft-capital-header-full">Open</span>
+          <span class="draft-capital-header-full">Open Pick</span>
           <span class="draft-capital-header-short">Open</span>
         </span>
       </div>
@@ -94,12 +109,22 @@ interface DraftCapitalViewModel {
     }
 
     .draft-dashboard-card {
+      --draft-count-width: 20px;
+      --draft-pick-width: clamp(52px, 12vw, 80px);
       padding: 13px 14px;
       margin: 0 5px 12px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       border-radius: 16px;
       background: #fff;
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    }
+
+    .draft-dashboard-card.draft-capital--medium-counts {
+      --draft-count-width: 24px;
+    }
+
+    .draft-dashboard-card.draft-capital--wide-counts {
+      --draft-count-width: 64px;
     }
 
     .draft-dashboard-card h2 {
@@ -136,6 +161,10 @@ interface DraftCapitalViewModel {
     .draft-capital-cell--pick {
       justify-self: center;
       text-align: center;
+    }
+
+    .draft-capital-column-label--desktop {
+      display: none;
     }
 
     .draft-capital-header-full {
@@ -216,6 +245,11 @@ interface DraftCapitalViewModel {
     }
 
     @media (min-width: 520px) {
+      .draft-dashboard-card {
+        --draft-count-width: 78px;
+        --draft-pick-width: clamp(76px, 10vw, 94px);
+      }
+
       .draft-capital-header,
       .draft-capital-row {
         column-gap: 8px;
@@ -224,6 +258,14 @@ interface DraftCapitalViewModel {
       .draft-capital-header {
         font-size: 0.72rem;
         letter-spacing: 0.03em;
+      }
+
+      .draft-capital-column-label--mobile {
+        display: none;
+      }
+
+      .draft-capital-column-label--desktop {
+        display: inline;
       }
 
       .draft-capital-header-full {
@@ -260,16 +302,25 @@ export class DraftCapitalOverviewComponent {
       const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
       if (seasonDrafts.length === 0) return null;
 
-      const columns = seasonDrafts.map(draft => ({
-        draftKey: draft.DraftKey,
-        label: getDraftCapitalAbbreviation(draft),
-        fullLabel: draft.DisplayDraftKey
-      }));
+      const useFullDraftTypeOnMobile = seasonDrafts.length <= 2;
+      const columns = seasonDrafts.map(draft => {
+        const draftTypeLabel = draft.DisplayDraftType || draft.DisplayDraftKey;
+        const abbreviatedLabel = getDraftCapitalAbbreviation(draft);
+
+        return {
+          draftKey: draft.DraftKey,
+          mobileLabel: useFullDraftTypeOnMobile ? draftTypeLabel : abbreviatedLabel,
+          desktopLabel: draftTypeLabel,
+          fullLabel: draft.DisplayDraftKey
+        };
+      });
       const rows = this.buildRows(teams, seasonDrafts, columns);
 
       return {
         columns,
         gridTemplate: this.buildGridTemplate(columns.length),
+        isMediumCountMode: columns.length > 2 && columns.length <= 4,
+        isWideCountMode: columns.length <= 2,
         rows
       } satisfies DraftCapitalViewModel;
     })
@@ -322,13 +373,11 @@ export class DraftCapitalOverviewComponent {
   }
 
   private buildGridTemplate(columnCount: number): string {
-    const countWidth = columnCount <= 2 ? '26px' : columnCount <= 4 ? '24px' : '20px';
-    const pickWidth = columnCount <= 2 ? 'clamp(56px, 14vw, 88px)' : 'clamp(52px, 12vw, 80px)';
     const draftColumns = columnCount > 0
-      ? `repeat(${columnCount}, ${countWidth})`
+      ? `repeat(${columnCount}, var(--draft-count-width))`
       : '';
 
-    return ['minmax(58px, 1fr)', draftColumns, pickWidth, pickWidth]
+    return ['minmax(58px, 1fr)', draftColumns, 'var(--draft-pick-width)', 'var(--draft-pick-width)']
       .filter(Boolean)
       .join(' ');
   }
