@@ -6,6 +6,16 @@ Pipeline:
 raw transcript -> episode note -> source takes -> current source view -> Mighty Giants analysis
 ```
 
+## Central source setup
+
+Podcast extraction rules are maintained in `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
+
+Source identity, weighting and profile comparison are maintained in `fantasy-management/_ai/source-registry.json`.
+
+Source-specific quirks and aliases belong in `sources/podcasts/{source}/SOURCE_NOTES.md`.
+
+Do not maintain source weights in multiple places.
+
 ## Layers
 
 1. Raw transcripts stay in `sources/podcasts/{source}/raw_transcripts/YYYY/`.
