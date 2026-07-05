@@ -40,11 +40,11 @@ Status: deutsch lesbarer Index der normalisierten atomaren Takes. JSON-Takes lie
 | Take | Entity | Kurzsignal |
 |---|---|---|
 | sl_0569_t021 | Josh Jacobs / Packers | Redraft-Gewinner, aber Dynasty-Sell-Fenster möglich. |
-| sl_0569_t022 | Chuba Hubbard | Redraft-Discount möglich, da keine starke RB-Ergänzung kam. |
+| sl_0569_t022 | Carolina-RB-Kontext | bestehender RB-Kontext gewinnt kurzfristig durch ausbleibende starke Konkurrenz. |
 | sl_0569_t023 | Ashton Jeanty / Brock Bowers | Klare Raiders-Redraft-Targets aus Quellenperspektive. |
 | sl_0569_t024 | Marlin Klein | Nicht wegen deutschem Community-Hype überbezahlen. |
 | sl_0569_t025 | Jonah/Joner Coleman | Möglicher Rookie-RB3, aber erst nach vielen WRs. |
-| sl_0569_t026 | Seth McGowan | Pfad hinter Taylor existiert, aber Quellenbegeisterung gering. |
+| sl_0569_t026 | Colts-RB-Dart | theoretischer Pfad, aber niedrige Quellenpriorität. |
 | sl_0569_t027 | Nicholas Singleton | Moderater Titans-RB-Pfad hinter Pollard/Spears. |
 | sl_0569_t028 | Brandon Thompson | Speed-/Scheme-Dart mit offenem Chargers-WR-Room. |
 | sl_0569_t029 | Barion Brown / Bryce Lance | Tiefe Saints-Upside-/Return-/RAS-Darts. |
