@@ -55,8 +55,14 @@ interface DraftCapitalViewModel {
           *ngFor="let column of vm.columns"
           [title]="column.fullLabel"
         >{{ column.label }}</span>
-        <span>Best Pick</span>
-        <span>Best Available</span>
+        <span>
+          <span class="draft-capital-header-full">Best Pick</span>
+          <span class="draft-capital-header-short">Best</span>
+        </span>
+        <span>
+          <span class="draft-capital-header-full">Best Available</span>
+          <span class="draft-capital-header-short">Avail.</span>
+        </span>
       </div>
 
       <div
@@ -105,20 +111,28 @@ interface DraftCapitalViewModel {
     .draft-capital-row {
       display: grid;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .draft-capital-header {
       padding-bottom: 6px;
       color: #64748b;
-      font-size: 0.72rem;
+      font-size: 0.62rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
     }
 
     .draft-capital-header span:not(:first-child) {
       text-align: right;
+    }
+
+    .draft-capital-header-full {
+      display: none;
+    }
+
+    .draft-capital-header-short {
+      display: inline;
     }
 
     .draft-capital-row {
@@ -172,19 +186,32 @@ interface DraftCapitalViewModel {
     }
 
     .draft-capital-best-available {
-      padding: 1px 6px;
-      border-radius: 999px;
       color: #15803d;
-      background: #dcfce7;
     }
 
     .draft-capital-best-available--empty {
-      padding: 0;
       color: #94a3b8;
-      background: transparent;
     }
 
     @media (min-width: 520px) {
+      .draft-capital-header,
+      .draft-capital-row {
+        gap: 8px;
+      }
+
+      .draft-capital-header {
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+      }
+
+      .draft-capital-header-full {
+        display: inline;
+      }
+
+      .draft-capital-header-short {
+        display: none;
+      }
+
       .draft-capital-team-name {
         display: inline;
       }
@@ -271,7 +298,7 @@ export class DraftCapitalOverviewComponent {
       ? `repeat(${columnCount}, minmax(34px, max-content))`
       : '';
 
-    return ['minmax(0, 1fr)', draftColumns, '70px', 'minmax(96px, max-content)']
+    return ['minmax(0, 1fr)', draftColumns, '70px', 'minmax(72px, max-content)']
       .filter(Boolean)
       .join(' ');
   }
