@@ -112,7 +112,7 @@ interface DraftCapitalViewModel {
     .draft-capital-row {
       display: grid;
       align-items: center;
-      gap: 4px;
+      column-gap: 6px;
     }
 
     .draft-capital-header {
@@ -129,8 +129,8 @@ interface DraftCapitalViewModel {
     }
 
     .draft-capital-cell--numeric {
-      justify-self: end;
-      text-align: right;
+      justify-self: center;
+      text-align: center;
     }
 
     .draft-capital-cell--pick {
@@ -193,6 +193,7 @@ interface DraftCapitalViewModel {
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
+      min-width: 58px;
       padding: 1px 4px;
       border-radius: 999px;
       background: #f1f5f9;
@@ -217,7 +218,7 @@ interface DraftCapitalViewModel {
     @media (min-width: 520px) {
       .draft-capital-header,
       .draft-capital-row {
-        gap: 8px;
+        column-gap: 8px;
       }
 
       .draft-capital-header {
@@ -242,6 +243,7 @@ interface DraftCapitalViewModel {
       }
 
       .draft-capital-pick-chip {
+        min-width: 64px;
         padding: 2px 6px;
         font-size: 0.82rem;
       }
@@ -321,10 +323,10 @@ export class DraftCapitalOverviewComponent {
 
   private buildGridTemplate(columnCount: number): string {
     const draftColumns = columnCount > 0
-      ? `repeat(${columnCount}, minmax(34px, max-content))`
+      ? `repeat(${columnCount}, 3ch)`
       : '';
 
-    return ['minmax(0, 1fr)', draftColumns, 'max-content', 'max-content']
+    return ['minmax(76px, 1fr)', draftColumns, 'clamp(62px, 16vw, 92px)', 'clamp(68px, 18vw, 108px)']
       .filter(Boolean)
       .join(' ');
   }
