@@ -134,7 +134,7 @@ interface DraftCapitalViewModel {
     }
 
     .draft-capital-cell--pick {
-      justify-self: stretch;
+      justify-self: center;
       text-align: center;
     }
 
@@ -189,11 +189,11 @@ interface DraftCapitalViewModel {
     }
 
     .draft-capital-pick-chip {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
-      padding: 1px 5px;
+      padding: 1px 4px;
       border-radius: 999px;
       background: #f1f5f9;
       font-weight: 800;
@@ -242,7 +242,7 @@ interface DraftCapitalViewModel {
       }
 
       .draft-capital-pick-chip {
-        padding: 2px 8px;
+        padding: 2px 6px;
         font-size: 0.82rem;
       }
     }
@@ -324,7 +324,7 @@ export class DraftCapitalOverviewComponent {
       ? `repeat(${columnCount}, minmax(34px, max-content))`
       : '';
 
-    return ['minmax(0, 1fr)', draftColumns, '70px', 'minmax(72px, max-content)']
+    return ['minmax(0, 1fr)', draftColumns, 'max-content', 'max-content']
       .filter(Boolean)
       .join(' ');
   }
