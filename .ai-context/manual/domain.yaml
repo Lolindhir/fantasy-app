@@ -170,12 +170,15 @@ coreConcepts:
       - use PlayerName as a fallback display value for completed historical picks when PlayerID cannot be resolved against current Players.json
       - show future drafts as compact team-owned round summaries inside DraftShellComponent with clickable shared pick triggers and pick popovers in a future-compatible mode
       - use src/app/shared/utils/draft-ui.util.ts for shared draft round colors and draft status display classes
+      - use src/app/shared/utils/draft-capital.util.ts for shared frontend draft-pick order, Pick Strength sorting, RoundCounts and BestPick helpers across Drafts and Overview Draft Capital
+      - treat Pick Strength as frontend display/ranking logic until generator-provided Draft Capital values exist
       - show current owner as the primary owner label in pick popovers
       - show original owner as "from <team>" only when current owner differs from original owner
       - allow the Traded Pick badge to indicate trade-history context independently from whether the pick is currently owned by the original owner
     doesNotOwn:
       - draft order derivation
       - draft-pick ownership derivation
+      - draft capital value source-of-truth
       - transaction source-of-truth logic
       - generated JSON contracts
 
