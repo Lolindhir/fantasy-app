@@ -168,26 +168,7 @@
       </div>
     </section>
 
-    <section class="draft-dashboard-card">
-      <h2>Draft Capital</h2>
-
-      <div class="draft-capital-header">
-        <span>Team</span>
-        <span>Rookie</span>
-        <span>FA</span>
-        <span>Best Pick</span>
-      </div>
-
-      <div *ngFor="let row of draftDashboard.draftCapital" class="draft-capital-row">
-        <div class="draft-capital-team">
-          <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
-          <span>{{ row.teamName }}</span>
-        </div>
-        <div class="draft-capital-count">{{ row.rookieCount }}</div>
-        <div class="draft-capital-count">{{ row.freeAgentCount }}</div>
-        <div class="draft-capital-best">{{ row.bestPick }}</div>
-      </div>
-    </section>
+    <app-draft-capital-overview></app-draft-capital-overview>
   </ng-container>
 
   <!-- 📊 Cap Space Overview -->
