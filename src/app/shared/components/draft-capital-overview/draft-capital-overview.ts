@@ -250,13 +250,21 @@ interface DraftCapitalViewModel {
 
     @media (min-width: 520px) {
       .draft-dashboard-card {
-        --draft-count-width: 78px;
+        --draft-count-width: 84px;
         --draft-pick-width: clamp(76px, 10vw, 94px);
+      }
+
+      .draft-dashboard-card.draft-capital--medium-counts {
+        --draft-count-width: 74px;
+      }
+
+      .draft-dashboard-card.draft-capital--wide-counts {
+        --draft-count-width: 92px;
       }
 
       .draft-capital-header,
       .draft-capital-row {
-        column-gap: 6px;
+        column-gap: 10px;
       }
 
       .draft-capital-header {
