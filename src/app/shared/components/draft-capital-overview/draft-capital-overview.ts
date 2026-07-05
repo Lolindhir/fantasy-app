@@ -124,7 +124,7 @@ interface DraftCapitalViewModel {
     }
 
     .draft-dashboard-card.draft-capital--wide-counts {
-      --draft-count-width: 30px;
+      --draft-count-width: 48px;
     }
 
     .draft-dashboard-card h2 {
@@ -227,11 +227,12 @@ interface DraftCapitalViewModel {
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
-      padding: 1px 3px;
+      min-width: 58px;
+      padding: 2px 3px;
       border-radius: 999px;
       background: #f1f5f9;
       font-weight: 800;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
@@ -294,12 +295,6 @@ interface DraftCapitalViewModel {
 
       .draft-capital-team-abbr {
         display: none;
-      }
-
-      .draft-capital-pick-chip {
-        min-width: 58px;
-        padding: 2px 3px;
-        font-size: 0.82rem;
       }
     }
   `]
