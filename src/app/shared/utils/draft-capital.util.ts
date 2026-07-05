@@ -1,4 +1,4 @@
-import type { DraftPick } from '../../core/models/fantasy.models';
+import type { DraftPick, RawDraft } from '../../core/models/fantasy.models';
 
 export interface DraftPickStrength {
   roundCounts: number[];
@@ -14,6 +14,16 @@ export function compareDraftPicksByDraftOrder(a: DraftPick, b: DraftPick): numbe
   if (positionDiff !== 0) return positionDiff;
 
   return sortNumber(a.OverallPick, 9999) - sortNumber(b.OverallPick, 9999);
+}
+
+export function compareDraftPicksBySlotAcrossDrafts(a: DraftPick, b: DraftPick): number {
+  const slotDiff = compareDraftPicksByDraftOrder(a, b);
+  if (slotDiff !== 0) return slotDiff;
+
+  const draftNoDiff = sortNumber(a.Draft?.DraftNo, 999) - sortNumber(b.Draft?.DraftNo, 999);
+  if (draftNoDiff !== 0) return draftNoDiff;
+
+  return (a.DraftKey ?? '').localeCompare(b.DraftKey ?? '', 'en', { sensitivity: 'base' });
 }
 
 export function compareDraftPicksByDraftThenOrder(a: DraftPick, b: DraftPick): number {
@@ -46,7 +56,11 @@ export function getDraftPickRoundCounts(picks: DraftPick[], maxRound?: number | 
 }
 
 export function getBestDraftPick(picks: DraftPick[]): DraftPick | null {
-  return [...picks].sort(compareDraftPicksByDraftThenOrder)[0] ?? null;
+  return [...picks].sort(compareDraftPicksBySlotAcrossDrafts)[0] ?? null;
+}
+
+export function getDraftCapitalAbbreviation(draft: Pick<RawDraft, 'DisplayAbrDraftKey'>): string {
+  return draft.DisplayAbrDraftKey.replace(/^\d+\s*/, '').trim();
 }
 
 export function compareDraftPickStrength(a: DraftPickStrength, b: DraftPickStrength): number {
@@ -85,7 +99,7 @@ function compareNullableDraftPicks(a: DraftPick | null, b: DraftPick | null): nu
   if (!a && b) return 1;
   if (!a || !b) return 0;
 
-  return compareDraftPicksByDraftThenOrder(a, b);
+  return compareDraftPicksBySlotAcrossDrafts(a, b);
 }
 
 function getEffectiveMaxRound(picks: DraftPick[], maxRound?: number | null): number {
