@@ -1,95 +1,95 @@
-# StonedLack 569 - AFC player and team extraction
+# StonedLack 569 – AFC-Spieler- und Teamextraktion
 
-Status: source perspective from transcript. No external verification.
+Status: StonedLack-Quellenperspektive aus dem Transkript. Keine externe Verifikation.
 
 ## AFC North
 
 ### Steelers
 
-- Jeremy Bernard: R2 WR and useful real-football worker. StonedLack sees low short-term fantasy value behind current veterans, but a possible long-term stash if Pittsburgh eventually resets the roster.
-- Ken Wachen/Wachen, unresolved: Returner profile, not fantasy relevant.
-- Eli Heidenreich: Interesting story and CMC-like measurements in the transcript, but minimal route to fantasy value.
+- Jeremy Bernard: R2-WR und nützlicher Real-Football-Arbeiter. Kurzfristig wenig Fantasy-Wert hinter aktuellen Veterans, langfristig möglicher Stash, falls Pittsburgh den Kader später resetten muss.
+- Ken Wachen/Wachen, ungeklärt: Returner-Profil, nicht fantasy-relevant.
+- Eli Heidenreich: Interessante Story und im Transkript CMC-artige Measurements, aber minimaler Pfad zu Fantasy-Relevanz.
 
 ### Browns
 
-- Casey Concepcion: StonedLack says the Browns landing spot should not push him out of the rookie first round. Talent and college profile remain strong.
-- Denzel Boston: Also treated as early rookie-draft relevant. The Browns appear to be building a young WR core with Concepcion and Boston.
-- Redraft vs dynasty: Browns WRs are unattractive in redraft, but StonedLack does not want to over-fade them in dynasty.
-- Existing WRs: Jerry Jeudy, Cedric Tillman and others are not treated as strong long-term blockers.
+- Casey Concepcion: StonedLack sagt klar, der Browns-Landing-Spot sollte ihn nicht aus der Rookie-Runde 1 drücken. Talent und College-Profil bleiben stark.
+- Denzel Boston: Ebenfalls früh rookie-draft-relevant. Die Browns scheinen mit Concepcion und Boston eine junge WR-Core aufzubauen.
+- Redraft vs Dynasty: Browns-WRs sind im Redraft unattraktiv, sollen in Dynasty aber nicht überfadet werden.
+- Bestehende WRs: Jerry Jeudy, Cedric Tillman und andere werden nicht als starke langfristige Blocker gesehen.
 
 ### Ravens
 
-- Adam Randall/Randle: Deep dart mostly due owner-pick/job-security narrative; not a broad priority.
-- Jacob/Jacoby Lane: R3 WR with size and red-zone profile. Interesting, but Baltimore passing volume limits upside.
-- Elijah Sarratt: Interesting profile, but source prefers clearer WR2 paths such as Antonio Williams before Ravens WR darts.
+- Adam Randall/Randle: Tiefer Dart vor allem wegen Owner-Pick-/Job-Security-Narrativ; keine breite Priorität.
+- Jacob/Jacoby Lane: R3-WR mit Size und Red-Zone-Profil. Interessant, aber Baltimore-Passvolumen limitiert Upside.
+- Elijah Sarratt: Interessantes Profil, aber StonedLack bevorzugt klarere WR2-Pfade wie Antonio Williams vor Ravens-WR-Darts.
 
 ### Bengals
 
-- Koby/Kory Young, unresolved: R4 WR with injury/off-field caution in transcript. StonedLack has low interest because the target tree is difficult and risk context is poor.
+- Koby/Kory Young, ungeklärt: R4-WR mit Injury-/Off-Field-Warnung im Transkript. Niedriges Interesse wegen schwierigem Target Tree und Risikokontext.
 
 ## AFC East
 
 ### Jets
 
-- Omar Cooper Jr.: Jets badly needed slot/inside production. Investment matters, but target competition with Garrett Wilson and Breece Hall limits excitement.
-- Second Jets pass catcher, unresolved Sadiq/Kenon C: Similar inside/slot logic, but identity and fantasy position need verification.
-- Team context: Future draft capital gives some dynasty hope for QB improvement, but current environment is not a source enthusiasm spot.
+- Omar Cooper Jr.: Jets brauchten dringend Slot-/Inside-Produktion. Investment zählt, aber Target-Konkurrenz mit Garrett Wilson und Breece Hall limitiert Begeisterung.
+- Zweiter Jets-Passfänger, ungeklärtes Sadiq/Kenon-C-Profil: ähnliche Inside-/Slot-Logik, aber Identität und Fantasy-Position müssen geprüft werden.
+- Teamkontext: Künftiges Draft Capital gibt etwas Dynasty-Hoffnung auf QB-Verbesserung, aber aktuelles Umfeld ist kein Enthusiasmus-Spot.
 
 ### Dolphins
 
-- Chris Bell: One of the strongest mid-round WR source takes. StonedLack likes the path to WR1 more than the team situation. Injury and QB context are risks.
-- Caleb Douglas: Outside WR size/speed profile. Possible starter, but lower conviction than Bell.
-- Team context: Bad for redraft but interesting for dynasty opportunity because the depth chart is open.
+- Chris Bell: Eines der stärksten Mid-Round-WR-Signale. StonedLack mag den Pfad zur WR1-Rolle mehr als das Teamumfeld. Verletzungs- und QB-Kontext bleiben Risiken.
+- Caleb Douglas: Outside-WR-Size-/Speed-Profil. Möglicher Starter, aber geringere Überzeugung als Bell.
+- Teamkontext: Schlecht für Redraft, aber interessant für Dynasty-Opportunity, weil die Depth Chart offen ist.
 
 ### Bills
 
-- Skyler Bell: Positive source profile and one of the favorite tape players. Compared stylistically to Khalil Shakir, but StonedLack likes him more.
+- Skyler Bell: Positives Quellenprofil und einer der bevorzugten Tape-Spieler. Stilistisch mit Khalil Shakir verglichen, aber StonedLack mag ihn sogar mehr.
 
 ### Patriots
 
-- Patriots fantasy additions are dismissed as irrelevant in this episode.
+- Patriots-Fantasy-Additions werden in dieser Folge als irrelevant verworfen.
 
 ## AFC South
 
 ### Jaguars
 
-- No RB added: Chris Rodriguez, LeQuint Allen and Bhayshul Tuten remain interesting by default.
-- Late WRs: Josh Cameron and CJ Williams are not fantasy priorities because Travis Hunter is treated as instant WR1.
+- Kein RB gedraftet: Chris Rodriguez, LeQuint Allen und Bhayshul Tuten bleiben dadurch standardmäßig interessant.
+- Späte WRs: Josh Cameron und CJ Williams sind keine Fantasy-Priorität, weil Travis Hunter als sofortiger WR1 behandelt wird.
 
 ### Colts
 
-- Seth McGowan: Path exists behind Jonathan Taylor because the RB depth is thin. StonedLack is still not very enthusiastic and prefers many WR darts.
-- Dion Burks: Mentioned as a Matt Harmon favorite, but round-seven capital makes him a very deep dart only.
+- Seth McGowan: Pfad hinter Jonathan Taylor existiert, weil die RB-Tiefe dünn ist. StonedLack ist trotzdem nicht sehr begeistert und bevorzugt viele WR-Darts.
+- Dion Burks: Als Matt-Harmon-Favorit erwähnt, aber Round-7-Capital macht ihn nur zu einem sehr tiefen Dart.
 
 ### Texans
 
-- Marlin Klein: German community hype risk. StonedLack warns not to overpay just because German managers may boost him. His profile belongs in the broader real-football TE caution bucket.
+- Marlin Klein: Risiko durch deutschen Community-Hype. StonedLack warnt, nicht zu überbezahlen, nur weil deutsche Manager ihn pushen könnten. Sein Profil gehört in den breiteren Real-Football-TE-Caution-Bucket.
 
 ### Titans
 
-- Nicholas Singleton: Former high-profile Penn State talent. StonedLack sees a path behind Pollard/Spears, but the source conviction is moderate, not aggressive.
+- Nicholas Singleton: Früher hoch bewerteter Penn-State-Name. StonedLack sieht einen Pfad hinter Pollard/Spears, aber die Überzeugung ist moderat, nicht aggressiv.
 
 ## AFC West
 
 ### Raiders
 
-- Ashton Jeanty: Very strong redraft/source conviction. StonedLack expects a major role and major season.
-- Brock Bowers: Clear redraft target and the other Raider the source wants.
-- Mike Washington Jr.: Relevant because of R4 capital, but not treated as a major Jeanty committee concern.
-- Raiders WRs: Cheap dynasty darts only. StonedLack does not want them in redraft.
+- Ashton Jeanty: Sehr starke Redraft-/Quellenüberzeugung. StonedLack erwartet große Rolle und starke Saison.
+- Brock Bowers: Klarer Redraft-Target und der zweite Raider, den die Quelle will.
+- Mike Washington Jr.: Wegen R4-Capital relevant, aber kein großes Jeanty-Committee-Problem.
+- Raiders-WRs: Nur günstige Dynasty-Darts. StonedLack will sie nicht im Redraft.
 
 ### Chargers
 
-- Brandon Thompson: Speed/scheme dart with 4.26 speed from the transcript. StonedLack sees an interesting path because the WR room is not locked down.
-- Ladd McConkey: Still the more important and trusted Chargers pass catcher.
-- Trey Harris and Quentin Johnston: Existing context leaves room for Thompson if he earns usage.
+- Brandon Thompson: Speed-/Scheme-Dart mit 4.26-Speed laut Transkript. Interessanter Pfad, weil der WR-Room nicht komplett geschlossen ist.
+- Ladd McConkey: Weiterhin der wichtigere und vertrauenswürdigere Chargers-Passfänger.
+- Trey Harris und Quentin Johnston: Bestehender Kontext lässt Thompson Raum, falls er sich Nutzung verdient.
 
 ### Broncos
 
-- Jonah/Joner Coleman: StonedLack likely ranks him as rookie RB3 after Love and Price, but only after many WRs. Sean Payton usage creates a plausible path.
+- Jonah/Joner Coleman: StonedLack sieht ihn wahrscheinlich als Rookie-RB3 nach Love und Price, aber erst nach vielen WRs. Sean-Payton-Nutzung erzeugt plausiblen Pfad.
 
 ### Chiefs
 
-- Emory Johnson: Preferred late RB stash. StonedLack likes the possible early-down/handcuff path on a strong offense.
-- Brashard Smith and Mari Mercado: More pass-blocking/role-player context, which may leave Johnson as the pure-rushing path bet.
-- Cyrus Allen: Not relevant.
+- Emory Johnson: Bevorzugter später RB-Stash. StonedLack mag den möglichen Early-Down-/Handcuff-Pfad in starker Offense.
+- Brashard Smith und Mari Mercado: Eher Pass-Blocking-/Role-Player-Kontext, wodurch Johnson als reiner Rushing-Pfad-Bet übrig bleibt.
+- Cyrus Allen: Nicht relevant.
