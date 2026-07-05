@@ -5,35 +5,57 @@ source_id: stonedlack
 episode_id: sl_0569
 created: 2026-07-05
 status: active_source_view
-validity_note: "Single-source current view from StonedLack episode 569. Not a final recommendation."
+validity_note: "Einzelquellen-Current-View aus StonedLack Folge 569. Keine finale Mighty-Giants-Empfehlung."
 ---
 
-# Current source view - StonedLack 569 rookie class
+# Current Source View – StonedLack 569 Rookie Class
 
-## Current source direction
+## Quellenrichtung
 
-StonedLack's active view from this episode is that the 2026 rookie class is weak for fantasy, especially at RB. The source prefers WR darts with clear field paths over low-capital RBs after the top RB names.
+StonedLack sieht die 2026er Rookie-Klasse als fantasy-schwach, besonders bei RB. Nach den Top-RBs bevorzugt die Quelle häufig WR-Darts mit erkennbarem Weg zu Snaps und Rolle gegenüber Low-Capital-RBs ohne klare Touch-Perspektive.
 
-## Active positive source signals
+Relevante Strategie-Takes:
 
-- Jordan Tyson: strong target, fast WR2 path in New Orleans.
-- Chris Bell: strong path-to-WR1 thesis in Miami.
-- Antonio Williams: strong WR2 path in Washington.
-- Chris Brazzell: strong outside opportunity in Carolina.
-- Price, Seattle RB: strong immediate role and redraft signal.
-- Skyler Bell: positive Bills WR profile.
-- Malachi Fields: R3 outside WR path next to Nabers.
-- Savian Thomas: gadget/speed/return fit with Ben Johnson.
-- Emory Johnson: late Chiefs RB stash.
+- `sl_0569_t001`: Rookie Drafts nicht zu früh erzwingen.
+- `sl_0569_t020`: WR-over-late-RB-Logik in dieser dünnen Klasse.
+- `sl_0569_t017`: TE-Caution trotz 2TE-Kontext.
 
-## Active cautious source signals
+## Aktive positive Quellensignale
 
-- Jeremy Love: still likely 1.01, but 2026 redraft/win-now outlook is weak.
-- Browns WRs: better dynasty than redraft.
-- Jets pass catchers: investment is real, but target context limits enthusiasm.
-- Stribling: day-two capital with likely real-football/blocking role risk.
-- Day-two TEs: role verification required.
+| Spieler / Entity | Signal | Take |
+|---|---|---|
+| Jordan Tyson | starkes Target, schneller WR2-Pfad in New Orleans | `sl_0569_t008` |
+| Chris Bell | starke Pfad-zur-WR1-These in Miami | `sl_0569_t012` |
+| Antonio Williams | starker WR2-Pfad in Washington | `sl_0569_t006` |
+| Chris Brazzell | starke Outside-WR-Opportunity in Carolina | `sl_0569_t007` |
+| Price, SEA RB | starkes Sofortrollen- und Redraft-Signal | `sl_0569_t003` |
+| Skyler Bell | positives Bills-WR-Profil | `sl_0569_t013` |
+| Malachi Fields | R3-Outside-WR-Pfad neben Nabers | `sl_0569_t005` |
+| Savian Thomas | Gadget-/Speed-/Return-Fit | `sl_0569_t014` |
+| Emory Johnson | später RB-Stash | `sl_0569_t015` |
+| Brandon Thompson | Speed-/Scheme-Dart bei Chargers | `sl_0569_t028` |
 
-## Use in later analysis
+## Aktive vorsichtige oder gemischte Signale
 
-Start here only as a StonedLack source view. For Mighty Giants decisions, combine with current league data, roster needs, pick ownership, salary/cap and external market checks.
+| Spieler / Entity | Signal | Take |
+|---|---|---|
+| Jeremy Love | weiter 1.01-Kandidat, aber schwaches 2026-Setup | `sl_0569_t002` |
+| Browns WRs | Dynasty nicht überfaden, Redraft unattraktiv | `sl_0569_t018` |
+| Jets Pass Catcher | Investment vorhanden, Target-Kontext limitiert | `sl_0569_t016` |
+| Stribling | mögliches Real-Football-/Blocking-Rollenrisiko | `sl_0569_t009` |
+| Day-Two-TEs | Usage prüfen, nicht wegen Draft Capital überhöhen | `sl_0569_t017` |
+| Ravens WRs | interessant, aber nicht prioritär | `sl_0569_t019` |
+| Jonah/Joner Coleman | möglicher RB3, aber erst nach vielen WRs | `sl_0569_t025` |
+| Seth McGowan | theoretischer Pfad, aber niedrige Priorität | `sl_0569_t026` |
+| Nicholas Singleton | moderates Titans-RB-Pfadsignal | `sl_0569_t027` |
+| Low-interest profiles | tiefe Fades/Darts | `sl_0569_t030` |
+
+## Nutzung in späteren Analysen
+
+Diese Datei ist ein schneller Einstiegspunkt in die StonedLack-Sicht. Für Mighty-Giants-Entscheidungen immer kombinieren mit:
+
+- aktuellem Roster,
+- aktuellem Pick Ownership,
+- Ligaformat und Salary-/Cap-Kontext,
+- aktuellen externen Rankings/Marktwerten,
+- aktuellen Depth Charts und News.
