@@ -82,9 +82,11 @@ Use this for StoneLack/StonedLack, Down Set Talk, Football Bromance and later po
 6. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/`.
 7. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
 8. Update `derived/knowledge/takes/` by player, team and source when requested.
-9. Update `derived/knowledge/current/` as the latest source-derived working view.
-10. Keep source statement, entity cleanup and AI interpretation separate.
-11. Do not invent missing details.
+9. Update `derived/knowledge/current/` as the latest source-derived working view when requested.
+10. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
+11. If raw source is only a placeholder, take coverage is obviously sparse, or episode JSON does not reference all takes, mark the extraction `incomplete` or `needs_rework`.
+12. Keep source statement, entity cleanup and AI interpretation separate.
+13. Do not invent missing details.
 
 ## League-context update workflow
 
