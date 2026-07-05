@@ -56,11 +56,11 @@ interface DraftCapitalViewModel {
           class="draft-capital-cell draft-capital-cell--numeric"
           [title]="column.fullLabel"
         >{{ column.label }}</span>
-        <span class="draft-capital-cell draft-capital-cell--numeric">
+        <span class="draft-capital-cell draft-capital-cell--pick">
           <span class="draft-capital-header-full">Best Pick</span>
           <span class="draft-capital-header-short">Best</span>
         </span>
-        <span class="draft-capital-cell draft-capital-cell--numeric">
+        <span class="draft-capital-cell draft-capital-cell--pick">
           <span class="draft-capital-header-full">Best Available</span>
           <span class="draft-capital-header-short">Avail.</span>
         </span>
@@ -80,9 +80,9 @@ interface DraftCapitalViewModel {
           *ngFor="let draftCount of row.draftCounts"
           class="draft-capital-cell draft-capital-cell--numeric draft-capital-count"
         >{{ draftCount.count }}</div>
-        <div class="draft-capital-cell draft-capital-cell--numeric draft-capital-pick-chip draft-capital-pick-chip--best">{{ row.bestPick }}</div>
+        <div class="draft-capital-cell draft-capital-cell--pick draft-capital-pick-chip draft-capital-pick-chip--best">{{ row.bestPick }}</div>
         <div
-          class="draft-capital-cell draft-capital-cell--numeric draft-capital-pick-chip draft-capital-pick-chip--available"
+          class="draft-capital-cell draft-capital-cell--pick draft-capital-pick-chip draft-capital-pick-chip--available"
           [class.draft-capital-pick-chip--empty]="!row.hasBestAvailablePick"
         >{{ row.bestAvailablePick }}</div>
       </div>
@@ -112,7 +112,7 @@ interface DraftCapitalViewModel {
     .draft-capital-row {
       display: grid;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .draft-capital-header {
@@ -131,6 +131,11 @@ interface DraftCapitalViewModel {
     .draft-capital-cell--numeric {
       justify-self: end;
       text-align: right;
+    }
+
+    .draft-capital-cell--pick {
+      justify-self: stretch;
+      text-align: center;
     }
 
     .draft-capital-header-full {
@@ -184,11 +189,15 @@ interface DraftCapitalViewModel {
     }
 
     .draft-capital-pick-chip {
-      padding: 2px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 1px 5px;
       border-radius: 999px;
       background: #f1f5f9;
       font-weight: 800;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
@@ -230,6 +239,11 @@ interface DraftCapitalViewModel {
 
       .draft-capital-team-abbr {
         display: none;
+      }
+
+      .draft-capital-pick-chip {
+        padding: 2px 8px;
+        font-size: 0.82rem;
       }
     }
   `]
