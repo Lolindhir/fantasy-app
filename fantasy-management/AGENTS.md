@@ -31,11 +31,12 @@ For Fantasy Management tasks, read these files as needed:
 4. `fantasy-management/_ai/knowledge-layer.yaml`
 5. `fantasy-management/derived/knowledge/PROCESS.md`
 6. `fantasy-management/_ai/WORKFLOWS.md`
-7. relevant source files under `fantasy-management/sources/`
-8. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
-9. relevant take history under `fantasy-management/derived/knowledge/takes/`
-10. relevant analyses under `fantasy-management/analyses/`
-11. relevant decisions under `fantasy-management/decisions/`
+7. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+8. relevant source files under `fantasy-management/sources/`
+9. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
+10. relevant take history under `fantasy-management/derived/knowledge/takes/`
+11. relevant analyses under `fantasy-management/analyses/`
+12. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -71,11 +72,15 @@ fantasy-management/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
     knowledge-layer.yaml
+    schema-list.json
     WORKFLOWS.md
     schemas/
       analysis.schema.json
       source-take.schema.json
       source-profile.schema.json
+      episode.schema.json
+      entity-signal.schema.json
+      take-view.schema.json
       relevant-player.schema.json
   sources/
     podcasts/
