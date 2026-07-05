@@ -6,9 +6,9 @@ The goal is to create reusable source data for Dynasty/Fantasy Football analysis
 
 ## 1. Core principle
 
-Document every episode in five layers:
+Document every episode in five focused local layers:
 
-1. Raw transcript
+1. Raw transcript or ordered raw transcript parts plus manifest
 2. German ai-input-style Markdown episode analysis
 3. Player/entity data JSON
 4. Machine-readable episode JSON
@@ -20,6 +20,8 @@ The central machine-readable objects are:
 
 - player/entity data JSON for aggregation
 - atomic takes for evidence and knowledge-layer updates
+
+Global indexes are not part of the default extraction package. They may be rebuilt later from the local episode packages.
 
 ## 2. Standard episode paths
 
@@ -101,9 +103,9 @@ raw_transcripts/2026/2026-05-11_sl_0571_rookie_rb_ranking.raw.v2.md
 
 A placeholder raw transcript is not a completed extraction. If the full raw transcript is missing, mark the episode extraction as incomplete and do not treat notes, takes or current views as complete.
 
-If a single large raw transcript cannot be written through the connector, split it into ordered part files and create a raw manifest. The manifest must make clear that the ordered parts together are the raw source.
+If a single large raw transcript cannot be written through the connector, split it into ordered part files and create a raw manifest. The manifest must make clear that the ordered parts together are the raw source. The episode JSON must reference the manifest, raw status and parts directory.
 
-## 5. Extraction tasks
+## 5. Focused extraction tasks
 
 For a new transcript, the agent should:
 
@@ -119,11 +121,11 @@ For a new transcript, the agent should:
 10. separate source statement from agent interpretation
 11. create the German ai-input-style Markdown episode analysis
 12. create the player/entity data JSON when the episode has reusable player, team, ranking, board or tier content
-13. create the episode JSON and link companion files
-14. create atomic take files
-15. create a German take index when there are many takes
-16. update current source views when requested or when the extraction should feed reusable knowledge
-17. update alias and index files when needed
+13. create the episode JSON and link local companion files
+14. create atomic take files with stable `episode_id_tNNN.json` names
+15. create a German episode-local take index when there are many takes
+16. update the current source view when requested or when the extraction should feed reusable knowledge directly
+17. do not update global index files unless the user explicitly asks for an index rebuild
 18. run the completeness gate before marking the extraction as complete
 
 ## 6. German ai-input-style Markdown standard
@@ -142,7 +144,7 @@ It must be written in German and should usually include:
 8. strategic rookie-draft, trade, redraft, dynasty or format notes
 9. league-format reuse notes, especially 6-team / 2QB / 2TE / 4Flex when relevant
 10. short source conclusion
-11. linked machine-readable files
+11. linked local machine-readable files
 
 Detailed player profiles should normally use this pattern:
 
@@ -207,7 +209,24 @@ Recommended player/entity fields:
 
 The player data JSON is not a replacement for atomic takes. It is an aggregation-friendly profile layer.
 
-## 8. Completeness gate
+## 8. Local vs global indexes
+
+The episode-local take index is part of the extraction when many takes are created.
+
+Global indexes are deferred derived artifacts. Do not try to keep all of them updated during a normal episode extraction.
+
+Treat empty global index files as pending/backfill unless they explicitly state that they are current. Do not use an empty global index as proof that no takes, players or source data exist.
+
+Examples of out-of-scope work for a normal extraction:
+
+- rebuilding `fantasy-management/indexes/`
+- rebuilding source-wide player lookup files
+- rebuilding cross-source player or team indexes
+- maintaining every by-player/by-team aggregate during the same chat
+
+Create or rebuild those only in a separate index-rebuild task.
+
+## 9. Completeness gate
 
 A StonedLack extraction is not complete until these checks pass:
 
@@ -219,14 +238,15 @@ A StonedLack extraction is not complete until these checks pass:
 6. Every high-signal player/entity is represented in the player/entity data JSON when such a file is required.
 7. Negative, cautious, fade, avoid and uncertainty takes are extracted, not only positive takes.
 8. Broad strategy points are extracted as dedicated takes when reusable.
-9. Episode JSON includes all take IDs, companion files and the player/entity data path when present.
+9. Episode JSON includes all local take IDs, local companion files and the player/entity data path when present.
 10. The take count is plausible for the transcript scope. Full draft-review, ranking or rookie-board episodes normally require many more than three takes.
 11. Important unresolved names are listed with original transcript form, guessed canonical name and confidence.
-12. Current knowledge views are updated when the extraction is intended to feed later analysis.
+12. Current knowledge views are updated when required by the task scope, or explicitly deferred.
+13. Global indexes are not required for extraction completeness unless the task is an index rebuild.
 
-If any check fails, set status to `needs_rework` or `incomplete` and document missing work in the episode note.
+If any required check fails, set status to `needs_rework` or `incomplete` and document missing work in the episode note.
 
-## 9. No hallucination rule
+## 10. No hallucination rule
 
 Do not invent missing details.
 
@@ -241,7 +261,7 @@ Add unresolved issues to the Markdown source note or entity companion file.
 
 Do not add prominent players from other episodes merely because they are important. If they are not clearly mentioned in the current transcript, leave them out unless the user asks for a non-mention note.
 
-## 10. Entity resolution
+## 11. Entity resolution
 
 Automatic transcripts often break player names.
 
@@ -262,7 +282,7 @@ Recommended identity-verification priority:
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
 
-## 11. Take model
+## 12. Take model
 
 A take may be:
 
@@ -294,7 +314,7 @@ A take may be:
 
 Take files should use stable IDs and file names such as `sl_0569_t001.json`, `sl_0569_t002.json`, etc.
 
-## 12. Fantasy context values
+## 13. Fantasy context values
 
 Allowed values include:
 
@@ -310,7 +330,7 @@ Allowed values include:
 - `real_football`
 - `unknown`
 
-## 13. Evaluation scales
+## 14. Evaluation scales
 
 Sentiment:
 
@@ -358,7 +378,7 @@ Time horizon:
 - `multi_year`
 - `unknown`
 
-## 14. Evidence rule
+## 15. Evidence rule
 
 Every important take should include evidence.
 
