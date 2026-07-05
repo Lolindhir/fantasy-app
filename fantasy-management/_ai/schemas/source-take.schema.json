@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/source-take.schema.json",
+  "title": "Fantasy Management Source Take",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["take_id", "source_name", "take_type", "fantasy_context", "sentiment", "conviction", "evidence"],
+  "properties": {
+    "take_id": { "type": "string" },
+    "source_name": { "type": "string" },
+    "source_type": { "type": "string" },
+    "episode_id": { "type": ["string", "null"] },
+    "player_id": { "type": ["string", "null"] },
+    "player_name": { "type": ["string", "null"] },
+    "take_type": {
+      "type": "string",
+      "enum": [
+        "player_evaluation",
+        "ranking",
+        "tier",
+        "sleeper",
+        "buy",
+        "sell",
+        "hold",
+        "fade",
+        "watchlist",
+        "trade_strategy",
+        "draft_strategy",
+        "rookie_draft_value",
+        "redraft_value",
+        "bestball_value",
+        "dynasty_value",
+        "injury_reaction",
+        "depth_chart_projection",
+        "role_projection",
+        "coaching_scheme",
+        "news_reaction",
+        "market_adp",
+        "format_note",
+        "league_settings_note",
+        "meta_strategy",
+        "uncertainty",
+        "other"
+      ]
+    },
+    "fantasy_context": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["dynasty", "rookie_draft", "startup", "redraft", "bestball", "waiver", "trade", "devy", "general_fantasy", "real_football", "unknown"]
+      }
+    },
+    "league_format_context": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": ["very_positive", "positive", "mixed", "cautious", "negative", "very_negative", "neutral"]
+    },
+    "conviction": {
+      "type": "string",
+      "enum": ["very_high", "high", "medium", "low", "very_low", "unknown"]
+    },
+    "action": {
+      "type": "string"
+    },
+    "time_horizon": {
+      "type": "string"
+    },
+    "arguments": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "timestamp_start": { "type": ["string", "null"] },
+          "timestamp_end": { "type": ["string", "null"] },
+          "type": { "type": "string" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "extractor_confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "unknown"]
+    }
+  }
+}
