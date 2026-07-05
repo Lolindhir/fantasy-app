@@ -13,7 +13,24 @@ Data generation:
 - PowerShell scripts in `public/requests`
 - Generated app data in `public/data`
 
-## Required context
+## Context routing
+
+This repository contains two separated agent working contexts:
+
+1. Application / frontend / generated app data context
+2. Fantasy Management context
+
+For application, frontend, data generation, generated JSON contract, routing or app architecture work, use the existing `.ai-context` reading order below.
+
+For any NFL Dynasty, Fantasy Football, Mighty Giants, roster, trade, draft, player evaluation, podcast, StonedLack, Relevant Players, free-agent analysis or source-processing task, agents must use:
+
+`fantasy-management/AGENTS.md`
+
+The Fantasy Management context is isolated from the application context. Do not store Fantasy Management analysis outputs, podcast extractions, player boards, source summaries or decisions in the central app AI context.
+
+Do not duplicate detailed Fantasy Management rules or source documentation in global project instructions. The canonical instructions for Fantasy Management live inside `fantasy-management/`.
+
+## Required app context
 
 Before making architecture, data model, generation or frontend changes, read:
 
@@ -36,11 +53,13 @@ Before making architecture, data model, generation or frontend changes, read:
 ## Documentation routing
 
 - `AGENTS.md` is the first file agents must read before making repository changes.
-- `.ai-context` is the canonical root for AI context documentation.
-- Human-maintained AI context belongs in `.ai-context/manual`.
-- Generated AI context belongs in `.ai-context/generated` and must not be edited manually.
+- `.ai-context` is the canonical root for application AI context documentation.
+- `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
+- Human-maintained application AI context belongs in `.ai-context/manual`.
+- Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
+- Fantasy Management rules, sources, workflows, stored analyses and decisions belong under `fantasy-management/`.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
-- When updating documentation:
+- When updating application documentation:
   - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
   - domain rules go to `.ai-context/manual/domain.yaml`
@@ -71,11 +90,14 @@ Exception:
 
 ## Current preference
 
-Do not add file-header `AI-DOC` comments unless explicitly requested.
+- Do not add file-header `AI-DOC` comments unless explicitly requested.
+- Agent-facing instruction files should be written in English.
+- Human-facing documentation may be written in German or bilingual.
 
 ## Change guidance
 
-- Keep `AGENTS.md` short and use it as a pointer to `.ai-context`.
-- Put durable architecture and domain decisions into `.ai-context/manual`.
+- Keep root `AGENTS.md` short and use it as a pointer to `.ai-context` and `fantasy-management/AGENTS.md`.
+- Put durable application architecture and domain decisions into `.ai-context/manual`.
+- Put durable Fantasy Management rules, source maps, workflows and analysis-storage conventions into `fantasy-management/_ai`.
 - Prefer small, focused commits.
 - Do not change the data generation pipeline, Angular data model or generated JSON contracts without checking the AI context first.
