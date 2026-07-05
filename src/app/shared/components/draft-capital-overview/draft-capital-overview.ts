@@ -73,7 +73,7 @@ interface DraftCapitalViewModel {
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
           <span class="draft-capital-header-full">Best Pick</span>
-          <span class="draft-capital-header-short">Best</span>
+          <span class="draft-capital-header-short">Best<br />Pick</span>
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
           <span class="draft-capital-header-full">Best Open<br />Pick</span>
@@ -314,13 +314,14 @@ export class DraftCapitalOverviewComponent {
       const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
       if (seasonDrafts.length === 0) return null;
 
+      const useFullDraftTypeOnMobile = seasonDrafts.length <= 2;
       const columns = seasonDrafts.map(draft => {
         const draftTypeLabel = draft.DisplayDraftType || draft.DisplayDraftKey;
         const abbreviatedLabel = getDraftCapitalAbbreviation(draft);
 
         return {
           draftKey: draft.DraftKey,
-          mobileLabel: abbreviatedLabel,
+          mobileLabel: useFullDraftTypeOnMobile ? draftTypeLabel : abbreviatedLabel,
           desktopLabel: draftTypeLabel,
           fullLabel: draft.DisplayDraftKey
         };
