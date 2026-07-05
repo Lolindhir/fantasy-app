@@ -1,4 +1,9 @@
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
+import {
+  compareDraftPickCollectionsByStrength,
+  compareDraftPicksByDraftOrder,
+  getDraftPickRoundCounts
+} from '../../../shared/utils/draft-capital.util';
 import { getDraftRoundColor, getDraftStatusClass } from '../../../shared/utils/draft-ui.util';
 import type {
   CompactOwnerPickGroupViewModel,
@@ -86,7 +91,7 @@ function createDraftViewModel(
   maxRound: number
 ): DraftViewModel {
   const orderedPicks = [...(draft.Picks ?? [])]
-    .sort(comparePicksByDraftOrder)
+    .sort(compareDraftPicksByDraftOrder)
     .map(pick => createPickViewModel(pick, teamByRosterId, playerById, maxRound));
 
   const pickedCount = orderedPicks.filter(item => item.isPicked).length;
@@ -101,23 +106,13 @@ function createDraftViewModel(
     pickedCount,
     orderedPicks,
     rounds: createRoundGroups(orderedPicks),
-    currentOwnerPickGroups: createCurrentOwnerPickGroups(orderedPicks),
+    currentOwnerPickGroups: createCurrentOwnerPickGroups(orderedPicks, getDraftMaxRound(draft)),
     ownerPickGroups: createOwnerPickGroups(orderedPicks, getDraftMaxRound(draft))
   };
 }
 
-function comparePicksByDraftOrder(a: DraftPick, b: DraftPick): number {
-  const roundDiff = (a.Round ?? 999) - (b.Round ?? 999);
-  if (roundDiff !== 0) return roundDiff;
-
-  const positionDiff = (a.PositionInRound ?? 999) - (b.PositionInRound ?? 999);
-  if (positionDiff !== 0) return positionDiff;
-
-  return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
-}
-
 function comparePickViewModelsByDraftOrder(a: DraftPickViewModel, b: DraftPickViewModel): number {
-  return comparePicksByDraftOrder(a.pick, b.pick);
+  return compareDraftPicksByDraftOrder(a.pick, b.pick);
 }
 
 function createPickViewModel(
@@ -166,7 +161,10 @@ function createRoundGroups(picks: DraftPickViewModel[]): DraftRoundViewModel[] {
     }));
 }
 
-function createCurrentOwnerPickGroups(picks: DraftPickViewModel[]): CurrentOwnerPickGroupViewModel[] {
+function createCurrentOwnerPickGroups(
+  picks: DraftPickViewModel[],
+  draftMaxRound: number
+): CurrentOwnerPickGroupViewModel[] {
   const groups = new Map<number, DraftPickViewModel[]>();
 
   picks.forEach(pick => {
@@ -180,33 +178,16 @@ function createCurrentOwnerPickGroups(picks: DraftPickViewModel[]): CurrentOwner
       const sortedPicks = [...ownerPicks].sort(comparePickViewModelsByDraftOrder);
 
       return {
-        owner: sortedPicks[0].currentOwner,
-        picks: sortedPicks,
-        pickCount: sortedPicks.length
+        group: {
+          owner: sortedPicks[0].currentOwner,
+          picks: sortedPicks,
+          pickCount: sortedPicks.length
+        },
+        sortPicks: sortedPicks.map(pick => pick.pick)
       };
     })
-    .sort(compareCurrentOwnerPickGroupsByPickStrength);
-}
-
-function compareCurrentOwnerPickGroupsByPickStrength(
-  a: CurrentOwnerPickGroupViewModel,
-  b: CurrentOwnerPickGroupViewModel
-): number {
-  const maxPickCount = Math.max(a.picks.length, b.picks.length);
-
-  for (let index = 0; index < maxPickCount; index++) {
-    const aPick = a.picks[index];
-    const bPick = b.picks[index];
-
-    if (!aPick && bPick) return 1;
-    if (aPick && !bPick) return -1;
-    if (!aPick || !bPick) continue;
-
-    const pickDiff = comparePickViewModelsByDraftOrder(aPick, bPick);
-    if (pickDiff !== 0) return pickDiff;
-  }
-
-  return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
+    .sort((a, b) => compareOwnerPickGroupSortItemsByPickStrength(a, b, draftMaxRound))
+    .map(item => item.group);
 }
 
 function createOwnerPickGroups(
@@ -224,45 +205,36 @@ function createOwnerPickGroups(
   return [...groups.values()]
     .map(ownerPicks => {
       const sortedPicks = [...ownerPicks].sort(comparePickViewModelsByDraftOrder);
+      const sortPicks = sortedPicks.map(pick => pick.pick);
 
       return {
-        owner: sortedPicks[0].currentOwner,
-        picks: sortedPicks.map(pick => ({
-          label: `R${pick.pick.Round}`,
-          color: pick.roundColor,
-          originalOwner: pick.originalOwner,
-          isCurrentlyTraded: pick.isCurrentlyTraded
-        })),
-        pickCount: sortedPicks.length,
-        roundCounts: getRoundCounts(sortedPicks, draftMaxRound)
+        group: {
+          owner: sortedPicks[0].currentOwner,
+          picks: sortedPicks.map(pick => ({
+            label: `R${pick.pick.Round}`,
+            color: pick.roundColor,
+            originalOwner: pick.originalOwner,
+            isCurrentlyTraded: pick.isCurrentlyTraded
+          })),
+          pickCount: sortedPicks.length,
+          roundCounts: getDraftPickRoundCounts(sortPicks, draftMaxRound)
+        },
+        sortPicks
       };
     })
-    .sort(compareOwnerPickGroupsByPickStrength);
+    .sort((a, b) => compareOwnerPickGroupSortItemsByPickStrength(a, b, draftMaxRound))
+    .map(item => item.group);
 }
 
-function getRoundCounts(picks: DraftPickViewModel[], maxRound: number): number[] {
-  const roundCounts = Array.from({ length: maxRound }, () => 0);
-
-  picks.forEach(pick => {
-    const roundIndex = pick.pick.Round - 1;
-    if (roundIndex >= 0 && roundIndex < maxRound) roundCounts[roundIndex] += 1;
-  });
-
-  return roundCounts;
-}
-
-function compareOwnerPickGroupsByPickStrength(
-  a: CompactOwnerPickGroupViewModel,
-  b: CompactOwnerPickGroupViewModel
+function compareOwnerPickGroupSortItemsByPickStrength(
+  a: { group: CurrentOwnerPickGroupViewModel | CompactOwnerPickGroupViewModel; sortPicks: DraftPick[] },
+  b: { group: CurrentOwnerPickGroupViewModel | CompactOwnerPickGroupViewModel; sortPicks: DraftPick[] },
+  maxRound: number
 ): number {
-  const maxRound = Math.max(a.roundCounts.length, b.roundCounts.length);
+  const strengthDiff = compareDraftPickCollectionsByStrength(a.sortPicks, b.sortPicks, maxRound);
+  if (strengthDiff !== 0) return strengthDiff;
 
-  for (let index = 0; index < maxRound; index++) {
-    const diff = (b.roundCounts[index] ?? 0) - (a.roundCounts[index] ?? 0);
-    if (diff !== 0) return diff;
-  }
-
-  return a.owner.name.localeCompare(b.owner.name, 'en', { sensitivity: 'base' });
+  return a.group.owner.name.localeCompare(b.group.owner.name, 'en', { sensitivity: 'base' });
 }
 
 function getTeamDisplay(teamByRosterId: Map<number, TeamDisplayViewModel>, rosterId: number | string): TeamDisplayViewModel {
