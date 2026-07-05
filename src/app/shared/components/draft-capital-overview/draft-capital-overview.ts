@@ -314,7 +314,8 @@ export class DraftCapitalOverviewComponent {
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams, drafts }: { league: League; teams: FantasyTeam[]; drafts: RawDraft[] }) => {
-      if (league.Status !== 'Draft-Season') return null;
+      const showDraftCapital = league.Status === 'Draft-Season' || league.Status === 'Off-Season';
+      if (!showDraftCapital) return null;
 
       const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
       if (seasonDrafts.length === 0) return null;
