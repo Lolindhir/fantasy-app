@@ -15,7 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
-import { DraftCapitalOverviewComponent } from '../features/overview/components/draft-capital-overview/draft-capital-overview';
+import { DraftCapitalOverviewComponent } from './components/draft-capital-overview/draft-capital-overview';
 
 export const SharedMaterialImports = [
   MatCardModule,
