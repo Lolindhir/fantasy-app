@@ -7,6 +7,12 @@ import { DataService } from '../../core/services/data.service';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
+import {
+  compareDraftPickCollectionsByStrength,
+  compareDraftPicksByDraftOrder,
+  compareDraftPicksByDraftThenOrder,
+  getBestDraftPick
+} from '../../shared/utils/draft-capital.util';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
 import {
   buildAllTimeStandings,
@@ -57,6 +63,10 @@ interface DraftCapitalRow {
   rookieCount: number;
   freeAgentCount: number;
   bestPick: string;
+}
+
+interface DraftCapitalSortRow extends DraftCapitalRow {
+  sortPicks: DraftPick[];
 }
 
 interface DraftPickOverviewEntry {
@@ -114,7 +124,6 @@ export class OverviewComponent {
       const currentSeason = league.Season;
       const maxDisplayedDraftRound = this.getMaxDisplayedDraftRound(teams, currentSeason);
 
-      // 🏆 Champion / Standings / Results
       const champion = getPreviousChampion(teams);
       const currentStandings = buildCurrentStandings(league, teams);
       const standings = currentStandings.map(row => ({
@@ -125,15 +134,13 @@ export class OverviewComponent {
       const allTimeStandings = buildAllTimeStandings(teams);
       const allTime = allTimeStandings.map(row => row.team);
 
-      // 💰 Salary je Team
       const salaryByTeam = teams.map(t => {
 
         const playerCount = Math.min(
-          league.SalaryRelevantTeamSize, // 👈 aus League!
+          league.SalaryRelevantTeamSize,
           t.Roster.length
         );
 
-        // sort aus DataService nutzen
         const sortedSalary = this.sortPlayersBySalary(t.Roster, false);
         const sortedProjected = this.sortPlayersBySalary(t.Roster, true);
 
@@ -152,7 +159,6 @@ export class OverviewComponent {
         const totalTop5 = top5Players.reduce((sum, p) => sum + p.Salary, 0);
         const totalTop5Projected = top5PlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
 
-        // Draft Picks
         const currentSeasonDraftPickGroups = this.getCurrentSeasonDraftPickGroups(
           t.DraftPicks ?? [],
           currentSeason,
@@ -180,11 +186,7 @@ export class OverviewComponent {
         : null;
 
       const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, currentSeason, draftSeason);
-
-      // 🔥 Awards
       const awards = getCurrentSeasonAwards(league);
-
-      // ⏱️ Deadline
       const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
       const now = new Date();
@@ -295,30 +297,28 @@ export class OverviewComponent {
   }
 
   private buildDraftCapitalRows(teams: FantasyTeam[], season: string): DraftCapitalRow[] {
-    return teams
-      .map(team => {
-        const currentSeasonPicks = team.DraftPicks.filter(pick => pick.Season === season);
-        const bestPick = [...currentSeasonPicks]
-          .filter(pick => pick.OverallPick !== null)
-          .sort((a, b) => {
-            const draftNoDiff = (a.Draft?.DraftNo ?? 999) - (b.Draft?.DraftNo ?? 999);
-            if (draftNoDiff !== 0) return draftNoDiff;
-            return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
-          })[0];
+    const maxRound = this.getMaxDisplayedDraftRound(teams, season);
+    const rows: DraftCapitalSortRow[] = teams.map(team => {
+      const currentSeasonPicks = team.DraftPicks.filter(pick => pick.Season === season);
+      const bestPick = getBestDraftPick(currentSeasonPicks);
 
-        return {
-          team,
-          teamName: team.Team ?? team.Owner,
-          rookieCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Rookie').length,
-          freeAgentCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Free_Agent').length,
-          bestPick: bestPick ? this.formatBestDraftPick(bestPick) : '—'
-        };
-      })
+      return {
+        team,
+        teamName: team.Team ?? team.Owner,
+        rookieCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Rookie').length,
+        freeAgentCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Free_Agent').length,
+        bestPick: bestPick ? this.formatBestDraftPick(bestPick) : '—',
+        sortPicks: currentSeasonPicks
+      };
+    });
+
+    return rows
       .sort((a, b) => {
-        const totalDiff = (b.rookieCount + b.freeAgentCount) - (a.rookieCount + a.freeAgentCount);
-        if (totalDiff !== 0) return totalDiff;
-        return a.teamName.localeCompare(b.teamName);
-      });
+        const strengthDiff = compareDraftPickCollectionsByStrength(a.sortPicks, b.sortPicks, maxRound);
+        if (strengthDiff !== 0) return strengthDiff;
+        return a.teamName.localeCompare(b.teamName, 'en', { sensitivity: 'base' });
+      })
+      .map(({ sortPicks: _sortPicks, ...row }) => row);
   }
 
   private formatBestDraftPick(pick: DraftPick): string {
@@ -376,7 +376,7 @@ export class OverviewComponent {
     const draftNoDiff = (a.draft.DraftNo ?? 999) - (b.draft.DraftNo ?? 999);
     if (draftNoDiff !== 0) return draftNoDiff;
 
-    return (a.pick.OverallPick ?? 9999) - (b.pick.OverallPick ?? 9999);
+    return compareDraftPicksByDraftOrder(a.pick, b.pick);
   }
 
   private compareRecentDraftPickEntries(a: DraftPickOverviewEntry, b: DraftPickOverviewEntry): number {
@@ -418,7 +418,7 @@ export class OverviewComponent {
   private getOpenDraftPicks(draft: RawDraft): DraftPick[] {
     return draft.Picks
       .filter(pick => !this.isDraftPickSelected(pick))
-      .sort((a, b) => (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999));
+      .sort(compareDraftPicksByDraftOrder);
   }
 
   private getSelectedDraftPicks(draft: RawDraft): DraftPick[] {
@@ -441,15 +441,7 @@ export class OverviewComponent {
   ): DraftPickDisplayGroup[] {
     const currentSeasonPicks = picks
       .filter(pick => pick.Season === season)
-      .sort((a, b) => {
-        const draftNoDiff = (a.Draft?.DraftNo ?? 999) - (b.Draft?.DraftNo ?? 999);
-        if (draftNoDiff !== 0) return draftNoDiff;
-
-        const roundDiff = (a.Round ?? 999) - (b.Round ?? 999);
-        if (roundDiff !== 0) return roundDiff;
-
-        return (a.OverallPick ?? 9999) - (b.OverallPick ?? 9999);
-      });
+      .sort(compareDraftPicksByDraftThenOrder);
 
     const groups = new Map<string, DraftPickDisplayGroup>();
 
@@ -563,18 +555,18 @@ export class OverviewComponent {
 
   standingEmoji(place: number): string {
     switch (place) {
-      case 1: return '🏆';   // Pokal für Champion
-      case 2: return '🥈';   // Silbermedaille
-      case 3: return '🥉';   // Bronzemedaille
-      case 4: return '4️⃣';   // Zahlen-Emoji ab 4
-      case 5: return '5️⃣';   // Zahlen-Emoji ab 5
-      case 6: return '6️⃣';   // Zahlen-Emoji ab 6
-      case 7: return '7️⃣';   // Zahlen-Emoji ab 7
-      case 8: return '8️⃣';   // Zahlen-Emoji ab 8
-      case 9: return '9️⃣';   // Zahlen-Emoji ab 9
-      case 10: return '🔟';   // Zahlen-Emoji ab 10
+      case 1: return '🏆';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      case 4: return '4️⃣';
+      case 5: return '5️⃣';
+      case 6: return '6️⃣';
+      case 7: return '7️⃣';
+      case 8: return '8️⃣';
+      case 9: return '9️⃣';
+      case 10: return '🔟';
       default:
-        return place.toString(); // fallback auf normale Zahl, wenn >10
+        return place.toString();
     }
   }
 
@@ -602,12 +594,10 @@ export class OverviewComponent {
   sortPlayersBySalary(players: Player[], useProjected: boolean): Player[] {
     const sorted = [...players].sort((a, b) => {
       if (useProjected) {
-        // Primär: SalaryProjected, Sekundär: Salary
         const diff = (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
         if (diff !== 0) return diff;
         return (b.Salary ?? 0) - (a.Salary ?? 0);
       } else {
-        // Primär: Salary, Sekundär: SalaryProjected
         const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
         if (diff !== 0) return diff;
         return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
