@@ -1,98 +1,98 @@
-# StonedLack 569 - NFC player and team extraction
+# StonedLack 569 – NFC-Spieler- und Teamextraktion
 
-Status: source perspective from transcript. No external verification.
+Status: StonedLack-Quellenperspektive aus dem Transkript. Keine externe Verifikation.
 
 ## NFC North
 
 ### Packers
 
-- Josh Jacobs: Redraft winner because Green Bay did not add meaningful RB competition. Dynasty angle is the opposite: StonedLack suggests using the unchanged depth chart as a sell/shop window.
-- Packers WRs: Existing WRs are winners because no new target arrived. Christian Watson is mentioned as a renewed opportunity candidate after his late-season stretch.
-- Backup RBs: Chris Brooks and Marshawn Lloyd are not treated as strong proven answers. The RB2 role remains open or at least unsettled.
-- Possible free agency: Najee Harris is mentioned speculatively as a name who could still matter.
+- Josh Jacobs: Redraft-Gewinner, weil Green Bay keine klare RB-Konkurrenz hinzugefügt hat. Dynasty ist es eher umgekehrt: StonedLack sieht durch die unveränderte Depth Chart ein mögliches Sell-/Shop-Fenster.
+- Packers-WRs: Bestehende WRs sind Gewinner, weil kein neuer Target-Konkurrent kam. Christian Watson wird als erneute Opportunity-Chance nach seinem starken Saisonende erwähnt.
+- Backup-RBs: Chris Brooks und Marshawn Lloyd werden nicht als starke, sichere Antworten behandelt. Die RB2-Rolle bleibt offen oder zumindest nicht klar gelöst.
+- Mögliche Free Agency: Najee Harris wird spekulativ als Name erwähnt, der noch relevant werden könnte.
 
 ### Bears
 
-- Sam Rous/Rousseau: TE depth and insurance for a Ben Johnson offense that values TE usage. More real-football signal than direct fantasy target.
-- Savian Thomas: Interesting speed/gadget/return dart. The source highlights 4.28 speed, return touchdowns, RB snaps and a possible Ben Johnson trick-play fit. Stronger in formats with return scoring.
-- Target hierarchy risk: Odunze, Loveland and Burden likely sit ahead of Thomas. The source likes the path to field usage more than target-volume certainty.
-- D'Andre Swift / Monangai context: The source questions Swift's job security long term and frames Monangai as limited, increasing interest in versatile gadget usage.
+- Sam Rous/Rousseau: TE-Tiefe und Versicherung für eine Ben-Johnson-Offense mit TE-Nutzung. Eher Real-Football-Signal als direkter Fantasy-Target.
+- Savian Thomas: Interessanter Speed-/Gadget-/Return-Dart. StonedLack hebt 4.28-Speed, Return-TDs, RB-Snaps und möglichen Ben-Johnson-Trick-Play-Fit hervor. Stärker in Formaten mit Return-Scoring.
+- Target-Hierarchie-Risiko: Odunze, Loveland und Burden stehen wahrscheinlich vor Thomas. Der Quellenreiz liegt eher im Weg aufs Feld als in sicherem Target-Volumen.
+- Swift-/Monangai-Kontext: StonedLack hinterfragt Swifts langfristige Job-Sicherheit und sieht Monangai als limitiert, wodurch vielseitige Gadget-Nutzung interessanter wird.
 
 ### Lions
 
-- Kendrick Law: Late gadget profile with insufficient investment and too much competition. Not a priority rookie pick.
+- Kendrick Law: Spätes Gadget-Profil mit wenig Investment und zu viel Konkurrenz. Kein priorisierter Rookie-Pick.
 
 ### Vikings
 
-- De'Mor Cleborne: Sixth-round speed/change-of-pace RB. Needs injuries and special teams relevance. Deep stash only.
+- De'Mor Cleborne: Sixth-Round-Speed-/Change-of-Pace-RB. Braucht Verletzungen und Special-Teams-Relevanz. Nur sehr tiefer Stash.
 
 ## NFC East
 
 ### Eagles
 
-- Cole Payton: Taysom Hill-style gadget QB. Deep superflex only; not a normal rookie-draft priority.
-- Eli Stowers: Receiving TE/WR hybrid and possible Goedert successor. The hosts are not aligned; immediate impact is low and long-term payoff is uncertain.
-- McKay Lemon: Discussed in the top WR tier. StonedLack likes the player, but short-term Eagles target competition matters.
+- Cole Payton: Taysom-Hill-artiger Gadget-QB. Nur sehr tiefe Superflex-Relevanz; kein normaler Rookie-Draft-Priority-Pick.
+- Eli Stowers: Receiving-TE/WR-Hybrid und möglicher Goedert-Nachfolger. Hosts sind nicht vollständig aligned; kurzfristiger Impact gering, langfristiger Payoff unsicher.
+- McKay Lemon: Im Top-WR-Tier diskutiert. StonedLack mag den Spieler, aber kurzfristig ist die Eagles-Target-Konkurrenz relevant.
 
 ### Cowboys
 
-- Anthony Smith: Seventh-round WR; not relevant for rookie drafts.
-- Javonte/Givon Williams: One of the RB draft winners because Dallas did not add meaningful RB competition. Still a possible shop candidate if the market pays for the unchanged depth chart.
+- Anthony Smith: Seventh-Round-WR; nicht relevant für Rookie Drafts.
+- Javonte/Givon Williams: Einer der RB-Draft-Gewinner, weil Dallas keine relevante RB-Konkurrenz hinzugefügt hat. Trotzdem möglicher Shop-Kandidat, falls der Markt die unveränderte Depth Chart bezahlt.
 
 ### Giants
 
-- Malachi Fields: R3 outside WR. StonedLack sees a plausible path next to Malik Nabers because the veteran competition is beatable. The main concern is the Giants offense/coaching environment.
+- Malachi Fields: R3-Outside-WR. StonedLack sieht einen plausiblen Pfad neben Malik Nabers, weil die Veteranenkonkurrenz schlagbar ist. Hauptsorge ist das Giants-Offense-/Coaching-Umfeld.
 
 ### Commanders
 
-- Antonio Williams: High-conviction positive take. StonedLack likes the route running, easy-target profile and fit with Jayden Daniels extended plays. Projected as a possible day-one WR2 next to Terry McLaurin.
-- Kaytron Allen: Late thumper/RB3 type. Weak draft capital but weak RB room creates a late dart argument.
+- Antonio Williams: Stark positives Signal. StonedLack mag Route Running, Easy-Target-Profil und Fit mit Jayden Daniels bei verlängerten Plays. Projektion: möglicher Day-One-WR2 neben Terry McLaurin.
+- Kaytron Allen: Später Thumper-/RB3-Typ. Schwaches Draft Capital, aber schwacher RB-Room erzeugt Late-Dart-Argument.
 
 ## NFC South
 
 ### Panthers
 
-- Chris Brazzell: Strong positive. Outside WR path is open next to Tet McMillan, while Jalen Coker is treated as a different slot/big-slot role.
-- Xavier Legette: Negative context. StonedLack says he has not done enough with prior opportunity.
-- Chuba Hubbard: No meaningful RB addition keeps him interesting, especially as a possible redraft discount.
+- Chris Brazzell: Stark positives Signal. Outside-WR-Pfad ist neben Tet McMillan offen, während Jalen Coker eher als anderer Slot-/Big-Slot-Typ eingeordnet wird.
+- Xavier Legette: Negativer Kontext. StonedLack findet, er habe aus seiner bisherigen Chance nicht genug gemacht.
+- Chuba Hubbard: Keine relevante RB-Ergänzung hält ihn interessant, besonders als möglicher Redraft-Discount.
 
 ### Buccaneers
 
-- Ted HST/Hurst, unresolved identity: 6'4 outside/TD profile with speed, but a crowded young WR room makes him a watch rather than a priority target.
+- Ted HST/Hurst, ungeklärte Identität: 6'4-Outside-/TD-Profil mit Speed. Wegen jungem, vollem WR-Room eher Watchlist als Priority Target.
 
 ### Saints
 
-- Jordan Tyson: One of the strongest positive takes of the episode. StonedLack likes the Saints pace, passing environment and immediate WR2 path next to Chris Olave.
-- Chris Olave context: Olave contract/trade uncertainty is a major Tyson upside variable. If Olave leaves, Tyson's ceiling rises sharply.
-- Bryce Lance: Raw high-RAS dart, compared conceptually to a Christian Watson-type developmental bet. Interesting around the third rookie round.
-- Barion Brown: Deep return-speed dart, especially if return scoring matters.
-- Oscar Delp: Real-football TE profile with blocking and receiving notes, but not a strong fantasy push.
+- Jordan Tyson: Eines der stärksten positiven Signale der Folge. StonedLack mag Pace, Passing-Umfeld und den direkten WR2-Pfad neben Chris Olave.
+- Chris-Olave-Kontext: Vertrags-/Trade-Unsicherheit bei Olave ist großer Upside-Hebel für Tyson. Wenn Olave geht, steigt Tysons Ceiling deutlich.
+- Bryce Lance: Roher High-RAS-Dart, konzeptionell mit Christian-Watson-artiger Entwicklungswette verglichen. Interessant um die dritte Rookie-Runde.
+- Barion Brown: Tiefer Return-Speed-Dart, besonders wenn Return-Scoring zählt.
+- Oscar Delp: Real-Football-TE-Profil mit Blocking-/Receiving-Notizen, aber kein starkes Fantasy-Push-Signal.
 
 ### Falcons
 
-- Branch: Gadget WR with behind-the-line usage and questions. StonedLack prefers Brazzell, HST/Hurst and Malachi Fields over him.
-- Target tree: Bijan Robinson, Drake London and Kyle Pitts dominate. Secondary Falcons pass catchers are not a priority.
+- Branch: Gadget-WR mit Behind-the-Line-Nutzung und Fragezeichen. StonedLack bevorzugt Brazzell, HST/Hurst und Malachi Fields vor ihm.
+- Target Tree: Bijan Robinson, Drake London und Kyle Pitts dominieren. Secondary Falcons Pass Catcher sind keine Priorität.
 
 ## NFC West
 
 ### 49ers
 
-- Stribling: R2 investment and reported NFL interest matter, but the source warns that his role may be blocking-heavy and more useful for real football than fantasy.
-- 49ers day-two skill picks: StonedLack is skeptical because of prior misses under the Shanahan/Lynch era.
-- Ken Black: Draftable due investment, but not a clean CMC handcuff. StonedLack expects any CMC absence to be replaced by multiple players.
+- Stribling: R2-Investment und gemeldetes NFL-Interesse zählen, aber StonedLack warnt vor blocking-lastiger Rolle und mehr Real-Football- als Fantasy-Nutzen.
+- 49ers-Day-Two-Skill-Picks: StonedLack ist skeptisch wegen früherer Misses unter Shanahan/Lynch.
+- Ken Black: Draftbar wegen Investment, aber kein sauberer CMC-Handcuff. StonedLack erwartet bei CMC-Ausfall eher mehrere Spieler statt klarer 1:1-Rolle.
 
 ### Cardinals
 
-- Jeremy Love: Still dynasty 1.01, but 2026 is a poor immediate fantasy setup due weak offense and crowded short-term RB room. 2027 is viewed as a better window.
-- Reggie Virgil: Not interesting from the source perspective.
+- Jeremy Love: Weiterhin Dynasty-1.01, aber 2026 ein schwaches Sofortumfeld wegen schwacher Offense und kurzfristig voller RB-Situation. 2027 wird als besseres Fenster gesehen.
+- Reggie Virgil: Aus Quellenperspektive uninteressant.
 
 ### Seahawks
 
-- Price: Very strong positive take. StonedLack projects him as Week-1 starter and says he may be more attractive than Jeremy Love in redraft.
-- Charbonnet: Still relevant long term, but Price has the immediate source momentum.
-- Emmanuel Henderson: Speed/special-teams profile, not fantasy-relevant.
+- Price: Sehr stark positives Signal. StonedLack projiziert ihn als Week-1-Starter und sagt, er könne im Redraft attraktiver als Jeremy Love sein.
+- Charbonnet: Langfristig weiter relevant, aber Price hat kurzfristig das stärkere Momentum.
+- Emmanuel Henderson: Speed-/Special-Teams-Profil, nicht fantasy-relevant.
 
 ### Rams
 
-- Max Klare: R2 TE in an offense expected to use more 3TE personnel. Real-football signal is interesting; fantasy path is difficult due existing TEs.
-- CJ Dennis/Daniels: Avoid for rookie drafts.
+- Max Klare: R2-TE in einer Offense, die mehr 3TE-Personnel nutzen könnte. Real-Football-Signal interessant, Fantasy-Pfad wegen vorhandener TEs schwierig.
+- CJ Dennis/Daniels: Für Rookie Drafts vermeiden.
