@@ -74,22 +74,35 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 
 Use this for StoneLack/StonedLack, Down Set Talk, Football Bromance and later podcast sources.
 
+Default rule: build a complete local episode package first. Do not try to maintain global indexes during normal extraction.
+
 1. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
 2. Load source identity, weighting and profile context from `fantasy-management/_ai/source-registry.json`.
 3. Load source-specific quirks from `sources/podcasts/{source_id}/SOURCE_NOTES.md` when present.
-4. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested. If a single large raw write is blocked, create ordered raw parts plus a manifest.
+4. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested. If a single large raw write is blocked, create ordered raw parts plus a manifest and reference it from episode JSON.
 5. Create a German ai-input-style episode analysis under `sources/podcasts/{source_id}/episodes/YYYY/`.
 6. Create a player/entity data JSON under `sources/podcasts/{source_id}/episodes/YYYY/` when the episode contains reusable player, team, tier, ranking, board or role content.
-7. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/` and link the raw manifest/status, companion files, player/entity data path and take IDs.
+7. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/` and link the raw manifest/status, local companion files, player/entity data path and canonical take IDs.
 8. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
 9. Use stable take IDs and matching file names such as `episode_id_tNNN.json`.
-10. Create a German take index when many takes are produced.
-11. Update `derived/knowledge/takes/` by player, team and source when requested.
-12. Update `derived/knowledge/current/` as the latest source-derived working view when requested or when the extraction should feed reusable analysis.
+10. Create a German episode-local take index when many takes are produced.
+11. Optionally update `derived/knowledge/current/` as the latest source-derived working view when requested or when the extraction should feed reusable analysis.
+12. Do not update global indexes or cross-source lookup files unless the user explicitly asks for an index rebuild.
 13. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
 14. If raw source is only a placeholder, German analysis is only a short summary, player data is missing for a board-style episode, take coverage is sparse, or episode JSON does not reference all canonical takes, mark the extraction `incomplete` or `needs_rework`.
-15. Keep source statement, entity cleanup and AI interpretation separate.
-16. Do not invent missing details or non-mentions.
+15. If current views or global indexes are deferred, state that explicitly in the episode note or final response.
+16. Keep source statement, entity cleanup and AI interpretation separate.
+17. Do not invent missing details or non-mentions.
+
+## Index rebuild workflow
+
+Use this only when the user explicitly asks to rebuild indexes or when a maintenance task is clearly about indexes.
+
+1. Read the relevant completed local episode packages.
+2. Treat episode Markdown, episode JSON, player/entity data JSON and canonical take files as source-of-truth inputs.
+3. Rebuild global indexes from existing completed files rather than hand-maintaining them during extraction.
+4. Mark rebuilt indexes with generated/backfill status and the input files used.
+5. Empty indexes are allowed only if they are clearly marked as pending/backfill or generated from zero inputs.
 
 ## League-context update workflow
 
