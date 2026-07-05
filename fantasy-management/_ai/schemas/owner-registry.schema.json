@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fantasy League Owner Registry",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["owners"],
+  "properties": {
+    "version": { "type": "integer" },
+    "purpose": { "type": "string" },
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name", "team_id"],
+        "properties": {
+          "name": { "type": "string" },
+          "team_id": { "type": "integer" },
+          "default_perspective": { "type": "boolean" },
+          "known_team_names": { "type": "array", "items": { "type": "string" } },
+          "aliases": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
