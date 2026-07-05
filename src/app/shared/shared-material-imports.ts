@@ -15,6 +15,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
+import { DraftCapitalOverviewComponent } from '../features/overview/components/draft-capital-overview/draft-capital-overview';
+
 export const SharedMaterialImports = [
   MatCardModule,
   MatTableModule,
@@ -30,5 +32,6 @@ export const SharedMaterialImports = [
   MatSlideToggleModule,
   MatFormFieldModule,
   MatInputModule,
-  MatSelectModule
+  MatSelectModule,
+  DraftCapitalOverviewComponent
 ];
