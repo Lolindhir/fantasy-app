@@ -83,6 +83,7 @@ fantasy-management/
       analysis.schema.json
       source-take.schema.json
       source-profile.schema.json
+      source-registry.schema.json
       episode.schema.json
       entity-signal.schema.json
       take-view.schema.json
