@@ -61,8 +61,8 @@ interface DraftCapitalViewModel {
           <span class="draft-capital-header-short">Best</span>
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
-          <span class="draft-capital-header-full">Available</span>
-          <span class="draft-capital-header-short">Available</span>
+          <span class="draft-capital-header-full">Open</span>
+          <span class="draft-capital-header-short">Open</span>
         </span>
       </div>
 
@@ -193,8 +193,8 @@ interface DraftCapitalViewModel {
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
-      min-width: 58px;
-      padding: 1px 4px;
+      min-width: 52px;
+      padding: 1px 2px;
       border-radius: 999px;
       background: #f1f5f9;
       font-weight: 800;
@@ -243,8 +243,8 @@ interface DraftCapitalViewModel {
       }
 
       .draft-capital-pick-chip {
-        min-width: 64px;
-        padding: 2px 6px;
+        min-width: 58px;
+        padding: 2px 3px;
         font-size: 0.82rem;
       }
     }
@@ -323,13 +323,12 @@ export class DraftCapitalOverviewComponent {
 
   private buildGridTemplate(columnCount: number): string {
     const countWidth = columnCount <= 2 ? '26px' : columnCount <= 4 ? '24px' : '20px';
-    const bestWidth = columnCount <= 2 ? 'clamp(62px, 16vw, 92px)' : 'clamp(58px, 14vw, 86px)';
-    const availableWidth = columnCount <= 2 ? 'clamp(72px, 18vw, 108px)' : 'clamp(64px, 16vw, 96px)';
+    const pickWidth = columnCount <= 2 ? 'clamp(56px, 14vw, 88px)' : 'clamp(52px, 12vw, 80px)';
     const draftColumns = columnCount > 0
       ? `repeat(${columnCount}, ${countWidth})`
       : '';
 
-    return ['minmax(58px, 1fr)', draftColumns, bestWidth, availableWidth]
+    return ['minmax(58px, 1fr)', draftColumns, pickWidth, pickWidth]
       .filter(Boolean)
       .join(' ');
   }
