@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Podcast Episode Player Data",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["metadata", "schema"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "source": { "type": "string" },
+        "topic": { "type": "string" },
+        "created_by": { "type": "string" },
+        "created_date": { "type": "string" },
+        "language": { "type": "string" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "schema": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "players": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entityProfile" }
+    },
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entityProfile" }
+    },
+    "category_rankings": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "entityProfile": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "rank": { "type": ["integer", "null"] },
+        "name": { "type": "string" },
+        "position": { "type": ["string", "null"] },
+        "team": { "type": ["string", "null"] },
+        "stonedlack_tier": { "type": ["string", "null"] },
+        "source_conviction": { "type": ["string", "null"] },
+        "sentiment": { "type": ["string", "null"] },
+        "main_argument": { "type": ["string", "null"] },
+        "opportunity": { "type": ["string", "null"] },
+        "short_term_value": { "type": ["string", "null"] },
+        "long_term_value": { "type": ["string", "null"] },
+        "risk": { "type": ["string", "null"] },
+        "format_dependency": { "type": ["string", "null"] },
+        "take_ids": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": ["string", "null"] },
+        "identity_confidence": { "type": ["string", "null"] },
+        "verification_status": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
