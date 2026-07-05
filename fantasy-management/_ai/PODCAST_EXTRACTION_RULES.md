@@ -16,6 +16,24 @@ Podcast-specific quirks, aliases and interpretation notes belong next to the sou
 
 Do not maintain source weights in multiple places.
 
+## Focus rule
+
+Default podcast extraction is episode-local first.
+
+A normal extraction should focus on creating a complete, reusable package for the single episode being processed. Do not try to maintain every global index or cross-source lookup file during the same chat unless the user explicitly asks for an index rebuild.
+
+Required default outputs:
+
+1. raw source material or ordered raw parts plus manifest
+2. German ai-input-style episode analysis
+3. player/entity data JSON when the episode contains reusable player, team, ranking, tier, board or role content
+4. episode JSON linking the local companion files and canonical take IDs
+5. atomic source takes with stable IDs and matching file names
+6. German take index when many takes are produced
+7. current source view only when the extraction should feed reusable later analysis
+
+Global indexes are derived lookup helpers. They are not source of truth. Empty or incomplete global index files are acceptable if they are treated as pending/backfill targets and are not used as complete knowledge.
+
 ## Layer model
 
 Process podcast material through these layers:
@@ -25,9 +43,10 @@ Process podcast material through these layers:
 3. player/entity data JSON
 4. episode JSON
 5. atomic source takes
-6. take index
-7. current knowledge view
-8. Mighty Giants analysis
+6. episode-local take index
+7. optional current source view
+8. optional global index rebuild
+9. Mighty Giants analysis
 
 ## Language and readability rule
 
@@ -47,7 +66,7 @@ Do not clean, rewrite or normalize the raw source file. If a better transcript b
 
 A placeholder raw file is not a completed raw source. If the full transcript cannot be committed, mark the whole extraction as incomplete and do not treat downstream notes or takes as complete.
 
-If a single large raw file cannot be committed, split the raw transcript into ordered parts and create a raw manifest. The episode JSON must then state the split raw status and parts directory.
+If a single large raw file cannot be committed, split the raw transcript into ordered parts and create a raw manifest. The episode JSON must then state the split raw status and parts directory. The ordered concatenation of the parts is the raw source for that episode.
 
 ## Episode rule
 
@@ -126,32 +145,26 @@ Each take should keep these concepts separate:
 
 Use stable take IDs and file names. Prefer `episode_id_tNNN.json` so `take_id` and file name can be matched mechanically. If legacy or descriptive file names exist, the episode JSON must clearly declare the canonical take file pattern.
 
-## Completeness gate
+## Indexing rule
 
-Before marking an extraction as complete, verify:
+Episode-local indexes are part of the extraction package. Create or update them when useful:
 
-1. the raw transcript is present and not a placeholder
-2. all meaningful player, team, coach, format and strategy mentions were reviewed
-3. every high-signal player in the episode note has at least one atomic take or an explicit reason why no take was created
-4. every high-signal player/entity profile is also represented in the player/entity data JSON when such a JSON is required
-5. caution, fade, uncertainty and negative takes are extracted, not only positive takes
-6. episode JSON `take_ids` matches the take files created
-7. episode JSON references the player/entity data JSON when present
-8. unresolved names and entity-mapping issues are listed in the episode note or companion entity file
-9. current views are updated when the extraction is intended to feed reusable knowledge
-10. the German episode analysis is sufficiently detailed to stand alone without opening the raw transcript
+- the episode JSON
+- the German take index
+- optional episode-local entity map
+- optional episode-local board/tier notes
 
-If any item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
+Global indexes and cross-file lookup metadata are separate derived artifacts. Do not update them during normal podcast extraction unless explicitly requested.
 
-## Entity resolution rule
+Examples of deferred global index work:
 
-Use source-specific notes for common aliases and transcript quirks.
+- cross-source player index
+- source-wide take index
+- team-wide signal index
+- global `fantasy-management/indexes/` lookup files
+- regenerated knowledge-layer lookup tables
 
-If a player, team or claim is uncertain, mark it as uncertain instead of guessing.
-
-When decision-relevant, verify identity and current context against current repo data and fresh external sources if needed.
-
-Do not invent non-mentions. If a prominent player from another episode or board is not clearly mentioned in the current transcript, do not add a profile just to fill a gap. Only add a `not mentioned / not found` note when it is directly useful for the episode's stated scope or the user asks.
+If a global index file exists but is empty, treat it as pending/backfill unless it explicitly claims to be current. Do not use an empty global index as evidence that no data exists.
 
 ## Current view rule
 
@@ -162,6 +175,37 @@ The current working view stays in `derived/knowledge/current/`.
 Do not delete older takes just because later context changes the evaluation. Move old context out of the current view instead.
 
 The current view should be derived from the normalized take and player/entity data layers, not only from a loose summary.
+
+Current views are useful but not always mandatory in the same chat. For long podcast episodes, prefer completing the episode-local package first. Update current views when the user requests persistence for later analysis or when the extraction is intended to be reused directly.
+
+## Completeness gate
+
+Before marking an extraction as complete, verify:
+
+1. the raw transcript is present and not a placeholder
+2. if raw is split, ordered parts and a raw manifest exist and the episode JSON states the split raw status
+3. all meaningful player, team, coach, format and strategy mentions were reviewed
+4. every high-signal player in the episode note has at least one atomic take or an explicit reason why no take was created
+5. every high-signal player/entity profile is also represented in the player/entity data JSON when such a JSON is required
+6. caution, fade, uncertainty and negative takes are extracted, not only positive takes
+7. episode JSON `take_ids` matches the canonical take files created
+8. episode JSON references the player/entity data JSON when present
+9. unresolved names and entity-mapping issues are listed in the episode note or companion entity file
+10. the German episode analysis is sufficiently detailed to stand alone without opening the raw transcript
+11. current views are updated when required by the task scope, or explicitly deferred
+12. global indexes are not required for extraction completeness unless the task is an index rebuild
+
+If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
+
+## Entity resolution rule
+
+Use source-specific notes for common aliases and transcript quirks.
+
+If a player, team or claim is uncertain, mark it as uncertain instead of guessing.
+
+When decision-relevant, verify identity and current context against current repo data and fresh external sources if needed.
+
+Do not invent non-mentions. If a prominent player from another episode or board is not clearly mentioned in the current transcript, do not add a profile just to fill a gap. Only add a `not mentioned / not found` note when it is directly useful for the episode's stated scope or the user asks.
 
 ## Recommendation rule
 
