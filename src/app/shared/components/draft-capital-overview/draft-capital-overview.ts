@@ -109,8 +109,8 @@ interface DraftCapitalViewModel {
     }
 
     .draft-dashboard-card {
-      --draft-count-width: 20px;
-      --draft-pick-width: clamp(52px, 12vw, 80px);
+      --draft-count-width: 26px;
+      --draft-pick-width: clamp(56px, 13vw, 74px);
       padding: 13px 14px;
       margin: 0 5px 12px;
       border: 1px solid rgba(148, 163, 184, 0.35);
@@ -120,11 +120,11 @@ interface DraftCapitalViewModel {
     }
 
     .draft-dashboard-card.draft-capital--medium-counts {
-      --draft-count-width: 24px;
+      --draft-count-width: 30px;
     }
 
     .draft-dashboard-card.draft-capital--wide-counts {
-      --draft-count-width: 64px;
+      --draft-count-width: 30px;
     }
 
     .draft-dashboard-card h2 {
@@ -137,7 +137,7 @@ interface DraftCapitalViewModel {
     .draft-capital-row {
       display: grid;
       align-items: center;
-      column-gap: 3px;
+      column-gap: 6px;
     }
 
     .draft-capital-header {
@@ -160,7 +160,6 @@ interface DraftCapitalViewModel {
 
     .draft-capital-cell--pick {
       justify-self: center;
-      margin-inline: 1px;
       text-align: center;
     }
 
@@ -228,8 +227,7 @@ interface DraftCapitalViewModel {
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
-      min-width: 52px;
-      padding: 1px 2px;
+      padding: 1px 3px;
       border-radius: 999px;
       background: #f1f5f9;
       font-weight: 800;
@@ -264,10 +262,6 @@ interface DraftCapitalViewModel {
       .draft-capital-header {
         font-size: 0.72rem;
         letter-spacing: 0.03em;
-      }
-
-      .draft-capital-cell--pick {
-        margin-inline: 2px;
       }
 
       .draft-capital-column-label--mobile {
@@ -312,14 +306,13 @@ export class DraftCapitalOverviewComponent {
       const seasonDrafts = this.getSeasonDrafts(drafts, league.Season);
       if (seasonDrafts.length === 0) return null;
 
-      const useFullDraftTypeOnMobile = seasonDrafts.length <= 2;
       const columns = seasonDrafts.map(draft => {
         const draftTypeLabel = draft.DisplayDraftType || draft.DisplayDraftKey;
         const abbreviatedLabel = getDraftCapitalAbbreviation(draft);
 
         return {
           draftKey: draft.DraftKey,
-          mobileLabel: useFullDraftTypeOnMobile ? draftTypeLabel : abbreviatedLabel,
+          mobileLabel: abbreviatedLabel,
           desktopLabel: draftTypeLabel,
           fullLabel: draft.DisplayDraftKey
         };
