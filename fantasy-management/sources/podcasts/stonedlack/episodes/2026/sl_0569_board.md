@@ -1,45 +1,45 @@
-# StonedLack 569 - Board, tiers and source signals
+# StonedLack 569 – Board, Tiers und Quellensignale
 
-Status: source perspective only. No external verification.
+Status: StonedLack-Quellenperspektive. Keine externe Verifikation. Nicht als finale Mighty-Giants-Empfehlung verwenden.
 
-## Global rookie-board logic
+## Globale Rookie-Board-Logik
 
-StonedLack treats the 2026 fantasy class as thin. The strongest source preference is to avoid forcing low-capital RBs over WRs with clearer routes to snaps. Landing spot matters, but bad team context is more damaging for redraft than for dynasty.
+StonedLack sieht die Fantasy-Klasse 2026 als dünn. Das stärkste wiederkehrende Signal: Nach den Top-RBs sollte man keine Low-Capital-RBs erzwingen, wenn WRs mit klareren Wegen zu Snaps und Rollen verfügbar sind. Landing Spot zählt, aber schlechte Teamumfelder treffen Redraft stärker als Dynasty.
 
-## Early rookie-draft signal tier
+## Frühes Rookie-Draft-Signal-Tier
 
-| Player | Team | Position | Source signal |
+| Spieler | Team | Pos | Quellensignal |
 |---|---|---:|---|
-| Jeremy Love | ARI | RB | Still likely 1.01 because of talent, but immediate Cardinals context is poor. |
-| Price | SEA | RB | Very strong immediate role; projected Week-1 starter; redraft appeal may exceed Love. |
-| Casey Concepcion | CLE | WR | Do not let Browns landing spot push him out of round 1. |
-| Denzel Boston | CLE | WR | Early pick; part of Browns future WR core. |
-| Jordan Tyson | NO | WR | One of the favorite source targets; fast path to WR2 role. |
-| McKay Lemon | PHI | WR | Top WR tier despite target competition. |
-| Omar Cooper Jr. | NYJ | WR | Investment matters; situation is not ideal. |
-| Jets second pass catcher | NYJ | TE/WR | Investment matters, but role and fantasy position are unclear. |
-| Chris Bell | MIA | WR | Strong path-to-WR1 thesis among mid-round WRs. |
+| Jeremy Love | ARI | RB | Wahrscheinlich weiterhin 1.01 wegen Talent, aber schwaches Sofortumfeld. |
+| Price | SEA | RB | Sehr starke Sofortrolle; möglicher Week-1-Starter; im Redraft evtl. attraktiver als Love. |
+| Casey Concepcion | CLE | WR | Browns-Landing-Spot soll ihn nicht aus Runde 1 fallen lassen. |
+| Denzel Boston | CLE | WR | Frühes Investment; Teil einer möglichen jungen Browns-WR-Core. |
+| Jordan Tyson | NO | WR | Einer der Lieblingsspieler der Folge; schneller Pfad zur WR2-Rolle. |
+| McKay Lemon | PHI | WR | Top-WR-Tier trotz Target-Konkurrenz. |
+| Omar Cooper Jr. | NYJ | WR | Investment zählt, Situation aber nicht ideal. |
+| Zweiter Jets-Passfänger | NYJ | TE/WR | Investment zählt, Rolle und Fantasy-Position unklar. |
+| Chris Bell | MIA | WR | Starke Pfad-zur-WR1-These bei Mid-Round-WRs. |
 
-## Preferred WR darts after the first tier
+## Bevorzugte WR-Darts nach dem ersten Tier
 
-| Player | Team | Signal |
+| Spieler | Team | Signal |
 |---|---|---|
-| Antonio Williams | WAS | Potential day-one WR2 next to Terry McLaurin. |
-| Chris Brazzell | CAR | Strong outside WR opportunity; Legette disappointment opens path. |
-| Skyler Bell | BUF | Positive profile and good team context. |
-| Malachi Fields | NYG | R3 outside WR with beatable veteran competition. |
-| Savian Thomas | CHI | Ben Johnson gadget/speed/return fit. |
-| Jacob/Jacoby Lane | BAL | Red-zone profile; Ravens pass volume is concern. |
-| Elijah Sarratt | BAL | Interesting, but StonedLack prefers clearer WR2 paths first. |
-| Bryce Lance | NO | Raw high-RAS upside dart. |
-| Brandon Thompson | LAC | Speed and scheme dart in a WR room with opportunity. |
-| Barion Brown | NO | Deep return-speed dart. |
+| Antonio Williams | WAS | Potenzieller Day-One-WR2 neben Terry McLaurin. |
+| Chris Brazzell | CAR | Starker Outside-WR-Pfad; Legette-Enttäuschung öffnet Tür. |
+| Skyler Bell | BUF | Positives Profil und gutes Teamumfeld. |
+| Malachi Fields | NYG | R3-Outside-WR mit schlagbarer Veteranenkonkurrenz. |
+| Savian Thomas | CHI | Ben-Johnson-Gadget-/Speed-/Return-Fit. |
+| Jacob/Jacoby Lane | BAL | Red-Zone-Profil; Ravens-Passvolumen limitiert. |
+| Elijah Sarratt | BAL | Interessant, aber klarere WR2-Pfade werden bevorzugt. |
+| Bryce Lance | NO | Roher High-RAS-Upside-Dart. |
+| Brandon Thompson | LAC | Speed-/Scheme-Dart in offenem WR-Room. |
+| Barion Brown | NO | Tiefer Return-Speed-Dart. |
 
-## RB order from the source perspective
+## RB-Reihenfolge aus Quellenperspektive
 
 1. Jeremy Love, ARI
 2. Price, SEA
-3. Jonah/Joner Coleman, DEN, but only after many WRs
+3. Jonah/Joner Coleman, DEN – aber erst nach vielen WRs
 4. Emory Johnson, KC
 5. Mike Washington Jr., LV
 6. Ken Black, SF
@@ -49,11 +49,11 @@ StonedLack treats the 2026 fantasy class as thin. The strongest source preferenc
 10. De'Mor Cleborne, MIN
 11. Eli Heidenreich, PIT
 
-## TE caution tier
+## TE-Caution-Tier
 
-StonedLack repeatedly separates real-football TE value from fantasy value. Eli Stowers, Max Klare, Marlin Klein and Oscar Delp require role verification. Blocking/Y-TE usage is not enough to push them aggressively in fantasy.
+StonedLack trennt wiederholt Real-Football-TE-Wert von Fantasy-Wert. Eli Stowers, Max Klare, Marlin Klein und Oscar Delp benötigen klare Rollen-/Usage-Verifikation. Blocking- oder Y-TE-Nutzung reicht nicht für aggressive Fantasy-Upgrades.
 
-## Source-favored targets
+## Source-Favored Targets
 
 - Jordan Tyson
 - Chris Bell
@@ -63,16 +63,20 @@ StonedLack repeatedly separates real-football TE value from fantasy value. Eli S
 - Skyler Bell
 - Malachi Fields
 - Savian Thomas
-- Emory Johnson as late RB stash
+- Emory Johnson als später RB-Stash
 
-## Source fades or low-interest profiles
+## Source-Fades oder Low-Interest-Profile
 
 - Anthony Smith, Cowboys
 - Kendrick Law, Lions
-- De'Mor Cleborne unless very deep
+- De'Mor Cleborne außer sehr tief
 - Reggie Virgil, Cardinals
 - Emmanuel Henderson, Seahawks
 - CJ Dennis/Daniels, Rams
-- late Jaguars WRs
-- Koby/Kory Young, Bengals, due risk profile
+- späte Jaguars-WRs
+- Koby/Kory Young, Bengals, wegen Risikoprofil
 - Cyrus Allen, Chiefs
+
+## Nutzung für spätere Boards
+
+Diese Datei ist die menschenlesbare Board-Schicht. Die normalisierten JSON-Takes unter `derived/knowledge/takes/stonedlack/2026/sl_0569_tNNN.json` sind die maschinenlesbare Schicht.
