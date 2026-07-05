@@ -24,8 +24,11 @@ interface DraftCapitalCount {
 interface DraftCapitalRow {
   team: FantasyTeam;
   teamName: string;
+  teamAbbr: string;
   draftCounts: DraftCapitalCount[];
   bestPick: string;
+  bestAvailablePick: string;
+  hasBestAvailablePick: boolean;
   sortPicks: DraftPick[];
 }
 
@@ -53,6 +56,7 @@ interface DraftCapitalViewModel {
           [title]="column.fullLabel"
         >{{ column.label }}</span>
         <span>Best Pick</span>
+        <span>Best Available</span>
       </div>
 
       <div
@@ -62,13 +66,18 @@ interface DraftCapitalViewModel {
       >
         <div class="draft-capital-team">
           <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
-          <span>{{ row.teamName }}</span>
+          <span class="draft-capital-team-name">{{ row.teamName }}</span>
+          <span class="draft-capital-team-abbr">{{ row.teamAbbr }}</span>
         </div>
         <div
           *ngFor="let draftCount of row.draftCounts"
           class="draft-capital-count"
         >{{ draftCount.count }}</div>
         <div class="draft-capital-best">{{ row.bestPick }}</div>
+        <div
+          class="draft-capital-best-available"
+          [class.draft-capital-best-available--empty]="!row.hasBestAvailablePick"
+        >{{ row.bestAvailablePick }}</div>
       </div>
     </section>
   `,
@@ -133,15 +142,25 @@ interface DraftCapitalViewModel {
       flex: 0 0 auto;
     }
 
-    .draft-capital-team span {
+    .draft-capital-team-name,
+    .draft-capital-team-abbr {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
+    .draft-capital-team-name {
+      display: none;
+    }
+
+    .draft-capital-team-abbr {
+      display: inline;
+    }
+
     .draft-capital-count,
-    .draft-capital-best {
+    .draft-capital-best,
+    .draft-capital-best-available {
       justify-self: end;
       font-variant-numeric: tabular-nums;
       font-weight: 700;
@@ -150,6 +169,29 @@ interface DraftCapitalViewModel {
 
     .draft-capital-best {
       color: #4f46e5;
+    }
+
+    .draft-capital-best-available {
+      padding: 1px 6px;
+      border-radius: 999px;
+      color: #15803d;
+      background: #dcfce7;
+    }
+
+    .draft-capital-best-available--empty {
+      padding: 0;
+      color: #94a3b8;
+      background: transparent;
+    }
+
+    @media (min-width: 520px) {
+      .draft-capital-team-name {
+        display: inline;
+      }
+
+      .draft-capital-team-abbr {
+        display: none;
+      }
     }
   `]
 })
@@ -199,15 +241,21 @@ export class DraftCapitalOverviewComponent {
         const sortPicks = (team.DraftPicks ?? [])
           .filter(pick => pick.Season === season && draftKeys.has(pick.DraftKey));
         const bestPick = getBestDraftPick(sortPicks);
+        const bestAvailablePick = getBestDraftPick(
+          sortPicks.filter(pick => this.isDraftPickAvailable(pick))
+        );
 
         return {
           team,
           teamName: team.Team ?? team.Owner,
+          teamAbbr: this.getTeamAbbreviation(team),
           draftCounts: columns.map(column => ({
             draftKey: column.draftKey,
             count: sortPicks.filter(pick => pick.DraftKey === column.draftKey).length
           })),
           bestPick: bestPick ? this.formatBestPick(bestPick, draftByKey) : '—',
+          bestAvailablePick: bestAvailablePick ? this.formatBestPick(bestAvailablePick, draftByKey) : '—',
+          hasBestAvailablePick: !!bestAvailablePick,
           sortPicks
         };
       })
@@ -223,7 +271,7 @@ export class DraftCapitalOverviewComponent {
       ? `repeat(${columnCount}, minmax(34px, max-content))`
       : '';
 
-    return ['minmax(0, 1fr)', draftColumns, '70px']
+    return ['minmax(0, 1fr)', draftColumns, '70px', 'minmax(96px, max-content)']
       .filter(Boolean)
       .join(' ');
   }
@@ -233,6 +281,25 @@ export class DraftCapitalOverviewComponent {
     const draftLabel = draft ? getDraftCapitalAbbreviation(draft) : pick.DraftKey;
 
     return `${draftLabel} ${pick.DisplayPick}`;
+  }
+
+  private isDraftPickAvailable(pick: DraftPick): boolean {
+    return pick.Status !== 'Picked'
+      && !pick.PlayerID
+      && !pick.PlayerName
+      && pick.SleeperPickNo === null;
+  }
+
+  private getTeamAbbreviation(team: FantasyTeam): string {
+    const abbreviation = team.TeamAbbr?.trim();
+    if (abbreviation) return abbreviation;
+
+    const displayName = (team.Team ?? team.Owner).trim();
+    return displayName
+      .split(/\s+/)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 3) || '?';
   }
 
   private getMaxRound(teams: FantasyTeam[], season: string): number {
