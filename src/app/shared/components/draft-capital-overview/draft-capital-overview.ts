@@ -76,8 +76,8 @@ interface DraftCapitalViewModel {
           <span class="draft-capital-header-short">Best</span>
         </span>
         <span class="draft-capital-cell draft-capital-cell--pick">
-          <span class="draft-capital-header-full">Open Pick</span>
-          <span class="draft-capital-header-short">Open</span>
+          <span class="draft-capital-header-full">Best Open<br />Pick</span>
+          <span class="draft-capital-header-short">Best<br />Open</span>
         </span>
       </div>
 
@@ -137,7 +137,7 @@ interface DraftCapitalViewModel {
     .draft-capital-row {
       display: grid;
       align-items: center;
-      column-gap: 4px;
+      column-gap: 3px;
     }
 
     .draft-capital-header {
@@ -160,6 +160,7 @@ interface DraftCapitalViewModel {
 
     .draft-capital-cell--pick {
       justify-self: center;
+      margin-inline: 1px;
       text-align: center;
     }
 
@@ -169,6 +170,11 @@ interface DraftCapitalViewModel {
 
     .draft-capital-header-full {
       display: none;
+    }
+
+    .draft-capital-header-full,
+    .draft-capital-header-short {
+      line-height: 1.05;
     }
 
     .draft-capital-header-short {
@@ -252,12 +258,16 @@ interface DraftCapitalViewModel {
 
       .draft-capital-header,
       .draft-capital-row {
-        column-gap: 8px;
+        column-gap: 6px;
       }
 
       .draft-capital-header {
         font-size: 0.72rem;
         letter-spacing: 0.03em;
+      }
+
+      .draft-capital-cell--pick {
+        margin-inline: 2px;
       }
 
       .draft-capital-column-label--mobile {
