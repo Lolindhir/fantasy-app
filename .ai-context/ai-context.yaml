@@ -39,6 +39,16 @@ contextModel:
     mayBeEditedByAI: false
     mayBeRegeneratedAutomatically: true
 
+  fantasyManagement:
+    description: >
+      Isolated Fantasy Management workspace for NFL Dynasty, Mighty Giants,
+      StonedLack, Relevant Players, trade, roster, draft, free-agent and player
+      evaluation work. Detailed rules and sources live in the repository under
+      fantasy-management/ and must not be duplicated in this central app context.
+    entryPoint: fantasy-management/AGENTS.md
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+
   todos:
     description: >
       Human-maintained, mutable project task list. Todos are intentionally kept
@@ -67,6 +77,7 @@ readingOrder:
   - .ai-context/generated/generated-json-contracts.json
 
 shortContext:
+  fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
   public/data/Metadata.json: Liga-spezifische Inputs und Regeln
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
