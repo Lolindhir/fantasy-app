@@ -1,0 +1,46 @@
+layer_model:
+  - raw_source
+  - episode
+  - atomic_take
+  - normalized_knowledge
+  - recommendation
+
+storage:
+  raw_source: fantasy-management/sources/podcasts/{source_id}/raw_transcripts/YYYY/
+  episode: fantasy-management/sources/podcasts/{source_id}/episodes/YYYY/
+  normalized_knowledge: fantasy-management/derived/knowledge/
+  recommendation: fantasy-management/analyses/YYYY/
+  decision: fantasy-management/decisions/YYYY/
+
+initial_podcast_sources:
+  - source_id: stonedlack
+    display_name: StoneLack
+  - source_id: down-set-talk
+    display_name: Down, Set, Talk
+  - source_id: football-bromance
+    display_name: Football Bromance
+
+current_relevance_values:
+  - active
+  - stale
+  - superseded
+  - resolved
+  - contradicted
+  - historical_context
+
+freshness_defaults:
+  injury_availability: short
+  practice_camp: short
+  depth_chart_role: medium
+  weekly_redraft: short
+  ranking_market_value: medium
+  dynasty_talent: long
+  source_philosophy: evergreen
+
+analysis_path:
+  player:
+    - public/data current records when dynamic facts matter
+    - derived/knowledge/current player view
+    - derived/knowledge/takes player history
+    - source episode note
+    - raw transcript audit trail

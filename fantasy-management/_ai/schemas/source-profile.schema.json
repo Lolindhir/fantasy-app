@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/source-profile.schema.json",
+  "title": "Fantasy Management Source Profile",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["source_id", "display_name", "source_kind", "primary_focus", "default_source_weight"],
+  "properties": {
+    "source_id": { "type": "string" },
+    "display_name": { "type": "string" },
+    "aliases": { "type": "array", "items": { "type": "string" } },
+    "source_kind": { "type": "string" },
+    "primary_focus": { "type": "array", "items": { "type": "string" } },
+    "secondary_focus": { "type": "array", "items": { "type": "string" } },
+    "default_source_weight": { "type": "number", "minimum": 0, "maximum": 1 },
+    "fantasy_specificity": { "type": "string" },
+    "news_reliability": { "type": "string" },
+    "entertainment_factor": { "type": "string" },
+    "language": { "type": "string" },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  }
+}
