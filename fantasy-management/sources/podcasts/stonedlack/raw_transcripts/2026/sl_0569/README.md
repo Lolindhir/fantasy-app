@@ -15,11 +15,14 @@ Part order:
 2. `part02_nfc_north_east.md`
 3. `part03_nfc_south_west.md`
 4. `part04_afc_north_east.md`
-5. `part05_afc_south_west_and_mock.md`
+5. `part05_afc_south.md`
+6. `part06_afc_west.md`
+7. `part07_wrap_and_mock.md`
 
 Rules:
 
 - Keep parts in numeric order.
 - Treat the concatenation of all parts as the raw transcript source.
 - Do not clean text inside raw parts except file-level headings/metadata.
-- If a local import is available later, replace these parts with exact verbatim export files from the transcript source.
+- These files are a split import from the transcript pasted in ChatGPT.
+- If a local original transcript export is available later, it can replace these parts.
