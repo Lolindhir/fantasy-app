@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/relevant-player.schema.json",
+  "title": "Fantasy Management Relevant Player Entry",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["player_id", "name", "position", "source", "created"],
+  "properties": {
+    "player_id": { "type": "string" },
+    "name": { "type": "string" },
+    "position": { "type": "string" },
+    "team": { "type": ["string", "null"] },
+    "source": { "type": "string" },
+    "created": { "type": "string", "format": "date" },
+    "reason": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "unknown"]
+    },
+    "notes": { "type": "string" }
+  }
+}
