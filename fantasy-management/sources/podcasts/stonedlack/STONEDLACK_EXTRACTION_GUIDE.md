@@ -86,6 +86,8 @@ Do not overwrite raw files. If a better transcript appears later, create a versi
 raw_transcripts/2026/2026-05-11_sl_0571_rookie_rb_ranking.raw.v2.md
 ```
 
+A placeholder raw transcript is not a completed extraction. If the full raw transcript is missing, mark the episode extraction as incomplete and do not treat notes, takes or current views as complete.
+
 ## 5. Extraction tasks
 
 For a new transcript, the agent should:
@@ -103,8 +105,25 @@ For a new transcript, the agent should:
 11. create the Markdown source note
 12. create the JSON take file
 13. update alias and index files when needed
+14. run the completeness gate before marking the extraction as complete
 
-## 6. No hallucination rule
+## 6. Completeness gate
+
+A StonedLack extraction is not complete until these checks pass:
+
+1. Raw transcript is present and not a placeholder.
+2. Episode note contains source-note/cleanup, verified entity mappings, overview, source philosophy, explicit rankings/tiers, sleepers/buy/sell/fade/watchlist, player profiles, strategy takes, format-dependent notes, uncertainties and Mighty Giants reuse notes where applicable.
+3. Every player listed as high-signal in the episode note has one or more atomic take files, or a clear explanation why no take was created.
+4. Negative, cautious, fade, avoid and uncertainty takes are extracted, not only positive takes.
+5. Broad strategy points are extracted as dedicated takes when reusable.
+6. Episode JSON includes all take IDs and relevant entities.
+7. The take count is plausible for the transcript scope. Full draft-review, ranking or rookie-board episodes normally require many more than three takes.
+8. Important unresolved names are listed with original transcript form, guessed canonical name and confidence.
+9. Current knowledge views are updated when the extraction is intended to feed later analysis.
+
+If any check fails, set status to `needs_rework` or `incomplete` and document missing work in the episode note.
+
+## 7. No hallucination rule
 
 Do not invent missing details.
 
@@ -117,7 +136,7 @@ Use:
 
 Add unresolved issues to the Markdown source note.
 
-## 7. Entity resolution
+## 8. Entity resolution
 
 Automatic transcripts often break player names.
 
@@ -138,7 +157,7 @@ Recommended identity-verification priority:
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
 
-## 8. Take model
+## 9. Take model
 
 A take may be:
 
@@ -168,7 +187,7 @@ A take may be:
 - meta strategy
 - uncertainty note
 
-## 9. Fantasy context values
+## 10. Fantasy context values
 
 Allowed values include:
 
@@ -184,7 +203,7 @@ Allowed values include:
 - `real_football`
 - `unknown`
 
-## 10. Evaluation scales
+## 11. Evaluation scales
 
 Sentiment:
 
@@ -232,7 +251,7 @@ Time horizon:
 - `multi_year`
 - `unknown`
 
-## 11. Evidence rule
+## 12. Evidence rule
 
 Every important take should include evidence.
 
@@ -244,7 +263,7 @@ Evidence may be:
 
 Avoid long quotes. Prefer short paraphrases.
 
-## 12. Markdown source-note structure
+## 13. Markdown source-note structure
 
 Use this structure when appropriate:
 
@@ -263,3 +282,5 @@ Use this structure when appropriate:
 ## 10. Uncertainties
 ## 11. Reuse notes for Mighty Giants
 ```
+
+For draft-review, ranking, rookie-board and player-preview episodes, this structure should be treated as the default, not optional.
