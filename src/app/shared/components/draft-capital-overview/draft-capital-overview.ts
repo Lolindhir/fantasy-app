@@ -50,16 +50,17 @@ interface DraftCapitalViewModel {
         class="draft-capital-header"
         [style.grid-template-columns]="vm.gridTemplate"
       >
-        <span>Team</span>
+        <span class="draft-capital-cell draft-capital-cell--team">Team</span>
         <span
           *ngFor="let column of vm.columns"
+          class="draft-capital-cell draft-capital-cell--numeric"
           [title]="column.fullLabel"
         >{{ column.label }}</span>
-        <span>
+        <span class="draft-capital-cell draft-capital-cell--numeric">
           <span class="draft-capital-header-full">Best Pick</span>
           <span class="draft-capital-header-short">Best</span>
         </span>
-        <span>
+        <span class="draft-capital-cell draft-capital-cell--numeric">
           <span class="draft-capital-header-full">Best Available</span>
           <span class="draft-capital-header-short">Avail.</span>
         </span>
@@ -70,19 +71,19 @@ interface DraftCapitalViewModel {
         class="draft-capital-row"
         [style.grid-template-columns]="vm.gridTemplate"
       >
-        <div class="draft-capital-team">
+        <div class="draft-capital-cell draft-capital-team">
           <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
           <span class="draft-capital-team-name">{{ row.teamName }}</span>
           <span class="draft-capital-team-abbr">{{ row.teamAbbr }}</span>
         </div>
         <div
           *ngFor="let draftCount of row.draftCounts"
-          class="draft-capital-count"
+          class="draft-capital-cell draft-capital-cell--numeric draft-capital-count"
         >{{ draftCount.count }}</div>
-        <div class="draft-capital-best">{{ row.bestPick }}</div>
+        <div class="draft-capital-cell draft-capital-cell--numeric draft-capital-pick-chip draft-capital-pick-chip--best">{{ row.bestPick }}</div>
         <div
-          class="draft-capital-best-available"
-          [class.draft-capital-best-available--empty]="!row.hasBestAvailablePick"
+          class="draft-capital-cell draft-capital-cell--numeric draft-capital-pick-chip draft-capital-pick-chip--available"
+          [class.draft-capital-pick-chip--empty]="!row.hasBestAvailablePick"
         >{{ row.bestAvailablePick }}</div>
       </div>
     </section>
@@ -123,7 +124,12 @@ interface DraftCapitalViewModel {
       letter-spacing: 0.02em;
     }
 
-    .draft-capital-header span:not(:first-child) {
+    .draft-capital-cell {
+      min-width: 0;
+    }
+
+    .draft-capital-cell--numeric {
+      justify-self: end;
       text-align: right;
     }
 
@@ -145,7 +151,6 @@ interface DraftCapitalViewModel {
       display: flex;
       align-items: center;
       gap: 7px;
-      min-width: 0;
       font-weight: 700;
     }
 
@@ -172,24 +177,31 @@ interface DraftCapitalViewModel {
       display: inline;
     }
 
-    .draft-capital-count,
-    .draft-capital-best,
-    .draft-capital-best-available {
-      justify-self: end;
+    .draft-capital-count {
       font-variant-numeric: tabular-nums;
       font-weight: 700;
       white-space: nowrap;
     }
 
-    .draft-capital-best {
+    .draft-capital-pick-chip {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      font-weight: 800;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .draft-capital-pick-chip--best {
       color: #4f46e5;
     }
 
-    .draft-capital-best-available {
+    .draft-capital-pick-chip--available {
       color: #15803d;
     }
 
-    .draft-capital-best-available--empty {
+    .draft-capital-pick-chip--empty {
       color: #94a3b8;
     }
 
