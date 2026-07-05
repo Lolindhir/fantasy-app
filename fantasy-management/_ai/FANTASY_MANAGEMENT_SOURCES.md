@@ -1,0 +1,260 @@
+# Fantasy Management Sources
+
+Purpose: this file defines the source map for Fantasy Management work. It replaces external chat-level source notes for this repository area.
+
+## Canonical technical app sources
+
+The repository `Lolindhir/fantasy-app` remains the canonical source for current league and app data.
+
+Current generated app data lives under:
+
+`public/data/`
+
+Important files:
+
+- `public/data/League.json`
+- `public/data/Players.json`
+- `public/data/Teams.json`
+- `public/data/Drafts.json`
+- `public/data/Transactions.json`
+- `public/data/Timestamps.json`
+- `public/data/Metadata.json`
+- `public/data/chat/players-relevant/index.json`
+- `public/data/chat/players-relevant/players_*.json`
+
+## League source rules
+
+`public/data/League.json` is the primary current source for:
+
+- league settings
+- team rosters
+- reserve lists
+- taxi lists
+- starters when in season
+- team draft-pick references
+- roster size and lineup settings
+- scoring settings
+- salary cap fields
+- current league phase/status fields
+
+The user team is:
+
+- Team name: `Mighty Giants`
+- TeamID: `1`
+
+For Mighty Giants analysis, always identify the team by `TeamID = 1` in current data.
+
+## Metadata source rules
+
+`public/data/Metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
+
+Known mapping may include:
+
+| Real name | TeamID / OwnerID mapping value |
+|---|---:|
+| Robert | 1 |
+| Marcel | 2 |
+| Flo | 3 |
+| Jan | 4 |
+| Dennis | 5 |
+| Tim | 6 |
+
+Always re-check `Metadata.json` when exact owner mapping matters.
+
+## Player source rules
+
+Do not use the full `public/data/Players.json` as the operational source for broad player lists in chat or agent workflows when chunked player exports are available.
+
+Reason: the full file is large and may be truncated in tool or chat contexts.
+
+For broad player lists, waiver/free-agent boards and candidate generation, use:
+
+1. `public/data/chat/players-relevant/index.json`
+2. the matching `public/data/chat/players-relevant/players_*.json` chunks
+
+For a single player, load the relevant chunk or exact current player record before drawing conclusions.
+
+Important player fields may include:
+
+- `ID`
+- `Name`
+- `NameFirst`
+- `NameLast`
+- `TeamID`
+- `TeamAbbr`
+- `Position`
+- `Age`
+- `Year`
+- `Salary`
+- `SalaryProjected`
+- `Status`
+- `Injured`
+- `InjuryDetails`
+- `GamesPlayed`
+- `GamesPotential`
+- `SnapsTotal`
+- `AttemptsTotal`
+- `FantasyPointsTotal`
+- `FantasyPointsAvgGame`
+- `FantasyPointsAvgPotentialGame`
+- `FantasyPointsAvgSnap`
+- `FantasyPointsAvgAttempt`
+- `PointHistory`
+- `GameHistory`
+- `Ranking`
+- `Grading`
+- `FantasyPros`
+- `ESPN`
+
+## Fantasy free-agent source rules
+
+`Players.json -> IsFreeAgent` is not a fantasy-league free-agent signal.
+
+A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`.
+
+A fantasy free agent is only a player whose ID does not appear in any roster, reserve or taxi list.
+
+For free-agent boards:
+
+1. load current `League.json`
+2. collect every owned player ID from all teams' `Roster`, `Reserve` and `Taxi`
+3. load relevant player chunks through the chunk index
+4. remove owned IDs
+5. evaluate the remaining candidates
+6. verify top candidates through their concrete player records
+
+## Draft source rules
+
+Current team draft-pick ownership starts from:
+
+`League.json -> Teams[].DraftPicks`
+
+Pick metadata is resolved through:
+
+`public/data/Drafts.json -> Picks[]`
+
+Never infer true pick position only from a pick key such as `R1` or `OO5`.
+
+Use these fields when available:
+
+- `DisplayPick`
+- `Round`
+- `PositionInRound`
+- `OverallPick`
+- `OriginalOwnerRosterID`
+- `CurrentOwnerRosterID`
+- `WasTraded`
+- `IsCurrentlyTraded`
+- `TradeHistory`
+- `PlayerID`
+- `PlayerName`
+- `Status`
+
+For current ownership, use `CurrentOwnerRosterID`, not `OriginalOwnerRosterID`.
+
+## Transaction source rules
+
+`public/data/Transactions.json` is the current source for completed transactions.
+
+Use it for:
+
+- trade history
+- add/drop history
+- pick movements
+- market activity
+- provenance checks
+
+When current state and transaction history disagree, current state from `League.json` wins for roster and pick ownership.
+
+## Timestamp source rules
+
+Check `public/data/Timestamps.json` before larger analyses when data freshness matters.
+
+## External fantasy sources
+
+External sources may be used for market, expert or plausibility context.
+
+Examples:
+
+- FantasyPros Dynasty Rankings / ECR
+- FantasyPros PPR or redraft rankings
+- KeepTradeCut dynasty rankings / trade calculator / market values
+- FantasyCalc dynasty rankings / trade database
+- ESPN player profiles
+- official NFL/team/college pages for identity, roster and injury context
+
+Rules:
+
+- fetch external rankings, values, ADP, injury/news and market context fresh when used
+- cite the source in user-facing responses when external data is used
+- explain what the source measures
+- do not let external sources override current league data
+- do not store dynamic external rankings as permanent truth
+
+## Fantasy Management internal sources
+
+The Fantasy Management workspace stores source and analysis artifacts under:
+
+`fantasy-management/`
+
+Important subfolders:
+
+- `fantasy-management/sources/`
+- `fantasy-management/derived/`
+- `fantasy-management/analyses/`
+- `fantasy-management/decisions/`
+- `fantasy-management/indexes/`
+
+These files are useful context but are not canonical current league state.
+
+## StonedLack source area
+
+StonedLack podcast data belongs under:
+
+`fantasy-management/sources/podcasts/stonedlack/`
+
+StonedLack is a secondary qualitative source, not a primary league source.
+
+Use it for:
+
+- rookie/prospect takes
+- source sentiment
+- conviction
+- tiers and rankings
+- sleeper/buy/sell/fade/watchlist takes
+- source philosophy
+- strategy notes
+- later meta-analysis across episodes
+
+Always distinguish:
+
+- internal league data
+- StonedLack source perspective
+- current external market data
+- final Mighty Giants recommendation
+
+Raw transcripts may contain automatic transcription errors, especially player names. Use cleaned entity mappings where available and verify uncertain names when they matter.
+
+## Relevant Players source area
+
+User-provided or generated Relevant Players files belong under:
+
+`fantasy-management/sources/relevant-players/`
+
+These files can supplement generated app/player chunks, but they must not override current generated league state unless explicitly documented.
+
+## Analysis artifacts are not permanent truth
+
+Files under `analyses/`, `derived/` and `decisions/` are useful context and history.
+
+They must not be treated as current truth for dynamic values such as:
+
+- current roster
+- current pick ownership
+- current salary/cap state
+- current injuries
+- current rankings
+- current market values
+- current NFL depth charts
+
+Re-derive dynamic facts from current sources when needed.
