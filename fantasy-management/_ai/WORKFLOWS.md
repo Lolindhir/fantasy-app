@@ -7,11 +7,12 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 1. Read `fantasy-management/AGENTS.md`.
 2. Read source and rule files under `fantasy-management/_ai/`.
 3. Read `fantasy-management/_ai/knowledge-layer.yaml` and `fantasy-management/derived/knowledge/PROCESS.md` when source context matters.
-4. Identify whether the task needs current app data from `public/data/`.
-5. Load only the required current data.
-6. Load relevant source, knowledge, analysis or decision files.
-7. Distinguish stable facts from dynamic values.
-8. Store outputs in the correct Fantasy Management folder when persistence is requested.
+4. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` and `fantasy-management/_ai/source-registry.json` when podcast/source extraction matters.
+5. Identify whether the task needs current app data from `public/data/`.
+6. Load only the required current data.
+7. Load relevant source, source notes, knowledge, analysis or decision files.
+8. Distinguish stable facts from dynamic values.
+9. Store outputs in the correct Fantasy Management folder when persistence is requested.
 
 ## Player analysis workflow
 
@@ -59,26 +60,28 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 6. Add current source-derived views for candidate players when relevant.
 7. Evaluate remaining candidates by position, production, role, age, format fit and salary.
 8. Verify top candidates through player records.
-9. Store under `fantasy-management/derived/free-agent-boards/YYYY/`.
+9. Store boards under `fantasy-management/derived/free-agent-boards/YYYY/`.
 
 ## Podcast workflow
 
 Use this for StoneLack/StonedLack, Down Set Talk, Football Bromance and later podcast sources.
 
-1. Load `sources/podcasts/{source_id}/SOURCE_PROFILE.json`.
-2. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested.
-3. Create an episode note under `sources/podcasts/{source_id}/episodes/YYYY/`.
-4. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/`.
-5. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
-6. Update `derived/knowledge/takes/` by player, team and source when requested.
-7. Update `derived/knowledge/current/` as the latest source-derived working view.
-8. Keep source statement, entity cleanup and AI interpretation separate.
-9. Do not invent missing details.
+1. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
+2. Load source identity, weighting and profile context from `fantasy-management/_ai/source-registry.json`.
+3. Load source-specific quirks from `sources/podcasts/{source_id}/SOURCE_NOTES.md` when present.
+4. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested.
+5. Create an episode note under `sources/podcasts/{source_id}/episodes/YYYY/`.
+6. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/`.
+7. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
+8. Update `derived/knowledge/takes/` by player, team and source when requested.
+9. Update `derived/knowledge/current/` as the latest source-derived working view.
+10. Keep source statement, entity cleanup and AI interpretation separate.
+11. Do not invent missing details.
 
 ## Knowledge-layer update workflow
 
-1. Resolve source IDs through `derived/knowledge/entities/source_registry.json`.
-2. Resolve player and team aliases through `derived/knowledge/entities/`.
+1. Resolve source IDs through `fantasy-management/_ai/source-registry.json`.
+2. Resolve player and team aliases through `derived/knowledge/entities/` and source-specific notes.
 3. Group takes by player, team and source.
 4. Compare new takes against older related takes.
 5. Move inactive information out of the current view without deleting history.
