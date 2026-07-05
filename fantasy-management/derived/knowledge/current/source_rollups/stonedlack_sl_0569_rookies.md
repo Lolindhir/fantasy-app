@@ -46,7 +46,7 @@ Relevante Strategie-Takes:
 | Day-Two-TEs | Usage prüfen, nicht wegen Draft Capital überhöhen | `sl_0569_t017` |
 | Ravens WRs | interessant, aber nicht prioritär | `sl_0569_t019` |
 | Jonah/Joner Coleman | möglicher RB3, aber erst nach vielen WRs | `sl_0569_t025` |
-| Seth McGowan | theoretischer Pfad, aber niedrige Priorität | `sl_0569_t026` |
+| Colts-RB-Dart | theoretischer Pfad, aber niedrige Priorität | `sl_0569_t026` |
 | Nicholas Singleton | moderates Titans-RB-Pfadsignal | `sl_0569_t027` |
 | Low-interest profiles | tiefe Fades/Darts | `sl_0569_t030` |
 
