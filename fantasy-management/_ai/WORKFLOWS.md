@@ -77,16 +77,19 @@ Use this for StoneLack/StonedLack, Down Set Talk, Football Bromance and later po
 1. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
 2. Load source identity, weighting and profile context from `fantasy-management/_ai/source-registry.json`.
 3. Load source-specific quirks from `sources/podcasts/{source_id}/SOURCE_NOTES.md` when present.
-4. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested.
-5. Create an episode note under `sources/podcasts/{source_id}/episodes/YYYY/`.
-6. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/`.
-7. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
-8. Update `derived/knowledge/takes/` by player, team and source when requested.
-9. Update `derived/knowledge/current/` as the latest source-derived working view when requested.
-10. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
-11. If raw source is only a placeholder, take coverage is obviously sparse, or episode JSON does not reference all takes, mark the extraction `incomplete` or `needs_rework`.
-12. Keep source statement, entity cleanup and AI interpretation separate.
-13. Do not invent missing details.
+4. Store the unchanged source file under `sources/podcasts/{source_id}/raw_transcripts/YYYY/` when requested. If a single large raw write is blocked, create ordered raw parts plus a manifest.
+5. Create a German ai-input-style episode analysis under `sources/podcasts/{source_id}/episodes/YYYY/`.
+6. Create a player/entity data JSON under `sources/podcasts/{source_id}/episodes/YYYY/` when the episode contains reusable player, team, tier, ranking, board or role content.
+7. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/` and link the raw manifest/status, companion files, player/entity data path and take IDs.
+8. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
+9. Use stable take IDs and matching file names such as `episode_id_tNNN.json`.
+10. Create a German take index when many takes are produced.
+11. Update `derived/knowledge/takes/` by player, team and source when requested.
+12. Update `derived/knowledge/current/` as the latest source-derived working view when requested or when the extraction should feed reusable analysis.
+13. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
+14. If raw source is only a placeholder, German analysis is only a short summary, player data is missing for a board-style episode, take coverage is sparse, or episode JSON does not reference all canonical takes, mark the extraction `incomplete` or `needs_rework`.
+15. Keep source statement, entity cleanup and AI interpretation separate.
+16. Do not invent missing details or non-mentions.
 
 ## League-context update workflow
 
