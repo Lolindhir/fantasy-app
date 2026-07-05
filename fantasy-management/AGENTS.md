@@ -29,14 +29,17 @@ For Fantasy Management tasks, read these files as needed:
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
 4. `fantasy-management/_ai/knowledge-layer.yaml`
-5. `fantasy-management/derived/knowledge/PROCESS.md`
-6. `fantasy-management/_ai/WORKFLOWS.md`
-7. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-8. relevant source files under `fantasy-management/sources/`
-9. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
-10. relevant take history under `fantasy-management/derived/knowledge/takes/`
-11. relevant analyses under `fantasy-management/analyses/`
-12. relevant decisions under `fantasy-management/decisions/`
+5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
+6. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
+7. `fantasy-management/derived/knowledge/PROCESS.md`
+8. `fantasy-management/_ai/WORKFLOWS.md`
+9. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+10. relevant source files under `fantasy-management/sources/`
+11. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+12. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
+13. relevant take history under `fantasy-management/derived/knowledge/takes/`
+14. relevant analyses under `fantasy-management/analyses/`
+15. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -71,8 +74,10 @@ fantasy-management/
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
+    PODCAST_EXTRACTION_RULES.md
     knowledge-layer.yaml
     schema-list.json
+    source-registry.json
     WORKFLOWS.md
     schemas/
       analysis.schema.json
@@ -85,8 +90,11 @@ fantasy-management/
   sources/
     podcasts/
       stonedlack/
+        SOURCE_NOTES.md
       down-set-talk/
+        SOURCE_NOTES.md
       football-bromance/
+        SOURCE_NOTES.md
     relevant-players/
     external-rankings/
     manual-notes/
@@ -109,6 +117,18 @@ fantasy-management/
   archive/
     superseded/
 ```
+
+## Source configuration rule
+
+Podcast source weights and comparable source metadata are canonical in:
+
+`fantasy-management/_ai/source-registry.json`
+
+Podcast-specific quirks and aliases belong in:
+
+`fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+
+Do not maintain source weights in source-local files.
 
 ## Language
 
