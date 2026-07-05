@@ -7,11 +7,16 @@
   "required": ["take_id", "source_name", "take_type", "fantasy_context", "sentiment", "conviction", "evidence"],
   "properties": {
     "take_id": { "type": "string" },
+    "source_id": { "type": ["string", "null"] },
     "source_name": { "type": "string" },
     "source_type": { "type": "string" },
     "episode_id": { "type": ["string", "null"] },
+    "published_date": { "type": ["string", "null"] },
+    "processed_date": { "type": ["string", "null"] },
     "player_id": { "type": ["string", "null"] },
     "player_name": { "type": ["string", "null"] },
+    "team_abbr": { "type": ["string", "null"] },
+    "entity_type": { "type": ["string", "null"] },
     "take_type": {
       "type": "string",
       "enum": [
@@ -31,6 +36,7 @@
         "bestball_value",
         "dynasty_value",
         "injury_reaction",
+        "availability_update",
         "depth_chart_projection",
         "role_projection",
         "coaching_scheme",
@@ -42,6 +48,10 @@
         "uncertainty",
         "other"
       ]
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": ["fact", "news", "opinion", "projection", "rumor", "market", "strategy", "unknown"]
     },
     "fantasy_context": {
       "type": "array",
@@ -62,12 +72,8 @@
       "type": "string",
       "enum": ["very_high", "high", "medium", "low", "very_low", "unknown"]
     },
-    "action": {
-      "type": "string"
-    },
-    "time_horizon": {
-      "type": "string"
-    },
+    "action": { "type": "string" },
+    "time_horizon": { "type": "string" },
     "arguments": {
       "type": "array",
       "items": { "type": "string" }
@@ -89,6 +95,25 @@
         }
       }
     },
+    "validity_type": {
+      "type": "string",
+      "enum": ["point_in_time", "until_updated", "season_long", "evergreen", "decays_fast", "unknown"]
+    },
+    "freshness_bucket": {
+      "type": "string",
+      "enum": ["short", "medium", "long", "evergreen", "unknown"]
+    },
+    "stale_after_days": { "type": ["integer", "null"] },
+    "current_relevance": {
+      "type": "string",
+      "enum": ["active", "stale", "superseded", "resolved", "contradicted", "historical_context", "unknown"]
+    },
+    "supersedes_take_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "superseded_by_take_id": { "type": ["string", "null"] },
+    "source_weight": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
     "extractor_confidence": {
       "type": "string",
       "enum": ["high", "medium", "low", "unknown"]
