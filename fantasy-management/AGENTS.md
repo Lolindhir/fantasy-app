@@ -2,7 +2,7 @@
 
 This folder is the isolated Fantasy Management workspace of the repository.
 
-Read this file first for Fantasy Football, Dynasty, Mighty Giants, StoneLack/StonedLack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer or analysis-storage tasks.
+Read this file first for Fantasy Football, Dynasty, Mighty Giants, StoneLack/StonedLack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer, league-context or analysis-storage tasks.
 
 ## Scope
 
@@ -17,6 +17,7 @@ Fantasy Management includes:
 - podcast and external-source processing
 - source take extraction
 - normalized knowledge-layer updates
+- league context, owner profiles and trade negotiation history
 - derived boards and source summaries
 - stored AI analyses
 - user decisions and decision history
@@ -31,15 +32,19 @@ For Fantasy Management tasks, read these files as needed:
 4. `fantasy-management/_ai/knowledge-layer.yaml`
 5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
 6. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
-7. `fantasy-management/derived/knowledge/PROCESS.md`
-8. `fantasy-management/_ai/WORKFLOWS.md`
-9. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-10. relevant source files under `fantasy-management/sources/`
-11. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-12. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
-13. relevant take history under `fantasy-management/derived/knowledge/takes/`
-14. relevant analyses under `fantasy-management/analyses/`
-15. relevant decisions under `fantasy-management/decisions/`
+7. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
+8. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
+9. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matter
+10. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
+11. `fantasy-management/derived/knowledge/PROCESS.md`
+12. `fantasy-management/_ai/WORKFLOWS.md`
+13. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+14. relevant source files under `fantasy-management/sources/`
+15. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+16. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
+17. relevant take history under `fantasy-management/derived/knowledge/takes/`
+18. relevant analyses under `fantasy-management/analyses/`
+19. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -84,10 +89,17 @@ fantasy-management/
       source-take.schema.json
       source-profile.schema.json
       source-registry.schema.json
+      owner-registry.schema.json
       episode.schema.json
       entity-signal.schema.json
       take-view.schema.json
       relevant-player.schema.json
+  league-context/
+    README.md
+    owner-registry.json
+    owner-profiles.md
+    trade-negotiation-history.md
+    league-format-notes.md
   sources/
     podcasts/
       stonedlack/
@@ -131,6 +143,14 @@ Podcast-specific quirks and aliases belong in:
 
 Do not maintain source weights in source-local files.
 
+## League context rule
+
+Owner/team aliases, user perspective, manager tendencies, negotiation history and stable format interpretation belong under:
+
+`fantasy-management/league-context/`
+
+Current league state still comes from `public/data/League.json` and `public/data/Metadata.json`.
+
 ## Language
 
 Agent-facing instruction files should be written in English.
@@ -140,6 +160,8 @@ Human-facing documentation may be written in German.
 Stored user-facing analysis outputs should be German unless requested otherwise.
 
 ## Output storage rules
+
+Use `league-context/` for stable league-specific strategic context, owner profiles, negotiation history and format notes.
 
 Use `sources/` for source material and source-specific extraction artifacts.
 
