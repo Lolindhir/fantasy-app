@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/analysis.schema.json",
+  "title": "Fantasy Management Analysis",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "created", "scope", "status", "summary"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "player_analysis",
+        "trade_analysis",
+        "roster_audit",
+        "draft_analysis",
+        "free_agent_board",
+        "strategy_report",
+        "league_meta_analysis",
+        "source_summary"
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "const": "fantasy-management"
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "superseded", "archived"]
+    },
+    "team_context": {
+      "type": "string"
+    },
+    "data_sources": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "recommendation": {
+      "type": "string"
+    },
+    "validity_note": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": ["string", "null"]
+    }
+  }
+}
