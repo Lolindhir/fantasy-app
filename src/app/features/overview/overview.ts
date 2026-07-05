@@ -8,10 +8,8 @@ import { AllTimeStandingsComponent } from '../../shared/components/all-time-stan
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import {
-  compareDraftPickCollectionsByStrength,
   compareDraftPicksByDraftOrder,
-  compareDraftPicksByDraftThenOrder,
-  getBestDraftPick
+  compareDraftPicksByDraftThenOrder
 } from '../../shared/utils/draft-capital.util';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
 import {
@@ -57,18 +55,6 @@ interface DraftSeasonDraftRow {
   startDisplay: string | null;
 }
 
-interface DraftCapitalRow {
-  team: FantasyTeam;
-  teamName: string;
-  rookieCount: number;
-  freeAgentCount: number;
-  bestPick: string;
-}
-
-interface DraftCapitalSortRow extends DraftCapitalRow {
-  sortPicks: DraftPick[];
-}
-
 interface DraftPickOverviewEntry {
   draft: RawDraft;
   pick: DraftPick;
@@ -85,7 +71,6 @@ interface DraftPickOverviewRow {
 
 interface DraftSeasonDashboard {
   drafts: DraftSeasonDraftRow[];
-  draftCapital: DraftCapitalRow[];
   nextPicks: DraftPickOverviewRow[];
   recentPicks: DraftPickOverviewRow[];
 }
@@ -258,7 +243,6 @@ export class OverviewComponent {
 
     return {
       drafts: seasonDrafts.map(draft => this.buildDraftSeasonDraftRow(draft)),
-      draftCapital: this.buildDraftCapitalRows(teams, season),
       nextPicks: this.getNextDraftPickEntries(seasonDrafts)
         .slice(0, 3)
         .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, false)),
@@ -294,36 +278,6 @@ export class OverviewComponent {
       statusClass,
       startDisplay
     };
-  }
-
-  private buildDraftCapitalRows(teams: FantasyTeam[], season: string): DraftCapitalRow[] {
-    const maxRound = this.getMaxDisplayedDraftRound(teams, season);
-    const rows: DraftCapitalSortRow[] = teams.map(team => {
-      const currentSeasonPicks = team.DraftPicks.filter(pick => pick.Season === season);
-      const bestPick = getBestDraftPick(currentSeasonPicks);
-
-      return {
-        team,
-        teamName: team.Team ?? team.Owner,
-        rookieCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Rookie').length,
-        freeAgentCount: currentSeasonPicks.filter(pick => pick.DraftType === 'Free_Agent').length,
-        bestPick: bestPick ? this.formatBestDraftPick(bestPick) : '—',
-        sortPicks: currentSeasonPicks
-      };
-    });
-
-    return rows
-      .sort((a, b) => {
-        const strengthDiff = compareDraftPickCollectionsByStrength(a.sortPicks, b.sortPicks, maxRound);
-        if (strengthDiff !== 0) return strengthDiff;
-        return a.teamName.localeCompare(b.teamName, 'en', { sensitivity: 'base' });
-      })
-      .map(({ sortPicks: _sortPicks, ...row }) => row);
-  }
-
-  private formatBestDraftPick(pick: DraftPick): string {
-    const prefix = pick.DraftType === 'Free_Agent' ? 'FA' : 'R';
-    return `${prefix} ${pick.DisplayPick}`;
   }
 
   private buildDraftPickOverviewRow(
