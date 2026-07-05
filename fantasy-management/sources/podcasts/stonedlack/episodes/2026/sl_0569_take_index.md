@@ -4,6 +4,22 @@ Status: deutsch lesbarer Index der normalisierten atomaren Takes. JSON-Takes lie
 
 `fantasy-management/derived/knowledge/takes/stonedlack/2026/sl_0569_tNNN.json`
 
+## Qualitätsstatus
+
+Die Takes `sl_0569_t001` bis `sl_0569_t030` sind die kanonische episode-lokale Take-Schicht für diese Folge.
+
+Sie wurden nach den fokussierten Podcast-Extraktionsregeln nachgezogen:
+
+- stabile Dateinamen passend zur `take_id`
+- deutsche Summary-, Argument-, Risiko- und Interpretationsfelder
+- strukturierte Evidence
+- explizites `source_statement`
+- explizites `cleaned_entity_mapping`
+- explizite `ai_interpretation`
+- `episode_local_scope` mit Hinweis, dass globale Indexe deferred sind
+
+Globale Indexdateien wurden nicht aktualisiert; das ist nach den neuen Regeln kein Teil der normalen Podcast-Extraktion.
+
 ## Strategie und Klassenbild
 
 | Take | Thema | Kurzsignal |
@@ -44,11 +60,11 @@ Status: deutsch lesbarer Index der normalisierten atomaren Takes. JSON-Takes lie
 | sl_0569_t023 | Ashton Jeanty / Brock Bowers | Klare Raiders-Redraft-Targets aus Quellenperspektive. |
 | sl_0569_t024 | Marlin Klein | Nicht wegen deutschem Community-Hype überbezahlen. |
 | sl_0569_t025 | Jonah/Joner Coleman | Möglicher Rookie-RB3, aber erst nach vielen WRs. |
-| sl_0569_t026 | Colts-RB-Dart | theoretischer Pfad, aber niedrige Quellenpriorität. |
+| sl_0569_t026 | Seth McGowan | theoretischer Colts-Backup-Pfad, aber niedrige Quellenpriorität. |
 | sl_0569_t027 | Nicholas Singleton | Moderater Titans-RB-Pfad hinter Pollard/Spears. |
 | sl_0569_t028 | Brandon Thompson | Speed-/Scheme-Dart mit offenem Chargers-WR-Room. |
 | sl_0569_t029 | Barion Brown / Bryce Lance | Tiefe Saints-Upside-/Return-/RAS-Darts. |
 
 ## Hinweis
 
-Dieser Index ist absichtlich auf Deutsch. Die JSON-Dateien bleiben maschinenlesbar und enthalten Evidence, Argumente, Risiken, Freshness und Current-Relevance-Felder.
+Dieser Index ist absichtlich auf Deutsch. Die JSON-Dateien bleiben maschinenlesbar und enthalten Evidence, Argumente, Risiken, Freshness, Current-Relevance, Quellenstatement, Entity-Mapping und AI-Interpretation.
