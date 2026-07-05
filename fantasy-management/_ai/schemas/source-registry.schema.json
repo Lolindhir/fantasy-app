@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fantasy Source Registry",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["sources"],
+  "properties": {
+    "version": { "type": "integer" },
+    "canonical": { "type": "boolean" },
+    "purpose": { "type": "string" },
+    "rules_path": { "type": "string" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["source_id", "display_name", "source_kind", "default_source_weight"],
+        "properties": {
+          "source_id": { "type": "string" },
+          "display_name": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "source_kind": { "type": "string" },
+          "primary_focus": { "type": "array", "items": { "type": "string" } },
+          "secondary_focus": { "type": "array", "items": { "type": "string" } },
+          "default_source_weight": { "type": "number", "minimum": 0, "maximum": 1 },
+          "fantasy_specificity": { "type": "string" },
+          "news_reliability": { "type": "string" },
+          "entertainment_factor": { "type": "string" },
+          "language": { "type": "string" },
+          "source_notes_path": { "type": "string" },
+          "folder_path": { "type": "string" }
+        }
+      }
+    }
+  }
+}
