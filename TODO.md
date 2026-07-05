@@ -121,11 +121,13 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [ ] Draft-Kapital-Score und Pick-Werte für Draft-Assets prüfen.
   - Kontext: Drafts zeigen bereits Pick-Besitz und Trade-History; für Dynasty-Planung wäre zusätzlich interessant, wie wertvoll die aktuellen und zukünftigen Picks eines Teams sind.
+  - Kontext: Overview Draft Capital und Drafts nutzen vorläufig eine frontendseitige Pick-Strength-Sortierung aus `src/app/shared/utils/draft-capital.util.ts`.
   - Idee: Einzelne Picks mit einem Wert versehen, z. B. abhängig von Runde, konkretem `OverallPick` bei Exact-Drafts und reduzierter Rundenschätzung bei RoundOnly-Future-Drafts.
   - Idee: Eine generierte Statistikdatei für historische Pick-Werte aufbauen, z. B. `public/data/stats/DraftPickValueStats.json`.
   - Idee: Historische Draft-Picks mit den gepickten Spielern und deren Fantasy-Punkten nach Rookie-Year, 2-Year-Window und 3-Year-Window verbinden.
   - Ziel: Daraus pro Team und Draft/Season einen Draft-Capital-Score ableiten, ohne Draft-Ownership als Source-of-Truth ins Frontend zu verlagern.
   - Ziel: Durchschnittliche Punkte pro konkretem Pick, Pick-Bucket, Runde und DraftType berechnen, damit Pick-Werte liga-spezifisch statt nur manuell geschätzt werden.
+  - Ziel: Sobald generatorseitig Draft-Capital-Werte vorliegen, Overview Draft Capital und Drafts-Sortierungen auf diese Datenwerte umstellen und die frontendseitige Pick-Strength nur noch als Fallback verwenden.
   - Hinweis: Gewichtung später bewusst diskutieren, weil `1.01`, frühe Runde 1 und spätere Runden sehr unterschiedlich bewertet werden sollten.
   - Hinweis: Kleine Sample Sizes über Fallbacks abfangen, z. B. exakter Pick → Pick-Bucket → Runde → DraftType-Durchschnitt.
 
