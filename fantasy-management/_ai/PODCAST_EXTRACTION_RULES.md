@@ -83,6 +83,8 @@ Use:
 - UTF-8 text
 - two-space indentation
 - one property per line
+- arrays on multiple lines, including single-item arrays
+- exactly one array item per line
 - nested arrays and objects on separate lines
 - stable key order within the same file type when practical
 - trailing newline at end of file
@@ -95,6 +97,8 @@ Do not write one-line JSON for podcast/source extraction artifacts such as:
 - source registry JSON
 - owner registry JSON
 - manually maintained indexes or rollups
+
+Do not use inline arrays such as `["tag1", "tag2"]` or `["take_id"]` in Fantasy Management JSON. Empty arrays may remain as `[]`.
 
 Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
 
@@ -195,7 +199,7 @@ For podcast extraction, every new atomic take should use the explicit field name
 - `evidence`: timestamped paraphrase or short excerpt
 - `episode_local_scope`: links or metadata for local package context, including `global_index_update: "deferred"` when global indexes are not updated
 
-Do not write one-line JSON takes for new podcast extractions. Every take JSON must be pretty-printed with two-space indentation and readable line breaks.
+Do not write one-line JSON takes for new podcast extractions. Every take JSON must be pretty-printed with two-space indentation, readable line breaks and exactly one array item per line.
 
 Use stable take IDs and file names. Prefer `episode_id_tNNN.json` so `take_id` and file name can be matched mechanically. If legacy or descriptive file names exist, the episode JSON must clearly declare the canonical take file pattern.
 
@@ -250,6 +254,7 @@ Before marking an extraction as complete, verify:
 12. global indexes are not required for extraction completeness unless the task is an index rebuild
 13. new podcast take files include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
 14. JSON files created or updated as part of the extraction are pretty-printed with two-space indentation, not one-line JSON
+15. non-empty JSON arrays have one item per line, including single-item arrays
 
 If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
 
