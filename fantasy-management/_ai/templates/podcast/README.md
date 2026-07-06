@@ -48,3 +48,15 @@ Source-specific files may add sections, but they should not remove the central c
 - local take index
 - optional current source view
 - deferred global indexes
+
+## JSON formatting rule
+
+All AI-created or manually maintained Fantasy Management JSON files must stay human-readable:
+
+- two-space indentation
+- one property per line
+- nested arrays and objects on separate lines
+- stable key order where practical
+- trailing newline at end of file
+
+Do not commit one-line/minified JSON for podcast episode metadata, player/entity data, source takes, registries or manually maintained indexes.
