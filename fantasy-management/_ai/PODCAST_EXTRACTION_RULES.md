@@ -74,6 +74,30 @@ Machine-readable JSON keys stay stable and may use English field names, but user
 
 The target quality for full podcast extraction is the older `ai-input` style: a readable German analysis that the user can understand without opening the raw transcript, plus machine-readable JSON for later agents.
 
+## JSON formatting rule
+
+Fantasy Management JSON artifacts that are created or manually maintained by AI must be human-readable and pretty-printed.
+
+Use:
+
+- UTF-8 text
+- two-space indentation
+- one property per line
+- nested arrays and objects on separate lines
+- stable key order within the same file type when practical
+- trailing newline at end of file
+
+Do not write one-line JSON for podcast/source extraction artifacts such as:
+
+- episode JSON
+- player/entity data JSON
+- source take JSON
+- source registry JSON
+- owner registry JSON
+- manually maintained indexes or rollups
+
+Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
+
 ## Raw source rule
 
 Store raw transcripts or raw notes unchanged under:
@@ -171,7 +195,7 @@ For podcast extraction, every new atomic take should use the explicit field name
 - `evidence`: timestamped paraphrase or short excerpt
 - `episode_local_scope`: links or metadata for local package context, including `global_index_update: "deferred"` when global indexes are not updated
 
-Avoid one-line JSON takes for new podcast extractions. Compact JSON is allowed, but the content must still contain the required conceptual fields above.
+Do not write one-line JSON takes for new podcast extractions. Every take JSON must be pretty-printed with two-space indentation and readable line breaks.
 
 Use stable take IDs and file names. Prefer `episode_id_tNNN.json` so `take_id` and file name can be matched mechanically. If legacy or descriptive file names exist, the episode JSON must clearly declare the canonical take file pattern.
 
@@ -225,6 +249,7 @@ Before marking an extraction as complete, verify:
 11. current views are updated when required by the task scope, or explicitly deferred
 12. global indexes are not required for extraction completeness unless the task is an index rebuild
 13. new podcast take files include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
+14. JSON files created or updated as part of the extraction are pretty-printed with two-space indentation, not one-line JSON
 
 If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
 
