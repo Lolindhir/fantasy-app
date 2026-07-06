@@ -16,6 +16,24 @@ Podcast-specific quirks, aliases and interpretation notes belong next to the sou
 
 Do not maintain source weights in multiple places.
 
+## Central template rule
+
+Central podcast templates live under:
+
+`fantasy-management/_ai/templates/podcast/`
+
+Use these templates for all podcast sources unless the user explicitly requests a different structure:
+
+- `raw_manifest_template.md`
+- `episode_analysis_template.md`
+- `episode_metadata_template.json`
+- `episode_player_data_template.json`
+- `source_take_template.json`
+- `take_index_template.md`
+- `current_source_view_template.md`
+
+Source-specific guides may add source quirks, alias notes or weighting guidance, but they must not redefine the common episode, take, player-data or rollup structure.
+
 ## Focus rule
 
 Default podcast extraction is episode-local first.
