@@ -74,6 +74,28 @@
     },
     "action": { "type": "string" },
     "time_horizon": { "type": "string" },
+    "summary": { "type": "string" },
+    "source_statement": {
+      "type": ["string", "null"],
+      "description": "What the podcast/source said, kept separate from the assistant's recommendation. Required by podcast extraction rules for new podcast takes."
+    },
+    "cleaned_entity_mapping": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Canonical entity mapping, raw transcript forms and confidence. Required by podcast extraction rules for new podcast takes.",
+      "properties": {
+        "canonical_entity": { "type": ["string", "null"] },
+        "entity_type": { "type": ["string", "null"] },
+        "team_abbr": { "type": ["string", "null"] },
+        "position": { "type": ["string", "null"] },
+        "confidence": { "type": ["string", "null"] },
+        "raw_transcript_forms": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ai_interpretation": {
+      "type": ["string", "null"],
+      "description": "Assistant interpretation for fantasy reuse, Mighty Giants context or league-format context. Required by podcast extraction rules for new podcast takes."
+    },
     "arguments": {
       "type": "array",
       "items": { "type": "string" }
@@ -117,6 +139,18 @@
     "extractor_confidence": {
       "type": "string",
       "enum": ["high", "medium", "low", "unknown"]
+    },
+    "episode_local_scope": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Episode-local package references and deferred/global-index status. Required by podcast extraction rules for new podcast takes.",
+      "properties": {
+        "player_data_path": { "type": ["string", "null"] },
+        "take_index_path": { "type": ["string", "null"] },
+        "player_data_rank": { "type": ["integer", "null"] },
+        "linked_take_ids": { "type": "array", "items": { "type": "string" } },
+        "global_index_update": { "type": ["string", "null"] }
+      }
     }
   }
 }
