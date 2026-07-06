@@ -143,6 +143,18 @@ Each take should keep these concepts separate:
 - evidence reference
 - freshness / current relevance
 
+For podcast extraction, every new atomic take should use the explicit field names from the current StonedLack 569 take pattern:
+
+- `source_statement`: what the podcast/source said, without turning it into a final recommendation
+- `cleaned_entity_mapping`: canonical entity, entity type, team/position when known, raw transcript forms and confidence
+- `ai_interpretation`: how the statement should be interpreted for fantasy reuse, Mighty Giants or the league format
+- `arguments`: reusable reasons supporting the take
+- `risks`: uncertainty, downside or reasons to avoid overuse
+- `evidence`: timestamped paraphrase or short excerpt
+- `episode_local_scope`: links or metadata for local package context, including `global_index_update: "deferred"` when global indexes are not updated
+
+Avoid one-line JSON takes for new podcast extractions. Compact JSON is allowed, but the content must still contain the required conceptual fields above.
+
 Use stable take IDs and file names. Prefer `episode_id_tNNN.json` so `take_id` and file name can be matched mechanically. If legacy or descriptive file names exist, the episode JSON must clearly declare the canonical take file pattern.
 
 ## Indexing rule
@@ -194,6 +206,7 @@ Before marking an extraction as complete, verify:
 10. the German episode analysis is sufficiently detailed to stand alone without opening the raw transcript
 11. current views are updated when required by the task scope, or explicitly deferred
 12. global indexes are not required for extraction completeness unless the task is an index rebuild
+13. new podcast take files include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
 
 If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
 
