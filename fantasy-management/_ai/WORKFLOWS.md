@@ -86,15 +86,16 @@ Default rule: build a complete local episode package first. Do not try to mainta
 8. Create an episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/` and link the raw manifest/status, local companion files, player/entity data path and canonical take IDs.
 9. Extract atomic takes with source metadata, entity mapping, sentiment, conviction, evidence and freshness fields.
 10. Every new podcast take should include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`.
-11. Use stable take IDs and matching file names such as `episode_id_tNNN.json`.
-12. Create a German episode-local take index when many takes are produced.
-13. Optionally update `derived/knowledge/current/` as the latest source-derived working view when requested or when the extraction should feed reusable analysis.
-14. Do not update global indexes or cross-source lookup files unless the user explicitly asks for an index rebuild.
-15. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
-16. If raw source is only a placeholder, German analysis is only a short summary, player data is missing for a board-style episode, take coverage is sparse, take files miss the explicit podcast-take fields, or episode JSON does not reference all canonical takes, mark the extraction `incomplete` or `needs_rework`.
-17. If current views or global indexes are deferred, state that explicitly in the episode note or final response.
-18. Keep source statement, entity cleanup and AI interpretation separate.
-19. Do not invent missing details or non-mentions.
+11. Write all Fantasy Management JSON artifacts as pretty-printed JSON with two-space indentation, one property per line and a trailing newline.
+12. Use stable take IDs and matching file names such as `episode_id_tNNN.json`.
+13. Create a German episode-local take index when many takes are produced.
+14. Optionally update `derived/knowledge/current/` as the latest source-derived working view when requested or when the extraction should feed reusable analysis.
+15. Do not update global indexes or cross-source lookup files unless the user explicitly asks for an index rebuild.
+16. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` and any source-specific guide before marking the extraction complete.
+17. If raw source is only a placeholder, German analysis is only a short summary, player data is missing for a board-style episode, take coverage is sparse, take files miss the explicit podcast-take fields, JSON files are one-line/minified, or episode JSON does not reference all canonical takes, mark the extraction `incomplete` or `needs_rework`.
+18. If current views or global indexes are deferred, state that explicitly in the episode note or final response.
+19. Keep source statement, entity cleanup and AI interpretation separate.
+20. Do not invent missing details or non-mentions.
 
 ## Index rebuild workflow
 
