@@ -55,8 +55,12 @@ All AI-created or manually maintained Fantasy Management JSON files must stay hu
 
 - two-space indentation
 - one property per line
+- arrays on multiple lines, including single-item arrays
+- exactly one array item per line
 - nested arrays and objects on separate lines
 - stable key order where practical
 - trailing newline at end of file
 
 Do not commit one-line/minified JSON for podcast episode metadata, player/entity data, source takes, registries or manually maintained indexes.
+
+Do not use inline arrays such as `["tag1", "tag2"]` or `["take_id"]` in Fantasy Management JSON. Empty arrays may remain as `[]`.
