@@ -31,20 +31,21 @@ For Fantasy Management tasks, read these files as needed:
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
 4. `fantasy-management/_ai/knowledge-layer.yaml`
 5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
-6. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
-7. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
-8. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
-9. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matter
-10. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
-11. `fantasy-management/derived/knowledge/PROCESS.md`
-12. `fantasy-management/_ai/WORKFLOWS.md`
-13. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-14. relevant source files under `fantasy-management/sources/`
-15. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-16. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
-17. relevant take history under `fantasy-management/derived/knowledge/takes/`
-18. relevant analyses under `fantasy-management/analyses/`
-19. relevant decisions under `fantasy-management/decisions/`
+6. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
+7. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
+8. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
+9. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
+10. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matter
+11. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
+12. `fantasy-management/derived/knowledge/PROCESS.md`
+13. `fantasy-management/_ai/WORKFLOWS.md`
+14. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+15. relevant source files under `fantasy-management/sources/`
+16. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+17. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
+18. relevant take history under `fantasy-management/derived/knowledge/takes/`
+19. relevant analyses under `fantasy-management/analyses/`
+20. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -84,6 +85,16 @@ fantasy-management/
     schema-list.json
     source-registry.json
     WORKFLOWS.md
+    templates/
+      podcast/
+        README.md
+        raw_manifest_template.md
+        episode_analysis_template.md
+        episode_metadata_template.json
+        episode_player_data_template.json
+        source_take_template.json
+        take_index_template.md
+        current_source_view_template.md
     schemas/
       analysis.schema.json
       source-take.schema.json
@@ -91,6 +102,7 @@ fantasy-management/
       source-registry.schema.json
       owner-registry.schema.json
       episode.schema.json
+      episode-player-data.schema.json
       entity-signal.schema.json
       take-view.schema.json
       relevant-player.schema.json
@@ -118,65 +130,17 @@ fantasy-management/
       entities/
       takes/
       current/
-      rollups/
-    player-boards/
-    rookie-boards/
-    free-agent-boards/
-    trade-value-context/
-    source-summaries/
-  analyses/
-  decisions/
-  indexes/
-  archive/
-    superseded/
 ```
 
-## Source configuration rule
+## Source of truth rules
 
-Podcast source weights and comparable source metadata are canonical in:
-
-`fantasy-management/_ai/source-registry.json`
-
-Podcast-specific quirks and aliases belong in:
-
-`fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-
-Do not maintain source weights in source-local files.
-
-## League context rule
-
-Owner/team aliases, user perspective, manager tendencies, negotiation history and stable format interpretation belong under:
-
-`fantasy-management/league-context/`
-
-Current league state still comes from `public/data/League.json` and `public/data/Metadata.json`.
+- Current league state comes from `public/data/`.
+- Fantasy Management files are analysis and working files, not permanent truth.
+- Podcast and external-source outputs are source context, not final recommendations.
+- Final Mighty Giants recommendations must combine current league data, source context and current market/news context when relevant.
 
 ## Language
 
-Agent-facing instruction files should be written in English.
+Use German for human-facing Fantasy Management notes, summaries, todo entries, podcast episode analyses, take indexes, rollups and recommendations unless the user explicitly asks otherwise.
 
-Human-facing documentation may be written in German.
-
-Stored user-facing analysis outputs should be German unless requested otherwise.
-
-## Output storage rules
-
-Use `league-context/` for stable league-specific strategic context, owner profiles, negotiation history and format notes.
-
-Use `sources/` for source material and source-specific extraction artifacts.
-
-Use `derived/knowledge/` for cross-source, normalized, AI-readable source context.
-
-Use `derived/knowledge/current/` for the current source-derived working view after freshness, contradiction and supersession handling.
-
-Use `derived/knowledge/takes/` for historical source-take evidence.
-
-Use `derived/` for boards, rankings, source summaries and intermediate outputs that are not final recommendations.
-
-Use `analyses/` for concrete AI evaluations, reports and recommendations.
-
-Use `decisions/` for user decisions and resulting decision history.
-
-Use `indexes/` for cross-file lookup metadata.
-
-Use `archive/superseded/` for replaced or outdated artifacts that should not be treated as current.
+Machine-readable JSON keys may remain English.
