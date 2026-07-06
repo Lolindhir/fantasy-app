@@ -123,10 +123,11 @@ For a new transcript, the agent should:
 12. create the player/entity data JSON when the episode has reusable player, team, ranking, board or tier content
 13. create the episode JSON and link local companion files
 14. create atomic take files with stable `episode_id_tNNN.json` names
-15. create a German episode-local take index when there are many takes
-16. update the current source view when requested or when the extraction should feed reusable knowledge directly
-17. do not update global index files unless the user explicitly asks for an index rebuild
-18. run the completeness gate before marking the extraction as complete
+15. for every atomic take, include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
+16. create a German episode-local take index when there are many takes
+17. update the current source view when requested or when the extraction should feed reusable knowledge directly
+18. do not update global index files unless the user explicitly asks for an index rebuild
+19. run the completeness gate before marking the extraction as complete
 
 ## 6. German ai-input-style Markdown standard
 
@@ -243,6 +244,7 @@ A StonedLack extraction is not complete until these checks pass:
 11. Important unresolved names are listed with original transcript form, guessed canonical name and confidence.
 12. Current knowledge views are updated when required by the task scope, or explicitly deferred.
 13. Global indexes are not required for extraction completeness unless the task is an index rebuild.
+14. Every new atomic take includes `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`.
 
 If any required check fails, set status to `needs_rework` or `incomplete` and document missing work in the episode note.
 
@@ -313,6 +315,49 @@ A take may be:
 - uncertainty note
 
 Take files should use stable IDs and file names such as `sl_0569_t001.json`, `sl_0569_t002.json`, etc.
+
+New StonedLack podcast takes must follow this JSON field pattern:
+
+```json
+{
+  "take_id": "sl_0569_t001",
+  "source_id": "stonedlack",
+  "source_name": "StonedLack",
+  "source_type": "podcast_transcript",
+  "episode_id": "sl_0569",
+  "published_date": "YYYY-MM-DD",
+  "processed_date": "YYYY-MM-DD",
+  "player_name": "Player Name or null",
+  "team_abbr": "TEAM or null",
+  "entity_type": "player|team_group|strategy|position_group|...",
+  "take_type": "sleeper|ranking|draft_strategy|...",
+  "claim_type": "opinion|projection|strategy|...",
+  "fantasy_context": ["rookie_draft", "dynasty"],
+  "league_format_context": ["dynasty", "6_team"],
+  "sentiment": "positive|mixed|cautious|...",
+  "conviction": "high|medium|low|...",
+  "summary": "German short summary.",
+  "source_statement": "What the source said.",
+  "cleaned_entity_mapping": {
+    "canonical_entity": "Canonical name or entity",
+    "entity_type": "player|strategy|team_group|...",
+    "team_abbr": "TEAM or null",
+    "position": "Position or null",
+    "confidence": "high|medium|low",
+    "raw_transcript_forms": ["raw form 1", "raw form 2"]
+  },
+  "ai_interpretation": "Fantasy/Mighty-Giants interpretation, not source statement.",
+  "arguments": ["reason 1"],
+  "risks": ["risk 1"],
+  "evidence": [{ "timestamp_start": "00:00:00", "timestamp_end": "00:00:00", "type": "paraphrase", "text": "Evidence note." }],
+  "validity_type": "until_updated|evergreen|...",
+  "freshness_bucket": "short|medium|evergreen|...",
+  "current_relevance": "active|stale|...",
+  "source_weight": 0.85,
+  "extractor_confidence": "high|medium|low",
+  "episode_local_scope": { "global_index_update": "deferred" }
+}
+```
 
 ## 13. Fantasy context values
 
