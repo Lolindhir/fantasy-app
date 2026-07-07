@@ -11,7 +11,7 @@ These templates apply to all podcast sources, including:
 
 Source-specific guides may add quirks, alias handling or weighting notes, but they should not redefine the common output structure.
 
-## Current templates
+## Templates
 
 Use these templates for new podcast extractions:
 
@@ -19,17 +19,6 @@ Use these templates for new podcast extractions:
 - `episode_takes_template.json` — categorized source takes for one episode.
 - `episode_index_template.json` — local technical package map.
 - `raw_manifest_template.md` — manifest for split raw transcripts.
-
-## Legacy templates
-
-The following older templates may remain temporarily for migration compatibility but should not define new extraction structure:
-
-- `episode_analysis_template.md`
-- `episode_metadata_template.json`
-- `episode_player_data_template.json`
-- `source_take_template.json`
-- `take_index_template.md`
-- `current_source_view_template.md`
 
 ## Default episode package
 
@@ -73,4 +62,4 @@ All AI-created or manually maintained Fantasy Management JSON files must stay hu
 - stable key order where practical
 - trailing newline at end of file
 
-Do not commit one-line/minified JSON or inline arrays such as `["tag1", "tag2"]`, `["take_id"]` or `[]` in Fantasy Management JSON when practical.
+Do not commit one-line/minified JSON or inline arrays in Fantasy Management JSON when practical.
