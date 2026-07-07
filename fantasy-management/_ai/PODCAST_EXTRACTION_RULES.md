@@ -4,6 +4,24 @@ Purpose: central extraction rules for all podcast sources in Fantasy Management.
 
 Use these rules for StoneLack/StonedLack, Down Set Talk, Football Bromance and future podcast sources.
 
+The detailed source/knowledge/analysis separation is defined in:
+
+`fantasy-management/_ai/PODCAST_SOURCE_MODEL.md`
+
+## Core rule
+
+Podcast extraction is source work, not final Fantasy Management analysis.
+
+A podcast extraction answers:
+
+> What did the podcast say?
+
+It must not answer:
+
+> What should Mighty Giants do?
+
+That belongs to later Knowledge derivation and Analysis.
+
 ## Canonical source configuration
 
 Podcast source identity, weighting and profile comparison are maintained centrally in:
@@ -16,63 +34,163 @@ Podcast-specific quirks, aliases and interpretation notes belong next to the sou
 
 Do not maintain source weights in multiple places.
 
-## Central template rule
+## Episode package rule
 
-Central podcast templates live under:
+Each new processed podcast episode should be stored as one local package:
 
-`fantasy-management/_ai/templates/podcast/`
+```text
+fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
+  raw/
+    manifest.md
+    part01.md
+    part02.md
+  episode.md
+  takes.json
+  index.json
+```
 
-Use these templates for all podcast sources unless the user explicitly requests a different structure:
+For small transcripts, `raw/source.md` may replace split raw parts.
 
-- `raw_manifest_template.md`
-- `episode_analysis_template.md`
-- `episode_metadata_template.json`
-- `episode_player_data_template.json`
-- `source_take_template.json`
-- `take_index_template.md`
-- `current_source_view_template.md`
+Legacy flat episode files may remain for compatibility, but new extractions should use the package folder.
 
-Source-specific guides may add source quirks, alias notes or weighting guidance, but they must not redefine the common episode, take, player-data or rollup structure.
+## Required default outputs
 
-## Focus rule
+A normal podcast extraction creates:
 
-Default podcast extraction is episode-local first.
+1. raw source material under the episode package
+2. `episode.md` as a clean German human-readable podcast summary
+3. `takes.json` as structured source takes grouped by category
+4. `index.json` as local technical metadata and package map
 
-A normal extraction should focus on creating a complete, reusable package for the single episode being processed. Do not try to maintain every global index or cross-source lookup file during the same chat unless the user explicitly asks for an index rebuild.
+Do not update global indexes during normal podcast extraction.
 
-Required default outputs:
+Do not write source takes to `derived/knowledge/takes/` by default. Podcast takes are not Knowledge yet.
 
-1. raw source material or ordered raw parts plus manifest
-2. German ai-input-style episode analysis
-3. player/entity data JSON when the episode contains reusable player, team, ranking, tier, board or role content
-4. episode JSON linking the local companion files and canonical take IDs
-5. atomic source takes with stable IDs and matching file names
-6. German take index when many takes are produced
-7. current source view only when the extraction should feed reusable later analysis
+## `episode.md` rule
 
-Global indexes are derived lookup helpers. They are not source of truth. Empty or incomplete global index files are acceptable if they are treated as pending/backfill targets and are not used as complete knowledge.
+`episode.md` is the clean reader-facing podcast summary.
 
-## Layer model
+It should be good enough that the user could read it directly or publish it privately.
 
-Process podcast material through these layers:
+It must not contain internal extraction metadata, such as:
 
-1. raw source material
-2. German ai-input-style episode analysis
-3. player/entity data JSON
-4. episode JSON
-5. atomic source takes
-6. episode-local take index
-7. optional current source view
-8. optional global index rebuild
-9. Mighty Giants analysis
+- file inventories
+- take IDs
+- source package paths
+- `global_index_update`
+- extraction status flags
+- machine-readable companion file references
+- Mighty Giants recommendations
 
-## Language and readability rule
+It may contain:
 
-Human-facing podcast summaries, episode notes, player profiles, take indexes, board notes, current rollups and source summaries must be written in German unless the user explicitly requests another language.
+- episode topic and context
+- the hosts' main arguments
+- rankings, tiers, boards or categories from the podcast
+- player/team/position sections
+- podcast-level positives and risks
+- source conclusion
 
-Machine-readable JSON keys stay stable and may use English field names, but user-facing values such as summaries, arguments, risks and notes should be German where practical.
+Keep it inside the source perspective.
 
-The target quality for full podcast extraction is the older `ai-input` style: a readable German analysis that the user can understand without opening the raw transcript, plus machine-readable JSON for later agents.
+Good:
+
+> The hosts like Jordan Tyson because they see a fast WR2 path in New Orleans.
+
+Not in `episode.md`:
+
+> Mighty Giants should draft Jordan Tyson.
+
+## `takes.json` rule
+
+`takes.json` contains structured podcast statements from the episode.
+
+Top-level categories:
+
+```json
+{
+  "players": [
+  ],
+  "teams": [
+  ],
+  "positions": [
+  ],
+  "nfl": [
+  ],
+  "fantasy": [
+  ],
+  "other": [
+  ]
+}
+```
+
+Category meanings:
+
+- `players`: specific player statements.
+- `teams`: NFL team, depth chart, team environment or team position-group statements.
+- `positions`: position-group statements such as WR, RB, TE or QB.
+- `nfl`: general NFL, draft, coaching, scheme or league-context statements.
+- `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
+- `other`: source statements that do not fit cleanly elsewhere.
+
+Default take fields:
+
+```json
+{
+  "id": "sl_0569_player_001",
+  "category": "players",
+  "type": "player",
+  "entity": "Jordan Tyson",
+  "team": "NO",
+  "position": "WR",
+  "formats": [
+    "dynasty",
+    "redraft",
+    "rookie_draft"
+  ],
+  "podcast_take": "The source statement in plain language.",
+  "reasoning": [
+    "Reason from the podcast."
+  ],
+  "risks": [
+    "Uncertainty or downside from the podcast."
+  ],
+  "sentiment": "positive",
+  "conviction": "high",
+  "evidence": {
+    "timestamp_start": "00:45:36",
+    "timestamp_end": "00:48:22"
+  },
+  "tags": [
+    "rookie_wr",
+    "landing_spot",
+    "opportunity"
+  ]
+}
+```
+
+Do not split every take into a separate JSON file by default.
+
+Use one `takes.json` per episode unless there is a clear practical reason to split it.
+
+## `index.json` rule
+
+`index.json` is the local technical package map.
+
+It may contain:
+
+- source id
+- episode id
+- episode number
+- title
+- dates
+- local package paths
+- raw status
+- take counts by category
+- extraction status
+- migration notes for legacy files
+
+Keep this metadata out of `episode.md`.
 
 ## JSON formatting rule
 
@@ -89,188 +207,68 @@ Use:
 - stable key order within the same file type when practical
 - trailing newline at end of file
 
-Do not write one-line JSON for podcast/source extraction artifacts such as:
-
-- episode JSON
-- player/entity data JSON
-- source take JSON
-- source registry JSON
-- owner registry JSON
-- manually maintained indexes or rollups
-
 Do not use inline arrays such as `["tag1", "tag2"]`, `["take_id"]` or `[]` in Fantasy Management JSON. Empty arrays should also be expanded across lines when practical.
 
 Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
 
 ## Raw source rule
 
-Store raw transcripts or raw notes unchanged under:
+Store raw transcripts or raw notes unchanged under the episode package.
 
-`sources/podcasts/{source_id}/raw_transcripts/YYYY/`
+Do not clean, rewrite or normalize the raw source file.
 
-Do not clean, rewrite or normalize the raw source file. If a better transcript becomes available, save a new version instead of overwriting the old trace.
+If a single large raw file cannot be committed, split the raw transcript into ordered parts and create `raw/manifest.md`. The ordered concatenation of the parts is the raw source for that episode.
 
-A placeholder raw file is not a completed raw source. If the full transcript cannot be committed, mark the whole extraction as incomplete and do not treat downstream notes or takes as complete.
+A placeholder raw file is not a completed raw source. If the full raw source is missing, mark the package as incomplete in `index.json`.
 
-If a single large raw file cannot be committed, split the raw transcript into ordered parts and create a raw manifest. The episode JSON must then state the split raw status and parts directory. The ordered concatenation of the parts is the raw source for that episode.
+## Knowledge separation rule
 
-## Episode rule
+Do not treat podcast takes as active Knowledge just because they exist.
 
-For every processed episode, create:
+After extraction, a separate Knowledge derivation step may decide which takes matter for:
 
-- a readable German episode analysis under `sources/podcasts/{source_id}/episodes/YYYY/`
-- a machine-readable episode JSON under `sources/podcasts/{source_id}/episodes/YYYY/`
-- a player/entity data JSON under `sources/podcasts/{source_id}/episodes/YYYY/` when the episode contains reusable player, team, tier, ranking or board content
-- a German take index under `sources/podcasts/{source_id}/episodes/YYYY/` when many atomic takes are created
+- players
+- NFL teams
+- positions
+- NFL context
+- fantasy strategy
 
-The episode analysis should not be a short summary only. For full draft-review, ranking, rookie-board, player-preview, landing-spot or strategy episodes it should include:
+Knowledge belongs under:
 
-1. source note and cleanup
-2. interpretation of the episode type
-3. source philosophy / evaluation logic
-4. explicit rankings, tiers, boards or category lists when present
-5. sleepers, buy/sell/hold/fade/watchlist and caution buckets
-6. detailed player/entity profiles with positives, risks and analysis tags
-7. strategy and format-dependent notes
-8. unresolved entity questions
-9. reuse notes for Mighty Giants and the league format where relevant
-10. links or references to companion files, player data JSON, take index and atomic takes
+```text
+fantasy-management/knowledge/
+  players/
+  teams/
+  positions/
+  nfl/
+  fantasy/
+```
 
-The episode JSON must reference every extracted take in `take_ids`. An empty or obviously incomplete `take_ids` list means the episode extraction is incomplete.
+A redraft-only take may stay only in the episode package if it does not matter for our Dynasty league.
 
-## Player/entity data JSON rule
-
-When an episode contains reusable player, team, ranking, tier or board information, create a companion data file such as:
-
-`sources/podcasts/{source_id}/episodes/YYYY/{episode_slug}_player_data.json`
-
-Use a stable schema-like shape with:
-
-- `metadata`
-- `schema`
-- `players` or `entities`
-- optional `category_rankings`
-
-For each player/entity, include as applicable:
-
-- rank
-- name
-- position
-- team
-- source tier
-- sentiment
-- source conviction
-- main argument
-- opportunity / path to touches or targets
-- short-term value
-- long-term value
-- risk
-- format dependency
-- linked take IDs
-- tags
-- notes
-- confidence or verification status when identity is uncertain
-
-This file should be player-centric and easier to aggregate than atomic takes. Atomic takes remain the evidence layer; player/entity data is the readable structured profile layer.
-
-## Atomic take rule
-
-Extract reusable takes at the smallest useful unit.
-
-A take should usually cover one player, team, role, market point, format note or strategy point.
-
-Do not collapse an entire episode into only a few summary takes when the transcript contains many player evaluations, rankings, tiers, sleepers, fades, buy/sell/hold notes, strategy notes or format notes.
-
-Each take should keep these concepts separate:
-
-- original source statement
-- cleaned entity mapping
-- AI interpretation
-- evidence reference
-- freshness / current relevance
-
-For podcast extraction, every new atomic take should use the explicit field names from the current StonedLack 569 take pattern:
-
-- `source_statement`: what the podcast/source said, without turning it into a final recommendation
-- `cleaned_entity_mapping`: canonical entity, entity type, team/position when known, raw transcript forms and confidence
-- `ai_interpretation`: how the statement should be interpreted for fantasy reuse, Mighty Giants or the league format
-- `arguments`: reusable reasons supporting the take
-- `risks`: uncertainty, downside or reasons to avoid overuse
-- `evidence`: timestamped paraphrase or short excerpt
-- `episode_local_scope`: links or metadata for local package context, including `global_index_update: "deferred"` when global indexes are not updated
-
-Do not write one-line JSON takes for new podcast extractions. Every take JSON must be pretty-printed with two-space indentation, readable line breaks and exactly one array item per line.
-
-Use stable take IDs and file names. Prefer `episode_id_tNNN.json` so `take_id` and file name can be matched mechanically. If legacy or descriptive file names exist, the episode JSON must clearly declare the canonical take file pattern.
-
-## Indexing rule
-
-Episode-local indexes are part of the extraction package. Create or update them when useful:
-
-- the episode JSON
-- the German take index
-- optional episode-local entity map
-- optional episode-local board/tier notes
-
-Global indexes and cross-file lookup metadata are separate derived artifacts. Do not update them during normal podcast extraction unless explicitly requested.
-
-Examples of deferred global index work:
-
-- cross-source player index
-- source-wide take index
-- team-wide signal index
-- global `fantasy-management/indexes/` lookup files
-- regenerated knowledge-layer lookup tables
-
-If a global index file exists but is empty, treat it as pending/backfill unless it explicitly claims to be current. Do not use an empty global index as evidence that no data exists.
-
-## Current view rule
-
-Historical takes stay in `derived/knowledge/takes/`.
-
-The current working view stays in `derived/knowledge/current/`.
-
-Do not delete older takes just because later context changes the evaluation. Move old context out of the current view instead.
-
-The current view should be derived from the normalized take and player/entity data layers, not only from a loose summary.
-
-Current views are useful but not always mandatory in the same chat. For long podcast episodes, prefer completing the episode-local package first. Update current views when the user requests persistence for later analysis or when the extraction is intended to be reused directly.
+If a redraft take affects market value, it may become fantasy-market knowledge rather than player-quality knowledge.
 
 ## Completeness gate
 
-Before marking an extraction as complete, verify:
+Before marking an episode extraction as complete, verify:
 
-1. the raw transcript is present and not a placeholder
-2. if raw is split, ordered parts and a raw manifest exist and the episode JSON states the split raw status
-3. all meaningful player, team, coach, format and strategy mentions were reviewed
-4. every high-signal player in the episode note has at least one atomic take or an explicit reason why no take was created
-5. every high-signal player/entity profile is also represented in the player/entity data JSON when such a JSON is required
-6. caution, fade, uncertainty and negative takes are extracted, not only positive takes
-7. episode JSON `take_ids` matches the canonical take files created
-8. episode JSON references the player/entity data JSON when present
-9. unresolved names and entity-mapping issues are listed in the episode note or companion entity file
-10. the German episode analysis is sufficiently detailed to stand alone without opening the raw transcript
-11. current views are updated when required by the task scope, or explicitly deferred
-12. global indexes are not required for extraction completeness unless the task is an index rebuild
-13. new podcast take files include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
-14. JSON files created or updated as part of the extraction are pretty-printed with two-space indentation, not one-line JSON
-15. non-empty JSON arrays have one item per line, including single-item arrays
-16. empty JSON arrays are expanded across lines when practical
+1. raw source is present or clearly marked as legacy/pending in `index.json`
+2. `episode.md` is a clean German podcast summary without internal metadata
+3. `takes.json` exists and uses the six standard categories
+4. meaningful player, team, position, NFL, fantasy and other source statements were reviewed
+5. high-signal player statements are represented under `players`
+6. team/depth-chart statements are represented under `teams`
+7. position-group statements are represented under `positions`
+8. fantasy strategy and format statements are represented under `fantasy`
+9. cautious, negative and uncertainty takes are extracted, not only positive takes
+10. `index.json` records counts by take category
+11. JSON files are pretty-printed with the formatting rule above
+12. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
 
-If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
-
-## Entity resolution rule
-
-Use source-specific notes for common aliases and transcript quirks.
-
-If a player, team or claim is uncertain, mark it as uncertain instead of guessing.
-
-When decision-relevant, verify identity and current context against current repo data and fresh external sources if needed.
-
-Do not invent non-mentions. If a prominent player from another episode or board is not clearly mentioned in the current transcript, do not add a profile just to fill a gap. Only add a `not mentioned / not found` note when it is directly useful for the episode's stated scope or the user asks.
+If any required item fails, mark the package as `incomplete` or `needs_rework` in `index.json` and explain what is missing.
 
 ## Recommendation rule
 
 Podcast output is source context, not a final recommendation.
 
-Final Mighty Giants recommendations belong under `fantasy-management/analyses/` and must combine current league data, current knowledge view, take history when relevant and external context when needed.
+Final Mighty Giants recommendations belong under `fantasy-management/analyses/` and must combine current league data, source context, derived Knowledge and current market/news context when relevant.
