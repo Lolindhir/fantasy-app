@@ -29,7 +29,7 @@ For Fantasy Management tasks, read these files as needed:
 1. `fantasy-management/AGENTS.md`
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
-4. `fantasy-management/_ai/knowledge-layer.yaml`
+4. `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast/source extraction, source takes, knowledge derivation or structure matters
 5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
 6. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
 7. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
@@ -37,15 +37,14 @@ For Fantasy Management tasks, read these files as needed:
 9. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
 10. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matter
 11. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
-12. `fantasy-management/derived/knowledge/PROCESS.md`
-13. `fantasy-management/_ai/WORKFLOWS.md`
-14. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-15. relevant source files under `fantasy-management/sources/`
-16. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-17. relevant current knowledge files under `fantasy-management/derived/knowledge/current/`
-18. relevant take history under `fantasy-management/derived/knowledge/takes/`
-19. relevant analyses under `fantasy-management/analyses/`
-20. relevant decisions under `fantasy-management/decisions/`
+12. `fantasy-management/_ai/WORKFLOWS.md`
+13. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+14. relevant source files under `fantasy-management/sources/`
+15. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+16. relevant knowledge files under `fantasy-management/knowledge/`
+17. relevant legacy current/take files under `fantasy-management/derived/knowledge/` only when older material still lives there
+18. relevant analyses under `fantasy-management/analyses/`
+19. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -69,6 +68,20 @@ Store them only under:
 
 `fantasy-management/`
 
+## Source, knowledge and analysis separation
+
+Use this mental model:
+
+```text
+Podcast source package = what the podcast said.
+Knowledge = what remains relevant for our league after interpretation.
+Analysis = what Mighty Giants should do.
+```
+
+Podcast takes are source material and should stay inside the episode package first. They are not automatically knowledge.
+
+Knowledge should be created only after a separate interpretation step that checks league format, roster context, relevance, freshness and whether the source statement actually applies to Mighty Giants.
+
 ## Main structure
 
 Use this target structure:
@@ -80,21 +93,18 @@ fantasy-management/
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
+    PODCAST_SOURCE_MODEL.md
     PODCAST_EXTRACTION_RULES.md
-    knowledge-layer.yaml
     schema-list.json
     source-registry.json
     WORKFLOWS.md
     templates/
       podcast/
         README.md
+        episode_summary_template.md
+        episode_takes_template.json
+        episode_index_template.json
         raw_manifest_template.md
-        episode_analysis_template.md
-        episode_metadata_template.json
-        episode_player_data_template.json
-        source_take_template.json
-        take_index_template.md
-        current_source_view_template.md
     schemas/
       analysis.schema.json
       source-take.schema.json
@@ -116,6 +126,13 @@ fantasy-management/
     podcasts/
       stonedlack/
         SOURCE_NOTES.md
+        episodes/
+          YYYY/
+            episode_id/
+              raw/
+              episode.md
+              takes.json
+              index.json
       down-set-talk/
         SOURCE_NOTES.md
       football-bromance/
@@ -123,13 +140,19 @@ fantasy-management/
     relevant-players/
     external-rankings/
     manual-notes/
+  knowledge/
+    players/
+    teams/
+    positions/
+    nfl/
+    fantasy/
+  analyses/
+  decisions/
   derived/
     knowledge/
       README.md
       PROCESS.md
-      entities/
-      takes/
-      current/
+      # legacy/derived compatibility area; do not put new podcast source takes here by default
 ```
 
 ## Source of truth rules
@@ -137,10 +160,11 @@ fantasy-management/
 - Current league state comes from `public/data/`.
 - Fantasy Management files are analysis and working files, not permanent truth.
 - Podcast and external-source outputs are source context, not final recommendations.
-- Final Mighty Giants recommendations must combine current league data, source context and current market/news context when relevant.
+- Final Mighty Giants recommendations must combine current league data, source context, derived knowledge and current market/news context when relevant.
+- Podcast source takes must not be treated as final knowledge until a knowledge derivation step decides whether they apply to the league format and current context.
 
 ## Language
 
-Use German for human-facing Fantasy Management notes, summaries, todo entries, podcast episode analyses, take indexes, rollups and recommendations unless the user explicitly asks otherwise.
+Use German for human-facing Fantasy Management notes, summaries, todo entries, podcast episode summaries, take indexes, rollups and recommendations unless the user explicitly asks otherwise.
 
 Machine-readable JSON keys may remain English.
