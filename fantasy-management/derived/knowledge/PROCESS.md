@@ -1,49 +1,44 @@
-# Knowledge Layer Process
+# Legacy Derived Knowledge Process
 
-Pipeline:
+This folder is now a legacy/compatibility area for older source-derived files.
+
+The simplified active model is documented in:
+
+- `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md`
+- `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`
+
+## Current preferred pipeline
 
 ```text
-raw transcript -> episode note -> source takes -> current source view -> Mighty Giants analysis
+podcast source package -> Knowledge derivation -> Mighty Giants analysis
 ```
 
-## Central source setup
+Meaning:
 
-Podcast extraction rules are maintained in `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
+1. Podcast source packages stay under `fantasy-management/sources/podcasts/{source}/episodes/{year}/{episode_id}/`.
+2. Podcast source packages contain `episode.md`, `takes.json`, `index.json` and `raw/`.
+3. Podcast takes remain source material and are not automatically active Knowledge.
+4. Derived Knowledge belongs under `fantasy-management/knowledge/`.
+5. Final recommendations belong under `fantasy-management/analyses/`.
 
-Source identity, weighting and profile comparison are maintained in `fantasy-management/_ai/source-registry.json`.
+## Legacy files
 
-Source-specific quirks and aliases belong in `sources/podcasts/{source}/SOURCE_NOTES.md`.
+Older files under this folder may remain for compatibility:
 
-Do not maintain source weights in multiple places.
+- `takes/`
+- `current/`
+- `entities/`
 
-## Layers
+Do not create new podcast source takes here by default.
 
-1. Raw transcripts stay in `sources/podcasts/{source}/raw_transcripts/YYYY/`.
-2. Episode notes and episode JSON files stay in `sources/podcasts/{source}/episodes/YYYY/`.
-3. Atomic takes are stored per episode and indexed under `derived/knowledge/takes/`.
-4. The current cross-source view is stored under `derived/knowledge/current/`.
-5. Final recommendations stay under `analyses/`; user decisions stay under `decisions/`.
+Use this folder only when working with older material that has not yet been migrated or when an explicit legacy/index rebuild task requires it.
 
-## Current view
+## Knowledge derivation
 
-The `current/` files are the normal starting point for later source-based evaluations. They summarize the latest source-derived view after stale, contradicted or superseded information has been separated from active information.
+When deriving Knowledge from source packages:
 
-## Historical view
-
-The `takes/` files keep older takes as evidence. Older takes are not deleted just because a newer source changes the evaluation.
-
-## Default freshness
-
-- injuries and availability: short-lived
-- camp and practice reports: short-lived
-- depth chart and role notes: medium-lived
-- weekly redraft notes: short-lived
-- rankings and market values: medium-lived
-- dynasty talent notes: long-lived
-- source philosophy: evergreen
-
-## Evaluation path
-
-For player analysis, use current app data first when dynamic facts matter, then the current player knowledge file, then player take history, then episode notes, then raw transcript evidence.
-
-For team, injury, role and market analysis, use the matching current aggregate first, then drill into take history and source files.
+1. Read the source package's `episode.md` and `takes.json`.
+2. Check whether the source take applies to the user's Dynasty league, 6-team structure, 2QB/2TE/4Flex format, roster context and current market.
+3. Store only relevant derived Knowledge under `fantasy-management/knowledge/`.
+4. Link back to the source package and take ID as evidence.
+5. Keep final Mighty Giants recommendations out of Knowledge and store them under `analyses/`.
