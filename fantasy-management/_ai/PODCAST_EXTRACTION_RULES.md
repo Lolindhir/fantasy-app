@@ -98,7 +98,7 @@ Do not write one-line JSON for podcast/source extraction artifacts such as:
 - owner registry JSON
 - manually maintained indexes or rollups
 
-Do not use inline arrays such as `["tag1", "tag2"]` or `["take_id"]` in Fantasy Management JSON. Empty arrays may remain as `[]`.
+Do not use inline arrays such as `["tag1", "tag2"]`, `["take_id"]` or `[]` in Fantasy Management JSON. Empty arrays should also be expanded across lines when practical.
 
 Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
 
@@ -255,6 +255,7 @@ Before marking an extraction as complete, verify:
 13. new podcast take files include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
 14. JSON files created or updated as part of the extraction are pretty-printed with two-space indentation, not one-line JSON
 15. non-empty JSON arrays have one item per line, including single-item arrays
+16. empty JSON arrays are expanded across lines when practical
 
 If any required item fails, mark the extraction as `incomplete` or `needs_rework` and explain what is missing.
 
