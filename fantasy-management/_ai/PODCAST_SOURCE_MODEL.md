@@ -41,8 +41,6 @@ fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
 
 For small transcripts, `raw/source.md` may replace split raw parts.
 
-Legacy episode files may remain, but new extraction should use the package folder.
-
 ## `episode.md`
 
 `episode.md` is the human-readable podcast summary.
@@ -155,7 +153,6 @@ It may contain:
 - paths within the package
 - counts by take category
 - extraction status
-- migration or legacy notes when needed
 
 Keep technical metadata out of `episode.md`.
 
@@ -207,9 +204,3 @@ A player analysis should combine:
 5. relevant source takes as evidence
 6. current external context when needed
 7. final Mighty Giants recommendation
-
-## Legacy handling
-
-Older files under `derived/knowledge/takes/` may remain for compatibility.
-
-Going forward, podcast source takes should be stored in episode-local `takes.json` first. Derived knowledge files should be created only in the knowledge layer when a take is relevant after league-context interpretation.
