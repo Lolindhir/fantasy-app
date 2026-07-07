@@ -1,6 +1,6 @@
 # Podcast Templates
 
-Purpose: central reusable templates for all Fantasy Management podcast extractions.
+Purpose: central reusable templates for all Fantasy Management podcast source packages.
 
 These templates apply to all podcast sources, including:
 
@@ -11,43 +11,55 @@ These templates apply to all podcast sources, including:
 
 Source-specific guides may add quirks, alias handling or weighting notes, but they should not redefine the common output structure.
 
-## Templates
+## Current templates
 
+Use these templates for new podcast extractions:
+
+- `episode_summary_template.md` — clean German reader-facing podcast summary without internal metadata.
+- `episode_takes_template.json` — categorized source takes for one episode.
+- `episode_index_template.json` — local technical package map.
 - `raw_manifest_template.md` — manifest for split raw transcripts.
-- `episode_analysis_template.md` — German ai-input-style human-facing episode analysis.
-- `episode_metadata_template.json` — episode JSON linking raw status, local companion files and canonical take IDs.
-- `episode_player_data_template.json` — player/entity profile data for aggregation.
-- `source_take_template.json` — canonical atomic podcast take pattern.
-- `take_index_template.md` — German local take index.
-- `current_source_view_template.md` — optional current source rollup / working view.
 
-## Default extraction package
+## Legacy templates
 
-A normal podcast extraction should create a local episode package first:
+The following older templates may remain temporarily for migration compatibility but should not define new extraction structure:
 
-1. Raw transcript or ordered raw parts plus manifest
-2. German episode analysis
-3. Player/entity data JSON when the episode contains reusable player, team, tier, board, role or ranking content
-4. Episode metadata JSON
-5. Atomic source takes
-6. German take index when many takes are produced
-7. Optional current source view when needed for later reuse
+- `episode_analysis_template.md`
+- `episode_metadata_template.json`
+- `episode_player_data_template.json`
+- `source_take_template.json`
+- `take_index_template.md`
+- `current_source_view_template.md`
 
-Global indexes are intentionally not part of the default package. Rebuild them separately from completed local packages.
+## Default episode package
 
-## Template rule
+A normal podcast extraction should create:
 
-When creating new extraction files, start from these central templates unless the user explicitly asks for a different structure.
+```text
+sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
+  raw/
+    manifest.md
+    part01.md
+    part02.md
+  episode.md
+  takes.json
+  index.json
+```
 
-Source-specific files may add sections, but they should not remove the central concepts:
+`episode.md` is for humans and contains only the podcast's content and source perspective.
 
-- German human-facing episode analysis
-- local machine-readable episode metadata
-- player/entity data for reusable player content
-- canonical atomic takes with explicit source statement, entity mapping and AI interpretation
-- local take index
-- optional current source view
-- deferred global indexes
+`takes.json` is structured source material and uses these categories:
+
+- `players`
+- `teams`
+- `positions`
+- `nfl`
+- `fantasy`
+- `other`
+
+`index.json` is the local technical package map and keeps metadata out of `episode.md`.
+
+Global indexes and Knowledge files are intentionally not part of the default extraction package.
 
 ## JSON formatting rule
 
@@ -61,6 +73,4 @@ All AI-created or manually maintained Fantasy Management JSON files must stay hu
 - stable key order where practical
 - trailing newline at end of file
 
-Do not commit one-line/minified JSON for podcast episode metadata, player/entity data, source takes, registries or manually maintained indexes.
-
-Do not use inline arrays such as `["tag1", "tag2"]` or `["take_id"]` in Fantasy Management JSON. Empty arrays may remain as `[]`.
+Do not commit one-line/minified JSON or inline arrays such as `["tag1", "tag2"]`, `["take_id"]` or `[]` in Fantasy Management JSON when practical.
