@@ -1,280 +1,106 @@
 # StonedLack Extraction Guide
 
-Purpose: define a stable extraction format for StonedLack podcast transcripts.
+Purpose: source-specific notes for extracting StonedLack podcast episodes.
 
-The goal is to create reusable source data for Dynasty/Fantasy Football analysis, meta-rankings and AI-assisted evaluations.
+The shared podcast structure is defined centrally in:
 
-## 1. Core principle
+- `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md`
+- `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`
+- `fantasy-management/_ai/templates/podcast/`
 
-Document every episode in five focused local layers:
+This guide only adds StonedLack-specific extraction notes.
 
-1. Raw transcript or ordered raw transcript parts plus manifest
-2. German ai-input-style Markdown episode analysis
-3. Player/entity data JSON
-4. Machine-readable episode JSON
-5. Atomic source take files plus German take index
+## Core principle
 
-The central user-facing object is the German episode analysis: it should be readable and useful on its own.
+StonedLack extraction creates a podcast source package, not active Knowledge and not a Mighty Giants recommendation.
 
-The central machine-readable objects are:
-
-- player/entity data JSON for aggregation
-- atomic takes for evidence and knowledge-layer updates
-
-Global indexes are not part of the default extraction package. They may be rebuilt later from the local episode packages.
-
-## 2. Standard episode paths
+Source package:
 
 ```text
-raw_transcripts/YYYY/YYYY-MM-DD_sl_EPISODE_slug.raw.md
-episodes/YYYY/YYYY-MM-DD_sl_EPISODE_slug.md
-episodes/YYYY/YYYY-MM-DD_sl_EPISODE_slug.json
-episodes/YYYY/YYYY-MM-DD_sl_EPISODE_slug_player_data.json
-episodes/YYYY/YYYY-MM-DD_sl_EPISODE_slug_take_index.md
+sources/podcasts/stonedlack/episodes/YYYY/sl_XXXX/
+  raw/
+    manifest.md
+    part01.md
+    part02.md
+  episode.md
+  takes.json
+  index.json
 ```
 
-Example:
+## `episode.md`
 
-```text
-raw_transcripts/2026/2026-05-11_sl_0571_rookie_rb_ranking.raw.md
-episodes/2026/2026-05-11_sl_0571_rookie_rb_ranking.md
-episodes/2026/2026-05-11_sl_0571_rookie_rb_ranking.json
-episodes/2026/2026-05-11_sl_0571_rookie_rb_ranking_player_data.json
-episodes/2026/2026-05-11_sl_0571_rookie_rb_ranking_take_index.md
-```
+`episode.md` must be a clean German podcast summary.
 
-Short legacy names such as `sl_0569.md`, `sl_0569.json` and `sl_0569_player_data.json` are acceptable if already used for the episode.
+It should read like a good article about the episode and must not contain:
 
-## 3. Slug rules
+- internal extraction metadata
+- take IDs
+- file inventories
+- `global_index_update`
+- legacy path lists
+- Mighty Giants recommendations
 
-Use short, stable slugs:
+It may contain:
 
-- lowercase
-- words separated by `_`
-- no umlauts
-- no special characters
-- descriptive topic
+- episode topic
+- hosts' central arguments
+- board/tier/ranking logic when present
+- player sections
+- team context
+- position-group context
+- fantasy strategy from the source perspective
+- source-level conclusion
 
-Examples:
+## `takes.json`
 
-- `rookie_wr_ranking`
-- `rookie_rb_ranking`
-- `startup_mock`
-- `nfl_news_adp`
-- `redraft_preview`
-- `week_1_reactions`
+Store all structured StonedLack source takes for the episode in one categorized `takes.json`.
 
-## 4. Raw transcript rules
+Use the shared categories:
 
-The raw transcript is the primary audit trace and must not be cleaned.
+- `players`
+- `teams`
+- `positions`
+- `nfl`
+- `fantasy`
+- `other`
 
-Preserve:
+Do not create one JSON file per take by default.
 
-- chapter headings
-- timestamps
-- transcription errors
-- repetitions
-- filler words
-- off-topic passages
-- speaker changes when available
+Do not store new podcast source takes under `derived/knowledge/takes/` by default.
 
-Allowed addition: a YAML frontmatter block at the start.
+## StonedLack extraction focus
 
-```yaml
----
-episode_id: sl_0571
-episode_number: 571
-source_name: StonedLack
-source_type: youtube_transcript
-published_date: YYYY-MM-DD
-processed_date: YYYY-MM-DD
-language: de
-raw_transcript_status: verbatim_user_paste
-notes:
-  - "Automatic transcript; names may be wrong."
----
-```
+When processing a StonedLack transcript, extract:
 
-Do not overwrite raw files. If a better transcript appears later, create a versioned file such as:
+1. player evaluations
+2. team/depth-chart context
+3. position-group takes
+4. rookie draft strategy
+5. redraft vs dynasty splits
+6. buy/sell/hold/fade/watchlist language
+7. format-dependent notes
+8. caution and uncertainty buckets
+9. unresolved transcript names
+10. source-level conviction and sentiment
 
-```text
-raw_transcripts/2026/2026-05-11_sl_0571_rookie_rb_ranking.raw.v2.md
-```
-
-A placeholder raw transcript is not a completed extraction. If the full raw transcript is missing, mark the episode extraction as incomplete and do not treat notes, takes or current views as complete.
-
-If a single large raw transcript cannot be written through the connector, split it into ordered part files and create a raw manifest. The manifest must make clear that the ordered parts together are the raw source. The episode JSON must reference the manifest, raw status and parts directory.
-
-## 5. Focused extraction tasks
-
-For a new transcript, the agent should:
-
-1. identify or infer episode metadata from the provided context
-2. save the raw transcript unchanged, either as one file or as ordered raw parts plus manifest
-3. identify chapters and topic blocks
-4. extract player, team, coach, format and strategy mentions
-5. clean and map broken transcript names
-6. verify names when decision-relevant
-7. extract rankings, tiers, sleepers, buy/sell/fade/watchlist takes
-8. mark implicit takes only when clearly supported
-9. store arguments, risks, context and uncertainty
-10. separate source statement from agent interpretation
-11. create the German ai-input-style Markdown episode analysis
-12. create the player/entity data JSON when the episode has reusable player, team, ranking, board or tier content
-13. create the episode JSON and link local companion files
-14. create atomic take files with stable `episode_id_tNNN.json` names
-15. for every atomic take, include `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`
-16. create a German episode-local take index when there are many takes
-17. update the current source view when requested or when the extraction should feed reusable knowledge directly
-18. do not update global index files unless the user explicitly asks for an index rebuild
-19. run the completeness gate before marking the extraction as complete
-
-## 6. German ai-input-style Markdown standard
-
-For StonedLack, the Markdown episode analysis should follow the quality level of the older `ai-input` episode writeups.
-
-It must be written in German and should usually include:
-
-1. Quellenhinweis und Bereinigung
-2. Interpretation der Folge
-3. zentrale Podcast-Philosophie / Bewertungslogik
-4. bereinigte Board-, Ranking- oder Tierlogik
-5. Podcast-Favoriten nach Kategorie, when supported
-6. Sleepers / Buy / Sell / Hold / Fade / Watchlist / Caution Buckets
-7. detailed player or entity profiles
-8. strategic rookie-draft, trade, redraft, dynasty or format notes
-9. league-format reuse notes, especially 6-team / 2QB / 2TE / 4Flex when relevant
-10. short source conclusion
-11. linked local machine-readable files
-
-Detailed player profiles should normally use this pattern:
-
-```markdown
-## Player Name
-
-**Tier:** ...  
-**Podcast-Rolle:** ...  
-**Sentiment:** ...
-
-### Begründung aus Podcast-Kontext
-
-- ...
-
-### Positiv
-
-- ...
-
-### Negativ / Risiko
-
-- ...
-
-### Analyse-Tags
-
-`tag`, `tag`, `tag`
-```
-
-Do not replace this with only short tables when the transcript contains enough substance for profile sections.
-
-## 7. Player/entity data JSON standard
-
-For full ranking, draft-review, rookie-board, landing-spot or player-preview episodes, create a companion file such as:
-
-`episodes/YYYY/sl_0569_player_data.json`
-
-It should contain:
-
-- `metadata`
-- `schema`
-- `players` or `entities`
-- optional `category_rankings`
-
-Recommended player/entity fields:
-
-- `rank`
-- `name`
-- `position`
-- `team`
-- `stonedlack_tier`
-- `source_conviction`
-- `sentiment`
-- `main_argument`
-- `opportunity`
-- `short_term_value`
-- `long_term_value`
-- `risk`
-- `format_dependency`
-- `take_ids`
-- `tags`
-- `notes`
-- `identity_confidence` or `verification_status` when needed
-
-The player data JSON is not a replacement for atomic takes. It is an aggregation-friendly profile layer.
-
-## 8. Local vs global indexes
-
-The episode-local take index is part of the extraction when many takes are created.
-
-Global indexes are deferred derived artifacts. Do not try to keep all of them updated during a normal episode extraction.
-
-Treat empty global index files as pending/backfill unless they explicitly state that they are current. Do not use an empty global index as proof that no takes, players or source data exist.
-
-Examples of out-of-scope work for a normal extraction:
-
-- rebuilding `fantasy-management/indexes/`
-- rebuilding source-wide player lookup files
-- rebuilding cross-source player or team indexes
-- maintaining every by-player/by-team aggregate during the same chat
-
-Create or rebuild those only in a separate index-rebuild task.
-
-## 9. Completeness gate
-
-A StonedLack extraction is not complete until these checks pass:
-
-1. Raw transcript is present and not a placeholder.
-2. If raw is split, the manifest lists all parts in order and the episode JSON states the split raw status.
-3. Episode note is a German ai-input-style analysis, not just a short summary.
-4. Episode note contains source-note/cleanup, overview, source philosophy, explicit rankings/tiers when present, sleepers/buy/sell/fade/watchlist, player profiles, strategy takes, format-dependent notes, uncertainties and Mighty Giants reuse notes where applicable.
-5. Every player listed as high-signal in the episode note has one or more atomic take files, or a clear explanation why no take was created.
-6. Every high-signal player/entity is represented in the player/entity data JSON when such a file is required.
-7. Negative, cautious, fade, avoid and uncertainty takes are extracted, not only positive takes.
-8. Broad strategy points are extracted as dedicated takes when reusable.
-9. Episode JSON includes all local take IDs, local companion files and the player/entity data path when present.
-10. The take count is plausible for the transcript scope. Full draft-review, ranking or rookie-board episodes normally require many more than three takes.
-11. Important unresolved names are listed with original transcript form, guessed canonical name and confidence.
-12. Current knowledge views are updated when required by the task scope, or explicitly deferred.
-13. Global indexes are not required for extraction completeness unless the task is an index rebuild.
-14. Every new atomic take includes `source_statement`, `cleaned_entity_mapping`, `ai_interpretation`, `arguments`, `risks`, `evidence` and `episode_local_scope`.
-
-If any required check fails, set status to `needs_rework` or `incomplete` and document missing work in the episode note.
-
-## 10. No hallucination rule
-
-Do not invent missing details.
-
-Use:
-
-- `unknown`
-- `unresolved`
-- `unverified`
-- `low confidence`
-
-Add unresolved issues to the Markdown source note or entity companion file.
-
-Do not add prominent players from other episodes merely because they are important. If they are not clearly mentioned in the current transcript, leave them out unless the user asks for a non-mention note.
-
-## 11. Entity resolution
+## Entity resolution
 
 Automatic transcripts often break player names.
 
-For each important entity:
+For important entities, preserve uncertainty in `takes.json` using notes, tags or confidence wording.
 
-1. store original transcript form
-2. identify phonetic variants
-3. use context: position, team, college, draft round, landing spot, teammates and competition
-4. verify through current sources when important
-5. store canonical name
-6. set confidence
+Use context to resolve names:
+
+- position
+- NFL team
+- college
+- draft round
+- landing spot
+- teammates
+- competition
+- episode section
+
+Verify decision-relevant names before using them for Knowledge derivation or analysis.
 
 Recommended identity-verification priority:
 
@@ -284,153 +110,36 @@ Recommended identity-verification priority:
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
 
-## 12. Take model
+## Completeness gate
 
-A take may be:
+A StonedLack episode package is complete when:
 
-- player evaluation
-- ranking
-- tier
-- sleeper
-- buy
-- sell
-- hold
-- fade
-- watchlist
-- trade strategy
-- draft strategy
-- rookie draft value
-- redraft value
-- bestball value
-- dynasty value
-- injury reaction
-- depth chart projection
-- role projection
-- coaching scheme
-- news reaction
-- market/ADP note
-- format note
-- league settings note
-- meta strategy
-- uncertainty note
+1. raw source is present or legacy raw source is clearly referenced in `raw/manifest.md` and `index.json`
+2. `episode.md` is a clean German source summary without internal metadata
+3. `takes.json` exists and uses all six shared categories
+4. all high-signal player statements are represented under `players`
+5. team/depth-chart statements are represented under `teams`
+6. position-group statements are represented under `positions`
+7. fantasy strategy and format statements are represented under `fantasy`
+8. cautious, negative and uncertainty takes are included, not only positive takes
+9. unresolved or low-confidence identities are visible in the summary or takes
+10. `index.json` records package paths, raw status and take counts
+11. no active Knowledge or Mighty Giants recommendations are mixed into the source package
 
-Take files should use stable IDs and file names such as `sl_0569_t001.json`, `sl_0569_t002.json`, etc.
+## Knowledge handoff
 
-New StonedLack podcast takes must follow this JSON field pattern:
+After extraction, a separate Knowledge derivation step may read the episode package and decide what applies to:
 
-```json
-{
-  "take_id": "sl_0569_t001",
-  "source_id": "stonedlack",
-  "source_name": "StonedLack",
-  "source_type": "podcast_transcript",
-  "episode_id": "sl_0569",
-  "published_date": "YYYY-MM-DD",
-  "processed_date": "YYYY-MM-DD",
-  "player_name": "Player Name or null",
-  "team_abbr": "TEAM or null",
-  "entity_type": "player|team_group|strategy|position_group|...",
-  "take_type": "sleeper|ranking|draft_strategy|...",
-  "claim_type": "opinion|projection|strategy|...",
-  "fantasy_context": ["rookie_draft", "dynasty"],
-  "league_format_context": ["dynasty", "6_team"],
-  "sentiment": "positive|mixed|cautious|...",
-  "conviction": "high|medium|low|...",
-  "summary": "German short summary.",
-  "source_statement": "What the source said.",
-  "cleaned_entity_mapping": {
-    "canonical_entity": "Canonical name or entity",
-    "entity_type": "player|strategy|team_group|...",
-    "team_abbr": "TEAM or null",
-    "position": "Position or null",
-    "confidence": "high|medium|low",
-    "raw_transcript_forms": ["raw form 1", "raw form 2"]
-  },
-  "ai_interpretation": "Fantasy/Mighty-Giants interpretation, not source statement.",
-  "arguments": ["reason 1"],
-  "risks": ["risk 1"],
-  "evidence": [{ "timestamp_start": "00:00:00", "timestamp_end": "00:00:00", "type": "paraphrase", "text": "Evidence note." }],
-  "validity_type": "until_updated|evergreen|...",
-  "freshness_bucket": "short|medium|evergreen|...",
-  "current_relevance": "active|stale|...",
-  "source_weight": 0.85,
-  "extractor_confidence": "high|medium|low",
-  "episode_local_scope": { "global_index_update": "deferred" }
-}
-```
+- `fantasy-management/knowledge/players/`
+- `fantasy-management/knowledge/teams/`
+- `fantasy-management/knowledge/positions/`
+- `fantasy-management/knowledge/nfl/`
+- `fantasy-management/knowledge/fantasy/`
 
-## 13. Fantasy context values
+Do not copy every StonedLack take into Knowledge. Redraft-only or irrelevant takes may stay only in the source package.
 
-Allowed values include:
+## Legacy handling
 
-- `dynasty`
-- `rookie_draft`
-- `startup`
-- `redraft`
-- `bestball`
-- `waiver`
-- `trade`
-- `devy`
-- `general_fantasy`
-- `real_football`
-- `unknown`
+Older flat StonedLack files such as `sl_0569.md`, `sl_0569.json`, `sl_0569_player_data.json` and individual take files may remain for compatibility.
 
-## 14. Evaluation scales
-
-Sentiment:
-
-- `very_positive`
-- `positive`
-- `mixed`
-- `cautious`
-- `negative`
-- `very_negative`
-- `neutral`
-
-Conviction:
-
-- `very_high`
-- `high`
-- `medium`
-- `low`
-- `very_low`
-- `unknown`
-
-Action:
-
-- `draft`
-- `reach`
-- `buy`
-- `sell`
-- `hold`
-- `fade`
-- `avoid`
-- `watch`
-- `stash`
-- `handcuff`
-- `trade_for`
-- `trade_away`
-- `do_not_overpay`
-- `no_action`
-- `unknown`
-
-Time horizon:
-
-- `immediate`
-- `early_season`
-- `full_season`
-- `long_term`
-- `multi_year`
-- `unknown`
-
-## 15. Evidence rule
-
-Every important take should include evidence.
-
-Evidence may be:
-
-1. a short transcript excerpt
-2. a paraphrased statement with timestamp
-3. a chapter or time range
-
-Avoid long quotes. Prefer short paraphrases.
+New extraction should use the episode package folder.
