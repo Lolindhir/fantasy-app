@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-index.schema.json",
+  "title": "Podcast Episode Package Index",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "episode_id",
+    "source_id",
+    "source_name",
+    "title",
+    "status",
+    "package_path",
+    "files",
+    "take_counts"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "episode_number": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "published_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "processed_date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "language": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "package_path": {
+      "type": "string"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "raw_status": {
+      "type": "string"
+    },
+    "take_counts": {
+      "type": "object",
+      "required": [
+        "players",
+        "teams",
+        "positions",
+        "nfl",
+        "fantasy",
+        "other"
+      ],
+      "properties": {
+        "players": {
+          "type": "integer"
+        },
+        "teams": {
+          "type": "integer"
+        },
+        "positions": {
+          "type": "integer"
+        },
+        "nfl": {
+          "type": "integer"
+        },
+        "fantasy": {
+          "type": "integer"
+        },
+        "other": {
+          "type": "integer"
+        }
+      }
+    },
+    "knowledge_derivation_status": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
