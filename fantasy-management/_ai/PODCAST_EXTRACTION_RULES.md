@@ -28,11 +28,48 @@ Podcast source identity, weighting and profile comparison are maintained central
 
 `fantasy-management/_ai/source-registry.json`
 
-Podcast-specific quirks, aliases and interpretation notes belong next to the source in:
+Podcast-specific quirks, recurring wording patterns and interpretation notes belong next to the source in:
 
 `sources/podcasts/{source_id}/SOURCE_NOTES.md`
 
 Do not maintain source weights in multiple places.
+
+## Entity aliases and transcript name resolution
+
+During podcast extraction, actively watch for recurring aliases, nicknames, transcript errors and phonetic name variants for players, teams, coaches, colleges and other decision-relevant entities.
+
+Examples:
+
+- German transcripts may distort English player names phonetically.
+- English sources may use nicknames, initials, shortened names or college-only references.
+- Automatic transcripts may split suffixes such as `Jr.`, confuse similar names or mistranscribe uncommon rookie names.
+
+Raw source text must stay unchanged. Do not rewrite raw transcript wording.
+
+In `episode.md` and `takes.json`, use the best canonical entity name only when confidence is sufficient. Preserve uncertainty in notes, tags, evidence or wording when the mapping is not fully resolved.
+
+If a recurring alias or transcript error is confirmed, store it centrally for all podcast sources in:
+
+`fantasy-management/sources/podcasts/entity_aliases.json`
+
+Create this file only when at least one real alias exists. Do not create an empty placeholder alias registry.
+
+Alias entries should distinguish language and source context. Use fields such as:
+
+- `alias`
+- `canonical_name`
+- `entity_type` (`player`, `team`, `coach`, `college`, `other`)
+- `alias_language` (`de`, `en`, `mixed`, `unknown`)
+- `source_ids`
+- `first_seen_episode_id`
+- `evidence_paths`
+- `confidence`
+- `reason`
+- `updated_date`
+
+Use source-specific `SOURCE_NOTES.md` only for source quirks, pronunciation patterns and unresolved recurring issues. Use the central alias registry for confirmed mappings that may help future extraction across multiple podcasts.
+
+Do not create or apply an alias mapping when the identity is uncertain. Leave the entity unresolved and mark the uncertainty in `takes.json` or the episode summary.
 
 ## Episode package rule
 
@@ -203,9 +240,11 @@ Before marking an episode extraction as complete, verify:
 7. position-group statements are represented under `positions`
 8. fantasy strategy and format statements are represented under `fantasy`
 9. cautious, negative and uncertainty takes are extracted, not only positive takes
-10. `index.json` records counts by take category
-11. JSON files are pretty-printed with the formatting rule above
-12. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
+10. transcript aliases, nicknames and unresolved entity names were reviewed
+11. confirmed recurring aliases were added to the central alias registry, if any exist
+12. `index.json` records counts by take category
+13. JSON files are pretty-printed with the formatting rule above
+14. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
 
 If any required item fails, mark the package as `incomplete` or `needs_rework` in `index.json` and explain what is missing.
 
