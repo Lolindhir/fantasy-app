@@ -31,29 +31,11 @@ The user team is:
 
 Team recommendations must be from the Mighty Giants perspective.
 
-Do not evaluate Mighty Giants as an abstract team. Consider:
-
-- current roster
-- current picks
-- cap/salary context
-- league format
-- contender/rebuild window
-- current season phase
-- user preferences and decisions stored under `fantasy-management/decisions/`
+Do not evaluate Mighty Giants as an abstract team. Consider current roster, picks, cap/salary context, league format, contender/rebuild window, current season phase and user decisions stored under `fantasy-management/decisions/`.
 
 ## 3. Dynamic values must be re-derived
 
-Always re-check current sources when relevant:
-
-- roster
-- reserve and taxi
-- draft picks
-- salary/cap state
-- cap deadline
-- trades/waivers/cuts openness
-- season phase
-- player status and injuries
-- external rankings and market values
+Always re-check current sources when relevant: roster, reserve and taxi, draft picks, salary/cap state, cap deadline, trades/waivers/cuts openness, season phase, player status and injuries, external rankings and market values.
 
 Stored analyses are historical context, not current truth.
 
@@ -109,29 +91,11 @@ User-provided salary logic:
 - low salary does not automatically imply weak quality or high surplus value
 - projected salary can be useful for cap planning, but it must not be treated as a projection of player quality
 
-Use salary for:
+Use salary for cap management, off-season cap-deadline decisions, roster management, cut/trade timing, opportunity cost, projected salary risk, rookie/prospect discount context and salary-relevant team-size calculations.
 
-- cap management
-- off-season cap-deadline decisions
-- roster management
-- cut/trade timing
-- opportunity cost
-- projected salary risk
-- rookie/prospect discount context
-- salary-relevant team-size calculations
+Do not use salary as the primary signal for talent, quality, future value, weekly startability or player rank.
 
-Do not use salary as the primary signal for:
-
-- talent
-- quality
-- future value
-- weekly startability
-- player rank
-
-When salary affects a recommendation, explicitly separate:
-
-- salary as cap or roster-management factor
-- player quality or role evaluation from production, role, age, health, league format and external context
+When salary affects a recommendation, explicitly separate salary as cap/roster-management factor from player quality or role evaluation.
 
 ## 7. Grading and ranking rule
 
@@ -150,22 +114,7 @@ If `Ranking` is empty or unclear, say so instead of inferring a rank from salary
 
 ## 8. Player quality criteria
 
-Use internal data primarily from:
-
-- fantasy points
-- average points per game
-- average points per potential game
-- point history
-- game history
-- games played and games potential
-- availability and injury status
-- snaps
-- attempts/touches/routes where available
-- points per snap or attempt
-- touchdown profile
-- position role
-- age and career phase
-- league-format fit
+Use internal data primarily from fantasy points, average points per game, average points per potential game, point history, game history, games played/potential, availability and injury status, snaps, attempts/touches/routes where available, points per snap or attempt, touchdown profile, position role, age and career phase, and league-format fit.
 
 For players with little history, distinguish between lack of production and lack of opportunity.
 
@@ -221,15 +170,7 @@ Always explain the label.
 
 Do not automatically treat Mighty Giants as a rebuild team.
 
-Evaluate the window from current data:
-
-- previous placement
-- points production
-- point differential
-- roster strength
-- pick inventory
-- salary/cap state
-- playoff format
+Evaluate the window from current data: previous placement, points production, point differential, roster strength, pick inventory, salary/cap state and playoff format.
 
 When data indicates a contender window:
 
@@ -273,21 +214,9 @@ External sources supplement internal league data. They do not override it automa
 
 Every AI player, trade, roster, draft or free-agent recommendation must reconcile internal league data and external context when both are relevant.
 
-When starting from internal league data, check externally for:
+When starting from internal league data, check externally for current NFL team and roster status, injury status and return timeline, role/depth chart/competition, current expert or market ranking when value matters, and recent news that could make historical production misleading.
 
-- current NFL team and roster status
-- injury status and return timeline
-- role, depth chart and competition
-- current expert or market ranking when value matters
-- recent news that could make historical production misleading
-
-When starting from an external source, check internally for:
-
-- fantasy-league ownership via `League.json -> Teams[].Roster`, `Reserve` and `Taxi`
-- Mighty Giants roster fit and team window
-- league scoring and roster-size effects
-- salary, projected salary and cap-deadline effects
-- current picks, trade liquidity and replacement level
+When starting from an external source, check internally for fantasy-league ownership via `League.json -> Teams[].Roster`, `Reserve` and `Taxi`, Mighty Giants roster fit and team window, league scoring and roster-size effects, salary/projected salary/cap-deadline effects, current picks, trade liquidity and replacement level.
 
 If internal and external sources conflict:
 
@@ -296,18 +225,11 @@ If internal and external sources conflict:
 - explain which source is more decision-relevant and why
 - lower confidence when the conflict cannot be resolved
 
-Examples:
+## 15. Stoned Lack rules
 
-- internal player team/status must be checked against current NFL/team sources if role or availability matters
-- internal production must be checked against current role, injury and depth-chart context before projecting forward
-- external rankings must be checked against league scarcity, 6-team replacement level and Mighty Giants needs
-- salary must be checked against role and external value before calling a player cheap, expensive, cuttable or a value
+Stoned Lack is a source perspective, not a final projection.
 
-## 15. StonedLack rules
-
-StonedLack is a source perspective, not a final projection.
-
-Use StonedLack for:
+Use Stoned Lack for:
 
 - rookie upside
 - prospect profiles
@@ -318,17 +240,19 @@ Use StonedLack for:
 - source conviction
 - source philosophy
 
-Always label StonedLack as a source perspective, for example:
+Always label Stoned Lack as a source perspective, for example:
 
-- "StonedLack sees ..."
-- "the StonedLack extraction says ..."
-- "according to the StonedLack source note ..."
+- "Stoned Lack sees ..."
+- "the Stoned Lack extraction says ..."
+- "according to the Stoned Lack source note ..."
 
-Do not present StonedLack as current live news or as the final Mighty Giants recommendation.
+Do not present Stoned Lack as current live news or as the final Mighty Giants recommendation.
+
+Legacy spellings `StoneLack`, `StonedLack` and `Stoned-Lack` may appear in older transcripts, commits or user references. Resolve them to canonical `Stoned Lack` unless preserving raw transcript wording.
 
 ## 16. Transcript extraction rules
 
-When processing StonedLack or other fantasy football transcripts:
+When processing Stoned Lack or other fantasy football transcripts:
 
 1. read `AGENTS.md`, source rules, analysis rules and the podcast-specific extraction guide
 2. treat the raw transcript as the primary trace
@@ -370,7 +294,7 @@ When giving player, trade or roster recommendations, separate where useful:
 - which source is more decision-relevant for the recommendation
 - confidence level when uncertainty remains
 
-### StonedLack / source input says
+### Stoned Lack / source input says
 
 - source takes
 - rankings or tiers
@@ -435,7 +359,7 @@ Do not:
 - use internal league data for player role assumptions without external plausibility checks when role matters
 - use external rankings or news without checking league ownership, scoring, roster size, salary/cap and Mighty Giants fit
 - invent ADP, rankings, market values or injury news
-- treat StonedLack takes as final recommendations
+- treat Stoned Lack takes as final recommendations
 - infer players from bad transcript names without verification
 - use `IsFreeAgent` as fantasy-league availability
 - read draft-pick keys as true pick position without `Drafts.json`
@@ -458,7 +382,7 @@ Use this structure when helpful:
 5. salary/cap relevance
 6. external market/ranking/news context
 7. plausibility check: internal vs external agreement/conflict
-8. StonedLack/source input if relevant
+8. Stoned Lack/source input if relevant
 9. risks
 10. recommendation label
 
