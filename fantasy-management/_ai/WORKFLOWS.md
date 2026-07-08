@@ -70,11 +70,11 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 7. Add player/team/position Knowledge for candidate players when relevant.
 8. Evaluate remaining candidates by position, production, role, age, format fit and salary.
 9. Verify top candidates through player records.
-10. Store boards under `fantasy-management/derived/free-agent-boards/YYYY/`.
+10. Store boards under `fantasy-management/analyses/YYYY/free-agent-boards/` if requested.
 
 ## Podcast workflow
 
-Use this for StoneLack/StonedLack, Down Set Talk, Football Bromance and later podcast sources.
+Use this for Stoned Lack, Down Set Talk, Football Bromance and later podcast sources.
 
 Default rule: keep each podcast episode as one local source package. Do not create active Knowledge or global indexes during normal extraction.
 
@@ -91,8 +91,7 @@ Default rule: keep each podcast episode as one local source package. Do not crea
 11. Write all Fantasy Management JSON artifacts as readable, pretty-printed JSON with two-space indentation, one property per line and arrays split across lines.
 12. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` before marking the package complete.
 13. Do not update `fantasy-management/knowledge/` unless the user explicitly asks for Knowledge derivation.
-14. Do not update `derived/knowledge/takes/` during new podcast extraction by default.
-15. Do not invent missing details or non-mentions.
+14. Do not invent missing details or non-mentions.
 
 ## Knowledge derivation workflow
 

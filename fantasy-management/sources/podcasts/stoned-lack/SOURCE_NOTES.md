@@ -1,4 +1,4 @@
-# StoneLack / StonedLack Source Notes
+# Stoned Lack Source Notes
 
 Podcast-specific notes for extraction.
 
@@ -10,13 +10,13 @@ Do not maintain source weights here.
 
 ## Existing guide
 
-For detailed StoneLack extraction guidance, also read:
+For detailed Stoned Lack extraction guidance, also read:
 
-`fantasy-management/sources/podcasts/stonedlack/STONEDLACK_EXTRACTION_GUIDE.md`
+`fantasy-management/sources/podcasts/stoned-lack/STONED_LACK_EXTRACTION_GUIDE.md`
 
 ## Source-specific handling
 
-- Treat StoneLack as a fantasy-first qualitative source.
+- Treat Stoned Lack as a fantasy-first qualitative source.
 - Use source takes as context, not as final Mighty Giants recommendations.
 - Preserve transcript wording in raw files.
 - Track strong conviction, player tiers, buy/sell/hold/fade/watchlist language and dynasty strategy notes carefully.
@@ -26,9 +26,11 @@ For detailed StoneLack extraction guidance, also read:
 
 ## Alias notes
 
-Known source aliases:
+Known source aliases and legacy spellings:
 
+- Stoned Lack
 - StoneLack
 - StonedLack
+- Stoned-Lack
 
-Add recurring transcript aliases and player-name quirks here as they are discovered.
+Add recurring transcript aliases and player-name quirks here as they are discovered. Confirmed reusable entity aliases belong in the central podcast alias registry, not in a source-local placeholder index.

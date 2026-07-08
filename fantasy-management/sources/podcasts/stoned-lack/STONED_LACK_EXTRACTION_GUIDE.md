@@ -1,6 +1,6 @@
-# StonedLack Extraction Guide
+# Stoned Lack Extraction Guide
 
-Purpose: source-specific notes for extracting StonedLack podcast episodes.
+Purpose: source-specific notes for extracting Stoned Lack podcast episodes.
 
 The shared podcast structure is defined centrally in:
 
@@ -8,16 +8,16 @@ The shared podcast structure is defined centrally in:
 - `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`
 - `fantasy-management/_ai/templates/podcast/`
 
-This guide only adds StonedLack-specific extraction notes.
+This guide only adds Stoned Lack-specific extraction notes.
 
 ## Core principle
 
-StonedLack extraction creates a podcast source package, not active Knowledge and not a Mighty Giants recommendation.
+Stoned Lack extraction creates a podcast source package, not active Knowledge and not a Mighty Giants recommendation.
 
 Source package:
 
 ```text
-sources/podcasts/stonedlack/episodes/YYYY/sl_XXXX/
+sources/podcasts/stoned-lack/episodes/YYYY/sl_XXXX/
   raw/
     manifest.md
     part01.md
@@ -52,7 +52,7 @@ It may contain:
 
 ## `takes.json`
 
-Store all structured StonedLack source takes for the episode in one categorized `takes.json`.
+Store all structured Stoned Lack source takes for the episode in one categorized `takes.json`.
 
 Use the shared categories:
 
@@ -65,9 +65,9 @@ Use the shared categories:
 
 Do not create one JSON file per take by default.
 
-## StonedLack extraction focus
+## Stoned Lack extraction focus
 
-When processing a StonedLack transcript, extract:
+When processing a Stoned Lack transcript, extract:
 
 1. player evaluations
 2. team/depth-chart context
@@ -109,7 +109,7 @@ Recommended identity-verification priority:
 
 ## Alias handling
 
-StonedLack is German-language fantasy content about mostly English player, team and college names. Watch especially for:
+Stoned Lack is German-language fantasy content about mostly English player, team and college names. Watch especially for:
 
 - phonetic German transcript variants of English names
 - missing suffixes such as `Jr.`
@@ -123,11 +123,11 @@ If a mapping is likely but not certain, keep the entity unresolved or mark confi
 
 If a recurring alias or transcript error is confirmed, store it in the central podcast alias registry defined in `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
 
-Do not maintain a separate StonedLack-only alias index unless the user explicitly asks for source-local aliases.
+Do not maintain a separate Stoned Lack-only alias index unless the user explicitly asks for source-local aliases.
 
 ## Completeness gate
 
-A StonedLack episode package is complete when:
+A Stoned Lack episode package is complete when:
 
 1. raw source is present in `raw/` and referenced in `raw/manifest.md` and `index.json`
 2. `episode.md` is a clean German source summary without internal metadata
@@ -152,4 +152,4 @@ After extraction, a separate Knowledge derivation step may read the episode pack
 - `fantasy-management/knowledge/nfl/`
 - `fantasy-management/knowledge/fantasy/`
 
-Do not copy every StonedLack take into Knowledge. Redraft-only or irrelevant takes may stay only in the source package.
+Do not copy every Stoned Lack take into Knowledge. Redraft-only or irrelevant takes may stay only in the source package.

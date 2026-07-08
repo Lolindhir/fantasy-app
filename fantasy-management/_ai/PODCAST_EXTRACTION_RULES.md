@@ -2,7 +2,7 @@
 
 Purpose: central extraction rules for all podcast sources in Fantasy Management.
 
-Use these rules for StoneLack/StonedLack, Down Set Talk, Football Bromance and future podcast sources.
+Use these rules for Stoned Lack, Down Set Talk, Football Bromance and future podcast sources.
 
 The detailed source/knowledge/analysis separation is defined in:
 

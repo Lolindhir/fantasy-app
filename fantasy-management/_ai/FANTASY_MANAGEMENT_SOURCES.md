@@ -24,18 +24,7 @@ Important files:
 
 ## League source rules
 
-`public/data/League.json` is the primary current source for:
-
-- league settings
-- team rosters
-- reserve lists
-- taxi lists
-- starters when in season
-- team draft-pick references
-- roster size and lineup settings
-- scoring settings
-- salary cap fields
-- current league phase/status fields
+`public/data/League.json` is the primary current source for league settings, team rosters, reserve lists, taxi lists, starters when in season, draft-pick references, roster size, lineup settings, scoring, salary cap fields and current league phase/status fields.
 
 The user team is:
 
@@ -74,37 +63,7 @@ For broad player lists, waiver/free-agent boards and candidate generation, use:
 
 For a single player, load the relevant chunk or exact current player record before drawing conclusions.
 
-Important player fields may include:
-
-- `ID`
-- `Name`
-- `NameFirst`
-- `NameLast`
-- `TeamID`
-- `TeamAbbr`
-- `Position`
-- `Age`
-- `Year`
-- `Salary`
-- `SalaryProjected`
-- `Status`
-- `Injured`
-- `InjuryDetails`
-- `GamesPlayed`
-- `GamesPotential`
-- `SnapsTotal`
-- `AttemptsTotal`
-- `FantasyPointsTotal`
-- `FantasyPointsAvgGame`
-- `FantasyPointsAvgPotentialGame`
-- `FantasyPointsAvgSnap`
-- `FantasyPointsAvgAttempt`
-- `PointHistory`
-- `GameHistory`
-- `Ranking`
-- `Grading`
-- `FantasyPros`
-- `ESPN`
+Important player fields may include ID, name fields, NFL team, position, age, salary, projected salary, status, injury fields, games played/potential, snaps, attempts, fantasy points, point history, game history, ranking, grading, FantasyPros and ESPN fields.
 
 ## Fantasy free-agent source rules
 
@@ -135,34 +94,13 @@ Pick metadata is resolved through:
 
 Never infer true pick position only from a pick key such as `R1` or `OO5`.
 
-Use these fields when available:
-
-- `DisplayPick`
-- `Round`
-- `PositionInRound`
-- `OverallPick`
-- `OriginalOwnerRosterID`
-- `CurrentOwnerRosterID`
-- `WasTraded`
-- `IsCurrentlyTraded`
-- `TradeHistory`
-- `PlayerID`
-- `PlayerName`
-- `Status`
-
 For current ownership, use `CurrentOwnerRosterID`, not `OriginalOwnerRosterID`.
 
 ## Transaction source rules
 
 `public/data/Transactions.json` is the current source for completed transactions.
 
-Use it for:
-
-- trade history
-- add/drop history
-- pick movements
-- market activity
-- provenance checks
+Use it for trade history, add/drop history, pick movements, market activity and provenance checks.
 
 When current state and transaction history disagree, current state from `League.json` wins for roster and pick ownership.
 
@@ -193,27 +131,26 @@ Rules:
 
 ## Fantasy Management internal sources
 
-The Fantasy Management workspace stores source and analysis artifacts under:
+The Fantasy Management workspace stores source, Knowledge, analysis and decision artifacts under:
 
 `fantasy-management/`
 
-Important subfolders:
+Important active subfolders:
 
 - `fantasy-management/sources/`
-- `fantasy-management/derived/`
+- `fantasy-management/knowledge/`
 - `fantasy-management/analyses/`
 - `fantasy-management/decisions/`
-- `fantasy-management/indexes/`
 
 These files are useful context but are not canonical current league state.
 
-## StonedLack source area
+## Stoned Lack source area
 
-StonedLack podcast data belongs under:
+Stoned Lack podcast data belongs under:
 
-`fantasy-management/sources/podcasts/stonedlack/`
+`fantasy-management/sources/podcasts/stoned-lack/`
 
-StonedLack is a secondary qualitative source, not a primary league source.
+Stoned Lack is a secondary qualitative source, not a primary league source.
 
 Use it for:
 
@@ -229,7 +166,7 @@ Use it for:
 Always distinguish:
 
 - internal league data
-- StonedLack source perspective
+- Stoned Lack source perspective
 - current external market data
 - final Mighty Giants recommendation
 
@@ -245,16 +182,8 @@ These files can supplement generated app/player chunks, but they must not overri
 
 ## Analysis artifacts are not permanent truth
 
-Files under `analyses/`, `derived/` and `decisions/` are useful context and history.
+Files under `analyses/`, `knowledge/` and `decisions/` are useful context and history.
 
-They must not be treated as current truth for dynamic values such as:
-
-- current roster
-- current pick ownership
-- current salary/cap state
-- current injuries
-- current rankings
-- current market values
-- current NFL depth charts
+They must not be treated as current truth for dynamic values such as current roster, current pick ownership, current salary/cap state, current injuries, current rankings, current market values or current NFL depth charts.
 
 Re-derive dynamic facts from current sources when needed.

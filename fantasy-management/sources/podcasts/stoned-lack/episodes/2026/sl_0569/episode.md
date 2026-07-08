@@ -1,4 +1,4 @@
-# StonedLack 569 – ALLE Fantasy Picks NFL Draft 2026
+# Stoned Lack 569 – ALLE Fantasy Picks NFL Draft 2026
 
 ## Worum geht es in der Folge?
 

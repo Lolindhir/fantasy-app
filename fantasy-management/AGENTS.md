@@ -2,7 +2,7 @@
 
 This folder is the isolated Fantasy Management workspace of the repository.
 
-Read this file first for Fantasy Football, Dynasty, Mighty Giants, StoneLack/StonedLack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer, league-context or analysis-storage tasks.
+Read this file first for Fantasy Football, Dynasty, Mighty Giants, Stoned Lack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer, league-context or analysis-storage tasks.
 
 ## Scope
 
@@ -115,8 +115,9 @@ fantasy-management/
     league-format-notes.md
   sources/
     podcasts/
-      stonedlack/
+      stoned-lack/
         SOURCE_NOTES.md
+        STONED_LACK_EXTRACTION_GUIDE.md
         episodes/
           YYYY/
             episode_id/

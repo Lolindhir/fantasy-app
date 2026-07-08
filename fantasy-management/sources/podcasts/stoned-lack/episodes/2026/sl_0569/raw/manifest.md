@@ -1,7 +1,7 @@
 ---
 type: podcast_raw_manifest
 scope: fantasy-management
-source_id: stonedlack
+source_id: stoned-lack
 episode_id: sl_0569
 episode_number: 569
 title: "ALLE Fantasy Picks NFL Draft 2026 [2026] - Podcast 569"
@@ -11,7 +11,7 @@ language: de
 raw_transcript_status: split_parts_in_package
 ---
 
-# Raw Transcript Manifest – StonedLack 569
+# Raw Transcript Manifest – Stoned Lack 569
 
 The raw transcript is stored as ordered parts inside this episode package.
 
