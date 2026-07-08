@@ -82,7 +82,7 @@ When processing a StonedLack transcript, extract:
 
 ## Entity resolution
 
-Automatic transcripts often break player names.
+Automatic German transcripts often break English NFL player names.
 
 For important entities, preserve uncertainty in `takes.json` using notes, tags or confidence wording.
 
@@ -107,6 +107,24 @@ Recommended identity-verification priority:
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
 
+## Alias handling
+
+StonedLack is German-language fantasy content about mostly English player, team and college names. Watch especially for:
+
+- phonetic German transcript variants of English names
+- missing suffixes such as `Jr.`
+- confused similar first/last names
+- college-only references in rookie discussions
+- nicknames, shortened names and host-specific wording
+
+Do not change raw transcript wording.
+
+If a mapping is likely but not certain, keep the entity unresolved or mark confidence as low.
+
+If a recurring alias or transcript error is confirmed, store it in the central podcast alias registry defined in `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
+
+Do not maintain a separate StonedLack-only alias index unless the user explicitly asks for source-local aliases.
+
 ## Completeness gate
 
 A StonedLack episode package is complete when:
@@ -120,8 +138,9 @@ A StonedLack episode package is complete when:
 7. fantasy strategy and format statements are represented under `fantasy`
 8. cautious, negative and uncertainty takes are included, not only positive takes
 9. unresolved or low-confidence identities are visible in the summary or takes
-10. `index.json` records package paths, raw status and take counts
-11. no active Knowledge or Mighty Giants recommendations are mixed into the source package
+10. recurring transcript aliases were reviewed and confirmed mappings were stored centrally, if any exist
+11. `index.json` records package paths, raw status and take counts
+12. no active Knowledge or Mighty Giants recommendations are mixed into the source package
 
 ## Knowledge handoff
 
