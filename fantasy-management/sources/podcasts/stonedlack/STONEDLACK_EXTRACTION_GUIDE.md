@@ -37,7 +37,6 @@ It should read like a good article about the episode and must not contain:
 - take IDs
 - file inventories
 - `global_index_update`
-- legacy path lists
 - Mighty Giants recommendations
 
 It may contain:
@@ -65,8 +64,6 @@ Use the shared categories:
 - `other`
 
 Do not create one JSON file per take by default.
-
-Do not store new podcast source takes under `derived/knowledge/takes/` by default.
 
 ## StonedLack extraction focus
 
@@ -114,7 +111,7 @@ Recommended identity-verification priority:
 
 A StonedLack episode package is complete when:
 
-1. raw source is present or legacy raw source is clearly referenced in `raw/manifest.md` and `index.json`
+1. raw source is present in `raw/` and referenced in `raw/manifest.md` and `index.json`
 2. `episode.md` is a clean German source summary without internal metadata
 3. `takes.json` exists and uses all six shared categories
 4. all high-signal player statements are represented under `players`
@@ -137,9 +134,3 @@ After extraction, a separate Knowledge derivation step may read the episode pack
 - `fantasy-management/knowledge/fantasy/`
 
 Do not copy every StonedLack take into Knowledge. Redraft-only or irrelevant takes may stay only in the source package.
-
-## Legacy handling
-
-Older flat StonedLack files such as `sl_0569.md`, `sl_0569.json`, `sl_0569_player_data.json` and individual take files may remain for compatibility.
-
-New extraction should use the episode package folder.

@@ -18,7 +18,7 @@ Fantasy Management includes:
 - source take extraction
 - normalized knowledge-layer updates
 - league context, owner profiles and trade negotiation history
-- derived boards and source summaries
+- boards and source summaries
 - stored AI analyses
 - user decisions and decision history
 
@@ -42,9 +42,8 @@ For Fantasy Management tasks, read these files as needed:
 14. relevant source files under `fantasy-management/sources/`
 15. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
 16. relevant knowledge files under `fantasy-management/knowledge/`
-17. relevant legacy current/take files under `fantasy-management/derived/knowledge/` only when older material still lives there
-18. relevant analyses under `fantasy-management/analyses/`
-19. relevant decisions under `fantasy-management/decisions/`
+17. relevant analyses under `fantasy-management/analyses/`
+18. relevant decisions under `fantasy-management/decisions/`
 
 ## Canonical app data
 
@@ -106,16 +105,6 @@ fantasy-management/
         episode_index_template.json
         raw_manifest_template.md
     schemas/
-      analysis.schema.json
-      source-take.schema.json
-      source-profile.schema.json
-      source-registry.schema.json
-      owner-registry.schema.json
-      episode.schema.json
-      episode-player-data.schema.json
-      entity-signal.schema.json
-      take-view.schema.json
-      relevant-player.schema.json
   league-context/
     README.md
     owner-registry.json
@@ -148,11 +137,6 @@ fantasy-management/
     fantasy/
   analyses/
   decisions/
-  derived/
-    knowledge/
-      README.md
-      PROCESS.md
-      # legacy/derived compatibility area; do not put new podcast source takes here by default
 ```
 
 ## Source of truth rules

@@ -51,8 +51,6 @@ fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
 
 For small transcripts, `raw/source.md` may replace split raw parts.
 
-Legacy flat episode files may remain for compatibility, but new extractions should use the package folder.
-
 ## Required default outputs
 
 A normal podcast extraction creates:
@@ -64,7 +62,7 @@ A normal podcast extraction creates:
 
 Do not update global indexes during normal podcast extraction.
 
-Do not write source takes to `derived/knowledge/takes/` by default. Podcast takes are not Knowledge yet.
+Do not write source takes to any separate derived take area by default. Podcast takes are not Knowledge yet.
 
 ## `episode.md` rule
 
@@ -77,7 +75,6 @@ It must not contain internal extraction metadata, such as:
 - file inventories
 - take IDs
 - source package paths
-- `global_index_update`
 - extraction status flags
 - machine-readable companion file references
 - Mighty Giants recommendations
@@ -93,36 +90,18 @@ It may contain:
 
 Keep it inside the source perspective.
 
-Good:
-
-> The hosts like Jordan Tyson because they see a fast WR2 path in New Orleans.
-
-Not in `episode.md`:
-
-> Mighty Giants should draft Jordan Tyson.
-
 ## `takes.json` rule
 
 `takes.json` contains structured podcast statements from the episode.
 
-Top-level categories:
+Use these top-level categories:
 
-```json
-{
-  "players": [
-  ],
-  "teams": [
-  ],
-  "positions": [
-  ],
-  "nfl": [
-  ],
-  "fantasy": [
-  ],
-  "other": [
-  ]
-}
-```
+- `players`
+- `teams`
+- `positions`
+- `nfl`
+- `fantasy`
+- `other`
 
 Category meanings:
 
@@ -132,42 +111,6 @@ Category meanings:
 - `nfl`: general NFL, draft, coaching, scheme or league-context statements.
 - `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
 - `other`: source statements that do not fit cleanly elsewhere.
-
-Default take fields:
-
-```json
-{
-  "id": "sl_0569_player_001",
-  "category": "players",
-  "type": "player",
-  "entity": "Jordan Tyson",
-  "team": "NO",
-  "position": "WR",
-  "formats": [
-    "dynasty",
-    "redraft",
-    "rookie_draft"
-  ],
-  "podcast_take": "The source statement in plain language.",
-  "reasoning": [
-    "Reason from the podcast."
-  ],
-  "risks": [
-    "Uncertainty or downside from the podcast."
-  ],
-  "sentiment": "positive",
-  "conviction": "high",
-  "evidence": {
-    "timestamp_start": "00:45:36",
-    "timestamp_end": "00:48:22"
-  },
-  "tags": [
-    "rookie_wr",
-    "landing_spot",
-    "opportunity"
-  ]
-}
-```
 
 Do not split every take into a separate JSON file by default.
 
@@ -188,7 +131,6 @@ It may contain:
 - raw status
 - take counts by category
 - extraction status
-- migration notes for legacy files
 
 Keep this metadata out of `episode.md`.
 
@@ -207,7 +149,7 @@ Use:
 - stable key order within the same file type when practical
 - trailing newline at end of file
 
-Do not use inline arrays such as `["tag1", "tag2"]`, `["take_id"]` or `[]` in Fantasy Management JSON. Empty arrays should also be expanded across lines when practical.
+Do not use inline arrays in Fantasy Management JSON when practical.
 
 Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
 
@@ -252,7 +194,7 @@ If a redraft take affects market value, it may become fantasy-market knowledge r
 
 Before marking an episode extraction as complete, verify:
 
-1. raw source is present or clearly marked as legacy/pending in `index.json`
+1. raw source is present or clearly marked in `index.json`
 2. `episode.md` is a clean German podcast summary without internal metadata
 3. `takes.json` exists and uses the six standard categories
 4. meaningful player, team, position, NFL, fantasy and other source statements were reviewed
