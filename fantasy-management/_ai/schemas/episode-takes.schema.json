@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-takes.schema.json",
+  "title": "Podcast Episode Takes",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "episode_id",
+    "source_id",
+    "source_name",
+    "take_categories"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "take_categories": {
+      "type": "object",
+      "required": [
+        "players",
+        "teams",
+        "positions",
+        "nfl",
+        "fantasy",
+        "other"
+      ],
+      "properties": {
+        "players": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        },
+        "nfl": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        },
+        "fantasy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        },
+        "other": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/take"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "take": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "category",
+        "type",
+        "entity",
+        "podcast_take"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "players",
+            "teams",
+            "positions",
+            "nfl",
+            "fantasy",
+            "other"
+          ]
+        },
+        "type": {
+          "type": "string"
+        },
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "podcast_take": {
+          "type": "string"
+        },
+        "reasoning": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sentiment": {
+          "type": "string"
+        },
+        "conviction": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
