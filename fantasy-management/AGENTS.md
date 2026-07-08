@@ -41,9 +41,9 @@ For Fantasy Management tasks, read these files as needed:
 13. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
 14. relevant source files under `fantasy-management/sources/`
 15. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-16. relevant knowledge files under `fantasy-management/knowledge/`
-17. relevant analyses under `fantasy-management/analyses/`
-18. relevant decisions under `fantasy-management/decisions/`
+16. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
+17. relevant analyses under `fantasy-management/analyses/` when such files exist
+18. relevant decisions under `fantasy-management/decisions/` when such files exist
 
 ## Canonical app data
 
@@ -83,7 +83,9 @@ Knowledge should be created only after a separate interpretation step that check
 
 ## Main structure
 
-Use this target structure:
+Keep only folders that contain real files. Do not commit empty placeholder folders or README-only category folders.
+
+Use this target structure as a logical layout. Create optional folders only when they receive actual content:
 
 ```text
 fantasy-management/
@@ -126,9 +128,6 @@ fantasy-management/
         SOURCE_NOTES.md
       football-bromance/
         SOURCE_NOTES.md
-    relevant-players/
-    external-rankings/
-    manual-notes/
   knowledge/
     players/
     teams/
@@ -138,6 +137,8 @@ fantasy-management/
   analyses/
   decisions/
 ```
+
+`knowledge/`, `analyses/`, `decisions/`, `sources/relevant-players/`, `sources/external-rankings/` and `sources/manual-notes/` are created on demand when actual files exist.
 
 ## Source of truth rules
 
