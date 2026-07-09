@@ -115,7 +115,11 @@
         <div *ngFor="let draft of draftDashboard.drafts" class="draft-status-row">
           <div>
             <div class="draft-status-name">{{ draft.name }}</div>
-            <div class="draft-status-rounds">{{ draft.details }}</div>
+            <div class="draft-status-rounds">
+              <span>{{ draft.detailsPrimary }}</span>
+              <span class="draft-status-detail-separator"> · </span>
+              <span class="draft-status-detail-secondary">{{ draft.detailsSecondary }}</span>
+            </div>
           </div>
           <div class="draft-status-side">
             <span
@@ -126,8 +130,8 @@
             >
               {{ draft.status }}
             </span>
-            <div *ngIf="draft.startDisplay || draft.statusClass === 'upcoming'" class="draft-status-start">
-              {{ draft.startDisplay || 'not scheduled' }}
+            <div *ngIf="draft.startDisplay" class="draft-status-start">
+              {{ draft.startDisplay }}
             </div>
           </div>
         </div>
@@ -139,30 +143,67 @@
 
       <div class="pick-overview-block">
         <div class="pick-overview-label">Next Picks</div>
-        <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row">
+        <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row pick-overview-row--next">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-          <span class="pick-overview-main">{{ pick.owner }}</span>
-          <span class="pick-overview-team-lockup" [title]="pick.owner" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; white-space: nowrap;">
+          <span class="pick-overview-main pick-overview-owner-main" [title]="pick.owner">
             <span class="pick-overview-team-logo">
               <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
               <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
             </span>
-            <span class="pick-overview-team-abbr" style="color: #475569; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.02em;">{{ pick.ownerAbbr }}</span>
+            <span class="pick-overview-owner-name">{{ pick.owner }}</span>
           </span>
         </div>
       </div>
 
       <div class="pick-overview-block" *ngIf="draftDashboard.recentPicks.length > 0">
         <div class="pick-overview-label">Recent Picks</div>
-        <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row">
+        <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row pick-overview-row--recent">
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-          <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
-          <span class="pick-overview-team-lockup" [title]="pick.owner" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; white-space: nowrap;">
+
+          <button
+            *ngIf="pick.player; else selectedPlayerFallback"
+            type="button"
+            class="pick-overview-player-card"
+            [title]="pick.player.Name"
+            (click)="openPlayerDetail(pick.player)"
+          >
+            <img
+              *ngIf="pick.player.Picture"
+              class="pick-overview-player-image"
+              [src]="pick.player.Picture"
+              [alt]="pick.player.Name"
+            />
+            <span *ngIf="!pick.player.Picture" class="pick-overview-player-image pick-overview-player-image--fallback">
+              {{ pick.player.Position }}
+            </span>
+
+            <span class="pick-overview-player-body">
+              <span class="pick-overview-player-name">{{ pick.player.NameShort || pick.player.Name }}</span>
+              <span class="pick-overview-player-meta">
+                <span class="pick-overview-player-position" [ngStyle]="pick.player.Position | positionStyle">
+                  {{ pick.player.Position }}
+                </span>
+                <img
+                  *ngIf="pick.player.TeamNFL?.Logo"
+                  class="pick-overview-nfl-logo"
+                  [src]="pick.player.TeamNFL.Logo"
+                  alt=""
+                />
+                <span>{{ pick.player.TeamNFL?.Abv }}</span>
+              </span>
+            </span>
+          </button>
+
+          <ng-template #selectedPlayerFallback>
+            <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
+          </ng-template>
+
+          <span class="pick-overview-team-lockup" [title]="pick.owner">
             <span class="pick-overview-team-logo">
               <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
               <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
             </span>
-            <span class="pick-overview-team-abbr" style="color: #475569; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.02em;">{{ pick.ownerAbbr }}</span>
+            <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
           </span>
         </div>
       </div>
