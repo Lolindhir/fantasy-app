@@ -99,11 +99,19 @@
         "type": {
           "type": "string"
         },
+        "raw_entity_mention": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Raw transcript/player mention before canonical name resolution."
+        },
         "entity": {
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "description": "Canonical full entity name only when verified with sufficient confidence; null when unresolved."
         },
         "team": {
           "type": [
@@ -116,6 +124,70 @@
             "string",
             "null"
           ]
+        },
+        "entity_resolution": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "confirmed",
+                "ambiguous",
+                "unresolved"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "team": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "position": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "college": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "match_reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "verified_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         },
         "formats": {
           "type": "array",
