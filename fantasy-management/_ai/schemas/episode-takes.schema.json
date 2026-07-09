@@ -199,10 +199,8 @@
       "additionalProperties": true,
       "required": [
         "status",
-        "confidence",
-        "reason",
-        "candidates",
-        "verified_sources"
+        "method",
+        "confidence"
       ],
       "properties": {
         "status": {
@@ -211,6 +209,16 @@
             "confirmed",
             "ambiguous",
             "unresolved"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "registry",
+            "external_verification",
+            "context_inference",
+            "manual_confirmation",
+            "none"
           ]
         },
         "confidence": {
