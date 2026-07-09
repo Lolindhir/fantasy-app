@@ -22,17 +22,17 @@ Return- und Gadget-Spieler werden als formatabhängig betrachtet. Solche Profile
 
 ### Premium- und Frühpicks
 
-**Jeremy Love** bleibt aus Talentgründen wahrscheinlich der wichtigste Rookie der Klasse. Die Hosts sehen ihn trotz schwachem Cardinals-Umfeld weiter als wahrscheinlichen 1.01-Kandidaten. Gleichzeitig ist sein Sofortwert für 2026 deutlich weniger attraktiv als sein langfristiger Dynasty-Case.
+**Jeremiyah Love** bleibt aus Talentgründen wahrscheinlich der wichtigste Rookie der Klasse. Die Hosts sehen ihn trotz schwachem Cardinals-Umfeld weiter als wahrscheinlichen 1.01-Kandidaten. Gleichzeitig ist sein Sofortwert für 2026 deutlich weniger attraktiv als sein langfristiger Dynasty-Case.
 
-**Price, Seattle RB**, bekommt eines der stärksten Sofortrollensignale der Folge. Die Hosts sehen einen möglichen frühen Starterpfad und einen sehr starken Redraft-Case. Im kurzfristigen Rollenprofil kann er attraktiver wirken als Love, auch wenn seine genaue Transkriptidentität noch sauber geprüft werden muss.
+**Jadarian Price** bekommt als Seattle-RB eines der stärksten Sofortrollensignale der Folge. Die Hosts sehen einen möglichen frühen Starterpfad und einen sehr starken Redraft-Case. Im kurzfristigen Rollenprofil kann er attraktiver wirken als Love, auch wenn Dynasty den langfristigen Talent-Case von Love stärker berücksichtigen sollte.
 
-**Casey Concepcion** soll aus Sicht der Hosts wegen Cleveland nicht zu weit fallen. Der Browns-Kontext ist kurzfristig nicht ideal, aber Talent und Investment bleiben stark genug, um ihn nicht übermäßig zu bestrafen.
+**KC Concepcion** soll aus Sicht der Hosts wegen Cleveland nicht zu weit fallen. Der Browns-Kontext ist kurzfristig nicht ideal, aber Talent und Investment bleiben stark genug, um ihn nicht übermäßig zu bestrafen.
 
 **Denzel Boston** wird ebenfalls als Teil einer möglichen jungen Browns-WR-Core gesehen. Die Hosts klingen weniger begeistert als bei Concepcion, sehen aber einen langfristig relevanten Baustein.
 
-**Jordan Tyson** ist einer der klarsten Lieblingsspieler der Folge. Die Hosts mögen seinen Pfad in New Orleans, weil sie ihm eine schnelle WR2-Rolle zutrauen. Das Saints-Umfeld, Pace und Passing-Kontext werden positiv gelesen.
+**Jordyn Tyson** ist einer der klarsten Lieblingsspieler der Folge. Die Hosts mögen seinen Pfad in New Orleans, weil sie ihm eine schnelle WR2-Rolle zutrauen. Das Saints-Umfeld, Pace und Passing-Kontext werden positiv gelesen.
 
-**McKay Lemon** wird als Top-WR-Tier-Profil eingeordnet. Die Hosts mögen das Talent, sehen aber kurzfristig die starke Target-Konkurrenz in Philadelphia.
+**Makai Lemon** wird als Top-WR-Tier-Profil eingeordnet. Die Hosts mögen das Talent, sehen aber kurzfristig die starke Target-Konkurrenz in Philadelphia.
 
 ## Starke Opportunity-Wide-Receiver
 
@@ -40,29 +40,29 @@ Return- und Gadget-Spieler werden als formatabhängig betrachtet. Solche Profile
 
 **Chris Bell** wird als einer der spannendsten Mid-Round- oder Discount-WRs beschrieben. Die Miami-Depth-Chart wirkt offen, auch wenn Team-, QB- und Verletzungsfragen Risiken bleiben. Gerade diese Risiken können seinen Preis drücken.
 
-**Chris Brazzell** profitiert in der Bewertung vom Carolina-Kontext. Hinter Tet McMillan wirkt eine Outside-WR-Rolle offen, während die bestehende Konkurrenz nicht vollständig überzeugt. Die Hosts sehen ihn deshalb als starken Opportunity-Dart.
+**Chris Brazzell II** profitiert in der Bewertung vom Carolina-Kontext. Hinter Tet McMillan wirkt eine Outside-WR-Rolle offen, während die bestehende Konkurrenz nicht vollständig überzeugt. Die Hosts sehen ihn deshalb als starken Opportunity-Dart.
 
 **Skyler Bell** wird im Bills-Kontext positiv erwähnt. Sein Profil gefällt den Hosts, und Buffalo ist grundsätzlich ein attraktiver Ort für Receiver. Gleichzeitig bleibt die konkrete Target-Verteilung offen.
 
 **Malachi Fields** wird als R3-Outside-WR mit plausiblem Pfad neben Malik Nabers gesehen. Die Giants-Konkurrenz wirkt schlagbar, aber Offense und Coaching-Kontext bleiben Unsicherheiten.
 
-**Savian Thomas** ist ein Spezialfall. Die Hosts bewerten ihn über Speed, Return-Fähigkeiten und mögliche Gadget-Nutzung. In Formaten mit Return-Scoring oder kreativer Touch-Nutzung kann er deutlich interessanter werden.
+**Zavion Thomas** ist ein Spezialfall. Die Hosts bewerten ihn über Speed, Return-Fähigkeiten und mögliche Gadget-Nutzung. In Formaten mit Return-Scoring oder kreativer Touch-Nutzung kann er deutlich interessanter werden.
 
 ## Watchlist- und gemischte Profile
 
 **Omar Cooper Jr.** und der Jets-Passfänger-Kontext werden vorsichtig diskutiert. Das Investment zählt, und die Jets brauchen Inside-/Slot-Produktion. Gleichzeitig limitieren vorhandene zentrale Offense-Optionen den direkten Target-Pfad.
 
-**Stribling** bekommt ein gemischtes Signal. Draft Capital und NFL-Interesse zählen positiv, aber die Hosts warnen davor, eine mögliche Blocking- oder Real-Football-Rolle automatisch als Fantasy-Wert zu behandeln.
+**De'Zhaun Stribling** bekommt ein gemischtes Signal. Draft Capital und NFL-Interesse zählen positiv, aber die Hosts warnen davor, eine mögliche Blocking- oder Real-Football-Rolle automatisch als Fantasy-Wert zu behandeln.
 
-**Emory Johnson** ist der bevorzugte spätere Chiefs-RB-Stash der Folge. Die gute Offense erhöht den Reiz jedes klaren Rollenpfads, aber es bleibt ein später Stash ohne sichere Touches.
+**Emmett Johnson** ist der bevorzugte spätere Chiefs-RB-Stash der Folge. Die gute Offense erhöht den Reiz jedes klaren Rollenpfads, aber es bleibt ein später Stash ohne sichere Touches.
 
-**Jonah/Joner Coleman** wird als möglicher Rookie-RB3 erwähnt, aber erst nach vielen Wide Receivern. Die Hosts sehen einen möglichen Team-/Coach-Pfad, aber kein starkes Push-Signal.
+**Jonah Coleman** wird als möglicher Rookie-RB3 erwähnt, aber erst nach vielen Wide Receivern. Die Hosts sehen einen möglichen Team-/Coach-Pfad, aber kein starkes Push-Signal.
 
 **Nicholas Singleton** hat aus Sicht der Hosts einen moderaten Titans-Pfad. Sein früheres Talentprofil bleibt interessant, aber die Quelle macht daraus keinen Prioritäts-Call.
 
 **Seth McGowan** wird über einen theoretischen Colts-RB-Pfad besprochen, bleibt aber klar Low-Priority. Ohne eindeutige Handcuff- oder Rollendynamik ist die Begeisterung begrenzt.
 
-**Brandon Thompson** wird als späterer Chargers-WR mit Entwicklungschance erwähnt. Die Hosts sehen Potenzial, aber keine Priorität und keinen sicheren Rollenpfad.
+**Brenen Thompson** wird als späterer Chargers-WR mit Entwicklungschance erwähnt. Die Hosts sehen Potenzial, aber keine Priorität und keinen sicheren Rollenpfad.
 
 ## Tight Ends und Positionsgruppen
 
@@ -72,11 +72,11 @@ Gerade in 2TE- oder TE-premium-nahen Formaten kann die Aufmerksamkeit für Tight
 
 ## Team- und Umfeldsignale
 
-Der Browns-WR-Kontext wird kurzfristig skeptisch, langfristig aber nicht hoffnungslos bewertet. Cleveland drückt Redraft-Wert, aber Concepcion und Boston sollen deswegen nicht automatisch aus Dynasty-Boards fallen.
+Der Browns-WR-Kontext wird kurzfristig skeptisch, langfristig aber nicht hoffnungslos bewertet. Cleveland drückt Redraft-Wert, aber KC Concepcion und Boston sollen deswegen nicht automatisch aus Dynasty-Boards fallen.
 
-New Orleans wirkt für Jordan Tyson attraktiv, weil ein schneller WR2-Pfad möglich erscheint und die Offense für Passing-Volumen interessant gelesen wird. Tiefer liegende Saints-WR-Profile wie Bryce Lance oder Barion Brown bleiben deutlich spekulativer und stärker formatabhängig.
+New Orleans wirkt für Jordyn Tyson attraktiv, weil ein schneller WR2-Pfad möglich erscheint und die Offense für Passing-Volumen interessant gelesen wird. Tiefer liegende Saints-WR-Profile wie Bryce Lance oder Barion Brown bleiben deutlich spekulativer und stärker formatabhängig.
 
-Carolina erzeugt zwei unterschiedliche Signale: Chris Brazzell profitiert vom offenen Outside-WR-Pfad, während der bestehende RB-Kontext kurzfristig gewinnt, weil keine starke neue Konkurrenz hinzugekommen ist.
+Carolina erzeugt zwei unterschiedliche Signale: Chris Brazzell II profitiert vom offenen Outside-WR-Pfad, während der bestehende RB-Kontext kurzfristig gewinnt, weil keine starke neue Konkurrenz hinzugekommen ist.
 
 Las Vegas liefert in der Folge vor allem Redraft-Signale. Die Hosts wollen bei den Raiders besonders Ashton Jeanty und Brock Bowers. Beide werden als klare Rollen- und Zielspieler gesehen, wobei für Dynasty trotzdem der Preis entscheidend bleibt.
 
@@ -94,6 +94,6 @@ Redraft und Dynasty müssen getrennt werden. Redraft belohnt kurzfristiges Umfel
 
 Die Folge ist vor allem eine Opportunity- und Landing-Spot-basierte Einordnung der 2026er Fantasy-Rookie-Klasse. Die Hosts sehen wenige sichere Profile, aber mehrere interessante WR-Pfade.
 
-Die stärksten positiven Signale gehen an Jordan Tyson, Price, Antonio Williams, Chris Bell und Chris Brazzell. Jeremy Love bleibt wahrscheinlich oben im Rookie-Board, wird aber kurzfristig vorsichtiger gesehen. Casey Concepcion und Denzel Boston sollen wegen Cleveland nicht zu stark abgestraft werden.
+Die stärksten positiven Signale gehen an Jordyn Tyson, Jadarian Price, Antonio Williams, Chris Bell und Chris Brazzell II. Jeremiyah Love bleibt wahrscheinlich oben im Rookie-Board, wird aber kurzfristig vorsichtiger gesehen. KC Concepcion und Denzel Boston sollen wegen Cleveland nicht zu stark abgestraft werden.
 
 Die wichtigsten Warnungen betreffen Day-Two-TEs ohne Receiving-Usage, späte RBs ohne klaren Touch-Pfad, Real-Football-Rollen ohne Fantasy-Volumen und tiefe Profile mit unsicherer Transkriptidentität.
