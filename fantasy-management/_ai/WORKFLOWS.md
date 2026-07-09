@@ -89,8 +89,8 @@ Default rule: keep each podcast episode as one local source package. Do not crea
 8. Store unchanged raw source under the package's `raw/` folder. If the raw source is split, create `raw/manifest.md`.
 9. Create `episode.md` as a clean German podcast summary without internal metadata, file lists, take IDs or Mighty Giants recommendations.
 10. Create `takes.json` with categorized source takes under `players`, `teams`, `positions`, `nfl`, `fantasy` and `other`.
-11. For every player take in `takes.json`, include inline `raw_entity_mention`, canonical `entity`, and `entity_resolution`.
-12. Do not use a companion `entity_resolution.json` file as a substitute for inline player resolution in `takes.json`. Companion files are allowed only as temporary migration overlays for legacy packages and must keep the package from being marked fully complete.
+11. For every player take in `takes.json`, include inline `raw_entity_mention`, canonical `entity`, and compact `entity_resolution`.
+12. Do not use a companion `entity_resolution.json` file as a substitute for inline player resolution in `takes.json`.
 13. Add confirmed reusable aliases or transcript-error mappings to `fantasy-management/_ai/entity-resolution/player_identity_registry.json`.
 14. Create `index.json` with local package metadata, paths, raw status, take counts, identity-resolution status and extraction status.
 15. Write all Fantasy Management JSON artifacts as readable, pretty-printed JSON with two-space indentation, one property per line and arrays split across lines.
@@ -104,11 +104,10 @@ Use this after one or more source packages are complete.
 
 1. Read relevant podcast source packages under `sources/podcasts/{source_id}/episodes/{year}/{episode_id}/`.
 2. Treat `episode.md` and `takes.json` as source evidence, not final truth.
-3. If a legacy package has a temporary entity-resolution overlay, merge that identity context explicitly and treat the package as not fully normalized until `takes.json` is fixed inline.
-4. Load current league format, Mighty Giants context and current app data when relevance depends on them.
-5. Decide whether each relevant source take applies to our Dynasty league, 6-team format, 2QB/2TE/4Flex settings, roster context and current market context.
-6. Ignore or de-prioritize source takes that are purely redraft and have no Dynasty, market or strategy relevance.
-7. Store derived Knowledge under:
+3. Load current league format, Mighty Giants context and current app data when relevance depends on them.
+4. Decide whether each relevant source take applies to our Dynasty league, 6-team format, 2QB/2TE/4Flex settings, roster context and current market context.
+5. Ignore or de-prioritize source takes that are purely redraft and have no Dynasty, market or strategy relevance.
+6. Store derived Knowledge under:
 
 ```text
 fantasy-management/knowledge/players/
@@ -118,8 +117,8 @@ fantasy-management/knowledge/nfl/
 fantasy-management/knowledge/fantasy/
 ```
 
-8. Link back to source packages and take IDs for evidence.
-9. Keep Knowledge separate from final recommendations.
+7. Link back to source packages and take IDs for evidence.
+8. Keep Knowledge separate from final recommendations.
 
 ## Index rebuild workflow
 
