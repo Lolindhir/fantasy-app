@@ -34,6 +34,18 @@ Podcast-specific quirks, recurring wording patterns and interpretation notes bel
 
 Do not maintain source weights in multiple places.
 
+## Central player identity registry
+
+Podcast-independent player identity mappings, aliases and transcript-error resolutions are maintained centrally in:
+
+`fantasy-management/_ai/entity-resolution/player_identity_registry.json`
+
+Use this registry before and during every podcast/source extraction that mentions players.
+
+The registry is not a source take, not Knowledge, not a ranking and not a recommendation. It is a reusable entity-resolution aid.
+
+Add confirmed reusable aliases or transcript-error mappings to the registry when they are discovered. Do not add speculative mappings.
+
 ## Entity aliases and transcript name resolution
 
 During podcast extraction, actively watch for recurring aliases, nicknames, transcript errors and phonetic name variants for players, teams, coaches, colleges and other decision-relevant entities.
@@ -48,37 +60,20 @@ Raw source text must stay unchanged. Do not rewrite raw transcript wording.
 
 In `episode.md` and `takes.json`, use the best canonical entity name only when confidence is sufficient. Preserve uncertainty in notes, tags, evidence or wording when the mapping is not fully resolved.
 
-If a recurring alias or transcript error is confirmed, store it centrally for all podcast sources in:
+If a recurring player alias or transcript error is confirmed, store it in the central podcast-independent player identity registry above, not in a podcast-local alias file.
 
-`fantasy-management/sources/podcasts/entity_aliases.json`
+Use source-specific `SOURCE_NOTES.md` only for source quirks, pronunciation patterns and unresolved recurring issues. Use the central registry for confirmed mappings that may help future extraction across multiple sources.
 
-Create this file only when at least one real alias exists. Do not create an empty placeholder alias registry.
-
-Alias entries should distinguish language and source context. Use fields such as:
-
-- `alias`
-- `canonical_name`
-- `entity_type` (`player`, `team`, `coach`, `college`, `other`)
-- `alias_language` (`de`, `en`, `mixed`, `unknown`)
-- `source_ids`
-- `first_seen_episode_id`
-- `evidence_paths`
-- `confidence`
-- `reason`
-- `updated_date`
-
-Use source-specific `SOURCE_NOTES.md` only for source quirks, pronunciation patterns and unresolved recurring issues. Use the central alias registry for confirmed mappings that may help future extraction across multiple podcasts.
-
-Do not create or apply an alias mapping when the identity is uncertain. Leave the entity unresolved and mark the uncertainty in `takes.json` or the episode summary.
+Do not create or apply an alias mapping when the identity is uncertain. Leave the entity unresolved and mark the uncertainty in `takes.json`.
 
 ## Canonical player identity rule
 
 Player identity resolution is a required extraction step, not a best-effort cleanup step.
 
-For every player take, distinguish:
+For every player take, `takes.json` must include:
 
 - `raw_entity_mention`: the name, nickname, surname or transcript phrase as heard/read in the raw source.
-- `entity`: the canonical full player name, only when verified with sufficient confidence.
+- `entity`: the canonical full player name, only when verified with sufficient confidence; otherwise `null`.
 - `entity_resolution`: the resolution status, evidence and candidate reasoning.
 
 Do not use a surname-only value such as `Price` as a finished player entity unless the take is explicitly about a one-name public entity and this is verified. For normal NFL player takes, a surname-only mention must be resolved to a canonical full name or marked unresolved.
@@ -105,13 +100,13 @@ Then verify decision-relevant identities against current external identity sourc
 
 Use `entity_resolution.status`:
 
-- `confirmed`: canonical full name is verified and matches podcast context.
-- `ambiguous`: likely candidates exist, but the transcript/context is not enough to choose safely.
+- `confirmed`: canonical full name is verified and matches podcast/source context.
+- `ambiguous`: likely candidates exist, but the transcript/source context is not enough to choose safely.
 - `unresolved`: no reliable mapping has been found.
 
-If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` or keep a clearly marked raw mention field, and include candidate notes in `entity_resolution.candidates`.
+If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` and include candidate notes in `entity_resolution.candidates`.
 
-A podcast episode package must not be marked complete if important player takes contain unresolved or suspicious identities without explicit unresolved handling.
+A companion `entity_resolution.json` file is not a valid substitute for inline player resolution in `takes.json` for new or fully reworked packages. Companion files may exist only as temporary migration overlays for legacy packages, and such packages must not be marked fully complete until the player takes are fixed inline.
 
 ## Episode package rule
 
@@ -136,7 +131,7 @@ A normal podcast extraction creates:
 
 1. raw source material under the episode package
 2. `episode.md` as a clean German human-readable podcast summary
-3. `takes.json` as structured source takes grouped by category
+3. `takes.json` as structured source takes grouped by category, including inline player identity resolution for every player take
 4. `index.json` as local technical metadata and package map
 
 Do not update global indexes during normal podcast extraction.
@@ -191,7 +186,7 @@ Category meanings:
 - `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
 - `other`: source statements that do not fit cleanly elsewhere.
 
-Player take objects should include `raw_entity_mention` and `entity_resolution` when the player identity had to be inferred, verified or disambiguated.
+Every player take object must include `raw_entity_mention`, `entity` and `entity_resolution` inline. If a player identity is not confirmed, `entity` must be `null` and `entity_resolution.status` must be `ambiguous` or `unresolved`.
 
 Do not split every take into a separate JSON file by default.
 
@@ -211,6 +206,7 @@ It may contain:
 - local package paths
 - raw status
 - take counts by category
+- identity-resolution status
 - extraction status
 
 Keep this metadata out of `episode.md`.
@@ -278,16 +274,16 @@ Before marking an episode extraction as complete, verify:
 1. raw source is present or clearly marked in `index.json`
 2. `episode.md` is a clean German podcast summary without internal metadata
 3. `takes.json` exists and uses the six standard categories
-4. meaningful player, team, position, NFL, fantasy and other source statements were reviewed
+4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and `entity_resolution`
 5. high-signal player statements are represented under `players`
 6. team/depth-chart statements are represented under `teams`
 7. position-group statements are represented under `positions`
 8. fantasy strategy and format statements are represented under `fantasy`
 9. cautious, negative and uncertainty takes are extracted, not only positive takes
 10. transcript aliases, nicknames and unresolved entity names were reviewed
-11. all important player takes either use verified canonical full names or have explicit `ambiguous`/`unresolved` entity resolution
-12. confirmed recurring aliases were added to the central alias registry, if any exist
-13. `index.json` records counts by take category
+11. all important player takes either use verified canonical full names or have explicit `ambiguous`/`unresolved` entity resolution inline in `takes.json`
+12. confirmed recurring player aliases were added to `fantasy-management/_ai/entity-resolution/player_identity_registry.json`, if any exist
+13. `index.json` records counts by take category and identity-resolution status
 14. JSON files are pretty-printed with the formatting rule above
 15. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
 
