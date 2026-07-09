@@ -65,6 +65,14 @@ Use the shared categories:
 
 Do not create one JSON file per take by default.
 
+For player takes, include identity-resolution fields when the transcript does not provide a clearly verified canonical full name:
+
+- `raw_entity_mention`
+- `entity`
+- `team`
+- `position`
+- `entity_resolution`
+
 ## Stoned Lack extraction focus
 
 When processing a Stoned Lack transcript, extract:
@@ -82,9 +90,9 @@ When processing a Stoned Lack transcript, extract:
 
 ## Entity resolution
 
-Automatic German transcripts often break English NFL player names.
+Automatic German transcripts often break English NFL player names, and German hosts may also use only last names, shortened names, college references or informal phrasing.
 
-For important entities, preserve uncertainty in `takes.json` using notes, tags or confidence wording.
+For important entities, preserve uncertainty in `takes.json` using `entity_resolution`, notes, tags or confidence wording.
 
 Use context to resolve names:
 
@@ -106,6 +114,56 @@ Recommended identity-verification priority:
 3. official college/athletics pages
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
+
+## Stoned Lack player-name quality gate
+
+Do not treat a Stoned Lack player take as complete when the player name is only a surname, a likely mistranscription or a guessed full name.
+
+Bad final entities include examples like:
+
+- `Price` when the take is about a Seattle RB and the full player identity must be resolved.
+- `Jeremy Love` when the context indicates a similar but different canonical player name.
+
+In these cases, either verify the canonical full player name from context and external identity sources, or keep the take unresolved.
+
+A resolved player take should make the mapping auditable:
+
+```json
+"raw_entity_mention": "Price",
+"entity": "Jadarian Price",
+"team": "SEA",
+"position": "RB",
+"entity_resolution": {
+  "status": "confirmed",
+  "confidence": "high",
+  "reason": "Podcast context says Seattle RB / rookie draft; external identity source confirms the canonical full name.",
+  "candidates": [
+    {
+      "name": "Jadarian Price",
+      "match_reason": "Seattle RB context matches."
+    }
+  ],
+  "verified_sources": [
+    "external identity check required at extraction time"
+  ]
+}
+```
+
+An unresolved player take should not pretend certainty:
+
+```json
+"raw_entity_mention": "Price",
+"entity": null,
+"entity_resolution": {
+  "status": "unresolved",
+  "confidence": "low",
+  "reason": "Surname-only transcript mention; context was insufficient or verification was not completed.",
+  "candidates": [
+  ],
+  "verified_sources": [
+  ]
+}
+```
 
 ## Alias handling
 
@@ -138,9 +196,10 @@ A Stoned Lack episode package is complete when:
 7. fantasy strategy and format statements are represented under `fantasy`
 8. cautious, negative and uncertainty takes are included, not only positive takes
 9. unresolved or low-confidence identities are visible in the summary or takes
-10. recurring transcript aliases were reviewed and confirmed mappings were stored centrally, if any exist
-11. `index.json` records package paths, raw status and take counts
-12. no active Knowledge or Mighty Giants recommendations are mixed into the source package
+10. every important player take has either a verified canonical full player name or explicit unresolved/ambiguous `entity_resolution`
+11. recurring transcript aliases were reviewed and confirmed mappings were stored centrally, if any exist
+12. `index.json` records package paths, raw status and take counts
+13. no active Knowledge or Mighty Giants recommendations are mixed into the source package
 
 ## Knowledge handoff
 
