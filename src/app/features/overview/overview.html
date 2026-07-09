@@ -108,7 +108,7 @@
   </section>
 
   <ng-container *ngIf="vm.draftSeasonDashboard as draftDashboard">
-    <section class="draft-dashboard-card">
+    <section class="draft-dashboard-card pick-overview-card">
       <h2>Drafts {{ vm.league.Season }}</h2>
 
       <div class="draft-status-list">
@@ -138,46 +138,48 @@
       </div>
     </section>
 
-    <section class="draft-dashboard-card">
+    <section class="draft-dashboard-card pick-overview-card">
       <h2>Next / Recent Picks</h2>
 
-      <div class="pick-overview-block">
-        <div class="pick-overview-label">Next Picks</div>
-        <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row pick-overview-row--next">
-          <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-          <span class="pick-overview-main pick-overview-owner-main" [title]="pick.owner">
-            <span class="pick-overview-team-logo">
-              <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
-              <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
-            </span>
-            <span class="pick-overview-owner-name">{{ pick.owner }}</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="pick-overview-block" *ngIf="draftDashboard.recentPicks.length > 0">
-        <div class="pick-overview-label">Recent Picks</div>
-        <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row pick-overview-row--recent">
-          <span class="pick-overview-chip">{{ pick.displayPick }}</span>
-
-          <span class="pick-overview-recent-content">
-            <span class="pick-overview-team-lockup" [title]="pick.owner">
+      <div class="pick-overview-grid">
+        <div class="pick-overview-block">
+          <div class="pick-overview-label">Next Picks</div>
+          <div *ngFor="let pick of draftDashboard.nextPicks" class="pick-overview-row pick-overview-row--next">
+            <span class="pick-overview-chip">{{ pick.displayPick }}</span>
+            <span class="pick-overview-main pick-overview-owner-main" [title]="pick.owner">
               <span class="pick-overview-team-logo">
                 <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
                 <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
               </span>
-              <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
+              <span class="pick-overview-owner-name">{{ pick.owner }}</span>
             </span>
+          </div>
+        </div>
 
-            <app-draft-pick-player-card
-              *ngIf="pick.player; else selectedPlayerFallback"
-              [player]="pick.player"
-            />
+        <div class="pick-overview-block" *ngIf="draftDashboard.recentPicks.length > 0">
+          <div class="pick-overview-label">Recent Picks</div>
+          <div *ngFor="let pick of draftDashboard.recentPicks" class="pick-overview-row pick-overview-row--recent">
+            <span class="pick-overview-chip">{{ pick.displayPick }}</span>
 
-            <ng-template #selectedPlayerFallback>
-              <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
-            </ng-template>
-          </span>
+            <span class="pick-overview-recent-content">
+              <span class="pick-overview-team-lockup" [title]="pick.owner">
+                <span class="pick-overview-team-logo">
+                  <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+                  <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+                </span>
+                <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
+              </span>
+
+              <app-draft-pick-player-card
+                *ngIf="pick.player; else selectedPlayerFallback"
+                [player]="pick.player"
+              />
+
+              <ng-template #selectedPlayerFallback>
+                <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
+              </ng-template>
+            </span>
+          </div>
         </div>
       </div>
     </section>
