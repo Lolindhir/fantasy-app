@@ -71,6 +71,48 @@ Use source-specific `SOURCE_NOTES.md` only for source quirks, pronunciation patt
 
 Do not create or apply an alias mapping when the identity is uncertain. Leave the entity unresolved and mark the uncertainty in `takes.json` or the episode summary.
 
+## Canonical player identity rule
+
+Player identity resolution is a required extraction step, not a best-effort cleanup step.
+
+For every player take, distinguish:
+
+- `raw_entity_mention`: the name, nickname, surname or transcript phrase as heard/read in the raw source.
+- `entity`: the canonical full player name, only when verified with sufficient confidence.
+- `entity_resolution`: the resolution status, evidence and candidate reasoning.
+
+Do not use a surname-only value such as `Price` as a finished player entity unless the take is explicitly about a one-name public entity and this is verified. For normal NFL player takes, a surname-only mention must be resolved to a canonical full name or marked unresolved.
+
+Do not invent or auto-complete first names from memory. A plausible-looking full name is still wrong if it has not been verified against the episode context and external identity sources.
+
+For each high-signal player take, use the podcast context before accepting a canonical player name:
+
+- NFL team or landing spot
+- position
+- college
+- draft round or pick range
+- depth chart context
+- teammates or competitors mentioned nearby
+- episode section and timestamp
+
+Then verify decision-relevant identities against current external identity sources when available. Preferred order:
+
+1. official NFL or team pages
+2. NFL.com Draft Tracker or official draft material
+3. official college/athletics pages
+4. Pro Football Reference / Sports Reference
+5. ESPN, Sleeper, FantasyPros, KeepTradeCut or similar fantasy sources only as supporting context, not primary identity proof
+
+Use `entity_resolution.status`:
+
+- `confirmed`: canonical full name is verified and matches podcast context.
+- `ambiguous`: likely candidates exist, but the transcript/context is not enough to choose safely.
+- `unresolved`: no reliable mapping has been found.
+
+If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` or keep a clearly marked raw mention field, and include candidate notes in `entity_resolution.candidates`.
+
+A podcast episode package must not be marked complete if important player takes contain unresolved or suspicious identities without explicit unresolved handling.
+
 ## Episode package rule
 
 Each new processed podcast episode should be stored as one local package:
@@ -148,6 +190,8 @@ Category meanings:
 - `nfl`: general NFL, draft, coaching, scheme or league-context statements.
 - `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
 - `other`: source statements that do not fit cleanly elsewhere.
+
+Player take objects should include `raw_entity_mention` and `entity_resolution` when the player identity had to be inferred, verified or disambiguated.
 
 Do not split every take into a separate JSON file by default.
 
@@ -241,10 +285,11 @@ Before marking an episode extraction as complete, verify:
 8. fantasy strategy and format statements are represented under `fantasy`
 9. cautious, negative and uncertainty takes are extracted, not only positive takes
 10. transcript aliases, nicknames and unresolved entity names were reviewed
-11. confirmed recurring aliases were added to the central alias registry, if any exist
-12. `index.json` records counts by take category
-13. JSON files are pretty-printed with the formatting rule above
-14. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
+11. all important player takes either use verified canonical full names or have explicit `ambiguous`/`unresolved` entity resolution
+12. confirmed recurring aliases were added to the central alias registry, if any exist
+13. `index.json` records counts by take category
+14. JSON files are pretty-printed with the formatting rule above
+15. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
 
 If any required item fails, mark the package as `incomplete` or `needs_rework` in `index.json` and explain what is missing.
 
