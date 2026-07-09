@@ -205,8 +205,22 @@ app-overview .draft-status-detail-secondary {
   display: block;
 }
 
-app-overview .pick-overview-row--next {
+app-overview .pick-overview-row--next,
+app-overview .pick-overview-row--recent {
   grid-template-columns: max-content minmax(0, 1fr);
+}
+
+app-overview .pick-overview-recent-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(8px, 3vw, 16px);
+  min-width: 0;
+}
+
+app-overview .pick-overview-recent-content .pick-overview-team-lockup {
+  flex: 0 0 auto;
+  justify-self: auto;
 }
 
 app-overview .pick-overview-owner-main,
@@ -238,6 +252,11 @@ app-overview .pick-overview-player-card {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+app-overview .pick-overview-row--recent .pick-overview-player-card {
+  flex: 0 1 auto;
+  max-width: min(100%, 210px);
 }
 
 app-overview .pick-overview-player-image {
@@ -303,6 +322,16 @@ app-overview .pick-overview-nfl-logo {
 
   app-overview .draft-status-detail-secondary {
     display: inline;
+  }
+
+  app-overview .pick-overview-recent-content {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  app-overview .pick-overview-row--recent .pick-overview-player-card {
+    flex: 1 1 auto;
+    max-width: 100%;
   }
 }
 
