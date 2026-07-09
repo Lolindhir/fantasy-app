@@ -197,6 +197,115 @@ app-overview .draft-status-start {
   white-space: nowrap;
 }
 
+app-overview .draft-status-detail-separator {
+  display: none;
+}
+
+app-overview .draft-status-detail-secondary {
+  display: block;
+}
+
+app-overview .pick-overview-row--next {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+app-overview .pick-overview-owner-main,
+app-overview .pick-overview-player-card,
+app-overview .pick-overview-player-meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+app-overview .pick-overview-owner-main {
+  gap: 7px;
+}
+
+app-overview .pick-overview-owner-name,
+app-overview .pick-overview-player-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+app-overview .pick-overview-player-card {
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+app-overview .pick-overview-player-image {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+app-overview .pick-overview-player-image--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+app-overview .pick-overview-player-body {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+app-overview .pick-overview-player-name {
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+app-overview .pick-overview-player-meta {
+  gap: 4px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+app-overview .pick-overview-player-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4ch;
+  padding: 1px 4px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+app-overview .pick-overview-nfl-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+@media (min-width: 520px) {
+  app-overview .draft-status-detail-separator {
+    display: inline;
+  }
+
+  app-overview .draft-status-detail-secondary {
+    display: inline;
+  }
+}
+
 @media (max-width: 600px) {
   app-current-drafts-tab .pick-row {
     grid-template-columns: 64px minmax(0, 1fr);
