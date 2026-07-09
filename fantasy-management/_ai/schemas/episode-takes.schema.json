@@ -34,7 +34,7 @@
         "players": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/take"
+            "$ref": "#/$defs/player_take"
           }
         },
         "teams": {
@@ -71,6 +71,33 @@
     }
   },
   "$defs": {
+    "player_take": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/take"
+        },
+        {
+          "type": "object",
+          "required": [
+            "raw_entity_mention",
+            "entity_resolution"
+          ],
+          "properties": {
+            "category": {
+              "const": "players"
+            },
+            "raw_entity_mention": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Raw transcript/player mention before canonical name resolution."
+            },
+            "entity_resolution": {
+              "$ref": "#/$defs/entity_resolution"
+            }
+          }
+        }
+      ]
+    },
     "take": {
       "type": "object",
       "additionalProperties": true,
@@ -104,7 +131,7 @@
             "string",
             "null"
           ],
-          "description": "Raw transcript/player mention before canonical name resolution."
+          "description": "Raw transcript/entity mention before canonical name resolution. Required for player takes."
         },
         "entity": {
           "type": [
@@ -126,68 +153,7 @@
           ]
         },
         "entity_resolution": {
-          "type": "object",
-          "additionalProperties": true,
-          "properties": {
-            "status": {
-              "type": "string",
-              "enum": [
-                "confirmed",
-                "ambiguous",
-                "unresolved"
-              ]
-            },
-            "confidence": {
-              "type": "string",
-              "enum": [
-                "high",
-                "medium",
-                "low"
-              ]
-            },
-            "reason": {
-              "type": "string"
-            },
-            "candidates": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "team": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "position": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "college": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "match_reason": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "verified_sources": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
+          "$ref": "#/$defs/entity_resolution"
         },
         "formats": {
           "type": "array",
@@ -221,6 +187,81 @@
           "additionalProperties": true
         },
         "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "entity_resolution": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "confidence",
+        "reason",
+        "candidates",
+        "verified_sources"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "ambiguous",
+            "unresolved"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "name",
+              "match_reason"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "team": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "position": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "college": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "match_reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "verified_sources": {
           "type": "array",
           "items": {
             "type": "string"
