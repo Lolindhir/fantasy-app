@@ -74,13 +74,35 @@ For every player take, `takes.json` must include:
 
 - `raw_entity_mention`: the name, nickname, surname or transcript phrase as heard/read in the raw source.
 - `entity`: the canonical full player name, only when verified with sufficient confidence; otherwise `null`.
-- `entity_resolution`: the resolution status, evidence and candidate reasoning.
+- `entity_resolution`: compact inline status metadata for the mapping.
+
+`raw_entity_mention` is required even when the canonical name is obvious. It preserves the connection to the raw source.
+
+For confirmed player identities, keep `entity_resolution` compact by default:
+
+```json
+"entity_resolution": {
+  "status": "confirmed",
+  "method": "registry",
+  "confidence": "high"
+}
+```
+
+Allowed `method` values:
+
+- `registry`: resolved through `player_identity_registry.json`
+- `external_verification`: resolved through external identity verification during extraction
+- `context_inference`: resolved from strong source context when a registry entry is not yet present
+- `manual_confirmation`: user or maintainer explicitly confirmed the mapping
+- `none`: used only for `unresolved`
+
+Only add optional detail fields such as `reason`, `candidates` or `verified_sources` when they add useful information, especially for ambiguous, unresolved or newly verified identities.
 
 Do not use a surname-only value such as `Price` as a finished player entity unless the take is explicitly about a one-name public entity and this is verified. For normal NFL player takes, a surname-only mention must be resolved to a canonical full name or marked unresolved.
 
-Do not invent or auto-complete first names from memory. A plausible-looking full name is still wrong if it has not been verified against the episode context and external identity sources.
+Do not invent or auto-complete first names from memory. A plausible-looking full name is still wrong if it has not been verified against the episode context, registry or external identity sources.
 
-For each high-signal player take, use the podcast context before accepting a canonical player name:
+For each high-signal player take, use source context before accepting a canonical player name:
 
 - NFL team or landing spot
 - position
@@ -104,9 +126,9 @@ Use `entity_resolution.status`:
 - `ambiguous`: likely candidates exist, but the transcript/source context is not enough to choose safely.
 - `unresolved`: no reliable mapping has been found.
 
-If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` and include candidate notes in `entity_resolution.candidates`.
+If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` and include useful candidate or reason notes in `entity_resolution`.
 
-A companion `entity_resolution.json` file is not a valid substitute for inline player resolution in `takes.json` for new or fully reworked packages. Companion files may exist only as temporary migration overlays for legacy packages, and such packages must not be marked fully complete until the player takes are fixed inline.
+A companion `entity_resolution.json` file is not a valid substitute for inline player resolution in `takes.json` for new or fully reworked packages.
 
 ## Episode package rule
 
@@ -131,7 +153,7 @@ A normal podcast extraction creates:
 
 1. raw source material under the episode package
 2. `episode.md` as a clean German human-readable podcast summary
-3. `takes.json` as structured source takes grouped by category, including inline player identity resolution for every player take
+3. `takes.json` as structured source takes grouped by category, including compact inline player identity resolution for every player take
 4. `index.json` as local technical metadata and package map
 
 Do not update global indexes during normal podcast extraction.
@@ -186,7 +208,7 @@ Category meanings:
 - `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
 - `other`: source statements that do not fit cleanly elsewhere.
 
-Every player take object must include `raw_entity_mention`, `entity` and `entity_resolution` inline. If a player identity is not confirmed, `entity` must be `null` and `entity_resolution.status` must be `ambiguous` or `unresolved`.
+Every player take object must include `raw_entity_mention`, `entity` and compact `entity_resolution` inline. If a player identity is not confirmed, `entity` must be `null` and `entity_resolution.status` must be `ambiguous` or `unresolved`.
 
 Do not split every take into a separate JSON file by default.
 
@@ -274,7 +296,7 @@ Before marking an episode extraction as complete, verify:
 1. raw source is present or clearly marked in `index.json`
 2. `episode.md` is a clean German podcast summary without internal metadata
 3. `takes.json` exists and uses the six standard categories
-4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and `entity_resolution`
+4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and compact `entity_resolution`
 5. high-signal player statements are represented under `players`
 6. team/depth-chart statements are represented under `teams`
 7. position-group statements are represented under `positions`
