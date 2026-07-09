@@ -161,39 +161,10 @@
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
 
           <span class="pick-overview-recent-content">
-            <button
+            <app-draft-pick-player-card
               *ngIf="pick.player; else selectedPlayerFallback"
-              type="button"
-              class="pick-overview-player-card"
-              [title]="pick.player.Name"
-              (click)="openPlayerDetail(pick.player)"
-            >
-              <img
-                *ngIf="pick.player.Picture"
-                class="pick-overview-player-image"
-                [src]="pick.player.Picture"
-                [alt]="pick.player.Name"
-              />
-              <span *ngIf="!pick.player.Picture" class="pick-overview-player-image pick-overview-player-image--fallback">
-                {{ pick.player.Position }}
-              </span>
-
-              <span class="pick-overview-player-body">
-                <span class="pick-overview-player-name">{{ pick.player.NameShort || pick.player.Name }}</span>
-                <span class="pick-overview-player-meta">
-                  <span class="pick-overview-player-position" [ngStyle]="pick.player.Position | positionStyle">
-                    {{ pick.player.Position }}
-                  </span>
-                  <img
-                    *ngIf="pick.player.TeamNFL?.Logo"
-                    class="pick-overview-nfl-logo"
-                    [src]="pick.player.TeamNFL.Logo"
-                    alt=""
-                  />
-                  <span>{{ pick.player.TeamNFL?.Abv }}</span>
-                </span>
-              </span>
-            </button>
+              [player]="pick.player"
+            />
 
             <ng-template #selectedPlayerFallback>
               <span class="pick-overview-main">{{ pick.playerDisplay }}</span>

@@ -17,24 +17,7 @@
       </span>
       <div class="pick-player-cell">
         @if (item.selectedPlayer) {
-          <button class="list-player-card" type="button" (click)="openPlayerDetail(item.selectedPlayer)">
-            <img class="list-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
-            <span class="list-player-main">
-              <strong>{{ item.selectedPlayer.NameShort || item.selectedPlayer.Name }}</strong>
-              <span class="list-player-meta">
-                <span
-                  class="list-player-position"
-                  [ngStyle]="item.selectedPlayer.Position | positionStyle"
-                >
-                  {{ item.selectedPlayer.Position }}
-                </span>
-                @if (item.selectedPlayer.TeamNFL?.Logo) {
-                  <img class="list-player-nfl-logo" [src]="item.selectedPlayer.TeamNFL.Logo" alt="" />
-                }
-                <span>{{ item.selectedPlayer.TeamNFL?.Abv }}</span>
-              </span>
-            </span>
-          </button>
+          <app-draft-pick-player-card [player]="item.selectedPlayer" />
         } @else if (item.isPicked) {
           <span class="open-pick-cell">{{ item.pick.PlayerName }}</span>
         } @else {
