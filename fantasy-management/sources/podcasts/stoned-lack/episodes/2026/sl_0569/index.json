@@ -7,13 +7,13 @@
   "published_date": "2026-04-27",
   "processed_date": "2026-07-07",
   "language": "de",
-  "status": "needs_inline_takes_rework",
+  "status": "active_source_package",
   "package_path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569/",
   "files": {
     "raw_manifest": "raw/manifest.md",
     "episode_summary": "episode.md",
     "takes": "takes.json",
-    "entity_resolution": "entity_resolution.json"
+    "legacy_entity_resolution_overlay": "entity_resolution.json"
   },
   "raw_status": "split_raw_referenced",
   "take_counts": {
@@ -24,18 +24,18 @@
     "fantasy": 5,
     "other": 0
   },
-  "entity_resolution_status": "completed_with_companion_overlay",
-  "inline_takes_resolution_status": "missing",
+  "entity_resolution_status": "inline_completed",
+  "inline_takes_resolution_status": "completed",
   "knowledge_derivation_status": "not_started",
   "rework_summary": [
     "Visible player names in episode.md were corrected after identity resolution.",
-    "Canonical player identities for all 21 player takes are stored in entity_resolution.json and central reusable aliases are stored in _ai/entity-resolution/player_identity_registry.json.",
-    "The original takes.json still preserves first-pass extraction text and does not yet meet the target inline entity_resolution standard."
+    "All 21 player takes in takes.json now include inline raw_entity_mention, canonical entity and entity_resolution.",
+    "Confirmed reusable aliases are stored centrally in _ai/entity-resolution/player_identity_registry.json.",
+    "entity_resolution.json remains only as a legacy audit overlay and is not the target pattern for future extractions."
   ],
   "notes": [
     "Knowledge derivation has not been started; source takes remain podcast source material.",
     "Source slug migrated from legacy stonedlack to stoned-lack; legacy spellings remain aliases.",
-    "For player identity in this legacy package, prefer entity_resolution.json over the original player entity strings inside takes.json.",
-    "Do not use companion entity_resolution.json as the target pattern for future extractions; future and fully reworked packages must store player identity resolution inline in takes.json."
+    "For future and fully reworked packages, player identity resolution belongs inline in takes.json."
   ]
 }
