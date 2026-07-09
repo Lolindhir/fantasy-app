@@ -65,15 +65,15 @@ Use the shared categories:
 
 Do not create one JSON file per take by default.
 
-For every player take, include identity-resolution fields inline in the take object:
+For every player take, include these fields inline in the take object:
 
 - `raw_entity_mention`
 - `entity`
 - `team`
 - `position`
-- `entity_resolution`
+- compact `entity_resolution`
 
-Do not use a separate companion `entity_resolution.json` file as the target pattern for new Stoned Lack extractions. Such files are allowed only as temporary migration overlays for legacy packages and must keep the package from being marked fully complete until `takes.json` is fixed inline.
+Do not use a separate companion `entity_resolution.json` file as the target pattern for new Stoned Lack extractions.
 
 ## Stoned Lack extraction focus
 
@@ -93,8 +93,6 @@ When processing a Stoned Lack transcript, extract:
 ## Entity resolution
 
 Automatic German transcripts often break English NFL player names, and German hosts may also use only last names, shortened names, college references or informal phrasing.
-
-For important entities, preserve uncertainty in `takes.json` using `entity_resolution`, notes, tags or confidence wording.
 
 Before processing the episode, load the podcast-independent player identity registry:
 
@@ -121,7 +119,7 @@ Recommended identity-verification priority:
 4. Pro Football Reference / Sports Reference
 5. ESPN / Sleeper / FantasyPros / KeepTradeCut for fantasy context, not primary identity
 
-## Stoned Lack player-name quality gate
+## Compact player-name quality gate
 
 Do not treat a Stoned Lack player take as complete when the player name is only a surname, a likely mistranscription or a guessed full name.
 
@@ -130,9 +128,9 @@ Bad final entities include examples like:
 - `Price` when the take is about a Seattle RB and the full player identity must be resolved.
 - `Jeremy Love` when the context indicates a similar but different canonical player name.
 
-In these cases, either verify the canonical full player name from context and external identity sources, or keep the take unresolved.
+In these cases, either verify the canonical full player name from context, registry and external identity sources, or keep the take unresolved.
 
-A resolved player take should make the mapping auditable inline in `takes.json`:
+A normal resolved player take should be compact:
 
 ```json
 "raw_entity_mention": "Price",
@@ -141,19 +139,12 @@ A resolved player take should make the mapping auditable inline in `takes.json`:
 "position": "RB",
 "entity_resolution": {
   "status": "confirmed",
-  "confidence": "high",
-  "reason": "Podcast context says Seattle RB / rookie draft; external identity source confirms the canonical full name.",
-  "candidates": [
-    {
-      "name": "Jadarian Price",
-      "match_reason": "Seattle RB context matches."
-    }
-  ],
-  "verified_sources": [
-    "external identity check required at extraction time"
-  ]
+  "method": "registry",
+  "confidence": "high"
 }
 ```
+
+Use optional detail fields such as `reason`, `candidates` and `verified_sources` only when the mapping is ambiguous, unresolved, newly verified or otherwise not self-explanatory.
 
 An unresolved player take should not pretend certainty:
 
@@ -162,12 +153,9 @@ An unresolved player take should not pretend certainty:
 "entity": null,
 "entity_resolution": {
   "status": "unresolved",
+  "method": "none",
   "confidence": "low",
-  "reason": "Surname-only transcript mention; context was insufficient or verification was not completed.",
-  "candidates": [
-  ],
-  "verified_sources": [
-  ]
+  "reason": "Surname-only transcript mention; context was insufficient or verification was not completed."
 }
 ```
 
@@ -198,7 +186,7 @@ A Stoned Lack episode package is complete when:
 1. raw source is present in `raw/` and referenced in `raw/manifest.md` and `index.json`
 2. `episode.md` is a clean German source summary without internal metadata
 3. `takes.json` exists and uses all six shared categories
-4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and `entity_resolution`
+4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and compact `entity_resolution`
 5. all high-signal player statements are represented under `players`
 6. team/depth-chart statements are represented under `teams`
 7. position-group statements are represented under `positions`
