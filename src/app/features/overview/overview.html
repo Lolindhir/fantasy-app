@@ -161,6 +161,14 @@
           <span class="pick-overview-chip">{{ pick.displayPick }}</span>
 
           <span class="pick-overview-recent-content">
+            <span class="pick-overview-team-lockup" [title]="pick.owner">
+              <span class="pick-overview-team-logo">
+                <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
+                <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
+              </span>
+              <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
+            </span>
+
             <app-draft-pick-player-card
               *ngIf="pick.player; else selectedPlayerFallback"
               [player]="pick.player"
@@ -169,14 +177,6 @@
             <ng-template #selectedPlayerFallback>
               <span class="pick-overview-main">{{ pick.playerDisplay }}</span>
             </ng-template>
-
-            <span class="pick-overview-team-lockup" [title]="pick.owner">
-              <span class="pick-overview-team-logo">
-                <img *ngIf="pick.ownerAvatar" [src]="pick.ownerAvatar" alt="" />
-                <span *ngIf="!pick.ownerAvatar">{{ pick.ownerFallback }}</span>
-              </span>
-              <span class="pick-overview-team-abbr">{{ pick.ownerAbbr }}</span>
-            </span>
           </span>
         </div>
       </div>
