@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { map } from 'rxjs/operators';
 
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../core/models/fantasy.models';
 import { DataService } from '../../core/services/data.service';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
+import { PlayerDetailDialogComponent } from '../../shared/components/player-detail-dialog/player-detail-dialog';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
+import { PositionStylePipe } from '../../shared/pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import {
   compareDraftPicksByDraftOrder,
@@ -49,7 +52,8 @@ interface CapCheckSummary {
 
 interface DraftSeasonDraftRow {
   name: string;
-  details: string;
+  detailsPrimary: string;
+  detailsSecondary: string;
   status: string;
   statusClass: DraftSeasonStatusClass;
   startDisplay: string | null;
@@ -66,6 +70,7 @@ interface DraftPickOverviewRow {
   ownerAbbr: string;
   ownerAvatar: string | null;
   ownerFallback: string;
+  player: Player | null;
   playerDisplay: string | null;
 }
 
@@ -85,7 +90,8 @@ interface SalaryTeamSummary {
     CommonModule,
     SharedMaterialImports,
     SeasonResultsComponent,
-    AllTimeStandingsComponent
+    AllTimeStandingsComponent,
+    PositionStylePipe
   ],
   standalone: true,
   templateUrl: './overview.html',
@@ -94,6 +100,7 @@ interface SalaryTeamSummary {
 export class OverviewComponent {
 
   private dataService = inject(DataService);
+  private dialog = inject(MatDialog);
   expandedTeamId: number | null = null;
 
   toggleTeam(teamId: number): void {
@@ -102,7 +109,7 @@ export class OverviewComponent {
   }
 
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
-    map(({ league, teams, drafts }: { league: League; teams: FantasyTeam[]; drafts: RawDraft[] }) => {
+    map(({ league, teams, drafts, players }: { league: League; teams: FantasyTeam[]; drafts: RawDraft[]; players: Player[] }) => {
 
       const offSeason = league.Status === 'Off-Season';
       const draftSeason = league.Status === 'Draft-Season';
@@ -170,7 +177,7 @@ export class OverviewComponent {
         ? this.buildCapCheckSummary(league, salaryByTeam)
         : null;
 
-      const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, currentSeason, draftSeason);
+      const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, players, currentSeason, draftSeason);
       const awards = getCurrentSeasonAwards(league);
       const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
@@ -200,6 +207,17 @@ export class OverviewComponent {
       };
     })
   );
+
+  openPlayerDetail(player: Player | null): void {
+    if (!player) return;
+
+    this.dialog.open(PlayerDetailDialogComponent, {
+      data: player,
+      width: '800px',
+      maxHeight: '90vh',
+      panelClass: 'player-dialog'
+    });
+  }
 
   private buildCapCheckSummary(
     league: League,
@@ -231,6 +249,7 @@ export class OverviewComponent {
   private buildDraftSeasonDashboard(
     drafts: RawDraft[],
     teams: FantasyTeam[],
+    players: Player[],
     season: string,
     draftSeason: boolean
   ): DraftSeasonDashboard | null {
@@ -240,15 +259,16 @@ export class OverviewComponent {
     if (seasonDrafts.length === 0) return null;
 
     const teamById = this.buildTeamById(teams);
+    const playerById = this.buildPlayerById(players);
 
     return {
       drafts: seasonDrafts.map(draft => this.buildDraftSeasonDraftRow(draft)),
       nextPicks: this.getNextDraftPickEntries(seasonDrafts)
         .slice(0, 3)
-        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, false)),
+        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, playerById, false)),
       recentPicks: this.getRecentDraftPickEntries(seasonDrafts)
-        .slice(0, 2)
-        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, true))
+        .slice(0, 3)
+        .map(entry => this.buildDraftPickOverviewRow(entry.pick, entry.draft, teamById, playerById, true))
     };
   }
 
@@ -263,17 +283,14 @@ export class OverviewComponent {
     const total = draft.Picks.length;
     const selected = draft.Picks.filter(pick => this.isDraftPickSelected(pick)).length;
     const remaining = total - selected;
-    const details = [
-      `${draft.Settings.Rounds} rounds`,
-      `${total} picks`,
-      `${selected} selected`,
-      `${remaining} remaining`
-    ];
-    const startDisplay = this.formatDraftStartTime(draft);
+    const startDisplay = statusClass === 'upcoming'
+      ? this.formatDraftStartTime(draft) ?? 'not scheduled'
+      : null;
 
     return {
       name: `${draft.DisplayDraftType} Draft`,
-      details: details.join(' · '),
+      detailsPrimary: [`${draft.Settings.Rounds} rounds`, `${total} picks`].join(' · '),
+      detailsSecondary: [`${selected} selected`, `${remaining} remaining`].join(' · '),
       status: this.formatDraftSummaryStatus(statusClass),
       statusClass,
       startDisplay
@@ -284,10 +301,14 @@ export class OverviewComponent {
     pick: DraftPick,
     draft: RawDraft,
     teamById: Map<number, FantasyTeam>,
+    playerById: Map<string, Player>,
     includePlayer: boolean
   ): DraftPickOverviewRow {
     const owner = teamById.get(pick.CurrentOwnerRosterID);
     const ownerName = owner?.Team ?? owner?.Owner ?? `Team ${pick.CurrentOwnerRosterID}`;
+    const player = includePlayer && pick.PlayerID
+      ? playerById.get(pick.PlayerID) ?? null
+      : null;
 
     return {
       displayPick: this.formatDraftPickOverviewChip(draft, pick),
@@ -295,7 +316,8 @@ export class OverviewComponent {
       ownerAbbr: owner?.TeamAbbr ?? this.formatOwnerFallback(ownerName),
       ownerAvatar: owner?.Avatar ?? null,
       ownerFallback: this.formatOwnerFallback(ownerName),
-      playerDisplay: includePlayer ? pick.PlayerName ?? 'Selected' : null
+      player,
+      playerDisplay: includePlayer ? player?.NameShort ?? pick.PlayerName ?? 'Selected' : null
     };
   }
 
@@ -309,6 +331,10 @@ export class OverviewComponent {
 
   private buildTeamById(teams: FantasyTeam[]): Map<number, FantasyTeam> {
     return new Map(teams.map(team => [team.TeamID, team]));
+  }
+
+  private buildPlayerById(players: Player[]): Map<string, Player> {
+    return new Map(players.map(player => [player.ID, player]));
   }
 
   private getNextDraftPickEntries(drafts: RawDraft[]): DraftPickOverviewEntry[] {
