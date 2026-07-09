@@ -95,8 +95,36 @@ Default rule: keep each podcast episode as one local source package. Do not crea
 14. Create `index.json` with local package metadata, paths, raw status, take counts, identity-resolution status and extraction status.
 15. Write all Fantasy Management JSON artifacts as readable, pretty-printed JSON with two-space indentation, one property per line and arrays split across lines.
 16. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` before marking the package complete.
-17. Do not update `fantasy-management/knowledge/` unless the user explicitly asks for Knowledge derivation.
-18. Do not invent missing details or non-mentions.
+17. Run the package validator before marking the package complete:
+
+```bash
+python fantasy-management/_ai/scripts/validate_episode_package.py \
+  fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}
+```
+
+18. Do not update `fantasy-management/knowledge/` unless the user explicitly asks for Knowledge derivation.
+19. Do not invent missing details or non-mentions.
+
+## Podcast package validation workflow
+
+Use this when checking one or more podcast source packages for technical consistency.
+
+1. Validate a single package with:
+
+```bash
+python fantasy-management/_ai/scripts/validate_episode_package.py \
+  fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569
+```
+
+2. Validate all podcast packages with:
+
+```bash
+python fantasy-management/_ai/scripts/validate_episode_package.py --all
+```
+
+3. Treat validation errors as blockers before marking an extraction complete.
+4. Treat warnings as review prompts. Warnings do not prove a take is wrong.
+5. The GitHub Actions workflow `.github/workflows/fantasy-management-validation.yml` runs the all-package validator automatically for relevant Fantasy Management source, schema, template, registry and script changes.
 
 ## Knowledge derivation workflow
 
