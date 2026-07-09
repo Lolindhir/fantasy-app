@@ -7,12 +7,13 @@
   "published_date": "2026-04-27",
   "processed_date": "2026-07-07",
   "language": "de",
-  "status": "needs_rework",
+  "status": "entity_resolution_completed",
   "package_path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569/",
   "files": {
     "raw_manifest": "raw/manifest.md",
     "episode_summary": "episode.md",
-    "takes": "takes.json"
+    "takes": "takes.json",
+    "entity_resolution": "entity_resolution.json"
   },
   "raw_status": "split_raw_referenced",
   "take_counts": {
@@ -23,14 +24,16 @@
     "fantasy": 5,
     "other": 0
   },
+  "entity_resolution_status": "completed_with_companion_file",
   "knowledge_derivation_status": "not_started",
-  "rework_reasons": [
-    "Some player takes contain incomplete or suspicious player identities, for example surname-only entities or likely wrong canonical first names.",
-    "Player takes need a dedicated entity-resolution pass against podcast context and external identity sources before Knowledge derivation."
+  "rework_summary": [
+    "Visible player names in episode.md were corrected after identity resolution.",
+    "Canonical player identities for all 21 player takes are stored in entity_resolution.json.",
+    "The original takes.json still preserves first-pass extraction text; use entity_resolution.json as the canonical identity overlay until takes.json can be safely rewritten inline."
   ],
   "notes": [
     "Knowledge derivation has not been started; source takes remain podcast source material.",
     "Source slug migrated from legacy stonedlack to stoned-lack; legacy spellings remain aliases.",
-    "Do not treat this package as complete until important player entities have verified canonical full names or explicit unresolved/ambiguous entity_resolution metadata."
+    "For player identity, prefer entity_resolution.json over the original player entity strings inside takes.json."
   ]
 }
