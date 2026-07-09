@@ -1,0 +1,53 @@
+name: Fantasy Management Validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "fantasy-management/sources/podcasts/**"
+      - "fantasy-management/_ai/schemas/**"
+      - "fantasy-management/_ai/templates/podcast/**"
+      - "fantasy-management/_ai/entity-resolution/**"
+      - "fantasy-management/_ai/scripts/**"
+      - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
+      - "fantasy-management/_ai/WORKFLOWS.md"
+      - "fantasy-management/AGENTS.md"
+      - ".github/workflows/fantasy-management-validation.yml"
+  pull_request:
+    paths:
+      - "fantasy-management/sources/podcasts/**"
+      - "fantasy-management/_ai/schemas/**"
+      - "fantasy-management/_ai/templates/podcast/**"
+      - "fantasy-management/_ai/entity-resolution/**"
+      - "fantasy-management/_ai/scripts/**"
+      - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
+      - "fantasy-management/_ai/WORKFLOWS.md"
+      - "fantasy-management/AGENTS.md"
+      - ".github/workflows/fantasy-management-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-podcast-packages:
+    name: Validate podcast episode packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jsonschema
+
+      - name: Validate Fantasy Management podcast packages
+        run: |
+          python fantasy-management/_ai/scripts/validate_episode_package.py --all
