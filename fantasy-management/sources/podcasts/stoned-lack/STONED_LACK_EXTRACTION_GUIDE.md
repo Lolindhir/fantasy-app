@@ -65,13 +65,15 @@ Use the shared categories:
 
 Do not create one JSON file per take by default.
 
-For player takes, include identity-resolution fields when the transcript does not provide a clearly verified canonical full name:
+For every player take, include identity-resolution fields inline in the take object:
 
 - `raw_entity_mention`
 - `entity`
 - `team`
 - `position`
 - `entity_resolution`
+
+Do not use a separate companion `entity_resolution.json` file as the target pattern for new Stoned Lack extractions. Such files are allowed only as temporary migration overlays for legacy packages and must keep the package from being marked fully complete until `takes.json` is fixed inline.
 
 ## Stoned Lack extraction focus
 
@@ -93,6 +95,10 @@ When processing a Stoned Lack transcript, extract:
 Automatic German transcripts often break English NFL player names, and German hosts may also use only last names, shortened names, college references or informal phrasing.
 
 For important entities, preserve uncertainty in `takes.json` using `entity_resolution`, notes, tags or confidence wording.
+
+Before processing the episode, load the podcast-independent player identity registry:
+
+`fantasy-management/_ai/entity-resolution/player_identity_registry.json`
 
 Use context to resolve names:
 
@@ -126,7 +132,7 @@ Bad final entities include examples like:
 
 In these cases, either verify the canonical full player name from context and external identity sources, or keep the take unresolved.
 
-A resolved player take should make the mapping auditable:
+A resolved player take should make the mapping auditable inline in `takes.json`:
 
 ```json
 "raw_entity_mention": "Price",
@@ -179,7 +185,9 @@ Do not change raw transcript wording.
 
 If a mapping is likely but not certain, keep the entity unresolved or mark confidence as low.
 
-If a recurring alias or transcript error is confirmed, store it in the central podcast alias registry defined in `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
+If a recurring player alias or transcript error is confirmed, store it in:
+
+`fantasy-management/_ai/entity-resolution/player_identity_registry.json`
 
 Do not maintain a separate Stoned Lack-only alias index unless the user explicitly asks for source-local aliases.
 
@@ -190,16 +198,17 @@ A Stoned Lack episode package is complete when:
 1. raw source is present in `raw/` and referenced in `raw/manifest.md` and `index.json`
 2. `episode.md` is a clean German source summary without internal metadata
 3. `takes.json` exists and uses all six shared categories
-4. all high-signal player statements are represented under `players`
-5. team/depth-chart statements are represented under `teams`
-6. position-group statements are represented under `positions`
-7. fantasy strategy and format statements are represented under `fantasy`
-8. cautious, negative and uncertainty takes are included, not only positive takes
-9. unresolved or low-confidence identities are visible in the summary or takes
-10. every important player take has either a verified canonical full player name or explicit unresolved/ambiguous `entity_resolution`
-11. recurring transcript aliases were reviewed and confirmed mappings were stored centrally, if any exist
-12. `index.json` records package paths, raw status and take counts
-13. no active Knowledge or Mighty Giants recommendations are mixed into the source package
+4. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and `entity_resolution`
+5. all high-signal player statements are represented under `players`
+6. team/depth-chart statements are represented under `teams`
+7. position-group statements are represented under `positions`
+8. fantasy strategy and format statements are represented under `fantasy`
+9. cautious, negative and uncertainty takes are included, not only positive takes
+10. unresolved or low-confidence identities are visible in the relevant player take's inline `entity_resolution`
+11. every important player take has either a verified canonical full player name or explicit unresolved/ambiguous `entity_resolution`
+12. recurring transcript aliases were reviewed and confirmed mappings were stored centrally, if any exist
+13. `index.json` records package paths, raw status, take counts and identity-resolution status
+14. no active Knowledge or Mighty Giants recommendations are mixed into the source package
 
 ## Knowledge handoff
 
