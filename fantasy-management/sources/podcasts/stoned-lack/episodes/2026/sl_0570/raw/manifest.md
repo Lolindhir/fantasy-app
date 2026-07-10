@@ -23,6 +23,14 @@ Use the following files in numeric order. The ordered concatenation is the raw t
 2. `part02.md`
 3. `part03.md`
 4. `part04.md`
+5. `part05.md`
+6. `part06.md`
+7. `part07.md`
+8. `part08.md`
+9. `part09.md`
+10. `part10.md`
+11. `part11.md`
+12. `part12.md`
 
 ## Notes
 
