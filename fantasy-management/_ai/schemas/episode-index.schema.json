@@ -15,6 +15,10 @@
     "take_counts"
   ],
   "properties": {
+    "package_schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "episode_id": {
       "type": "string"
     },
@@ -59,6 +63,20 @@
       "type": "object",
       "additionalProperties": {
         "type": "string"
+      },
+      "properties": {
+        "raw_manifest": {
+          "type": "string"
+        },
+        "episode_summary": {
+          "type": "string"
+        },
+        "takes": {
+          "type": "string"
+        },
+        "mentions": {
+          "type": "string"
+        }
       }
     },
     "raw_status": {
@@ -76,22 +94,114 @@
       ],
       "properties": {
         "players": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "teams": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "positions": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "nfl": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "fantasy": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
         },
         "other": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "mention_counts": {
+      "type": "object",
+      "required": [
+        "total",
+        "resolved",
+        "ambiguous",
+        "unresolved",
+        "ranking_subjects",
+        "substantive_subjects",
+        "context_only",
+        "with_take_links",
+        "uncovered"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ambiguous": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ranking_subjects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "substantive_subjects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "context_only": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "with_take_links": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uncovered": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "coverage_audit": {
+      "type": "object",
+      "required": [
+        "status",
+        "method",
+        "uncovered_mentions"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "needs_review",
+            "completed"
+          ]
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uncovered_mentions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -104,5 +214,32 @@
         "type": "string"
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "package_schema_version": {
+            "minimum": 2
+          }
+        },
+        "required": [
+          "package_schema_version"
+        ]
+      },
+      "then": {
+        "required": [
+          "mention_counts",
+          "coverage_audit"
+        ],
+        "properties": {
+          "files": {
+            "required": [
+              "mentions"
+            ]
+          }
+        }
+      }
+    }
+  ]
 }
