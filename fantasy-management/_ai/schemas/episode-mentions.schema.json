@@ -179,7 +179,7 @@
                   "standalone_take_required": {
                     "const": true
                   },
-                  "take_ids": {
+                  "subject_take_ids": {
                     "minItems": 1
                   }
                 }
@@ -281,7 +281,8 @@
       "required": [
         "episode_md",
         "standalone_take_required",
-        "take_ids"
+        "subject_take_ids",
+        "context_take_ids"
       ],
       "properties": {
         "episode_md": {
@@ -296,7 +297,14 @@
         "standalone_take_required": {
           "type": "boolean"
         },
-        "take_ids": {
+        "subject_take_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "context_take_ids": {
           "type": "array",
           "uniqueItems": true,
           "items": {
@@ -321,7 +329,7 @@
           },
           "then": {
             "properties": {
-              "take_ids": {
+              "subject_take_ids": {
                 "minItems": 1
               }
             }
