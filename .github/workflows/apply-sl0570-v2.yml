@@ -10,6 +10,9 @@ on:
   issues:
     types:
       - opened
+  pull_request:
+    types:
+      - opened
   workflow_dispatch:
 
 permissions:
@@ -17,11 +20,17 @@ permissions:
 
 jobs:
   apply:
-    if: ${{ github.event_name != 'issues' || github.event.issue.title == '[automation] Apply Stoned Lack 570 V2' }}
+    if: >-
+      ${{
+        (github.event_name != 'issues' || github.event.issue.title == '[automation] Apply Stoned Lack 570 V2') &&
+        (github.event_name != 'pull_request' || github.event.pull_request.title == '[automation] Apply Stoned Lack 570 V2')
+      }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,5 +52,5 @@ jobs:
             echo "No package changes to commit."
           else
             git commit -m "Re-extract Stoned Lack 570 as version 2"
-            git push
+            git push origin HEAD:main
           fi
