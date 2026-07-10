@@ -52,6 +52,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install jsonschema
 
+      - name: Test entity mention coverage validator
+        run: |
+          python -m unittest discover \
+            -s fantasy-management/_ai/scripts/tests \
+            -p "test_*.py" \
+            -v
+
       - name: Validate package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
