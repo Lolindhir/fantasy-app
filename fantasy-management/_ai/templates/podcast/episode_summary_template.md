@@ -1,73 +1,112 @@
 # {{source_name}} {{episode_number}} – {{title}}
 
+> Dieses Template ist ein Baukasten, keine starre Gliederung. Verwende nur passende Abschnitte, ergänze notwendige eigene Überschriften und passe Reihenfolge sowie Tiefe an die tatsächliche Folge an.
+
 ## Worum geht es in der Folge?
 
-Beschreibe die Folge als Podcast-Inhalt, nicht als Datenextraktion.
+Ordne Thema, Anlass, Format und zentrale Fragestellung der Folge ausführlich ein. Beschreibe Podcast-Inhalt, nicht den Extraktionsprozess.
 
-## Zentrale Aussagen der Hosts
+## Zentrale Aussagen und Bewertungslogik der Hosts
 
-- {{main_statement_1}}
-- {{main_statement_2}}
-- {{main_statement_3}}
+Erkläre nicht nur die Ergebnisse, sondern auch, wie die Hosts argumentieren. Relevante Kriterien können beispielsweise sein:
 
-## Bewertungslogik der Folge
-
-Beschreibe, wie die Hosts argumentieren:
-
-- Talent vs. Landing Spot
-- Rolle / Opportunity
+- Talent und Prospect-Profil
+- Landing Spot und Teamumfeld
+- Rolle, Snaps, Targets oder Touches
 - Draft Capital
+- Coaching und Scheme
+- Konkurrenz und Depth Chart
+- Verletzungen
 - Redraft vs. Dynasty
-- Teamumfeld
-- Positionsgruppe
-- Fantasy-Format
+- Rookie Draft, Bestball oder andere Formate
+- Scoring-Besonderheiten
+- Marktpreis oder ADP
 
-## Spieler
+Halte unterschiedliche Host-Meinungen und Unsicherheiten ausdrücklich fest.
 
-### {{player_name}}
+## {{episode_specific_section}}
 
-Beschreibe die Podcast-Aussage zum Spieler.
+Nutze für die tatsächlichen Inhalte passende Abschnitte, zum Beispiel News-Blöcke, Teams, Positionsgruppen, Interviews, Strategiethemen, Mock-Draft-Runden oder Debatten.
 
-**Podcast-Einschätzung:** {{sentiment_or_summary}}
+## Vollständiges Ranking / Board / Tierstruktur
 
-**Begründung:**
+Diesen Abschnitt nur verwenden, wenn die Folge eine Rangfolge, Tiers, Kategorien, einen Mock Draft oder eine vergleichbare Ordnung enthält.
+
+Rekonstruiere die vollständige Quellstruktur so sicher wie möglich. Markiere unklare Reihenfolgen statt sie zu erfinden.
+
+| Rang / Tier | Entity | Podcast-Einschätzung | Zentrale Begründung | Risiko / Unsicherheit |
+|---|---|---|---|---|
+| {{rank_or_tier}} | {{entity}} | {{source_view}} | {{reason}} | {{risk}} |
+
+## Ausführliche Profile und Themenblöcke
+
+Erstelle für jeden wichtigen oder gerankten Gegenstand ausreichend ausführliche Abschnitte. Spieler sind ein häufiger Fall, aber Teams, Coaches, Positionsgruppen oder strategische Fragen können ebenso die passende Haupteinheit sein.
+
+### {{entity_name}}
+
+**Einordnung der Quelle:** {{sentiment_tier_or_role}}
+
+#### Begründung aus dem Podcast
 
 - {{reason_1}}
 - {{reason_2}}
+- {{reason_3}}
 
-**Risiken / Einordnung aus Podcast-Sicht:**
+#### Positiver Case
+
+- {{positive_1}}
+- {{positive_2}}
+
+#### Risiken, Gegenargumente und offene Punkte
 
 - {{risk_1}}
 - {{risk_2}}
 
-## NFL-Teams und Teamumfelder
+#### Host-Differenzen oder Formatabhängigkeit
 
-### {{team_name_or_abbr}}
+Beschreibe Unterschiede zwischen Hosts, kurzfristiger und langfristiger Sicht oder verschiedenen Fantasy-Formaten, sofern vorhanden.
 
-Beschreibe Team-, Depth-Chart-, Coaching- oder Rollen-Aussagen aus dem Podcast.
+## Fantasy-Strategie der Quelle
 
-## Positionsgruppen
+Bereite Aussagen zu Rookie Drafts, Redraft, Dynasty, Bestball, Waivers, Trades, Marktwert, ADP oder Scoring ausführlich und source-nah auf.
 
-### {{position_group}}
+## Source-abgeleitete Schlusslisten nach Kriterien
 
-Beschreibe Aussagen zu Positionsgruppen wie WR, RB, TE oder QB.
+Diesen Abschnitt flexibel verwenden, wenn die Folge genug Material dafür liefert. Mögliche, aber nicht verpflichtende Perspektiven sind:
 
-## Fantasy-Strategie
+- höchste Host-Conviction
+- beste Opportunity
+- bestes Talent oder Upside
+- stärkste Sofortrolle
+- stärkste langfristige Profile
+- beste Redraft- oder Dynasty-Signale
+- Sleeper und Dart Throws
+- formatabhängige Spezialfälle
+- größte Risiken, Fades oder Unsicherheiten
+- wichtigste Host-Unstimmigkeiten
 
-Beschreibe source-nahe Fantasy-Aussagen, z. B. zu Rookie Drafts, Redraft, Dynasty, Bestball, Marktwerten oder Scoring.
-
-## Sonstiges
-
-Weitere relevante Podcast-Aussagen.
+Nur Listen erstellen, die durch Aussagen der Folge gestützt werden. Keine eigenen Rankings erfinden.
 
 ## Fazit der Podcast-Folge
 
-Fasse zusammen, was die Folge aus Podcast-Sicht aussagt.
+Fasse ausführlich zusammen, welche Gesamtbotschaft und welche wichtigsten source-nahen Aussagen die Folge vermittelt.
+
+## Vollständiges Entity- und Erwähnungsregister
+
+Liste alle im zweiten Coverage-Durchlauf gefundenen, nicht als `false_positive` klassifizierten Spielererwähnungen auf. Weitere fantasy-relevante Entitäten können ergänzt werden.
+
+| Entity / Rohform | Rolle in der Folge | Abdeckung |
+|---|---|---|
+| {{canonical_or_unresolved_raw_name}} | {{ranking_subject_substantive_evaluation_comparison_depth_chart_context_or_other}} | {{detailed_section_take_context_or_register_only}} |
+
+Auch reine Vergleiche, Depth-Chart-Kontexte, beiläufige Referenzen und ungelöste mögliche Spielernamen bleiben hier sichtbar.
 
 Nicht ergänzen:
 
 - interne Dateilisten
 - Take IDs
 - Extraktionsstatus
+- technische Package-Pfade
 - Knowledge-Ableitungen
 - Mighty-Giants-Empfehlungen
+- eigene Ligaempfehlungen, die nicht aus dem Podcast stammen
