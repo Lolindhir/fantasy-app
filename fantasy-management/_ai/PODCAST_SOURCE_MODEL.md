@@ -1,6 +1,6 @@
 # Podcast Source Model
 
-Purpose: define the simplified source model for podcast extraction and later Fantasy Management use.
+Purpose: define the source model for podcast extraction and later Fantasy Management use.
 
 This model separates three layers:
 
@@ -14,7 +14,7 @@ Podcast extraction must not decide final Fantasy Management relevance.
 
 Podcast extraction answers:
 
-> What did the source say?
+> What did the source say, how did it argue, and which fantasy-relevant entities and statements appeared?
 
 Knowledge derivation answers:
 
@@ -26,7 +26,7 @@ Analysis answers:
 
 ## Podcast episode package
 
-Each processed podcast episode should live as one local package:
+Each newly processed podcast episode should live as one local package using the current package schema:
 
 ```text
 fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
@@ -36,16 +36,21 @@ fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
     part02.md
   episode.md
   takes.json
+  mentions.json
   index.json
 ```
 
 For small transcripts, `raw/source.md` may replace split raw parts.
 
+Legacy packages created before the mention-coverage model may not contain `mentions.json`. New and fully reworked packages use `package_schema_version: 2` in `index.json` and must contain it.
+
 ## `episode.md`
 
-`episode.md` is the human-readable podcast summary.
+`episode.md` is the detailed human-readable podcast preparation.
 
-It must be written like a clean article that the user could read or publish privately:
+It is not intended to be a short executive summary. It should preserve the fantasy-relevant content, arguments, rankings, disagreements, uncertainties and context of the episode in a form the user can read without opening the machine-readable JSON files.
+
+Write it like a detailed article that the user could read or publish privately:
 
 - no internal pipeline metadata
 - no file inventory
@@ -53,16 +58,31 @@ It must be written like a clean article that the user could read or publish priv
 - no `global_index_update`
 - no extraction status blocks
 - no Mighty Giants recommendation
+- no arbitrary brevity target
 
 It may include source framing and interpretation of the podcast's own logic, but it must stay inside the podcast perspective.
 
+The structure must adapt to the episode instead of forcing every podcast into one fixed outline. Depending on the content, useful sections may include:
+
+- news and current-context blocks
+- rankings, tiers, boards or draft rounds
+- detailed player, team or position profiles
+- host agreements and disagreements
+- positive cases, risks and uncertainty
+- fantasy-format distinctions
+- strategy principles
+- category-specific closing rankings or favorite lists
+- a complete entity/mention register
+
+For ranking or list episodes, preserve the complete source board when possible. When the source material supports it, include additional source-derived views such as highest conviction, best opportunity, best talent/upside, strongest immediate role, sleepers, format-dependent profiles, fades or major disagreements. Do not manufacture these categories when the episode does not support them.
+
 Good:
 
-> The hosts see Jordan Tyson as one of their favorite players in the episode because they expect a fast WR2 path in New Orleans.
+> The hosts see Jordyn Tyson as one of their favorite players in the episode because they expect a fast WR2 path in New Orleans. They still identify Chris Olave as the main target-competition risk.
 
 Not in `episode.md`:
 
-> Mighty Giants should draft Jordan Tyson.
+> Mighty Giants should draft Jordyn Tyson.
 
 That belongs in later analysis.
 
@@ -70,7 +90,7 @@ That belongs in later analysis.
 
 `takes.json` contains structured podcast statements from the same episode.
 
-It is still source material, not knowledge.
+It is still source material, not Knowledge.
 
 Use these top-level categories:
 
@@ -100,18 +120,40 @@ Use these top-level categories:
 - `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
 - `other`: source statements that do not fit cleanly elsewhere.
 
+### Take granularity
+
+Takes should be concise enough for machines but complete enough to preserve the claim, source reasoning, risks and evidence.
+
+Create a standalone take for:
+
+- every ranking or tier subject
+- every explicit sleeper, fade, buy, sell, hold or watchlist subject
+- every player or entity with a substantive positive, negative or uncertain evaluation
+- every independent role, injury, market, strategy or format thesis
+- every meaningful host disagreement when it changes the evaluation
+
+A player may have multiple takes when the episode makes materially different claims, for example ranking, role projection and market value. Do not collapse contradictory or independent claims merely to keep the file short.
+
+Pure comparisons, depth-chart names, historical references and passing mentions do not automatically need standalone takes. They remain documented in `mentions.json` and link to the surrounding take when useful.
+
 ### Take fields
 
-Keep takes simple and readable:
+Keep takes readable and source-focused:
 
 ```json
 {
   "id": "sl_0569_player_001",
   "category": "players",
   "type": "player",
-  "entity": "Jordan Tyson",
+  "raw_entity_mention": "Jordan Tyson",
+  "entity": "Jordyn Tyson",
   "team": "NO",
   "position": "WR",
+  "entity_resolution": {
+    "status": "confirmed",
+    "method": "registry",
+    "confidence": "high"
+  },
   "formats": [
     "dynasty",
     "redraft",
@@ -140,18 +182,75 @@ Keep takes simple and readable:
 
 Do not split every take into separate files by default. One `takes.json` per episode is the default.
 
+## `mentions.json`
+
+`mentions.json` is the episode-level coverage and audit register.
+
+Its main purpose is to make omissions visible. It records each unique player mention and other fantasy-relevant named entity found during a separate second pass over the raw transcript.
+
+Each mention records:
+
+- the raw transcript form or forms
+- the canonical entity when resolved
+- compact entity-resolution status
+- how the entity was used in the episode
+- one or more occurrences and timestamps
+- whether it appears in `episode.md`
+- whether a standalone take is required
+- which take IDs cover it
+
+Common mention types include:
+
+- `ranking_subject`
+- `substantive_take`
+- `news_subject`
+- `player_comparison`
+- `depth_chart_context`
+- `injury_context`
+- `scheme_context`
+- `historical_reference`
+- `passing_reference`
+- `unresolved`
+- `false_positive`
+
+Every player mentioned in the raw source must be represented, even when the player appears only as a comparison, teammate, competitor or passing reference. Non-player entities should be included when they carry fantasy-relevant source context.
+
+A mention classified as a ranking subject, substantive take or news subject requires a linked standalone take. Context-only mentions may link to the surrounding take or have no take link when no structured claim is needed.
+
+All non-false-positive mentions must appear in the complete mention register inside `episode.md`, including unresolved transcript names.
+
+## Coverage audit
+
+Mention coverage is produced in a second pass that is separate from the main content extraction.
+
+The audit asks:
+
+1. Which player names or possible player names occur in the raw transcript?
+2. Which other named entities carry fantasy-relevant content?
+3. Which are ranking subjects, substantive evaluations or news subjects?
+4. Which are comparisons, competitors, teammates or passing references only?
+5. Does every required subject have a take?
+6. Does every non-false-positive mention appear in the detailed `episode.md` register?
+7. Are unresolved identities visible rather than silently discarded?
+
+A package using schema version 2 is complete only when the audit status is `completed` and uncovered mentions equal zero.
+
 ## `index.json`
 
 `index.json` is the local technical map for the episode package.
 
 It may contain:
 
+- package schema version
 - source id
 - episode id
 - title
 - dates
 - paths within the package
 - counts by take category
+- mention coverage counts
+- entity-resolution status
+- coverage-audit status
 - extraction status
 
 Keep technical metadata out of `episode.md`.
