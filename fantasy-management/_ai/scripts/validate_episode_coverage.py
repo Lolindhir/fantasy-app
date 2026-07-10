@@ -175,6 +175,29 @@ def mention_search_names(mention: dict[str, Any]) -> list[str]:
     return names
 
 
+def identity_values_from_mention(mention: dict[str, Any]) -> set[str]:
+    values = {
+        normalize_text(value)
+        for value in mention_search_names(mention)
+        if normalize_text(value)
+    }
+    return values
+
+
+def identity_values_from_take(take: dict[str, Any]) -> set[str]:
+    values: set[str] = set()
+    for key in ["entity", "raw_entity_mention"]:
+        value = take.get(key)
+        normalized = normalize_text(value)
+        if normalized:
+            values.add(normalized)
+    return values
+
+
+def mention_matches_player_take(mention: dict[str, Any], take: dict[str, Any]) -> bool:
+    return bool(identity_values_from_mention(mention) & identity_values_from_take(take))
+
+
 def collect_takes(takes: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], set[str]]:
     take_by_id: dict[str, dict[str, Any]] = {}
     player_take_ids: set[str] = set()
@@ -196,6 +219,12 @@ def collect_takes(takes: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], set
                 player_take_ids.add(take_id)
 
     return take_by_id, player_take_ids
+
+
+def valid_links(raw_links: Any, take_by_id: dict[str, dict[str, Any]]) -> list[str]:
+    if not isinstance(raw_links, list):
+        return []
+    return [take_id for take_id in raw_links if take_id in take_by_id]
 
 
 def calculate_mention_counts(
@@ -241,21 +270,44 @@ def calculate_mention_counts(
                 counts["uncovered"] += 1
             continue
 
-        take_ids = coverage.get("take_ids")
-        take_ids = take_ids if isinstance(take_ids, list) else []
-        valid_take_ids = [take_id for take_id in take_ids if take_id in take_by_id]
-        if valid_take_ids:
+        valid_subject_ids = valid_links(coverage.get("subject_take_ids"), take_by_id)
+        valid_context_ids = valid_links(coverage.get("context_take_ids"), take_by_id)
+        if valid_subject_ids or valid_context_ids:
             counts["with_take_links"] += 1
 
         standalone_required = coverage.get("standalone_take_required") is True
         episode_covered = coverage.get("episode_md") is True
         if not false_positive and (
             not episode_covered
-            or (standalone_required and not valid_take_ids)
+            or (standalone_required and not valid_subject_ids)
         ):
             counts["uncovered"] += 1
 
     return counts
+
+
+def validate_link_ids(
+    mention_id: str,
+    link_label: str,
+    raw_links: Any,
+    take_by_id: dict[str, dict[str, Any]],
+    report: Report,
+    package_label: str,
+) -> list[str]:
+    if not isinstance(raw_links, list):
+        report.error(package_label, f"Mention {mention_id} {link_label} must be an array.")
+        return []
+
+    valid: list[str] = []
+    for take_id in raw_links:
+        if take_id not in take_by_id:
+            report.error(
+                package_label,
+                f"Mention {mention_id} references unknown {link_label} take id: {take_id}",
+            )
+            continue
+        valid.append(take_id)
+    return valid
 
 
 def validate_package(
@@ -355,7 +407,7 @@ def validate_package(
         return
 
     take_by_id, player_take_ids = collect_takes(takes)
-    referenced_take_ids: set[str] = set()
+    covered_player_take_ids: set[str] = set()
     seen_mention_ids: set[str] = set()
 
     for position, mention in enumerate(mentions):
@@ -387,36 +439,46 @@ def validate_package(
             report.error(package_label, f"Mention {mention_id} is missing coverage object.")
             continue
 
-        take_ids = coverage.get("take_ids")
-        take_ids = take_ids if isinstance(take_ids, list) else []
-        valid_take_ids: list[str] = []
-        for take_id in take_ids:
-            if take_id not in take_by_id:
-                report.error(
-                    package_label,
-                    f"Mention {mention_id} references unknown take id: {take_id}",
-                )
-                continue
-            valid_take_ids.append(take_id)
-            referenced_take_ids.add(take_id)
+        valid_subject_ids = validate_link_ids(
+            mention_id,
+            "subject_take_ids",
+            coverage.get("subject_take_ids"),
+            take_by_id,
+            report,
+            package_label,
+        )
+        valid_context_ids = validate_link_ids(
+            mention_id,
+            "context_take_ids",
+            coverage.get("context_take_ids"),
+            take_by_id,
+            report,
+            package_label,
+        )
 
         standalone_required = coverage.get("standalone_take_required") is True
-        if standalone_required and not valid_take_ids:
+        if standalone_required and not valid_subject_ids:
             report.error(
                 package_label,
-                f"Mention {mention_id} requires a standalone take but has no valid take link.",
+                f"Mention {mention_id} requires a standalone take but has no valid subject take link.",
             )
 
-        if (
-            mention.get("entity_type") == "player"
-            and standalone_required
-            and valid_take_ids
-            and not any(take_id in player_take_ids for take_id in valid_take_ids)
-        ):
-            report.error(
-                package_label,
-                f"Player mention {mention_id} requires a player take, but links only to non-player takes.",
-            )
+        if mention.get("entity_type") == "player":
+            for take_id in valid_subject_ids:
+                take = take_by_id[take_id]
+                if take_id not in player_take_ids:
+                    report.error(
+                        package_label,
+                        f"Player mention {mention_id} links non-player take {take_id} as a subject take.",
+                    )
+                    continue
+                if not mention_matches_player_take(mention, take):
+                    report.error(
+                        package_label,
+                        f"Player mention {mention_id} subject take {take_id} does not match the mention identity.",
+                    )
+                    continue
+                covered_player_take_ids.add(take_id)
 
         if false_positive:
             if coverage.get("episode_md") is True:
@@ -424,7 +486,7 @@ def validate_package(
                     package_label,
                     f"False-positive mention {mention_id} is marked as included in episode.md.",
                 )
-            if take_ids:
+            if valid_subject_ids or valid_context_ids:
                 report.error(
                     package_label,
                     f"False-positive mention {mention_id} must not link to takes.",
@@ -449,10 +511,10 @@ def validate_package(
                     "nor raw name appears in episode.md.",
                 )
 
-    for player_take_id in sorted(player_take_ids - referenced_take_ids):
+    for player_take_id in sorted(player_take_ids - covered_player_take_ids):
         report.error(
             package_label,
-            f"Player take {player_take_id} is not covered by any mentions.json entry.",
+            f"Player take {player_take_id} is not covered as a matching subject take in mentions.json.",
         )
 
     calculated_counts = calculate_mention_counts(
