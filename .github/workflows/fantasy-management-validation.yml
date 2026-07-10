@@ -10,6 +10,8 @@ on:
       - "fantasy-management/_ai/templates/podcast/**"
       - "fantasy-management/_ai/entity-resolution/**"
       - "fantasy-management/_ai/scripts/**"
+      - "fantasy-management/_ai/schema-list.json"
+      - "fantasy-management/_ai/PODCAST_SOURCE_MODEL.md"
       - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
       - "fantasy-management/_ai/WORKFLOWS.md"
       - "fantasy-management/AGENTS.md"
@@ -21,6 +23,8 @@ on:
       - "fantasy-management/_ai/templates/podcast/**"
       - "fantasy-management/_ai/entity-resolution/**"
       - "fantasy-management/_ai/scripts/**"
+      - "fantasy-management/_ai/schema-list.json"
+      - "fantasy-management/_ai/PODCAST_SOURCE_MODEL.md"
       - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
       - "fantasy-management/_ai/WORKFLOWS.md"
       - "fantasy-management/AGENTS.md"
@@ -48,6 +52,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install jsonschema
 
-      - name: Validate Fantasy Management podcast packages
+      - name: Validate package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
+
+      - name: Validate entity mention coverage
+        run: |
+          python fantasy-management/_ai/scripts/validate_episode_coverage.py --all
