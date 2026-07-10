@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,7 @@ SPEC = importlib.util.spec_from_file_location("validate_episode_coverage", SCRIP
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load validator module from {SCRIPT_PATH}")
 VALIDATOR = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = VALIDATOR
 SPEC.loader.exec_module(VALIDATOR)
 
 SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas"
