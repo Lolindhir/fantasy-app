@@ -6,7 +6,7 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 
 1. Read `fantasy-management/AGENTS.md`.
 2. Read source and rule files under `fantasy-management/_ai/`.
-3. Read `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast source packages, source takes or Knowledge derivation matter.
+3. Read `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast source packages, source takes, mention coverage or Knowledge derivation matter.
 4. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` and `fantasy-management/_ai/source-registry.json` when podcast/source extraction matters.
 5. Read `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter.
 6. Read `fantasy-management/league-context/` when owner identity, user perspective, league format interpretation, trade talks or negotiation history matter.
@@ -81,38 +81,54 @@ Default rule: keep each podcast episode as one local source package. Do not crea
 
 1. Read `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md`.
 2. Read `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md`.
-3. Read central podcast templates under `fantasy-management/_ai/templates/podcast/` and use them as the default structure.
+3. Read central podcast templates under `fantasy-management/_ai/templates/podcast/` and use them as flexible building blocks rather than a rigid universal outline.
 4. Load source identity, weighting and profile context from `fantasy-management/_ai/source-registry.json`.
 5. Load podcast-independent player aliases and previous identity mappings from `fantasy-management/_ai/entity-resolution/player_identity_registry.json`.
 6. Load source-specific quirks from `sources/podcasts/{source_id}/SOURCE_NOTES.md` when present.
 7. Create or update the episode package under `sources/podcasts/{source_id}/episodes/{year}/{episode_id}/`.
 8. Store unchanged raw source under the package's `raw/` folder. If the raw source is split, create `raw/manifest.md`.
-9. Create `episode.md` as a clean German podcast summary without internal metadata, file lists, take IDs or Mighty Giants recommendations.
-10. Create `takes.json` with categorized source takes under `players`, `teams`, `positions`, `nfl`, `fantasy` and `other`.
-11. For every player take in `takes.json`, include inline `raw_entity_mention`, canonical `entity`, and compact `entity_resolution`.
-12. Do not use a companion `entity_resolution.json` file as a substitute for inline player resolution in `takes.json`.
-13. Add confirmed reusable aliases or transcript-error mappings to `fantasy-management/_ai/entity-resolution/player_identity_registry.json`.
-14. Create `index.json` with local package metadata, paths, raw status, take counts, identity-resolution status and extraction status.
-15. Write all Fantasy Management JSON artifacts as readable, pretty-printed JSON with two-space indentation, one property per line and arrays split across lines.
-16. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` before marking the package complete.
-17. Run the package validator before marking the package complete:
+9. Perform Pass A: read the complete raw source for fantasy-relevant content, arguments, rankings, disagreements, risks, news and strategy.
+10. Create `episode.md` as a detailed German preparation of the podcast content. Do not optimize for brevity; adapt the structure to the episode and keep internal metadata, file lists, take IDs and Mighty Giants recommendations out.
+11. For ranking, tier, mock-draft or list episodes, preserve every safely reconstructable ranked subject, source order, tier and meaningful alternative host order.
+12. Include source-derived category rankings or favorite lists when supported by the episode, without inventing unsupported rankings.
+13. Create `takes.json` with categorized source takes under `players`, `teams`, `positions`, `nfl`, `fantasy` and `other`.
+14. Create standalone takes for every ranked subject, substantive evaluation, news subject and independent role, injury, market, strategy or format thesis.
+15. Allow multiple takes for one entity when materially different claims would otherwise be collapsed.
+16. For every player take in `takes.json`, include inline `raw_entity_mention`, canonical `entity`, and compact `entity_resolution`.
+17. Do not use a companion `entity_resolution.json` file as a substitute for inline player resolution.
+18. Perform Pass B: read the raw transcript again independently and collect every player name or possible player name plus other named entities carrying fantasy-relevant context.
+19. Create `mentions.json` from Pass B, classifying ranking subjects, substantive takes, news subjects, comparisons, depth-chart context, injury context, scheme context, historical references, passing references and unresolved names.
+20. Reconcile `mentions.json` against `episode.md` and `takes.json`: add missing subjects, takes, detailed sections and unresolved mentions.
+21. End `episode.md` with a complete entity and mention register containing every non-false-positive player mention.
+22. Add confirmed reusable aliases or transcript-error mappings to `fantasy-management/_ai/entity-resolution/player_identity_registry.json`.
+23. Create `index.json` with `package_schema_version: 2`, local package paths, raw status, take counts, mention counts, identity-resolution status, coverage-audit status and extraction status.
+24. Set `coverage_audit.status` to `completed` only after the second raw-transcript sweep and cross-file reconciliation are complete and uncovered mentions equal zero.
+25. Write all Fantasy Management JSON artifacts as readable, pretty-printed JSON with two-space indentation, one property per line and arrays split across lines.
+26. Run the extraction completeness gate from `PODCAST_EXTRACTION_RULES.md` before marking the package complete.
+27. Run both validators before marking the package complete:
 
 ```bash
 python fantasy-management/_ai/scripts/validate_episode_package.py \
   fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}
+
+python fantasy-management/_ai/scripts/validate_episode_coverage.py \
+  fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}
 ```
 
-18. Do not update `fantasy-management/knowledge/` unless the user explicitly asks for Knowledge derivation.
-19. Do not invent missing details or non-mentions.
+28. Do not update `fantasy-management/knowledge/` unless the user explicitly asks for Knowledge derivation.
+29. Do not invent missing details or non-mentions.
 
 ## Podcast package validation workflow
 
-Use this when checking one or more podcast source packages for technical consistency.
+Use this when checking one or more podcast source packages for technical consistency and mention coverage.
 
 1. Validate a single package with:
 
 ```bash
 python fantasy-management/_ai/scripts/validate_episode_package.py \
+  fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569
+
+python fantasy-management/_ai/scripts/validate_episode_coverage.py \
   fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569
 ```
 
@@ -120,18 +136,20 @@ python fantasy-management/_ai/scripts/validate_episode_package.py \
 
 ```bash
 python fantasy-management/_ai/scripts/validate_episode_package.py --all
+python fantasy-management/_ai/scripts/validate_episode_coverage.py --all
 ```
 
 3. Treat validation errors as blockers before marking an extraction complete.
 4. Treat warnings as review prompts. Warnings do not prove a take is wrong.
-5. The GitHub Actions workflow `.github/workflows/fantasy-management-validation.yml` runs the all-package validator automatically for relevant Fantasy Management source, schema, template, registry and script changes.
+5. Legacy schema-version-1 packages may produce a warning that no mention coverage is available, but they remain technically valid until reworked.
+6. The GitHub Actions workflow `.github/workflows/fantasy-management-validation.yml` runs both all-package validators automatically for relevant Fantasy Management source, schema, template, registry and script changes.
 
 ## Knowledge derivation workflow
 
 Use this after one or more source packages are complete.
 
 1. Read relevant podcast source packages under `sources/podcasts/{source_id}/episodes/{year}/{episode_id}/`.
-2. Treat `episode.md` and `takes.json` as source evidence, not final truth.
+2. Treat `episode.md`, `takes.json` and `mentions.json` as source evidence, not final truth. Mention-only context is not automatically Knowledge.
 3. Load current league format, Mighty Giants context and current app data when relevance depends on them.
 4. Decide whether each relevant source take applies to our Dynasty league, 6-team format, 2QB/2TE/4Flex settings, roster context and current market context.
 5. Ignore or de-prioritize source takes that are purely redraft and have no Dynasty, market or strategy relevance.
