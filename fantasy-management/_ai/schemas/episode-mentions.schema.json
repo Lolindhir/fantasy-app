@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-mentions.schema.json",
+  "title": "Podcast Episode Entity Mentions",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "episode_id",
+    "source_id",
+    "source_name",
+    "mentions"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "source_name": {
+      "type": "string"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mention"
+      }
+    }
+  },
+  "$defs": {
+    "mention": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "entity_type",
+        "raw_entity_mentions",
+        "entity",
+        "entity_resolution",
+        "mention_types",
+        "occurrences",
+        "coverage"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": [
+            "player",
+            "coach",
+            "team",
+            "college",
+            "league",
+            "other"
+          ]
+        },
+        "raw_entity_mentions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "entity_resolution": {
+          "$ref": "#/$defs/entity_resolution"
+        },
+        "mention_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "ranking_subject",
+              "substantive_take",
+              "news_subject",
+              "player_comparison",
+              "depth_chart_context",
+              "injury_context",
+              "scheme_context",
+              "historical_reference",
+              "passing_reference",
+              "unresolved",
+              "false_positive"
+            ]
+          }
+        },
+        "occurrences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/occurrence"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "entity_resolution": {
+                "properties": {
+                  "status": {
+                    "const": "confirmed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "entity": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "entity_resolution": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "ambiguous",
+                      "unresolved"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "entity": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mention_types": {
+                "contains": {
+                  "enum": [
+                    "ranking_subject",
+                    "substantive_take",
+                    "news_subject"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "coverage": {
+                "properties": {
+                  "standalone_take_required": {
+                    "const": true
+                  },
+                  "take_ids": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "entity_resolution": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "method",
+        "confidence"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "ambiguous",
+            "unresolved"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "registry",
+            "external_verification",
+            "context_inference",
+            "manual_confirmation",
+            "none"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "verified_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "timestamp_start"
+      ],
+      "properties": {
+        "timestamp_start": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timestamp_end": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "context_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "episode_md",
+        "standalone_take_required",
+        "take_ids"
+      ],
+      "properties": {
+        "episode_md": {
+          "type": "boolean"
+        },
+        "episode_md_section": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "standalone_take_required": {
+          "type": "boolean"
+        },
+        "take_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "standalone_take_required": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "take_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
