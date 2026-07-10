@@ -17,6 +17,7 @@ Fantasy Management includes:
 - podcast and external-source processing
 - source take extraction
 - player identity resolution and alias handling
+- entity-mention coverage auditing
 - normalized knowledge-layer updates
 - league context, owner profiles and trade negotiation history
 - boards and source summaries
@@ -30,14 +31,14 @@ For Fantasy Management tasks, read these files as needed:
 1. `fantasy-management/AGENTS.md`
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
-4. `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast/source extraction, source takes, knowledge derivation or structure matters
+4. `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast/source extraction, source takes, mention coverage, knowledge derivation or structure matters
 5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
 6. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
 7. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
 8. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
 9. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
 10. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
-11. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matter
+11. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
 12. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
 13. `fantasy-management/_ai/WORKFLOWS.md`
 14. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
@@ -83,9 +84,9 @@ Podcast takes are source material and should stay inside the episode package fir
 
 Knowledge should be created only after a separate interpretation step that checks league format, roster context, relevance, freshness and whether the source statement actually applies to Mighty Giants.
 
-## Entity resolution separation
+## Entity resolution and mention coverage separation
 
-Player identity resolution is source-processing support and may be reused across podcasts, manual notes and future external source extractions.
+Player identity resolution and entity-mention coverage are source-processing support and may be reused across podcasts, manual notes and future external source extractions.
 
 The central podcast-independent player identity registry is:
 
@@ -95,7 +96,9 @@ Use the registry to resolve known aliases, transcript errors, phonetic variants,
 
 Do not treat entity-resolution entries as fantasy recommendations, player values or current depth-chart truth.
 
-For new podcast/source extractions, confirmed player identity resolution must be stored inline in the relevant `takes.json` player take, not only in a companion overlay file.
+For new podcast/source extractions, confirmed player identity resolution must be stored inline in the relevant `takes.json` player take and `mentions.json` mention entry, not only in a companion overlay file.
+
+Schema-version-2 podcast packages must use a separate second raw-transcript pass to create `mentions.json`, covering every player mention and other fantasy-relevant named entities. The mention register is an audit layer, not Knowledge or analysis.
 
 ## Main structure
 
@@ -122,9 +125,13 @@ fantasy-management/
         README.md
         episode_summary_template.md
         episode_takes_template.json
+        episode_mentions_template.json
         episode_index_template.json
         raw_manifest_template.md
     schemas/
+      episode-index.schema.json
+      episode-takes.schema.json
+      episode-mentions.schema.json
   league-context/
     README.md
     owner-registry.json
@@ -142,6 +149,7 @@ fantasy-management/
               raw/
               episode.md
               takes.json
+              mentions.json
               index.json
       down-set-talk/
         SOURCE_NOTES.md
@@ -166,6 +174,7 @@ fantasy-management/
 - Podcast and external-source outputs are source context, not final recommendations.
 - Final Mighty Giants recommendations must combine current league data, source context, derived knowledge and current market/news context when relevant.
 - Podcast source takes must not be treated as final knowledge until a knowledge derivation step decides whether they apply to the league format and current context.
+- `mentions.json` is a completeness and audit artifact; it must not be treated as a ranking or recommendation.
 
 ## Language
 
