@@ -35,24 +35,33 @@ jobs:
           import zipfile
           from pathlib import Path
 
+          expected_hashes = {
+              'episode.md': '19edb0d2b1dafdf2726ab567990399a80948b1d478c37dba6f9a2b4adf5135b6',
+              'takes.json': '14b00fe4df617c5e5ae111345247a5bb33a8c2ad95970046dfd42cb898ae245a',
+              'mentions.json': '963373494046e9eeb3415433dbdca19c28a2c64e74eeb611158c86192a66804d',
+              'index.json': 'b2a3c89384673ff0ba249e18d163992805a773f0a462b01e17623d102fd5a27a',
+          }
+
           namespace = runpy.run_path('/tmp/apply_sl0570_v2.py')
           archive = base64.b64decode(namespace['PAYLOAD'])
-          actual_hash = hashlib.sha256(archive).hexdigest()
-          expected_hash = 'fabfdf0d2846585e4e8e11660f0966aec837e364e39946f3e8078e0c9935a80c'
-          if actual_hash != expected_hash:
-              raise RuntimeError(f'Migration payload hash mismatch: {actual_hash}')
-
-          expected_files = {'episode.md', 'takes.json', 'mentions.json', 'index.json'}
           target = Path('fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570')
           target.mkdir(parents=True, exist_ok=True)
+
           with zipfile.ZipFile(io.BytesIO(archive)) as source:
               names = set(source.namelist())
-              if names != expected_files:
+              if names != set(expected_hashes):
                   raise RuntimeError(f'Unexpected archive contents: {sorted(names)}')
+
               for name in sorted(names):
                   data = source.read(name)
+                  actual_hash = hashlib.sha256(data).hexdigest()
+                  expected_hash = expected_hashes[name]
+                  if actual_hash != expected_hash:
+                      raise RuntimeError(
+                          f'{name} hash mismatch: expected {expected_hash}, got {actual_hash}'
+                      )
                   (target / name).write_bytes(data)
-                  print(f'wrote {target / name} ({len(data)} bytes)')
+                  print(f'wrote {target / name} ({len(data)} bytes, sha256={actual_hash})')
           PY
 
       - name: Validate episode package
