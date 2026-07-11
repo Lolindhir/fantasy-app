@@ -1,17 +1,20 @@
 name: Apply Stoned Lack 570 V2 Feature Branch
 
 on:
-  push:
+  pull_request:
     branches:
       - agent/stoned-lack-570-v2
-    paths:
-      - .github/workflows/apply-sl0570-v2-feature.yml
+    types:
+      - opened
+      - synchronize
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'agent/stoned-lack-570-v2-trigger' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout feature branch with history
@@ -69,5 +72,3 @@ jobs:
           git rm .github/workflows/apply-sl0570-v2-feature.yml
           git commit -m "Re-extract Stoned Lack 570 as version 2"
           git push origin HEAD:agent/stoned-lack-570-v2
-
-# trigger
