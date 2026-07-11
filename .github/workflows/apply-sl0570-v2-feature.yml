@@ -23,61 +23,67 @@ jobs:
           ref: agent/stoned-lack-570-v2
           fetch-depth: 0
 
-      - name: Restore and apply validated migration payload
+      - name: Inspect historical migration payload
         shell: bash
         run: |
+          set +e
           git show c29cc2b6e83cadd3d9368ffe94dcb5383d0ac2e3:fantasy-management/_ai/scripts/migrations/apply_sl0570_v2.py > /tmp/apply_sl0570_v2.py
+          SHOW_STATUS=$?
+          export SHOW_STATUS
           python - <<'PY'
           import base64
           import hashlib
           import io
+          import json
+          import os
           import runpy
+          import traceback
           import zipfile
           from pathlib import Path
 
-          expected_hashes = {
-              'episode.md': '19edb0d2b1dafdf2726ab567990399a80948b1d478c37dba6f9a2b4adf5135b6',
-              'takes.json': '14b00fe4df617c5e5ae111345247a5bb33a8c2ad95970046dfd42cb898ae245a',
-              'mentions.json': '963373494046e9eeb3415433dbdca19c28a2c64e74eeb611158c86192a66804d',
-              'index.json': 'b2a3c89384673ff0ba249e18d163992805a773f0a462b01e17623d102fd5a27a',
+          report = {
+              'git_show_status': int(os.environ.get('SHOW_STATUS', '-1')),
+              'expected_local_hashes': {
+                  'episode.md': '19edb0d2b1dafdf2726ab567990399a80948b1d478c37dba6f9a2b4adf5135b6',
+                  'takes.json': '14b00fe4df617c5e5ae111345247a5bb33a8c2ad95970046dfd42cb898ae245a',
+                  'mentions.json': '963373494046e9eeb3415433dbdca19c28a2c64e74eeb611158c86192a66804d',
+                  'index.json': 'b2a3c89384673ff0ba249e18d163992805a773f0a462b01e17623d102fd5a27a',
+              },
           }
 
-          namespace = runpy.run_path('/tmp/apply_sl0570_v2.py')
-          archive = base64.b64decode(namespace['PAYLOAD'])
-          target = Path('fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570')
-          target.mkdir(parents=True, exist_ok=True)
+          try:
+              namespace = runpy.run_path('/tmp/apply_sl0570_v2.py')
+              payload = namespace.get('PAYLOAD')
+              report['payload_type'] = type(payload).__name__
+              report['payload_length'] = len(payload) if payload is not None else None
+              archive = base64.b64decode(payload)
+              report['archive_size'] = len(archive)
+              report['archive_sha256'] = hashlib.sha256(archive).hexdigest()
+              with zipfile.ZipFile(io.BytesIO(archive)) as source:
+                  report['archive_names'] = source.namelist()
+                  report['files'] = {}
+                  for name in source.namelist():
+                      data = source.read(name)
+                      report['files'][name] = {
+                          'size': len(data),
+                          'sha256': hashlib.sha256(data).hexdigest(),
+                      }
+          except Exception as exc:
+              report['error_type'] = type(exc).__name__
+              report['error'] = str(exc)
+              report['traceback'] = traceback.format_exc()
 
-          with zipfile.ZipFile(io.BytesIO(archive)) as source:
-              names = set(source.namelist())
-              if names != set(expected_hashes):
-                  raise RuntimeError(f'Unexpected archive contents: {sorted(names)}')
-
-              for name in sorted(names):
-                  data = source.read(name)
-                  actual_hash = hashlib.sha256(data).hexdigest()
-                  expected_hash = expected_hashes[name]
-                  if actual_hash != expected_hash:
-                      raise RuntimeError(
-                          f'{name} hash mismatch: expected {expected_hash}, got {actual_hash}'
-                      )
-                  (target / name).write_bytes(data)
-                  print(f'wrote {target / name} ({len(data)} bytes, sha256={actual_hash})')
+          output = Path('fantasy-management/_ai/scripts/migrations/sl0570_v2_diagnostic.json')
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          print(output.read_text(encoding='utf-8'))
           PY
 
-      - name: Validate episode package
-        run: |
-          python fantasy-management/_ai/scripts/validate_episode_package.py fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570
-          python fantasy-management/_ai/scripts/validate_episode_coverage.py fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570
-
-      - name: Commit package and remove temporary workflow
+      - name: Commit diagnostic
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/episode.md
-          git add fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/takes.json
-          git add fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/mentions.json
-          git add fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/index.json
-          git rm .github/workflows/apply-sl0570-v2-feature.yml
-          git commit -m "Re-extract Stoned Lack 570 as version 2"
+          git add fantasy-management/_ai/scripts/migrations/sl0570_v2_diagnostic.json
+          git commit -m "Diagnose Stoned Lack 570 v2 migration payload"
           git push origin HEAD:agent/stoned-lack-570-v2
