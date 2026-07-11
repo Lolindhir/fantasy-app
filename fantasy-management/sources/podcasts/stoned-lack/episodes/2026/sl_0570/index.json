@@ -1,5 +1,5 @@
 {
-  "package_schema_version": 1,
+  "package_schema_version": 2,
   "episode_id": "sl_0570",
   "source_id": "stoned-lack",
   "source_name": "Stoned Lack",
@@ -8,37 +8,52 @@
   "published_date": "2026-05-04",
   "processed_date": "2026-07-10",
   "language": "de",
-  "status": "needs_rework",
+  "status": "active_source_package",
   "package_path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/",
   "files": {
     "raw_manifest": "raw/manifest.md",
     "episode_summary": "episode.md",
-    "takes": "takes.json"
+    "takes": "takes.json",
+    "mentions": "mentions.json"
   },
   "raw_status": "split_raw_referenced",
   "take_counts": {
-    "players": 26,
-    "teams": 8,
-    "positions": 3,
-    "nfl": 2,
-    "fantasy": 6,
+    "players": 40,
+    "teams": 16,
+    "positions": 4,
+    "nfl": 4,
+    "fantasy": 9,
     "other": 0
+  },
+  "mention_counts": {
+    "total": 151,
+    "resolved": 135,
+    "ambiguous": 0,
+    "unresolved": 16,
+    "ranking_subjects": 23,
+    "substantive_subjects": 40,
+    "context_only": 111,
+    "with_take_links": 144,
+    "uncovered": 0
   },
   "entity_resolution_status": "compact_inline_completed",
   "inline_takes_resolution_status": "completed",
+  "coverage_audit": {
+    "status": "completed",
+    "method": "second_pass_entity_mention_sweep",
+    "uncovered_mentions": 0,
+    "notes": [
+      "Alle zwölf Rohtranskript-Teile wurden nach der Inhaltsaufbereitung erneut mit Fokus auf Spieler- und Coach-Erwähnungen gelesen.",
+      "Ranking-Spieler, eigenständige Bewertungen und News-Hauptsubjekte sind mit eigenen Takes verknüpft.",
+      "Vergleichs-, Depth-Chart-, Verletzungs-, Scheme- und beiläufige Erwähnungen bleiben im Mention-Register sichtbar.",
+      "Nicht sicher aufgelöste Transkriptformen wurden als unresolved erhalten statt geraten."
+    ]
+  },
   "knowledge_derivation_status": "not_started",
-  "rework_required": true,
-  "rework_reasons": [
-    "Die Extraktion entstand vor dem schema-version-2 Mention-Coverage-Modell und enthält kein mentions.json.",
-    "Ein unabhängiger zweiter Rohtranskript-Durchlauf zur vollständigen Spieler- und Entity-Erfassung wurde noch nicht dokumentiert.",
-    "Der Vergleich mit der älteren ausführlichen 570-Extraktion zeigte fehlende oder nicht atomisierte Ranking-Spieler, darunter Skyler Bell, Ted Hurst III, Caleb Douglas, Bryce Lance und Zavion Thomas.",
-    "episode.md ist für die gewünschte ausführliche menschliche Aufbereitung zu stark verdichtet und muss nach den aktuellen Regeln erweitert werden."
-  ],
+  "rework_required": false,
   "notes": [
-    "Das Rohtranskript wurde unverändert in zwölf fortlaufende Teile aufgeteilt.",
-    "Spielernamen wurden gegen das zentrale Registry und aktuelle Draft-/Teamquellen geprüft.",
-    "Neue einmalige Transkriptvarianten wurden per external_verification aufgelöst; wiederkehrende bestehende Varianten nutzen das zentrale Registry.",
-    "Knowledge-Ableitung wurde nicht begonnen; alle Takes bleiben Podcast-Quellenmaterial.",
-    "Das Package bleibt als Legacy-Quelle erhalten, darf aber erst nach Mention-Coverage-Rework wieder als vollständig auditiert gelten."
+    "Version-2-Neuaufbereitung mit ausführlicher episode.md, vollständigem Rookie-WR-Board und separatem Mention-Sweep.",
+    "Das Rohtranskript bleibt unverändert in zwölf fortlaufenden Teilen erhalten.",
+    "Knowledge-Ableitung wurde nicht begonnen; alle Takes bleiben Podcast-Quellenmaterial."
   ]
 }
