@@ -35,8 +35,11 @@ coreConcepts:
       League Phase is an optional UI-safe sub-status. It is an empty string for
       statuses without a meaningful sub-phase. Current planned values include
       Off-Season phases Cap Deadline Open, Cap Check and Post Cap Check, plus
-      Draft-Season phases Pre Draft and In Draft. Phase must not be treated as a
-      source of truth for unrelated move permissions such as CutsAllowed.
+      Draft-Season phases Pre Draft, In Draft and Between Drafts. Between Drafts
+      applies after at least one current-season draft is complete while another
+      current-season draft is still open but not scheduled. Phase must not be
+      treated as a source of truth for unrelated move permissions such as
+      CutsAllowed.
     tradeOpennessRules: >
       TradesOpen represents whether trades are freely open from a league-process
       perspective, not merely whether Sleeper allows users to submit trade offers.
@@ -50,10 +53,14 @@ coreConcepts:
       can be mapped from league metadata and generated league data.
     draftPickRelation: >
       Team DraftPicks are stored as PickKey references in generated League.json
-      and resolved to DraftPick objects by Angular DataService. Only current,
-      upcoming or live draft picks from public/data/Drafts.json should be exposed
-      this way; completed historical draft picks must not be added as current
-      team assets.
+      and resolved to DraftPick objects by Angular DataService. Drafts.json is the
+      source for those references and includes every draft from the current league
+      season, including completed drafts, plus configured open future drafts.
+      Current-season picked picks intentionally remain attached to their team so
+      Draft Capital can evaluate the complete season. Pick availability is derived
+      separately from DraftPick status and selected-player fields. Completed drafts
+      from seasons older than League.Season remain historical only and must not be
+      added as current team data.
 
   Player:
     description: >
@@ -91,8 +98,12 @@ coreConcepts:
 
   Draft:
     description: >
-      A league draft event. Current draft output may represent upcoming or live
-      drafts, while completed draft history is stored separately by season.
+      A league draft event. Drafts.json contains every draft from the current
+      LeagueYear regardless of status and, for each configured draft type, the
+      configured number of non-completed drafts. A completed current-season draft
+      therefore remains in the current read model without counting toward the open
+      future-draft limit. Completed draft history is additionally stored separately
+      by season for past-season views.
     importantFields:
       - DraftKey
       - DisplayDraftKey
@@ -116,9 +127,10 @@ coreConcepts:
     startTimeRules: >
       SleeperStartTime is the raw Sleeper draft start_time timestamp in
       milliseconds when present. DraftStartTimeUtc is the generated UTC ISO value
-      derived from it. A current-season draft with a start time can move the
-      League Phase from Off-Season / Post Cap Check to Draft-Season / Pre Draft
-      once trades are freely open and the draft has not started yet.
+      derived from it. Only a non-completed current-season draft with a start time
+      can move the League Phase to Draft-Season / Pre Draft. Once one current-season
+      draft is complete, another open draft without a start time keeps the league in
+      Draft-Season / Between Drafts rather than returning it to Off-Season.
 
   DraftPick:
     description: >
@@ -149,13 +161,14 @@ coreConcepts:
 
   DraftsFeature:
     description: >
-      Frontend feature area for current/upcoming/live draft assets, future draft
-      assets and completed historical draft views. Its primary route is /drafts
-      and its routed page aggregator is src/app/features/drafts/drafts-page.ts.
+      Frontend feature area for all current-season drafts, open future draft assets
+      and completed historical draft views. Its primary route is /drafts and its
+      routed page aggregator is src/app/features/drafts/drafts-page.ts.
     currentScope:
-      - display current/upcoming/live drafts from public/data/Drafts.json
-      - display future drafts from public/data/Drafts.json without treating unresolved future order as concrete pick order
+      - display every current-season draft from public/data/Drafts.json regardless of whether it is upcoming, live or completed
+      - display only seasons greater than League.Season as future drafts from public/data/Drafts.json without treating unresolved future order as concrete pick order
       - display completed past drafts from public/data/past_seasons/Drafts/Drafts_<season>.json discovered through public/data/PastSeasonsIndex.json
+      - exclude League.Season and later seasons from the Past season selector even when an archive copy already exists
       - split current-season, future and past drafts into dedicated top-level tabs
       - let the Past tab choose available seasons from PastSeasonsIndex.json via dropdown and load the selected season's historical Drafts resource
       - map draft presentation data through DraftsViewModelService and the central Drafts view-model mapper
@@ -169,6 +182,7 @@ coreConcepts:
       - make current-season and past picks clickable in every current/past view, including open picks, to expose pick, owner, original owner and trade context through DraftPickPopoverComponent
       - use PlayerName as a fallback display value for completed historical picks when PlayerID cannot be resolved against current Players.json
       - show future drafts as compact team-owned round summaries inside DraftShellComponent with clickable shared pick triggers and pick popovers in a future-compatible mode
+      - keep completed current-season picks in Overview Draft Capital so Best Pick can represent the full season while Best Open Pick filters by pick availability
       - use src/app/shared/utils/draft-ui.util.ts for shared draft round colors and draft status display classes
       - use src/app/shared/utils/draft-capital.util.ts for shared frontend draft-pick order, Pick Strength sorting, RoundCounts and BestPick helpers across Drafts and Overview Draft Capital
       - treat Pick Strength as frontend display/ranking logic until generator-provided Draft Capital values exist
