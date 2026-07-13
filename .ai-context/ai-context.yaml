@@ -78,20 +78,21 @@ readingOrder:
 
 shortContext:
   fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
-  public/data/Metadata.json: Liga-spezifische Inputs und Regeln
+  public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
-  public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; berücksichtigt Sleeper draft type linear/snake bei der OriginalOwner-Reihenfolge für exakte aktuelle und historische Drafts
+  public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
   public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; reichert completed Pick-Ergebnisse und CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
+  public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und .ai-workflow/deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive
-  src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator für aktuelle, zukünftige und historische Drafts; lädt Past Drafts über PastSeasonsIndex.json
+  src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator; Current entspricht League.Season, Future nur späteren Seasons und Past nur archivierten früheren Seasons
   src/app/features/drafts/components/**: Wiederverwendbare Draft-UI-Bausteine wie DraftShell, DraftPickCard, DraftPickTrigger und DraftPickPopover
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete current-style Draft-Cards für Current und Past mit Overview, Teams und List; nutzen zentrale Draft-ViewModels und gemeinsame Draft-UI-Komponenten
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen, DraftShell-Header, gemeinsamem DraftPickTrigger und gemeinsamem DraftPickPopover
