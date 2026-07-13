@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "Owner and team reference map for Fantasy Management.",
   "canonical_dynamic_sources": [
     "public/data/Metadata.json",
@@ -8,11 +8,17 @@
   "rules": [
     "Use TeamID as the stable identity.",
     "Use Metadata.json when exact owner mapping matters.",
-    "Use League.json for current team names, rosters, picks and salary context."
+    "Use League.json for current team names, rosters, picks and salary context.",
+    "In human-facing analyses, rankings, tables, headings and recommendations, use each owner's preferred_human_label by default.",
+    "Refer to TeamID 1 as Robert, not merely as Mighty Giants, whenever the manager is being compared with Marcel, Flo, Jan, Dennis or Tim.",
+    "Use a team name alone only when the franchise identity itself is relevant, for example canonical team fields, matchup displays, logos, trade graphics or explicit team-name tables.",
+    "When both identities matter, use the form 'Robert (Mighty Giants)'.",
+    "Do not replace canonical machine-readable team_name values or historical source data with owner names."
   ],
   "owners": [
     {
       "name": "Robert",
+      "preferred_human_label": "Robert",
       "team_id": 1,
       "default_perspective": true,
       "known_team_names": ["Mighty Giants"],
@@ -20,30 +26,35 @@
     },
     {
       "name": "Marcel",
+      "preferred_human_label": "Marcel",
       "team_id": 2,
       "known_team_names": ["Ruhr Valley Packers", "ND - Fighting Childish", "Fighting Childish"],
       "aliases": ["Marcel", "Marci0231", "Ruhr Valley Packers", "Fighting Childish"]
     },
     {
       "name": "Flo",
+      "preferred_human_label": "Flo",
       "team_id": 3,
       "known_team_names": ["Just Bill"],
       "aliases": ["Flo", "FloDHL99", "Just Bill"]
     },
     {
       "name": "Jan",
+      "preferred_human_label": "Jan",
       "team_id": 4,
       "known_team_names": ["Mammoth Marauders", "Team JanB94"],
       "aliases": ["Jan", "JanB94", "Mammoth Marauders"]
     },
     {
       "name": "Dennis",
+      "preferred_human_label": "Dennis",
       "team_id": 5,
       "known_team_names": ["Team DennisLACards"],
       "aliases": ["Dennis", "DennisLACards", "Team DennisLACards"]
     },
     {
       "name": "Tim",
+      "preferred_human_label": "Tim",
       "team_id": 6,
       "known_team_names": ["Team TimpaBay", "Timpa Bay"],
       "aliases": ["Tim", "TimpaBay", "Timpa Bay", "Team TimpaBay"]
