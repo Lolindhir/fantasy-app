@@ -29,6 +29,32 @@ Optionale Bereiche wie `knowledge/players/`, `analyses/`, `decisions/`, `sources
 
 Keine leeren Platzhalterordner und keine README-only-Kategorieordner committen.
 
+## Draft-Analysen
+
+Draftanalysen werden als zusammengehöriges Analysepaket gespeichert:
+
+```text
+analyses/{analysis-year}/drafts/
+  YYYY-MM-DD_{draft-key-slug}_{analysis-kind}.md
+  YYYY-MM-DD_{draft-key-slug}_{analysis-kind}.json
+```
+
+- Die Markdown-Datei ist die ausführliche, menschenlesbare Auswertung.
+- Die JSON-Datei enthält dieselbe Analyse strukturiert für spätere Vergleiche, Manager-Tendenzen und Year-1-/Year-2-/Year-3-Reviews.
+- Aktuelle Post-Draft-Analysen frieren den damaligen Team-, Liga- und Markt-Kontext über Quellenpfade, Zeitstände und Blob-SHAs ein.
+- Historische Analysen kennzeichnen ausdrücklich, ob der damalige Teamkontext vollständig, teilweise oder nur minimal rekonstruierbar ist.
+- Process-, Market-Value- und Team-Fit-Grades bleiben von späteren Outcome-Grades getrennt.
+- Eine ursprüngliche Post-Draft-Analyse wird nicht mit Rückschauwissen überschrieben. Spätere Reviews werden als neue Dateien gespeichert und verweisen über `review_of` auf die Ausgangsanalyse.
+- Einzelne Managerbeobachtungen bleiben zunächst `candidate` oder `provisional`. Erst wiederholte Belege gehören in `league-context/owner-profiles.md`.
+
+Die technischen Regeln stehen in:
+
+- `_ai/WORKFLOWS.md`
+- `_ai/schemas/draft-analysis.schema.json`
+- `_ai/templates/draft-analysis/`
+
+Konkrete Mighty-Giants-Entscheidungen werden nicht in der Liga-Gesamtanalyse dupliziert, sondern zusätzlich kompakt unter `decisions/{year}/` dokumentiert.
+
 ## Podcast-Struktur
 
 Podcast-Folgen werden als zusammenhängende Quellenpakete gespeichert:
