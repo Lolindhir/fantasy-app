@@ -6,13 +6,15 @@ Er ist bewusst getrennt von der App-Logik, dem Angular-Frontend, der PowerShell-
 
 ## Zweck
 
-Hier liegen Quellen, Regeln, Podcastdaten, Liga-Kontext, abgeleitetes Knowledge und konkrete Analysen/Entscheidungen für NFL Dynasty / Fantasy Football rund um Mighty Giants.
+Hier liegen Quellen, Regeln, Podcastdaten, Liga-Kontext, abgeleitetes Knowledge und konkrete Analysen/Entscheidungen für NFL Dynasty / Fantasy Football rund um Robert und sein Team Mighty Giants.
 
 ## Für Menschen
 
 Diese README erklärt den Bereich auf menschlich lesbare Weise.
 
 Für Agents und Maschinen ist `fantasy-management/AGENTS.md` maßgeblich.
+
+Menschlich lesbare Managervergleiche verwenden standardmäßig die Namen Robert, Marcel, Flo, Jan, Dennis und Tim. Teamnamen werden nur ergänzt, wenn die Franchiseidentität selbst relevant ist. Für TeamID 1 lautet die kombinierte Form `Robert (Mighty Giants)`.
 
 ## Struktur
 
@@ -45,6 +47,7 @@ analyses/{analysis-year}/drafts/
 - Historische Analysen kennzeichnen ausdrücklich, ob der damalige Teamkontext vollständig, teilweise oder nur minimal rekonstruierbar ist.
 - Process-, Market-Value- und Team-Fit-Grades bleiben von späteren Outcome-Grades getrennt.
 - Eine ursprüngliche Post-Draft-Analyse wird nicht mit Rückschauwissen überschrieben. Spätere Reviews werden als neue Dateien gespeichert und verweisen über `review_of` auf die Ausgangsanalyse.
+- Rein redaktionelle Korrekturen wie bevorzugte Managernamen dürfen auch in historischen Analysen vorgenommen werden, solange Datengrundlage, Bewertung und zeitgenössisches Urteil unverändert bleiben.
 - Einzelne Managerbeobachtungen bleiben zunächst `candidate` oder `provisional`. Erst wiederholte Belege gehören in `league-context/owner-profiles.md`.
 
 Die technischen Regeln stehen in:
@@ -53,7 +56,7 @@ Die technischen Regeln stehen in:
 - `_ai/schemas/draft-analysis.schema.json`
 - `_ai/templates/draft-analysis/`
 
-Konkrete Mighty-Giants-Entscheidungen werden nicht in der Liga-Gesamtanalyse dupliziert, sondern zusätzlich kompakt unter `decisions/{year}/` dokumentiert.
+Konkrete Entscheidungen von Robert werden nicht in der Liga-Gesamtanalyse dupliziert, sondern zusätzlich kompakt unter `decisions/{year}/` dokumentiert.
 
 ## Podcast-Struktur
 
@@ -78,7 +81,7 @@ sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
 ```text
 Podcast source package = was der Podcast gesagt hat
 Knowledge = was davon für unsere Liga relevant bleibt
-Analysis = was Mighty Giants tun sollte
+Analysis = was Robert tun sollte
 ```
 
 Aktuelle App- und Liga-Daten bleiben unter `public/data/`.
