@@ -1,0 +1,529 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/draft-analysis.schema.json",
+  "title": "Fantasy Management Draft Analysis",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "type",
+    "scope",
+    "created",
+    "status",
+    "summary",
+    "draft_key",
+    "draft_season",
+    "analysis_kind",
+    "context_completeness",
+    "data_snapshot",
+    "teams",
+    "picks"
+  ],
+  "properties": {
+    "type": {
+      "const": "draft_analysis"
+    },
+    "scope": {
+      "const": "fantasy-management"
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "superseded",
+        "archived"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "draft_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "draft_season": {
+      "type": "integer",
+      "minimum": 2000
+    },
+    "draft_type": {
+      "type": "string"
+    },
+    "analysis_kind": {
+      "type": "string",
+      "enum": [
+        "post_draft_contextual",
+        "retrospective_outcome",
+        "year_1_review",
+        "year_2_review",
+        "year_3_review",
+        "league_meta_rollup"
+      ]
+    },
+    "analysis_as_of": {
+      "type": "string",
+      "format": "date"
+    },
+    "context_completeness": {
+      "type": "string",
+      "enum": [
+        "full",
+        "partial",
+        "minimal"
+      ]
+    },
+    "team_context_available": {
+      "type": "boolean"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_snapshot": {
+      "$ref": "#/$defs/dataSnapshot"
+    },
+    "market_snapshots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/marketSnapshot"
+      }
+    },
+    "grading_model": {
+      "$ref": "#/$defs/gradingModel"
+    },
+    "league_context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "teams": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/teamAnalysis"
+      }
+    },
+    "picks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pickAnalysis"
+      }
+    },
+    "manager_observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/managerObservation"
+      }
+    },
+    "league_findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "review_schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "review_kind",
+          "target_date"
+        ],
+        "properties": {
+          "review_kind": {
+            "type": "string"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "review_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "validity_note": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "dataSnapshot": {
+      "type": "object",
+      "required": [
+        "captured_at",
+        "sources"
+      ],
+      "properties": {
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "blob_sha": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "generated_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "purpose": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "marketSnapshot": {
+      "type": "object",
+      "required": [
+        "source",
+        "retrieved_at",
+        "measurement"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "measurement": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "gradingModel": {
+      "type": "object",
+      "properties": {
+        "overall_components": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "component_definitions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "outcome_separated_from_process": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "gradeComponents": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "market_value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "team_fit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "outcome": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": true
+    },
+    "teamAnalysis": {
+      "type": "object",
+      "required": [
+        "team_id",
+        "owner",
+        "drafted_player_ids"
+      ],
+      "properties": {
+        "team_id": {
+          "type": "integer"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "team_name": {
+          "type": "string"
+        },
+        "team_window": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "context_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "drafted_player_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overall_grade": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "overall_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "component_scores": {
+          "$ref": "#/$defs/gradeComponents"
+        },
+        "strengths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rookie_year_fantasy_points_total": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "pickAnalysis": {
+      "type": "object",
+      "required": [
+        "pick_key",
+        "display_pick",
+        "overall_pick",
+        "current_owner_team_id",
+        "player_id",
+        "player_name",
+        "position"
+      ],
+      "properties": {
+        "pick_key": {
+          "type": "string"
+        },
+        "display_pick": {
+          "type": "string"
+        },
+        "overall_pick": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "original_owner_team_id": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "current_owner_team_id": {
+          "type": "integer"
+        },
+        "player_id": {
+          "type": "string"
+        },
+        "player_name": {
+          "type": "string"
+        },
+        "position": {
+          "type": "string"
+        },
+        "market_rank_at_analysis": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "market_delta": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "pick_grade": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "component_scores": {
+          "$ref": "#/$defs/gradeComponents"
+        },
+        "classification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        },
+        "rookie_year_outcome": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "fantasy_points": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "games_played": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "bucket": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "outcome_grade": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "managerObservation": {
+      "type": "object",
+      "required": [
+        "team_id",
+        "observation",
+        "confidence",
+        "status"
+      ],
+      "properties": {
+        "team_id": {
+          "type": "integer"
+        },
+        "observation": {
+          "type": "string"
+        },
+        "evidence_draft_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_pick_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "candidate",
+            "provisional",
+            "confirmed",
+            "rejected"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
