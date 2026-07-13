@@ -7,7 +7,7 @@ team_context: Mighty Giants
 related_analysis: fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie-draft-postmortem.md
 ---
 
-# Mighty Giants – Rookie-Draft-Entscheidungen 2026
+# Robert – Rookie-Draft-Entscheidungen 2026
 
 ## Kontext
 
@@ -96,7 +96,7 @@ related_analysis: fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie
 
 **Begründung:**
 
-- Mighty Giants waren bereits außergewöhnlich tief auf Wide Receiver aufgestellt;
+- Roberts Kader war bereits außergewöhnlich tief auf Wide Receiver aufgestellt;
 - zusätzlicher WR-Zugang Tetairoa McMillan im Free-Agent-Draft war geplant;
 - möglicher Trade für Antonio Williams würde den WR-Raum weiter verdichten;
 - Black besitzt über RB2-Job, Pass Protection und Verletzungshebel einen für den eigenen Kader wertvolleren positiven Auszahlungspfad;
