@@ -152,6 +152,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ## Erledigt / Archiv
 
+- [x] Abgeschlossene Drafts der aktuellen Saison in `Drafts.json` und Current-Ansichten behalten.
+  - Kontext: Ein abgeschlossener Draft gehört bis zum Wechsel von `League.Season` weiterhin zur aktiven Saison und wird für Overview, Current Drafts und vollständiges Draft Capital benötigt.
+  - Ergebnis: `Drafts.json` enthält alle Drafts aus `LeagueYear` unabhängig vom Status und zusätzlich je Draft-Typ die konfigurierte Anzahl nicht abgeschlossener Drafts. Abgeschlossene aktuelle Picks bleiben in den Team-DraftPicks; `Best Open Pick` filtert weiterhin separat nach Verfügbarkeit.
+  - Ergebnis: Nach einem abgeschlossenen aktuellen Draft und vor Terminierung des nächsten offenen Drafts bleibt die Liga in `Draft-Season / Between Drafts`. Current, Future und Past werden über explizite Saisonvergleiche getrennt.
+  - Validierung: 2026 Rookie bleibt abgeschlossen in Current, 2026 Free Agent bleibt offen, Rookie reicht offen bis 2029 und Free Agent bis 2028; die Oberfläche und generierten Daten wurden nach dem Lauf geprüft.
+
 - [x] Draft-Startzeit aus Sleeper prüfen und in `Drafts.json` übernehmen.
   - Ergebnis: `Drafts.json` bekommt für aktuelle Sleeper-Drafts `SleeperStartTime` aus `start_time` und `DraftStartTimeUtc` als UTC-ISO-Wert. `League.Phase = "Pre Draft"` nutzt diese generierte Startzeit jetzt datengetrieben.
 
@@ -224,8 +230,9 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Hinweis: Diese Architektur wurde später durch getrennte `/drafts`- und `/moves`-Routen abgelöst.
 
 - [x] Completed-Draft-Historie separat von `Drafts.json` aufbauen.
-  - Kontext: `Drafts.json` bleibt auf aktuelle/kommende/live Drafts beschränkt, damit alte Picks nicht als aktuelle Team-Assets erscheinen.
+  - Kontext: Der ursprüngliche Vertrag hielt abgeschlossene Drafts vollständig aus `Drafts.json` heraus, damit historische Picks nicht als aktuelle Team-Assets erschienen.
   - Ergebnis: `DraftHistoryUtils.psm1` erzeugt historische Draft-Dateien unter `public/data/past_seasons/Drafts/Drafts_<season>.json`; der bestehende wöchentliche/manuelle `RequestDrafts.ps1`-Flow aktualisiert Current-Drafts und Completed-History zusammen.
+  - Hinweis: Dieser Vertrag wurde durch ADR-021 für abgeschlossene Drafts der aktuellen `LeagueYear` teilweise abgelöst. Ältere abgeschlossene Saisons bleiben weiterhin ausschließlich historisch; abgeschlossene Drafts der aktuellen Saison bleiben zusätzlich in `Drafts.json`.
 
 - [x] `CHAT_START.md` als Projektquelle und im Repository-Root hinterlegen.
   - Kontext: Die Datei liegt sowohl hier im ChatGPT-Projekt als Quelle als auch im Repository-Root.
