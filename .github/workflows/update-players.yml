@@ -1,4 +1,3 @@
-
 name: Update Players
 
 on:
@@ -18,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Voller Git-History für Push  
+          fetch-depth: 0  # Voller Git-History für Push
           token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
 
       - name: Setup Node.js
@@ -35,6 +34,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
-          git diff --cached --quiet || git commit -m "Players Update"
+          pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope players
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
-
