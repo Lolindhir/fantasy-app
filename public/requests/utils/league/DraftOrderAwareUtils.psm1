@@ -203,10 +203,56 @@ function New-DraftOutputOrderAware {
     }
 }
 
+function Get-CurrentAndOpenDraftDefinitionsOrderAware {
+    param(
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
+        [Parameter(Mandatory = $true)][hashtable]$sleeperDraftMap,
+        [Parameter(Mandatory = $true)][int]$leagueYear,
+        [Parameter(Mandatory = $true)][int]$openDraftCountPerType
+    )
+
+    $definitions = @()
+
+    foreach ($draftTypeConfig in ($draftTypeConfigs | Sort-Object DraftNo)) {
+        $openDraftCount = 0
+        $season = $leagueYear
+        $guard = 0
+
+        while ($openDraftCount -lt $openDraftCountPerType) {
+            $guard++
+            if ($guard -gt 30) { throw "Draft generation guard reached for draft type '$($draftTypeConfig.DraftType)'." }
+
+            $draftType = [string]$draftTypeConfig.DraftType
+            $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType
+            $sleeperDraft = $null
+            if ($sleeperDraftMap.ContainsKey($draftKey)) { $sleeperDraft = $sleeperDraftMap[$draftKey] }
+
+            $isCurrentSeason = ($season -eq $leagueYear)
+            $isComplete = Test-SleeperDraftComplete -sleeperDraft $sleeperDraft
+
+            if ($isCurrentSeason -or -not $isComplete) {
+                $definitions += [PSCustomObject][ordered]@{
+                    Season          = [string]$season
+                    DraftType       = $draftType
+                    DraftNo         = [int]$draftTypeConfig.DraftNo
+                    DraftKey        = $draftKey
+                    DraftTypeConfig = $draftTypeConfig
+                    SleeperDraft    = $sleeperDraft
+                }
+            }
+
+            if (-not $isComplete) { $openDraftCount++ }
+            $season++
+        }
+    }
+
+    return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo)
+}
+
 function Update-DraftsOrderAware {
     param([string]$leagueID = (Get-Config).LeagueID)
 
-    Write-Host "Update upcoming drafts..." -ForegroundColor Yellow
+    Write-Host "Update current and open drafts..." -ForegroundColor Yellow
 
     $config = Get-Config
     $draftsConfig = $config.DraftsConfig
@@ -215,8 +261,8 @@ function Update-DraftsOrderAware {
     $upcomingDraftCountMode = [string](Get-DraftObjectProperty -object $draftsConfig -propertyName "UpcomingDraftCountMode" -defaultValue "PerDraftType")
     if ($upcomingDraftCountMode -ne "PerDraftType") { throw "Unsupported UpcomingDraftCountMode '$upcomingDraftCountMode'. Only 'PerDraftType' is supported." }
 
-    $upcomingDraftCountPerType = [int]$draftsConfig.UpcomingDraftCount
-    if ($upcomingDraftCountPerType -lt 1) { throw "UpcomingDraftCount must be at least 1." }
+    $openDraftCountPerType = [int]$draftsConfig.UpcomingDraftCount
+    if ($openDraftCountPerType -lt 1) { throw "UpcomingDraftCount must be at least 1." }
 
     $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
     if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
@@ -225,7 +271,7 @@ function Update-DraftsOrderAware {
     $standings = Get-DraftStandingsLocal
     $transactions = Get-DraftTransactionsLocal
     $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID
-    $definitions = Get-UpcomingDraftDefinitions -draftTypeConfigs $draftTypeConfigs -sleeperDraftMap $sleeperDraftMap -leagueYear ([int]$config.LeagueYear) -upcomingDraftCountPerType $upcomingDraftCountPerType
+    $definitions = Get-CurrentAndOpenDraftDefinitionsOrderAware -draftTypeConfigs $draftTypeConfigs -sleeperDraftMap $sleeperDraftMap -leagueYear ([int]$config.LeagueYear) -openDraftCountPerType $openDraftCountPerType
     $drafts = @()
 
     foreach ($definition in $definitions) {
@@ -236,7 +282,7 @@ function Update-DraftsOrderAware {
     $compare = ${function:Compare-DraftsFieldBased}
     Save-JsonFile -Type "Drafts" -Data $drafts -CompareScript $compare -CreateBackup -UpdateTimestamp
 
-    Write-Host "Upcoming drafts update finished." -ForegroundColor DarkCyan
+    Write-Host "Current and open drafts update finished." -ForegroundColor DarkCyan
 
     return $drafts
 }

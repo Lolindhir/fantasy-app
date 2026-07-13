@@ -114,7 +114,8 @@ decisions:
 
   - id: ADR-011
     title: Completed draft history is stored separately from current drafts
-    status: accepted
+    status: superseded
+    supersededBy: ADR-021
     context: >
       The app needs current/upcoming/live draft picks as team assets, but also
       needs completed draft history for historical views. Mixing completed draft
@@ -382,3 +383,38 @@ decisions:
         - Future generator-side legacy summaries can derive from Standings.json.
       negative:
         - Frontend refactors that currently read awards through League.json still need a migration path to load Standings.json directly.
+
+  - id: ADR-021
+    title: Completed current-season drafts remain in Drafts.json
+    status: accepted
+    context: >
+      A completed draft still belongs to the active league season and is needed by
+      Overview, the Drafts Current tab and complete-season Draft Capital. Removing
+      it immediately after completion also makes the league fall out of Draft-Season
+      before the next configured draft is scheduled.
+    decision: >
+      Generate public/data/Drafts.json with every draft from LeagueYear regardless
+      of status. In addition, retain Drafts.UpcomingDraftCount non-completed drafts
+      for each configured draft type; a completed LeagueYear draft does not consume
+      one of those open slots. League.json team DraftPicks continue to include
+      picked current-season picks so Best Pick and total Draft Capital cover the
+      complete season, while availability-sensitive views derive Best Open Pick
+      from pick status and selected-player metadata. Angular classifies only
+      Season equal to League.Season as Current, only greater seasons as Future and
+      only archived lower seasons as Past. After one current-season draft completes
+      while another remains open and unscheduled, League Status remains Draft-Season
+      with Phase Between Drafts.
+    rationale: >
+      Draft lifecycle, season membership and pick availability are separate domain
+      concepts. Keeping them separate preserves completed current-season context,
+      maintains a stable count of open future assets and prevents status transitions
+      from depending on whether Sleeper has scheduled the next draft yet.
+    consequences:
+      positive:
+        - Overview and the Drafts Current tab retain completed LeagueYear drafts.
+        - Draft Capital can compare all current-season picks while Best Open Pick remains availability-aware.
+        - The generator continues to expose the configured number of non-completed drafts per type.
+        - Draft-Season remains stable between consecutive current-season drafts.
+      negative:
+        - A completed current-season draft may exist both in Drafts.json and in its archive file until League.Season advances.
+        - Consumers must use explicit season and availability filters instead of assuming every Drafts.json pick is open.

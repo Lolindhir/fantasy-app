@@ -26,7 +26,7 @@ export function createDraftsViewModel(
   return {
     currentSeason: league.Season,
     currentSeasonDrafts: draftViewModels.filter(draft => draft.draft.Season === league.Season),
-    futureDrafts: draftViewModels.filter(draft => draft.draft.Season !== league.Season),
+    futureDrafts: draftViewModels.filter(draft => Number(draft.draft.Season) > Number(league.Season)),
     draftCount: draftViewModels.length,
     tradedPickCount: draftViewModels.reduce((sum, draft) => sum + draft.tradedPickCount, 0),
     pickCount: draftViewModels.reduce((sum, draft) => sum + draft.pickCount, 0),

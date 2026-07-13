@@ -133,28 +133,43 @@ function Test-CurrentSeasonDraftsComplete {
     return $incompleteDrafts.Count -eq 0
 }
 
-function Test-CurrentSeasonDraftStarted {
+function Test-CurrentSeasonDraftLive {
     param(
         [Parameter(Mandatory = $true)][array]$Drafts,
         [Parameter(Mandatory = $true)][int]$LeagueYear
     )
 
-    $startedDrafts = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
-        [string]$_.Status -in @("Drafting", "Complete")
+    $liveDrafts = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
+        [string]$_.Status -eq "Drafting"
     })
 
-    return $startedDrafts.Count -gt 0
+    return $liveDrafts.Count -gt 0
 }
 
-function Test-CurrentSeasonDraftStartTimeSet {
+function Test-CurrentSeasonDraftCompleted {
+    param(
+        [Parameter(Mandatory = $true)][array]$Drafts,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
+
+    $completedDrafts = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
+        [string]$_.Status -eq "Complete"
+    })
+
+    return $completedDrafts.Count -gt 0
+}
+
+function Test-CurrentSeasonOpenDraftStartTimeSet {
     param(
         [Parameter(Mandatory = $true)][array]$Drafts,
         [Parameter(Mandatory = $true)][int]$LeagueYear
     )
 
     $draftsWithStartTime = @(Get-CurrentSeasonDrafts -Drafts $Drafts -LeagueYear $LeagueYear | Where-Object {
-        -not [string]::IsNullOrWhiteSpace([string]$_.DraftStartTimeUtc) -or
-        ($null -ne $_.SleeperStartTime -and -not [string]::IsNullOrWhiteSpace([string]$_.SleeperStartTime))
+        [string]$_.Status -in @("Virtual", "PreDraft", "Drafting") -and (
+            -not [string]::IsNullOrWhiteSpace([string]$_.DraftStartTimeUtc) -or
+            ($null -ne $_.SleeperStartTime -and -not [string]::IsNullOrWhiteSpace([string]$_.SleeperStartTime))
+        )
     })
 
     return $draftsWithStartTime.Count -gt 0
@@ -199,16 +214,25 @@ function Resolve-LeagueStatusState {
     $seasonWindowStarted = Test-LeagueSeasonWindowStarted -Schedule $Schedule -DaysBeforeFirstGame $SeasonStartBufferDays
     $hasOpenCurrentDrafts = Test-CurrentSeasonDraftOpen -Drafts $Drafts -LeagueYear $LeagueYear
     $allCurrentDraftsComplete = Test-CurrentSeasonDraftsComplete -Drafts $Drafts -LeagueYear $LeagueYear
-    $currentSeasonDraftStarted = Test-CurrentSeasonDraftStarted -Drafts $Drafts -LeagueYear $LeagueYear
-    $currentSeasonDraftStartTimeSet = Test-CurrentSeasonDraftStartTimeSet -Drafts $Drafts -LeagueYear $LeagueYear
+    $hasLiveCurrentDraft = Test-CurrentSeasonDraftLive -Drafts $Drafts -LeagueYear $LeagueYear
+    $hasCompletedCurrentDraft = Test-CurrentSeasonDraftCompleted -Drafts $Drafts -LeagueYear $LeagueYear
+    $openCurrentDraftStartTimeSet = Test-CurrentSeasonOpenDraftStartTimeSet -Drafts $Drafts -LeagueYear $LeagueYear
 
     if ($allCurrentDraftsComplete) {
         if (-not $seasonWindowStarted) { return New-LeagueStatusState -Status "Pre-Season" }
         return New-LeagueStatusState -Status "In-Season"
     }
 
-    if ($hasOpenCurrentDrafts -and $currentSeasonDraftStarted) {
+    if ($hasLiveCurrentDraft) {
         return New-LeagueStatusState -Status "Draft-Season" -Phase "In Draft"
+    }
+
+    if ($hasCompletedCurrentDraft -and $hasOpenCurrentDrafts -and $openCurrentDraftStartTimeSet) {
+        return New-LeagueStatusState -Status "Draft-Season" -Phase "Pre Draft"
+    }
+
+    if ($hasCompletedCurrentDraft -and $hasOpenCurrentDrafts) {
+        return New-LeagueStatusState -Status "Draft-Season" -Phase "Between Drafts"
     }
 
     if ($TradesOpen -and (Test-LeagueCapDeadlineBufferOpen -Deadline $CapDeadline -BufferDays $CapDeadlineBufferDays)) {
@@ -219,11 +243,11 @@ function Resolve-LeagueStatusState {
         return New-LeagueStatusState -Status "Off-Season" -Phase "Cap Check"
     }
 
-    if ($hasOpenCurrentDrafts -and $TradesOpen -and -not $currentSeasonDraftStartTimeSet) {
+    if ($hasOpenCurrentDrafts -and $TradesOpen -and -not $openCurrentDraftStartTimeSet) {
         return New-LeagueStatusState -Status "Off-Season" -Phase "Post Cap Check"
     }
 
-    if ($hasOpenCurrentDrafts -and $TradesOpen -and $currentSeasonDraftStartTimeSet) {
+    if ($hasOpenCurrentDrafts -and $TradesOpen -and $openCurrentDraftStartTimeSet) {
         return New-LeagueStatusState -Status "Draft-Season" -Phase "Pre Draft"
     }
 
