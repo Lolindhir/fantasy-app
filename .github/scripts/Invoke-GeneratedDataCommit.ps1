@@ -9,7 +9,8 @@ param(
         "games",
         "standings",
         "teams",
-        "past-seasons-index"
+        "past-seasons-index",
+        "backup-cleanup"
     )]
     [string]$Scope
 )
