@@ -14,7 +14,7 @@ dataSources:
       - CapDeadline
       - CapDeadlineBufferDays
       - OwnerIDs
-      - Drafts configuration
+      - Drafts configuration, including the number of non-completed drafts retained per draft type
 
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1
@@ -137,15 +137,18 @@ dataSources:
         draftSeason:
           - Pre Draft
           - In Draft
+          - Between Drafts
       tradeOpenness: >
         TradesOpen is true only when Sleeper has not disabled trades, the trade
         deadline has not been reached and trade_review_days is 0. A positive
         trade_review_days value represents the commissioner-review workaround for
         closing or controlling trades and therefore counts as not freely open.
       draftStartTime: >
-        Draft-Season / Pre Draft is enabled when at least one current-season
-        draft has DraftStartTimeUtc or SleeperStartTime, trades are freely open
-        and the draft has not started yet.
+        Draft-Season / Pre Draft is enabled when at least one non-completed
+        current-season draft has DraftStartTimeUtc or SleeperStartTime and no draft
+        is currently live. After a current-season draft completes, another open
+        current-season draft without a start time keeps the league in Draft-Season
+        / Between Drafts.
       cutsAllowed: >
         CutsAllowed is not derived from Phase. Keep it data-driven once a
         reliable Sleeper field is identified; until then it follows the existing
@@ -178,19 +181,24 @@ dataSources:
       - public/requests/utils/league/DraftOrderAwareUtils.psm1
     teamMapper: public/requests/utils/league/TeamDraftPickUtils.psm1
     category: generated-output
-    role: Current/upcoming/live draft and draft-pick read model
+    role: Current-season draft history and open future draft-pick read model
     description: >
-      Generated current/upcoming/live draft data. Current-season drafts can have
-      exact order; future-season drafts may be round-only placeholders. For exact
-      drafts, DraftOrderAwareUtils.psm1 derives the original owner order from the
-      Sleeper draft type: linear drafts keep the base order every round, while
-      snake drafts reverse the base order in even rounds. Completed transaction
-      data is then applied to derive current pick ownership. DisplayStatus is
-      generated directly by the draft generation utilities as a UI-safe status
-      label. SleeperStartTime contains the source start_time value when present,
-      and DraftStartTimeUtc contains the generated UTC ISO representation used by
-      the league status phase resolver. This file is the only draft output used
-      to enrich League.json team DraftPick references.
+      Generated draft data containing every draft from the configured LeagueYear
+      regardless of status plus Drafts.UpcomingDraftCount non-completed drafts for
+      each configured draft type. A completed current-season draft remains in this
+      file and does not count toward the configured open-draft limit, so later open
+      seasons are added until the limit is reached. Current-season drafts can have
+      exact order and completed pick results; future-season drafts may be round-only
+      placeholders. For exact drafts, DraftOrderAwareUtils.psm1 derives the original
+      owner order from the Sleeper draft type: linear drafts keep the base order
+      every round, while snake drafts reverse the base order in even rounds.
+      Completed transaction data is then applied to derive current pick ownership.
+      DisplayStatus is generated directly by the draft generation utilities as a
+      UI-safe status label. SleeperStartTime contains the source start_time value
+      when present, and DraftStartTimeUtc contains the generated UTC ISO
+      representation used by the league status phase resolver. This file is the
+      only draft output used to enrich League.json team DraftPick references,
+      including picked current-season picks needed for complete-season Draft Capital.
     updateMode:
       restricted: frequent RequestLeague.ps1 update
       full: weekly/manual RequestDrafts.ps1 update
@@ -209,20 +217,23 @@ dataSources:
     description: >
       Generated completed draft history by season. Historical draft files are
       refreshed as part of the weekly/manual RequestDrafts.ps1 full draft update.
-      They use the same draft/pick shape as Drafts.json but must not be used to
-      enrich League.json team DraftPick references. For exact historical Sleeper
-      drafts, DraftOrderAwareUtils.psm1 derives the original owner order from the
-      Sleeper draft type before trade flags and completed pick results are
-      applied: linear drafts keep the base order every round, while snake drafts
-      reverse the base order in even rounds. Completed historical pick results and
-      final current pick ownership are enriched from Sleeper draft picks in
-      DraftHistoryUtils.psm1. Completed pick TradeHistory is enriched by
-      confirming traded pick assets through the draft-specific Sleeper traded
-      picks endpoint and then attaching matching historical transaction details;
-      transaction data is provenance for completed draft history and must not
-      overwrite the final completed-draft owner. RequestDrafts.psm1 refreshes the
-      central PastSeasonsIndex.json manifest after the history update; the index
-      utility writes the manifest only when the semantic resource listing changes.
+      A completed current-season draft may exist both here as an archive copy and
+      in Drafts.json as current-season data; Angular must expose it through Current
+      only until League.Season advances. Historical files use the same draft/pick
+      shape as Drafts.json but must not be used to enrich League.json team DraftPick
+      references. For exact historical Sleeper drafts, DraftOrderAwareUtils.psm1
+      derives the original owner order from the Sleeper draft type before trade
+      flags and completed pick results are applied: linear drafts keep the base
+      order every round, while snake drafts reverse the base order in even rounds.
+      Completed historical pick results and final current pick ownership are
+      enriched from Sleeper draft picks in DraftHistoryUtils.psm1. Completed pick
+      TradeHistory is enriched by confirming traded pick assets through the
+      draft-specific Sleeper traded picks endpoint and then attaching matching
+      historical transaction details; transaction data is provenance for completed
+      draft history and must not overwrite the final completed-draft owner.
+      RequestDrafts.ps1 refreshes the central PastSeasonsIndex.json manifest after
+      the history update; the index utility writes the manifest only when the
+      semantic resource listing changes.
     updateMode:
       normal: weekly scheduled RequestDrafts workflow
       manual: workflow_dispatch on the RequestDrafts workflow
@@ -275,7 +286,7 @@ dataSources:
 dataFlow:
   - from: public/data/Metadata.json
     to: public/requests/utils/ConfigUtils.psm1
-    purpose: Load league-specific inputs and rules.
+    purpose: Load league-specific inputs and rules, including the open draft count per draft type.
 
   - from: public/data/Metadata.json
     to: public/data/League.json
@@ -303,19 +314,19 @@ dataFlow:
 
   - from: public/data/Transactions.json
     to: public/data/Drafts.json
-    purpose: Apply draft-pick ownership changes before generating current/upcoming/live draft output.
+    purpose: Apply draft-pick ownership changes before generating current-season and open future draft output.
 
   - from: public/data/Metadata.json
     to: public/data/Drafts.json
-    purpose: Provide draft types, rounds and configured order rules.
+    purpose: Provide draft types, rounds, configured order rules and the number of non-completed drafts retained per type.
 
   - from: Sleeper drafts endpoints
     to: public/data/Drafts.json
-    purpose: Use authoritative Sleeper draft metadata, base order, draft type and start_time when available; exact snake drafts reverse the original owner order in even rounds during pick generation.
+    purpose: Use authoritative Sleeper draft metadata, status, base order, draft type and start_time when available; retain completed LeagueYear drafts and continue adding later non-completed drafts until the configured per-type count is reached.
 
   - from: public/data/Drafts.json
     to: public/data/League.json
-    purpose: Add sorted current/upcoming/live draft PickKey references to generated team data and drive draft-related Status/Phase transitions, including Draft-Season / Pre Draft when a current draft start time is set.
+    purpose: Add sorted current-season and open-future PickKey references to generated team data and drive draft-related Status/Phase transitions, including Draft-Season / Between Drafts after one current draft completes while another remains open and unscheduled.
 
   - from: public/data/Players.json
     to: public/data/Players_Relevant.json
@@ -327,7 +338,7 @@ dataFlow:
 
   - from: public/requests/RequestDrafts.ps1
     to: public/data/Drafts.json
-    purpose: Refresh current/upcoming/live draft data in the weekly/manual full draft update.
+    purpose: Refresh all current-season drafts and the configured non-completed future drafts in the weekly/manual full draft update.
 
   - from: public/requests/RequestDrafts.ps1
     to: public/data/past_seasons/Drafts/Drafts_<season>.json
@@ -359,7 +370,7 @@ dataFlow:
 
   - from: public/data/Drafts.json
     to: src/app/core/services/data.service.ts
-    purpose: Resolve current/upcoming/live team DraftPickKeys into DraftPick objects and display generated DisplayStatus when present.
+    purpose: Resolve current-season and open-future team DraftPickKeys into DraftPick objects, including completed current-season picks, and display generated DisplayStatus when present.
 
   - from: public/data/Players.json
     to: src/app/core/services/data.service.ts
@@ -378,14 +389,17 @@ notesForAIAgents:
   - Draft generation depends on current transaction output.
   - Draft DisplayStatus is a generated UI label owned by the draft generation utilities; keep Status and SleeperStatus as technical/source status fields.
   - Drafts.json exposes SleeperStartTime from source start_time and DraftStartTimeUtc as the generated UTC representation when a start time exists.
+  - Drafts.json retains every LeagueYear draft regardless of status and then counts only non-completed drafts toward Metadata Drafts.UpcomingDraftCount for each draft type.
+  - Current-season completed picks remain in League team DraftPicks so full-season Draft Capital and Best Pick can include them; availability-sensitive views must filter by pick status and selected-player metadata.
   - League Status and Phase are generated UI-safe lifecycle labels. Phase is optional and should be an empty string when no sub-phase applies.
   - TradesOpen is a league-process flag. A positive Sleeper trade_review_days value means commissioner review is active and trades are not freely open, even though Sleeper may still allow submitting trade offers.
   - Do not derive CutsAllowed from League Phase. A reliable Sleeper field must be identified before changing cut/move openness logic.
-  - Draft-Season / Pre Draft depends on a generated current-season draft start time from Drafts.json.
+  - Draft-Season / Pre Draft depends on a non-completed current-season draft start time from Drafts.json; a completed current draft plus another unscheduled open current draft produces Draft-Season / Between Drafts.
   - Exact draft pick original owner order is generated by draft type: linear keeps the base order every round; snake reverses the base order in even rounds. Do not fix snake order by post-processing generated picks.
   - Current-season virtual drafts display as Upcoming; later virtual season drafts display as Future.
+  - Angular Current Drafts is defined by Season equal to League.Season, Future Drafts by Season greater than League.Season, and Past Drafts by archived seasons lower than League.Season.
   - Angular display issues should not be fixed by changing generated data contracts unless the domain shape is wrong.
   - Completed draft history is generated by the weekly/manual RequestDrafts flow and should not refresh in the 10-minute RequestLeague workflow.
   - Completed draft history uses Sleeper draft picks as source for completed pick results and final current pick ownership; draft-specific Sleeper traded picks confirm completed trade assets before matching historical Transactions into TradeHistory. Do not reintroduce transaction-based ownership repair for completed draft history.
-  - PastSeasonsIndex.json is a generated navigation manifest for historical files and should be regenerated through RequestPastSeasonsIndex.ps1, not edited manually.
+  - PastSeasonsIndex.json is a generated navigation manifest for historical files and should be regenerated through RequestPastSeasonsIndex.psm1, not edited manually.
   - Player chat export files under public/data/chat/players-relevant are generated helper output for AI/chat workflows; update PlayerChatExportUtils.psm1 or relevant-player generation instead of editing them manually.
