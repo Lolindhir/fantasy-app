@@ -60,6 +60,44 @@ Purpose: reusable agent workflows for Fantasy Management tasks.
 10. Identify upgrade targets, package pieces, stashes and cut risks.
 11. Store under `fantasy-management/analyses/YYYY/roster/` if requested.
 
+## Draft analysis workflow
+
+Use this for post-draft reports, historical draft retrospectives, manager-tendency analysis and Year-1/Year-2/Year-3 reviews.
+
+1. Resolve the exact draft through `public/data/Drafts.json` or `public/data/past_seasons/Drafts/Drafts_<season>.json`.
+2. Record the draft key, season, type, pick order, current owner, original owner, traded status, player IDs and stable pick keys.
+3. For a current contextual post-draft analysis, load the current `League.json`, `Metadata.json`, league format notes, owner registry and relevant owner profiles.
+4. Capture immutable source references with repository paths and blob SHAs. Do not rely only on mutable current file contents.
+5. Classify context completeness as:
+   - `full` when draft-time rosters, team windows and relevant decision context are available;
+   - `partial` when the draft is known but some historical team context is missing;
+   - `minimal` when only the pick results are safely reconstructable.
+6. Load the relevant player chunks through `public/data/chat/players-relevant/index.json` rather than the full player file.
+7. Add external market, ADP or ranking snapshots only when they materially improve the analysis. Store retrieval date, format, measurement and limitations.
+8. Separate four evaluations:
+   - `process`: quality of the decision using information available at the time;
+   - `market_value`: value relative to the dated market or consensus snapshot;
+   - `team_fit`: fit with roster, team window and league format;
+   - `outcome`: later production and value development.
+9. Never rewrite the historical process grade because a later outcome was unexpectedly good or bad.
+10. For a current post-draft report, evaluate every team and every pick, plus class construction, positional portfolio, values, reaches, unselected relevant players and league-wide patterns.
+11. For a retrospective without reliable draft-time team context, set `team_context_available` to `false`, leave team-fit grades null and state the limitation explicitly.
+12. For rookie-year outcome reviews, use dated internal production fields such as `PointHistory`, games played and availability. Label any production bucket as a heuristic rather than a permanent player grade.
+13. Store the human-readable analysis and machine-readable companion file together under:
+
+```text
+fantasy-management/analyses/<analysis-year>/drafts/
+  YYYY-MM-DD_<draft-key-slug>_<analysis-kind>.md
+  YYYY-MM-DD_<draft-key-slug>_<analysis-kind>.json
+```
+
+14. Validate the JSON structure against `fantasy-management/_ai/schemas/draft-analysis.schema.json` when local validation is available.
+15. Store manager observations in the analysis first with status `candidate` or `provisional` and concrete evidence draft/pick keys.
+16. Promote a manager tendency into `league-context/owner-profiles.md` only after repeated evidence across multiple drafts or other independent behavior.
+17. Keep the original post-draft analysis immutable. Later reviews must use new files with `review_of` pointing to the original analysis.
+18. Add review targets for Year 1, Year 2 and Year 3 when the draft is current enough for future evaluation.
+19. Use the templates under `fantasy-management/_ai/templates/draft-analysis/` as a starting point, not as a reason to invent unavailable context.
+
 ## Free-agent board workflow
 
 1. Load current `League.json`.
@@ -127,7 +165,6 @@ Use this when checking one or more podcast source packages for technical consist
 ```bash
 python fantasy-management/_ai/scripts/validate_episode_package.py \
   fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569
-
 python fantasy-management/_ai/scripts/validate_episode_coverage.py \
   fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0569
 ```
