@@ -6,8 +6,10 @@ on:
       - main
     paths:
       - "fantasy-management/sources/podcasts/**"
+      - "fantasy-management/analyses/**/drafts/**"
       - "fantasy-management/_ai/schemas/**"
       - "fantasy-management/_ai/templates/podcast/**"
+      - "fantasy-management/_ai/templates/draft-analysis/**"
       - "fantasy-management/_ai/entity-resolution/**"
       - "fantasy-management/_ai/scripts/**"
       - "fantasy-management/_ai/schema-list.json"
@@ -19,8 +21,10 @@ on:
   pull_request:
     paths:
       - "fantasy-management/sources/podcasts/**"
+      - "fantasy-management/analyses/**/drafts/**"
       - "fantasy-management/_ai/schemas/**"
       - "fantasy-management/_ai/templates/podcast/**"
+      - "fantasy-management/_ai/templates/draft-analysis/**"
       - "fantasy-management/_ai/entity-resolution/**"
       - "fantasy-management/_ai/scripts/**"
       - "fantasy-management/_ai/schema-list.json"
@@ -35,8 +39,8 @@ permissions:
   contents: read
 
 jobs:
-  validate-podcast-packages:
-    name: Validate podcast episode packages
+  validate-fantasy-management:
+    name: Validate Fantasy Management artifacts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -59,10 +63,14 @@ jobs:
             -p "test_*.py" \
             -v
 
-      - name: Validate package structure and takes
+      - name: Validate podcast package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
 
-      - name: Validate entity mention coverage
+      - name: Validate podcast entity mention coverage
         run: |
           python fantasy-management/_ai/scripts/validate_episode_coverage.py --all
+
+      - name: Validate structured draft analyses
+        run: |
+          python fantasy-management/_ai/scripts/validate_draft_analyses.py --all
