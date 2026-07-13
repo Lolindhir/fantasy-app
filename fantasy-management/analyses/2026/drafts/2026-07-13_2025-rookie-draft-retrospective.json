@@ -1,0 +1,1341 @@
+{
+  "type": "draft_analysis",
+  "scope": "fantasy-management",
+  "created": "2026-07-13",
+  "status": "active",
+  "summary": "Retrospektive Year-1-Auswertung des Rookie-Drafts 2025 anhand der vollständigen Pickreihenfolge und interner 2025-PPR-Produktion. Historischer Teamkontext und damalige Marktwerte sind nicht vollständig verfügbar.",
+  "draft_key": "2025_D1_Rookie",
+  "draft_season": 2025,
+  "draft_type": "Rookie",
+  "analysis_kind": "retrospective_outcome",
+  "analysis_as_of": "2026-07-13",
+  "context_completeness": "partial",
+  "team_context_available": false,
+  "limitations": [
+    "Es existiert kein verlässlicher historischer Team- und Roster-Snapshot direkt vom Drafttag 2025.",
+    "Damalige ADP- und Markt-Rang-Snapshots sind nicht versioniert vorhanden; Process- und Market-Value-Grades bleiben deshalb null.",
+    "Rookie-Year-Fantasy-Punkte sind positionsabhängig und bei Quarterbacks strukturell höher; Team-Rankings berücksichtigen deshalb zusätzlich Pickslot, Position und Anzahl klarer Hits.",
+    "Verletzungen und verzögerte Entwicklungsprofile dürfen nicht als endgültiges Karriereurteil verstanden werden."
+  ],
+  "data_snapshot": {
+    "captured_at": "2026-07-13T14:07:21Z",
+    "sources": [
+      {
+        "path": "public/data/past_seasons/Drafts/Drafts_2025.json",
+        "blob_sha": "1414c1c08c770eeb55357ba3a49e9746b7409fb3",
+        "generated_at": "2026-06-22T03:29:14Z",
+        "purpose": "Vollständige historische Pickreihenfolge, Pickbesitz und Trade-Historie"
+      },
+      {
+        "path": "fantasy-management/league-context/owner-registry.json",
+        "blob_sha": "a3607f3645b27bdfe6228a7180fee7014d8744b4",
+        "generated_at": null,
+        "purpose": "Stabile Zuordnung von TeamID und Managername"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0017.json",
+        "blob_sha": "ac45a97ba079c26d725f71e24db99f30991e707a",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Jaydon Blue"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0018.json",
+        "blob_sha": "c15f3d5f6b87dbb20e0b88bed2435ea90bb958b3",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Dylan Sampson"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0019.json",
+        "blob_sha": "14ccfc75642a3b16da64be17b1d0d361f3fb54c8",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Cam Skattebo, Jack Bech und Jayden Higgins"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0020.json",
+        "blob_sha": "ee063435c4be290c599ef3153fe714cd1390f88a",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Terrance Ferguson, RJ Harvey, Bhayshul Tuten und Pat Bryant"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0021.json",
+        "blob_sha": "1b704e679948a65a0b230917335ef387c7d10d87",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Mason Taylor, Matthew Golden und Kaleb Johnson"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0022.json",
+        "blob_sha": "d8741733c0aa112848bad2b2dd33195f288f367e",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Hampton, Dart, Harris, Milroe, Judkins, Egbuka und Loveland"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0023.json",
+        "blob_sha": "ed0715c649ffc36bfe55351935a5a9022f0cdc45",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Warren, Burden, Arroyo, Ward, Sanders, McMillan und Jeanty"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0024.json",
+        "blob_sha": "63ef29f57d6bfc5a5da058d2130f32eb98bb59ce",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Henderson, Hunter und Croskey-Merritt"
+      },
+      {
+        "path": "public/data/chat/players-relevant/players_0025.json",
+        "blob_sha": "ce5b342f4c4c1ba0212c8ba4c1079672bb587ac1",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Rookie-Year-Produktion von Kyle Williams"
+      }
+    ]
+  },
+  "market_snapshots": [],
+  "grading_model": {
+    "overall_components": {
+      "rookie_year_outcome": 0.7,
+      "pick_slot_efficiency": 0.3
+    },
+    "component_definitions": {
+      "process": "Nicht belastbar rekonstruierbar, weil Markt- und Teamkontext vom Drafttag fehlen.",
+      "market_value": "Nicht belastbar rekonstruierbar, weil kein datierter Drafttag-Marktstand gespeichert wurde.",
+      "team_fit": "Nicht belastbar rekonstruierbar, weil historische Team-Snapshots fehlen.",
+      "outcome": "Positionsabhängige Rookie-Year-Produktion aus PointHistory plus Effizienz relativ zum Pickslot."
+    },
+    "outcome_separated_from_process": true,
+    "rookie_year_bucket_thresholds": {
+      "QB": {
+        "strong": 180,
+        "promising": 80
+      },
+      "RB": {
+        "strong": 150,
+        "productive": 100,
+        "role": 40
+      },
+      "WR": {
+        "strong": 170,
+        "productive": 100,
+        "role": 50
+      },
+      "TE": {
+        "strong": 130,
+        "productive": 70,
+        "role": 30
+      }
+    }
+  },
+  "league_context": {
+    "teams": 6,
+    "scoring": "PPR",
+    "draft_rounds": 5,
+    "draft_mode": "linear",
+    "team_context_note": "Die ligaweiten Formatregeln sind bekannt, der konkrete Kaderzustand am Drafttag jedoch nicht vollständig archiviert."
+  },
+  "teams": [
+    {
+      "team_id": 5,
+      "owner": "Dennis",
+      "team_name": "Team DennisLACards",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12527",
+        "12526",
+        "12512",
+        "12524",
+        "12521"
+      ],
+      "overall_grade": "A+",
+      "overall_score": 98,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 98
+      },
+      "strengths": [
+        "Drei starke Rookie-Year-Outcomes mit Jeanty, McMillan und Judkins",
+        "Shedeur Sanders lieferte an 4.01 bereits relevante QB-Produktion",
+        "Höchste rohe Rookie-Year-Punktesumme aller Teams"
+      ],
+      "risks": [
+        "Arroyo blieb zunächst nur ein Rollen-TE",
+        "Die starke Outcome-Note darf nicht automatisch als Beweis für perfekten Drafttag-Prozess gelesen werden"
+      ],
+      "rookie_year_fantasy_points_total": 732.16,
+      "points_per_pick": 146.43
+    },
+    {
+      "team_id": 6,
+      "owner": "Tim",
+      "team_name": "Team TimpaBay",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12529",
+        "12514",
+        "12484",
+        "12508",
+        "12457"
+      ],
+      "overall_grade": "A+",
+      "overall_score": 97,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 97
+      },
+      "strengths": [
+        "Jaxson Dart an 4.03 war der stärkste Pickslot-Value der Klasse",
+        "Egbuka, Henderson und Higgins produzierten ebenfalls sofort",
+        "Vier der fünf Picks lieferten mindestens produktive oder starke Rookie-Year-Outcomes"
+      ],
+      "risks": [
+        "Jaydon Blue blieb nahezu ohne Produktion",
+        "QB-Punkte erhöhen die rohe Klassensumme und müssen positionsbereinigt gelesen werden"
+      ],
+      "rookie_year_fantasy_points_total": 695.88,
+      "points_per_pick": 139.18
+    },
+    {
+      "team_id": 3,
+      "owner": "Flo",
+      "team_name": "Just Bill",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12522",
+        "12501",
+        "12509",
+        "12481",
+        "12469",
+        "12533"
+      ],
+      "overall_grade": "A",
+      "overall_score": 94,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 94
+      },
+      "strengths": [
+        "Cam Ward lieferte sofort starke QB-Produktion",
+        "Skattebo an 3.06 und Croskey-Merritt an 5.06 waren herausragende späte RB-Outcomes",
+        "Alle sechs Picks lieferten zumindest messbare Rookie-Year-Produktion"
+      ],
+      "risks": [
+        "Golden, Tre' Harris und Sampson blieben zunächst in Rollen- statt Unterschiedsspielerbereichen",
+        "Sechs Picks erhöhen die rohe Gesamtsumme gegenüber Klassen mit weniger Kapital"
+      ],
+      "rookie_year_fantasy_points_total": 640.58,
+      "points_per_pick": 106.76
+    },
+    {
+      "team_id": 1,
+      "owner": "Robert",
+      "team_name": "Mighty Giants",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12517",
+        "12518",
+        "12547",
+        "12492"
+      ],
+      "overall_grade": "A-",
+      "overall_score": 90,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 90
+      },
+      "strengths": [
+        "Loveland und Warren lieferten sofort starke TE-Produktion in einem 2TE-Format",
+        "Pat Bryant war an 5.04 ein brauchbarer Rollen-Outcome",
+        "Trotz nur vier Picks entstanden zwei klare Start-2-TE-Bausteine"
+      ],
+      "risks": [
+        "Kyle Williams blieb nach einem Pick in Runde vier deutlich hinter den stärksten Alternativen",
+        "Ohne historischen Teamkontext ist nicht rekonstruierbar, wie stark der doppelte TE-Fokus damals zum Kader passte"
+      ],
+      "rookie_year_fantasy_points_total": 411.6,
+      "points_per_pick": 102.9
+    },
+    {
+      "team_id": 4,
+      "owner": "Jan",
+      "team_name": "Mammoth Marauders",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12507",
+        "12489",
+        "12490",
+        "12519",
+        "12487"
+      ],
+      "overall_grade": "B",
+      "overall_score": 82,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 82
+      },
+      "strengths": [
+        "Hampton und Harvey lieferten trotz jeweils nur acht Spielen produktive Rookie-Year-Outcomes",
+        "Burden zeigte eine brauchbare frühe Rolle",
+        "Ferguson lieferte als später TE zumindest verwertbare Produktion"
+      ],
+      "risks": [
+        "Tuten blieb deutlich hinter seinem Drittrunden-Pick zurück",
+        "Kein Spieler erreichte den starken positionsabhängigen Outcome-Bucket"
+      ],
+      "rookie_year_fantasy_points_total": 408.1,
+      "points_per_pick": 81.62
+    },
+    {
+      "team_id": 2,
+      "owner": "Marcel",
+      "team_name": "Ruhr Valley Packers",
+      "team_window": null,
+      "context_summary": null,
+      "drafted_player_ids": [
+        "12530",
+        "12504",
+        "12498",
+        "12483",
+        "12510"
+      ],
+      "overall_grade": "C+",
+      "overall_score": 68,
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 68
+      },
+      "strengths": [
+        "Mason Taylor war an 3.05 ein produktiver TE-Outcome",
+        "Hunter zeigte in sieben Spielen brauchbare Produktion, wobei die Verletzung die Bewertung begrenzt"
+      ],
+      "risks": [
+        "Kaleb Johnson und Milroe produzierten fast nicht",
+        "Bech blieb als Viertrunden-WR im limitierten Bereich",
+        "Niedrigste rohe und pickbereinigte Rookie-Year-Ausbeute"
+      ],
+      "rookie_year_fantasy_points_total": 203.4,
+      "points_per_pick": 40.68
+    }
+  ],
+  "picks": [
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO5",
+      "display_pick": "1.01",
+      "overall_pick": 1,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "12527",
+      "player_name": "Ashton Jeanty",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 96
+      },
+      "classification": [
+        "strong_rookie_year",
+        "premium_pick_hit"
+      ],
+      "summary": "Erfüllte die hohen 1.01-Erwartungen mit 233.7 PPR-Punkten.",
+      "rookie_year_outcome": {
+        "fantasy_points": 233.7,
+        "games_played": 16,
+        "bucket": "strong",
+        "outcome_grade": "A"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO4",
+      "display_pick": "1.02",
+      "overall_pick": 2,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "12507",
+      "player_name": "Omarion Hampton",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 86
+      },
+      "classification": [
+        "productive_rookie_year",
+        "injury_limited_sample"
+      ],
+      "summary": "110.8 Punkte in nur acht Spielen zeigen einen produktiven, aber noch nicht vollständig realisierten Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 110.8,
+        "games_played": 8,
+        "bucket": "productive",
+        "outcome_grade": "B+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO6",
+      "display_pick": "1.03",
+      "overall_pick": 3,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "12529",
+      "player_name": "TreVeyon Henderson",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 91
+      },
+      "classification": [
+        "productive_rookie_year"
+      ],
+      "summary": "147.3 Punkte in elf Spielen waren ein starker früher RB-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 147.3,
+        "games_played": 11,
+        "bucket": "productive",
+        "outcome_grade": "A-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO1",
+      "display_pick": "1.04",
+      "overall_pick": 4,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "12517",
+      "player_name": "Colston Loveland",
+      "position": "TE",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 96
+      },
+      "classification": [
+        "strong_rookie_year",
+        "2te_format_hit"
+      ],
+      "summary": "140.0 Punkte und 9.33 pro Spiel waren ein starker Rookie-TE-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 140.0,
+        "games_played": 15,
+        "bucket": "strong",
+        "outcome_grade": "A"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO2",
+      "display_pick": "1.05",
+      "overall_pick": 5,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "12530",
+      "player_name": "Travis Hunter",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "C+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 72
+      },
+      "classification": [
+        "role_rookie_year",
+        "injury_caveat"
+      ],
+      "summary": "63.8 Punkte in sieben Spielen sind noch kein abschließendes Urteil; die frühe Ausbeute blieb aber hinter Pick 1.05 zurück.",
+      "rookie_year_outcome": {
+        "fantasy_points": 63.8,
+        "games_played": 7,
+        "bucket": "role",
+        "outcome_grade": "C+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R1_OO3",
+      "display_pick": "1.06",
+      "overall_pick": 6,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "12522",
+      "player_name": "Cam Ward",
+      "position": "QB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 95
+      },
+      "classification": [
+        "strong_rookie_year",
+        "2qb_hit"
+      ],
+      "summary": "191.48 Punkte als sofortiger Starter machten 1.06 zu einem starken 2QB-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 191.48,
+        "games_played": 16,
+        "bucket": "strong",
+        "outcome_grade": "A"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO5",
+      "display_pick": "2.01",
+      "overall_pick": 7,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "12526",
+      "player_name": "Tetairoa McMillan",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 100
+      },
+      "classification": [
+        "strong_rookie_year",
+        "elite_pick_slot_value"
+      ],
+      "summary": "200.9 Punkte an 2.01 waren einer der besten Outcome-Values der Klasse.",
+      "rookie_year_outcome": {
+        "fantasy_points": 200.9,
+        "games_played": 16,
+        "bucket": "strong",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO4",
+      "display_pick": "2.02",
+      "overall_pick": 8,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "12489",
+      "player_name": "RJ Harvey",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 92
+      },
+      "classification": [
+        "productive_rookie_year",
+        "injury_limited_sample"
+      ],
+      "summary": "117.8 Punkte und 14.72 pro Spiel in acht Einsätzen waren ein starker Zweitrunden-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 117.8,
+        "games_played": 8,
+        "bucket": "productive",
+        "outcome_grade": "A-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO6",
+      "display_pick": "2.03",
+      "overall_pick": 9,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "12514",
+      "player_name": "Emeka Egbuka",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 99
+      },
+      "classification": [
+        "strong_rookie_year",
+        "elite_pick_slot_value"
+      ],
+      "summary": "193.9 Punkte an 2.03 waren ein klarer Soforthit.",
+      "rookie_year_outcome": {
+        "fantasy_points": 193.9,
+        "games_played": 16,
+        "bucket": "strong",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO1",
+      "display_pick": "2.04",
+      "overall_pick": 10,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "12518",
+      "player_name": "Tyler Warren",
+      "position": "TE",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 100
+      },
+      "classification": [
+        "strong_rookie_year",
+        "elite_2te_value"
+      ],
+      "summary": "180.9 Punkte an 2.04 waren ein herausragender 2TE-Pickslot-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 180.9,
+        "games_played": 16,
+        "bucket": "strong",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO2",
+      "display_pick": "2.05",
+      "overall_pick": 11,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "12504",
+      "player_name": "Kaleb Johnson",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "D",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 28
+      },
+      "classification": [
+        "limited_rookie_year"
+      ],
+      "summary": "8.9 Punkte in acht Spielen blieben deutlich hinter einem Zweitrundenpick zurück.",
+      "rookie_year_outcome": {
+        "fantasy_points": 8.9,
+        "games_played": 8,
+        "bucket": "limited",
+        "outcome_grade": "D"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R2_OO3",
+      "display_pick": "2.06",
+      "overall_pick": 12,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "12501",
+      "player_name": "Matthew Golden",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 77
+      },
+      "classification": [
+        "role_rookie_year"
+      ],
+      "summary": "68.2 Punkte waren eine brauchbare frühe Rolle, aber noch kein starker Zweitrundenhit.",
+      "rookie_year_outcome": {
+        "fantasy_points": 68.2,
+        "games_played": 13,
+        "bucket": "role",
+        "outcome_grade": "B-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO5",
+      "display_pick": "3.01",
+      "overall_pick": 13,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "12512",
+      "player_name": "Quinshon Judkins",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 100
+      },
+      "classification": [
+        "strong_rookie_year",
+        "elite_pick_slot_value"
+      ],
+      "summary": "169.8 Punkte an 3.01 waren ein herausragender Outcome-Value.",
+      "rookie_year_outcome": {
+        "fantasy_points": 169.8,
+        "games_played": 14,
+        "bucket": "strong",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO4",
+      "display_pick": "3.02",
+      "overall_pick": 14,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "12490",
+      "player_name": "Bhayshul Tuten",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "C-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 55
+      },
+      "classification": [
+        "limited_rookie_year"
+      ],
+      "summary": "30.6 Punkte in fünf Spielen blieben zunächst unter dem erwarteten Drittrundenwert.",
+      "rookie_year_outcome": {
+        "fantasy_points": 30.6,
+        "games_played": 5,
+        "bucket": "limited",
+        "outcome_grade": "C-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO6",
+      "display_pick": "3.03",
+      "overall_pick": 15,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "12484",
+      "player_name": "Jayden Higgins",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 92
+      },
+      "classification": [
+        "productive_rookie_year",
+        "third_round_value"
+      ],
+      "summary": "119.2 Punkte und volle Verfügbarkeit machten 3.03 zu einem starken Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 119.2,
+        "games_played": 16,
+        "bucket": "productive",
+        "outcome_grade": "A-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO1",
+      "display_pick": "3.04",
+      "overall_pick": 16,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 3,
+      "player_id": "12509",
+      "player_name": "Tre' Harris",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 75
+      },
+      "classification": [
+        "role_rookie_year",
+        "traded_pick"
+      ],
+      "summary": "64.6 Punkte waren ein brauchbarer, aber noch begrenzter Drittrunden-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 64.6,
+        "games_played": 16,
+        "bucket": "role",
+        "outcome_grade": "B-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO2",
+      "display_pick": "3.05",
+      "overall_pick": 17,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "12498",
+      "player_name": "Mason Taylor",
+      "position": "TE",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 88
+      },
+      "classification": [
+        "productive_rookie_year",
+        "2te_value"
+      ],
+      "summary": "88.9 Punkte an 3.05 waren ein guter Start-2-TE-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 88.9,
+        "games_played": 13,
+        "bucket": "productive",
+        "outcome_grade": "B+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R3_OO3",
+      "display_pick": "3.06",
+      "overall_pick": 18,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "12481",
+      "player_name": "Cam Skattebo",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 99
+      },
+      "classification": [
+        "productive_rookie_year",
+        "elite_late_value",
+        "injury_limited_sample"
+      ],
+      "summary": "128.7 Punkte und 16.09 pro Spiel in acht Einsätzen waren ein herausragender später RB-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 128.7,
+        "games_played": 8,
+        "bucket": "productive",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO5",
+      "display_pick": "4.01",
+      "overall_pick": 19,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "12524",
+      "player_name": "Shedeur Sanders",
+      "position": "QB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 89
+      },
+      "classification": [
+        "promising_rookie_year",
+        "late_2qb_value"
+      ],
+      "summary": "89.86 Punkte in sieben Spielen waren für 4.01 ein guter früher QB-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 89.86,
+        "games_played": 7,
+        "bucket": "promising",
+        "outcome_grade": "B+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO4",
+      "display_pick": "4.02",
+      "overall_pick": 20,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "12519",
+      "player_name": "Luther Burden",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 83
+      },
+      "classification": [
+        "role_rookie_year",
+        "late_wr_value"
+      ],
+      "summary": "96.8 Punkte in zehn Spielen waren an 4.02 ein positiver, wenn auch noch nicht produktiver WR-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 96.8,
+        "games_played": 10,
+        "bucket": "role",
+        "outcome_grade": "B"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO6",
+      "display_pick": "4.03",
+      "overall_pick": 21,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "12508",
+      "player_name": "Jaxson Dart",
+      "position": "QB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 100
+      },
+      "classification": [
+        "strong_rookie_year",
+        "best_pick_slot_value",
+        "2qb_hit"
+      ],
+      "summary": "228.18 Punkte an 4.03 waren der beste reine Pickslot-Outcome des Drafts.",
+      "rookie_year_outcome": {
+        "fantasy_points": 228.18,
+        "games_played": 13,
+        "bucket": "strong",
+        "outcome_grade": "A+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO1",
+      "display_pick": "4.04",
+      "overall_pick": 22,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "12547",
+      "player_name": "Kyle Williams",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "C-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 53
+      },
+      "classification": [
+        "limited_rookie_year"
+      ],
+      "summary": "23.0 Punkte in zwölf Spielen blieben trotz des späten Picks klar limitiert.",
+      "rookie_year_outcome": {
+        "fantasy_points": 23.0,
+        "games_played": 12,
+        "bucket": "limited",
+        "outcome_grade": "C-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO2",
+      "display_pick": "4.05",
+      "overall_pick": 23,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "12483",
+      "player_name": "Jack Bech",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "C+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 66
+      },
+      "classification": [
+        "limited_rookie_year"
+      ],
+      "summary": "42.4 Punkte in 14 Spielen waren ein begrenzter Viertrunden-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 42.4,
+        "games_played": 14,
+        "bucket": "limited",
+        "outcome_grade": "C+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R4_OO3",
+      "display_pick": "4.06",
+      "overall_pick": 24,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "12469",
+      "player_name": "Dylan Sampson",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 80
+      },
+      "classification": [
+        "role_rookie_year",
+        "late_rb_value"
+      ],
+      "summary": "48.2 Punkte in acht Spielen waren für 4.06 ein brauchbarer Rollen-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 48.2,
+        "games_played": 8,
+        "bucket": "role",
+        "outcome_grade": "B"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO5",
+      "display_pick": "5.01",
+      "overall_pick": 25,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "12521",
+      "player_name": "Elijah Arroyo",
+      "position": "TE",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B-",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 76
+      },
+      "classification": [
+        "role_rookie_year",
+        "late_2te_value"
+      ],
+      "summary": "37.9 Punkte waren an 5.01 ein vertretbarer früher TE-Rollen-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 37.9,
+        "games_played": 13,
+        "bucket": "role",
+        "outcome_grade": "B-"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO4",
+      "display_pick": "5.02",
+      "overall_pick": 26,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "12487",
+      "player_name": "Terrance Ferguson",
+      "position": "TE",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 81
+      },
+      "classification": [
+        "role_rookie_year",
+        "late_2te_value"
+      ],
+      "summary": "52.1 Punkte an 5.02 waren ein brauchbarer 2TE-Outcomewert.",
+      "rookie_year_outcome": {
+        "fantasy_points": 52.1,
+        "games_played": 13,
+        "bucket": "role",
+        "outcome_grade": "B"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO6",
+      "display_pick": "5.03",
+      "overall_pick": 27,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "12457",
+      "player_name": "Jaydon Blue",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "D",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 35
+      },
+      "classification": [
+        "limited_rookie_year"
+      ],
+      "summary": "7.3 Punkte waren auch für einen Fünftrundenpick ein sehr begrenzter Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 7.3,
+        "games_played": 2,
+        "bucket": "limited",
+        "outcome_grade": "D"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO1",
+      "display_pick": "5.04",
+      "overall_pick": 28,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "12492",
+      "player_name": "Pat Bryant",
+      "position": "WR",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 87
+      },
+      "classification": [
+        "role_rookie_year",
+        "late_wr_value"
+      ],
+      "summary": "67.7 Punkte und 14 Spiele waren für 5.04 ein guter später WR-Outcome.",
+      "rookie_year_outcome": {
+        "fantasy_points": 67.7,
+        "games_played": 14,
+        "bucket": "role",
+        "outcome_grade": "B+"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO2",
+      "display_pick": "5.05",
+      "overall_pick": 29,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "12510",
+      "player_name": "Jalen Milroe",
+      "position": "QB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "D",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 30
+      },
+      "classification": [
+        "limited_rookie_year",
+        "no_starting_role"
+      ],
+      "summary": "Minus 0.6 Punkte in drei Einsätzen und kein stabiler Starterpfad ergaben keinen frühen 2QB-Value.",
+      "rookie_year_outcome": {
+        "fantasy_points": -0.6,
+        "games_played": 3,
+        "bucket": "limited",
+        "outcome_grade": "D"
+      }
+    },
+    {
+      "pick_key": "2025_D1_Rookie_R5_OO3",
+      "display_pick": "5.06",
+      "overall_pick": 30,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "12533",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB",
+      "market_rank_at_analysis": null,
+      "market_delta": null,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": null,
+        "market_value": null,
+        "team_fit": null,
+        "outcome": 100
+      },
+      "classification": [
+        "productive_rookie_year",
+        "elite_last_pick_value"
+      ],
+      "summary": "139.4 Punkte als letzter Draftpick waren ein herausragender Outcome-Value.",
+      "rookie_year_outcome": {
+        "fantasy_points": 139.4,
+        "games_played": 16,
+        "bucket": "productive",
+        "outcome_grade": "A+"
+      }
+    }
+  ],
+  "manager_observations": [
+    {
+      "team_id": 1,
+      "observation": "Robert investierte 2025 ungewöhnlich stark in Tight Ends und erhielt mit Loveland und Warren sofort zwei starke 2TE-Outcomes.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO1",
+        "2025_D1_Rookie_R2_OO1"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    },
+    {
+      "team_id": 2,
+      "observation": "Marcel verteilte die Klasse auf mehrere Positionen, erhielt aber nur bei Mason Taylor einen klar positiven Pickslot-Outcome.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO2",
+        "2025_D1_Rookie_R2_OO2",
+        "2025_D1_Rookie_R3_OO2",
+        "2025_D1_Rookie_R4_OO2",
+        "2025_D1_Rookie_R5_OO2"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    },
+    {
+      "team_id": 3,
+      "observation": "Flo nutzte zusätzliche Pickmenge und traf insbesondere bei späten Running Backs außergewöhnlich gut.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R3_OO3",
+        "2025_D1_Rookie_R5_OO3"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    },
+    {
+      "team_id": 4,
+      "observation": "Jan nahm drei Running Backs in den ersten drei Runden und ergänzte anschließend WR und TE; der frühe RB-Fokus lieferte zwei produktive, aber keinen starken Outcome.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO4",
+        "2025_D1_Rookie_R2_OO4",
+        "2025_D1_Rookie_R3_OO4"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    },
+    {
+      "team_id": 5,
+      "observation": "Dennis kombinierte Premiumtalent mit fallenden Werten und erzielte über mehrere Runden starke Outcomes.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO5",
+        "2025_D1_Rookie_R2_OO5",
+        "2025_D1_Rookie_R3_OO5",
+        "2025_D1_Rookie_R4_OO5"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    },
+    {
+      "team_id": 6,
+      "observation": "Tim traf 2025 sowohl bei frühen Skill-Position-Spielern als auch beim späten Quarterback Jaxson Dart außergewöhnlich gut.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO6",
+        "2025_D1_Rookie_R2_OO6",
+        "2025_D1_Rookie_R3_OO6",
+        "2025_D1_Rookie_R4_OO6"
+      ],
+      "confidence": "low",
+      "status": "candidate"
+    }
+  ],
+  "league_findings": [
+    "Der Draft produzierte ungewöhnlich viele sofortige Hits: Jeanty, Ward, McMillan, Egbuka, Warren, Judkins, Dart und Loveland erreichten starke positionsabhängige Rookie-Year-Buckets.",
+    "Jaxson Dart an 4.03 war der beste Pickslot-Outcome des Drafts.",
+    "Jacory Croskey-Merritt an 5.06 und Cam Skattebo an 3.06 waren die stärksten späten RB-Outcomes.",
+    "Die größte enttäuschende frühe Investition war Kaleb Johnson an 2.05.",
+    "Tight Ends waren im Start-2-TE-Format besonders erfolgreich: Loveland und Warren waren starke Hits; Mason Taylor, Ferguson und Arroyo lieferten zumindest frühe Rollenproduktion.",
+    "Die Ergebnisse stützen die These, dass späte Quarterbacks nur dann wertvoll werden, wenn ein echter Starterpfad entsteht: Dart war ein Volltreffer, Milroe nahezu wertlos."
+  ],
+  "review_schedule": [
+    {
+      "review_kind": "year_2_review",
+      "target_date": "2027-07-13",
+      "status": "planned"
+    },
+    {
+      "review_kind": "year_3_review",
+      "target_date": "2028-07-13",
+      "status": "planned"
+    }
+  ],
+  "review_of": null,
+  "supersedes": null,
+  "validity_note": "Retrospektive Year-1-Outcome-Auswertung. Mangels historischem Drafttag-Markt- und Teamkontext dürfen die Outcome-Grades nicht als vollständige Process-Grades interpretiert werden."
+}
