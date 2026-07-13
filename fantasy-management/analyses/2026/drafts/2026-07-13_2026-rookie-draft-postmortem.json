@@ -1,0 +1,1187 @@
+{
+  "type": "draft_analysis",
+  "scope": "fantasy-management",
+  "created": "2026-07-13",
+  "status": "active",
+  "summary": "Kontextuelle Post-Draft-Analyse des vollständigen Rookie-Drafts 2026 mit getrennten Process-, Market-Value- und Team-Fit-Grades für alle sechs Teams und alle 30 Picks.",
+  "draft_key": "2026_Rookie",
+  "draft_season": 2026,
+  "draft_type": "Rookie",
+  "analysis_kind": "post_draft_contextual",
+  "analysis_as_of": "2026-07-13",
+  "context_completeness": "full",
+  "team_context_available": true,
+  "limitations": [
+    "Der KeepTradeCut-Snapshot misst crowdsourceten Marktwert in Superflex, 0.5 PPR und ohne standardmäßigen Tight-End-Premium und bildet das ligaeigene 2TE-Format nicht vollständig ab.",
+    "Camp-Rollen, Verletzungen und Marktwerte nach dem Analysezeitpunkt dürfen nicht rückwirkend in die Process-Grades eingerechnet werden.",
+    "Die Managerbeobachtungen sind Hypothesen und noch keine dauerhaften Owner-Profile."
+  ],
+  "data_snapshot": {
+    "captured_at": "2026-07-13T14:07:21Z",
+    "sources": [
+      {
+        "path": "public/data/Drafts.json",
+        "blob_sha": "4b49cbe9696a0a24765b87091e7c87567f7df299",
+        "generated_at": "2026-07-13T12:32:52Z",
+        "purpose": "Vollständige Draftreihenfolge, Pickbesitz, Trades und Ergebnisse"
+      },
+      {
+        "path": "public/data/League.json",
+        "blob_sha": "600447dc3f4407132e946b1cbf6c47bdd4a66818",
+        "generated_at": "2026-07-13T08:50:07Z",
+        "purpose": "Ligaformat, Kader, Draftkapital, Teamfenster und Vorjahresleistung"
+      },
+      {
+        "path": "public/data/chat/players-relevant/index.json",
+        "blob_sha": "46688b1e861259040b70043cb4398bd9c9788e2e",
+        "generated_at": "2026-07-13T14:07:21Z",
+        "purpose": "Player-ID-, Positions- und Chunk-Zuordnung"
+      },
+      {
+        "path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/episode.md",
+        "blob_sha": "d451bb4562f9e8c51282d316d3f556fc20b6ec59",
+        "generated_at": null,
+        "purpose": "Qualitativer WR-Prospect-, Rollen- und Opportunity-Kontext"
+      },
+      {
+        "path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0571/episode.md",
+        "blob_sha": "d0b6ad7d8346e16b21911e3f164046a8a4d188b0",
+        "generated_at": null,
+        "purpose": "Qualitativer RB-Tier-, Rollen- und Handcuff-Kontext"
+      }
+    ]
+  },
+  "market_snapshots": [
+    {
+      "source": "KeepTradeCut Rookie Rankings",
+      "retrieved_at": "2026-07-13",
+      "measurement": "Crowdsourceter Dynasty-Marktwert und Rookie-Rang",
+      "format": "Superflex, 0.5 PPR, no TEP",
+      "limitations": [
+        "Nicht liga-spezifisch",
+        "Start-2-TE-Wert wird unterschätzt",
+        "Marktwert ist keine reine Talentprojektion"
+      ]
+    }
+  ],
+  "grading_model": {
+    "overall_components": {
+      "process": 0.4,
+      "market_value": 0.25,
+      "team_fit": 0.2,
+      "class_construction": 0.15
+    },
+    "component_definitions": {
+      "process": "Qualität der Entscheidung mit den am Drafttag verfügbaren Informationen.",
+      "market_value": "Value relativ zum datierten Markt- und Consensus-Stand.",
+      "team_fit": "Passung zu Kader, Teamfenster und ligaeigenem Positionswert.",
+      "class_construction": "Komplementarität, Ceiling, Risikoverteilung und Liquidität der gesamten Klasse.",
+      "outcome": "Spätere Produktion und Wertentwicklung; am Drafttag nicht benotet."
+    },
+    "outcome_separated_from_process": true
+  },
+  "league_context": {
+    "teams": 6,
+    "scoring": "PPR",
+    "lineup": {
+      "QB": 2,
+      "RB": 2,
+      "WR": 2,
+      "TE": 2,
+      "FLEX": 4,
+      "K": 1,
+      "BENCH": 16
+    },
+    "draft_rounds": 5,
+    "draft_mode": "linear",
+    "replacement_level_note": "Durch nur sechs Teams ist der Replacement Level hoch. Premium-Ceiling, knappe Positionen und konsolidierbare Marktwerte sind wichtiger als reine NFL-Rosterfähigkeit."
+  },
+  "teams": [
+    {
+      "team_id": 5,
+      "owner": "Dennis",
+      "team_name": "Team DennisLACards",
+      "team_window": "rebuild_to_ascending",
+      "context_summary": "Vorjahresletzter mit 4-9 und 170.8 Punkten pro Spiel. Der Kader besaß junge Premiumbausteine, benötigte aber zusätzliche langfristige QB- und WR-Anker sowie Altersabsicherung.",
+      "drafted_player_ids": [
+        "13281",
+        "13269",
+        "13288",
+        "13268",
+        "13353"
+      ],
+      "overall_grade": "A",
+      "overall_score": 95,
+      "component_scores": {
+        "process": 96,
+        "market_value": 98,
+        "team_fit": 94,
+        "class_construction": 92,
+        "outcome": null
+      },
+      "strengths": [
+        "Jordyn Tyson als junger Premium-WR-Anker",
+        "Fernando Mendoza an 2.02 als stärkster positions- und marktbezogener Value des Drafts",
+        "Ausgewogene Ergänzungen auf RB und WR ohne spätes Kapital zu verschwenden"
+      ],
+      "risks": [
+        "Singleton, Sarratt und Brazzell sind eher Portfolio- als sichere Unterschiedsspieler",
+        "Die Klasse verbessert die Zukunft stärker als die unmittelbare Titelfähigkeit"
+      ],
+      "rookie_year_fantasy_points_total": null
+    },
+    {
+      "team_id": 1,
+      "owner": "Robert",
+      "team_name": "Mighty Giants",
+      "team_window": "contender",
+      "context_summary": "Vorjahres-Regular-Season-Sieger mit 10-3 und 190.17 Punkten pro Spiel. Elite auf QB, WR und TE; der größte langfristige Portfoliobedarf lag bei jungen Running Backs und zusätzlichen liquiden Upside-Assets.",
+      "drafted_player_ids": [
+        "13287",
+        "13311",
+        "13285",
+        "13405",
+        "13417",
+        "13414"
+      ],
+      "overall_grade": "A-",
+      "overall_score": 92,
+      "component_scores": {
+        "process": 94,
+        "market_value": 89,
+        "team_fit": 96,
+        "class_construction": 91,
+        "outcome": null
+      },
+      "strengths": [
+        "Jeremiyah Love als klassenbester Premium-RB und perfekter Portfolio-Fit",
+        "Chris Bell und De'Zhaun Stribling als starke Werte außerhalb der ersten Runde",
+        "Drei unterschiedliche RB-Auszahlungspfade über Love, Kaytron Allen und Kaelon Black"
+      ],
+      "risks": [
+        "Fields, Allen und Black lagen leicht vor dem neutralen Marktbereich",
+        "Black über Zachariah Branch tauschte Marktliquidität gegen teambezogenen RB-Fit"
+      ],
+      "rookie_year_fantasy_points_total": null
+    },
+    {
+      "team_id": 4,
+      "owner": "Jan",
+      "team_name": "Mammoth Marauders",
+      "team_window": "contender_with_roster_pressure",
+      "context_summary": "Elite-QB- und Elite-WR-Kern mit sehr tiefem Kader. Die Klasse musste weniger ein einzelnes Loch schließen als Ceiling über mehrere Positionen verteilen und zugleich die spätere Rosterverdichtung berücksichtigen.",
+      "drafted_player_ids": [
+        "13294",
+        "13345",
+        "13275",
+        "13301",
+        "13319",
+        "13317"
+      ],
+      "overall_grade": "A-",
+      "overall_score": 90,
+      "component_scores": {
+        "process": 91,
+        "market_value": 89,
+        "team_fit": 90,
+        "class_construction": 92,
+        "outcome": null
+      },
+      "strengths": [
+        "Makai Lemon, Jonah Coleman, Ty Simpson und Antonio Williams bilden eine tiefe, ausgewogene Spitzengruppe",
+        "Simpson und Hurst fielen relativ zum Markt",
+        "Antonio Williams war ein klarer eigener Conviction-Pick mit frühem Rollenpfad"
+      ],
+      "risks": [
+        "Oscar Delp an 4.04 war der größte eigene Reach",
+        "Viele neue Assets verschärfen den bereits hohen Roster- und Konsolidierungsdruck"
+      ],
+      "rookie_year_fantasy_points_total": null
+    },
+    {
+      "team_id": 6,
+      "owner": "Tim",
+      "team_name": "Team TimpaBay",
+      "team_window": "retool_with_contender_ceiling",
+      "context_summary": "Starker QB- und RB-Kern, aber schwächere Vorjahresproduktion und Bedarf an zusätzlichem jungen WR-Ceiling. Die Draftklasse durfte deshalb bewusst receiverlastig sein.",
+      "drafted_player_ids": [
+        "13279",
+        "13298",
+        "13346",
+        "13421",
+        "13293"
+      ],
+      "overall_grade": "B+",
+      "overall_score": 87,
+      "component_scores": {
+        "process": 86,
+        "market_value": 84,
+        "team_fit": 92,
+        "class_construction": 87,
+        "outcome": null
+      },
+      "strengths": [
+        "Carnell Tate, KC Concepcion und Denzel Boston bilden die stärkste reine WR-Spitze einer Klasse",
+        "Tate vor Love war aus dem konkreten Kaderkontext vertretbar",
+        "Ja'Kobi Lane war ein vernünftiger später Outside-WR-Dart"
+      ],
+      "risks": [
+        "Eli Raridon an 3.01 erzeugte sehr hohen Opportunity Cost",
+        "Die Klasse hängt stark an der Entwicklung mehrerer Receiver und ist weniger positionsdiversifiziert"
+      ],
+      "rookie_year_fantasy_points_total": null
+    },
+    {
+      "team_id": 3,
+      "owner": "Flo",
+      "team_name": "Just Bill",
+      "team_window": "reigning_champion",
+      "context_summary": "Amtierender Champion und punktbestes Team der Vorsaison mit einem tiefen, jungen Kern. Es bestand kein akuter Need; formatgerechte Knappheits- und Upside-Picks waren sinnvoll.",
+      "drafted_player_ids": [
+        "13330",
+        "13276",
+        "13274",
+        "13337",
+        "13289"
+      ],
+      "overall_grade": "B+",
+      "overall_score": 86,
+      "component_scores": {
+        "process": 88,
+        "market_value": 87,
+        "team_fit": 88,
+        "class_construction": 82,
+        "outcome": null
+      },
+      "strengths": [
+        "Kenyon Sadiq ist im Start-2-TE-Format wertvoller als sein Standardmarkt-Rang",
+        "Omar Cooper an 2.06 war ein sauberer Value",
+        "Emmett Johnson und Drew Allar ergänzen unterschiedliche späte Upside-Pfade"
+      ],
+      "risks": [
+        "Kein Spieler aus dem absoluten Markt-Top-7-Bereich",
+        "Allar besitzt keinen sicheren unmittelbaren Starterpfad und ist daher ein langfristiger Stash"
+      ],
+      "rookie_year_fantasy_points_total": null
+    },
+    {
+      "team_id": 2,
+      "owner": "Marcel",
+      "team_name": "Ruhr Valley Packers",
+      "team_window": "contender",
+      "context_summary": "Runner-up mit starkem Veteranenkern, aber nur drei Picks. Altersabsicherung bei RB und TE war sinnvoll; geringe Pickmenge erhöhte den Opportunity Cost jedes Reaches.",
+      "drafted_player_ids": [
+        "13286",
+        "13349",
+        "13305"
+      ],
+      "overall_grade": "B",
+      "overall_score": 82,
+      "component_scores": {
+        "process": 84,
+        "market_value": 79,
+        "team_fit": 88,
+        "class_construction": 75,
+        "outcome": null
+      },
+      "strengths": [
+        "Jadarian Price war der klare zweite RB der Klasse und ein guter Henry-Nachfolgebaustein",
+        "Eli Stowers war im 2TE-Format mindestens preisgerecht",
+        "Die Klasse adressierte echte Alters- und Positionsfragen"
+      ],
+      "risks": [
+        "Nur drei Picks begrenzen die Gesamtauszahlung",
+        "Mike Washington an 4.05 war deutlich vor dem neutralen Markt und primär eine Handcuff-Wette"
+      ],
+      "rookie_year_fantasy_points_total": null
+    }
+  ],
+  "picks": [
+    {
+      "pick_key": "2026_Rookie_R1_OO6",
+      "display_pick": "1.01",
+      "overall_pick": 1,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "13279",
+      "player_name": "Carnell Tate",
+      "position": "WR",
+      "market_rank_at_analysis": 2,
+      "market_delta": -1,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 91,
+        "market_value": 94,
+        "team_fit": 94,
+        "outcome": null
+      },
+      "classification": [
+        "premium_asset",
+        "team_fit_over_market_1_01"
+      ],
+      "summary": "Leicht unter Love im neutralen Markt, aber ein sehr starker Pick für Tims WR-Bedarf.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R1_OO5",
+      "display_pick": "1.02",
+      "overall_pick": 2,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 1,
+      "player_id": "13287",
+      "player_name": "Jeremiyah Love",
+      "position": "RB",
+      "market_rank_at_analysis": 1,
+      "market_delta": 1,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": 99,
+        "market_value": 99,
+        "team_fit": 100,
+        "outcome": null
+      },
+      "classification": [
+        "premium_asset",
+        "class_rb1",
+        "core_upside"
+      ],
+      "summary": "Bester neutrale Marktwert und idealer Premium-RB für einen WR-starken Contender.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R1_OO1",
+      "display_pick": "1.03",
+      "overall_pick": 3,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 5,
+      "player_id": "13281",
+      "player_name": "Jordyn Tyson",
+      "position": "WR",
+      "market_rank_at_analysis": 4,
+      "market_delta": -1,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 96,
+        "market_value": 95,
+        "team_fit": 97,
+        "outcome": null
+      },
+      "classification": [
+        "premium_asset",
+        "young_wr_anchor"
+      ],
+      "summary": "Premium-WR mit langfristiger Kernrolle für einen aufsteigenden Kader.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R1_OO4",
+      "display_pick": "1.04",
+      "overall_pick": 4,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "13294",
+      "player_name": "Makai Lemon",
+      "position": "WR",
+      "market_rank_at_analysis": 5,
+      "market_delta": -1,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 94,
+        "market_value": 94,
+        "team_fit": 92,
+        "outcome": null
+      },
+      "classification": [
+        "premium_wr",
+        "consensus_value"
+      ],
+      "summary": "Sauberer Premium-WR-Pick ohne unnötigen Positionsreach.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R1_OO2",
+      "display_pick": "1.05",
+      "overall_pick": 5,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "13286",
+      "player_name": "Jadarian Price",
+      "position": "RB",
+      "market_rank_at_analysis": 6,
+      "market_delta": -1,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 92,
+        "market_value": 92,
+        "team_fit": 96,
+        "outcome": null
+      },
+      "classification": [
+        "class_rb2",
+        "veteran_successor"
+      ],
+      "summary": "Starkes Draftkapital und passender langfristiger RB-Nachfolger.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R1_OO3",
+      "display_pick": "1.06",
+      "overall_pick": 6,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "13330",
+      "player_name": "Kenyon Sadiq",
+      "position": "TE",
+      "market_rank_at_analysis": 8,
+      "market_delta": -2,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 93,
+        "market_value": 89,
+        "team_fit": 95,
+        "outcome": null
+      },
+      "classification": [
+        "scarce_position",
+        "format_adjusted_value"
+      ],
+      "summary": "Der 2TE-Faktor rechtfertigt den kleinen Reach gegenüber dem Standardmarkt.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO6",
+      "display_pick": "2.01",
+      "overall_pick": 7,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "13298",
+      "player_name": "KC Concepcion",
+      "position": "WR",
+      "market_rank_at_analysis": 7,
+      "market_delta": 0,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 95,
+        "market_value": 96,
+        "team_fit": 96,
+        "outcome": null
+      },
+      "classification": [
+        "consensus_value",
+        "wr_ceiling"
+      ],
+      "summary": "Exakter Markt- und Kaderfit an 2.01.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO5",
+      "display_pick": "2.02",
+      "overall_pick": 8,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "13269",
+      "player_name": "Fernando Mendoza",
+      "position": "QB",
+      "market_rank_at_analysis": 3,
+      "market_delta": 5,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": 100,
+        "market_value": 100,
+        "team_fit": 98,
+        "outcome": null
+      },
+      "classification": [
+        "best_value",
+        "premium_qb",
+        "2qb_liquidity"
+      ],
+      "summary": "Größter Value des Drafts: Premium-QB und Markt-Rookie 3 an Overall 8.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO1",
+      "display_pick": "2.03",
+      "overall_pick": 9,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 2,
+      "player_id": "13349",
+      "player_name": "Eli Stowers",
+      "position": "TE",
+      "market_rank_at_analysis": 10,
+      "market_delta": -1,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 92,
+        "market_value": 92,
+        "team_fit": 95,
+        "outcome": null
+      },
+      "classification": [
+        "format_adjusted_value",
+        "te_successor"
+      ],
+      "summary": "Im Start-2-TE-Format mindestens preisgerecht und ein langfristiger Kelce-Nachfolger.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO4",
+      "display_pick": "2.04",
+      "overall_pick": 10,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "13345",
+      "player_name": "Jonah Coleman",
+      "position": "RB",
+      "market_rank_at_analysis": 13,
+      "market_delta": -3,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 91,
+        "market_value": 87,
+        "team_fit": 93,
+        "outcome": null
+      },
+      "classification": [
+        "need_adjusted_reach",
+        "early_role_upside"
+      ],
+      "summary": "Kleiner RB-Reach, aber mit plausiblem frühen Rollen- und Verletzungshebel.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO2",
+      "display_pick": "2.05",
+      "overall_pick": 11,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 6,
+      "player_id": "13346",
+      "player_name": "Denzel Boston",
+      "position": "WR",
+      "market_rank_at_analysis": 12,
+      "market_delta": -1,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 92,
+        "market_value": 93,
+        "team_fit": 95,
+        "outcome": null
+      },
+      "classification": [
+        "wr_portfolio",
+        "near_consensus"
+      ],
+      "summary": "Starker dritter WR-Baustein für Tims bewusst receiverlastige Klasse.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R2_OO3",
+      "display_pick": "2.06",
+      "overall_pick": 12,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "13276",
+      "player_name": "Omar Cooper",
+      "position": "WR",
+      "market_rank_at_analysis": 9,
+      "market_delta": 3,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 95,
+        "market_value": 97,
+        "team_fit": 91,
+        "outcome": null
+      },
+      "classification": [
+        "value",
+        "wr_upside"
+      ],
+      "summary": "Sauberer Marktvalue am Ende der zweiten Runde.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO6",
+      "display_pick": "3.01",
+      "overall_pick": 13,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "13421",
+      "player_name": "Eli Raridon",
+      "position": "TE",
+      "market_rank_at_analysis": 36,
+      "market_delta": -23,
+      "pick_grade": "C+",
+      "component_scores": {
+        "process": 68,
+        "market_value": 45,
+        "team_fit": 73,
+        "outcome": null
+      },
+      "classification": [
+        "major_reach",
+        "format_mitigation"
+      ],
+      "summary": "Der 2TE-Faktor mildert den Reach, beseitigt aber nicht den hohen Opportunity Cost.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO5",
+      "display_pick": "3.02",
+      "overall_pick": 14,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "13288",
+      "player_name": "Nicholas Singleton",
+      "position": "RB",
+      "market_rank_at_analysis": 17,
+      "market_delta": -3,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 88,
+        "market_value": 85,
+        "team_fit": 92,
+        "outcome": null
+      },
+      "classification": [
+        "rb_sleeper",
+        "age_portfolio"
+      ],
+      "summary": "Leicht aggressiv, aber sinnvoll zur Verjüngung eines volatilen Veteranen-RB-Raums.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO1",
+      "display_pick": "3.03",
+      "overall_pick": 15,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "13311",
+      "player_name": "Chris Bell",
+      "position": "WR",
+      "market_rank_at_analysis": 14,
+      "market_delta": 1,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 95,
+        "market_value": 95,
+        "team_fit": 90,
+        "outcome": null
+      },
+      "classification": [
+        "value",
+        "outside_wr_upside"
+      ],
+      "summary": "Guter Marktwert mit echtem Outside-WR-Ceiling trotz bereits großer WR-Tiefe.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO4",
+      "display_pick": "3.04",
+      "overall_pick": 16,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "13275",
+      "player_name": "Ty Simpson",
+      "position": "QB",
+      "market_rank_at_analysis": 11,
+      "market_delta": 5,
+      "pick_grade": "A",
+      "component_scores": {
+        "process": 95,
+        "market_value": 98,
+        "team_fit": 88,
+        "outcome": null
+      },
+      "classification": [
+        "2qb_value",
+        "long_term_qb_stash"
+      ],
+      "summary": "Starker Marktvalue auf der wertvollsten Ligaposition, trotz begrenztem Sofortpfad.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO2",
+      "display_pick": "3.05",
+      "overall_pick": 17,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 4,
+      "player_id": "13301",
+      "player_name": "Antonio Williams",
+      "position": "WR",
+      "market_rank_at_analysis": 15,
+      "market_delta": 2,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 94,
+        "market_value": 95,
+        "team_fit": 89,
+        "outcome": null
+      },
+      "classification": [
+        "conviction_pick",
+        "early_slot_role"
+      ],
+      "summary": "Eigener Target-Pick mit Marktvalue und plausiblem frühen Slot-/WR2-Pfad.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R3_OO3",
+      "display_pick": "3.06",
+      "overall_pick": 18,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "13274",
+      "player_name": "Germie Bernard",
+      "position": "WR",
+      "market_rank_at_analysis": 16,
+      "market_delta": 2,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 89,
+        "market_value": 94,
+        "team_fit": 86,
+        "outcome": null
+      },
+      "classification": [
+        "value",
+        "snap_path"
+      ],
+      "summary": "Guter Preis; die offene Frage bleibt, ob frühe NFL-Snaps zu genügend Targets führen.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO6",
+      "display_pick": "4.01",
+      "overall_pick": 19,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 1,
+      "player_id": "13285",
+      "player_name": "Malachi Fields",
+      "position": "WR",
+      "market_rank_at_analysis": 21,
+      "market_delta": -2,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 89,
+        "market_value": 88,
+        "team_fit": 86,
+        "outcome": null
+      },
+      "classification": [
+        "small_reach",
+        "role_opportunity"
+      ],
+      "summary": "Kleiner Reach, aber ein plausibler Rollen- und Opportunity-Pick.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO5",
+      "display_pick": "4.02",
+      "overall_pick": 20,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "13268",
+      "player_name": "Elijah Sarratt",
+      "position": "WR",
+      "market_rank_at_analysis": 19,
+      "market_delta": 1,
+      "pick_grade": "B",
+      "component_scores": {
+        "process": 84,
+        "market_value": 94,
+        "team_fit": 84,
+        "outcome": null
+      },
+      "classification": [
+        "near_consensus",
+        "developmental_wr"
+      ],
+      "summary": "Preisgerecht, aber mit weniger klarem Differenzierungsmerkmal als die stärksten späten WR-Values.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO1",
+      "display_pick": "4.03",
+      "overall_pick": 21,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "13405",
+      "player_name": "Kaytron Allen",
+      "position": "RB",
+      "market_rank_at_analysis": 24,
+      "market_delta": -3,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 90,
+        "market_value": 85,
+        "team_fit": 96,
+        "outcome": null
+      },
+      "classification": [
+        "need_adjusted_reach",
+        "goal_line_upside"
+      ],
+      "summary": "Marktseitig leicht früh, aber sehr guter Kaderfit als Goal-Line- und Rollenwette.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO4",
+      "display_pick": "4.04",
+      "overall_pick": 22,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "13319",
+      "player_name": "Oscar Delp",
+      "position": "TE",
+      "market_rank_at_analysis": 35,
+      "market_delta": -13,
+      "pick_grade": "C+",
+      "component_scores": {
+        "process": 72,
+        "market_value": 60,
+        "team_fit": 81,
+        "outcome": null
+      },
+      "classification": [
+        "reach",
+        "2te_format"
+      ],
+      "summary": "Formatbedingt interessanter als im Standardmarkt, aber mehrere liquidere Assets waren noch verfügbar.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO2",
+      "display_pick": "4.05",
+      "overall_pick": 23,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 2,
+      "player_id": "13305",
+      "player_name": "Mike Washington",
+      "position": "RB",
+      "market_rank_at_analysis": 30,
+      "market_delta": -7,
+      "pick_grade": "C+",
+      "component_scores": {
+        "process": 75,
+        "market_value": 68,
+        "team_fit": 80,
+        "outcome": null
+      },
+      "classification": [
+        "handcuff_reach",
+        "trade_chip_case"
+      ],
+      "summary": "Handcuff- und Trade-Chip-Case, aber hoher Opportunity Cost gegenüber verfügbaren WR-Assets.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R4_OO3",
+      "display_pick": "4.06",
+      "overall_pick": 24,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "13337",
+      "player_name": "Emmett Johnson",
+      "position": "RB",
+      "market_rank_at_analysis": 23,
+      "market_delta": 1,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 89,
+        "market_value": 94,
+        "team_fit": 89,
+        "outcome": null
+      },
+      "classification": [
+        "near_consensus",
+        "chiefs_upside"
+      ],
+      "summary": "Preisgerechter RB-Dart in einer attraktiven Offense.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO6",
+      "display_pick": "5.01",
+      "overall_pick": 25,
+      "original_owner_team_id": 6,
+      "current_owner_team_id": 6,
+      "player_id": "13293",
+      "player_name": "Ja'Kobi Lane",
+      "position": "WR",
+      "market_rank_at_analysis": 27,
+      "market_delta": -2,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 88,
+        "market_value": 89,
+        "team_fit": 90,
+        "outcome": null
+      },
+      "classification": [
+        "late_wr_dart",
+        "outside_role"
+      ],
+      "summary": "Vernünftiger später Outside-WR-Dart für einen receiverbedürftigen Kader.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO5",
+      "display_pick": "5.02",
+      "overall_pick": 26,
+      "original_owner_team_id": 5,
+      "current_owner_team_id": 5,
+      "player_id": "13353",
+      "player_name": "Chris Brazzell",
+      "position": "WR",
+      "market_rank_at_analysis": 25,
+      "market_delta": 1,
+      "pick_grade": "B+",
+      "component_scores": {
+        "process": 91,
+        "market_value": 94,
+        "team_fit": 90,
+        "outcome": null
+      },
+      "classification": [
+        "late_value",
+        "outside_wr_path"
+      ],
+      "summary": "Guter Fünftrundenwert mit plausiblem frühen Outside-Rollenpfad.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO1",
+      "display_pick": "5.03",
+      "overall_pick": 27,
+      "original_owner_team_id": 1,
+      "current_owner_team_id": 1,
+      "player_id": "13417",
+      "player_name": "De'Zhaun Stribling",
+      "position": "WR",
+      "market_rank_at_analysis": 18,
+      "market_delta": 9,
+      "pick_grade": "A+",
+      "component_scores": {
+        "process": 97,
+        "market_value": 100,
+        "team_fit": 89,
+        "outcome": null
+      },
+      "classification": [
+        "best_late_value",
+        "draft_capital",
+        "outside_wr"
+      ],
+      "summary": "Größter später Value: Markt-Rookie 18 und starkes NFL-Investment an Overall 27.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO4",
+      "display_pick": "5.04",
+      "overall_pick": 28,
+      "original_owner_team_id": 4,
+      "current_owner_team_id": 4,
+      "player_id": "13317",
+      "player_name": "Ted Hurst",
+      "position": "WR",
+      "market_rank_at_analysis": 22,
+      "market_delta": 6,
+      "pick_grade": "A-",
+      "component_scores": {
+        "process": 92,
+        "market_value": 98,
+        "team_fit": 84,
+        "outcome": null
+      },
+      "classification": [
+        "late_market_value",
+        "role_uncertainty"
+      ],
+      "summary": "Starker Marktvalue, auch wenn der unmittelbare Target-Pfad nicht frei ist.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO2",
+      "display_pick": "5.05",
+      "overall_pick": 29,
+      "original_owner_team_id": 2,
+      "current_owner_team_id": 1,
+      "player_id": "13414",
+      "player_name": "Kaelon Black",
+      "position": "RB",
+      "market_rank_at_analysis": 34,
+      "market_delta": -5,
+      "pick_grade": "B",
+      "component_scores": {
+        "process": 91,
+        "market_value": 76,
+        "team_fit": 97,
+        "outcome": null
+      },
+      "classification": [
+        "team_fit_over_market",
+        "contingent_upside",
+        "rb2_bet"
+      ],
+      "summary": "Bewusster Team-Fit-Pick über Branch: schwächerer Marktwert, aber wertvollerer positiver RB-Auszahlungspfad für Mighty Giants.",
+      "rookie_year_outcome": null
+    },
+    {
+      "pick_key": "2026_Rookie_R5_OO3",
+      "display_pick": "5.06",
+      "overall_pick": 30,
+      "original_owner_team_id": 3,
+      "current_owner_team_id": 3,
+      "player_id": "13289",
+      "player_name": "Drew Allar",
+      "position": "QB",
+      "market_rank_at_analysis": 33,
+      "market_delta": -3,
+      "pick_grade": "B-",
+      "component_scores": {
+        "process": 78,
+        "market_value": 86,
+        "team_fit": 80,
+        "outcome": null
+      },
+      "classification": [
+        "2qb_stash",
+        "no_immediate_start"
+      ],
+      "summary": "In 2QB als letzter Pick vertretbar, aber ohne bestätigten unmittelbaren Starterpfad nur ein langfristiger Stash.",
+      "rookie_year_outcome": null
+    }
+  ],
+  "manager_observations": [
+    {
+      "team_id": 1,
+      "observation": "Robert passt die Positionsstrategie sichtbar an den eigenen Kader an: 2025 frühe TE-Investitionen im 2TE-Format, 2026 bewusster Schwerpunkt auf RB-Ceiling und späten WR-Values.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO1",
+        "2025_D1_Rookie_R2_OO1",
+        "2026_Rookie_R1_OO5",
+        "2026_Rookie_R4_OO1",
+        "2026_Rookie_R5_OO2"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    },
+    {
+      "team_id": 2,
+      "observation": "Marcel investiert wiederholt in RB- und TE-Profile und akzeptiert dabei auch rollen- oder handcuffbasierte Wetten vor liquidere WR-Alternativen.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R2_OO2",
+        "2025_D1_Rookie_R3_OO2",
+        "2026_Rookie_R1_OO2",
+        "2026_Rookie_R2_OO1",
+        "2026_Rookie_R4_OO2"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    },
+    {
+      "team_id": 3,
+      "observation": "Flo verteilt Draftkapital breit über knappe Positionen und mehrere Upside-Pfade, statt eine einzelne Position massiv zu überladen.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO3",
+        "2025_D1_Rookie_R3_OO1",
+        "2025_D1_Rookie_R5_OO3",
+        "2026_Rookie_R1_OO3",
+        "2026_Rookie_R5_OO3"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    },
+    {
+      "team_id": 4,
+      "observation": "Jan arbeitet erkennbar mit einem eigenen Board, kombiniert Consensus-Value mit persönlichen Targets und ist bereit, Tight Ends deutlich vor dem Standardmarkt zu nehmen.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R5_OO4",
+        "2026_Rookie_R3_OO2",
+        "2026_Rookie_R4_OO4",
+        "2026_Rookie_R5_OO4"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    },
+    {
+      "team_id": 5,
+      "observation": "Dennis sammelt Premiumtalent und nutzt fallende Quarterback-Werte aggressiv, ohne spätes Kapital ausschließlich auf eine Position zu konzentrieren.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R1_OO5",
+        "2025_D1_Rookie_R2_OO5",
+        "2025_D1_Rookie_R4_OO5",
+        "2026_Rookie_R1_OO1",
+        "2026_Rookie_R2_OO5"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    },
+    {
+      "team_id": 6,
+      "observation": "Tim priorisiert wiederholt junge Wide Receiver und ergänzt das Portfolio mit einzelnen QB-, TE- oder RB-Wetten, selbst wenn dabei ein positionsbezogener Reach entsteht.",
+      "evidence_draft_keys": [
+        "2025_D1_Rookie",
+        "2026_Rookie"
+      ],
+      "evidence_pick_keys": [
+        "2025_D1_Rookie_R2_OO6",
+        "2025_D1_Rookie_R3_OO6",
+        "2026_Rookie_R1_OO6",
+        "2026_Rookie_R2_OO6",
+        "2026_Rookie_R2_OO2",
+        "2026_Rookie_R3_OO6"
+      ],
+      "confidence": "medium",
+      "status": "provisional"
+    }
+  ],
+  "league_findings": [
+    "Fernando Mendoza an 2.02 war der stärkste positions- und marktbezogene Value.",
+    "De'Zhaun Stribling an 5.03 war der beste Late-Round-Value.",
+    "Eli Raridon an 3.01 und Oscar Delp an 4.04 waren die größten Standardmarkt-Reaches; das 2TE-Format mildert beide, eliminiert den Opportunity Cost aber nicht.",
+    "Die Liga priorisierte Running Backs aufgrund der dünnen Klasse sichtbar vor ähnlich bewerteten Wide Receivern.",
+    "Zachariah Branch blieb trotz eines Marktbereichs um Rookie 20 ungedraftet und ist ein relevanter Free-Agent-Draft-Kandidat.",
+    "Die 2QB-Struktur wurde bei Mendoza und Simpson wertschöpfend genutzt, während Allar nur als langfristiger Stash einzuordnen ist."
+  ],
+  "review_schedule": [
+    {
+      "review_kind": "year_1_review",
+      "target_date": "2027-07-13",
+      "status": "planned"
+    },
+    {
+      "review_kind": "year_2_review",
+      "target_date": "2028-07-13",
+      "status": "planned"
+    },
+    {
+      "review_kind": "year_3_review",
+      "target_date": "2029-07-13",
+      "status": "planned"
+    }
+  ],
+  "review_of": null,
+  "supersedes": null,
+  "validity_note": "Historische Post-Draft-Einschätzung mit vollständigem Teamkontext zum 13.07.2026. Rollen, Verletzungen und Marktwerte nach diesem Datum vor neuen Entscheidungen frisch prüfen."
+}
