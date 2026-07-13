@@ -117,7 +117,7 @@ Die Teamnote berücksichtigt:
 | 1 | Dennis | A+ | 98 | 732,16 | 146,43 |
 | 2 | Tim | A+ | 97 | 695,88 | 139,18 |
 | 3 | Flo | A | 94 | 640,58 | 106,76 |
-| 4 | Mighty Giants | A- | 90 | 411,60 | 102,90 |
+| 4 | Robert | A- | 90 | 411,60 | 102,90 |
 | 5 | Jan | B | 82 | 408,10 | 81,62 |
 | 6 | Marcel | C+ | 68 | 203,40 | 40,68 |
 
@@ -162,7 +162,7 @@ Flo hatte mit sechs Picks das größte Volumen und verwandelte insbesondere spä
 
 **Year-1-Urteil:** Sehr starke, breite Klasse. Die späten RB-Treffer sind das zentrale historische Signal.
 
-### 7.4 Robert – Mighty Giants
+### 7.4 Robert
 
 **Klasse:** Colston Loveland, Tyler Warren, Kyle Williams, Pat Bryant.
 
