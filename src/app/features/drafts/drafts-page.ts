@@ -35,11 +35,18 @@ export class DraftsPageComponent {
     shareReplay(1)
   );
 
-  private pastSeasons$ = this.dataService.getPastSeasonsIndex().pipe(
-    map(index => this.getPastDraftSeasons(index.Seasons ?? [])),
+  private pastSeasons$ = combineLatest([
+    this.dataService.getPastSeasonsIndex(),
+    this.leagueData$
+  ]).pipe(
+    map(([index, leagueData]) => this.getPastDraftSeasons(index.Seasons ?? [], leagueData.league.Season)),
     tap(seasons => {
-      if (!this.selectedPastSeasonSubject.value && seasons.length > 0) {
-        this.selectedPastSeasonSubject.next(seasons[0].Season);
+      const selectedSeason = this.selectedPastSeasonSubject.value;
+      const fallbackSeason = seasons[0]?.Season ?? null;
+      const selectionIsAvailable = !!selectedSeason && seasons.some(entry => entry.Season === selectedSeason);
+
+      if (!selectionIsAvailable && selectedSeason !== fallbackSeason) {
+        this.selectedPastSeasonSubject.next(fallbackSeason);
       }
     }),
     catchError(() => of([] as PastSeasonIndexEntry[])),
@@ -107,9 +114,16 @@ export class DraftsPageComponent {
     this.selectedPastSeasonSubject.next(season);
   }
 
-  private getPastDraftSeasons(seasons: PastSeasonIndexEntry[]): PastSeasonIndexEntry[] {
+  private getPastDraftSeasons(
+    seasons: PastSeasonIndexEntry[],
+    currentSeason: string
+  ): PastSeasonIndexEntry[] {
     return seasons
-      .filter(entry => entry.Resources?.Drafts?.Exists === true && !!entry.Resources?.Drafts?.Path)
+      .filter(entry =>
+        entry.Resources?.Drafts?.Exists === true
+        && !!entry.Resources?.Drafts?.Path
+        && Number(entry.Season) < Number(currentSeason)
+      )
       .sort((a, b) => Number(b.Season) - Number(a.Season));
   }
 }
