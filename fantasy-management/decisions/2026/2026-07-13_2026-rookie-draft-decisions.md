@@ -31,17 +31,27 @@ related_analysis: fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie
 
 **Status:** final.
 
-### 3.03 – Chris Bell
+### 3.03 – Chris Bell über Antonio Williams
 
-**Entscheidung:** Bell als Outside-WR-Upside und guten Marktwert ausgewählt.
+**Entscheidung:** Bell knapp vor Antonio Williams ausgewählt.
 
 **Begründung:**
 
-- fiel ungefähr in beziehungsweise leicht hinter seinen Marktbereich;
-- klassischeres langfristiges WR-Ceiling als mehrere reine Gadget-Profile;
-- trotz eigener WR-Tiefe als liquider Prospect und potenzieller Trade-Chip sinnvoll.
+- Bell lag im damaligen neutralen Markt- und Consensus-Bild knapp vor Antonio;
+- Bell besaß das klassischere Outside-WR-Profil und den weniger rollenabhängigen langfristigen Ceiling-Pfad;
+- dadurch galt Bell als der etwas sicherere und liquidere Dynasty-Asset;
+- Antonio blieb dennoch ein klar gewünschter Spieler: Sein Case beruhte stärker auf dem Conviction-Signal aus den besonders hoch gewichteten Quellen sowie einem plausiblen frühen Slot-/WR2-Pfad;
+- die Entscheidung war deshalb kein klares Abwerten von Antonio, sondern eine knappe Priorisierung von Bells neutralem Asset-Profil.
 
-**Status:** final.
+**Bewusst akzeptiertes Draft-Risiko:**
+
+- Nach dem Pick an 3.03 musste Antonio zwei unmittelbar folgende Jan-Picks an 3.04 und 3.05 überstehen, bevor Robert an 4.01 wieder an der Reihe war;
+- Robert nahm Bell zuerst und akzeptierte damit das Risiko, dass Jan Antonio vorher auswählt;
+- Jan nahm zunächst Ty Simpson an 3.04 und kam Robert anschließend mit Antonio Williams an 3.05 zuvor.
+
+**Folge:** Antonio wurde dadurch nicht zu einem nachträglich entdeckten Ziel, sondern zu einem verpassten Wunschspieler und anschließendem Post-Draft-Tradeziel.
+
+**Status:** final; die Reihenfolge Bell vor Antonio und der dadurch eingetretene Verlust von Antonio müssen bei späteren Reviews gemeinsam bewertet werden.
 
 ### 4.01 – Malachi Fields
 
@@ -105,7 +115,9 @@ related_analysis: fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie
 
 ### Antonio Williams
 
-Antonio Williams wurde von Jan an 3.05 ausgewählt und blieb ein gewünschtes Post-Draft-Tradeziel.
+Antonio Williams wurde von Jan an 3.05 ausgewählt, nachdem Robert an 3.03 Chris Bell knapp vor ihm priorisiert hatte. Jan besaß mit 3.04 und 3.05 zwei Picks zwischen Roberts Auswahl und dessen nächstem Pick an 4.01. Der Verlust von Antonio war damit die konkret eingetretene Kehrseite der Bell-Entscheidung und kein unabhängig davon entstandenes späteres Interesse.
+
+Antonio blieb wegen des starken Conviction-Signals aus den hoch gewichteten Quellen und seines plausiblen frühen Slot-/WR2-Pfads ein gewünschtes Post-Draft-Tradeziel.
 
 **Geplanter Verhandlungsrahmen:**
 
@@ -132,4 +144,9 @@ Die Draftklasse kombiniert:
 - zwei zusätzliche RB-Rollenwetten;
 - drei WR-Prospects mit unterschiedlichen Rollen- und Wertsteigerungspfaden.
 
-Die zentrale strategische Entscheidung war nicht Love an 1.02, sondern Black über Branch an 5.05. Diese Entscheidung muss in späteren Reviews getrennt nach Prozess, Marktwert und tatsächlichem Outcome bewertet werden.
+Zwei Entscheidungen verdienen in späteren Reviews besondere Aufmerksamkeit:
+
+1. Bell knapp vor Antonio an 3.03 – inklusive des bewusst eingegangenen Risikos, dass Jan Antonio vor 4.01 auswählt;
+2. Black über Branch an 5.05 – als bewusster Tausch von neutraler Marktliquidität gegen teambezogenen RB-Fit.
+
+Beide Entscheidungen müssen später getrennt nach Prozess, Marktwert und tatsächlichem Outcome bewertet werden.
