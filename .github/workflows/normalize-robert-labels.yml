@@ -1,0 +1,92 @@
+name: Normalize Robert labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/normalize-robert-labels.yml
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize human-facing manager labels
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie-draft-postmortem.md'): [
+                  ('| 2 | Mighty Giants | A- | 92 |', '| 2 | Robert | A- | 92 |'),
+                  ('### 6.2 Robert – Mighty Giants', '### 6.2 Robert'),
+              ],
+              Path('fantasy-management/analyses/2026/drafts/2026-07-13_2025-rookie-draft-retrospective.md'): [
+                  ('| 4 | Mighty Giants | A- | 90 |', '| 4 | Robert | A- | 90 |'),
+                  ('### 7.4 Robert – Mighty Giants', '### 7.4 Robert'),
+              ],
+              Path('fantasy-management/analyses/2026/drafts/2026-07-13_2024-startup-draft-retrospective.md'): [
+                  ('| 3 | Robert / Mighty Giants | A | 94 |', '| 3 | Robert | A | 94 |'),
+                  ('## 8. Robert – Mighty Giants', '## 8. Robert'),
+              ],
+              Path('fantasy-management/README.md'): [
+                  ('konkrete Analysen/Entscheidungen für NFL Dynasty / Fantasy Football rund um Mighty Giants.', 'konkrete Analysen/Entscheidungen für NFL Dynasty / Fantasy Football rund um Robert und sein Team Mighty Giants.'),
+                  ('Konkrete Mighty-Giants-Entscheidungen werden nicht', 'Konkrete Entscheidungen von Robert werden nicht'),
+                  ('Analysis = was Mighty Giants tun sollte', 'Analysis = was Robert tun sollte'),
+              ],
+              Path('fantasy-management/AGENTS.md'): [
+                  ('- Mighty Giants analysis', '- Robert / Mighty Giants analysis'),
+                  ('Analysis = what Mighty Giants should do.', 'Analysis = what Robert should do.'),
+                  ('whether the source statement actually applies to Mighty Giants.', "whether the source statement actually applies to Robert's roster context."),
+                  ('Final Mighty Giants recommendations must combine', 'Final recommendations for Robert must combine'),
+              ],
+              Path('fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md'): [
+                  ('The user team is:\n\n- Team name: `Mighty Giants`\n- TeamID: `1`\n\nTeam recommendations must be from the Mighty Giants perspective.\n\nDo not evaluate Mighty Giants as an abstract team.', 'The user and team are:\n\n- Manager: `Robert`\n- Team name: `Mighty Giants`\n- TeamID: `1`\n\nHuman-facing recommendations must address Robert by name. Use Mighty Giants when the franchise identity itself is relevant.\n\nDo not evaluate Robert\'s roster as an abstract team.'),
+                  ('Mighty Giants relevance', "Robert's roster relevance"),
+                  ('apply them to Mighty Giants', "apply them to Robert's roster"),
+                  ('## 10. Mighty Giants role categories', '## 10. Robert roster role categories'),
+                  ('Do not automatically treat Mighty Giants as a rebuild team.', 'Do not automatically treat Robert as managing a rebuild team.'),
+                  ('Does this player help Mighty Giants win,', 'Does this player help Robert win,'),
+                  ('Mighty Giants context', "Robert's roster context"),
+              ],
+          }
+
+          changed = []
+          for path, pairs in replacements.items():
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for old, new in pairs:
+                  if old not in text:
+                      raise SystemExit(f'Expected text not found in {path}: {old!r}')
+                  text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Changed files:')
+          for path in changed:
+              print(f'- {path}')
+          PY
+
+      - name: Show remaining references
+        shell: bash
+        run: |
+          grep -RIn --exclude='owner-registry.json' --exclude='*.schema.json' 'Mighty Giants' fantasy-management || true
+
+      - name: Remove one-time workflow and commit
+        shell: bash
+        run: |
+          git rm .github/workflows/normalize-robert-labels.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fantasy-management
+          git commit -m 'docs(fantasy): normalize Robert labels in historical analyses'
+          git push
