@@ -10,7 +10,7 @@ Fantasy Management work must stay inside this folder unless current application 
 
 Fantasy Management includes:
 
-- Mighty Giants analysis
+- Robert / Mighty Giants analysis
 - roster, trade, draft and free-agent analysis
 - player evaluations
 - Relevant Players files
@@ -77,12 +77,12 @@ Use this mental model:
 ```text
 Podcast source package = what the podcast said.
 Knowledge = what remains relevant for our league after interpretation.
-Analysis = what Mighty Giants should do.
+Analysis = what Robert should do.
 ```
 
 Podcast takes are source material and should stay inside the episode package first. They are not automatically knowledge.
 
-Knowledge should be created only after a separate interpretation step that checks league format, roster context, relevance, freshness and whether the source statement actually applies to Mighty Giants.
+Knowledge should be created only after a separate interpretation step that checks league format, roster context, relevance, freshness and whether the source statement actually applies to Robert's roster context.
 
 ## Entity resolution and mention coverage separation
 
@@ -172,7 +172,7 @@ fantasy-management/
 - Current league state comes from `public/data/`.
 - Fantasy Management files are analysis and working files, not permanent truth.
 - Podcast and external-source outputs are source context, not final recommendations.
-- Final Mighty Giants recommendations must combine current league data, source context, derived knowledge and current market/news context when relevant.
+- Final recommendations for Robert must combine current league data, source context, derived knowledge and current market/news context when relevant.
 - Podcast source takes must not be treated as final knowledge until a knowledge derivation step decides whether they apply to the league format and current context.
 - `mentions.json` is a completeness and audit artifact; it must not be treated as a ranking or recommendation.
 
