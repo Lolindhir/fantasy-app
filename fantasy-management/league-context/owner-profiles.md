@@ -11,13 +11,15 @@ Use together with:
 
 Do not treat these profiles as permanent truth. Update them when new trade talks, decisions or repeated behavior provide better evidence. Draft tendencies and negotiation tendencies are separate: a confirmed draft pattern does not automatically prove how a manager negotiates trades.
 
+Human-facing manager references follow `owner-registry.json`: use Robert, Marcel, Flo, Jan, Dennis and Tim by default. Add the current team name in parentheses only when the franchise identity is relevant.
+
 ## Evidence levels
 
 - **Confirmed:** repeated across the 2024 Startup and at least one later rookie draft or supported by several independent decisions.
 - **Provisional:** plausible pattern with more than one signal, but not yet stable enough for strong prediction.
 - **Candidate:** single or weak signal that should only be watched.
 
-## TeamID 1 / Mighty Giants
+## TeamID 1 / Robert (Mighty Giants)
 
 Known references:
 
@@ -53,7 +55,7 @@ Negotiation tendencies:
 - Use `trade-negotiation-history.md` and concrete recorded talks.
 - Do not infer negotiation behavior only from Startup pick trades.
 
-## TeamID 2 / Ruhr Valley Packers
+## TeamID 2 / Marcel (Ruhr Valley Packers)
 
 Known references:
 
@@ -66,7 +68,7 @@ Draft and roster-construction tendencies:
 
 - **Confirmed, high confidence:** Prioritizes Running Backs and Tight Ends more aggressively than the neutral market when he sees scarcity, role value or immediate production.
   - Startup evidence: Breece Hall, De'Von Achane, Rachaad White, Travis Kelce, Derrick Henry and multiple later RBs.
-  - 2025/2026 evidence: Mason Taylor, Eli Stowers, Jadarian Price and Mike Washington.
+  - 2025/2026 evidence: Mason Taylor, Eli Stowers, Jadarian Price und Mike Washington.
 - **Confirmed, high confidence:** Accepts veteran age and handcuff risk when it raises immediate contender production.
   - Startup examples: Kelce, Henry, Deebo Samuel, Cooper Kupp and James Conner.
   - 2026 example: Mike Washington as a Jeanty-handcuff and possible trade chip.
@@ -78,7 +80,7 @@ Negotiation tendencies:
 
 - TBD from concrete recorded trade talks and counters.
 
-## TeamID 3 / Just Bill
+## TeamID 3 / Flo (Just Bill)
 
 Known references:
 
@@ -102,7 +104,7 @@ Negotiation tendencies:
 
 - TBD from concrete recorded trade talks and counters.
 
-## TeamID 4 / Mammoth Marauders
+## TeamID 4 / Jan (Mammoth Marauders)
 
 Known references:
 
@@ -129,7 +131,7 @@ Negotiation tendencies:
 - Consult recorded talks before assuming willingness to move a personal target.
 - A clearly researched or conviction-based pick may require more than generic market value.
 
-## TeamID 5 / Team DennisLACards
+## TeamID 5 / Dennis (Team DennisLACards)
 
 Known references:
 
@@ -153,7 +155,7 @@ Negotiation tendencies:
 
 - TBD from concrete recorded trade talks and counters.
 
-## TeamID 6 / Team TimpaBay
+## TeamID 6 / Tim (Team TimpaBay)
 
 Known references:
 
