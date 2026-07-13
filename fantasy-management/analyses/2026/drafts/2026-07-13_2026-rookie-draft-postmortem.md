@@ -100,7 +100,7 @@ Spätere Outcomes werden separat bewertet. Ein guter Prozess bleibt ein guter Pr
 | Rang | Team | Note | Score | Kernaussage |
 |---:|---|---:|---:|---|
 | 1 | Dennis | A | 95 | Zwei Premiumassets und der beste QB-Value des Drafts |
-| 2 | Mighty Giants | A- | 92 | Klassen-RB1 plus mehrere passende Upside-Wetten |
+| 2 | Robert | A- | 92 | Klassen-RB1 plus mehrere passende Upside-Wetten |
 | 3 | Jan | A- | 90 | Tiefste und ausgewogenste Klasse, aber ein klarer TE-Reach |
 | 4 | Tim | B+ | 87 | Sehr starke WR-Spitze, Raridon mit hohem Opportunity Cost |
 | 5 | Flo | B+ | 86 | Formatgerecht, ausgewogen und ohne gravierenden Fehler |
@@ -129,7 +129,7 @@ Spätere Outcomes werden separat bewertet. Ein guter Prozess bleibt ein guter Pr
 
 **Urteil:** Beste Klasse des Drafts, weil Tyson und Mendoza die wertvollsten strukturellen Probleme des Kaders lösen.
 
-### 6.2 Robert – Mighty Giants
+### 6.2 Robert
 
 **Kontext:** Vorjahres-Regular-Season-Sieger mit 10-3 und 190,17 Punkten pro Spiel. Elite auf QB, WR und TE; der größte Portfoliobedarf lag bei jungen Running Backs und zusätzlichen liquiden Upside-Assets.
 
