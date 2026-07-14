@@ -34,6 +34,14 @@ function ConvertTo-DraftCompareValue {
     if ($null -eq $Value) { return $null }
 
     if ($PropertyName -eq "DraftStartTimeUtc") {
+        if ($Value -is [DateTimeOffset]) {
+            return $Value.UtcDateTime.ToString("o")
+        }
+
+        if ($Value -is [DateTime]) {
+            return $Value.ToUniversalTime().ToString("o")
+        }
+
         $dateText = [string]$Value
         if ([string]::IsNullOrWhiteSpace($dateText)) { return $null }
 
