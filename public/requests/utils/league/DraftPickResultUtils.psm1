@@ -86,11 +86,11 @@ function Get-AppliedDraftPickResults {
         if ($null -ne $pickOwnerRosterID -and -not [string]::IsNullOrWhiteSpace([string]$pickOwnerRosterID)) {
             $ownerRosterID = [int]$pickOwnerRosterID
             $targetPick.CurrentOwnerRosterID = $ownerRosterID
-            $isTraded = ([int]$targetPick.OriginalOwnerRosterID -ne [int]$targetPick.CurrentOwnerRosterID)
-            $targetPick.WasTraded = $isTraded
-            $targetPick.IsCurrentlyTraded = $isTraded
+            $isCurrentlyTraded = ([int]$targetPick.OriginalOwnerRosterID -ne [int]$targetPick.CurrentOwnerRosterID)
+            $targetPick.WasTraded = ([bool]$targetPick.WasTraded -or $isCurrentlyTraded)
+            $targetPick.IsCurrentlyTraded = $isCurrentlyTraded
 
-            if ($isTraded -and [string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) {
+            if ($isCurrentlyTraded -and [string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) {
                 $targetPick.TradeSource = "SleeperDraftPick"
             }
         }
