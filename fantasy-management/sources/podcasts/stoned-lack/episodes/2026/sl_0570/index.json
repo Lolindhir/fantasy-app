@@ -8,7 +8,7 @@
   "published_date": "2026-05-04",
   "processed_date": "2026-07-14",
   "language": "de",
-  "status": "needs_review",
+  "status": "active_source_package",
   "package_path": "fantasy-management/sources/podcasts/stoned-lack/episodes/2026/sl_0570/",
   "files": {
     "raw_manifest": "raw/manifest.md",
@@ -18,46 +18,57 @@
   },
   "raw_status": "split_raw_referenced",
   "take_counts": {
-    "players": 40,
-    "teams": 16,
+    "players": 52,
+    "teams": 19,
     "positions": 4,
     "nfl": 4,
-    "fantasy": 9,
+    "fantasy": 10,
     "other": 0
   },
   "mention_counts": {
-    "total": 60,
-    "resolved": 58,
+    "total": 187,
+    "resolved": 182,
     "ambiguous": 0,
-    "unresolved": 2,
+    "unresolved": 5,
     "ranking_subjects": 23,
-    "substantive_subjects": 17,
-    "context_only": 20,
-    "with_take_links": 58,
+    "substantive_subjects": 29,
+    "context_only": 135,
+    "with_take_links": 175,
     "uncovered": 0
   },
-  "entity_resolution_status": "reconstructed_inline_completed",
+  "entity_resolution_status": "completed_with_unresolved_mentions",
   "inline_takes_resolution_status": "completed",
   "coverage_audit": {
-    "status": "needs_review",
+    "status": "completed",
     "method": "second_pass_entity_mention_sweep",
     "uncovered_mentions": 0,
+    "raw_parts_reviewed": [
+      "raw/part01.md",
+      "raw/part02.md",
+      "raw/part03.md",
+      "raw/part04.md",
+      "raw/part05.md",
+      "raw/part06.md",
+      "raw/part07.md",
+      "raw/part08.md",
+      "raw/part09.md",
+      "raw/part10.md",
+      "raw/part11.md",
+      "raw/part12.md"
+    ],
     "notes": [
-      "Rekonstruierter Version-2-Kandidat nach Verlust des ursprünglichen vollständigen Payloads.",
-      "Die interne Verknüpfung zwischen episode.md, takes.json und mentions.json wurde geprüft.",
-      "Vor Merge ist ein erneuter vollständiger Zweitpass über alle zwölf Rohtranskriptteile erforderlich; die frühere behauptete Mention-Zahl von 151 konnte aus dem beschädigten Archiv nicht zuverlässig wiederhergestellt werden."
+      "Der unabhängige Zweitpass wurde am 14. Juli 2026 über alle zwölf geordneten Rohtranskriptteile durchgeführt.",
+      "Der Mention-Sweep umfasst Nachrichten, das vollständige Rookie-WR-Ranking, Vergleiche, Depth-Chart-Kontext, historische Referenzen und den anschließenden Live-Rookie-Draft.",
+      "Fünf nicht sicher auflösbare Transkriptformen bleiben ausdrücklich unresolved.",
+      "Alle erforderlichen Hauptsubjekte sind mit einem eigenständigen Take und einer substantiven Lesefassung verknüpft."
     ]
   },
   "knowledge_derivation_status": "not_started",
-  "rework_required": true,
+  "rework_required": false,
   "notes": [
-    "Rekonstruierter Schema-Version-2-Kandidat mit ausführlicher episode.md, 73 strukturierten Takes und 60 verknüpften Mentions.",
-    "Das Rohtranskript bleibt unverändert in zwölf fortlaufenden Teilen im Repository erhalten.",
-    "Knowledge-Ableitung wurde nicht begonnen; alle Takes bleiben Podcast-Quellenmaterial.",
-    "Nicht mergefertig, bis der vollständige Raw-Transcript-Mention-Sweep erneut dokumentiert und die Repo-Validatoren ausgeführt wurden."
-  ],
-  "rework_reasons": [
-    "Vollständigkeit des unabhängigen Zweitpasses gegen alle zwölf Rohtranskriptteile muss erneut bestätigt werden.",
-    "Der rekonstruierte Mention-Register umfasst 60 Einträge und ist nicht als bytegleiche Wiederherstellung des verlorenen 151-Mention-Packages zu verstehen."
+    "Schema-Version-2-Source-Package mit ausführlicher menschenlesbarer Episodenaufbereitung.",
+    "Podcast-Inhalt, technische Mention-Abdeckung und spätere Knowledge-Ableitung bleiben getrennt.",
+    "Die technischen Auditdaten befinden sich ausschließlich in takes.json, mentions.json und index.json.",
+    "Knowledge-Ableitung wurde nicht begonnen; alle Bewertungen bleiben Podcast-Quellenmaterial."
   ]
 }
