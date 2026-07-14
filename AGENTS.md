@@ -88,6 +88,12 @@ Exception:
 - `public/data/Metadata.json` is manual input.
 - `public/data/Metadata.ai-doc.yaml` documents `Metadata.json`.
 
+## GitHub Actions approval
+
+- Do not create, modify, enable or commit GitHub Actions workflow files unless the user has explicitly approved the specific workflow change.
+- Topic-specific, one-off, migration, upload, recovery or branch-manipulation workflows are prohibited by default.
+- For one-off tasks, use existing repository tooling, local scripts, connector actions or temporary uncommitted files. If no safe alternative exists, ask for explicit approval before touching `.github/workflows/`.
+
 ## Current preference
 
 - Do not add file-header `AI-DOC` comments unless explicitly requested.
