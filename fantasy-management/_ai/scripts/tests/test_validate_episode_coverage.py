@@ -24,19 +24,71 @@ MENTIONS_SCHEMA = SCHEMA_DIR / "episode-mentions.schema.json"
 class MentionCoverageValidatorTests(unittest.TestCase):
     def write_json(self, path: Path, data: dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    def player_take(self, take_id: str, name: str) -> dict[str, Any]:
+        return {
+            "id": take_id,
+            "category": "players",
+            "type": "ranking_subject",
+            "raw_entity_mention": name,
+            "entity": name,
+            "team": "TST",
+            "position": "WR",
+            "entity_resolution": {
+                "status": "confirmed",
+                "method": "manual_confirmation",
+                "confidence": "high",
+            },
+            "formats": ["dynasty"],
+            "podcast_take": "Test take.",
+            "reasoning": ["Test reasoning."],
+            "risks": ["Test risk."],
+            "sentiment": "positive",
+            "conviction": "high",
+            "evidence": {"timestamp_start": "00:01:00"},
+            "tags": ["test"],
+        }
+
+    def mention(
+        self,
+        mention_id: str,
+        name: str,
+        mention_types: list[str],
+        subject_ids: list[str],
+        *,
+        episode_md: bool = True,
+        note: str | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "id": mention_id,
+            "entity_type": "player",
+            "raw_entity_mentions": [name],
+            "entity": name,
+            "entity_resolution": {
+                "status": "confirmed",
+                "method": "manual_confirmation",
+                "confidence": "high",
+            },
+            "mention_types": mention_types,
+            "occurrences": [{"timestamp_start": "00:01:00"}],
+            "coverage": {
+                "episode_md": episode_md,
+                "standalone_take_required": bool(subject_ids),
+                "subject_take_ids": subject_ids,
+                "context_take_ids": [],
+                "note": note,
+            },
+        }
 
     def create_package(
         self,
         root: Path,
-        *,
         takes: list[dict[str, Any]],
         mentions: list[dict[str, Any]],
-        mention_counts: dict[str, int],
         episode_text: str,
+        *,
+        audit_status: str = "completed",
     ) -> Path:
         package = (
             root
@@ -51,273 +103,181 @@ class MentionCoverageValidatorTests(unittest.TestCase):
         package.mkdir(parents=True, exist_ok=True)
         (package / "episode.md").write_text(episode_text, encoding="utf-8")
 
-        self.write_json(
-            package / "takes.json",
-            {
-                "episode_id": "test_0001",
-                "source_id": "test-source",
-                "source_name": "Test Source",
-                "take_categories": {
-                    "players": takes,
-                    "teams": [],
-                    "positions": [],
-                    "nfl": [],
-                    "fantasy": [],
-                    "other": [],
-                },
+        takes_data = {
+            "episode_id": "test_0001",
+            "source_id": "test-source",
+            "source_name": "Test Source",
+            "take_categories": {
+                "players": takes,
+                "teams": [],
+                "positions": [],
+                "nfl": [],
+                "fantasy": [],
+                "other": [],
             },
-        )
-        self.write_json(
-            package / "mentions.json",
-            {
-                "episode_id": "test_0001",
-                "source_id": "test-source",
-                "source_name": "Test Source",
-                "mentions": mentions,
+        }
+        self.write_json(package / "takes.json", takes_data)
+
+        mention_data = {
+            "episode_id": "test_0001",
+            "source_id": "test-source",
+            "source_name": "Test Source",
+            "mentions": mentions,
+        }
+        self.write_json(package / "mentions.json", mention_data)
+
+        take_map = {take["id"]: take for take in takes}
+        counts = VALIDATOR.calculate_counts(mentions, take_map)
+        index_data = {
+            "package_schema_version": 2,
+            "episode_id": "test_0001",
+            "source_id": "test-source",
+            "source_name": "Test Source",
+            "episode_number": 1,
+            "title": "Test Episode",
+            "status": "active_source_package",
+            "package_path": (
+                "fantasy-management/sources/podcasts/test-source/episodes/2026/test_0001/"
+            ),
+            "files": {
+                "episode_summary": "episode.md",
+                "takes": "takes.json",
+                "mentions": "mentions.json",
             },
-        )
-        self.write_json(
-            package / "index.json",
-            {
-                "package_schema_version": 2,
-                "episode_id": "test_0001",
-                "source_id": "test-source",
-                "source_name": "Test Source",
-                "episode_number": 1,
-                "title": "Test Episode",
-                "status": "active_source_package",
-                "package_path": (
-                    "fantasy-management/sources/podcasts/test-source/"
-                    "episodes/2026/test_0001/"
-                ),
-                "files": {
-                    "episode_summary": "episode.md",
-                    "takes": "takes.json",
-                    "mentions": "mentions.json",
-                },
-                "take_counts": {
-                    "players": len(takes),
-                    "teams": 0,
-                    "positions": 0,
-                    "nfl": 0,
-                    "fantasy": 0,
-                    "other": 0,
-                },
-                "mention_counts": mention_counts,
-                "coverage_audit": {
-                    "status": "completed",
-                    "method": "second_pass_entity_mention_sweep",
-                    "uncovered_mentions": mention_counts["uncovered"],
-                    "notes": [],
-                },
+            "take_counts": {
+                "players": len(takes),
+                "teams": 0,
+                "positions": 0,
+                "nfl": 0,
+                "fantasy": 0,
+                "other": 0,
             },
-        )
+            "mention_counts": counts,
+            "coverage_audit": {
+                "status": audit_status,
+                "method": "second_pass_entity_mention_sweep",
+                "uncovered_mentions": counts["uncovered"],
+                "notes": [],
+            },
+        }
+        self.write_json(package / "index.json", index_data)
         return package
-
-    def player_take(self, take_id: str, raw: str, entity: str) -> dict[str, Any]:
-        return {
-            "id": take_id,
-            "category": "players",
-            "type": "player",
-            "raw_entity_mention": raw,
-            "entity": entity,
-            "team": "TST",
-            "position": "WR",
-            "entity_resolution": {
-                "status": "confirmed",
-                "method": "manual_confirmation",
-                "confidence": "high",
-            },
-            "formats": [
-                "dynasty"
-            ],
-            "podcast_take": "Test take.",
-            "reasoning": [
-                "Test reasoning."
-            ],
-            "risks": [
-                "Test risk."
-            ],
-            "sentiment": "positive",
-            "conviction": "high",
-            "evidence": {
-                "timestamp_start": "00:01:00",
-                "timestamp_end": "00:02:00",
-            },
-            "tags": [
-                "test"
-            ],
-        }
-
-    def mention(
-        self,
-        *,
-        mention_id: str,
-        raw: str,
-        entity: str,
-        mention_types: list[str],
-        standalone: bool,
-        subject_take_ids: list[str],
-        context_take_ids: list[str] | None = None,
-    ) -> dict[str, Any]:
-        return {
-            "id": mention_id,
-            "entity_type": "player",
-            "raw_entity_mentions": [
-                raw
-            ],
-            "entity": entity,
-            "entity_resolution": {
-                "status": "confirmed",
-                "method": "manual_confirmation",
-                "confidence": "high",
-            },
-            "mention_types": mention_types,
-            "occurrences": [
-                {
-                    "timestamp_start": "00:01:00",
-                    "timestamp_end": "00:02:00",
-                    "section": "Test",
-                    "context_summary": "Test context.",
-                }
-            ],
-            "coverage": {
-                "episode_md": True,
-                "episode_md_section": "Complete mention register",
-                "standalone_take_required": standalone,
-                "subject_take_ids": subject_take_ids,
-                "context_take_ids": context_take_ids or [],
-                "note": None,
-            },
-        }
 
     def validate(self, root: Path, package: Path):
         report = VALIDATOR.Report()
         VALIDATOR.validate_package(
-            package_dir=package,
-            root=root,
-            index_schema_path=INDEX_SCHEMA,
-            mentions_schema_path=MENTIONS_SCHEMA,
-            report=report,
-            warnings_for_legacy=True,
+            package,
+            root,
+            INDEX_SCHEMA,
+            MENTIONS_SCHEMA,
+            report,
+            True,
         )
         return report
 
-    def test_valid_schema_version_2_package_passes(self) -> None:
+    def test_substantive_subject_passes_without_technical_register(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             take_id = "test_0001_player_001"
             package = self.create_package(
                 root,
-                takes=[self.player_take(take_id, "Test Player", "Test Player")],
-                mentions=[
+                [self.player_take(take_id, "Test Player")],
+                [
                     self.mention(
-                        mention_id="test_0001_mention_001",
-                        raw="Test Player",
-                        entity="Test Player",
-                        mention_types=["ranking_subject", "substantive_take"],
-                        standalone=True,
-                        subject_take_ids=[take_id],
+                        "test_0001_mention_001",
+                        "Test Player",
+                        ["ranking_subject"],
+                        [take_id],
                     )
                 ],
-                mention_counts={
-                    "total": 1,
-                    "resolved": 1,
-                    "ambiguous": 0,
-                    "unresolved": 0,
-                    "ranking_subjects": 1,
-                    "substantive_subjects": 1,
-                    "context_only": 0,
-                    "with_take_links": 1,
-                    "uncovered": 0,
-                },
-                episode_text=(
-                    "# Test Episode\n\n"
-                    "## Complete mention register\n\n"
-                    "| Entity | Role |\n|---|---|\n| Test Player | Ranking subject |\n"
-                ),
+                "# Test Episode\n\n## Player profile\n\nTest Player is discussed in detail.\n",
             )
-
             report = self.validate(root, package)
-
             self.assertEqual([], report.errors)
 
-    def test_ranking_subject_without_subject_take_fails(self) -> None:
+    def test_audit_only_context_with_note_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             package = self.create_package(
                 root,
-                takes=[],
-                mentions=[
+                [],
+                [
                     self.mention(
-                        mention_id="test_0001_mention_001",
-                        raw="Missing Player",
-                        entity="Missing Player",
-                        mention_types=["ranking_subject"],
-                        standalone=True,
-                        subject_take_ids=[],
+                        "test_0001_mention_001",
+                        "Comparison Player",
+                        ["player_comparison"],
+                        [],
+                        episode_md=False,
+                        note="Technical comparison only; no substantive reader section required.",
                     )
                 ],
-                mention_counts={
-                    "total": 1,
-                    "resolved": 1,
-                    "ambiguous": 0,
-                    "unresolved": 0,
-                    "ranking_subjects": 1,
-                    "substantive_subjects": 0,
-                    "context_only": 0,
-                    "with_take_links": 0,
-                    "uncovered": 1,
-                },
-                episode_text="# Test Episode\n\nMissing Player\n",
+                "# Test Episode\n\nNo substantive player subject.\n",
             )
-
             report = self.validate(root, package)
+            self.assertEqual([], report.errors)
 
-            self.assertTrue(
-                any("no valid subject take link" in issue.message for issue in report.errors)
+    def test_audit_only_context_without_note_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = self.create_package(
+                root,
+                [],
+                [
+                    self.mention(
+                        "test_0001_mention_001",
+                        "Comparison Player",
+                        ["player_comparison"],
+                        [],
+                        episode_md=False,
+                    )
+                ],
+                "# Test Episode\n",
             )
+            report = self.validate(root, package)
+            self.assertTrue(any("coverage.note" in issue.message for issue in report.errors))
 
-    def test_context_link_does_not_cover_another_players_take(self) -> None:
+    def test_required_subject_without_take_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = self.create_package(
+                root,
+                [],
+                [
+                    self.mention(
+                        "test_0001_mention_001",
+                        "Missing Player",
+                        ["ranking_subject"],
+                        [],
+                    )
+                ],
+                "# Test Episode\n\nMissing Player\n",
+            )
+            report = self.validate(root, package)
+            self.assertTrue(any("requires a valid subject take" in issue.message for issue in report.errors))
+
+    def test_needs_review_status_fails_schema_v2_completion(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             take_id = "test_0001_player_001"
             package = self.create_package(
                 root,
-                takes=[self.player_take(take_id, "Main Player", "Main Player")],
-                mentions=[
-                    self.mention(
-                        mention_id="test_0001_mention_001",
-                        raw="Comparison Player",
-                        entity="Comparison Player",
-                        mention_types=["player_comparison"],
-                        standalone=False,
-                        subject_take_ids=[],
-                        context_take_ids=[take_id],
-                    )
-                ],
-                mention_counts={
-                    "total": 1,
-                    "resolved": 1,
-                    "ambiguous": 0,
-                    "unresolved": 0,
-                    "ranking_subjects": 0,
-                    "substantive_subjects": 0,
-                    "context_only": 1,
-                    "with_take_links": 1,
-                    "uncovered": 0,
-                },
-                episode_text="# Test Episode\n\nComparison Player\n",
+                [self.player_take(take_id, "Test Player")],
+                [self.mention("test_0001_mention_001", "Test Player", ["ranking_subject"], [take_id])],
+                "# Test Episode\n\nTest Player\n",
+                audit_status="needs_review",
             )
-
             report = self.validate(root, package)
+            self.assertTrue(any("coverage_audit.status" in issue.message for issue in report.errors))
 
-            self.assertTrue(
-                any(
-                    "not covered as a matching subject take" in issue.message
-                    for issue in report.errors
-                )
-            )
+    def test_non_pretty_json_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = self.create_package(root, [], [], "# Test Episode\n")
+            path = package / "mentions.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            report = self.validate(root, package)
+            self.assertTrue(any("canonical pretty JSON" in issue.message for issue in report.errors))
 
 
 if __name__ == "__main__":
