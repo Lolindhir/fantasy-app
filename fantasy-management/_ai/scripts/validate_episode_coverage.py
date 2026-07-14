@@ -2,12 +2,12 @@
 """Validate cross-file entity mention coverage for podcast episode packages.
 
 The validator checks technical completeness and consistency. It does not decide
-whether a podcast statement is factually correct or whether an evaluation is
-strategically sound.
+whether a podcast statement is factually correct or strategically sound.
 
-Schema-version-2 packages require mentions.json and a completed second-pass
-coverage audit. Legacy packages remain valid but do not receive the same
-coverage guarantee.
+Schema-version-2 packages require mentions.json and a completed independent
+second-pass coverage audit. The complete technical mention register lives in
+mentions.json. episode.md is validated for substantive reader-facing subjects,
+not as a duplicate metadata register.
 """
 
 from __future__ import annotations
@@ -157,6 +157,10 @@ def is_false_positive(mention_types: set[str]) -> bool:
     return FALSE_POSITIVE_TYPE in mention_types
 
 
+def is_mandatory_subject(mention_types: set[str]) -> bool:
+    return bool(mention_types & MANDATORY_TAKE_TYPES)
+
+
 def mention_search_names(mention: dict[str, Any]) -> list[str]:
     resolution = mention.get("entity_resolution")
     status = resolution.get("status") if isinstance(resolution, dict) else None
@@ -176,19 +180,17 @@ def mention_search_names(mention: dict[str, Any]) -> list[str]:
 
 
 def identity_values_from_mention(mention: dict[str, Any]) -> set[str]:
-    values = {
+    return {
         normalize_text(value)
         for value in mention_search_names(mention)
         if normalize_text(value)
     }
-    return values
 
 
 def identity_values_from_take(take: dict[str, Any]) -> set[str]:
     values: set[str] = set()
     for key in ["entity", "raw_entity_mention"]:
-        value = take.get(key)
-        normalized = normalize_text(value)
+        normalized = normalize_text(take.get(key))
         if normalized:
             values.add(normalized)
     return values
@@ -227,6 +229,32 @@ def valid_links(raw_links: Any, take_by_id: dict[str, dict[str, Any]]) -> list[s
     return [take_id for take_id in raw_links if take_id in take_by_id]
 
 
+def mention_is_uncovered(
+    mention: dict[str, Any],
+    take_by_id: dict[str, dict[str, Any]],
+) -> bool:
+    raw_types = mention.get("mention_types")
+    mention_types = set(raw_types) if isinstance(raw_types, list) else set()
+    if is_false_positive(mention_types):
+        return False
+
+    coverage = mention.get("coverage")
+    if not isinstance(coverage, dict):
+        return True
+
+    subject_ids = valid_links(coverage.get("subject_take_ids"), take_by_id)
+    mandatory = is_mandatory_subject(mention_types)
+
+    if mandatory:
+        return coverage.get("episode_md") is not True or not subject_ids
+
+    if coverage.get("episode_md") is True:
+        return False
+
+    note = coverage.get("note")
+    return not isinstance(note, str) or not note.strip()
+
+
 def calculate_mention_counts(
     mentions: list[dict[str, Any]],
     take_by_id: dict[str, dict[str, Any]],
@@ -261,26 +289,17 @@ def calculate_mention_counts(
             counts["substantive_subjects"] += 1
 
         false_positive = is_false_positive(mention_types)
-        if not false_positive and not (mention_types & MANDATORY_TAKE_TYPES):
+        if not false_positive and not is_mandatory_subject(mention_types):
             counts["context_only"] += 1
 
         coverage = mention.get("coverage")
-        if not isinstance(coverage, dict):
-            if not false_positive:
-                counts["uncovered"] += 1
-            continue
+        if isinstance(coverage, dict):
+            subject_ids = valid_links(coverage.get("subject_take_ids"), take_by_id)
+            context_ids = valid_links(coverage.get("context_take_ids"), take_by_id)
+            if subject_ids or context_ids:
+                counts["with_take_links"] += 1
 
-        valid_subject_ids = valid_links(coverage.get("subject_take_ids"), take_by_id)
-        valid_context_ids = valid_links(coverage.get("context_take_ids"), take_by_id)
-        if valid_subject_ids or valid_context_ids:
-            counts["with_take_links"] += 1
-
-        standalone_required = coverage.get("standalone_take_required") is True
-        episode_covered = coverage.get("episode_md") is True
-        if not false_positive and (
-            not episode_covered
-            or (standalone_required and not valid_subject_ids)
-        ):
+        if mention_is_uncovered(mention, take_by_id):
             counts["uncovered"] += 1
 
     return counts
@@ -427,6 +446,7 @@ def validate_package(
         raw_types = mention.get("mention_types")
         mention_types = set(raw_types) if isinstance(raw_types, list) else set()
         false_positive = is_false_positive(mention_types)
+        mandatory = is_mandatory_subject(mention_types)
 
         if false_positive and len(mention_types) > 1:
             report.error(
@@ -456,8 +476,7 @@ def validate_package(
             package_label,
         )
 
-        standalone_required = coverage.get("standalone_take_required") is True
-        if standalone_required and not valid_subject_ids:
+        if mandatory and not valid_subject_ids:
             report.error(
                 package_label,
                 f"Mention {mention_id} requires a standalone take but has no valid subject take link.",
@@ -493,22 +512,30 @@ def validate_package(
                 )
             continue
 
-        if coverage.get("episode_md") is not True:
-            report.error(
-                package_label,
-                f"Mention {mention_id} is not covered by the complete episode.md mention register.",
-            )
-        else:
-            search_names = [
-                normalize_text(name)
-                for name in mention_search_names(mention)
-                if normalize_text(name)
-            ]
-            if search_names and not any(name in normalized_episode for name in search_names):
+        if mandatory:
+            if coverage.get("episode_md") is not True:
                 report.error(
                     package_label,
-                    f"Mention {mention_id} is marked episode_md=true, but neither its canonical "
-                    "nor raw name appears in episode.md.",
+                    f"Required subject {mention_id} is not covered in episode.md.",
+                )
+            else:
+                search_names = [
+                    normalize_text(name)
+                    for name in mention_search_names(mention)
+                    if normalize_text(name)
+                ]
+                if search_names and not any(name in normalized_episode for name in search_names):
+                    report.error(
+                        package_label,
+                        f"Required subject {mention_id} is marked episode_md=true, but neither its "
+                        "canonical nor raw name appears in episode.md.",
+                    )
+        elif coverage.get("episode_md") is False:
+            note = coverage.get("note")
+            if not isinstance(note, str) or not note.strip():
+                report.error(
+                    package_label,
+                    f"Audit-only context mention {mention_id} must explain the reader-facing omission in coverage.note.",
                 )
 
     for player_take_id in sorted(player_take_ids - covered_player_take_ids):

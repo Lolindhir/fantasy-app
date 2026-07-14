@@ -54,9 +54,12 @@ Write it like a detailed article that the user could read or publish privately:
 
 - no internal pipeline metadata
 - no file inventory
-- no take IDs
-- no `global_index_update`
-- no extraction status blocks
+- no take or mention IDs
+- no raw-name or alias register
+- no entity-resolution or coverage table
+- no timestamps as technical evidence structure
+- no extraction, validator or review status blocks
+- no machine-readable companion-file references
 - no Mighty Giants recommendation
 - no arbitrary brevity target
 
@@ -70,11 +73,11 @@ The structure must adapt to the episode instead of forcing every podcast into on
 - host agreements and disagreements
 - positive cases, risks and uncertainty
 - fantasy-format distinctions
+- team, depth-chart, coach and scheme context
 - strategy principles
 - category-specific closing rankings or favorite lists
-- a complete entity/mention register
 
-For ranking or list episodes, preserve the complete source board when possible. When the source material supports it, include additional source-derived views such as highest conviction, best opportunity, best talent/upside, strongest immediate role, sleepers, format-dependent profiles, fades or major disagreements. Do not manufacture these categories when the episode does not support them.
+For ranking or list episodes, preserve the complete source board when possible. Every ranked subject should receive enough explanation to retain the source's reasoning, positive case, risk and relevant disagreement or format dependency. When the source material supports it, include additional source-derived views such as highest conviction, best opportunity, best talent/upside, strongest immediate role, sleepers, format-dependent profiles, fades or major disagreements. Do not manufacture these categories when the episode does not support them.
 
 Good:
 
@@ -86,6 +89,17 @@ Not in `episode.md`:
 
 That belongs in later analysis.
 
+## Reader-facing versus technical coverage
+
+The human-readable and technical artifacts have deliberately different completeness goals:
+
+- `episode.md` must be substantively complete. It includes every ranking subject, news subject, substantive evaluation and other entity needed to understand the hosts' argument.
+- `mentions.json` must be technically complete. It includes every non-false-positive player mention and other fantasy-relevant named entity found in the second raw pass, including passing references, comparisons, depth-chart names, historical references and unresolved transcript forms.
+
+A context-only or unresolved mention does not need to appear in `episode.md` merely to prove that it was detected. It may remain audit-only in `mentions.json` when including it would add no substantive reader value.
+
+Do not turn `episode.md` into a metadata appendix to satisfy coverage. The complete technical register is `mentions.json`.
+
 ## `takes.json`
 
 `takes.json` contains structured podcast statements from the same episode.
@@ -96,18 +110,12 @@ Use these top-level categories:
 
 ```json
 {
-  "players": [
-  ],
-  "teams": [
-  ],
-  "positions": [
-  ],
-  "nfl": [
-  ],
-  "fantasy": [
-  ],
-  "other": [
-  ]
+  "players": [],
+  "teams": [],
+  "positions": [],
+  "nfl": [],
+  "fantasy": [],
+  "other": []
 }
 ```
 
@@ -195,9 +203,10 @@ Each mention records:
 - compact entity-resolution status
 - how the entity was used in the episode
 - one or more occurrences and timestamps
-- whether it appears in `episode.md`
+- whether the entity is substantively represented in `episode.md`
 - whether a standalone take is required
 - which take IDs cover it
+- an optional note when the mention is intentionally audit-only
 
 Common mention types include:
 
@@ -215,9 +224,11 @@ Common mention types include:
 
 Every player mentioned in the raw source must be represented, even when the player appears only as a comparison, teammate, competitor or passing reference. Non-player entities should be included when they carry fantasy-relevant source context.
 
-A mention classified as a ranking subject, substantive take or news subject requires a linked standalone take. Context-only mentions may link to the surrounding take or have no take link when no structured claim is needed.
+A mention classified as a ranking subject, substantive take or news subject requires a linked standalone take and substantive reader-facing coverage in `episode.md`.
 
-All non-false-positive mentions must appear in the complete mention register inside `episode.md`, including unresolved transcript names.
+Context-only mentions may link to the surrounding take or have no take link when no structured claim is needed. They may use `coverage.episode_md: false` when they are intentionally retained only for technical audit. In that case, `coverage.note` should briefly explain the omission from the reader-facing note.
+
+Unresolved transcript forms must remain visible in `mentions.json`. They do not need to be inserted into `episode.md` unless the unresolved reference is itself important for understanding a substantive argument.
 
 ## Coverage audit
 
@@ -228,10 +239,17 @@ The audit asks:
 1. Which player names or possible player names occur in the raw transcript?
 2. Which other named entities carry fantasy-relevant content?
 3. Which are ranking subjects, substantive evaluations or news subjects?
-4. Which are comparisons, competitors, teammates or passing references only?
-5. Does every required subject have a take?
-6. Does every non-false-positive mention appear in the detailed `episode.md` register?
-7. Are unresolved identities visible rather than silently discarded?
+4. Which are comparisons, competitors, teammates, historical references or passing references only?
+5. Does every required subject have a matching standalone take?
+6. Does every required subject appear substantively in `episode.md`?
+7. Are context-only and unresolved identities preserved in `mentions.json` rather than silently discarded?
+8. Are intentional reader-facing omissions documented in the mention's coverage note?
+
+For coverage counting, a non-false-positive mention is uncovered only when:
+
+- a required ranking, substantive or news subject lacks a valid subject take; or
+- a required ranking, substantive or news subject lacks reader-facing coverage; or
+- the mention is neither reader-covered nor explicitly documented as an intentional audit-only context mention.
 
 A package using schema version 2 is complete only when the audit status is `completed` and uncovered mentions equal zero.
 
