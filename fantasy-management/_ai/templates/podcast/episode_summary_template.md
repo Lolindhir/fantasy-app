@@ -1,14 +1,14 @@
 # {{source_name}} {{episode_number}} – {{title}}
 
-> Dieses Template ist ein Baukasten, keine starre Gliederung. Verwende nur passende Abschnitte, ergänze notwendige eigene Überschriften und passe Reihenfolge sowie Tiefe an die tatsächliche Folge an.
+> Dieses Template ist ein flexibler Baukasten. Verwende nur passende Abschnitte und passe Reihenfolge sowie Tiefe an die tatsächliche Folge an.
 
 ## Worum geht es in der Folge?
 
-Ordne Thema, Anlass, Format und zentrale Fragestellung der Folge ausführlich ein. Beschreibe Podcast-Inhalt, nicht den Extraktionsprozess.
+Ordne Thema, Anlass, Format und zentrale Fragestellung ausführlich ein. Beschreibe ausschließlich den Podcast-Inhalt und seine Fantasy-Relevanz, nicht den Extraktionsprozess.
 
 ## Zentrale Aussagen und Bewertungslogik der Hosts
 
-Erkläre nicht nur die Ergebnisse, sondern auch, wie die Hosts argumentieren. Relevante Kriterien können beispielsweise sein:
+Erkläre nicht nur Ergebnisse, sondern auch die Argumentation. Relevante Kriterien können sein:
 
 - Talent und Prospect-Profil
 - Landing Spot und Teamumfeld
@@ -17,20 +17,22 @@ Erkläre nicht nur die Ergebnisse, sondern auch, wie die Hosts argumentieren. Re
 - Coaching und Scheme
 - Konkurrenz und Depth Chart
 - Verletzungen
-- Redraft vs. Dynasty
-- Rookie Draft, Bestball oder andere Formate
+- Redraft im Vergleich zu Dynasty
+- Rookie Draft, Bestball oder Spezialformate
 - Scoring-Besonderheiten
 - Marktpreis oder ADP
 
-Halte unterschiedliche Host-Meinungen und Unsicherheiten ausdrücklich fest.
+Halte unterschiedliche Host-Meinungen und Unsicherheiten fest.
 
 ## {{episode_specific_section}}
 
-Nutze für die tatsächlichen Inhalte passende Abschnitte, zum Beispiel News-Blöcke, Teams, Positionsgruppen, Interviews, Strategiethemen, Mock-Draft-Runden oder Debatten.
+Nutze passende Abschnitte für News, Teams, Positionsgruppen, Interviews, Strategie, Mock-Draft-Runden oder Debatten.
+
+News und Nebenthemen sollen nicht nur aufgezählt werden. Erkläre Argumentation, positiven Case und Risiken, sofern die Folge substanziellen Inhalt liefert.
 
 ## Vollständiges Ranking / Board / Tierstruktur
 
-Diesen Abschnitt nur verwenden, wenn die Folge eine Rangfolge, Tiers, Kategorien, einen Mock Draft oder eine vergleichbare Ordnung enthält.
+Nur verwenden, wenn die Folge eine entsprechende Ordnung enthält.
 
 Rekonstruiere die vollständige Quellstruktur so sicher wie möglich. Markiere unklare Reihenfolgen statt sie zu erfinden.
 
@@ -40,11 +42,13 @@ Rekonstruiere die vollständige Quellstruktur so sicher wie möglich. Markiere u
 
 ## Ausführliche Profile und Themenblöcke
 
-Erstelle für jeden wichtigen oder gerankten Gegenstand ausreichend ausführliche Abschnitte. Spieler sind ein häufiger Fall, aber Teams, Coaches, Positionsgruppen oder strategische Fragen können ebenso die passende Haupteinheit sein.
+Erstelle für jeden wichtigen oder gerankten Gegenstand ausreichend ausführliche Abschnitte. Bewahre die vollständige Argumentationskette der Quelle.
 
 ### {{entity_name}}
 
 **Einordnung der Quelle:** {{sentiment_tier_or_role}}
+
+**Rolle im Podcast-Board:** {{ranking_tier_sleeper_fade_news_or_other}}
 
 #### Begründung aus dem Podcast
 
@@ -64,49 +68,52 @@ Erstelle für jeden wichtigen oder gerankten Gegenstand ausreichend ausführlich
 
 #### Host-Differenzen oder Formatabhängigkeit
 
-Beschreibe Unterschiede zwischen Hosts, kurzfristiger und langfristiger Sicht oder verschiedenen Fantasy-Formaten, sofern vorhanden.
+Nur aufnehmen, wenn die Quelle eine entsprechende Differenz enthält.
+
+## Weitere substanzielle Episodensegmente
+
+Bei gemischten Folgen müssen auch Segmente nach dem Hauptthema erhalten bleiben, etwa ein Live-Rookie-Draft, eine Q&A-Runde oder ein Strategieblock.
+
+## Team-, Depth-Chart- und Scheme-Kontext
+
+Fasse fantasy-relevante Umfelder und Konkurrenten lesbar zusammen, wenn sie mehrere Takes verbinden.
+
+Dieser Abschnitt ist Inhalt, kein Entity-, Alias- oder Coverage-Register.
 
 ## Fantasy-Strategie der Quelle
 
-Bereite Aussagen zu Rookie Drafts, Redraft, Dynasty, Bestball, Waivers, Trades, Marktwert, ADP oder Scoring ausführlich und source-nah auf.
+Bereite Aussagen zu Rookie Drafts, Redraft, Dynasty, Bestball, Waivers, Trades, Marktwert, ADP oder Scoring source-nah auf.
 
 ## Source-abgeleitete Schlusslisten nach Kriterien
 
-Diesen Abschnitt flexibel verwenden, wenn die Folge genug Material dafür liefert. Mögliche, aber nicht verpflichtende Perspektiven sind:
+Nur Listen erstellen, die durch die Folge gestützt werden, beispielsweise:
 
 - höchste Host-Conviction
 - beste Opportunity
 - bestes Talent oder Upside
 - stärkste Sofortrolle
-- stärkste langfristige Profile
-- beste Redraft- oder Dynasty-Signale
 - Sleeper und Dart Throws
 - formatabhängige Spezialfälle
-- größte Risiken, Fades oder Unsicherheiten
+- größte Risiken oder Fades
 - wichtigste Host-Unstimmigkeiten
-
-Nur Listen erstellen, die durch Aussagen der Folge gestützt werden. Keine eigenen Rankings erfinden.
 
 ## Fazit der Podcast-Folge
 
-Fasse ausführlich zusammen, welche Gesamtbotschaft und welche wichtigsten source-nahen Aussagen die Folge vermittelt.
+Fasse Gesamtbotschaft und wichtigste source-nahe Schlussfolgerungen ausführlich zusammen.
 
-## Vollständiges Entity- und Erwähnungsregister
+## Klare Trennung der Lesefassung
 
-Liste alle im zweiten Coverage-Durchlauf gefundenen, nicht als `false_positive` klassifizierten Spielererwähnungen auf. Weitere fantasy-relevante Entitäten können ergänzt werden.
+Nicht in `episode.md` aufnehmen:
 
-| Entity / Rohform | Rolle in der Folge | Abdeckung |
-|---|---|---|
-| {{canonical_or_unresolved_raw_name}} | {{ranking_subject_substantive_evaluation_comparison_depth_chart_context_or_other}} | {{detailed_section_take_context_or_register_only}} |
-
-Auch reine Vergleiche, Depth-Chart-Kontexte, beiläufige Referenzen und ungelöste mögliche Spielernamen bleiben hier sichtbar.
-
-Nicht ergänzen:
-
-- interne Dateilisten
-- Take IDs
-- Extraktionsstatus
-- technische Package-Pfade
+- Rohformen oder Transkript-Aliase als Register
+- Entity-Resolution-Status
+- vollständige Mention- oder Coverage-Tabellen
+- Take- oder Mention-IDs
+- technische Timestamp-Anhänge
+- Dateilisten und Package-Pfade
+- Extraktions-, Review- oder Validatorstatus
+- Referenzen auf maschinenlesbare Begleitdateien
 - Knowledge-Ableitungen
-- Mighty-Giants-Empfehlungen
-- eigene Ligaempfehlungen, die nicht aus dem Podcast stammen
+- Mighty-Giants- oder eigene Ligaempfehlungen
+
+Technische Informationen gehören in `takes.json`, `mentions.json` und `index.json`.

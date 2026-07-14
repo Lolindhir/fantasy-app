@@ -4,7 +4,7 @@ Purpose: central extraction rules for all podcast sources in Fantasy Management.
 
 Use these rules for Stoned Lack, Down Set Talk, Football Bromance and future podcast sources.
 
-The detailed source/knowledge/analysis separation is defined in:
+The detailed source/Knowledge/Analysis separation is defined in:
 
 `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md`
 
@@ -42,97 +42,45 @@ Podcast-independent player identity mappings, aliases and transcript-error resol
 
 Use this registry before and during every podcast/source extraction that mentions players.
 
-The registry is not a source take, not Knowledge, not a ranking and not a recommendation. It is a reusable entity-resolution aid.
+The registry is not a source take, Knowledge, a ranking or a recommendation.
 
-Add confirmed reusable aliases or transcript-error mappings to the registry when they are discovered. Do not add speculative mappings.
+Add confirmed reusable aliases or transcript-error mappings when discovered. Do not add speculative mappings.
 
 ## Entity aliases and transcript name resolution
 
-During podcast extraction, actively watch for recurring aliases, nicknames, transcript errors and phonetic name variants for players, teams, coaches, colleges and other decision-relevant entities.
+Raw source text must stay unchanged. Do not rewrite transcript wording.
 
-Examples:
+In `episode.md`, use canonical names only when confidence is sufficient. Do not expose raw aliases, resolution methods or confidence metadata solely for audit purposes.
 
-- German transcripts may distort English player names phonetically.
-- English sources may use nicknames, initials, shortened names or college-only references.
-- Automatic transcripts may split suffixes such as `Jr.`, confuse similar names or mistranscribe uncommon rookie names.
-
-Raw source text must stay unchanged. Do not rewrite raw transcript wording.
-
-In `episode.md`, `takes.json` and `mentions.json`, use the best canonical entity name only when confidence is sufficient. Preserve uncertainty when the mapping is not fully resolved.
-
-If a recurring player alias or transcript error is confirmed, store it in the central podcast-independent player identity registry above, not in a podcast-local alias file.
-
-Use source-specific `SOURCE_NOTES.md` only for source quirks, pronunciation patterns and unresolved recurring issues. Use the central registry for confirmed mappings that may help future extraction across multiple sources.
-
-Do not create or apply an alias mapping when the identity is uncertain. Leave the entity unresolved and mark the uncertainty explicitly.
-
-## Canonical player identity rule
-
-Player identity resolution is a required extraction step, not a best-effort cleanup step.
+In `takes.json` and `mentions.json`, preserve the raw mention and compact resolution metadata.
 
 For every player take, `takes.json` must include:
 
-- `raw_entity_mention`: the name, nickname, surname or transcript phrase as heard/read in the raw source.
-- `entity`: the canonical full player name, only when verified with sufficient confidence; otherwise `null`.
-- `entity_resolution`: compact inline status metadata for the mapping.
+- `raw_entity_mention`
+- verified canonical `entity`, otherwise `null`
+- compact `entity_resolution`
 
-`raw_entity_mention` is required even when the canonical name is obvious. It preserves the connection to the raw source.
+Allowed resolution methods:
 
-For confirmed player identities, keep `entity_resolution` compact by default:
+- `registry`
+- `external_verification`
+- `context_inference`
+- `manual_confirmation`
+- `none`, only for unresolved entities
 
-```json
-"entity_resolution": {
-  "status": "confirmed",
-  "method": "registry",
-  "confidence": "high"
-}
-```
+Allowed statuses:
 
-Allowed `method` values:
+- `confirmed`
+- `ambiguous`
+- `unresolved`
 
-- `registry`: resolved through `player_identity_registry.json`
-- `external_verification`: resolved through external identity verification during extraction
-- `context_inference`: resolved from strong source context when a registry entry is not yet present
-- `manual_confirmation`: user or maintainer explicitly confirmed the mapping
-- `none`: used only for `unresolved`
+Ambiguous and unresolved entries use `entity: null` and explain the uncertainty when useful.
 
-Only add optional detail fields such as `reason`, `candidates` or `verified_sources` when they add useful information, especially for ambiguous, unresolved or newly verified identities.
-
-Do not use a surname-only value such as `Price` as a finished player entity unless the take is explicitly about a one-name public entity and this is verified. For normal NFL player takes, a surname-only mention must be resolved to a canonical full name or marked unresolved.
-
-Do not invent or auto-complete first names from memory. A plausible-looking full name is still wrong if it has not been verified against the episode context, registry or external identity sources.
-
-For each high-signal player take, use source context before accepting a canonical player name:
-
-- NFL team or landing spot
-- position
-- college
-- draft round or pick range
-- depth chart context
-- teammates or competitors mentioned nearby
-- episode section and timestamp
-
-Then verify decision-relevant identities against current external identity sources when available. Preferred order:
-
-1. official NFL or team pages
-2. NFL.com Draft Tracker or official draft material
-3. official college/athletics pages
-4. Pro Football Reference / Sports Reference
-5. ESPN, Sleeper, FantasyPros, KeepTradeCut or similar fantasy sources only as supporting context, not primary identity proof
-
-Use `entity_resolution.status`:
-
-- `confirmed`: canonical full name is verified and matches podcast/source context.
-- `ambiguous`: likely candidates exist, but the transcript/source context is not enough to choose safely.
-- `unresolved`: no reliable mapping has been found.
-
-If status is `ambiguous` or `unresolved`, do not write a confident canonical `entity`. Use `entity: null` and include useful candidate or reason notes in `entity_resolution`.
-
-A companion `entity_resolution.json` file is not a valid substitute for inline player resolution in `takes.json` or `mentions.json` for new or fully reworked packages.
+Do not invent or autocomplete names from memory. A plausible-looking name is still wrong when it is not verified against the raw context, registry or an appropriate identity source.
 
 ## Episode package rule
 
-Each new processed podcast episode should be stored as one local package using the current package schema:
+Each current processed episode is one package:
 
 ```text
 fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
@@ -146,104 +94,74 @@ fantasy-management/sources/podcasts/{source_id}/episodes/{year}/{episode_id}/
   index.json
 ```
 
-For small transcripts, `raw/source.md` may replace split raw parts.
+For small transcripts, `raw/source.md` may replace split parts.
 
-New and fully reworked packages use `package_schema_version: 2` in `index.json`. Older packages may remain on the legacy structure until explicitly reworked.
+New and fully reworked packages use `package_schema_version: 2`.
 
-## Required default outputs
+## Required outputs
 
-A normal schema-version-2 podcast extraction creates:
+A normal schema-version-2 extraction creates:
 
-1. raw source material under the episode package
-2. `episode.md` as a detailed German human-readable preparation of the fantasy-relevant podcast content
-3. `takes.json` as structured source takes grouped by category, including compact inline player identity resolution for every player take
-4. `mentions.json` as the complete entity-mention and coverage register
-5. `index.json` as local technical metadata, counts and audit status
+1. unchanged raw source material
+2. `episode.md` as detailed German reader-facing preparation
+3. `takes.json` as structured source takes
+4. `mentions.json` as the complete technical entity and coverage audit
+5. `index.json` as package metadata, counts and status
 
-Do not update global indexes during normal podcast extraction.
-
-Do not write source takes to any separate derived take area by default. Podcast takes are not Knowledge yet.
+Do not update global indexes or active Knowledge during normal extraction.
 
 ## `episode.md` rule
 
-`episode.md` is the detailed reader-facing podcast preparation.
+`episode.md` is the primary human-readable record of the episode.
 
-It is not a short executive summary and must not be optimized for brevity. The user should be able to read it as the main human-facing record of the episode without opening the JSON files for substantive understanding.
+It is not a short executive summary and must not be optimized for brevity. Preserve the fantasy-relevant content as fully as practical:
 
-Preserve the fantasy-relevant content as fully as practical, including:
-
-- the episode topic and current context
-- the hosts' central arguments and evaluation criteria
+- episode topic and context
+- hosts' central arguments and evaluation criteria
 - reasoning chains, not only conclusions
-- important positive, negative and uncertain statements
-- host agreements and disagreements
-- rankings, tiers, boards, buckets or categories when present
-- players, teams, positions, coaches and scheme context when fantasy-relevant
-- redraft, dynasty, rookie-draft, bestball, scoring or market distinctions
+- positive, negative and uncertain statements
+- agreements and disagreements
+- complete safely reconstructable rankings, tiers, boards or mock-draft structures
+- player, team, position, coach and scheme context needed to understand the source
+- format distinctions
 - strategy implications stated by the source
 - source-level conclusion
-- a complete entity and mention register at the end
-
-The structure must adapt to the content of the episode. Do not force a news episode, interview, mock draft, ranking show and strategy discussion into the same rigid set of headings.
 
 For ranking, tier, mock-draft or list episodes:
 
-- reproduce the complete source ordering or tier structure when it can be reconstructed safely
-- give every ranked subject enough explanation to preserve the source case and risk
-- preserve host disagreements and alternative orders
-- include source-derived closing views by different criteria when the material supports them, for example highest conviction, best opportunity, best talent/upside, best immediate role, strongest dynasty profile, strongest redraft profile, sleepers, format-dependent profiles, fades or major uncertainty
-- do not manufacture category rankings that the episode does not support
+- reproduce the complete safely reconstructable source order
+- explain every ranked subject sufficiently
+- preserve positive cases, risks, uncertainty and host differences
+- preserve format dependency
+- include source-derived closing views only when the episode supports them
 
-For other episode formats, organize around the actual themes, news blocks, debates, teams, positions, strategy questions or interview topics.
+For mixed episodes, include all substantive segments, including news, rankings and live drafts. Do not silently stop processing when the headline segment ends.
 
-Repetition may be reduced, but not at the cost of losing distinct arguments, caveats, rankings, comparisons or dissenting host opinions.
-
-It must not contain internal extraction metadata, such as:
+`episode.md` must not contain technical extraction metadata:
 
 - file inventories
-- take IDs
-- source package paths
-- extraction status flags
-- machine-readable companion file references
+- raw-name or alias registers
+- entity-resolution status or confidence
+- complete mention or coverage tables
+- take or mention IDs
+- technical timestamp appendices
+- package paths
+- extraction, review or validator status
+- machine-readable companion-file references
 - Mighty Giants recommendations
 - league-specific advice not stated by the source
 
-Keep it inside the source perspective.
+## Reader-facing coverage rule
 
-## Complete mention register in `episode.md`
+`episode.md` must include every ranking subject, news subject and substantive evaluation in enough detail to understand the source's argument.
 
-End every schema-version-2 `episode.md` with a complete, human-readable entity and mention register.
+Context-only entities appear naturally only when needed for the argument.
 
-The register must include every non-false-positive player mention found during the coverage sweep, including:
-
-- ranking subjects
-- players with substantive takes
-- news subjects
-- player comparisons
-- teammates and depth-chart competitors
-- injury or scheme context
-- historical or passing references
-- unresolved transcript names
-
-The register should explain the role of the mention, for example:
-
-- `ranking subject`
-- `substantive evaluation`
-- `comparison for Player X`
-- `depth-chart context`
-- `injury context`
-- `passing reference`
-- `unresolved transcript mention`
-
-Other fantasy-relevant named entities such as coaches, teams or colleges may also be included when useful.
-
-The mention register is an audit aid, not a substitute for detailed sections or takes.
+Do not append a complete technical entity or mention register. Passing references, historical comparisons, depth-chart names and unresolved transcript forms may remain exclusively in `mentions.json` when they add no substantive reader value.
 
 ## `takes.json` rule
 
-`takes.json` contains structured podcast statements from the episode.
-
-Use these top-level categories:
+Use one categorized `takes.json` per episode with these buckets:
 
 - `players`
 - `teams`
@@ -252,189 +170,140 @@ Use these top-level categories:
 - `fantasy`
 - `other`
 
-Category meanings:
-
-- `players`: specific player statements.
-- `teams`: NFL team, depth chart, team environment or team position-group statements.
-- `positions`: position-group statements such as WR, RB, TE or QB.
-- `nfl`: general NFL, draft, coaching, scheme or league-context statements.
-- `fantasy`: fantasy strategy, scoring, redraft, dynasty, rookie draft, bestball, market or format statements.
-- `other`: source statements that do not fit cleanly elsewhere.
-
-Every player take object must include `raw_entity_mention`, `entity` and compact `entity_resolution` inline. If a player identity is not confirmed, `entity` must be `null` and `entity_resolution.status` must be `ambiguous` or `unresolved`.
-
-Create a standalone take for:
+Create standalone takes for:
 
 - every ranking or tier subject
-- every explicit sleeper, fade, buy, sell, hold or watchlist subject
-- every player or entity with a substantive positive, negative or uncertain evaluation
+- every explicit recommendation label
+- every substantive positive, negative or uncertain evaluation
 - every independent role, injury, market, strategy or format thesis
-- every meaningful host disagreement when it changes the evaluation
+- every meaningful disagreement
+- substantive segments outside the headline topic, including a live mock draft
 
-A player or entity may have multiple takes when the episode makes materially different claims. Do not collapse ranking, role, injury, market and format claims into one overly short take when they are independently useful.
+A take must preserve the source claim, reasoning, risks, formats, sentiment, conviction and evidence. Do not collapse materially distinct claims merely to reduce file size.
 
-Pure comparisons, depth-chart names, historical references and passing mentions do not automatically need standalone takes. They must still be recorded in `mentions.json` and may link to the surrounding take.
-
-Do not split every take into a separate JSON file by default.
-
-Use one `takes.json` per episode unless there is a clear practical reason to split it.
+Pure comparisons, teammates, depth-chart competitors, historical examples and passing references do not automatically need standalone takes. They remain in `mentions.json`.
 
 ## `mentions.json` rule
 
-`mentions.json` is required for schema-version-2 packages.
+`mentions.json` is the complete technical entity and coverage audit.
 
-It is created from a separate second pass over the raw transcript after the main content extraction.
+Create it in an independent second pass over the entire raw source, not by rereading only `episode.md` or `takes.json`.
 
-Record every unique player mention, even when the player appears only as:
+Include every player mention or possible player mention and every other named entity carrying fantasy-relevant context, including:
 
-- a comparison
-- a teammate
-- a depth-chart competitor
-- injury context
-- scheme context
-- historical reference
-- passing reference
-- an unresolved possible player name
+- ranking subjects
+- substantive takes
+- news subjects
+- comparisons
+- teammates and competitors
+- injury and scheme context
+- historical examples
+- live-draft names
+- passing references
+- ambiguous and unresolved transcript forms
+- false positives when preserving them helps auditability
 
-Also record other named entities when they carry fantasy-relevant source content.
+A ranking, substantive or news subject requires:
 
-Each mention must include:
+- a standalone take
+- `coverage.episode_md: true`
+- substantive reader-facing coverage
 
-- one or more raw transcript forms
-- canonical entity or `null`
-- entity type
-- compact entity resolution
-- one or more mention types
-- one or more occurrences with timestamp or section context
-- coverage in `episode.md`
-- whether a standalone take is required
-- linked take IDs when applicable
+Context-only or unresolved mentions may use `coverage.episode_md: false` when intentionally audit-only. Add `coverage.note` explaining the omission.
 
-Use these mention types:
+The technical register belongs here, never in `episode.md`.
 
-- `ranking_subject`
-- `substantive_take`
-- `news_subject`
-- `player_comparison`
-- `depth_chart_context`
-- `injury_context`
-- `scheme_context`
-- `historical_reference`
-- `passing_reference`
-- `unresolved`
-- `false_positive`
+## Coverage audit rule
 
-A `ranking_subject`, `substantive_take` or `news_subject` requires a standalone take.
-
-A `false_positive` should be used only when the second pass identifies a transcript token as a likely name that is not actually an entity. It should not be combined with normal mention types.
-
-Every non-false-positive mention must appear in the complete mention register in `episode.md`.
-
-## Two-pass extraction and coverage audit
-
-Every schema-version-2 extraction uses at least two distinct passes over the raw source.
+Schema-version-2 packages require at least two distinct passes.
 
 ### Pass A: content extraction
 
-Create the detailed `episode.md` and structured `takes.json` from the fantasy-relevant content.
+Read the entire raw source and create the detailed `episode.md` and `takes.json`.
 
-### Pass B: independent entity-mention sweep
+### Pass B: independent entity sweep
 
-Read the raw source again with a different objective:
+Read the entire raw source again with a different objective:
 
 1. collect every player name and possible player name
-2. collect other named entities carrying fantasy-relevant content
-3. resolve or preserve uncertainty
-4. classify each mention's role
-5. compare the mention register with `episode.md` and `takes.json`
-6. add missing subjects, takes, sections or unresolved entries
-
-Do not perform Pass B only by re-reading the already produced summary. It must use the raw transcript.
+2. collect other fantasy-relevant named entities
+3. resolve identities or preserve uncertainty
+4. classify each mention
+5. compare mentions with `episode.md` and `takes.json`
+6. add omitted segments, subjects, takes or unresolved forms
+7. calculate counts from the finished files
 
 The audit is complete only when:
 
-- all non-false-positive mentions appear in `episode.md`
-- all required standalone subjects have linked takes
-- all player takes are represented in `mentions.json`
-- unresolved possible player names remain visible
-- `index.json` records `coverage_audit.status: completed`
-- `mention_counts.uncovered` and `coverage_audit.uncovered_mentions` are both zero
+- all required subjects have valid standalone takes
+- all required subjects are substantively covered in `episode.md`
+- all player takes are covered by matching mention entries
+- context-only and unresolved forms remain visible
+- audit-only omissions have notes
+- all links resolve
+- calculated counts match `index.json`
+- uncovered mentions equal zero
+
+A package is complete only when `coverage_audit.status` is `completed`.
 
 ## `index.json` rule
 
-`index.json` is the local technical package map.
-
-It may contain:
+`index.json` is the local technical map. It may contain:
 
 - package schema version
-- source id
-- episode id
-- episode number
-- title
+- source and episode identity
 - dates
-- local package paths
+- package paths
 - raw status
-- take counts by category
-- mention coverage counts
+- take and mention counts
 - identity-resolution status
 - coverage-audit status
-- extraction status
+- Knowledge derivation status
+- rework notes
 
-For schema-version-2 packages it must reference `mentions.json` and record:
+Keep all such metadata out of `episode.md`.
 
-- total mentions
-- resolved, ambiguous and unresolved counts
-- ranking-subject count
-- substantive-subject count
-- context-only count
-- mentions with take links
-- uncovered count
-- coverage-audit method and status
+Recommended status conventions:
 
-Keep this metadata out of `episode.md`.
+- `needs_review`: extraction exists but a required review, second pass or validator is open
+- `needs_rework`: known substantive or structural defects remain
+- `active_source_package`: all completeness gates pass and the package is usable as source evidence
+
+Do not set `active_source_package` or `coverage_audit.status: completed` merely to silence a validator.
 
 ## JSON formatting rule
 
-Fantasy Management JSON artifacts that are created or manually maintained by AI must be human-readable and pretty-printed.
+Fantasy Management JSON created or manually maintained by AI must be human-readable and pretty-printed:
 
-Use:
-
-- UTF-8 text
+- UTF-8
 - two-space indentation
 - one property per line
 - arrays on multiple lines, including single-item arrays
-- exactly one array item per line
+- one array item per line
 - nested arrays and objects on separate lines
-- stable key order within the same file type when practical
-- trailing newline at end of file
+- stable key order where practical
+- trailing newline
 
-Do not use inline arrays in Fantasy Management JSON when practical.
-
-Compact one-line JSON is only acceptable for generated application/runtime data outside Fantasy Management when the generator owns the format.
+Do not commit minified JSON or an entire object on one line.
 
 ## Raw source rule
 
-Store raw transcripts or raw notes unchanged under the episode package.
+Store raw transcripts or notes unchanged.
 
-Do not clean, rewrite or normalize the raw source file.
+For split transcripts:
 
-If a single large raw file cannot be committed, split the raw transcript into ordered parts and create `raw/manifest.md`. The ordered concatenation of the parts is the raw source for that episode.
+- use ordered `partNN.md` files
+- list every part in `raw/manifest.md`
+- require contiguous numbering
+- treat ordered concatenation as the complete raw source
 
-A placeholder raw file is not a completed raw source. If the full raw source is missing, mark the package as incomplete in `index.json`.
+A placeholder raw file is not a completed source. Mark missing raw material explicitly in `index.json`.
 
 ## Knowledge separation rule
 
-Do not treat podcast takes as active Knowledge just because they exist.
+Podcast packages are source evidence, not active Knowledge.
 
-After extraction, a separate Knowledge derivation step may decide which takes matter for:
-
-- players
-- NFL teams
-- positions
-- NFL context
-- fantasy strategy
-
-Knowledge belongs under:
+Knowledge may be derived later under:
 
 ```text
 fantasy-management/knowledge/
@@ -445,49 +314,44 @@ fantasy-management/knowledge/
   fantasy/
 ```
 
-A redraft-only take may stay only in the episode package if it does not matter for our Dynasty league.
-
-If a redraft take affects market value, it may become fantasy-market knowledge rather than player-quality knowledge.
+A separate derivation step decides what remains useful for the league and current context.
 
 ## Completeness gate
 
-Before marking a schema-version-2 episode extraction as complete, verify:
+Before marking a schema-version-2 package complete, verify:
 
-1. raw source is present or clearly marked in `index.json`
-2. `episode.md` is a detailed German podcast preparation without internal metadata or Mighty Giants recommendations
-3. `episode.md` preserves the episode's fantasy-relevant reasoning, caveats, disagreements, rankings and format distinctions without an artificial brevity target
-4. ranking, tier, mock-draft or list episodes contain the complete safely reconstructable source order and enough explanation for every ranked subject
-5. source-derived category rankings or favorite lists are included when supported by the episode, but are not invented when unsupported
-6. `takes.json` exists and uses the six standard categories
-7. every player take in `takes.json` has inline `raw_entity_mention`, `entity` and compact `entity_resolution`
-8. every ranking subject, substantive evaluation and news subject has a standalone take
-9. independent claims are not collapsed into an unusably short take merely for compactness
-10. team/depth-chart statements are represented under `teams`
-11. position-group statements are represented under `positions`
-12. fantasy strategy and format statements are represented under `fantasy`
-13. cautious, negative, uncertainty and host-disagreement takes are extracted, not only positive takes
-14. `mentions.json` exists and conforms to the mention schema
-15. a second raw-transcript entity-mention sweep was completed independently from the main extraction
-16. every player mention is recorded, including comparisons, competitors, teammates, passing references and unresolved possible names
-17. every non-false-positive mention appears in the complete mention register in `episode.md`
-18. every required standalone mention links to an existing take
-19. every player take is covered by at least one mention entry
-20. transcript aliases, nicknames and unresolved entity names were reviewed
-21. all important player takes either use verified canonical full names or have explicit `ambiguous`/`unresolved` entity resolution inline
-22. confirmed recurring player aliases were added to `fantasy-management/_ai/entity-resolution/player_identity_registry.json`, if any exist
-23. `index.json` records take counts, mention counts, identity-resolution status and coverage-audit status
-24. `coverage_audit.status` is `completed`
-25. `mention_counts.uncovered` and `coverage_audit.uncovered_mentions` are zero
-26. JSON files are pretty-printed with the formatting rule above
-27. any Knowledge derivation is either not started or explicitly stored separately under `knowledge/`
-28. the package validator and coverage validator pass
+1. raw source is complete and referenced
+2. every raw part was read in Pass A
+3. every raw part was read again in Pass B
+4. `episode.md` is detailed German source preparation without technical metadata
+5. all substantive episode segments are represented
+6. complete rankings, tiers and mock-draft structures are preserved when safely reconstructable
+7. every ranked subject has sufficient explanation
+8. source reasoning, risks, disagreement and format distinctions are preserved
+9. `takes.json` uses all six categories
+10. player takes contain inline raw mention, canonical entity and resolution
+11. all ranking, substantive and news subjects have standalone takes
+12. materially distinct claims are not collapsed improperly
+13. `mentions.json` conforms to its schema
+14. every player mention or possible player mention from Pass B is registered
+15. context, comparison, historical and unresolved mentions are retained
+16. every required mention links to a valid take
+17. every player take has a matching subject mention
+18. calculated take and mention counts match `index.json`
+19. uncovered mentions equal zero
+20. JSON formatting follows the repository rule
+21. recurring confirmed aliases are stored in the central registry
+22. `coverage_audit.status` is `completed`
+23. Knowledge derivation is absent or stored separately
+24. package and coverage validators pass
+25. validator unit tests pass
 
-If any required item fails, mark the package as `incomplete` or `needs_rework` in `index.json` and explain what is missing.
+If any required item fails, use `needs_review` or `needs_rework` and document the blocker.
 
-Legacy schema-version-1 packages may remain valid historical packages without `mentions.json`, but they do not provide the same coverage guarantee and should be reworked before being treated as fully audited.
+Legacy schema-version-1 packages may remain historical packages without `mentions.json`; they do not provide the same coverage guarantee.
 
 ## Recommendation rule
 
 Podcast output is source context, not a final recommendation.
 
-Final Mighty Giants recommendations belong under `fantasy-management/analyses/` and must combine current league data, source context, derived Knowledge and current market/news context when relevant.
+Final Mighty Giants recommendations belong under `fantasy-management/analyses/` and must combine current league data, derived Knowledge, relevant source evidence and current market/news context.
