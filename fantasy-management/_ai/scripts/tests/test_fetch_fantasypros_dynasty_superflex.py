@@ -90,6 +90,28 @@ class FantasyProsFetcherTests(unittest.TestCase):
         with self.assertRaisesRegex(module.FantasyProsFetchError, "rank_min exceeds rank_max"):
             module.parse_players(data)
 
+    def test_allows_ecr_outside_expert_range_and_reports_diagnostic(self):
+        data = self.make_data()
+        player = data["players"][99]
+        player["rank_min"] = "10"
+        player["rank_max"] = "20"
+        player["rank_ave"] = "15.00"
+
+        rows = module.parse_players(data)
+        diagnostics = module.consensus_relationship_diagnostics(rows)
+
+        self.assertEqual(1, diagnostics["ecr_outside_expert_range_count"])
+        self.assertEqual(
+            {
+                "name": "Player 100",
+                "rank_ecr": 100,
+                "rank_min": 10,
+                "rank_max": 20,
+                "rank_ave": "15.00",
+            },
+            diagnostics["ecr_outside_expert_range_samples"][0],
+        )
+
     def test_rejects_average_outside_rank_range(self):
         data = self.make_data()
         data["players"][0]["rank_ave"] = "9.00"
@@ -139,6 +161,12 @@ class FantasyProsFetcherTests(unittest.TestCase):
             self.assertEqual(160, metadata_data["snapshot"]["row_count"])
             self.assertEqual("raw-ecr-data.json", metadata_data["snapshot"]["raw_data_file"])
             self.assertEqual(160, metadata_data["snapshot"]["consensus_field_coverage"]["tier"])
+            self.assertEqual(
+                0,
+                metadata_data["snapshot"]["consensus_relationship_diagnostics"][
+                    "ecr_outside_expert_range_count"
+                ],
+            )
             self.assertIn("rank_min", metadata_data["raw_schema"]["player_field_names"])
             self.assertEqual(160, metadata_data["raw_schema"]["player_count"])
 
