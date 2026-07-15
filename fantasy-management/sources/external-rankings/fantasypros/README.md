@@ -15,13 +15,30 @@ fantasypros/
         metadata.json
 ```
 
+## Direkter Abruf
+
+Der offizielle FantasyPros-Dynasty-Superflex-ECR wird direkt aus dem in der öffentlichen HTML-Seite eingebetteten `ecrData`-Payload gelesen:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
+```
+
+Nützliche Prüfmodi:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --dry-run
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --from-file path/to/saved-page.html --dry-run
+```
+
+Der Fetcher nutzt keinen Mirror-Fallback. Bei Netzwerk-, Schema- oder Plausibilitätsfehlern wird kein neuer `latest.json`-Stand veröffentlicht. Erfolgreiche Abrufe erzeugen oder aktualisieren den datierten Snapshot und dokumentieren Abrufzeit, Zeilenanzahl, Positionsverteilung, fehlende Rangnummern und SHA-256.
+
 ## Nutzungsregeln
 
 - Die Snapshots sind externe Quellenkontexte und keine dauerhafte Wahrheit.
-- Für aktuelle Spieler-, Trade-, Draft-, Roster- oder Free-Agent-Entscheidungen muss die Quelle frisch geprüft werden.
-- `ranking.csv` enthält das unveränderte externe Overall-Ranking mit Rank, Spielername, Position und NFL-Team.
+- Für aktuelle Spieler-, Trade-, Draft-, Roster- oder Free-Agent-Entscheidungen soll der direkte Abruf erneut ausgeführt werden, wenn der Snapshot nicht vom selben Tag stammt oder sich der Markt schnell bewegt.
+- `ranking.csv` enthält das externe Overall-Ranking mit Rank, Spielername, Position und NFL-Team.
 - `metadata.json` dokumentiert Format, Abruf- und Snapshot-Provenienz sowie bekannte Einschränkungen.
-- `latest.json` ist nur ein Zeiger auf den zuletzt abgelegten Snapshot und keine eigene Ranking-Quelle.
+- `latest.json` ist nur ein Zeiger auf den zuletzt erfolgreich abgelegten Snapshot und keine eigene Ranking-Quelle.
 - Das FantasyPros-Superflex-Ranking wird als PPR-/Superflex-Proxy für die Liga verwendet. Bei zwei fest vorgeschriebenen QB-Startplätzen müssen Quarterbacks in der finalen Mighty-Giants-Analyse gegebenenfalls zusätzlich aufgewertet werden.
 
 ## Quellenrolle
