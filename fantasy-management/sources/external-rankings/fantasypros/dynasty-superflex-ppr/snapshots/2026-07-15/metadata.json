@@ -6,7 +6,7 @@
   "ranking_name": "Dynasty Superflex PPR ECR",
   "ranking_type": "expert_consensus_ranking",
   "official_source_url": "https://www.fantasypros.com/nfl/rankings/dynasty-superflex.php",
-  "fetched_at": "2026-07-15T07:02:42.440160+00:00",
+  "fetched_at": "2026-07-15T15:33:24.406557+00:00",
   "season_label": 2026,
   "format": {
     "dynasty": true,
@@ -20,24 +20,19 @@
   "snapshot": {
     "snapshot_date": "2026-07-15",
     "ranking_file": "ranking.csv",
-    "raw_data_file": null,
-    "raw_payload_status": "unavailable_for_preexisting_snapshot",
-    "row_count": 539,
+    "raw_data_file": "raw-ecr-data.json",
+    "row_count": 541,
     "rank_min": 1,
     "rank_max": 541,
-    "missing_ranks": [
-      464,
-      468
-    ],
+    "missing_ranks": [],
     "position_counts": {
       "QB": 72,
-      "RB": 136,
+      "RB": 138,
       "TE": 99,
       "WR": 232
     },
     "position_rank_source_counts": {
-      "derived": 539,
-      "source": 0
+      "source": 541
     },
     "csv_columns": [
       "name",
@@ -47,32 +42,69 @@
       "position_rank",
       "source_player_id"
     ],
-    "ranking_sha256": "c1b5de31f302f347dc2617616952b77c358cfc5ca8f2a35a3c049427447abf65",
-    "raw_data_sha256": null
+    "ranking_sha256": "60f81cd0abb306f155c450002c7add1048396f299e8924a22170cd6be415f122",
+    "raw_data_sha256": "f3bfff507177c56abdbbba3bd551010e4c11e0a5565fb545fa21bfdbb3d9b51f"
   },
-  "raw_schema": null,
+  "raw_schema": {
+    "top_level_keys": [
+      "accessed",
+      "count",
+      "experts_available",
+      "filters",
+      "last_updated",
+      "last_updated_ts",
+      "players",
+      "position_id",
+      "ranking_type_name",
+      "scoring",
+      "sport",
+      "total_experts",
+      "type",
+      "week",
+      "year"
+    ],
+    "player_count": 541,
+    "player_field_names": [
+      "player_age",
+      "player_bye_week",
+      "player_ecr_delta",
+      "player_eligibility",
+      "player_filename",
+      "player_id",
+      "player_name",
+      "player_owned_avg",
+      "player_page_url",
+      "player_position_id",
+      "player_positions",
+      "player_short_name",
+      "player_team_id",
+      "pos_rank",
+      "rank_ave",
+      "rank_ecr",
+      "rank_max",
+      "rank_min",
+      "rank_std",
+      "tier"
+    ]
+  },
   "extraction_provenance": {
-    "method": "same_day_direct_scraper_normalized_export",
-    "uses_april_snapshot": false,
-    "upstream_repository": "jasonleetucker-code/riskittogetthebrisket",
-    "upstream_path": "data/ros/sources/fantasyProsRosSf.csv",
-    "upstream_blob_sha": "c1697834d3155abdbd7ce0fe947cc1cb4786dd95",
-    "upstream_run_completed_at": "2026-07-15T07:02:42.440160+00:00",
-    "upstream_run_status": "ok",
-    "upstream_rows_written": 539,
-    "repository_direct_fetcher": "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py",
-    "position_rank_method": "Derived by counting players within each position in ascending overall ECR order.",
-    "raw_payload_limitation": "The original ecrData payload was not retained for this preexisting snapshot. It is not reconstructed from the normalized CSV."
+    "method": "direct_official_html_ecrData",
+    "uses_mirror": false,
+    "raw_payload_semantics": "Complete parsed ecrData object; JSON whitespace is normalized but fields are not dropped.",
+    "response_headers": {
+      "etag": "",
+      "last_modified": "",
+      "content_type": "text/html; charset=UTF-8"
+    }
   },
   "freshness": {
-    "status": "same_day_snapshot",
-    "refresh_before_value_sensitive_analysis": true,
-    "limitation": "The checked-in rows come from a successful same-day scraper run against the official FantasyPros page. The expanded direct fetcher will retain the complete raw ecrData payload on the next successful refresh."
+    "status": "live_fetch",
+    "refresh_before_value_sensitive_analysis": true
   },
   "analysis_usage": {
     "role": "External expert-consensus context",
     "not_adp": true,
     "not_league_specific": true,
-    "league_adjustment": "Use as a Superflex proxy. In the Mighty Giants league with two fixed QB starters, quarterbacks may require an additional scarcity boost after checking current league and roster context."
+    "league_adjustment": "Use as a Superflex proxy. In the Mighty Giants league with two fixed QB starters, quarterbacks may require an additional scarcity boost."
   }
 }
