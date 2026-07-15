@@ -6,12 +6,17 @@ import { map } from 'rxjs/operators';
 import type { RawDraft } from '../models/draft.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
+import type { RawTransaction } from '../models/transaction.models';
 
 export interface LeagueDataLoadResult {
   leagueRaw: RawLeague;
   playersRaw: RawPlayer[];
   nflTeamsRaw: RawNFLTeam[];
   draftsRaw: RawDraft[];
+}
+
+export interface MovesDataLoadResult extends LeagueDataLoadResult {
+  transactionsRaw: RawTransaction[];
 }
 
 export interface PastSeasonResourceIndex {
@@ -66,6 +71,10 @@ export class DataApiService {
     return this.http.get<RawDraft[]>('data/Drafts.json');
   }
 
+  getTransactionsRaw(): Observable<RawTransaction[]> {
+    return this.http.get<RawTransaction[]>('data/Transactions.json');
+  }
+
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {
     return this.http.get<PastSeasonsIndex>('data/PastSeasonsIndex.json');
   }
@@ -83,6 +92,18 @@ export class DataApiService {
       nflTeamsRaw: this.getNflTeamsRaw(),
       draftsRaw: this.getDraftsRaw()
     });
+  }
+
+  getMovesData(): Observable<MovesDataLoadResult> {
+    return forkJoin({
+      leagueData: this.getLeagueData(),
+      transactionsRaw: this.getTransactionsRaw()
+    }).pipe(
+      map(({ leagueData, transactionsRaw }) => ({
+        ...leagueData,
+        transactionsRaw
+      }))
+    );
   }
 
   private normalizeDataPath(path: string): string {
