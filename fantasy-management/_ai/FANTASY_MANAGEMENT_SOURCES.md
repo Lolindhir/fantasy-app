@@ -145,15 +145,16 @@ python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
 
 The fetcher must fail closed: do not update `latest.json` after network, schema, row-count or rank-validation errors. A successful refresh must retain the complete parsed `ecrData` payload, write a normalized CSV with `position_rank`, `tier`, `rank_min`, `rank_max`, `rank_ave` and `rank_std`, and document both files plus field coverage and cross-field diagnostics in metadata.
 
-Interpret FantasyPros consensus fields as follows:
+Detailed field semantics, observed source behavior and interpretation limits are canonical in:
 
-- use `tier` as the source-provided value cluster and prefer meaningful tier breaks over small rank differences inside one tier
-- use `rank_std` as the primary expert-dispersion signal; lower means tighter agreement and higher means wider disagreement
-- use `rank_min` and `rank_max` as best/worst submitted expert-rank extremes and remember that their range may be driven by an outlier
-- use `rank_ave` as the average submitted expert rank
-- treat `rank_ecr` as FantasyPros' final published consensus ordering; it is not guaranteed to lie inside `rank_min`/`rank_max`
-- retain and document ECR-outside-range cases as source diagnostics rather than rejecting the complete snapshot
-- do not interpret dispersion as a probability, projection confidence, injury risk or guarantee that the ECR will be correct
+`fantasy-management/sources/external-rankings/fantasypros/README.md`
+
+Operational rules:
+
+- never assume that `rank_ecr` must lie inside `rank_min`/`rank_max`
+- interpret `rank_std` as dispersion of source-provided expert-rank values, not as total expert coverage, outcome confidence or probability
+- treat explanations involving unranked players, expert weighting, freshness or caching as plausible but unconfirmed unless FantasyPros documents the aggregation method
+- retain ECR-outside-range cases and their diagnostics instead of mutating or rejecting valid source values
 
 Treat FantasyPros Dynasty ECR as expert-consensus context, not ADP or league-specific truth. For the current fixed-2QB Mighty Giants league, apply an additional quarterback-scarcity interpretation only during analysis, not by mutating the source snapshot.
 
