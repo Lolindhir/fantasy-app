@@ -2,10 +2,14 @@ import type { DraftPick } from './draft.models';
 import type { Player } from './player.models';
 
 export interface DataTimestamps {
-  League: string;
-  Players: string;
-  Teams: string;
-  Drafts: string;
+  League?: string;
+  Players?: string;
+  Teams?: string;
+  Drafts?: string;
+  Transactions?: string;
+  Standings?: string;
+  Games?: string;
+  Schedule?: string;
 }
 
 export interface PlayoffTeam {
