@@ -10,7 +10,8 @@ param(
         "standings",
         "teams",
         "past-seasons-index",
-        "backup-cleanup"
+        "backup-cleanup",
+        "fantasypros-rankings"
     )]
     [string]$Scope
 )
@@ -30,6 +31,7 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/chat/players-relevant/" { return "Player chat export" }
         "^public/data/backup/" { return "Backups" }
+        "^fantasy-management/sources/external-rankings/fantasypros/" { return "FantasyPros rankings" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players_Relevant\.json$" { return "Relevant players" }
