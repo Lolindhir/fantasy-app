@@ -33,7 +33,7 @@ from typing import Any, Iterable
 SOURCE_URL = "https://www.fantasypros.com/nfl/rankings/dynasty-superflex.php"
 SOURCE_ID = "fantasypros"
 RANKING_ID = "dynasty-superflex-ppr"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 MIN_PLAYER_ROWS = 150
 OFFENSIVE_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
 CONSENSUS_FIELDS = ("tier", "rank_min", "rank_max", "rank_ave", "rank_std")
@@ -489,11 +489,44 @@ def build_metadata(
             "consensus_metrics": {
                 "tier": "FantasyPros value cluster; prefer tier breaks over small rank gaps.",
                 "rank_min_rank_max": (
-                    "Best and worst submitted expert ranks; range can be influenced by outliers "
-                    "and is not guaranteed to contain the final published rank_ecr."
+                    "Best and worst source-provided expert ranks; range can be influenced by "
+                    "outliers and is not guaranteed to contain the final published rank_ecr."
                 ),
-                "rank_ave": "Mean submitted expert rank.",
-                "rank_std": "Dispersion of expert ranks; lower values indicate tighter agreement.",
+                "rank_ave": "Mean source-provided expert rank.",
+                "rank_std": (
+                    "Dispersion of source-provided expert ranks; lower values indicate tighter "
+                    "agreement among those values."
+                ),
+            },
+            "field_semantics": {
+                "reference": (
+                    "fantasy-management/sources/external-rankings/fantasypros/README.md"
+                ),
+                "methodology_status": (
+                    "exact_aggregation_formula_not_available_in_source_payload"
+                ),
+                "confirmed_observations": {
+                    "rank_ecr_is_final_published_ordering": True,
+                    "rank_ecr_may_fall_outside_rank_min_rank_max": True,
+                    "rank_ave_expected_within_rank_min_rank_max": True,
+                },
+                "unknowns": [
+                    "per_player_expert_coverage",
+                    "handling_of_unranked_players",
+                    "expert_weighting",
+                    "freshness_or_cache_alignment",
+                ],
+                "interpretation_limits": {
+                    "rank_std": (
+                        "Dispersion of source-provided expert-rank values; not total-panel "
+                        "coverage or outcome confidence."
+                    ),
+                    "rank_min_rank_max": (
+                        "Extrema of source-provided expert-rank values; not a bound on the "
+                        "final rank_ecr."
+                    ),
+                },
+                "plausible_explanation_status": "unconfirmed",
             },
             "league_adjustment": (
                 "Use as a Superflex proxy. In the Mighty Giants league with two fixed QB "
