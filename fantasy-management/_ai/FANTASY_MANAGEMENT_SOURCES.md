@@ -135,7 +135,7 @@ Stored source area:
 
 `fantasy-management/sources/external-rankings/fantasypros/dynasty-superflex-ppr/`
 
-Use `latest.json` to resolve the newest successful snapshot and then load the referenced `ranking.csv` and `metadata.json`.
+Use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance and freshness.
 
 Refresh directly from the official FantasyPros page with:
 
@@ -143,7 +143,7 @@ Refresh directly from the official FantasyPros page with:
 python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
 ```
 
-The fetcher must fail closed: do not update `latest.json` after network, schema, row-count or rank-validation errors. Treat FantasyPros Dynasty ECR as expert-consensus context, not ADP or league-specific truth. For the current fixed-2QB Mighty Giants league, apply an additional quarterback-scarcity interpretation only during analysis, not by mutating the source snapshot.
+The fetcher must fail closed: do not update `latest.json` after network, schema, row-count or rank-validation errors. A successful refresh must retain the complete parsed `ecrData` payload, write a normalized CSV with `position_rank`, and document both files in metadata. Treat FantasyPros Dynasty ECR as expert-consensus context, not ADP or league-specific truth. For the current fixed-2QB Mighty Giants league, apply an additional quarterback-scarcity interpretation only during analysis, not by mutating the source snapshot.
 
 ## Fantasy Management internal sources
 
