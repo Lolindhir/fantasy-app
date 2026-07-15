@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Fetch FantasyPros Dynasty Superflex ECR directly and store a dated snapshot.
+"""Fetch FantasyPros Dynasty Superflex ECR and store a lossless snapshot.
 
 The public FantasyPros rankings page embeds its ranking payload in the HTML as
 ``ecrData = {...}``. This script downloads that official page directly, extracts
-and validates the player rows, then writes:
+and validates the payload, then writes:
 
-- ``ranking.csv`` in a dated snapshot folder
-- ``metadata.json`` next to the CSV
+- ``ranking.csv`` as a compact normalized analysis table
+- ``raw-ecr-data.json`` as the complete parsed ``ecrData`` payload
+- ``metadata.json`` with provenance, schema and freshness information
 - ``latest.json`` as a pointer to the newest successful snapshot
 
 No mirror or cached third-party ranking is used by this script.
@@ -33,7 +34,7 @@ SOURCE_ID = "fantasypros"
 RANKING_ID = "dynasty-superflex-ppr"
 MIN_PLAYER_ROWS = 150
 OFFENSIVE_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
-CSV_FIELDS = ["name", "Rank", "position", "team"]
+CSV_FIELDS = ["name", "Rank", "position", "team", "position_rank", "source_player_id"]
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
@@ -114,7 +115,7 @@ def extract_ecr_data(html: str) -> dict[str, Any]:
 
 
 def parse_players(data: dict[str, Any]) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     seen_ranks: set[int] = set()
 
     for player in data["players"]:
@@ -135,11 +136,28 @@ def parse_players(data: dict[str, Any]) -> list[dict[str, Any]]:
             continue
 
         seen_ranks.add(rank)
-        rows.append({"name": name, "Rank": rank, "position": position, "team": team})
+        candidates.append(
+            {
+                "name": name,
+                "Rank": rank,
+                "position": position,
+                "team": team,
+                "position_rank": str(player.get("pos_rank") or "").strip().upper(),
+                "source_player_id": str(player.get("player_id") or "").strip(),
+                "position_rank_source": "source" if player.get("pos_rank") else "derived",
+            }
+        )
 
-    rows.sort(key=lambda row: row["Rank"])
-    validate_rows(rows)
-    return rows
+    candidates.sort(key=lambda row: row["Rank"])
+    position_counters: Counter[str] = Counter()
+    for row in candidates:
+        position = str(row["position"])
+        position_counters[position] += 1
+        if not row["position_rank"]:
+            row["position_rank"] = f"{position}{position_counters[position]}"
+
+    validate_rows(candidates)
+    return candidates
 
 
 def validate_rows(rows: list[dict[str, Any]]) -> None:
@@ -153,16 +171,28 @@ def validate_rows(rows: list[dict[str, Any]]) -> None:
         raise FantasyProsFetchError("Ranks are not unique and ascending")
     if any(row["position"] not in OFFENSIVE_POSITIONS for row in rows):
         raise FantasyProsFetchError("Unexpected position in parsed rows")
+    if any(not str(row["position_rank"]).strip() for row in rows):
+        raise FantasyProsFetchError("Position rank is missing after normalization")
 
 
 def render_csv(rows: Iterable[dict[str, Any]]) -> str:
     from io import StringIO
 
     buffer = StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=CSV_FIELDS, lineterminator="\n")
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=CSV_FIELDS,
+        extrasaction="ignore",
+        lineterminator="\n",
+    )
     writer.writeheader()
     writer.writerows(rows)
     return buffer.getvalue()
+
+
+def render_raw_json(data: dict[str, Any]) -> str:
+    """Serialize the complete parsed ecrData payload without dropping fields."""
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
 def atomic_write_text(path: Path, content: str) -> None:
@@ -175,19 +205,36 @@ def atomic_write_text(path: Path, content: str) -> None:
     temporary_path.replace(path)
 
 
+def raw_schema_summary(data: dict[str, Any]) -> dict[str, Any]:
+    players = data.get("players")
+    player_fields: set[str] = set()
+    if isinstance(players, list):
+        for player in players:
+            if isinstance(player, dict):
+                player_fields.update(str(key) for key in player.keys())
+    return {
+        "top_level_keys": sorted(str(key) for key in data.keys()),
+        "player_count": len(players) if isinstance(players, list) else 0,
+        "player_field_names": sorted(player_fields),
+    }
+
+
 def build_metadata(
     *,
     rows: list[dict[str, Any]],
     csv_content: str,
+    raw_content: str,
+    ecr_data: dict[str, Any],
     fetched_at: datetime,
     response_headers: dict[str, str],
 ) -> dict[str, Any]:
     ranks = [int(row["Rank"]) for row in rows]
     missing_ranks = sorted(set(range(min(ranks), max(ranks) + 1)) - set(ranks))
     position_counts = Counter(str(row["position"]) for row in rows)
+    position_rank_sources = Counter(str(row["position_rank_source"]) for row in rows)
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "source_id": SOURCE_ID,
         "source_name": "FantasyPros",
         "ranking_id": RANKING_ID,
@@ -208,16 +255,24 @@ def build_metadata(
         "snapshot": {
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
+            "raw_data_file": "raw-ecr-data.json",
             "row_count": len(rows),
             "rank_min": min(ranks),
             "rank_max": max(ranks),
             "missing_ranks": missing_ranks,
             "position_counts": dict(sorted(position_counts.items())),
-            "sha256": hashlib.sha256(csv_content.encode("utf-8")).hexdigest(),
+            "position_rank_source_counts": dict(sorted(position_rank_sources.items())),
+            "csv_columns": CSV_FIELDS,
+            "ranking_sha256": hashlib.sha256(csv_content.encode("utf-8")).hexdigest(),
+            "raw_data_sha256": hashlib.sha256(raw_content.encode("utf-8")).hexdigest(),
         },
+        "raw_schema": raw_schema_summary(ecr_data),
         "extraction_provenance": {
             "method": "direct_official_html_ecrData",
             "uses_mirror": False,
+            "raw_payload_semantics": (
+                "Complete parsed ecrData object; JSON whitespace is normalized but fields are not dropped."
+            ),
             "response_headers": response_headers,
         },
         "freshness": {
@@ -240,9 +295,10 @@ def write_snapshot(
     *,
     repo_root: Path,
     rows: list[dict[str, Any]],
+    ecr_data: dict[str, Any],
     fetched_at: datetime,
     response_headers: dict[str, str],
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path]:
     ranking_root = (
         repo_root
         / "fantasy-management"
@@ -254,34 +310,43 @@ def write_snapshot(
     snapshot_date = fetched_at.date().isoformat()
     snapshot_dir = ranking_root / "snapshots" / snapshot_date
     ranking_path = snapshot_dir / "ranking.csv"
+    raw_path = snapshot_dir / "raw-ecr-data.json"
     metadata_path = snapshot_dir / "metadata.json"
     latest_path = ranking_root / "latest.json"
 
     csv_content = render_csv(rows)
+    raw_content = render_raw_json(ecr_data)
     metadata = build_metadata(
         rows=rows,
         csv_content=csv_content,
+        raw_content=raw_content,
+        ecr_data=ecr_data,
         fetched_at=fetched_at,
         response_headers=response_headers,
     )
     relative_snapshot = snapshot_dir.relative_to(repo_root).as_posix()
     latest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "source_id": SOURCE_ID,
         "ranking_id": RANKING_ID,
         "snapshot_date": snapshot_date,
         "fetched_at": fetched_at.isoformat(),
         "snapshot_path": relative_snapshot,
         "ranking_file": ranking_path.relative_to(repo_root).as_posix(),
+        "raw_data_file": raw_path.relative_to(repo_root).as_posix(),
         "metadata_file": metadata_path.relative_to(repo_root).as_posix(),
         "freshness_status": "live_fetch",
+        "direct_fetcher": "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py",
         "refresh_before_value_sensitive_analysis": True,
     }
 
+    # Write the snapshot files before moving latest.json. A failed write must not
+    # publish a pointer to an incomplete snapshot.
     atomic_write_text(ranking_path, csv_content)
+    atomic_write_text(raw_path, raw_content)
     atomic_write_text(metadata_path, json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
     atomic_write_text(latest_path, json.dumps(latest, indent=2, ensure_ascii=False) + "\n")
-    return ranking_path, metadata_path, latest_path
+    return ranking_path, raw_path, metadata_path, latest_path
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -327,17 +392,23 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.dry_run:
             counts = Counter(row["position"] for row in rows)
+            position_rank_sources = Counter(row["position_rank_source"] for row in rows)
             print(
                 f"FantasyPros rows={len(rows)} "
                 + " ".join(f"{key}={counts[key]}" for key in sorted(counts))
+                + " position_rank="
+                + "/".join(
+                    f"{key}:{position_rank_sources[key]}" for key in sorted(position_rank_sources)
+                )
             )
             for row in rows[:10]:
-                print(row)
+                print({key: row[key] for key in CSV_FIELDS})
             return 0
 
         paths = write_snapshot(
             repo_root=args.repo_root.resolve(),
             rows=rows,
+            ecr_data=data,
             fetched_at=fetched_at,
             response_headers=response_headers,
         )
