@@ -97,6 +97,68 @@ class FantasyProsFetcherTests(unittest.TestCase):
             self.assertEqual("live_fetch", latest_data["freshness_status"])
             self.assertTrue(latest_data["raw_data_file"].endswith("raw-ecr-data.json"))
 
+    def test_skip_unchanged_avoids_second_snapshot(self):
+        html = self.make_html()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repo_root = Path(temporary_directory)
+            html_path = repo_root / "fantasypros.html"
+            html_path.write_text(html, encoding="utf-8")
+
+            first_result = module.main(
+                [
+                    "--from-file",
+                    str(html_path),
+                    "--repo-root",
+                    str(repo_root),
+                    "--fetched-at",
+                    "2026-07-15T08:00:00Z",
+                    "--skip-unchanged",
+                ]
+            )
+            second_result = module.main(
+                [
+                    "--from-file",
+                    str(html_path),
+                    "--repo-root",
+                    str(repo_root),
+                    "--fetched-at",
+                    "2026-07-16T08:00:00Z",
+                    "--skip-unchanged",
+                ]
+            )
+
+            self.assertEqual(0, first_result)
+            self.assertEqual(0, second_result)
+            snapshot_root = (
+                repo_root
+                / "fantasy-management"
+                / "sources"
+                / "external-rankings"
+                / "fantasypros"
+                / module.RANKING_ID
+                / "snapshots"
+            )
+            self.assertTrue((snapshot_root / "2026-07-15").is_dir())
+            self.assertFalse((snapshot_root / "2026-07-16").exists())
+
+    def test_changed_payload_publishes_new_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repo_root = Path(temporary_directory)
+            first_data = self.make_data()
+            first_rows = module.parse_players(first_data)
+            module.write_snapshot(
+                repo_root=repo_root,
+                rows=first_rows,
+                ecr_data=first_data,
+                fetched_at=datetime(2026, 7, 15, 8, 0, tzinfo=timezone.utc),
+                response_headers={},
+            )
+
+            changed_data = self.make_data()
+            changed_data["players"][0]["rank_min"] = 99
+            self.assertTrue(module.raw_payload_changed(repo_root=repo_root, ecr_data=changed_data))
+            self.assertFalse(module.raw_payload_changed(repo_root=repo_root, ecr_data=first_data))
+
 
 if __name__ == "__main__":
     unittest.main()

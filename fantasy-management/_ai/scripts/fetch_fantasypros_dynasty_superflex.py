@@ -205,6 +205,46 @@ def atomic_write_text(path: Path, content: str) -> None:
     temporary_path.replace(path)
 
 
+def ranking_root(repo_root: Path) -> Path:
+    return (
+        repo_root
+        / "fantasy-management"
+        / "sources"
+        / "external-rankings"
+        / "fantasypros"
+        / RANKING_ID
+    )
+
+
+def latest_raw_data_hash(repo_root: Path) -> str | None:
+    """Read the last published raw payload hash, returning None when unavailable."""
+    latest_path = ranking_root(repo_root) / "latest.json"
+    if not latest_path.is_file():
+        return None
+
+    try:
+        latest = json.loads(latest_path.read_text(encoding="utf-8"))
+        metadata_file = latest.get("metadata_file")
+        if not isinstance(metadata_file, str) or not metadata_file.strip():
+            return None
+        metadata_path = repo_root / metadata_file
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        raw_hash = metadata.get("snapshot", {}).get("raw_data_sha256")
+    except (OSError, json.JSONDecodeError, TypeError, AttributeError):
+        return None
+
+    return raw_hash if isinstance(raw_hash, str) and raw_hash else None
+
+
+def raw_payload_changed(*, repo_root: Path, ecr_data: dict[str, Any]) -> bool:
+    """Return True when no comparable snapshot exists or the raw payload changed."""
+    previous_hash = latest_raw_data_hash(repo_root)
+    if previous_hash is None:
+        return True
+    current_hash = hashlib.sha256(render_raw_json(ecr_data).encode("utf-8")).hexdigest()
+    return current_hash != previous_hash
+
+
 def raw_schema_summary(data: dict[str, Any]) -> dict[str, Any]:
     players = data.get("players")
     player_fields: set[str] = set()
@@ -299,20 +339,13 @@ def write_snapshot(
     fetched_at: datetime,
     response_headers: dict[str, str],
 ) -> tuple[Path, Path, Path, Path]:
-    ranking_root = (
-        repo_root
-        / "fantasy-management"
-        / "sources"
-        / "external-rankings"
-        / "fantasypros"
-        / RANKING_ID
-    )
+    root = ranking_root(repo_root)
     snapshot_date = fetched_at.date().isoformat()
-    snapshot_dir = ranking_root / "snapshots" / snapshot_date
+    snapshot_dir = root / "snapshots" / snapshot_date
     ranking_path = snapshot_dir / "ranking.csv"
     raw_path = snapshot_dir / "raw-ecr-data.json"
     metadata_path = snapshot_dir / "metadata.json"
-    latest_path = ranking_root / "latest.json"
+    latest_path = root / "latest.json"
 
     csv_content = render_csv(rows)
     raw_content = render_raw_json(ecr_data)
@@ -364,6 +397,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--fetched-at",
         help="Override UTC timestamp for reproducible tests (ISO-8601)",
     )
+    parser.add_argument(
+        "--skip-unchanged",
+        action="store_true",
+        help="Do not publish a new snapshot when the complete raw payload matches latest.json",
+    )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -389,6 +427,7 @@ def main(argv: list[str] | None = None) -> int:
         data = extract_ecr_data(html)
         rows = parse_players(data)
         fetched_at = parse_timestamp(args.fetched_at)
+        repo_root = args.repo_root.resolve()
 
         if args.dry_run:
             counts = Counter(row["position"] for row in rows)
@@ -405,8 +444,12 @@ def main(argv: list[str] | None = None) -> int:
                 print({key: row[key] for key in CSV_FIELDS})
             return 0
 
+        if args.skip_unchanged and not raw_payload_changed(repo_root=repo_root, ecr_data=data):
+            print("[fantasypros] raw payload unchanged; no snapshot written")
+            return 0
+
         paths = write_snapshot(
-            repo_root=args.repo_root.resolve(),
+            repo_root=repo_root,
             rows=rows,
             ecr_data=data,
             fetched_at=fetched_at,
