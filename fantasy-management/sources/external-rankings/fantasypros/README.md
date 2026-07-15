@@ -12,6 +12,7 @@ fantasypros/
     snapshots/
       YYYY-MM-DD/
         ranking.csv
+        raw-ecr-data.json
         metadata.json
 ```
 
@@ -32,13 +33,20 @@ python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --f
 
 Der Fetcher nutzt keinen Mirror-Fallback. Bei Netzwerk-, Schema- oder Plausibilitätsfehlern wird kein neuer `latest.json`-Stand veröffentlicht. Erfolgreiche Abrufe erzeugen oder aktualisieren den datierten Snapshot und dokumentieren Abrufzeit, Zeilenanzahl, Positionsverteilung, fehlende Rangnummern und SHA-256.
 
+## Dateien eines Snapshots
+
+- `ranking.csv` ist die kompakte normalisierte Analysequelle. Sie enthält Overall-Rang, Positionsrang, Position, NFL-Team und – sofern FantasyPros ihn liefert – die FantasyPros-Spieler-ID.
+- `raw-ecr-data.json` enthält den vollständigen geparsten `ecrData`-Payload. Die JSON-Formatierung wird normalisiert, aber Felder werden nicht entfernt.
+- `metadata.json` dokumentiert Format, Raw-Schema, Hashes, Abruf- und Snapshot-Provenienz sowie bekannte Einschränkungen.
+- `latest.json` ist nur ein Zeiger auf den zuletzt erfolgreich abgelegten Snapshot und keine eigene Ranking-Quelle.
+
+Der bestehende Snapshot vom 15.07.2026 wurde ursprünglich nur als normalisierte CSV übernommen. Sein Positionsrang wurde aus der Reihenfolge innerhalb jeder Position abgeleitet. Ein Raw-Payload wird dafür bewusst nicht rekonstruiert oder als Originalquelle ausgegeben. Der nächste erfolgreiche Direktabruf erzeugt `raw-ecr-data.json` automatisch und übernimmt `pos_rank` direkt aus FantasyPros, soweit vorhanden.
+
 ## Nutzungsregeln
 
 - Die Snapshots sind externe Quellenkontexte und keine dauerhafte Wahrheit.
 - Für aktuelle Spieler-, Trade-, Draft-, Roster- oder Free-Agent-Entscheidungen soll der direkte Abruf erneut ausgeführt werden, wenn der Snapshot nicht vom selben Tag stammt oder sich der Markt schnell bewegt.
-- `ranking.csv` enthält das externe Overall-Ranking mit Rank, Spielername, Position und NFL-Team.
-- `metadata.json` dokumentiert Format, Abruf- und Snapshot-Provenienz sowie bekannte Einschränkungen.
-- `latest.json` ist nur ein Zeiger auf den zuletzt erfolgreich abgelegten Snapshot und keine eigene Ranking-Quelle.
+- Die normalisierte CSV ist die primäre Join- und Analysequelle; die Raw-JSON dient für zusätzliche Felder, Schema-Audits und spätere Neuauswertungen.
 - Das FantasyPros-Superflex-Ranking wird als PPR-/Superflex-Proxy für die Liga verwendet. Bei zwei fest vorgeschriebenen QB-Startplätzen müssen Quarterbacks in der finalen Mighty-Giants-Analyse gegebenenfalls zusätzlich aufgewertet werden.
 
 ## Quellenrolle
