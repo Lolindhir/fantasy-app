@@ -129,6 +129,22 @@ Rules:
 - do not let external sources override current league data
 - do not store dynamic external rankings as permanent truth
 
+### FantasyPros Dynasty Superflex PPR snapshot
+
+Stored source area:
+
+`fantasy-management/sources/external-rankings/fantasypros/dynasty-superflex-ppr/`
+
+Use `latest.json` to resolve the newest successful snapshot and then load the referenced `ranking.csv` and `metadata.json`.
+
+Refresh directly from the official FantasyPros page with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
+```
+
+The fetcher must fail closed: do not update `latest.json` after network, schema, row-count or rank-validation errors. Treat FantasyPros Dynasty ECR as expert-consensus context, not ADP or league-specific truth. For the current fixed-2QB Mighty Giants league, apply an additional quarterback-scarcity interpretation only during analysis, not by mutating the source snapshot.
+
 ## Fantasy Management internal sources
 
 The Fantasy Management workspace stores source, Knowledge, analysis and decision artifacts under:
