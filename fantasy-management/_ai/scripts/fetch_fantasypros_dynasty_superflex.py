@@ -26,15 +26,30 @@ import urllib.error
 import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterable
 
 SOURCE_URL = "https://www.fantasypros.com/nfl/rankings/dynasty-superflex.php"
 SOURCE_ID = "fantasypros"
 RANKING_ID = "dynasty-superflex-ppr"
+SCHEMA_VERSION = 4
 MIN_PLAYER_ROWS = 150
 OFFENSIVE_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
-CSV_FIELDS = ["name", "Rank", "position", "team", "position_rank", "source_player_id"]
+CONSENSUS_FIELDS = ("tier", "rank_min", "rank_max", "rank_ave", "rank_std")
+CSV_FIELDS = [
+    "name",
+    "Rank",
+    "position",
+    "team",
+    "position_rank",
+    "tier",
+    "rank_min",
+    "rank_max",
+    "rank_ave",
+    "rank_std",
+    "source_player_id",
+]
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
@@ -114,6 +129,53 @@ def extract_ecr_data(html: str) -> dict[str, Any]:
     return data
 
 
+def parse_optional_int(
+    value: Any,
+    *,
+    field_name: str,
+    player_name: str,
+    minimum: int = 1,
+) -> int | str:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return ""
+    try:
+        parsed = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError) as exc:
+        raise FantasyProsFetchError(
+            f"Invalid {field_name} for {player_name}: {value!r}"
+        ) from exc
+    if not parsed.is_finite() or parsed != parsed.to_integral_value():
+        raise FantasyProsFetchError(f"Invalid {field_name} for {player_name}: {value!r}")
+    result = int(parsed)
+    if result < minimum:
+        raise FantasyProsFetchError(
+            f"{field_name} for {player_name} must be at least {minimum}: {result}"
+        )
+    return result
+
+
+def parse_optional_decimal(
+    value: Any,
+    *,
+    field_name: str,
+    player_name: str,
+    minimum: Decimal = Decimal("0"),
+) -> Decimal | str:
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return ""
+    try:
+        parsed = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError) as exc:
+        raise FantasyProsFetchError(
+            f"Invalid {field_name} for {player_name}: {value!r}"
+        ) from exc
+    if not parsed.is_finite() or parsed < minimum:
+        raise FantasyProsFetchError(
+            f"{field_name} for {player_name} must be at least {minimum}: {value!r}"
+        )
+    return parsed
+
+
 def parse_players(data: dict[str, Any]) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
     seen_ranks: set[int] = set()
@@ -143,6 +205,21 @@ def parse_players(data: dict[str, Any]) -> list[dict[str, Any]]:
                 "position": position,
                 "team": team,
                 "position_rank": str(player.get("pos_rank") or "").strip().upper(),
+                "tier": parse_optional_int(
+                    player.get("tier"), field_name="tier", player_name=name
+                ),
+                "rank_min": parse_optional_int(
+                    player.get("rank_min"), field_name="rank_min", player_name=name
+                ),
+                "rank_max": parse_optional_int(
+                    player.get("rank_max"), field_name="rank_max", player_name=name
+                ),
+                "rank_ave": parse_optional_decimal(
+                    player.get("rank_ave"), field_name="rank_ave", player_name=name
+                ),
+                "rank_std": parse_optional_decimal(
+                    player.get("rank_std"), field_name="rank_std", player_name=name
+                ),
                 "source_player_id": str(player.get("player_id") or "").strip(),
                 "position_rank_source": "source" if player.get("pos_rank") else "derived",
             }
@@ -173,6 +250,33 @@ def validate_rows(rows: list[dict[str, Any]]) -> None:
         raise FantasyProsFetchError("Unexpected position in parsed rows")
     if any(not str(row["position_rank"]).strip() for row in rows):
         raise FantasyProsFetchError("Position rank is missing after normalization")
+
+    for row in rows:
+        name = str(row["name"])
+        rank = int(row["Rank"])
+        rank_min = row["rank_min"]
+        rank_max = row["rank_max"]
+        rank_ave = row["rank_ave"]
+        rank_std = row["rank_std"]
+
+        if rank_min != "" and rank_max != "":
+            minimum = int(rank_min)
+            maximum = int(rank_max)
+            if minimum > maximum:
+                raise FantasyProsFetchError(
+                    f"rank_min exceeds rank_max for {name}: {minimum} > {maximum}"
+                )
+            if not minimum <= rank <= maximum:
+                raise FantasyProsFetchError(
+                    f"rank_ecr is outside rank_min/rank_max for {name}: "
+                    f"{minimum} <= {rank} <= {maximum} is false"
+                )
+            if rank_ave != "" and not Decimal(minimum) <= rank_ave <= Decimal(maximum):
+                raise FantasyProsFetchError(
+                    f"rank_ave is outside rank_min/rank_max for {name}: {rank_ave}"
+                )
+        if rank_std != "" and rank_std < 0:
+            raise FantasyProsFetchError(f"rank_std is negative for {name}: {rank_std}")
 
 
 def render_csv(rows: Iterable[dict[str, Any]]) -> str:
@@ -216,8 +320,7 @@ def ranking_root(repo_root: Path) -> Path:
     )
 
 
-def latest_raw_data_hash(repo_root: Path) -> str | None:
-    """Read the last published raw payload hash, returning None when unavailable."""
+def latest_snapshot_metadata(repo_root: Path) -> dict[str, Any] | None:
     latest_path = ranking_root(repo_root) / "latest.json"
     if not latest_path.is_file():
         return None
@@ -227,22 +330,34 @@ def latest_raw_data_hash(repo_root: Path) -> str | None:
         metadata_file = latest.get("metadata_file")
         if not isinstance(metadata_file, str) or not metadata_file.strip():
             return None
-        metadata_path = repo_root / metadata_file
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        raw_hash = metadata.get("snapshot", {}).get("raw_data_sha256")
+        metadata = json.loads((repo_root / metadata_file).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError, TypeError, AttributeError):
         return None
+    return metadata if isinstance(metadata, dict) else None
 
-    return raw_hash if isinstance(raw_hash, str) and raw_hash else None
 
-
-def raw_payload_changed(*, repo_root: Path, ecr_data: dict[str, Any]) -> bool:
-    """Return True when no comparable snapshot exists or the raw payload changed."""
-    previous_hash = latest_raw_data_hash(repo_root)
-    if previous_hash is None:
+def snapshot_needs_refresh(*, repo_root: Path, ecr_data: dict[str, Any]) -> bool:
+    """Refresh when payload or normalized schema differs from the published snapshot."""
+    metadata = latest_snapshot_metadata(repo_root)
+    if metadata is None:
+        return True
+    snapshot = metadata.get("snapshot")
+    if not isinstance(snapshot, dict):
+        return True
+    if metadata.get("schema_version") != SCHEMA_VERSION:
+        return True
+    if snapshot.get("csv_columns") != CSV_FIELDS:
+        return True
+    previous_hash = snapshot.get("raw_data_sha256")
+    if not isinstance(previous_hash, str) or not previous_hash:
         return True
     current_hash = hashlib.sha256(render_raw_json(ecr_data).encode("utf-8")).hexdigest()
     return current_hash != previous_hash
+
+
+def raw_payload_changed(*, repo_root: Path, ecr_data: dict[str, Any]) -> bool:
+    """Backward-compatible alias that now also detects normalized schema changes."""
+    return snapshot_needs_refresh(repo_root=repo_root, ecr_data=ecr_data)
 
 
 def raw_schema_summary(data: dict[str, Any]) -> dict[str, Any]:
@@ -256,6 +371,13 @@ def raw_schema_summary(data: dict[str, Any]) -> dict[str, Any]:
         "top_level_keys": sorted(str(key) for key in data.keys()),
         "player_count": len(players) if isinstance(players, list) else 0,
         "player_field_names": sorted(player_fields),
+    }
+
+
+def consensus_field_coverage(rows: list[dict[str, Any]]) -> dict[str, int]:
+    return {
+        field: sum(1 for row in rows if row.get(field) not in (None, ""))
+        for field in CONSENSUS_FIELDS
     }
 
 
@@ -274,7 +396,7 @@ def build_metadata(
     position_rank_sources = Counter(str(row["position_rank_source"]) for row in rows)
 
     return {
-        "schema_version": 3,
+        "schema_version": SCHEMA_VERSION,
         "source_id": SOURCE_ID,
         "source_name": "FantasyPros",
         "ranking_id": RANKING_ID,
@@ -302,6 +424,7 @@ def build_metadata(
             "missing_ranks": missing_ranks,
             "position_counts": dict(sorted(position_counts.items())),
             "position_rank_source_counts": dict(sorted(position_rank_sources.items())),
+            "consensus_field_coverage": consensus_field_coverage(rows),
             "csv_columns": CSV_FIELDS,
             "ranking_sha256": hashlib.sha256(csv_content.encode("utf-8")).hexdigest(),
             "raw_data_sha256": hashlib.sha256(raw_content.encode("utf-8")).hexdigest(),
@@ -323,6 +446,12 @@ def build_metadata(
             "role": "External expert-consensus context",
             "not_adp": True,
             "not_league_specific": True,
+            "consensus_metrics": {
+                "tier": "FantasyPros value cluster; prefer tier breaks over small rank gaps.",
+                "rank_min_rank_max": "Best and worst expert ranks; range can be influenced by outliers.",
+                "rank_ave": "Mean expert rank.",
+                "rank_std": "Dispersion of expert ranks; lower values indicate tighter agreement.",
+            },
             "league_adjustment": (
                 "Use as a Superflex proxy. In the Mighty Giants league with two fixed QB "
                 "starters, quarterbacks may require an additional scarcity boost."
@@ -359,7 +488,7 @@ def write_snapshot(
     )
     relative_snapshot = snapshot_dir.relative_to(repo_root).as_posix()
     latest = {
-        "schema_version": 3,
+        "schema_version": SCHEMA_VERSION,
         "source_id": SOURCE_ID,
         "ranking_id": RANKING_ID,
         "snapshot_date": snapshot_date,
@@ -400,7 +529,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--skip-unchanged",
         action="store_true",
-        help="Do not publish a new snapshot when the complete raw payload matches latest.json",
+        help="Do not publish when both raw payload and normalized snapshot schema are unchanged",
     )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
@@ -432,6 +561,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run:
             counts = Counter(row["position"] for row in rows)
             position_rank_sources = Counter(row["position_rank_source"] for row in rows)
+            coverage = consensus_field_coverage(rows)
             print(
                 f"FantasyPros rows={len(rows)} "
                 + " ".join(f"{key}={counts[key]}" for key in sorted(counts))
@@ -439,13 +569,17 @@ def main(argv: list[str] | None = None) -> int:
                 + "/".join(
                     f"{key}:{position_rank_sources[key]}" for key in sorted(position_rank_sources)
                 )
+                + " consensus="
+                + "/".join(f"{key}:{coverage[key]}" for key in CONSENSUS_FIELDS)
             )
             for row in rows[:10]:
                 print({key: row[key] for key in CSV_FIELDS})
             return 0
 
-        if args.skip_unchanged and not raw_payload_changed(repo_root=repo_root, ecr_data=data):
-            print("[fantasypros] raw payload unchanged; no snapshot written")
+        if args.skip_unchanged and not snapshot_needs_refresh(
+            repo_root=repo_root, ecr_data=data
+        ):
+            print("[fantasypros] payload and normalized schema unchanged; no snapshot written")
             return 0
 
         paths = write_snapshot(
