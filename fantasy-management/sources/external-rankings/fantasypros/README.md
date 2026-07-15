@@ -50,7 +50,7 @@ Workflow-Datei:
 
 - `ranking.csv` ist die kompakte normalisierte Analysequelle. Sie enthält Spielername, Overall-ECR, Position, NFL-Team, Positionsrang, Tier, besten und schlechtesten Expertenrang, durchschnittlichen Expertenrang, Rang-Standardabweichung und – sofern FantasyPros ihn liefert – die FantasyPros-Spieler-ID.
 - `raw-ecr-data.json` enthält den vollständigen geparsten `ecrData`-Payload. Die JSON-Formatierung wird normalisiert, aber Felder werden nicht entfernt.
-- `metadata.json` dokumentiert Format, Raw-Schema, Feldabdeckung, Hashes, Abruf- und Snapshot-Provenienz sowie bekannte Einschränkungen.
+- `metadata.json` dokumentiert Format, Raw-Schema, Feldabdeckung, Beziehungen zwischen Konsensfeldern, Hashes, Abruf- und Snapshot-Provenienz sowie bekannte Einschränkungen.
 - `latest.json` ist nur ein Zeiger auf den zuletzt erfolgreich abgelegten Snapshot und keine eigene Ranking-Quelle.
 
 Normalisierte CSV-Spalten:
@@ -66,9 +66,10 @@ name,Rank,position,team,position_rank,tier,rank_min,rank_max,rank_ave,rank_std,s
 - `rank_ave` ist der durchschnittliche Expertenrang.
 - `rank_std` misst die Streuung der Expertenränge. Ein kleiner Wert steht für engeren Konsens, ein großer Wert für stärkere Abweichungen.
 - Eine große Min-Max-Spanne kann durch einen einzelnen Ausreißer entstehen. Für die Konsensstärke ist `rank_std` deshalb das primäre Streuungsmaß; Min-Max bleibt eine ergänzende Extremwertprüfung.
+- `rank_ecr` ist die von FantasyPros veröffentlichte finale Konsensreihenfolge. Sie ist nicht garantiert innerhalb von `rank_min` und `rank_max`, weil diese Felder die eingereichten Expertenränge beschreiben. Solche Fälle werden als Diagnose in `metadata.json` dokumentiert und nicht als fehlerhafter Payload verworfen.
 - `rank_std` ist keine Wahrscheinlichkeit, kein Verletzungsrisiko und keine direkte Aussage über die Wahrscheinlichkeit, dass ein Spieler seinen ECR bestätigt.
 
-Fehlende optionale Konsenswerte bleiben in der CSV leer. Nichtleere Werte werden numerisch normalisiert und fail-closed validiert: Tier und Ränge müssen positiv sein, `rank_min` darf `rank_max` nicht übersteigen, ECR und Durchschnitt müssen innerhalb der vorhandenen Min-Max-Spanne liegen und `rank_std` darf nicht negativ sein.
+Fehlende optionale Konsenswerte bleiben in der CSV leer. Nichtleere Werte werden numerisch normalisiert und fail-closed validiert: Tier und Ränge müssen positiv sein, `rank_min` darf `rank_max` nicht übersteigen, `rank_ave` muss innerhalb der vorhandenen Min-Max-Spanne liegen und `rank_std` darf nicht negativ sein. Ein ECR außerhalb der Experten-Spanne bleibt als originaler Quellwert erhalten.
 
 ## Nutzungsregeln
 
