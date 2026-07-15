@@ -253,7 +253,6 @@ def validate_rows(rows: list[dict[str, Any]]) -> None:
 
     for row in rows:
         name = str(row["name"])
-        rank = int(row["Rank"])
         rank_min = row["rank_min"]
         rank_max = row["rank_max"]
         rank_ave = row["rank_ave"]
@@ -266,11 +265,11 @@ def validate_rows(rows: list[dict[str, Any]]) -> None:
                 raise FantasyProsFetchError(
                     f"rank_min exceeds rank_max for {name}: {minimum} > {maximum}"
                 )
-            if not minimum <= rank <= maximum:
-                raise FantasyProsFetchError(
-                    f"rank_ecr is outside rank_min/rank_max for {name}: "
-                    f"{minimum} <= {rank} <= {maximum} is false"
-                )
+            # rank_ecr is FantasyPros' final published consensus ordering. It is
+            # not guaranteed to be bounded by the best/worst submitted expert
+            # ranks, so outside-range ECR values are diagnostics rather than
+            # malformed source data. The arithmetic mean must still remain
+            # within the expert range when all three fields are present.
             if rank_ave != "" and not Decimal(minimum) <= rank_ave <= Decimal(maximum):
                 raise FantasyProsFetchError(
                     f"rank_ave is outside rank_min/rank_max for {name}: {rank_ave}"
@@ -381,6 +380,46 @@ def consensus_field_coverage(rows: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
+def consensus_relationship_diagnostics(
+    rows: list[dict[str, Any]], *, sample_limit: int = 20
+) -> dict[str, Any]:
+    """Describe valid cross-field relationships that merit analyst attention.
+
+    FantasyPros can publish a final ``rank_ecr`` outside the submitted-expert
+    ``rank_min``/``rank_max`` interval. Preserve those source values and surface
+    them as diagnostics instead of rejecting the complete snapshot.
+    """
+    samples: list[dict[str, Any]] = []
+    count = 0
+    for row in rows:
+        rank_min = row.get("rank_min")
+        rank_max = row.get("rank_max")
+        if rank_min in (None, "") or rank_max in (None, ""):
+            continue
+        rank_ecr = int(row["Rank"])
+        minimum = int(rank_min)
+        maximum = int(rank_max)
+        if minimum <= rank_ecr <= maximum:
+            continue
+        count += 1
+        if len(samples) < sample_limit:
+            rank_ave = row.get("rank_ave")
+            samples.append(
+                {
+                    "name": str(row["name"]),
+                    "rank_ecr": rank_ecr,
+                    "rank_min": minimum,
+                    "rank_max": maximum,
+                    "rank_ave": "" if rank_ave in (None, "") else str(rank_ave),
+                }
+            )
+    return {
+        "ecr_outside_expert_range_count": count,
+        "ecr_outside_expert_range_samples": samples,
+        "sample_limit": sample_limit,
+    }
+
+
 def build_metadata(
     *,
     rows: list[dict[str, Any]],
@@ -425,6 +464,7 @@ def build_metadata(
             "position_counts": dict(sorted(position_counts.items())),
             "position_rank_source_counts": dict(sorted(position_rank_sources.items())),
             "consensus_field_coverage": consensus_field_coverage(rows),
+            "consensus_relationship_diagnostics": consensus_relationship_diagnostics(rows),
             "csv_columns": CSV_FIELDS,
             "ranking_sha256": hashlib.sha256(csv_content.encode("utf-8")).hexdigest(),
             "raw_data_sha256": hashlib.sha256(raw_content.encode("utf-8")).hexdigest(),
@@ -448,8 +488,11 @@ def build_metadata(
             "not_league_specific": True,
             "consensus_metrics": {
                 "tier": "FantasyPros value cluster; prefer tier breaks over small rank gaps.",
-                "rank_min_rank_max": "Best and worst expert ranks; range can be influenced by outliers.",
-                "rank_ave": "Mean expert rank.",
+                "rank_min_rank_max": (
+                    "Best and worst submitted expert ranks; range can be influenced by outliers "
+                    "and is not guaranteed to contain the final published rank_ecr."
+                ),
+                "rank_ave": "Mean submitted expert rank.",
                 "rank_std": "Dispersion of expert ranks; lower values indicate tighter agreement.",
             },
             "league_adjustment": (
@@ -555,6 +598,14 @@ def main(argv: list[str] | None = None) -> int:
 
         data = extract_ecr_data(html)
         rows = parse_players(data)
+        relationship_diagnostics = consensus_relationship_diagnostics(rows)
+        mismatch_count = relationship_diagnostics["ecr_outside_expert_range_count"]
+        if mismatch_count:
+            print(
+                f"[fantasypros] note: {mismatch_count} rows have rank_ecr outside "
+                "rank_min/rank_max; source values retained",
+                file=sys.stderr,
+            )
         fetched_at = parse_timestamp(args.fetched_at)
         repo_root = args.repo_root.resolve()
 
@@ -571,6 +622,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 + " consensus="
                 + "/".join(f"{key}:{coverage[key]}" for key in CONSENSUS_FIELDS)
+                + f" ecr_outside_range:{mismatch_count}"
             )
             for row in rows[:10]:
                 print({key: row[key] for key in CSV_FIELDS})
