@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "source_id": "fantasypros",
   "source_name": "FantasyPros",
   "ranking_id": "dynasty-superflex-ppr",
@@ -20,6 +20,8 @@
   "snapshot": {
     "snapshot_date": "2026-07-15",
     "ranking_file": "ranking.csv",
+    "raw_data_file": null,
+    "raw_payload_status": "unavailable_for_preexisting_snapshot",
     "row_count": 539,
     "rank_min": 1,
     "rank_max": 541,
@@ -33,10 +35,24 @@
       "TE": 99,
       "WR": 232
     },
-    "sha256": "7172dfc5a9121b5b18cdccb661e97ca5bb15981393d1c9c6a9b5a303bba6d2ef"
+    "position_rank_source_counts": {
+      "derived": 539,
+      "source": 0
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "position",
+      "team",
+      "position_rank",
+      "source_player_id"
+    ],
+    "ranking_sha256": "c1b5de31f302f347dc2617616952b77c358cfc5ca8f2a35a3c049427447abf65",
+    "raw_data_sha256": null
   },
+  "raw_schema": null,
   "extraction_provenance": {
-    "method": "same_day_direct_scraper_snapshot",
+    "method": "same_day_direct_scraper_normalized_export",
     "uses_april_snapshot": false,
     "upstream_repository": "jasonleetucker-code/riskittogetthebrisket",
     "upstream_path": "data/ros/sources/fantasyProsRosSf.csv",
@@ -44,12 +60,14 @@
     "upstream_run_completed_at": "2026-07-15T07:02:42.440160+00:00",
     "upstream_run_status": "ok",
     "upstream_rows_written": 539,
-    "repository_direct_fetcher": "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py"
+    "repository_direct_fetcher": "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py",
+    "position_rank_method": "Derived by counting players within each position in ascending overall ECR order.",
+    "raw_payload_limitation": "The original ecrData payload was not retained for this preexisting snapshot. It is not reconstructed from the normalized CSV."
   },
   "freshness": {
     "status": "same_day_snapshot",
     "refresh_before_value_sensitive_analysis": true,
-    "limitation": "The checked-in rows come from a successful same-day scraper run against the official FantasyPros page. Future refreshes should use the repository's direct fetcher so the repository owns the complete retrieval and provenance chain."
+    "limitation": "The checked-in rows come from a successful same-day scraper run against the official FantasyPros page. The expanded direct fetcher will retain the complete raw ecrData payload on the next successful refresh."
   },
   "analysis_usage": {
     "role": "External expert-consensus context",
