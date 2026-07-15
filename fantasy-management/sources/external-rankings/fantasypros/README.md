@@ -29,9 +29,22 @@ Nützliche Prüfmodi:
 ```bash
 python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --dry-run
 python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --from-file path/to/saved-page.html --dry-run
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
 ```
 
 Der Fetcher nutzt keinen Mirror-Fallback. Bei Netzwerk-, Schema- oder Plausibilitätsfehlern wird kein neuer `latest.json`-Stand veröffentlicht. Erfolgreiche Abrufe erzeugen oder aktualisieren den datierten Snapshot und dokumentieren Abrufzeit, Zeilenanzahl, Positionsverteilung, fehlende Rangnummern und SHA-256.
+
+Mit `--skip-unchanged` wird kein neuer Snapshot geschrieben, wenn der vollständige normalisierte Raw-Payload denselben SHA-256 wie der zuletzt veröffentlichte Snapshot hat.
+
+## Automatische Aktualisierung
+
+Der GitHub-Actions-Workflow `Update FantasyPros Rankings` läuft täglich um `05:17 UTC` und kann zusätzlich manuell gestartet werden. Er testet zuerst den Fetcher, führt danach den direkten Abruf mit `--skip-unchanged` aus und committet nur tatsächlich geänderte Snapshot-Dateien.
+
+Workflow-Datei:
+
+```text
+.github/workflows/update-fantasypros-rankings.yml
+```
 
 ## Dateien eines Snapshots
 
