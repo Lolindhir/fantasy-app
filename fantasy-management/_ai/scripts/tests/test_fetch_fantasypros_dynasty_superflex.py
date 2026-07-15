@@ -169,6 +169,24 @@ class FantasyProsFetcherTests(unittest.TestCase):
             )
             self.assertIn("rank_min", metadata_data["raw_schema"]["player_field_names"])
             self.assertEqual(160, metadata_data["raw_schema"]["player_count"])
+            field_semantics = metadata_data["analysis_usage"]["field_semantics"]
+            self.assertEqual(
+                "fantasy-management/sources/external-rankings/fantasypros/README.md",
+                field_semantics["reference"],
+            )
+            self.assertEqual(
+                "exact_aggregation_formula_not_available_in_source_payload",
+                field_semantics["methodology_status"],
+            )
+            self.assertTrue(
+                field_semantics["confirmed_observations"][
+                    "rank_ecr_may_fall_outside_rank_min_rank_max"
+                ]
+            )
+            self.assertIn("per_player_expert_coverage", field_semantics["unknowns"])
+            self.assertEqual(
+                "unconfirmed", field_semantics["plausible_explanation_status"]
+            )
 
             latest_data = json.loads(latest.read_text(encoding="utf-8"))
             self.assertEqual(module.SCHEMA_VERSION, latest_data["schema_version"])
