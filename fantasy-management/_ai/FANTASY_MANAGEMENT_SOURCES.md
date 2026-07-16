@@ -129,25 +129,35 @@ Rules:
 - do not let external sources override current league data
 - do not store dynamic external rankings as permanent truth
 
-### FantasyPros Dynasty Superflex PPR snapshot
+### FantasyPros PPR Superflex ECR snapshots
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/fantasypros/dynasty-superflex-ppr/`
+`fantasy-management/sources/external-rankings/fantasypros/`
 
-Use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance and freshness.
+Available ranking IDs:
 
-Refresh directly from the official FantasyPros page with:
+- `dynasty-superflex-ppr`: long-term asset and market-value context
+- `redraft-ppr-superflex`: current-season lineup, production and win-now context
+
+For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
+
+Refresh directly from the official FantasyPros pages with:
 
 ```bash
 python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
+python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py
 ```
 
-The fetcher must fail closed: do not update `latest.json` after network, schema, row-count or rank-validation errors. A successful refresh must retain the complete parsed `ecrData` payload, write a normalized CSV with `position_rank`, `tier`, `rank_min`, `rank_max`, `rank_ave` and `rank_std`, and document both files plus field coverage and cross-field diagnostics in metadata.
+Both fetchers must fail closed: do not update `latest.json` after network, source-identity, schema, row-count or rank-validation errors. A successful refresh must retain the complete parsed `ecrData` payload, write the normalized CSV with `position_rank`, `tier`, `rank_min`, `rank_max`, `rank_ave` and `rank_std`, and document files plus diagnostics in metadata.
 
 Detailed field semantics, observed source behavior and interpretation limits are canonical in:
 
 `fantasy-management/sources/external-rankings/fantasypros/README.md`
+
+The shared machine-readable Dynasty-/Redraft comparison contract is:
+
+`fantasy-management/sources/external-rankings/fantasypros/analysis-metadata.json`
 
 Operational rules:
 
@@ -155,8 +165,12 @@ Operational rules:
 - interpret `rank_std` as dispersion of source-provided expert-rank values, not as total expert coverage, outcome confidence or probability
 - treat explanations involving unranked players, expert weighting, freshness or caching as plausible but unconfirmed unless FantasyPros documents the aggregation method
 - retain ECR-outside-range cases and their diagnostics instead of mutating or rejecting valid source values
+- join Dynasty and Redraft primarily through `source_player_id`
+- prefer snapshots fetched on the same day
+- normalize ranks to list-length-aware percentiles before calculating a cross-ranking gap
+- do not use a raw rank difference when lists or player pools differ
 
-Treat FantasyPros Dynasty ECR as expert-consensus context, not ADP or league-specific truth. For the current fixed-2QB Mighty Giants league, apply an additional quarterback-scarcity interpretation only during analysis, not by mutating the source snapshot.
+Treat FantasyPros Dynasty ECR as long-term expert-consensus context and Redraft ECR as current-season win-now context. Neither is ADP, a projection or league-specific truth. For the fixed-2QB and fixed-2TE Mighty Giants league, apply additional scarcity interpretation only during analysis, not by mutating source snapshots.
 
 ## Fantasy Management internal sources
 

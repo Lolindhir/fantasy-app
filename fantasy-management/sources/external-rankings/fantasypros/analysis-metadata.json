@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasypros",
+  "ranking_family": "fantasypros-ppr-superflex-ecr",
+  "applies_to_ranking_ids": [
+    "dynasty-superflex-ppr",
+    "redraft-ppr-superflex"
+  ],
+  "preferred_join_key": "source_player_id",
+  "fallback_join_key": "normalized_name_and_position",
+  "preferred_snapshot_alignment": "same_day",
+  "rank_comparison": {
+    "rule": "Normalize each rank to a list-length-aware percentile before comparing rankings.",
+    "raw_rank_difference_is_directly_comparable": false,
+    "reason": "The rankings can contain different list lengths, player pools and expert panels.",
+    "recommended_derived_metrics": [
+      "dynasty_percentile",
+      "redraft_percentile",
+      "win_now_gap"
+    ]
+  },
+  "ranking_roles": {
+    "dynasty-superflex-ppr": {
+      "value_horizon": "multi_season",
+      "primary_use": "dynasty_asset_value",
+      "interpretation": "Long-term asset and market-value context."
+    },
+    "redraft-ppr-superflex": {
+      "value_horizon": "single_season",
+      "primary_use": "current_season_lineup_value",
+      "interpretation": "Current-season lineup, production and win-now context."
+    }
+  },
+  "win_now_gap": {
+    "definition": "redraft_percentile minus dynasty_percentile on a scale where a higher percentile is better",
+    "positive_interpretation": "Redraft is relatively stronger than Dynasty; possible win-now producer or veteran discount.",
+    "negative_interpretation": "Dynasty is relatively stronger than Redraft; future asset value may exceed current-season expectation.",
+    "automatic_trade_grade": false
+  },
+  "limitations": [
+    "Prefer snapshots fetched on the same day.",
+    "FantasyPros may use different expert panels or list depths across ranking types.",
+    "Redraft ECR is not a projection and not Dynasty trade value.",
+    "Dynasty ECR is not a current-season Start/Sit ranking.",
+    "Apply Mighty Giants league scarcity, roster, salary, ownership, injury and news context after comparison."
+  ],
+  "field_semantics_reference": "fantasy-management/sources/external-rankings/fantasypros/README.md"
+}
