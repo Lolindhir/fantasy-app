@@ -1,8 +1,8 @@
 // Central model import surface for Angular consumers.
 //
-// Draft, league/team and player model declarations live in dedicated core model
-// files. DataService imports those model declarations directly while its loading
-// and mapping responsibilities are split in later refactor slices.
+// Draft, league/team, player and transaction model declarations live in dedicated
+// core model files. DataService imports those model declarations directly while its
+// loading and mapping responsibilities stay separated.
 
 export type {
   RawDraft,
@@ -55,3 +55,13 @@ export type {
   TopPlayersSalaryResult,
   SortField
 } from './player.models';
+
+export type {
+  TransactionPlayerRosterMap,
+  RawTransactionDraftPick,
+  RawTransaction,
+  TransactionPlayerAsset,
+  TransactionDraftPick,
+  TransactionParticipant,
+  Transaction
+} from './transaction.models';
