@@ -122,8 +122,12 @@
                                     {{ getPlayerName(asset) }}
                                   </span>
                                 }
-                                @for (pick of participant.AcquiredDraftPicks; track pick.DraftKey + '-' + pick.Round + '-' + pick.NewOwnerRosterID) {
-                                  <span class="asset-chip asset-chip--pick">
+                                @for (pick of participant.AcquiredDraftPicks; track draftPickTrackKey(pick)) {
+                                  <span
+                                    class="asset-chip asset-chip--pick"
+                                    [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
+                                    [attr.aria-label]="draftPickLabel(pick) + ', original owner ' + draftPickOriginalOwnerLabel(pick)"
+                                  >
                                     {{ draftPickLabel(pick) }}
                                   </span>
                                 }
@@ -143,8 +147,12 @@
                                     {{ getPlayerName(asset) }}
                                   </span>
                                 }
-                                @for (pick of participant.SentDraftPicks; track pick.DraftKey + '-' + pick.Round + '-' + pick.PreviousOwnerRosterID) {
-                                  <span class="asset-chip asset-chip--pick">
+                                @for (pick of participant.SentDraftPicks; track draftPickTrackKey(pick)) {
+                                  <span
+                                    class="asset-chip asset-chip--pick"
+                                    [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
+                                    [attr.aria-label]="draftPickLabel(pick) + ', original owner ' + draftPickOriginalOwnerLabel(pick)"
+                                  >
                                     {{ draftPickLabel(pick) }}
                                   </span>
                                 }
