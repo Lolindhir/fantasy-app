@@ -63,12 +63,6 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Frontend
 
-- [ ] `Transactions.json` im Frontend modellieren und für Moves anbinden.
-  - Kontext: `src/app/features/league-activity/league-activity.ts` ist aktuell die technische Moves-Komponente und bleibt Platzhalter, weil `Transactions.json` noch nicht im `DataService` geladen wird.
-  - Ziel: Transaction-Interfaces ergänzen und `DataService` so erweitern, dass Trades, Adds, Drops und weitere Roster Moves als expliziter Frontend-Vertrag verfügbar sind.
-  - Ziel: Moves später als chronologische Activity-Timeline darstellen.
-  - Hinweis: Keine Pending-Transaction-Datei erzeugen, solange keine zuverlässige Pending-Quelle existiert.
-
 - [ ] Alternative Sortierung für kompakte Future-Drafts in Drafts prüfen.
   - Kontext: Future-Drafts werden aktuell nach Pick Strength sortiert: zuerst Anzahl Picks in Runde 1, dann Runde 2, dann Runde 3 usw. bis zur flexiblen Draft-Rundenzahl.
   - Alternative: Optional eine Sortierung nach den Draft-Order-Regeln anbieten, z. B. Free-Agent-Drafts nach All-Time-Standings und Rookie-Drafts nach Saison-/Vorjahresplatzierung, sobald eine verlässliche Reihenfolge verfügbar ist.
@@ -79,10 +73,11 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: Die alte Location `src/app/services/data-service.ts` wurde entfernt; Consumer importieren `DataService` aus `src/app/core/services/data.service.ts`.
   - Kontext: Die Zielstruktur `src/app/core`, `src/app/shared` und `src/app/features` ist umgesetzt; geroutete Feature-Seiten liegen unter `src/app/features/**`, wiederverwendbare UI-Komponenten unter `src/app/shared/components/**`.
   - Kontext: `src/app/core/models/fantasy.models.ts` ist der zentrale Model-Importpfad. Feature- und Shared-Komponenten importieren ihre reinen Model-/Type-Abhängigkeiten von dort statt direkt aus `data.service.ts`.
-  - Kontext: Draft-Modelle liegen in `src/app/core/models/draft.models.ts`, League-/Standing-/FantasyTeam-Modelle in `src/app/core/models/league.models.ts`, Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle in `src/app/core/models/player.models.ts`.
-  - Kontext: `src/app/core/services/data-api.service.ts` enthält das HTTP-Laden der generierten JSON-Dateien und Timestamps.
+  - Kontext: Draft-Modelle liegen in `src/app/core/models/draft.models.ts`, League-/Standing-/FantasyTeam-Modelle in `src/app/core/models/league.models.ts`, Player-/NFLTeam-/Stats-/FreeAgentMarket-Modelle in `src/app/core/models/player.models.ts` und Transaction-Modelle in `src/app/core/models/transaction.models.ts`.
+  - Kontext: `src/app/core/services/data-api.service.ts` enthält das HTTP-Laden der generierten JSON-Dateien und Timestamps einschließlich des Moves-Datenpakets.
   - Kontext: `src/app/core/mappers/league.mapper.ts` enthält die reine `RawLeague`-/`RawFantasyTeam`-/DraftPick-zu-`League`/`FantasyTeam`-Transformation inklusive Team-Roster-Zuweisung.
   - Kontext: `src/app/core/mappers/player.mapper.ts` enthält die reine `RawPlayer`-zu-`Player`-Transformation inklusive Stats-, Injury-, SalaryDisplay- und GameHistory-Mapping.
+  - Kontext: `src/app/core/mappers/transaction.mapper.ts` enthält die reine `RawTransaction`-zu-`Transaction`-Transformation mit Team-/Player-Auflösung und participant-bezogener Asset-Richtung.
   - Kontext: `src/app/core/services/free-agent-market.service.ts` enthält die FreeAgentMarket-/RuleBasedAutoCut-Logik für Current- und Projected-Salary-Modi.
   - Kontext: `src/app/shared/utils/player-sort.util.ts` enthält die wiederverwendbare Player-Sortierung.
   - Kontext: `src/app/shared/utils/trade-calculator.util.ts` enthält wiederverwendbare Salary- und Trade-Roster-Berechnungen.
@@ -137,20 +132,26 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Leitplanke: Arbeitsmodi dürfen globale Source-of-Truth-, Write-Strategy-, Dokumentations-, TODO- und Post-Commit-Regeln nicht deaktivieren.
 
 - [ ] Aussagekräftigere Summary-Kacheln für Moves prüfen.
-  - Kontext: Die aktuelle Moves-Seite ist nur ein Platzhalter, weil `Transactions.json` noch nicht im Frontend modelliert ist.
+  - Kontext: Der Moves-MVP zeigt aktuell einfache Counts für Moves, Trades, hinzugefügte Spieler und gehandelte Picks.
   - Ziel: Summary-Kacheln sollen später stärker auf echte Aktivität, Relevanz und nächste Entscheidungen fokussieren.
   - Potenzielle Kacheln: `Traded Picks`, `Next Draft`, `Most Active Team`, `Round 1 Moves`, `Upcoming`, `Moves`.
-  - Hinweis: Sinnvoll vor allem, sobald `Transactions.json` im Frontend modelliert ist und Moves/Trades als explizite Daten verfügbar sind.
 
 - [ ] Moves optisch mit Sleeper-Screenshots und eigener Zielvorstellung weiter verfeinern.
-  - Kontext: Die Moves-Seite ist aktuell ein Platzhalter.
-  - Ziel: Nach Abgleich mit Sleeper-Drafts/Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
+  - Kontext: Die Current-Season-Timeline mit Teams, Acquired-/Sent-Assets und Summary-Kacheln ist als funktionaler MVP umgesetzt.
+  - Ziel: Nach weiterem Abgleich mit Sleeper-Trades und der gewünschten eigenen Darstellung UI/UX gezielt verbessern.
 
 - [ ] Trade Simulator später in Moves integrieren.
   - Kontext: `src/app/features/trade/trade-simulator/trade-simulator.ts` bleibt vorerst eine eigene Route unter `/trade`.
   - Ziel: Später prüfen, ob und wie der Trade Simulator als Tool oder Subbereich unter Moves aufgeht.
 
 ## Erledigt / Archiv
+
+- [x] `Transactions.json` im Frontend modellieren und als Moves-MVP anbinden.
+  - Ergebnis: `transaction.models.ts` trennt den generierten Raw-Vertrag vom aufgelösten Frontend-Modell; `transaction.mapper.ts` ordnet Teams, Spieler und Draft-Picks participant-bezogen als acquired/sent zu.
+  - Ergebnis: `DataApiService` lädt das Moves-Datenpaket, `DataService.getTransactions()` reicht ausschließlich gemappte `Transaction[]` durch und berücksichtigt den Transactions-Timestamp.
+  - Ergebnis: `/moves` zeigt eine chronologische Current-Season-Timeline mit Summary-Kacheln, Teams sowie Player- und Pick-Assets.
+  - Korrektur: Gleichrunde Picks werden über `OriginalOwnerRosterID` unterschieden; sichtbare Pick-Chips enthalten die Team-Abkürzung des Originalbesitzers und Angular-Track-Keys enthalten die vollständige Pick-Bewegung.
+  - Hinweis: Pending Transactions bleiben ausgeschlossen, solange keine zuverlässige Pending-Quelle existiert.
 
 - [x] Abgeschlossene Drafts der aktuellen Saison in `Drafts.json` und Current-Ansichten behalten.
   - Kontext: Ein abgeschlossener Draft gehört bis zum Wechsel von `League.Season` weiterhin zur aktiven Saison und wird für Overview, Current Drafts und vollständiges Draft Capital benötigt.
@@ -204,7 +205,7 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 - [x] Drafts und Moves als getrennte Routen vorbereiten.
   - Kontext: Der gemeinsame Bereich `/league-activity` wurde durch getrennte sichtbare Feature-Routen ersetzt.
-  - Ergebnis: Drafts liegen als eigene Route `/drafts` unter `src/app/features/drafts`; Moves nutzt weiterhin `LeagueActivityComponent` als technische Platzhalter-Komponente unter `/moves`; `/league-activity` leitet auf `/moves` weiter.
+  - Ergebnis: Drafts liegen als eigene Route `/drafts` unter `src/app/features/drafts`; Moves nutzt weiterhin `LeagueActivityComponent` als technische Komponente unter `/moves`; `/league-activity` leitet auf `/moves` weiter.
   - Validierung: Tests nach Merge erfolgreich.
 
 - [x] `Players_Relevant.json`- und Chat-Export-Pfade nach `ConfigUtils.psm1` verlagern.

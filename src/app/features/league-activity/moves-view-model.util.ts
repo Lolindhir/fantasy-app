@@ -80,7 +80,31 @@ export function getMoveTypeIcon(type: string): string {
 }
 
 export function getDraftPickLabel(pick: TransactionDraftPick): string {
-  return `${pick.Season} ${formatDraftType(pick.DraftType)} ${formatRound(pick.Round)}`;
+  const pickLabel = `${pick.Season} ${formatDraftType(pick.DraftType)} ${formatRound(pick.Round)}`;
+  return `${pickLabel} (${getDraftPickOriginalOwnerShortLabel(pick)})`;
+}
+
+export function getDraftPickOriginalOwnerLabel(pick: TransactionDraftPick): string {
+  return pick.OriginalOwner?.Team
+    || pick.OriginalOwner?.Owner
+    || `Team ${pick.OriginalOwnerRosterID}`;
+}
+
+export function getDraftPickTrackKey(pick: TransactionDraftPick): string {
+  return [
+    pick.DraftKey,
+    `R${pick.Round}`,
+    `OO${pick.OriginalOwnerRosterID}`,
+    `PO${pick.PreviousOwnerRosterID}`,
+    `NO${pick.NewOwnerRosterID}`
+  ].join('_');
+}
+
+function getDraftPickOriginalOwnerShortLabel(pick: TransactionDraftPick): string {
+  return pick.OriginalOwner?.TeamAbbr
+    || pick.OriginalOwner?.Team
+    || pick.OriginalOwner?.Owner
+    || `T${pick.OriginalOwnerRosterID}`;
 }
 
 function formatDateLabel(dateKey: string): string {

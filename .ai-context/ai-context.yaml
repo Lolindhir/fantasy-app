@@ -89,7 +89,10 @@ shortContext:
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und .ai-workflow/deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
-  src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt Past Drafts tolerant als einzelnes historisches Draft-Objekt oder Draft-Array und normalisiert alte absolute Index-Pfade
+  src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt League-Daten, Transactions.json für Moves und historische Draft-Ressourcen
+  src/app/core/services/data.service.ts: Öffentliche App-Datenfassade; reicht gemappte League-, Player-, Draft- und Transaction-Daten an Feature-Consumer durch
+  src/app/core/models/transaction.models.ts: Explizite Raw- und Frontend-Modelle für abgeschlossene Transaktionen, Teilnehmer, Spieler-Assets und Draft-Pick-Bewegungen
+  src/app/core/mappers/transaction.mapper.ts: Reiner Mapper für Transactions.json; löst Teams und Spieler auf und ordnet Assets je Teilnehmer als acquired/sent zu
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator; Current entspricht League.Season, Future nur späteren Seasons und Past nur archivierten früheren Seasons
@@ -107,5 +110,6 @@ shortContext:
   src/app/shared/utils/league-standings-view.util.ts: Gemeinsame Frontend-ViewModel-Utility für Current Standings, Season Results, Hall of Fame und Season Archive
   src/app/shared/utils/draft-ui.util.ts: Gemeinsame Frontend-Utility für Draft-Round-Farben und Draft-Status-Klassen
   src/app/shared/utils/draft-capital.util.ts: Gemeinsame Frontend-Utility für Draft-Pick-Reihenfolge, Pick-Strength-Sortierung, RoundCounts und BestPick; aktuell display-/ranking-orientiert, bis generierte Draft-Capital-Werte existieren
-  src/app/features/league-activity/league-activity.ts: Technische Moves-Seite für spätere Transaktionen und Roster Moves
+  src/app/features/league-activity/league-activity.ts: Geroutete Moves-Seite mit chronologischer Current-Season-Timeline, Summary-Kacheln und participant-bezogener Asset-Darstellung
+  src/app/features/league-activity/moves-view-model.util.ts: Frontend-ViewModel- und Display-Utility für Moves; kennzeichnet Draft-Picks eindeutig über ihren Originalbesitzer
   src/app/shared/**: Wiederverwendbare Angular-Bausteine

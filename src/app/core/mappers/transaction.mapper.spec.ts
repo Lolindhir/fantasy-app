@@ -7,11 +7,13 @@ describe('transaction.mapper', () => {
   const teamOne = {
     TeamID: 1,
     Team: 'Team One',
+    TeamAbbr: 'ONE',
     Owner: 'Owner One'
   } as FantasyTeam;
   const teamTwo = {
     TeamID: 2,
     Team: 'Team Two',
+    TeamAbbr: 'TWO',
     Owner: 'Owner Two'
   } as FantasyTeam;
   const playerOne = {
@@ -62,6 +64,42 @@ describe('transaction.mapper', () => {
     expect(participantTwo.DroppedPlayers.map(asset => asset.Player)).toEqual([playerTwo]);
     expect(participantTwo.AcquiredDraftPicks[0].PreviousOwner).toBe(teamOne);
     expect(participantTwo.AcquiredDraftPicks[0].NewOwner).toBe(teamTwo);
+  });
+
+  it('keeps same-round pick swaps distinct by original owner', () => {
+    const transaction = mapRawTransaction(createRawTransaction({
+      RosterIDs: [1, 2],
+      DraftPicks: [
+        {
+          DraftType: 'Rookie',
+          DraftSource: 'Sleeper',
+          DraftKey: '2026_Rookie',
+          Season: '2026',
+          Round: 2,
+          OriginalOwnerRosterID: 1,
+          PreviousOwnerRosterID: 1,
+          NewOwnerRosterID: 2
+        },
+        {
+          DraftType: 'Rookie',
+          DraftSource: 'Sleeper',
+          DraftKey: '2026_Rookie',
+          Season: '2026',
+          Round: 2,
+          OriginalOwnerRosterID: 2,
+          PreviousOwnerRosterID: 2,
+          NewOwnerRosterID: 1
+        }
+      ]
+    }), [teamOne, teamTwo], []);
+
+    const participantOne = transaction.Participants.find(participant => participant.RosterID === 1);
+    const participantTwo = transaction.Participants.find(participant => participant.RosterID === 2);
+
+    expect(participantOne?.AcquiredDraftPicks.map(pick => pick.OriginalOwnerRosterID)).toEqual([2]);
+    expect(participantOne?.SentDraftPicks.map(pick => pick.OriginalOwnerRosterID)).toEqual([1]);
+    expect(participantTwo?.AcquiredDraftPicks.map(pick => pick.OriginalOwnerRosterID)).toEqual([1]);
+    expect(participantTwo?.SentDraftPicks.map(pick => pick.OriginalOwnerRosterID)).toEqual([2]);
   });
 
   it('keeps unresolved assets and discovers roster ids outside RosterIDs', () => {
