@@ -12,6 +12,8 @@ import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import {
   buildMovesViewModel,
   getDraftPickLabel,
+  getDraftPickOriginalOwnerLabel,
+  getDraftPickTrackKey,
   getMoveTypeIcon,
   getMoveTypeLabel
 } from './moves-view-model.util';
@@ -34,6 +36,8 @@ export class LeagueActivityComponent {
   readonly moveTypeLabel = getMoveTypeLabel;
   readonly moveTypeIcon = getMoveTypeIcon;
   readonly draftPickLabel = getDraftPickLabel;
+  readonly draftPickOriginalOwnerLabel = getDraftPickOriginalOwnerLabel;
+  readonly draftPickTrackKey = getDraftPickTrackKey;
 
   readonly timestamp$ = this.dataService.getTransactionsTimestamp().pipe(
     catchError(() => of(undefined))
