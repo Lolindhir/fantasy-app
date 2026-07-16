@@ -3,7 +3,11 @@ import type { TransactionDraftPick } from '../../core/models/transaction.models'
 import {
   getDraftPickLabel,
   getDraftPickOriginalOwnerLabel,
-  getDraftPickTrackKey
+  getDraftPickTrackKey,
+  getIncomingAssetIcon,
+  getIncomingAssetLabel,
+  getOutgoingAssetIcon,
+  getOutgoingAssetLabel
 } from './moves-view-model.util';
 
 describe('moves-view-model.util', () => {
@@ -19,6 +23,22 @@ describe('moves-view-model.util', () => {
     TeamAbbr: 'RVP',
     Owner: 'Marcio231'
   } as FantasyTeam;
+
+  it('uses transfer language only for trades', () => {
+    expect(getIncomingAssetLabel('trade')).toBe('Acquired');
+    expect(getOutgoingAssetLabel('trade')).toBe('Sent');
+    expect(getIncomingAssetIcon('trade')).toBe('south_west');
+    expect(getOutgoingAssetIcon('trade')).toBe('north_east');
+  });
+
+  it('uses roster-action language for adds and cuts', () => {
+    expect(getIncomingAssetLabel('free_agent')).toBe('Added');
+    expect(getOutgoingAssetLabel('free_agent')).toBe('Cut');
+    expect(getIncomingAssetLabel('waiver')).toBe('Added');
+    expect(getOutgoingAssetLabel('waiver')).toBe('Cut');
+    expect(getIncomingAssetIcon('free_agent')).toBe('person_add');
+    expect(getOutgoingAssetIcon('free_agent')).toBe('person_remove');
+  });
 
   it('distinguishes same-round picks by original owner in the visible label', () => {
     const mightyGiantsPick = createPick({
