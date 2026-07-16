@@ -80,7 +80,9 @@ coreConcepts:
   Transaction:
     description: >
       Completed league move from Sleeper and/or manual input. Transactions can
-      affect players and draft-pick ownership.
+      affect players and draft-pick ownership. Angular maps the generated raw
+      transaction into participant-specific acquired and sent assets while retaining
+      OriginalOwnerRosterID as the stable identity of every traded draft pick.
     importantFields:
       - Source
       - TransactionID
@@ -198,19 +200,25 @@ coreConcepts:
 
   MovesFeature:
     description: >
-      Frontend feature area for chronological league activity such as trades,
-      adds, drops and roster movement. Its primary route is /moves. The current
-      technical component is still src/app/features/league-activity/league-activity.ts
-      and currently acts as a placeholder until Transactions.json is modeled in
-      Angular.
+      Frontend feature area for chronological current-season league activity such as
+      trades, adds, drops and roster movement. Its primary route is /moves. The
+      technical component remains src/app/features/league-activity/league-activity.ts
+      for compatibility.
     currentScope:
-      - reserve a Moves page as placeholder until Transactions.json is modeled in Angular
+      - load public/data/Transactions.json through DataApiService together with the common league/player resolution bundle
+      - expose mapped Transaction objects through DataService instead of raw generated transaction JSON
+      - resolve participant teams and player assets while preserving unresolved assets through ID fallbacks
+      - assign players and draft picks per participant as acquired or sent from the generated owner fields
+      - group completed transactions chronologically by CreatedDate
+      - show current-season summary counts, transaction metadata, participant teams and asset chips
+      - identify traded picks by season, draft type, round and original owner so equal-round pick swaps remain distinguishable
       - keep /league-activity as compatibility redirect to /moves
       - keep /trade separate until the Trade Simulator is intentionally integrated into Moves
     doesNotOwn:
       - draft presentation
       - transaction source-of-truth logic
       - generated JSON contracts
+      - pending transaction derivation
 
 transactions:
   sourceOfTruth:
@@ -228,13 +236,16 @@ transactions:
 
   frontendStatus:
     currentState: >
-      Transactions.json exists as generated output but is not yet modeled or
-      loaded by Angular DataService. Moves therefore remains a placeholder instead
-      of rendering transaction data.
-    target: >
-      When Moves are implemented, add explicit transaction interfaces and a
-      frontend mapping/loading path before rendering trades, waiver moves, adds or
-      drops in the Moves timeline.
+      Transactions.json is modeled through RawTransaction and resolved Transaction
+      interfaces. DataApiService loads the current transaction output, DataService
+      maps the shared league/player bundle and transaction.mapper.ts resolves teams,
+      players and participant-specific asset direction before /moves renders the
+      chronological timeline.
+    draftPickIdentity: >
+      A transaction pick is not uniquely identified by season, draft type and round.
+      Multiple picks of the same round can be exchanged in opposite directions in one
+      trade. OriginalOwnerRosterID is therefore retained in the mapped model, visible
+      in Moves pick labels and included in Angular track keys.
 
   manualEnrichment:
     description: >
