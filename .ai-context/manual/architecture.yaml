@@ -102,10 +102,31 @@ frontendStructure:
 
     - path: src/app/core/services/data-api.service.ts
       responsibility: >
-        Low-level HTTP loader for generated JSON files. For Past Drafts it reads
-        PastSeasonsIndex.json, normalizes legacy absolute index paths into
-        app-relative data/... URLs and accepts historical Drafts resources that
-        are stored either as a single RawDraft object or as an array of RawDrafts.
+        Low-level HTTP loader for generated JSON files. It loads the common league
+        data bundle, Transactions.json for the Moves feature and historical resources.
+        For Past Drafts it reads PastSeasonsIndex.json, normalizes legacy absolute
+        index paths into app-relative data/... URLs and accepts historical Drafts
+        resources stored either as one RawDraft object or as an array of RawDrafts.
+
+    - path: src/app/core/services/data.service.ts
+      responsibility: >
+        Public app-data facade and orchestrator. It maps the common league/player
+        bundle once per request path, exposes resolved League, Player, Team and Draft
+        data, and returns mapped current-season Transaction objects for Moves without
+        exposing raw transaction JSON to feature components.
+
+    - path: src/app/core/models/transaction.models.ts
+      responsibility: >
+        Defines the generated RawTransaction contract and the resolved frontend
+        Transaction model, including participant-specific added/dropped players and
+        acquired/sent draft picks.
+
+    - path: src/app/core/mappers/transaction.mapper.ts
+      responsibility: >
+        Pure RawTransaction-to-Transaction mapper. It resolves player and fantasy-team
+        references, keeps unresolved assets through ID fallbacks and assigns each
+        draft-pick movement from PreviousOwnerRosterID to NewOwnerRosterID while
+        retaining OriginalOwnerRosterID as the stable pick identity.
 
     - path: src/app/features/standings/standings-page.ts
       responsibility: >
@@ -158,8 +179,18 @@ frontendStructure:
     - path: src/app/features/league-activity/league-activity.ts
       responsibility: >
         Routed Moves page implementation for /moves. The technical component name
-        is intentionally still LeagueActivityComponent for now. It is a placeholder
-        until Transactions.json is modeled and loaded in the frontend.
+        remains LeagueActivityComponent for compatibility. It consumes mapped
+        current-season Transaction objects from DataService and renders a chronological
+        timeline with summary metrics, participant teams, player movement and traded
+        picks. Pick chips include the original-team abbreviation because multiple
+        picks from the same season, draft type and round can move in opposite directions
+        within one trade.
+
+    - path: src/app/features/league-activity/moves-view-model.util.ts
+      responsibility: >
+        Frontend-only Moves view-model and display utility. It groups transactions by
+        date, derives summary counts, formats transaction labels and creates stable,
+        original-owner-aware draft-pick labels and Angular track keys.
 
     - path: src/app/features/trade/trade-simulator/trade-simulator.ts
       responsibility: >
