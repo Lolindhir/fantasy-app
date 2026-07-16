@@ -79,6 +79,22 @@ export function getMoveTypeIcon(type: string): string {
   }
 }
 
+export function getIncomingAssetLabel(type: string): string {
+  return type === 'trade' ? 'Acquired' : 'Added';
+}
+
+export function getOutgoingAssetLabel(type: string): string {
+  return type === 'trade' ? 'Sent' : 'Cut';
+}
+
+export function getIncomingAssetIcon(type: string): string {
+  return type === 'trade' ? 'south_west' : 'person_add';
+}
+
+export function getOutgoingAssetIcon(type: string): string {
+  return type === 'trade' ? 'north_east' : 'person_remove';
+}
+
 export function getDraftPickLabel(pick: TransactionDraftPick): string {
   const pickLabel = `${pick.Season} ${formatDraftType(pick.DraftType)} ${formatRound(pick.Round)}`;
   return `${pickLabel} (${getDraftPickOriginalOwnerShortLabel(pick)})`;

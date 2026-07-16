@@ -14,8 +14,12 @@ import {
   getDraftPickLabel,
   getDraftPickOriginalOwnerLabel,
   getDraftPickTrackKey,
+  getIncomingAssetIcon,
+  getIncomingAssetLabel,
   getMoveTypeIcon,
-  getMoveTypeLabel
+  getMoveTypeLabel,
+  getOutgoingAssetIcon,
+  getOutgoingAssetLabel
 } from './moves-view-model.util';
 
 @Component({
@@ -35,6 +39,10 @@ export class LeagueActivityComponent {
 
   readonly moveTypeLabel = getMoveTypeLabel;
   readonly moveTypeIcon = getMoveTypeIcon;
+  readonly incomingAssetLabel = getIncomingAssetLabel;
+  readonly outgoingAssetLabel = getOutgoingAssetLabel;
+  readonly incomingAssetIcon = getIncomingAssetIcon;
+  readonly outgoingAssetIcon = getOutgoingAssetIcon;
   readonly draftPickLabel = getDraftPickLabel;
   readonly draftPickOriginalOwnerLabel = getDraftPickOriginalOwnerLabel;
   readonly draftPickTrackKey = getDraftPickTrackKey;

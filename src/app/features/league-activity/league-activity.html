@@ -76,15 +76,7 @@
 
                   <mat-card class="move-card">
                     <header class="move-card-header">
-                      <div>
-                        <div class="move-title-row">
-                          <span class="move-type">{{ moveTypeLabel(transaction.Type) }}</span>
-                          <span class="move-status">{{ transaction.Status }}</span>
-                        </div>
-                        <span class="move-meta">
-                          Week {{ transaction.Week }} · {{ transaction.Source }}
-                        </span>
-                      </div>
+                      <span class="move-type">{{ moveTypeLabel(transaction.Type) }}</span>
 
                       @if (transaction.CreatedAtDate) {
                         <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
@@ -113,8 +105,8 @@
                           @if (hasIncomingAssets(participant)) {
                             <div class="asset-section asset-section--incoming">
                               <span class="asset-direction">
-                                <mat-icon aria-hidden="true">south_west</mat-icon>
-                                Acquired
+                                <mat-icon aria-hidden="true">{{ incomingAssetIcon(transaction.Type) }}</mat-icon>
+                                {{ incomingAssetLabel(transaction.Type) }}
                               </span>
                               <div class="asset-list">
                                 @for (asset of participant.AddedPlayers; track asset.PlayerID) {
@@ -138,8 +130,8 @@
                           @if (hasOutgoingAssets(participant)) {
                             <div class="asset-section asset-section--outgoing">
                               <span class="asset-direction">
-                                <mat-icon aria-hidden="true">north_east</mat-icon>
-                                Sent
+                                <mat-icon aria-hidden="true">{{ outgoingAssetIcon(transaction.Type) }}</mat-icon>
+                                {{ outgoingAssetLabel(transaction.Type) }}
                               </span>
                               <div class="asset-list">
                                 @for (asset of participant.DroppedPlayers; track asset.PlayerID) {
