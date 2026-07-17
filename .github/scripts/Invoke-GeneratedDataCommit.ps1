@@ -11,7 +11,8 @@ param(
         "teams",
         "past-seasons-index",
         "backup-cleanup",
-        "fantasypros-rankings"
+        "fantasypros-rankings",
+        "fantasycalc-rankings"
     )]
     [string]$Scope
 )
@@ -32,6 +33,7 @@ function Get-GeneratedDataLabel {
         "^public/data/chat/players-relevant/" { return "Player chat export" }
         "^public/data/backup/" { return "Backups" }
         "^fantasy-management/sources/external-rankings/fantasypros/" { return "FantasyPros rankings" }
+        "^fantasy-management/sources/external-rankings/fantasycalc/" { return "FantasyCalc rankings" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players_Relevant\.json$" { return "Relevant players" }

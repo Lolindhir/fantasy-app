@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasycalc",
+  "applies_to_ranking_ids": [
+    "dynasty-superflex-ppr-8-team",
+    "redraft-superflex-ppr-8-team"
+  ],
+  "source_measurement": {
+    "type": "observed_trade_market_value",
+    "not_expert_consensus": true,
+    "not_projection": true,
+    "not_league_specific_truth": true
+  },
+  "format_context": {
+    "actual_league_team_count": 6,
+    "source_team_count": 8,
+    "team_count_usage": "nearest_supported_proxy",
+    "superflex": true,
+    "scoring": "ppr",
+    "te_premium": false,
+    "fixed_two_te_modeled_by_source": false
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.json",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "granularity": "daily_latest_changed_ranking",
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_new_snapshot_when_normalized_ranking_unchanged": true
+  },
+  "player_join": {
+    "preferred": [
+      "sleeper_id",
+      "source_asset_id"
+    ],
+    "fallback": "normalized_name_plus_position"
+  },
+  "draft_pick_join": {
+    "source_ids_are_synthetic": true,
+    "canonical_ownership_sources": [
+      "public/data/League.json",
+      "public/data/Drafts.json"
+    ],
+    "use_fantasycalc_for": "external_market_value_only"
+  },
+  "cross_source_comparison": {
+    "preferred_snapshot_alignment": "same_day",
+    "do_not_compare_raw_value_to_rank": true,
+    "normalize_rankings": "list_length_aware_percentile",
+    "recommended_metrics": [
+      "fantasycalc_dynasty_percentile",
+      "fantasycalc_redraft_percentile",
+      "fantasypros_dynasty_percentile",
+      "fantasypros_redraft_percentile",
+      "expert_market_gap",
+      "market_win_now_gap",
+      "market_momentum"
+    ],
+    "expert_market_gap": {
+      "definition": "FantasyPros percentile minus FantasyCalc percentile on a scale where higher is better",
+      "positive_interpretation": "Experts value the asset relatively higher than the observed trade market",
+      "negative_interpretation": "The observed trade market values the asset relatively higher than experts"
+    },
+    "market_win_now_gap": {
+      "definition": "FantasyCalc redraft percentile minus FantasyCalc dynasty percentile on a scale where higher is better",
+      "positive_interpretation": "Current-season market value is relatively stronger than long-term market value",
+      "negative_interpretation": "Long-term market value is relatively stronger than current-season market value"
+    }
+  },
+  "league_adjustments": [
+    "Apply six-team replacement-level context after reading the eight-team source proxy.",
+    "Apply additional scarcity for two fixed quarterback starters.",
+    "Apply additional scarcity for two fixed tight-end starters without pretending that TEP scoring models the same effect.",
+    "Do not use FantasyCalc values as an automatic trade grade."
+  ],
+  "limitations": [
+    "FantasyCalc does not publish a source-updated timestamp in the values payload.",
+    "The public format request does not model the number of fixed tight-end starters.",
+    "Market values may reflect trade behavior, liquidity and participant composition rather than future fantasy production.",
+    "Optional payload fields can be absent or change without a documented schema version."
+  ],
+  "attribution": {
+    "required": true,
+    "display_name": "FantasyCalc",
+    "website": "https://fantasycalc.com/"
+  }
+}
