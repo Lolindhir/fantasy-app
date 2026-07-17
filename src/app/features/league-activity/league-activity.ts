@@ -47,10 +47,6 @@ export class LeagueActivityComponent {
   readonly draftPickOriginalOwnerLabel = getDraftPickOriginalOwnerLabel;
   readonly draftPickTrackKey = getDraftPickTrackKey;
 
-  readonly timestamp$ = this.dataService.getTransactionsTimestamp().pipe(
-    catchError(() => of(undefined))
-  );
-
   readonly vm$ = this.dataService.getTransactions().pipe(
     map(transactions => buildMovesViewModel(transactions)),
     catchError(() => {
