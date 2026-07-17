@@ -13,7 +13,7 @@ from episode_coverage_validation_common import (
 )
 
 def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions_schema: Path, report: Report, warnings_for_legacy: bool) -> None:
-    label = rel(packae_dir, root)
+    label = rel(package_dir, root)
     index_path = package_dir / "index.json"
     episode_path = package_dir / "episode.md"
     try:
@@ -126,5 +126,5 @@ def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions
             report.error(label, "coverage_audit.status must be 'completed' for schema-version-2 packages.")
         if audit.get("uncovered_mentions") != actual_counts["uncovered"]:
             report.error(label, "coverage_audit.uncovered_mentions does not match calculated uncovered count.")
-        if audit.get("status" == "completed" and actual_counts["uncovered"] != 0:
+        if audit.get("status") == "completed" and actual_counts["uncovered"] != 0:
             report.error(label, "coverage_audit cannot be completed while mentions are uncovered.")
