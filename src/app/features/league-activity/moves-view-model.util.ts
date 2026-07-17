@@ -12,8 +12,8 @@ export interface MovesDateGroup {
 export interface MovesViewModel {
   TotalCount: number;
   TradeCount: number;
-  AddedPlayerCount: number;
-  TradedPickCount: number;
+  CutCount: number;
+  WaiverAddCount: number;
   Groups: MovesDateGroup[];
 }
 
@@ -31,16 +31,16 @@ export function buildMovesViewModel(transactions: Transaction[]): MovesViewModel
   return {
     TotalCount: normalizedTransactions.length,
     TradeCount: normalizedTransactions.filter(transaction => transaction.Type === 'trade').length,
-    AddedPlayerCount: normalizedTransactions.reduce((sum, transaction) => {
-      return sum + transaction.Participants.reduce(
-        (participantSum, participant) => participantSum + participant.AddedPlayers.length,
-        0
-      );
+    CutCount: normalizedTransactions.reduce((sum, transaction) => {
+      return transaction.Type === 'trade'
+        ? sum
+        : sum + countDroppedPlayers(transaction);
     }, 0),
-    TradedPickCount: normalizedTransactions.reduce(
-      (sum, transaction) => sum + transaction.DraftPicks.length,
-      0
-    ),
+    WaiverAddCount: normalizedTransactions.reduce((sum, transaction) => {
+      return transaction.Type === 'waiver'
+        ? sum + countAddedPlayers(transaction)
+        : sum;
+    }, 0),
     Groups: Array.from(groupsByDate.entries()).map(([dateKey, groupedTransactions]) => ({
       DateKey: dateKey,
       DateLabel: formatDateLabel(dateKey),
@@ -114,6 +114,20 @@ export function getDraftPickTrackKey(pick: TransactionDraftPick): string {
     `PO${pick.PreviousOwnerRosterID}`,
     `NO${pick.NewOwnerRosterID}`
   ].join('_');
+}
+
+function countAddedPlayers(transaction: Transaction): number {
+  return transaction.Participants.reduce(
+    (sum, participant) => sum + participant.AddedPlayers.length,
+    0
+  );
+}
+
+function countDroppedPlayers(transaction: Transaction): number {
+  return transaction.Participants.reduce(
+    (sum, participant) => sum + participant.DroppedPlayers.length,
+    0
+  );
 }
 
 function getDraftPickOriginalOwnerShortLabel(pick: TransactionDraftPick): string {

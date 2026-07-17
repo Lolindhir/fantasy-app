@@ -1,6 +1,10 @@
 import type { FantasyTeam } from '../../core/models/league.models';
-import type { TransactionDraftPick } from '../../core/models/transaction.models';
+import type {
+  Transaction,
+  TransactionDraftPick
+} from '../../core/models/transaction.models';
 import {
+  buildMovesViewModel,
   getDraftPickLabel,
   getDraftPickOriginalOwnerLabel,
   getDraftPickTrackKey,
@@ -23,6 +27,20 @@ describe('moves-view-model.util', () => {
     TeamAbbr: 'RVP',
     Owner: 'Marcio231'
   } as FantasyTeam;
+
+  it('counts trades, cuts and waiver adds independently', () => {
+    const viewModel = buildMovesViewModel([
+      createTransaction('trade-1', 'trade', 1, 1),
+      createTransaction('cut-1', 'free_agent', 0, 1),
+      createTransaction('waiver-with-cut', 'waiver', 1, 1),
+      createTransaction('waiver-add', 'waiver', 1, 0)
+    ]);
+
+    expect(viewModel.TotalCount).toBe(4);
+    expect(viewModel.TradeCount).toBe(1);
+    expect(viewModel.CutCount).toBe(2);
+    expect(viewModel.WaiverAddCount).toBe(2);
+  });
 
   it('uses transfer language only for trades', () => {
     expect(getIncomingAssetLabel('trade')).toBe('Acquired');
@@ -77,6 +95,42 @@ describe('moves-view-model.util', () => {
     expect(getDraftPickLabel(pick)).toBe('2026 Rookie 2nd (T5)');
     expect(getDraftPickOriginalOwnerLabel(pick)).toBe('Team 5');
   });
+
+  function createTransaction(
+    transactionID: string,
+    type: string,
+    addedPlayerCount: number,
+    droppedPlayerCount: number
+  ): Transaction {
+    return {
+      Source: 'Sleeper',
+      TransactionID: transactionID,
+      Type: type,
+      Status: 'complete',
+      Season: '2026',
+      Week: 1,
+      CreatedAt: 1781261326971,
+      CreatedDate: '2026-06-12',
+      CreatedAtDate: new Date(1781261326971),
+      RosterIDs: [1],
+      Participants: [
+        {
+          RosterID: 1,
+          Team: mightyGiants,
+          AddedPlayers: Array.from({ length: addedPlayerCount }, (_, index) => ({
+            PlayerID: `added-${transactionID}-${index}`
+          })),
+          DroppedPlayers: Array.from({ length: droppedPlayerCount }, (_, index) => ({
+            PlayerID: `dropped-${transactionID}-${index}`
+          })),
+          AcquiredDraftPicks: [],
+          SentDraftPicks: []
+        }
+      ],
+      DraftPicks: [],
+      Notes: null
+    };
+  }
 
   function createPick(
     overrides: Partial<TransactionDraftPick> = {}
