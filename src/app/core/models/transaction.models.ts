@@ -1,3 +1,4 @@
+import type { DraftPick } from './draft.models';
 import type { FantasyTeam } from './league.models';
 import type { Player } from './player.models';
 
@@ -42,6 +43,7 @@ export interface TransactionDraftPick extends RawTransactionDraftPick {
   OriginalOwner?: FantasyTeam;
   PreviousOwner?: FantasyTeam;
   NewOwner?: FantasyTeam;
+  ResolvedDraftPick?: DraftPick;
 }
 
 export interface TransactionParticipant {
