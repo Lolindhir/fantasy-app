@@ -1,19 +1,7 @@
 <div class="moves-page">
   @if (vm$ | async; as vm) {
     <section class="hero-card">
-      <div class="hero-card-top">
-        <div>
-          <p class="eyebrow">League activity</p>
-          <h1>Moves</h1>
-        </div>
-
-        @if (timestamp$ | async; as timestamp) {
-          <div class="updated-at">
-            <mat-icon aria-hidden="true">update</mat-icon>
-            <span>Updated {{ timestamp | date: 'MMM d, y, HH:mm' }}</span>
-          </div>
-        }
-      </div>
+      <p class="eyebrow">League activity</p>
 
       <section class="hero-summary-grid" aria-label="Moves summary">
         <article class="hero-summary-card hero-summary-card--trades">
