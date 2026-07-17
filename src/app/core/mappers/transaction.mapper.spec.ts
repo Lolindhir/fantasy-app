@@ -1,3 +1,4 @@
+import type { DraftPick, RawDraft } from '../models/draft.models';
 import type { FantasyTeam } from '../models/league.models';
 import type { Player } from '../models/player.models';
 import type { RawTransaction } from '../models/transaction.models';
@@ -64,6 +65,36 @@ describe('transaction.mapper', () => {
     expect(participantTwo.DroppedPlayers.map(asset => asset.Player)).toEqual([playerTwo]);
     expect(participantTwo.AcquiredDraftPicks[0].PreviousOwner).toBe(teamOne);
     expect(participantTwo.AcquiredDraftPicks[0].NewOwner).toBe(teamTwo);
+  });
+
+  it('resolves a transaction pick to its concrete generated draft position', () => {
+    const resolvedPick = {
+      DraftKey: '2026_Rookie',
+      Round: 2,
+      OriginalOwnerRosterID: 1,
+      DisplayPick: '2.03'
+    } as DraftPick;
+    const draft = {
+      DraftKey: '2026_Rookie',
+      Picks: [resolvedPick]
+    } as RawDraft;
+
+    const transaction = mapRawTransaction(createRawTransaction({
+      DraftPicks: [
+        {
+          DraftType: 'Rookie',
+          DraftSource: 'Sleeper',
+          DraftKey: '2026_Rookie',
+          Season: '2026',
+          Round: 2,
+          OriginalOwnerRosterID: 1,
+          PreviousOwnerRosterID: 1,
+          NewOwnerRosterID: 2
+        }
+      ]
+    }), [teamOne, teamTwo], [], [draft]);
+
+    expect(transaction.DraftPicks[0].ResolvedDraftPick).toBe(resolvedPick);
   });
 
   it('keeps same-round pick swaps distinct by original owner', () => {
