@@ -157,3 +157,16 @@ python fantasy-management/_ai/scripts/validate_episode_coverage.py \
 ## League-context update workflow
 
 Use owner registry, owner profiles, negotiation history and league-format notes for durable league context. Promote tendencies only after repeated evidence.
+
+## External ranking refresh workflow
+
+1. Read the source-specific README and machine-readable analysis metadata.
+2. Fetch the official source directly with the documented format parameters.
+3. Fail closed on network, source-identity, schema, row-count, rank or format-plausibility errors.
+4. Keep source Raw retention and normalized-history policy source-specific.
+5. For FantasyCalc, replace `raw-latest.json` after every successful fetch and archive only changed normalized rankings plus metadata.
+6. Update `latest.json` only after all required files have been written successfully.
+7. Run source-specific unit tests before publishing generated data.
+8. Keep independent external sources in independent workflows so one unavailable source does not block another.
+9. Treat all external rankings and market values as dated context, not permanent truth.
+10. Reconcile source format with the actual six-team, fixed-2QB, fixed-2TE league during analysis instead of mutating source values.
