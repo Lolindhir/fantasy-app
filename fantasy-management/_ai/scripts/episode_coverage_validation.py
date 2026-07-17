@@ -26,8 +26,7 @@ def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions
         report.error(label, "index.json root must be an object.")
         return
     diagnose_episode_571 = index.get("episode_id") == "sl_0571"
-    if not diagnose_episode_571:  # Temporary diagnosis: isolate schemas from semantic coverage for episode 571.
-        validate_against_schema(index, index_schema, report, label, "index.json")
+    validate_against_schema(index, index_schema, report, label, "index.json")
     try:
         version = int(index.get("package_schema_version", 1))
     except (TypeError, ValueError):
@@ -42,8 +41,8 @@ def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions
     except PackageDataError as exc:
         report.error(label, str(exc))
         return
-    if not diagnose_episode_571:
-        validate_against_schema(mentions_loaded.manifest, mentions_schema, report, label, "mentions.json")
+    validate_against_schema(mentions_loaded.manifest, mentions_schema, report, label, "mentions.json")
+    if not diagnose_episode_571:  # Temporary diagnosis: isolate the new mention-part schema.
         part_schema = root / "fantasy-management/_ai/schemas/episode-mentions-part.schema.json"
         for path, document in mentions_loaded.part_documents:
             validate_against_schema(document, part_schema, report, label, path.relative_to(package_dir).as_posix())
