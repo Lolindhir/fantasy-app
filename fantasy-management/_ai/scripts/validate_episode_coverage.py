@@ -11,7 +11,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from episode_coverage_validation_common import Report, repo_root_from_script
+from episode_coverage_validation_common import Report, calculate_counts, repo_root_from_script
 from episode_coverage_validation import validate_package
 
 
