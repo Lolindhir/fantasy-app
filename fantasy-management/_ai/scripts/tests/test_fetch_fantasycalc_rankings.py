@@ -15,12 +15,22 @@ spec.loader.exec_module(module)
 
 
 class FantasyCalcFetcherTests(unittest.TestCase):
-    def make_payload(self, *, dynasty: bool, change_value: bool = False, raw_note: str = "a"):
+    def make_payload(
+        self,
+        *,
+        dynasty: bool,
+        change_value: bool = False,
+        raw_note: str = "a",
+        duplicate_source_rank: bool = False,
+    ):
         positions = ["QB", "RB", "WR", "TE"]
         payload = []
         rank = 1
         for index in range(1, 121):
             position = positions[(index - 1) % len(positions)]
+            source_rank = rank
+            if duplicate_source_rank and index == 11:
+                source_rank = 10
             payload.append(
                 {
                     "player": {
@@ -35,7 +45,7 @@ class FantasyCalcFetcherTests(unittest.TestCase):
                         "maybeYoe": index % 8,
                     },
                     "value": 9000 - index - (1 if change_value and index == 1 else 0),
-                    "overallRank": rank,
+                    "overallRank": source_rank,
                     "positionRank": 1 + (index - 1) // 4,
                     "trend30Day": index % 7 - 3,
                     "redraftValue": 5000 - index,
@@ -91,6 +101,23 @@ class FantasyCalcFetcherTests(unittest.TestCase):
         self.assertEqual("player", rows[0]["asset_type"])
         self.assertEqual("draft_pick", rows[-1]["asset_type"])
         self.assertEqual("5001", rows[0]["sleeper_id"])
+        self.assertEqual(1, rows[0]["Rank"])
+        self.assertEqual(1, rows[0]["source_overall_rank"])
+
+    def test_accepts_duplicate_source_ranks_and_assigns_unique_normalized_ranks(self):
+        rows = module.parse_assets(
+            self.make_payload(dynasty=True, duplicate_source_rank=True),
+            module.FORMAT_CONFIGS["dynasty"],
+        )
+        tied = [row for row in rows if row["source_overall_rank"] == 10]
+        self.assertEqual(2, len(tied))
+        self.assertEqual([10, 11], [row["Rank"] for row in tied])
+        self.assertGreaterEqual(tied[0]["value"], tied[1]["value"])
+        self.assertEqual(len(rows), len({row["Rank"] for row in rows}))
+        diagnostics = module.source_rank_diagnostics(rows)
+        self.assertFalse(diagnostics["source_overall_rank_unique"])
+        self.assertEqual(1, diagnostics["duplicate_source_rank_group_count"])
+        self.assertEqual(2, diagnostics["duplicate_source_rank_row_count"])
 
     def test_rejects_picks_in_redraft(self):
         with self.assertRaisesRegex(module.FantasyCalcFetchError, "Redraft"):
@@ -102,7 +129,9 @@ class FantasyCalcFetcherTests(unittest.TestCase):
         config = module.FORMAT_CONFIGS["dynasty"]
         with tempfile.TemporaryDirectory() as temporary_directory:
             repo_root = Path(temporary_directory)
-            first_payload = self.make_payload(dynasty=True, raw_note="first")
+            first_payload = self.make_payload(
+                dynasty=True, raw_note="first", duplicate_source_rank=True
+            )
             first_rows = module.parse_assets(first_payload, config)
             paths, created = module.write_format(
                 repo_root=repo_root,
@@ -117,7 +146,9 @@ class FantasyCalcFetcherTests(unittest.TestCase):
             self.assertTrue(created)
             self.assertEqual(4, len(paths))
 
-            second_payload = self.make_payload(dynasty=True, raw_note="second")
+            second_payload = self.make_payload(
+                dynasty=True, raw_note="second", duplicate_source_rank=True
+            )
             second_rows = module.parse_assets(second_payload, config)
             paths, created = module.write_format(
                 repo_root=repo_root,
@@ -139,6 +170,18 @@ class FantasyCalcFetcherTests(unittest.TestCase):
             latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             self.assertEqual("2026-07-17", latest["snapshot_date"])
             self.assertEqual("2026-07-18T06:00:00+00:00", latest["raw_fetched_at"])
+            metadata = json.loads(
+                (root / "snapshots" / "2026-07-17" / "metadata.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(2, metadata["schema_version"])
+            self.assertEqual(
+                1,
+                metadata["snapshot"]["rank_diagnostics"][
+                    "duplicate_source_rank_group_count"
+                ],
+            )
 
     def test_changed_ranking_creates_new_normalized_snapshot(self):
         config = module.FORMAT_CONFIGS["redraft"]
@@ -167,11 +210,17 @@ class FantasyCalcFetcherTests(unittest.TestCase):
                 skip_unchanged=True,
             )
             self.assertTrue(created)
-            ranking_path = module.ranking_root(repo_root, config) / "snapshots" / "2026-07-18" / "ranking.csv"
+            ranking_path = (
+                module.ranking_root(repo_root, config)
+                / "snapshots"
+                / "2026-07-18"
+                / "ranking.csv"
+            )
             with ranking_path.open(encoding="utf-8", newline="") as handle:
                 rows = list(csv.DictReader(handle))
             self.assertEqual(module.CSV_FIELDS, list(rows[0]))
             self.assertEqual("8998", rows[0]["value"])
+            self.assertEqual("1", rows[0]["source_overall_rank"])
             self.assertEqual(4, len(paths))
 
 

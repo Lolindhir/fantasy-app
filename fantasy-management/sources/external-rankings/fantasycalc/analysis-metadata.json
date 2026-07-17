@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "source_id": "fantasycalc",
   "applies_to_ranking_ids": [
     "dynasty-superflex-ppr-8-team",
@@ -34,6 +34,19 @@
     ],
     "skip_new_snapshot_when_normalized_ranking_unchanged": true
   },
+  "rank_semantics": {
+    "source_overall_rank": {
+      "source_field": "overallRank",
+      "unique": false,
+      "usage": "source audit and tie visibility",
+      "warning": "FantasyCalc can publish the same overallRank for multiple assets; never use as a unique key."
+    },
+    "Rank": {
+      "unique": true,
+      "usage": "deterministic repository row order and list-length-aware percentiles",
+      "normalization": "source_overall_rank ascending, then value descending, then source_asset_id"
+    }
+  },
   "player_join": {
     "preferred": [
       "sleeper_id",
@@ -52,7 +65,7 @@
   "cross_source_comparison": {
     "preferred_snapshot_alignment": "same_day",
     "do_not_compare_raw_value_to_rank": true,
-    "normalize_rankings": "list_length_aware_percentile",
+    "normalize_rankings": "list_length_aware_percentile_using_Rank",
     "recommended_metrics": [
       "fantasycalc_dynasty_percentile",
       "fantasycalc_redraft_percentile",
@@ -81,6 +94,7 @@
   ],
   "limitations": [
     "FantasyCalc does not publish a source-updated timestamp in the values payload.",
+    "FantasyCalc overallRank can contain duplicate values and is not a unique identifier.",
     "The public format request does not model the number of fixed tight-end starters.",
     "Market values may reflect trade behavior, liquidity and participant composition rather than future fantasy production.",
     "Optional payload fields can be absent or change without a documented schema version."

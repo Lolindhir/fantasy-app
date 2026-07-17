@@ -36,11 +36,22 @@ Für jedes Format gilt:
 
 Mehrere Änderungen am selben Kalendertag ersetzen den Snapshot dieses Tages. Damit bleibt die Historie täglich statt abrufweise granular.
 
+## Rang-Semantik
+
+FantasyCalc kann denselben `overallRank` für mehrere Assets veröffentlichen. Das Feld ist deshalb keine eindeutige ID und wird nicht als Unique Constraint validiert.
+
+Die CSV trennt zwei Felder:
+
+- `source_overall_rank`: der unveränderte FantasyCalc-`overallRank`; Duplikate sind zulässig.
+- `Rank`: unser eindeutiger normalisierter Zeilenrang für stabile Joins und listenlängenabhängige Perzentile.
+
+Bei gleichen Source-Rängen wird `Rank` deterministisch nach FantasyCalc-Wert absteigend und anschließend nach `source_asset_id` vergeben. Die Metadaten dokumentieren Anzahl und Beispiele aller doppelten Source-Ranggruppen.
+
 ## Normalisierte Felder
 
 Die CSV enthält unter anderem:
 
-- Rang, Assettyp, Position, NFL-Team und FantasyCalc-Wert
+- normalisierten Rang, FantasyCalc-Source-Rang, Assettyp, Position, NFL-Team und FantasyCalc-Wert
 - Positionsrang, Tier und 30-Tage-Trend
 - FantasyCalc-, Sleeper-, MFL- und ESPN-IDs
 - Alter, Erfahrung, optionale ADP, Handelsfrequenz und Rosterquote
@@ -63,6 +74,7 @@ FantasyCalc-Draftpick-IDs sind synthetische Quellenkennungen. Aktuelle Pick-Iden
 - Werte verschiedener Formatabfragen dürfen nicht roh miteinander verrechnet werden.
 - FantasyCalc-Werte sind nicht linear mit FantasyPros-Rängen vergleichbar.
 - Quellenübergreifende Vergleiche sollen listenlängenabhängige Perzentile verwenden.
+- Für reproduzierbare Perzentile wird `Rank` verwendet; `source_overall_rank` bleibt Audit- und Quellenfeld.
 - Die hohe Replacement-Qualität einer 6-Team-Liga und die Knappheit durch zwei feste QB- und TE-Plätze müssen separat angewendet werden.
 - FantasyCalc ergänzt aktuelle Liga- und Spielerdaten; es überschreibt sie nicht.
 
