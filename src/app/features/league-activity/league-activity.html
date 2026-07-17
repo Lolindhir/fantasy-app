@@ -1,42 +1,45 @@
 <div class="moves-page">
-  <section class="hero-card">
-    <div>
-      <p class="eyebrow">League activity</p>
-      <h1>Moves</h1>
-      <p class="hero-text">
-        Completed trades, adds, drops and draft-pick movement from the generated league data.
-      </p>
-    </div>
-
-    @if (timestamp$ | async; as timestamp) {
-      <div class="updated-at">
-        <mat-icon aria-hidden="true">update</mat-icon>
-        <span>Updated {{ timestamp | date: 'MMM d, y, HH:mm' }}</span>
-      </div>
-    }
-  </section>
-
   @if (vm$ | async; as vm) {
-    <section class="summary-grid" aria-label="Moves summary">
-      <mat-card class="summary-card">
-        <span class="summary-label">Moves</span>
-        <strong>{{ vm.TotalCount }}</strong>
-      </mat-card>
+    <section class="hero-card">
+      <div class="hero-card-top">
+        <div>
+          <p class="eyebrow">League activity</p>
+          <h1>Moves</h1>
+        </div>
 
-      <mat-card class="summary-card">
-        <span class="summary-label">Trades</span>
-        <strong>{{ vm.TradeCount }}</strong>
-      </mat-card>
+        @if (timestamp$ | async; as timestamp) {
+          <div class="updated-at">
+            <mat-icon aria-hidden="true">update</mat-icon>
+            <span>Updated {{ timestamp | date: 'MMM d, y, HH:mm' }}</span>
+          </div>
+        }
+      </div>
 
-      <mat-card class="summary-card">
-        <span class="summary-label">Players added</span>
-        <strong>{{ vm.AddedPlayerCount }}</strong>
-      </mat-card>
+      <section class="hero-summary-grid" aria-label="Moves summary">
+        <article class="hero-summary-card hero-summary-card--trades">
+          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+          <div>
+            <span>Trades</span>
+            <strong>{{ vm.TradeCount }}</strong>
+          </div>
+        </article>
 
-      <mat-card class="summary-card">
-        <span class="summary-label">Picks traded</span>
-        <strong>{{ vm.TradedPickCount }}</strong>
-      </mat-card>
+        <article class="hero-summary-card hero-summary-card--cuts">
+          <mat-icon aria-hidden="true">person_remove</mat-icon>
+          <div>
+            <span>Cuts</span>
+            <strong>{{ vm.CutCount }}</strong>
+          </div>
+        </article>
+
+        <article class="hero-summary-card hero-summary-card--waivers">
+          <mat-icon aria-hidden="true">playlist_add_check</mat-icon>
+          <div>
+            <span>Waiver Adds</span>
+            <strong>{{ vm.WaiverAddCount }}</strong>
+          </div>
+        </article>
+      </section>
     </section>
 
     @if (loadFailed) {
