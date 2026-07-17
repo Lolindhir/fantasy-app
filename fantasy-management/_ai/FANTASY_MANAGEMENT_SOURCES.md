@@ -172,6 +172,52 @@ Operational rules:
 
 Treat FantasyPros Dynasty ECR as long-term expert-consensus context and Redraft ECR as current-season win-now context. Neither is ADP, a projection or league-specific truth. For the fixed-2QB and fixed-2TE Mighty Giants league, apply additional scarcity interpretation only during analysis, not by mutating source snapshots.
 
+### FantasyCalc market-value snapshots
+
+Stored source area:
+
+`fantasy-management/sources/external-rankings/fantasycalc/`
+
+Available ranking IDs:
+
+- `dynasty-superflex-ppr-8-team`: observed long-term trade-market values, including source draft-pick assets
+- `redraft-superflex-ppr-8-team`: observed current-season trade-market values
+
+FantasyCalc is queried with two quarterbacks, full PPR and the nearest supported eight-team proxy for the actual six-team league. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
+
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and its current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the full API payload is retained only as the latest Raw response.
+
+Refresh both formats with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+```
+
+The fetcher must fail closed after network, JSON, row-count, identity, rank or format-plausibility errors. It must not create a new historical snapshot when the normalized ranking is unchanged, but it must still replace `raw-latest.json` and update Raw freshness metadata after a successful fetch.
+
+Detailed storage rules, field semantics and interpretation limits are canonical in:
+
+`fantasy-management/sources/external-rankings/fantasycalc/README.md`
+
+The shared machine-readable Dynasty-/Redraft comparison contract is:
+
+`fantasy-management/sources/external-rankings/fantasycalc/analysis-metadata.json`
+
+Operational rules:
+
+- treat FantasyCalc as observed trade-market context, not expert consensus or a projection
+- join players primarily through `sleeper_id`, then `source_asset_id`, then normalized name plus position
+- treat FantasyCalc draft-pick IDs as source-only synthetic identifiers
+- resolve actual draft-pick identity and ownership from `League.json` and `Drafts.json`
+- apply six-team replacement-level context after reading the eight-team source proxy
+- apply additional scarcity for two fixed QB and two fixed TE starters during analysis
+- compare FantasyCalc and FantasyPros through normalized percentiles, not raw value-to-rank arithmetic
+- visibly attribute FantasyCalc whenever its values are shown to users
+
+### KeepTradeCut manual-reference restriction
+
+KeepTradeCut may be used as a manually checked crowd/market-sentiment source. Do not create an automated fetcher or workflow for KeepTradeCut unless its published automation policy changes or explicit permission is obtained.
+
 ## Fantasy Management internal sources
 
 The Fantasy Management workspace stores source, Knowledge, analysis and decision artifacts under:
