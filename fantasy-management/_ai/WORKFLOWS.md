@@ -83,34 +83,39 @@ Default: one local source package per episode. Do not create active Knowledge or
 
 1. Read `PODCAST_SOURCE_MODEL.md`.
 2. Read `PODCAST_EXTRACTION_RULES.md`.
-3. Read podcast templates as flexible building blocks.
-4. Load source identity from `source-registry.json`.
-5. Load the central player identity registry.
-6. Load source-specific notes and guides.
-7. Create or update the episode package.
-8. Store the complete raw source unchanged.
-9. For split raw, create a manifest with contiguous ordered parts.
-10. Perform Pass A over the complete raw source.
-11. Create a detailed German `episode.md`.
-12. Preserve every substantive segment, including content after the headline segment.
-13. Preserve complete safely reconstructable rankings, tiers and mock-draft structures.
-14. Create detailed categorized `takes.json`.
-15. Create standalone takes for ranking, substantive and news subjects.
-16. Keep inline resolution on every player take.
-17. Perform Pass B by reading the complete raw source again.
-18. Create `mentions.json` from Pass B.
-19. Record comparisons, competitors, historical examples, live-draft names and unresolved forms.
-20. Reconcile required subjects with `episode.md` and `takes.json`.
-21. Keep context-only audit entries in `mentions.json`; do not append a technical register to `episode.md`.
-22. Add confirmed reusable aliases to the central registry.
-23. Calculate `index.json` counts from the finished files.
-24. Set `coverage_audit.status: completed` only after the full second pass, reconciliation and zero uncovered mentions.
-25. Pretty-print all Fantasy Management JSON.
-26. Run the completeness gate.
-27. Run validator unit tests.
-28. Run package and coverage validators.
-29. Do not update Knowledge unless explicitly requested.
-30. Do not invent missing details.
+3. Read `PODCAST_PACKAGE_STORAGE.md`.
+4. Read podcast templates as flexible building blocks.
+5. Load source identity from `source-registry.json`.
+6. Load the central player identity registry.
+7. Load source-specific notes and guides.
+8. Create or update the episode package.
+9. Store the complete raw source unchanged.
+10. For split raw, create a manifest with contiguous ordered parts.
+11. Perform Pass A over the complete raw source.
+12. Create a detailed German `episode.md`.
+13. Keep `episode.md` as one continuous reader-facing file; never split it.
+14. Preserve every substantive segment, including content after the headline segment.
+15. Preserve complete safely reconstructable rankings, tiers and mock-draft structures.
+16. Create detailed categorized takes.
+17. Create standalone takes for ranking, substantive and news subjects.
+18. Keep inline resolution on every player take.
+19. Perform Pass B by reading the complete raw source again.
+20. Create the independent mention register from Pass B.
+21. Record comparisons, competitors, historical examples, live-draft names and unresolved forms.
+22. Reconcile required subjects with `episode.md` and the aggregated takes.
+23. Keep context-only audit entries in the mention register; do not append a technical register to `episode.md`.
+24. Use inline `takes.json`/`mentions.json` for small packages or split manifests plus parts for large technical payloads.
+25. Do not reduce extraction detail to avoid splitting a large JSON file.
+26. Add confirmed reusable aliases to the central registry.
+27. Calculate `index.json` counts from the fully aggregated finished files.
+28. Keep `index.json` references stable at `takes.json` and `mentions.json`, including in split mode.
+29. Set `coverage_audit.status: completed` only after the full second pass, reconciliation and zero uncovered mentions.
+30. Pretty-print every Fantasy Management JSON manifest and part.
+31. Run the completeness gate.
+32. Run validator unit tests.
+33. Run package and coverage validators.
+34. Do not update Knowledge unless explicitly requested.
+35. Do not invent missing details.
 
 Validation commands:
 
@@ -132,10 +137,11 @@ python fantasy-management/_ai/scripts/validate_episode_coverage.py \
 1. Run both validators for the changed package.
 2. Run validator unit tests when scripts or tests changed.
 3. Run all-package validation before merge when shared rules, templates, schemas, registries or scripts changed.
-4. Treat errors as blockers.
-5. Treat warnings as review prompts.
-6. Legacy schema-version-1 warnings do not invalidate historical packages.
-7. The repository workflow runs these checks for relevant pull requests.
+4. For split packages, validate the entry-point manifest, every part and the fully aggregated payload.
+5. Treat errors as blockers.
+6. Treat warnings as review prompts.
+7. Legacy schema-version-1 warnings do not invalidate historical packages.
+8. The repository workflow runs these checks for relevant pull requests.
 
 ## Knowledge derivation workflow
 

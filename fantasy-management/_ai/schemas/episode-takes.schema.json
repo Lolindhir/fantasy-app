@@ -1,103 +1,185 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-takes.schema.json",
-  "title": "Podcast Episode Takes",
-  "type": "object",
-  "additionalProperties": true,
-  "required": [
-    "episode_id",
-    "source_id",
-    "source_name",
-    "take_categories"
-  ],
-  "properties": {
-    "episode_id": {
-      "type": "string"
-    },
-    "source_id": {
-      "type": "string"
-    },
-    "source_name": {
-      "type": "string"
-    },
-    "take_categories": {
+  "title": "Podcast Episode Takes Entry Point",
+  "oneOf": [
+    {
       "type": "object",
+      "additionalProperties": true,
       "required": [
-        "players",
-        "teams",
-        "positions",
-        "nfl",
-        "fantasy",
-        "other"
+        "episode_id",
+        "source_id",
+        "source_name",
+        "take_categories"
       ],
       "properties": {
-        "players": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/player_take"
+        "episode_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "take_categories": {
+          "type": "object",
+          "required": [
+            "players",
+            "teams",
+            "positions",
+            "nfl",
+            "fantasy",
+            "other"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "players": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            },
+            "teams": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            },
+            "positions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            },
+            "nfl": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            },
+            "fantasy": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            },
+            "other": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/take"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "episode_id",
+        "source_id",
+        "source_name",
+        "storage_mode",
+        "take_counts",
+        "parts"
+      ],
+      "properties": {
+        "episode_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storage_mode": {
+          "const": "split"
+        },
+        "take_counts": {
+          "type": "object",
+          "required": [
+            "players",
+            "teams",
+            "positions",
+            "nfl",
+            "fantasy",
+            "other"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "players": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "teams": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "positions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "nfl": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fantasy": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "other": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         },
-        "teams": {
+        "parts": {
           "type": "array",
+          "minItems": 6,
           "items": {
-            "$ref": "#/$defs/take"
-          }
-        },
-        "positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/take"
-          }
-        },
-        "nfl": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/take"
-          }
-        },
-        "fantasy": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/take"
-          }
-        },
-        "other": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/take"
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "category",
+              "path",
+              "count"
+            ],
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": [
+                  "players",
+                  "teams",
+                  "positions",
+                  "nfl",
+                  "fantasy",
+                  "other"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^takes/[^/]+\\.json$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }
     }
-  },
+  ],
   "$defs": {
-    "player_take": {
-      "allOf": [
-        {
-          "$ref": "#/$defs/take"
-        },
-        {
-          "type": "object",
-          "required": [
-            "raw_entity_mention",
-            "entity_resolution"
-          ],
-          "properties": {
-            "category": {
-              "const": "players"
-            },
-            "raw_entity_mention": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Raw transcript/player mention before canonical name resolution."
-            },
-            "entity_resolution": {
-              "$ref": "#/$defs/entity_resolution"
-            }
-          }
-        }
-      ]
-    },
     "take": {
       "type": "object",
       "additionalProperties": true,
@@ -106,11 +188,13 @@
         "category",
         "type",
         "entity",
-        "podcast_take"
+        "podcast_take",
+        "evidence"
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "category": {
           "type": "string",
@@ -124,21 +208,20 @@
           ]
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "raw_entity_mention": {
           "type": [
             "string",
             "null"
-          ],
-          "description": "Raw transcript/entity mention before canonical name resolution. Required for player takes."
+          ]
         },
         "entity": {
           "type": [
             "string",
             "null"
-          ],
-          "description": "Canonical full entity name only when verified with sufficient confidence; null when unresolved."
+          ]
         },
         "team": {
           "type": [
@@ -153,7 +236,57 @@
           ]
         },
         "entity_resolution": {
-          "$ref": "#/$defs/entity_resolution"
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "status",
+            "method",
+            "confidence"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "confirmed",
+                "ambiguous",
+                "unresolved"
+              ]
+            },
+            "method": {
+              "type": "string",
+              "enum": [
+                "registry",
+                "external_verification",
+                "context_inference",
+                "manual_confirmation",
+                "none"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "verified_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         },
         "formats": {
           "type": "array",
@@ -162,7 +295,8 @@
           }
         },
         "podcast_take": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "reasoning": {
           "type": "array",
@@ -184,6 +318,9 @@
         },
         "evidence": {
           "type": "object",
+          "required": [
+            "timestamp_start"
+          ],
           "additionalProperties": true
         },
         "tags": {
@@ -192,90 +329,33 @@
             "type": "string"
           }
         }
-      }
-    },
-    "entity_resolution": {
-      "type": "object",
-      "additionalProperties": true,
-      "required": [
-        "status",
-        "method",
-        "confidence"
-      ],
-      "properties": {
-        "status": {
-          "type": "string",
-          "enum": [
-            "confirmed",
-            "ambiguous",
-            "unresolved"
-          ]
-        },
-        "method": {
-          "type": "string",
-          "enum": [
-            "registry",
-            "external_verification",
-            "context_inference",
-            "manual_confirmation",
-            "none"
-          ]
-        },
-        "confidence": {
-          "type": "string",
-          "enum": [
-            "high",
-            "medium",
-            "low"
-          ]
-        },
-        "reason": {
-          "type": "string"
-        },
-        "candidates": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true,
-            "required": [
-              "name",
-              "match_reason"
-            ],
+      },
+      "allOf": [
+        {
+          "if": {
             "properties": {
-              "name": {
-                "type": "string"
-              },
-              "team": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "position": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "college": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "match_reason": {
-                "type": "string"
+              "category": {
+                "const": "players"
               }
-            }
-          }
-        },
-        "verified_sources": {
-          "type": "array",
-          "items": {
-            "type": "string"
+            },
+            "required": [
+              "category"
+            ]
+          },
+          "then": {
+            "required": [
+              "raw_entity_mention",
+              "entity_resolution",
+              "formats",
+              "reasoning",
+              "risks",
+              "sentiment",
+              "conviction",
+              "tags"
+            ]
           }
         }
-      }
+      ]
     }
   }
 }

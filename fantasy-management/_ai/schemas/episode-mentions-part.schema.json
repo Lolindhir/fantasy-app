@@ -1,94 +1,41 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-mentions.schema.json",
-  "title": "Podcast Episode Mentions Entry Point",
-  "oneOf": [
-    {
-      "type": "object",
-      "additionalProperties": true,
-      "required": [
-        "episode_id",
-        "source_id",
-        "source_name",
-        "mentions"
-      ],
-      "properties": {
-        "episode_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "source_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "source_name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "mentions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/mention"
-          }
-        }
-      }
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-mentions-part.schema.json",
+  "title": "Podcast Episode Mentions Part",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "episode_id",
+    "source_id",
+    "source_name",
+    "part_number",
+    "mentions"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
     },
-    {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "episode_id",
-        "source_id",
-        "source_name",
-        "storage_mode",
-        "mention_count",
-        "parts"
-      ],
-      "properties": {
-        "episode_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "source_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "source_name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "storage_mode": {
-          "const": "split"
-        },
-        "mention_count": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "parts": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "path",
-              "count"
-            ],
-            "properties": {
-              "path": {
-                "type": "string",
-                "pattern": "^mentions/part[0-9]{2}\\.json$"
-              },
-              "count": {
-                "type": "integer",
-                "minimum": 1
-              }
-            }
-          }
-        }
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "part_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mentions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/mention"
       }
     }
-  ],
+  },
   "$defs": {
     "mention": {
       "type": "object",
@@ -208,7 +155,7 @@
             ]
           }
         },
-        "occurrences": {
+        "occurrrences": {
           "type": "array",
           "minItems": 1,
           "items": {
@@ -341,10 +288,10 @@
                   "status": {
                     "enum": [
                       "ambiguous",
-                      "unresolved"
-                    ]
-                  }
-                },
+                    "unresolved"
+                  ]
+                }
+              },
                 "required": [
                   "status"
                 ]
@@ -358,37 +305,36 @@
               }
             }
           }
-        },
-        {
-          "if": {
-            "properties": {
-              "mention_types": {
-                "contains": {
-                  "enum": [
-                    "ranking_subject",
-                    "substantive_take",
-                    "news_subject"
-                  ]
-                }
+      },
+      {
+        "if": {
+          "properties": {
+            "mention_types": {
+              "contains": {
+                "enum": [
+                  "ranking_subject",
+                  "substantive_take",
+                  "news_subject"
+                ]
               }
             }
-          },
-          "then": {
-            "properties": {
-              "coverage": {
-                "properties": {
-                  "standalone_take_required": {
-                    "const": true
-                  },
-                  "subject_take_ids": {
-                    "minItems": 1
-                  }
+          }
+        },
+        "then": {
+          "properties": {
+            "coverage": {
+              "properties": {
+                "standalone_take_required": {
+                  "const": true
+                },
+                "subject_take_ids": {
+                  "minItems": 1
                 }
               }
             }
           }
         }
-      ]
-    }
+      }
+    ]
   }
 }
