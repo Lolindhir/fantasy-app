@@ -1,3 +1,4 @@
+import type { DraftPick, RawDraft } from '../models/draft.models';
 import type { FantasyTeam } from '../models/league.models';
 import type { Player } from '../models/player.models';
 import type {
@@ -13,10 +14,13 @@ import type {
 export function mapRawTransactions(
   rawTransactions: RawTransaction[],
   teams: FantasyTeam[],
-  players: Player[]
+  players: Player[],
+  drafts: RawDraft[] = []
 ): Transaction[] {
+  const draftPickByIdentity = createDraftPickIndex(drafts);
+
   return (rawTransactions ?? [])
-    .map(raw => mapRawTransaction(raw, teams, players))
+    .map(raw => mapRawTransactionInternal(raw, teams, players, draftPickByIdentity))
     .sort((a, b) => {
       const createdAtDifference = b.CreatedAt - a.CreatedAt;
       return createdAtDifference !== 0
@@ -28,13 +32,27 @@ export function mapRawTransactions(
 export function mapRawTransaction(
   raw: RawTransaction,
   teams: FantasyTeam[],
-  players: Player[]
+  players: Player[],
+  drafts: RawDraft[] = []
+): Transaction {
+  return mapRawTransactionInternal(raw, teams, players, createDraftPickIndex(drafts));
+}
+
+function mapRawTransactionInternal(
+  raw: RawTransaction,
+  teams: FantasyTeam[],
+  players: Player[],
+  draftPickByIdentity: Map<string, DraftPick>
 ): Transaction {
   const teamByRosterId = new Map(teams.map(team => [team.TeamID, team]));
   const playerById = new Map(players.map(player => [player.ID, player]));
   const adds = raw.Adds ?? {};
   const drops = raw.Drops ?? {};
-  const draftPicks = (raw.DraftPicks ?? []).map(pick => mapDraftPick(pick, teamByRosterId));
+  const draftPicks = (raw.DraftPicks ?? []).map(pick => mapDraftPick(
+    pick,
+    teamByRosterId,
+    draftPickByIdentity
+  ));
   const rosterIDs = collectRosterIDs(raw, adds, drops, draftPicks);
 
   return {
@@ -91,7 +109,8 @@ function mapPlayerAssets(
 
 function mapDraftPick(
   raw: RawTransactionDraftPick,
-  teamByRosterId: Map<number, FantasyTeam>
+  teamByRosterId: Map<number, FantasyTeam>,
+  draftPickByIdentity: Map<string, DraftPick>
 ): TransactionDraftPick {
   const originalOwnerRosterID = normalizeRosterID(raw.OriginalOwnerRosterID) ?? 0;
   const previousOwnerRosterID = normalizeRosterID(raw.PreviousOwnerRosterID) ?? 0;
@@ -104,8 +123,37 @@ function mapDraftPick(
     NewOwnerRosterID: newOwnerRosterID,
     OriginalOwner: teamByRosterId.get(originalOwnerRosterID),
     PreviousOwner: teamByRosterId.get(previousOwnerRosterID),
-    NewOwner: teamByRosterId.get(newOwnerRosterID)
+    NewOwner: teamByRosterId.get(newOwnerRosterID),
+    ResolvedDraftPick: draftPickByIdentity.get(createDraftPickIdentity(
+      raw.DraftKey,
+      raw.Round,
+      originalOwnerRosterID
+    ))
   };
+}
+
+function createDraftPickIndex(drafts: RawDraft[]): Map<string, DraftPick> {
+  const draftPickByIdentity = new Map<string, DraftPick>();
+
+  for (const draft of drafts ?? []) {
+    for (const pick of draft.Picks ?? []) {
+      draftPickByIdentity.set(createDraftPickIdentity(
+        pick.DraftKey,
+        pick.Round,
+        pick.OriginalOwnerRosterID
+      ), pick);
+    }
+  }
+
+  return draftPickByIdentity;
+}
+
+function createDraftPickIdentity(
+  draftKey: string,
+  round: number,
+  originalOwnerRosterID: number
+): string {
+  return `${draftKey}_R${round}_OO${originalOwnerRosterID}`;
 }
 
 function collectRosterIDs(
