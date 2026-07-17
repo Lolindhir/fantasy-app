@@ -5,6 +5,10 @@ FantasyCalc is queried twice: Dynasty and Redraft. The source's nearest supporte
 league-size proxy is eight teams for the actual six-team league. Each format keeps
 only the newest complete API response as ``raw-latest.json``. Historical snapshots
 contain only our normalized ``ranking.csv`` and the accompanying ``metadata.json``.
+
+FantasyCalc's ``overallRank`` is retained as ``source_overall_rank`` and is not
+assumed to be globally unique. Our ``Rank`` column is a deterministic unique row
+order derived from source rank, value and source asset id.
 """
 
 from __future__ import annotations
@@ -27,7 +31,7 @@ from typing import Any, Iterable
 API_URL = "https://api.fantasycalc.com/values/current"
 WEBSITE_URL = "https://fantasycalc.com/"
 SOURCE_ID = "fantasycalc"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 ACTUAL_LEAGUE_TEAMS = 6
 SOURCE_TEAM_PROXY = 8
 NUM_QBS = 2
@@ -66,6 +70,7 @@ FORMAT_CONFIGS: dict[str, dict[str, Any]] = {
 CSV_FIELDS = [
     "name",
     "Rank",
+    "source_overall_rank",
     "asset_type",
     "position",
     "team",
@@ -191,10 +196,9 @@ def parse_assets(
     payload: list[dict[str, Any]], config: dict[str, Any]
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    seen_ranks: set[int] = set()
     seen_ids: set[str] = set()
 
-    for entry in payload:
+    for source_order, entry in enumerate(payload):
         player = entry.get("player")
         if not isinstance(player, dict):
             raise FantasyCalcFetchError("FantasyCalc entry is missing a player object")
@@ -209,31 +213,27 @@ def parse_assets(
             raise FantasyCalcFetchError(f"Duplicate FantasyCalc source ID: {source_asset_id}")
         seen_ids.add(source_asset_id)
 
-        rank = parse_required_int(
+        source_overall_rank = parse_required_int(
             entry.get("overallRank"), field_name="overallRank", asset_name=name, minimum=1
         )
-        if rank in seen_ranks:
-            raise FantasyCalcFetchError(f"Duplicate FantasyCalc overall rank: {rank}")
-        seen_ranks.add(rank)
         value = parse_required_int(
             entry.get("value"), field_name="value", asset_name=name, minimum=0
         )
-        position_rank = parse_optional_number(
-            entry.get("positionRank"),
-            field_name="positionRank",
-            asset_name=name,
-            minimum=Decimal("1"),
-        )
-
         rows.append(
             {
                 "name": name,
-                "Rank": rank,
+                "Rank": 0,
+                "source_overall_rank": source_overall_rank,
                 "asset_type": "draft_pick" if position == "PICK" else "player",
                 "position": position,
                 "team": str(player.get("maybeTeam") or "").strip().upper(),
                 "value": value,
-                "position_rank": position_rank,
+                "position_rank": parse_optional_number(
+                    entry.get("positionRank"),
+                    field_name="positionRank",
+                    asset_name=name,
+                    minimum=Decimal("1"),
+                ),
                 "tier": parse_optional_number(
                     entry.get("maybeTier"),
                     field_name="maybeTier",
@@ -300,12 +300,57 @@ def parse_assets(
                     asset_name=name,
                 ),
                 "starter": bool(entry.get("starter")),
+                "_source_order": source_order,
             }
         )
 
-    rows.sort(key=lambda row: int(row["Rank"]))
+    # FantasyCalc can publish duplicate overallRank values. Preserve those source
+    # ranks, then create a deterministic unique normalized row order for our CSV.
+    rows.sort(
+        key=lambda row: (
+            int(row["source_overall_rank"]),
+            -int(row["value"]),
+            str(row["source_asset_id"]),
+            int(row["_source_order"]),
+        )
+    )
+    for normalized_rank, row in enumerate(rows, start=1):
+        row["Rank"] = normalized_rank
+        row.pop("_source_order", None)
+
     validate_rows(rows, config)
     return rows
+
+
+def source_rank_diagnostics(
+    rows: list[dict[str, Any]], *, sample_limit: int = 20
+) -> dict[str, Any]:
+    counts = Counter(int(row["source_overall_rank"]) for row in rows)
+    duplicate_ranks = sorted(rank for rank, count in counts.items() if count > 1)
+    samples: list[dict[str, Any]] = []
+    for source_rank in duplicate_ranks[:sample_limit]:
+        assets = [
+            {
+                "name": str(row["name"]),
+                "position": str(row["position"]),
+                "value": int(row["value"]),
+                "normalized_rank": int(row["Rank"]),
+                "source_asset_id": str(row["source_asset_id"]),
+            }
+            for row in rows
+            if int(row["source_overall_rank"]) == source_rank
+        ]
+        samples.append({"source_overall_rank": source_rank, "assets": assets})
+    return {
+        "source_overall_rank_unique": not duplicate_ranks,
+        "duplicate_source_rank_group_count": len(duplicate_ranks),
+        "duplicate_source_rank_row_count": sum(counts[rank] for rank in duplicate_ranks),
+        "duplicate_source_rank_samples": samples,
+        "sample_limit": sample_limit,
+        "normalized_rank_method": (
+            "source_overall_rank_asc_then_value_desc_then_source_asset_id"
+        ),
+    }
 
 
 def validate_rows(rows: list[dict[str, Any]], config: dict[str, Any]) -> None:
@@ -314,8 +359,8 @@ def validate_rows(rows: list[dict[str, Any]], config: dict[str, Any]) -> None:
             f"Only {len(rows)} normalized rows found; expected at least {MIN_NORMALIZED_ROWS}"
         )
     ranks = [int(row["Rank"]) for row in rows]
-    if ranks != sorted(ranks) or len(ranks) != len(set(ranks)):
-        raise FantasyCalcFetchError("FantasyCalc ranks are not unique and ascending")
+    if ranks != list(range(1, len(rows) + 1)):
+        raise FantasyCalcFetchError("Normalized FantasyCalc ranks are not contiguous and unique")
 
     position_counts = Counter(str(row["position"]) for row in rows)
     missing_positions = sorted(PLAYER_POSITIONS - set(position_counts))
@@ -466,6 +511,7 @@ def build_metadata(
             "source_raw_sha256_at_snapshot": hashlib.sha256(
                 raw_content.encode("utf-8")
             ).hexdigest(),
+            "rank_diagnostics": source_rank_diagnostics(rows),
         },
         "raw_schema": raw_schema_summary(payload),
         "extraction_provenance": {
@@ -486,7 +532,21 @@ def build_metadata(
             "not_projection": True,
             "not_expert_consensus": True,
             "comparison_contract": ANALYSIS_METADATA_FILE,
-            "preferred_player_join": ["sleeper_id", "source_asset_id", "normalized_name_position"],
+            "preferred_player_join": [
+                "sleeper_id",
+                "source_asset_id",
+                "normalized_name_position",
+            ],
+            "rank_semantics": {
+                "Rank": (
+                    "Repository-normalized unique row order. Use for deterministic joins and "
+                    "list-length percentiles."
+                ),
+                "source_overall_rank": (
+                    "FantasyCalc-published overallRank. May contain duplicate values and must "
+                    "not be treated as a unique key."
+                ),
+            },
             "league_adjustment": (
                 "FantasyCalc uses the nearest supported eight-team proxy for the actual "
                 "six-team league. It models Superflex and PPR, but not two fixed TE starters; "
@@ -655,12 +715,21 @@ def main(argv: list[str] | None = None) -> int:
                     config, base_url=args.url, timeout=args.timeout
                 )
             rows = parse_assets(payload, config)
+            diagnostics = source_rank_diagnostics(rows)
+            if diagnostics["duplicate_source_rank_group_count"]:
+                print(
+                    "[fantasycalc] note: "
+                    f"{diagnostics['duplicate_source_rank_group_count']} duplicate source-rank "
+                    "groups retained; normalized Rank is unique",
+                    file=sys.stderr,
+                )
 
             if args.dry_run:
                 counts = Counter(str(row["position"]) for row in rows)
                 print(
                     f"FantasyCalc {format_key} rows={len(rows)} "
                     + " ".join(f"{key}={counts[key]}" for key in sorted(counts))
+                    + f" duplicate_source_rank_groups={diagnostics['duplicate_source_rank_group_count']}"
                 )
                 for row in rows[:10]:
                     print({key: row[key] for key in CSV_FIELDS})
