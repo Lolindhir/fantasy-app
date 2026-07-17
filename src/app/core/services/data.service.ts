@@ -105,7 +105,12 @@ export class DataService {
     return this.dataApiService.getMovesData().pipe(
       map(data => {
         const leagueData = this.mapLeagueData(data, sortFields);
-        return mapRawTransactions(data.transactionsRaw, leagueData.teams, leagueData.players);
+        return mapRawTransactions(
+          data.transactionsRaw,
+          leagueData.teams,
+          leagueData.players,
+          leagueData.drafts
+        );
       })
     );
   }
