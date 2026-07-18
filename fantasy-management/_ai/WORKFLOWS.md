@@ -138,10 +138,11 @@ python fantasy-management/_ai/scripts/validate_episode_coverage.py \
 2. Run validator unit tests when scripts or tests changed.
 3. Run all-package validation before merge when shared rules, templates, schemas, registries or scripts changed.
 4. For split packages, validate the entry-point manifest, every part and the fully aggregated payload.
-5. Treat errors as blockers.
-6. Treat warnings as review prompts.
-7. Legacy schema-version-1 warnings do not invalidate historical packages.
-8. The repository workflow runs these checks for relevant pull requests.
+5. Do not add source- or episode-specific validation bypasses; fix the schema, package or validator defect instead.
+6. Treat errors as blockers.
+7. Treat warnings as review prompts.
+8. Legacy schema-version-1 warnings do not invalidate historical packages.
+9. The repository workflow runs these checks for relevant pull requests.
 
 ## Knowledge derivation workflow
 
