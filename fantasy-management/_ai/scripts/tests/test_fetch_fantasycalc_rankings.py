@@ -175,7 +175,7 @@ class FantasyCalcFetcherTests(unittest.TestCase):
                     encoding="utf-8"
                 )
             )
-            self.assertEqual(2, metadata["schema_version"])
+            self.assertEqual(module.SCHEMA_VERSION, metadata["schema_version"])
             self.assertEqual(
                 1,
                 metadata["snapshot"]["rank_diagnostics"][

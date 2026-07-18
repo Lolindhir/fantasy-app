@@ -54,8 +54,6 @@ Always re-check `Metadata.json` when exact owner mapping matters.
 
 Do not use the full `public/data/Players.json` as the operational source for broad player lists in chat or agent workflows when chunked player exports are available.
 
-Reason: the full file is large and may be truncated in tool or chat contexts.
-
 For broad player lists, waiver/free-agent boards and candidate generation, use:
 
 1. `public/data/chat/players-relevant/index.json`
@@ -69,14 +67,12 @@ Important player fields may include ID, name fields, NFL team, position, age, sa
 
 `Players.json -> IsFreeAgent` is not a fantasy-league free-agent signal.
 
-A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`.
-
-A fantasy free agent is only a player whose ID does not appear in any roster, reserve or taxi list.
+A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`. A fantasy free agent is only a player whose ID does not appear in any of those lists.
 
 For free-agent boards:
 
 1. load current `League.json`
-2. collect every owned player ID from all teams' `Roster`, `Reserve` and `Taxi`
+2. collect every owned player ID from roster, reserve and taxi
 3. load relevant player chunks through the chunk index
 4. remove owned IDs
 5. evaluate the remaining candidates
@@ -92,15 +88,11 @@ Pick metadata is resolved through:
 
 `public/data/Drafts.json -> Picks[]`
 
-Never infer true pick position only from a pick key such as `R1` or `OO5`.
-
-For current ownership, use `CurrentOwnerRosterID`, not `OriginalOwnerRosterID`.
+Never infer true pick position only from a pick key such as `R1` or `OO5`. For current ownership, use `CurrentOwnerRosterID`, not `OriginalOwnerRosterID`.
 
 ## Transaction source rules
 
-`public/data/Transactions.json` is the current source for completed transactions.
-
-Use it for trade history, add/drop history, pick movements, market activity and provenance checks.
+`public/data/Transactions.json` is the current source for completed transactions. Use it for trade history, add/drop history, pick movements, market activity and provenance checks.
 
 When current state and transaction history disagree, current state from `League.json` wins for roster and pick ownership.
 
@@ -110,34 +102,47 @@ Check `public/data/Timestamps.json` before larger analyses when data freshness m
 
 ## External fantasy sources
 
-External sources may be used for market, expert or plausibility context.
+External sources may be used for expert, market, ADP, injury, news or plausibility context. They supplement current league data and never override it automatically.
 
-Examples:
+Always:
 
-- FantasyPros Dynasty Rankings / ECR
-- FantasyPros PPR or redraft rankings
-- KeepTradeCut dynasty rankings / trade calculator / market values
-- FantasyCalc dynasty rankings / trade database
-- ESPN player profiles
-- official NFL/team/college pages for identity, roster and injury context
+- fetch dynamic external rankings, values, ADP, injuries and news fresh when used
+- cite external claims in user-facing responses
+- explain what each source measures
+- do not store dynamic external values as permanent truth
+- reconcile every source with the actual league format and Mighty Giants context
 
-Rules:
+### External-ranking hierarchy
 
-- fetch external rankings, values, ADP, injury/news and market context fresh when used
-- cite the source in user-facing responses when external data is used
-- explain what the source measures
-- do not let external sources override current league data
-- do not store dynamic external rankings as permanent truth
+All ordered external player or asset evaluations belong under:
 
-### FantasyPros PPR Superflex ECR snapshots
+```text
+fantasy-management/sources/external-rankings/<ranking_kind>/<provider>/<format>/
+```
+
+The first level describes how the ordering is produced, not who publishes it.
+
+Active and reserved ranking kinds:
+
+- `expert-consensus`: ordering derived from expert opinions
+- `market-value`: ordering or values derived from trade/crowd market behavior
+- `adp`: ordering derived from observed draft positions
+
+Provider comes second because one provider can publish more than one ranking kind and several providers can publish the same kind. Format comes last and records horizon, scoring, league-size and lineup assumptions.
+
+The canonical hierarchy and common rules are documented in:
+
+`fantasy-management/sources/external-rankings/README.md`
+
+### FantasyPros expert-consensus snapshots
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/fantasypros/`
+`fantasy-management/sources/external-rankings/expert-consensus/fantasypros/`
 
 Available ranking IDs:
 
-- `dynasty-superflex-ppr`: long-term asset and market-value context
+- `dynasty-superflex-ppr`: long-term asset and expert-consensus context
 - `redraft-ppr-superflex`: current-season lineup, production and win-now context
 
 For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
@@ -145,47 +150,44 @@ For each ranking, use `latest.json` to resolve the newest successful snapshot. L
 Refresh directly from the official FantasyPros pages with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py
-python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py
+python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
+python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
 ```
 
-Both fetchers must fail closed: do not update `latest.json` after network, source-identity, schema, row-count or rank-validation errors. A successful refresh must retain the complete parsed `ecrData` payload, write the normalized CSV with `position_rank`, `tier`, `rank_min`, `rank_max`, `rank_ave` and `rank_std`, and document files plus diagnostics in metadata.
+Both fetchers must fail closed after network, source-identity, schema, row-count or rank-validation errors. A successful refresh retains the complete parsed `ecrData` payload and writes the normalized consensus fields.
 
-Detailed field semantics, observed source behavior and interpretation limits are canonical in:
+Canonical source documentation:
 
-`fantasy-management/sources/external-rankings/fantasypros/README.md`
-
-The shared machine-readable Dynasty-/Redraft comparison contract is:
-
-`fantasy-management/sources/external-rankings/fantasypros/analysis-metadata.json`
+- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md`
+- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/analysis-metadata.json`
 
 Operational rules:
 
-- never assume that `rank_ecr` must lie inside `rank_min`/`rank_max`
-- interpret `rank_std` as dispersion of source-provided expert-rank values, not as total expert coverage, outcome confidence or probability
-- treat explanations involving unranked players, expert weighting, freshness or caching as plausible but unconfirmed unless FantasyPros documents the aggregation method
-- retain ECR-outside-range cases and their diagnostics instead of mutating or rejecting valid source values
+- never assume `rank_ecr` must lie inside `rank_min`/`rank_max`
+- interpret `rank_std` as dispersion of source-provided ranks, not total panel coverage or outcome confidence
+- keep explanations about unranked players, weighting and cache alignment unconfirmed unless FantasyPros documents them
+- retain ECR-outside-range cases and diagnostics
 - join Dynasty and Redraft primarily through `source_player_id`
 - prefer snapshots fetched on the same day
-- normalize ranks to list-length-aware percentiles before calculating a cross-ranking gap
-- do not use a raw rank difference when lists or player pools differ
+- normalize ranks to list-length-aware percentiles before calculating gaps
+- do not use raw rank differences across lists with different pools or lengths
 
-Treat FantasyPros Dynasty ECR as long-term expert-consensus context and Redraft ECR as current-season win-now context. Neither is ADP, a projection or league-specific truth. For the fixed-2QB and fixed-2TE Mighty Giants league, apply additional scarcity interpretation only during analysis, not by mutating source snapshots.
+FantasyPros ECR is expert consensus. It is not ADP, a projection or league-specific truth.
 
 ### FantasyCalc market-value snapshots
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/fantasycalc/`
+`fantasy-management/sources/external-rankings/market-value/fantasycalc/`
 
 Available ranking IDs:
 
-- `dynasty-superflex-ppr-8-team`: observed long-term trade-market values, including source draft-pick assets
+- `dynasty-superflex-ppr-8-team`: observed long-term trade-market values including source draft-pick assets
 - `redraft-superflex-ppr-8-team`: observed current-season trade-market values
 
 FantasyCalc is queried with two quarterbacks, full PPR and the nearest supported eight-team proxy for the actual six-team league. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
 
-For each ranking, use `latest.json` to resolve the newest normalized snapshot and its current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the full API payload is retained only as the latest Raw response.
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the complete API payload is retained only as the latest Raw response.
 
 Refresh both formats with:
 
@@ -193,36 +195,42 @@ Refresh both formats with:
 python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
 ```
 
-The fetcher must fail closed after network, JSON, row-count, identity, rank or format-plausibility errors. It must not create a new historical snapshot when the normalized ranking is unchanged, but it must still replace `raw-latest.json` and update Raw freshness metadata after a successful fetch.
+Canonical source documentation:
 
-Detailed storage rules, field semantics and interpretation limits are canonical in:
-
-`fantasy-management/sources/external-rankings/fantasycalc/README.md`
-
-The shared machine-readable Dynasty-/Redraft comparison contract is:
-
-`fantasy-management/sources/external-rankings/fantasycalc/analysis-metadata.json`
+- `fantasy-management/sources/external-rankings/market-value/fantasycalc/README.md`
+- `fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json`
 
 Operational rules:
 
 - treat FantasyCalc as observed trade-market context, not expert consensus or a projection
+- use normalized `Rank` for ordering and per-centile comparisons; retain `source_overall_rank` as an audit field with permitted ties
 - join players primarily through `sleeper_id`, then `source_asset_id`, then normalized name plus position
 - treat FantasyCalc draft-pick IDs as source-only synthetic identifiers
-- resolve actual draft-pick identity and ownership from `League.json` and `Drafts.json`
-- apply six-team replacement-level context after reading the eight-team source proxy
+- resolve real pick identity and ownership from `League.json` and `Drafts.json`
+- apply six-team replacement-level context after reading the eight-team proxy
 - apply additional scarcity for two fixed QB and two fixed TE starters during analysis
 - compare FantasyCalc and FantasyPros through normalized percentiles, not raw value-to-rank arithmetic
-- visibly attribute FantasyCalc whenever its values are shown to users
+- visibly attribute FantasyCalc whenever its values are shown
 
 ### KeepTradeCut manual-reference restriction
 
-KeepTradeCut may be used as a manually checked crowd/market-sentiment source. Do not create an automated fetcher or workflow for KeepTradeCut unless its published automation policy changes or explicit permission is obtained.
+KeepTradeCut belongs under:
+
+`fantasy-management/sources/external-rankings/market-value/keeptradecut/`
+
+Its current status is `manual_reference_only`. Do not create an automated fetcher or workflow unless the published automation policy changes or explicit permission is obtained.
+
+### ADP sources
+
+ADP is an external ranking kind. The first implemented provider must be stored under:
+
+`fantasy-management/sources/external-rankings/adp/<provider>/<format>/`
+
+ADP measures observed draft cost and must remain distinct from expert consensus and trade-market value even though all are normalized as rankings.
 
 ## Fantasy Management internal sources
 
-The Fantasy Management workspace stores source, Knowledge, analysis and decision artifacts under:
-
-`fantasy-management/`
+The Fantasy Management workspace stores source, Knowledge, analysis and decision artifacts under `fantasy-management/`.
 
 Important active subfolders:
 
@@ -233,33 +241,11 @@ Important active subfolders:
 
 These files are useful context but are not canonical current league state.
 
-## Stoned Lack source area
+## Podcast source areas
 
-Stoned Lack podcast data belongs under:
+Podcast source packages belong under `fantasy-management/sources/podcasts/`. Stoned Lack, Down Set Talk and Football Bromance are qualitative secondary sources whose fantasy specificity and reliability depend on the subject.
 
-`fantasy-management/sources/podcasts/stoned-lack/`
-
-Stoned Lack is a secondary qualitative source, not a primary league source.
-
-Use it for:
-
-- rookie/prospect takes
-- source sentiment
-- conviction
-- tiers and rankings
-- sleeper/buy/sell/fade/watchlist takes
-- source philosophy
-- strategy notes
-- later meta-analysis across episodes
-
-Always distinguish:
-
-- internal league data
-- Stoned Lack source perspective
-- current external market data
-- final Mighty Giants recommendation
-
-Raw transcripts may contain automatic transcription errors, especially player names. Use cleaned entity mappings where available and verify uncertain names when they matter.
+Always distinguish internal league data, source perspective, current external market/news context and the final Mighty Giants recommendation. Raw transcripts may contain transcription errors, especially player names; use the identity registry and verify uncertain names when they matter.
 
 ## Relevant Players source area
 
@@ -267,12 +253,10 @@ User-provided or generated Relevant Players files belong under:
 
 `fantasy-management/sources/relevant-players/`
 
-These files can supplement generated app/player chunks, but they must not override current generated league state unless explicitly documented.
+They can supplement generated app/player chunks but do not override current generated league state unless explicitly documented.
 
 ## Analysis artifacts are not permanent truth
 
-Files under `analyses/`, `knowledge/` and `decisions/` are useful context and history.
+Files under `analyses/`, `knowledge/` and `decisions/` are context and history. They are not current truth for roster, pick ownership, salary/cap state, injuries, rankings, market values or NFL depth charts.
 
-They must not be treated as current truth for dynamic values such as current roster, current pick ownership, current salary/cap state, current injuries, current rankings, current market values or current NFL depth charts.
-
-Re-derive dynamic facts from current sources when needed.
+Re-derive dynamic facts from current repository data and current external sources when needed.
