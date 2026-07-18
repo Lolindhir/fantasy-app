@@ -55,6 +55,8 @@ Do not append an entity, alias, mention or coverage register to `episode.md`.
 
 `mentions.json` is created from a separate full raw-source pass. It records every player mention or possible player mention and other fantasy-relevant named entities, including comparisons, competitors, historical references and unresolved forms.
 
+For split mention storage, part files validate their envelope while the aggregated payload is validated against the same canonical mention definition as inline storage. Do not duplicate the complete mention definition in a second schema.
+
 `index.json` stores technical metadata, calculated counts and the audit status.
 
 ## JSON formatting rule
