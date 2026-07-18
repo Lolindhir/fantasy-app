@@ -31,8 +31,9 @@ jobs:
 
       - name: Test FantasyCalc fetcher
         run: >-
-          python -m unittest
-          fantasy-management/_ai/scripts/tests/test_fetch_fantasycalc_rankings.py
+          python -m unittest discover
+          -s fantasy-management/_ai/scripts/tests
+          -p "test_fetch_fantasycalc*.py"
           -v
 
       - name: Update FantasyCalc rankings
@@ -44,6 +45,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add fantasy-management/sources/external-rankings/fantasycalc/
+          git add fantasy-management/sources/external-rankings/market-value/fantasycalc/
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope fantasycalc-rankings
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main

@@ -32,8 +32,8 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/chat/players-relevant/" { return "Player chat export" }
         "^public/data/backup/" { return "Backups" }
-        "^fantasy-management/sources/external-rankings/fantasypros/" { return "FantasyPros rankings" }
-        "^fantasy-management/sources/external-rankings/fantasycalc/" { return "FantasyCalc rankings" }
+        "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
+        "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players_Relevant\.json$" { return "Relevant players" }

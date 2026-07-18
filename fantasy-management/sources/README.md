@@ -2,10 +2,19 @@
 
 Source material for Fantasy Management.
 
-Use this folder for raw and structured input sources such as podcast source packages, Relevant Players files, external ranking snapshots and manual notes.
+Aktive Quelltypen sind unter anderem:
 
-Podcast sources are the active source type right now.
+- Podcast-Source-Packages
+- externe Rankings
+- Relevant-Players-Dateien
+- manuelle Notizen
 
-Other source categories are created on demand only when real files exist. Do not create README-only placeholder folders.
+Externe Rankings werden nach ihrer Messart organisiert:
 
-Source files provide context. They do not override current league data in `public/data/`.
+```text
+external-rankings/<ranking_kind>/<provider>/<format>/
+```
+
+Die kanonischen Ranking-Arten und Speicherregeln stehen in `external-rankings/README.md`.
+
+Ordner werden nur angelegt, wenn sie echte Inhalte erhalten. Quellen liefern Kontext und überschreiben niemals den aktuellen Ligastand unter `public/data/`.
