@@ -12,6 +12,7 @@ from episode_coverage_validation_common import (
     valid_links, mention_uncovered, normalize_text, FALSE_POSITIVE,
 )
 
+
 def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions_schema: Path, report: Report, warnings_for_legacy: bool) -> None:
     label = rel(package_dir, root)
     index_path = package_dir / "index.json"
@@ -25,7 +26,6 @@ def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions
     if not isinstance(index, dict):
         report.error(label, "index.json root must be an object.")
         return
-    diagnose_episode_571 = index.get("episode_id") == "sl_0571"
     validate_against_schema(index, index_schema, report, label, "index.json")
     try:
         version = int(index.get("package_schema_version", 1))
@@ -42,11 +42,18 @@ def validate_package(package_dir: Path, root: Path, index_schema: Path, mentions
         report.error(label, str(exc))
         return
     validate_against_schema(mentions_loaded.manifest, mentions_schema, report, label, "mentions.json")
-    if not diagnose_episode_571:  # Temporary diagnosis: isolate the new mention-part schema.
-        part_schema = root / "fantasy-management/_ai/schemas/episode-mentions-part.schema.json"
-        for path, document in mentions_loaded.part_documents:
-            validate_against_schema(document, part_schema, report, label, path.relative_to(package_dir).as_posix())
-    if version >= 2 and not diagnose_episode_571:
+    part_schema = root / "fantasy-management/_ai/schemas/episode-mentions-part.schema.json"
+    for path, document in mentions_loaded.part_documents:
+        validate_against_schema(document, part_schema, report, label, path.relative_to(package_dir).as_posix())
+    if mentions_loaded.mode == "split":
+        validate_against_schema(
+            mentions_loaded.aggregate,
+            mentions_schema,
+            report,
+            label,
+            "aggregated mentions",
+        )
+    if version >= 2:
         for path, data in (index_path, index), *takes_loaded.json_documents, *mentions_loaded.json_documents:
             if not is_canonical_pretty_json(path, data):
                 report.error(label, f"{path.relative_to(package_dir).as_posix()} is not canonical pretty JSON.")
