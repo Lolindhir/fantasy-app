@@ -62,7 +62,7 @@ Validators aggregate all parts into the historical `take_categories` shape befor
 
 Each `mentions/partNN.json` contains a contiguous `part_number` and a `mentions` array. Part numbering starts at `1` and has no gaps.
 
-Validators aggregate all parts into the historical `mentions` shape before calculating counts and coverage.
+Validators aggregate all parts into the historical `mentions` shape before calculating counts and coverage. The part schema validates only the split-file envelope; the aggregated mention payload is validated once against the canonical episode mention schema so inline and split storage cannot drift apart.
 
 ## Integrity rules
 
@@ -78,6 +78,7 @@ For every split package:
 8. `index.json` continues to reference `takes.json` and `mentions.json`, never individual parts.
 9. Coverage and count validation runs on the fully aggregated data.
 10. Every manifest and part must be UTF-8 canonical pretty JSON with a trailing newline.
+11. Validators may not add episode-specific bypasses for schema, formatting or completeness checks.
 
 ## Validation
 
