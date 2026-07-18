@@ -171,7 +171,7 @@ class FantasyProsFetcherTests(unittest.TestCase):
             self.assertEqual(160, metadata_data["raw_schema"]["player_count"])
             field_semantics = metadata_data["analysis_usage"]["field_semantics"]
             self.assertEqual(
-                "fantasy-management/sources/external-rankings/fantasypros/README.md",
+                "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md",
                 field_semantics["reference"],
             )
             self.assertEqual(
