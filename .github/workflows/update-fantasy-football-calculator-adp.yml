@@ -1,0 +1,49 @@
+name: Update Fantasy Football Calculator ADP
+
+on:
+  schedule:
+    - cron: "7 6 * * *"  # täglich um 06:07 UTC
+  workflow_dispatch: # manueller Start
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-fantasy-football-calculator-adp
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test Fantasy Football Calculator ADP fetcher
+        run: >-
+          python -m unittest
+          fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
+          -v
+
+      - name: Update Fantasy Football Calculator ADP rankings
+        run: >-
+          python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
+          --skip-unchanged
+
+      - name: Commit and push updates
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/
+          pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope ffc-adp-rankings
+          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
