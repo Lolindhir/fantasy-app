@@ -34,7 +34,10 @@ import {
     SharedMaterialImports
   ],
   templateUrl: './league-activity.html',
-  styleUrl: './league-activity.scss'
+  styleUrls: [
+    './league-activity.scss',
+    './league-activity-hero.scss'
+  ]
 })
 export class LeagueActivityComponent {
   private readonly dataService = inject(DataService);
