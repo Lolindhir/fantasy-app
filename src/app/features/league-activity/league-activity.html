@@ -1,165 +1,385 @@
 <div class="moves-page">
   @if (vm$ | async; as vm) {
-    <section class="hero-card">
-      <p class="eyebrow">League activity</p>
+    <section class="moves-hero">
+      <div class="hero-heading">
+        <div>
+          <p class="eyebrow">League activity</p>
+          <h1>Moves</h1>
+          <p class="hero-description">
+            Every trade, waiver claim and roster decision in one compact activity feed.
+          </p>
+        </div>
 
-      <section class="hero-summary-grid" aria-label="Moves summary">
-        <article class="hero-summary-card hero-summary-card--trades">
-          <mat-icon aria-hidden="true">swap_horiz</mat-icon>
-          <div>
-            <span>Trades</span>
-            <strong>{{ vm.TradeCount }}</strong>
-          </div>
+        <span class="season-pill">
+          <mat-icon aria-hidden="true">calendar_month</mat-icon>
+          {{ vm.SeasonLabel }} season
+        </span>
+      </div>
+
+      <section class="summary-grid" aria-label="Season move summary">
+        <article class="summary-card">
+          <span class="summary-icon summary-icon--moves">
+            <mat-icon aria-hidden="true">dynamic_feed</mat-icon>
+          </span>
+          <div><strong>{{ vm.TotalCount }}</strong><span>Moves</span></div>
         </article>
 
-        <article class="hero-summary-card hero-summary-card--waivers">
-          <mat-icon aria-hidden="true">playlist_add_check</mat-icon>
-          <div>
-            <span>Waiver Adds</span>
-            <strong>{{ vm.WaiverAddCount }}</strong>
-          </div>
+        <article class="summary-card">
+          <span class="summary-icon summary-icon--trades">
+            <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+          </span>
+          <div><strong>{{ vm.TradeCount }}</strong><span>Trades</span></div>
         </article>
 
-        <article class="hero-summary-card hero-summary-card--cuts">
-          <mat-icon aria-hidden="true">person_remove</mat-icon>
-          <div>
-            <span>Cuts</span>
-            <strong>{{ vm.CutCount }}</strong>
-          </div>
+        <article class="summary-card">
+          <span class="summary-icon summary-icon--players">
+            <mat-icon aria-hidden="true">groups</mat-icon>
+          </span>
+          <div><strong>{{ vm.PlayerMoveCount }}</strong><span>Players moved</span></div>
+        </article>
+
+        <article class="summary-card">
+          <span class="summary-icon summary-icon--picks">
+            <mat-icon aria-hidden="true">local_activity</mat-icon>
+          </span>
+          <div><strong>{{ vm.DraftPickCount }}</strong><span>Picks traded</span></div>
         </article>
       </section>
     </section>
 
+    <section class="filter-shell" aria-label="Filter league moves">
+      <nav class="filter-list">
+        @for (filter of vm.Filters; track filter.Id) {
+          <button
+            type="button"
+            class="filter-button"
+            [class.filter-button--active]="filter.Id === selectedFilter"
+            [attr.aria-pressed]="filter.Id === selectedFilter"
+            (click)="setFilter(filter.Id)"
+          >
+            <mat-icon aria-hidden="true">{{ filter.Icon }}</mat-icon>
+            <span>{{ filter.Label }}</span>
+            <strong>{{ filter.Count }}</strong>
+          </button>
+        }
+      </nav>
+      <span class="filter-result">{{ vm.VisibleCount }} of {{ vm.TotalCount }}</span>
+    </section>
+
     @if (loadFailed) {
-      <mat-card class="state-card state-card--error">
+      <section class="state-card state-card--error">
         <mat-icon aria-hidden="true">error_outline</mat-icon>
         <div>
           <strong>Moves could not be loaded.</strong>
           <span>The generated transaction data is currently unavailable.</span>
         </div>
-      </mat-card>
+      </section>
     } @else if (vm.TotalCount === 0) {
-      <mat-card class="state-card">
+      <section class="state-card">
         <mat-icon aria-hidden="true">inbox</mat-icon>
         <div>
           <strong>No completed moves yet.</strong>
           <span>New transactions will appear here after the next data update.</span>
         </div>
-      </mat-card>
+      </section>
+    } @else if (vm.VisibleCount === 0) {
+      <section class="state-card">
+        <mat-icon aria-hidden="true">filter_alt_off</mat-icon>
+        <div>
+          <strong>No moves match this filter.</strong>
+          <span>Choose another activity type to return to the feed.</span>
+        </div>
+      </section>
     } @else {
-      <div class="moves-timeline">
+      <main class="activity-feed">
         @for (group of vm.Groups; track group.DateKey) {
           <section class="date-group">
             <header class="date-header">
               <h2>{{ group.DateLabel }}</h2>
-              <span>{{ group.Transactions.length }} move{{ group.Transactions.length === 1 ? '' : 's' }}</span>
+              <span></span>
+              <strong>
+                {{ group.Transactions.length }}
+                move{{ group.Transactions.length === 1 ? '' : 's' }}
+              </strong>
             </header>
 
-            <div class="date-moves">
+            <div class="date-cards">
               @for (transaction of group.Transactions; track transaction.TransactionID) {
                 <article
-                  class="move-entry"
-                  [class.move-entry--trade]="transaction.Type === 'trade'"
+                  class="move-card"
+                  [class.move-card--trade]="transaction.Type === 'trade'"
+                  [class.move-card--waiver]="transaction.Type === 'waiver'"
+                  [class.move-card--roster]="transaction.Type !== 'trade' && transaction.Type !== 'waiver'"
                 >
-                  <div class="timeline-marker" aria-hidden="true">
-                    <mat-icon>{{ moveTypeIcon(transaction.Type) }}</mat-icon>
-                  </div>
+                  <header class="move-card-header">
+                    <span class="move-type-badge">
+                      <mat-icon aria-hidden="true">{{ moveTypeIcon(transaction.Type) }}</mat-icon>
+                      {{ moveTypeLabel(transaction.Type) }}
+                    </span>
 
-                  <mat-card class="move-card">
-                    <header class="move-card-header">
-                      <span class="move-type">{{ moveTypeLabel(transaction.Type) }}</span>
-
+                    <div class="move-meta">
+                      <span>{{ transaction.Week > 0 ? 'Week ' + transaction.Week : 'Offseason' }}</span>
                       @if (transaction.CreatedAtDate) {
                         <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
                           {{ transaction.CreatedAtDate | date: 'HH:mm' }}
                         </time>
                       }
-                    </header>
+                    </div>
+                  </header>
 
-                    <div class="participants">
+                  @if (transaction.Type === 'trade') {
+                    <div
+                      class="trade-board"
+                      [class.trade-board--multi-team]="transaction.Participants.length > 2"
+                    >
                       @for (participant of transaction.Participants; track participant.RosterID) {
-                        <section class="participant">
-                          <div class="team-line">
-                            <img
-                              class="team-avatar"
-                              [src]="participant.Team?.Avatar || 'assets/default-team-avatar.png'"
-                              [alt]="getTeamName(participant)"
-                            />
-                            <div>
-                              <strong>{{ getTeamName(participant) }}</strong>
-                              @if (participant.Team?.Owner) {
-                                <span>{{ participant.Team?.Owner }}</span>
-                              }
-                            </div>
-                          </div>
-
-                          @if (hasIncomingAssets(participant)) {
-                            <div class="asset-section asset-section--incoming">
-                              <span class="asset-direction">
-                                <mat-icon aria-hidden="true">{{ incomingAssetIcon(transaction.Type) }}</mat-icon>
-                                {{ incomingAssetLabel(transaction.Type) }}
-                              </span>
-                              <div class="asset-list">
-                                @for (asset of participant.AddedPlayers; track asset.PlayerID) {
-                                  <span class="asset-chip asset-chip--player">
-                                    {{ getPlayerName(asset) }}
-                                  </span>
+                        <section class="trade-side">
+                          <header class="team-header">
+                            <div class="team-identity">
+                              <span class="team-avatar-shell">
+                                @if (participant.Team?.Avatar) {
+                                  <img [src]="participant.Team?.Avatar" [alt]="getTeamName(participant)" />
+                                } @else {
+                                  <span>{{ getTeamInitials(participant) }}</span>
                                 }
-                                @for (pick of participant.AcquiredDraftPicks; track draftPickTrackKey(pick)) {
-                                  <span
-                                    class="asset-chip asset-chip--pick"
-                                    [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
-                                    [attr.aria-label]="draftPickLabel(pick) + ', original owner ' + draftPickOriginalOwnerLabel(pick)"
-                                  >
-                                    {{ draftPickLabel(pick) }}
-                                  </span>
+                              </span>
+                              <div>
+                                <strong>{{ getTeamName(participant) }}</strong>
+                                @if (participant.Team?.Owner) {
+                                  <span>{{ participant.Team?.Owner }}</span>
                                 }
                               </div>
                             </div>
-                          }
+                            <span class="asset-count">
+                              {{ getIncomingAssetCount(participant) }}
+                              asset{{ getIncomingAssetCount(participant) === 1 ? '' : 's' }}
+                            </span>
+                          </header>
+
+                          <div class="asset-block asset-block--incoming">
+                            <span class="asset-direction">
+                              <mat-icon aria-hidden="true">{{ incomingAssetIcon(transaction.Type) }}</mat-icon>
+                              {{ incomingAssetLabel(transaction.Type) }}
+                            </span>
+
+                            @if (hasIncomingAssets(participant)) {
+                              <div class="asset-stack">
+                                @for (asset of participant.AddedPlayers; track asset.PlayerID) {
+                                  <div class="asset-card asset-card--player">
+                                    <span class="player-image">
+                                      @if (asset.Player?.Picture) {
+                                        <img [src]="asset.Player?.Picture" [alt]="getPlayerName(asset)" />
+                                      } @else {
+                                        <mat-icon aria-hidden="true">person</mat-icon>
+                                      }
+                                    </span>
+                                    <div class="asset-copy">
+                                      <strong>{{ getPlayerName(asset) }}</strong>
+                                      <span class="player-meta">
+                                        @if (asset.Player?.Position) {
+                                          <b class="position-chip" [ngStyle]="asset.Player?.Position | positionStyle">
+                                            {{ asset.Player?.Position }}
+                                          </b>
+                                        }
+                                        <span>{{ getPlayerTeamLabel(asset) }}</span>
+                                      </span>
+                                    </div>
+                                    @if (asset.Player?.TeamNFL?.Logo) {
+                                      <img
+                                        class="nfl-logo"
+                                        [src]="asset.Player?.TeamNFL?.Logo"
+                                        [alt]="asset.Player?.TeamNFL?.Name || 'NFL team'"
+                                      />
+                                    }
+                                  </div>
+                                }
+
+                                @for (pick of participant.AcquiredDraftPicks; track draftPickTrackKey(pick)) {
+                                  <div
+                                    class="asset-card asset-card--pick"
+                                    [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
+                                    [attr.aria-label]="draftPickLabel(pick) + ', original owner ' + draftPickOriginalOwnerLabel(pick)"
+                                  >
+                                    <span class="pick-shield">
+                                      <small>Round</small>
+                                      <strong>{{ pick.Round }}</strong>
+                                    </span>
+                                    <div class="asset-copy">
+                                      <strong>{{ draftPickAssetLabel(pick) }}</strong>
+                                      <span>from {{ draftPickOriginalOwnerLabel(pick) }}</span>
+                                    </div>
+                                    <mat-icon class="pick-icon" aria-hidden="true">local_activity</mat-icon>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <span class="empty-assets">No incoming assets recorded</span>
+                            }
+                          </div>
 
                           @if (hasOutgoingAssets(participant)) {
-                            <div class="asset-section asset-section--outgoing">
+                            <div class="sent-summary">
                               <span class="asset-direction">
                                 <mat-icon aria-hidden="true">{{ outgoingAssetIcon(transaction.Type) }}</mat-icon>
                                 {{ outgoingAssetLabel(transaction.Type) }}
                               </span>
-                              <div class="asset-list">
+                              <div class="compact-asset-list">
                                 @for (asset of participant.DroppedPlayers; track asset.PlayerID) {
-                                  <span class="asset-chip asset-chip--player">
-                                    {{ getPlayerName(asset) }}
-                                  </span>
+                                  <span>{{ getPlayerName(asset) }}</span>
                                 }
                                 @for (pick of participant.SentDraftPicks; track draftPickTrackKey(pick)) {
-                                  <span
-                                    class="asset-chip asset-chip--pick"
-                                    [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
-                                    [attr.aria-label]="draftPickLabel(pick) + ', original owner ' + draftPickOriginalOwnerLabel(pick)"
-                                  >
-                                    {{ draftPickLabel(pick) }}
-                                  </span>
+                                  <span>{{ draftPickAssetLabel(pick) }}</span>
                                 }
                               </div>
                             </div>
                           }
-
-                          @if (!hasIncomingAssets(participant) && !hasOutgoingAssets(participant)) {
-                            <span class="participant-empty">Involved in this transaction</span>
-                          }
                         </section>
                       }
                     </div>
+                  } @else {
+                    <div class="roster-board">
+                      @for (participant of transaction.Participants; track participant.RosterID) {
+                        <section class="roster-team">
+                          <header class="team-header">
+                            <div class="team-identity">
+                              <span class="team-avatar-shell">
+                                @if (participant.Team?.Avatar) {
+                                  <img [src]="participant.Team?.Avatar" [alt]="getTeamName(participant)" />
+                                } @else {
+                                  <span>{{ getTeamInitials(participant) }}</span>
+                                }
+                              </span>
+                              <div>
+                                <strong>{{ getTeamName(participant) }}</strong>
+                                @if (participant.Team?.Owner) {
+                                  <span>{{ participant.Team?.Owner }}</span>
+                                }
+                              </div>
+                            </div>
+                          </header>
 
-                    @if (transaction.Notes) {
-                      <p class="move-notes">{{ transaction.Notes }}</p>
-                    }
-                  </mat-card>
+                          <div class="roster-flow">
+                            @if (hasIncomingAssets(participant)) {
+                              <section class="asset-block asset-block--incoming">
+                                <span class="asset-direction">
+                                  <mat-icon aria-hidden="true">{{ incomingAssetIcon(transaction.Type) }}</mat-icon>
+                                  {{ incomingAssetLabel(transaction.Type) }}
+                                </span>
+                                <div class="asset-stack">
+                                  @for (asset of participant.AddedPlayers; track asset.PlayerID) {
+                                    <div class="asset-card asset-card--player">
+                                      <span class="player-image">
+                                        @if (asset.Player?.Picture) {
+                                          <img [src]="asset.Player?.Picture" [alt]="getPlayerName(asset)" />
+                                        } @else {
+                                          <mat-icon aria-hidden="true">person</mat-icon>
+                                        }
+                                      </span>
+                                      <div class="asset-copy">
+                                        <strong>{{ getPlayerName(asset) }}</strong>
+                                        <span class="player-meta">
+                                          @if (asset.Player?.Position) {
+                                            <b class="position-chip" [ngStyle]="asset.Player?.Position | positionStyle">
+                                              {{ asset.Player?.Position }}
+                                            </b>
+                                          }
+                                          <span>{{ getPlayerTeamLabel(asset) }}</span>
+                                        </span>
+                                      </div>
+                                      @if (asset.Player?.TeamNFL?.Logo) {
+                                        <img
+                                          class="nfl-logo"
+                                          [src]="asset.Player?.TeamNFL?.Logo"
+                                          [alt]="asset.Player?.TeamNFL?.Name || 'NFL team'"
+                                        />
+                                      }
+                                    </div>
+                                  }
+                                  @for (pick of participant.AcquiredDraftPicks; track draftPickTrackKey(pick)) {
+                                    <div
+                                      class="asset-card asset-card--pick"
+                                      [matTooltip]="'Original owner: ' + draftPickOriginalOwnerLabel(pick)"
+                                    >
+                                      <span class="pick-shield">
+                                        <small>Round</small>
+                                        <strong>{{ pick.Round }}</strong>
+                                      </span>
+                                      <div class="asset-copy">
+                                        <strong>{{ draftPickAssetLabel(pick) }}</strong>
+                                        <span>from {{ draftPickOriginalOwnerLabel(pick) }}</span>
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </section>
+                            }
+
+                            @if (hasOutgoingAssets(participant)) {
+                              <section class="asset-block asset-block--outgoing">
+                                <span class="asset-direction">
+                                  <mat-icon aria-hidden="true">{{ outgoingAssetIcon(transaction.Type) }}</mat-icon>
+                                  {{ outgoingAssetLabel(transaction.Type) }}
+                                </span>
+                                <div class="asset-stack">
+                                  @for (asset of participant.DroppedPlayers; track asset.PlayerID) {
+                                    <div class="asset-card asset-card--player asset-card--outgoing">
+                                      <span class="player-image">
+                                        @if (asset.Player?.Picture) {
+                                          <img [src]="asset.Player?.Picture" [alt]="getPlayerName(asset)" />
+                                        } @else {
+                                          <mat-icon aria-hidden="true">person</mat-icon>
+                                        }
+                                      </span>
+                                      <div class="asset-copy">
+                                        <strong>{{ getPlayerName(asset) }}</strong>
+                                        <span class="player-meta">
+                                          @if (asset.Player?.Position) {
+                                            <b class="position-chip" [ngStyle]="asset.Player?.Position | positionStyle">
+                                              {{ asset.Player?.Position }}
+                                            </b>
+                                          }
+                                          <span>{{ getPlayerTeamLabel(asset) }}</span>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  }
+                                  @for (pick of participant.SentDraftPicks; track draftPickTrackKey(pick)) {
+                                    <div class="asset-card asset-card--pick asset-card--outgoing">
+                                      <span class="pick-shield">
+                                        <small>Round</small>
+                                        <strong>{{ pick.Round }}</strong>
+                                      </span>
+                                      <div class="asset-copy">
+                                        <strong>{{ draftPickAssetLabel(pick) }}</strong>
+                                        <span>from {{ draftPickOriginalOwnerLabel(pick) }}</span>
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </section>
+                            }
+
+                            @if (!hasIncomingAssets(participant) && !hasOutgoingAssets(participant)) {
+                              <span class="empty-assets">Involved in this transaction</span>
+                            }
+                          </div>
+                        </section>
+                      }
+                    </div>
+                  }
+
+                  @if (transaction.Notes) {
+                    <footer class="move-notes">
+                      <mat-icon aria-hidden="true">notes</mat-icon>
+                      <span>{{ transaction.Notes }}</span>
+                    </footer>
+                  }
                 </article>
               }
             </div>
           </section>
         }
-      </div>
+      </main>
     }
   }
 </div>
