@@ -1,8 +1,3 @@
-.hero-heading h1,
-.hero-description {
-  display: none;
-}
-
 .moves-hero {
   gap: 14px;
   padding: 17px 19px;
@@ -14,6 +9,35 @@
 
 .eyebrow {
   margin-bottom: 0;
+}
+
+.season-selector {
+  position: relative;
+  padding: 0 8px 0 10px;
+  cursor: pointer;
+}
+
+.season-selector select {
+  appearance: none;
+  min-width: 112px;
+  padding: 8px 24px 8px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.season-selector option {
+  color: #172033;
+}
+
+.season-selector-chevron {
+  position: absolute;
+  right: 7px;
+  pointer-events: none;
 }
 
 .summary-grid {
@@ -52,15 +76,6 @@
   justify-content: flex-start;
 }
 
-.move-meta {
-  display: none;
-}
-
-.asset-card--pick,
-.asset-card--pick * {
-  pointer-events: none;
-}
-
 @media (max-width: 680px) {
   .moves-hero {
     gap: 12px;
@@ -72,8 +87,12 @@
     gap: 8px;
   }
 
-  .season-pill {
+  .season-selector {
     align-self: auto;
+  }
+
+  .season-selector select {
+    min-width: 104px;
   }
 }
 
