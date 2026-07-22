@@ -49,6 +49,12 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
 
 ### Data Generation / League History
 
+- [ ] Player-Snapshot zum Saisonende für historische Moves erzeugen.
+  - Kontext: Die Moves-Historie kann historische Transactions laden, löst Spieler aktuell aber weiterhin gegen das jeweils aktuelle `Players.json` auf.
+  - Problem: Ausgeschiedene oder später aus dem aktuellen Playerbestand entfernte Spieler können dadurch in historischen Moves nur als `Player <ID>` erscheinen.
+  - Ziel: Am Saisonende einen stabilen, saisonbezogenen Player-Snapshot mit mindestens Player-ID, Name, Position, NFL-Team und Bildreferenz erzeugen und über `PastSeasonsIndex.json` auffindbar machen.
+  - Leitplanke: Der Snapshot muss generatorseitig entstehen; Angular darf ihn nur laden und zur historischen Anzeige verwenden.
+
 - [ ] Hall-of-Fame-/Legacy-Auswertungen generatorseitig modellieren.
   - Kontext: Die Standings-Route erzeugt Hall-of-Fame-Highlights, Award-Legende, All-Time-Regular-Season und Season-Archive aktuell bewusst als Frontend-Prototyp in `league-standings-view.util.ts`.
   - Entscheidung: Season-Awards bleiben dauerhaft Teil von `Standings.json`; es soll kein eigenständiges `Awards.json` für diesen Contract entstehen.
