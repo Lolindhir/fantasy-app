@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { mapRawLeagueData } from '../mappers/league.mapper';
@@ -12,7 +12,7 @@ import type {
   SortField,
   TopPlayersSalaryResult
 } from '../models/player.models';
-import type { Transaction } from '../models/transaction.models';
+import type { RawTransaction, Transaction } from '../models/transaction.models';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
 import {
   calculateTopPlayersSalary,
@@ -102,10 +102,38 @@ export class DataService {
   }
 
   getTransactions(sortFields: SortField[] = ['NameLast']): Observable<Transaction[]> {
-    return this.dataApiService.getMovesData().pipe(
-      map(data => {
-        const leagueData = this.mapLeagueData(data, sortFields);
-        return mapRawTransactions(data.transactionsRaw, leagueData.teams, leagueData.players);
+    return this.getTransactionsForSources(true, [], sortFields);
+  }
+
+  getTransactionsForSources(
+    includeCurrent: boolean,
+    historicalPaths: string[],
+    sortFields: SortField[] = ['NameLast']
+  ): Observable<Transaction[]> {
+    const normalizedHistoricalPaths = Array.from(new Set(
+      (historicalPaths ?? []).filter(path => !!path)
+    ));
+    const transactionSources: Observable<RawTransaction[]>[] = [
+      ...(includeCurrent ? [this.dataApiService.getTransactionsRaw()] : []),
+      ...normalizedHistoricalPaths.map(path => this.dataApiService.getPastTransactionsRaw(path))
+    ];
+    const transactionLists$ = transactionSources.length > 0
+      ? forkJoin(transactionSources)
+      : of([] as RawTransaction[][]);
+
+    return forkJoin({
+      leagueData: this.dataApiService.getLeagueData(),
+      transactionLists: transactionLists$
+    }).pipe(
+      map(({ leagueData, transactionLists }) => {
+        const mappedLeagueData = this.mapLeagueData(leagueData, sortFields);
+        const transactionsRaw = this.getCompletedUniqueTransactions(transactionLists);
+
+        return mapRawTransactions(
+          transactionsRaw,
+          mappedLeagueData.teams,
+          mappedLeagueData.players
+        );
       })
     );
   }
@@ -138,6 +166,26 @@ export class DataService {
     incoming: Player[]
   ): Player[] {
     return getRosterAfterTrade(currentRoster, outgoing, incoming);
+  }
+
+  private getCompletedUniqueTransactions(transactionLists: RawTransaction[][]): RawTransaction[] {
+    const transactionsByKey = new Map<string, RawTransaction>();
+
+    for (const transactionList of transactionLists) {
+      for (const transaction of transactionList ?? []) {
+        if (transaction.Status?.toLowerCase() !== 'complete') {
+          continue;
+        }
+
+        const key = `${transaction.Season}:${transaction.TransactionID}`;
+
+        if (!transactionsByKey.has(key)) {
+          transactionsByKey.set(key, transaction);
+        }
+      }
+    }
+
+    return Array.from(transactionsByKey.values());
   }
 
   private mapLeagueData(
