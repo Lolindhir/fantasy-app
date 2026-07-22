@@ -21,6 +21,7 @@ Menschlich lesbare Managervergleiche verwenden standardmäßig die Namen Robert,
 Aktive Kernbereiche:
 
 - `_ai/` enthält Agent-Regeln, Quellenlogik, Workflows, Templates und Schemas.
+- `automation/` enthält die Repo-gesteuerte Steuerungsebene für wiederkehrende Jobs, Trigger, States und Benachrichtigungsregeln.
 - `league-context/` enthält Liga-, Owner-, Format- und Verhandlungskontext.
 - `sources/` enthält Rohquellen und strukturierte Quellenpakete.
 - `knowledge/` enthält abgeleitetes, liga-relevantes Knowledge, sobald es echte Knowledge-Dateien gibt.
@@ -30,6 +31,28 @@ Aktive Kernbereiche:
 Optionale Bereiche wie `knowledge/players/`, `analyses/`, `decisions/`, `sources/relevant-players/`, `sources/external-rankings/` oder `sources/manual-notes/` werden erst angelegt, wenn dort echte Dateien liegen.
 
 Keine leeren Platzhalterordner und keine README-only-Kategorieordner committen.
+
+## Automation
+
+Die Automation ist als deklaratives Job-System angelegt:
+
+- Ein externer geplanter Task oder späterer technischer Runner startet regelmäßige Prüfungen.
+- `automation/runner-config.json` definiert die globalen Runner-Regeln.
+- `automation/jobs/` definiert fachliche Trigger, Abhängigkeiten, Outputs und Benachrichtigungen.
+- `automation/state/` speichert pro Job den veränderlichen Ausführungszustand.
+- Fertige Berichte bleiben datierte Analysen unter `analyses/`.
+
+Der externe Zeitplan startet nur den Runner. Ob ein einzelner Job tatsächlich fällig ist, entscheidet die Repo-Konfiguration anhand fachlicher Trigger, Datenbereitschaft und Idempotenz.
+
+Das Grundmodell startet im `read_only`-Modus. Der erste Referenzjob ist bewusst deaktiviert, bis der konkrete Spieltagsbericht umgesetzt und geprüft ist.
+
+Die verbindlichen Regeln stehen in:
+
+- `automation/AGENTS.md`
+- `automation/README.md`
+- `_ai/schemas/automation-runner-config.schema.json`
+- `_ai/schemas/automation-job.schema.json`
+- `_ai/schemas/automation-state.schema.json`
 
 ## Draft-Analysen
 
