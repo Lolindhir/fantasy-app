@@ -418,3 +418,37 @@ decisions:
       negative:
         - A completed current-season draft may exist both in Drafts.json and in its archive file until League.Season advances.
         - Consumers must use explicit season and availability filters instead of assuming every Drafts.json pick is open.
+
+  - id: ADR-022
+    title: Current generated JSON uses build-version cache busting
+    status: accepted
+    context: >
+      Angular bundles are output-hashed, but generated JSON resources keep stable
+      filenames such as data/Drafts.json. Browser or intermediary caches can therefore
+      serve JSON from an older deployment while the frontend already displays the new
+      build commit. Historical resources can grow over time and normally do not change,
+      so invalidating every historical file on every deploy would waste their durable
+      cache value.
+    decision: >
+      Register a global Angular HttpClient interceptor that appends the deployed
+      APP_BUILD_INFO commit as the build query parameter to local GET requests for JSON
+      files under data/. Exclude data/past_seasons/** from build-version cache busting.
+      Keep data/PastSeasonsIndex.json versioned because the root manifest can change
+      when historical seasons or resource paths are added. Do not rename generated JSON
+      files or change the deployment layout.
+    rationale: >
+      One global interceptor automatically protects current and future generated JSON
+      loaders without requiring each DataApiService method to remember a URL helper.
+      A stable build value preserves normal caching inside one deployment, while a new
+      deploy receives a distinct request URL. Excluding historical resources avoids
+      repeatedly downloading unchanged archive data.
+    consequences:
+      positive:
+        - Current generated JSON cannot remain tied to an older frontend cache key after a deploy.
+        - Future JSON files under data/ inherit the policy automatically when loaded through Angular HttpClient.
+        - Historical files retain stable URLs and long-lived browser cache value.
+        - The deploy script, physical JSON filenames and generated JSON contracts remain unchanged.
+      negative:
+        - Every new deploy invalidates all non-historical JSON URLs, even when an individual file did not change.
+        - A historical file corrected in place may remain stale for users who already cached its stable URL.
+        - Requests that bypass Angular HttpClient do not receive this cache policy automatically.
