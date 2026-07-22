@@ -19,6 +19,7 @@ Geplanter Task / Runner-Wakeup
 
 ## Dateien und Verantwortlichkeiten
 
+- `AGENTS.md` enthält die verbindlichen Runner-Regeln für Agents und geplante Tasks.
 - `runner-config.json` enthält globale Runner-Regeln, aber keinen externen Zeitplan.
 - `jobs/*.json` enthält deklarative Jobdefinitionen.
 - `state/{job-id}.json` enthält ausschließlich den veränderlichen Zustand eines einzelnen Jobs.
@@ -114,11 +115,13 @@ Der Job bleibt deaktiviert, bis der konkrete Spieltagsanalyse-Workflow und die A
 
 1. `/AGENTS.md`
 2. `fantasy-management/AGENTS.md`
-3. relevante Dateien unter `fantasy-management/_ai/`
-4. diese README
-5. `runner-config.json`
-6. aktivierte Jobdefinitionen
-7. jeweilige Job-States
-8. benötigte aktuelle Repo-Daten und externe Quellen
+3. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
+4. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
+5. `fantasy-management/automation/AGENTS.md`
+6. diese README
+7. `runner-config.json`
+8. aktivierte Jobdefinitionen
+9. jeweilige Job-States
+10. benötigte aktuelle Repo-Daten und externe Quellen
 
 Die Schemata liegen unter `fantasy-management/_ai/schemas/` und sind in `_ai/schema-list.json` registriert.
