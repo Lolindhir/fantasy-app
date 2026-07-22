@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-state.schema.json",
+  "title": "Fantasy Management Automation Job State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "status",
+    "revision",
+    "last_evaluated_at",
+    "last_successful_run",
+    "last_processed_key",
+    "last_input_fingerprints",
+    "pending",
+    "last_error",
+    "last_material_change",
+    "recent_events"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "never_run",
+        "idle",
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "disabled"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_evaluated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_successful_run": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_processed_key": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ]
+    },
+    "last_input_fingerprints": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "pending": {
+      "type": "boolean"
+    },
+    "last_error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "message",
+            "retryable"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "last_material_change": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "severity",
+            "summary"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "severity": {
+              "$ref": "#/$defs/severity"
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decision_effect": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "recent_events": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "type",
+          "severity",
+          "summary"
+        ],
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "evaluated",
+              "skipped",
+              "pending",
+              "output_written",
+              "material_change",
+              "notification_sent",
+              "error",
+              "recovered"
+            ]
+          },
+          "severity": {
+            "$ref": "#/$defs/severity"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    }
+  }
+}
