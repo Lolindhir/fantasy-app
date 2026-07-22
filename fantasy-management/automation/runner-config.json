@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "runner_id": "fantasy-operations",
+  "enabled": true,
+  "timezone": "Europe/Berlin",
+  "mode": "read_only",
+  "job_discovery": {
+    "directory": "fantasy-management/automation/jobs",
+    "include": [
+      "*.json"
+    ],
+    "exclude": [
+      "*.disabled.json"
+    ]
+  },
+  "execution_policy": {
+    "max_jobs_per_run": 10,
+    "continue_on_job_error": true,
+    "skip_when_dependencies_incomplete": true,
+    "write_outputs_only_when_material": true,
+    "retry_pending_jobs_on_next_wakeup": true
+  },
+  "state_policy": {
+    "directory": "fantasy-management/automation/state",
+    "one_file_per_job": true,
+    "write_on": [
+      "status_change",
+      "material_change",
+      "successful_output",
+      "error_state_change"
+    ],
+    "keep_recent_events": 20
+  },
+  "notification_policy": {
+    "default_mode": "material_changes_only",
+    "minimum_severity": "medium",
+    "bundle_notifications": true,
+    "include_no_change_runs": false
+  },
+  "source_policy": {
+    "repo_is_control_plane": true,
+    "current_league_data_root": "public/data",
+    "fantasy_management_root": "fantasy-management",
+    "refresh_dynamic_external_sources": true,
+    "stored_analyses_are_not_current_truth": true
+  }
+}
