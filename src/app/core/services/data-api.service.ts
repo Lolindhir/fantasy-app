@@ -85,6 +85,12 @@ export class DataApiService {
     );
   }
 
+  getPastTransactionsRaw(path: string): Observable<RawTransaction[]> {
+    return this.http.get<RawTransaction[] | RawTransaction>(this.normalizeDataPath(path)).pipe(
+      map(transactions => Array.isArray(transactions) ? transactions : [transactions])
+    );
+  }
+
   getLeagueData(): Observable<LeagueDataLoadResult> {
     return forkJoin({
       leagueRaw: this.getLeagueRaw(),
