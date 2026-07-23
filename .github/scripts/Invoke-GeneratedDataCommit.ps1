@@ -12,7 +12,8 @@ param(
         "past-seasons-index",
         "backup-cleanup",
         "fantasypros-rankings",
-        "fantasycalc-rankings"
+        "fantasycalc-rankings",
+        "ffc-adp-rankings"
     )]
     [string]$Scope
 )
@@ -34,6 +35,7 @@ function Get-GeneratedDataLabel {
         "^public/data/backup/" { return "Backups" }
         "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
         "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
+        "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players_Relevant\.json$" { return "Relevant players" }
