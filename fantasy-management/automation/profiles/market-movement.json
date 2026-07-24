@@ -11,7 +11,7 @@
   "evaluator": {
     "id": "market-movement-evaluator",
     "type": "hybrid",
-    "version": 1,
+    "version": 2,
     "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md#market-movement-module"
   },
   "signals": [
@@ -26,7 +26,7 @@
     },
     {
       "id": "market.position_rank",
-      "description": "Aktuelles Positionsranking.",
+      "description": "Aktuelles Positionsranking der konfigurierten Primärquelle.",
       "value_type": "integer",
       "unit": "rank",
       "source_types": [
@@ -35,7 +35,7 @@
     },
     {
       "id": "market.value",
-      "description": "Normalisierter oder quellenspezifischer Marktwert.",
+      "description": "Quellenspezifischer Marktwert der konfigurierten Marktquelle.",
       "value_type": "number",
       "unit": "source_value",
       "source_types": [
@@ -44,7 +44,7 @@
     },
     {
       "id": "market.tier",
-      "description": "Aktuelles Markt- oder Konsens-Tier.",
+      "description": "Aktuelles Markt- oder Konsens-Tier der konfigurierten Primärquelle.",
       "value_type": "string",
       "unit": null,
       "source_types": [
@@ -54,7 +54,7 @@
     },
     {
       "id": "market.roster_rate",
-      "description": "Rosterquote in einer dokumentierten Plattform oder Quelle.",
+      "description": "Rosterquote der konfigurierten Marktquelle.",
       "value_type": "number",
       "unit": "share",
       "source_types": [
@@ -63,7 +63,7 @@
     },
     {
       "id": "market.source_disagreement",
-      "description": "Abweichung zwischen relevanten unabhängigen Marktquellen.",
+      "description": "Abweichung zwischen den verbindlich gebundenen unabhängigen Marktquellen.",
       "value_type": "object",
       "unit": null,
       "source_types": [
@@ -75,6 +75,11 @@
       "description": "Gesamtkonfidenz der Marktbewegung.",
       "value_type": "enum",
       "unit": null,
+      "allowed_values": [
+        "low",
+        "medium",
+        "high"
+      ],
       "source_types": [
         "derived"
       ]
@@ -90,6 +95,97 @@
       "official_transaction"
     ]
   },
+  "source_bindings": [
+    {
+      "id": "fantasypros-dynasty-superflex-ppr",
+      "source_type": "external_ranking",
+      "provider": "fantasypros",
+      "dataset_id": "dynasty-superflex-ppr",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasypros",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
+        "selection_policy": "latest_successful_snapshot"
+      },
+      "entity_join": [
+        "source_player_id",
+        "normalized_name_position"
+      ],
+      "signal_mappings": {
+        "market.dynasty_overall_rank": "Rank",
+        "market.position_rank": "position_rank",
+        "market.tier": "tier"
+      },
+      "freshness_policy": {
+        "max_age_hours": 48,
+        "refresh_before_analysis": true
+      },
+      "format_context": {
+        "horizon": "dynasty",
+        "scoring": "ppr",
+        "quarterback_mode": "superflex"
+      }
+    },
+    {
+      "id": "fantasycalc-dynasty-superflex-ppr-8-team",
+      "source_type": "market_source",
+      "provider": "fantasycalc",
+      "dataset_id": "dynasty-superflex-ppr-8-team",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasycalc",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
+        "selection_policy": "latest_successful_snapshot"
+      },
+      "entity_join": [
+        "sleeper_id",
+        "source_asset_id",
+        "normalized_name_position"
+      ],
+      "signal_mappings": {
+        "market.value": "value",
+        "market.roster_rate": "roster_percent"
+      },
+      "freshness_policy": {
+        "max_age_hours": 48,
+        "refresh_before_analysis": true
+      },
+      "format_context": {
+        "horizon": "dynasty",
+        "scoring": "ppr",
+        "quarterback_mode": "superflex",
+        "team_count": 8
+      }
+    },
+    {
+      "id": "market-cross-source-derivation",
+      "source_type": "derived",
+      "provider": "observation_runner",
+      "dataset_id": "market-cross-source-comparison",
+      "role": "derived",
+      "required": true,
+      "independence_group": "derived-market-comparison",
+      "access": {
+        "type": "derived",
+        "location": null,
+        "selection_policy": "derived"
+      },
+      "entity_join": [],
+      "signal_mappings": {
+        "market.source_disagreement": "derived",
+        "evidence.confidence": "derived"
+      },
+      "freshness_policy": {
+        "max_age_hours": null,
+        "refresh_before_analysis": false
+      },
+      "format_context": {}
+    }
+  ],
   "criteria": [
     {
       "id": "overall-rank-movement",
@@ -154,7 +250,7 @@
     },
     {
       "id": "large-source-disagreement",
-      "description": "Zwischen unabhängigen Quellen ist eine neue strategisch relevante Abweichung entstanden.",
+      "description": "Zwischen den gebundenen unabhängigen Quellen ist eine neue strategisch relevante Abweichung entstanden.",
       "condition": {
         "all": [
           {
