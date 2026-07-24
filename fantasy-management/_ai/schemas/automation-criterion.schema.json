@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-criterion.schema.json",
+  "title": "Fantasy Management Observation Criterion",
+  "$ref": "#/$defs/criterion",
+  "$defs": {
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "condition",
+        "materiality"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "condition": {
+          "$ref": "#/$defs/condition"
+        },
+        "materiality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "is_material",
+            "severity",
+            "classification"
+          ],
+          "properties": {
+            "is_material": {
+              "type": "boolean"
+            },
+            "severity": {
+              "$ref": "#/$defs/severity"
+            },
+            "classification": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*$"
+            }
+          }
+        },
+        "effect": {
+          "type": "object"
+        }
+      }
+    },
+    "condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "signal",
+            "operator"
+          ],
+          "properties": {
+            "signal": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]*$"
+            },
+            "operator": {
+              "type": "string",
+              "enum": [
+                "equals",
+                "not_equals",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "delta_gte",
+                "delta_lte",
+                "absolute_delta_gte",
+                "changed",
+                "entered_set",
+                "left_set",
+                "contains",
+                "not_contains"
+              ]
+            },
+            "value": {},
+            "comparison_window": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "all"
+          ],
+          "properties": {
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "any"
+          ],
+          "properties": {
+            "any": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "not"
+          ],
+          "properties": {
+            "not": {
+              "$ref": "#/$defs/condition"
+            }
+          }
+        }
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    }
+  }
+}
