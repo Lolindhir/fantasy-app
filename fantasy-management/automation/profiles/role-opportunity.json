@@ -11,7 +11,7 @@
   "evaluator": {
     "id": "role-opportunity-evaluator",
     "type": "hybrid",
-    "version": 1,
+    "version": 2,
     "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md#player-role-opportunity-module"
   },
   "signals": [
@@ -28,13 +28,33 @@
     },
     {
       "id": "role.first_team_usage",
-      "description": "Anteil oder qualitative Einordnung der Arbeit mit der ersten Einheit.",
+      "description": "Numerisch belastbarer Anteil der Arbeit mit der ersten Einheit, sofern verfügbar.",
       "value_type": "number",
       "unit": "share",
       "source_types": [
         "beat_reporter",
         "practice_report",
         "game_usage"
+      ]
+    },
+    {
+      "id": "role.first_team_usage_class",
+      "description": "Qualitative, geordnete Einordnung der Arbeit mit der ersten Einheit, wenn kein belastbarer Prozentwert vorliegt.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "unknown",
+        "none",
+        "occasional",
+        "rotational",
+        "majority",
+        "exclusive"
+      ],
+      "source_types": [
+        "beat_reporter",
+        "practice_report",
+        "game_usage",
+        "derived"
       ]
     },
     {
@@ -97,6 +117,11 @@
       "description": "Gesamtkonfidenz der aktuellen Rollenbewertung.",
       "value_type": "enum",
       "unit": null,
+      "allowed_values": [
+        "low",
+        "medium",
+        "high"
+      ],
       "source_types": [
         "derived"
       ]
@@ -144,12 +169,37 @@
     },
     {
       "id": "meaningful-first-team-movement",
-      "description": "Der Einsatz mit der ersten Einheit hat sich substanziell verschoben.",
+      "description": "Der numerisch belastbare Einsatz mit der ersten Einheit hat sich substanziell verschoben.",
       "condition": {
         "signal": "role.first_team_usage",
         "operator": "absolute_delta_gte",
         "value": 0.25,
         "comparison_window": "previous_material_state"
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "opportunity_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "qualitative-first-team-class-change",
+      "description": "Eine wiederholt belegte qualitative First-Team-Nutzungsklasse hat sich verändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "role.first_team_usage_class",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
       },
       "materiality": {
         "is_material": true,
@@ -216,6 +266,7 @@
     "role_class",
     "competition_summary",
     "usage_summary",
+    "first_team_usage_class",
     "high_value_usage",
     "confidence"
   ]
