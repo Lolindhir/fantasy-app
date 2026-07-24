@@ -36,16 +36,16 @@
 
         <article class="summary-card">
           <span class="summary-icon summary-icon--players">
-            <mat-icon aria-hidden="true">groups</mat-icon>
+            <mat-icon aria-hidden="true">person_add</mat-icon>
           </span>
-          <div><strong>{{ vm.PlayerMoveCount }}</strong><span>Players moved</span></div>
+          <div><strong>{{ vm.AddCount }}</strong><span>Adds</span></div>
         </article>
 
         <article class="summary-card">
           <span class="summary-icon summary-icon--picks">
-            <mat-icon aria-hidden="true">local_activity</mat-icon>
+            <mat-icon aria-hidden="true">person_remove</mat-icon>
           </span>
-          <div><strong>{{ vm.DraftPickCount }}</strong><span>Picks traded</span></div>
+          <div><strong>{{ vm.CutCount }}</strong><span>Cuts</span></div>
         </article>
       </section>
     </section>
@@ -110,14 +110,14 @@
               @for (transaction of group.Transactions; track transaction.Season + '_' + transaction.TransactionID) {
                 <article
                   class="move-card"
-                  [class.move-card--trade]="transaction.Type === 'trade'"
-                  [class.move-card--waiver]="transaction.Type === 'waiver'"
-                  [class.move-card--roster]="transaction.Type !== 'trade' && transaction.Type !== 'waiver'"
+                  [class.move-card--trade]="moveCategory(transaction) === 'trade'"
+                  [class.move-card--waiver]="moveCategory(transaction) === 'add'"
+                  [class.move-card--roster]="moveCategory(transaction) === 'cut' || moveCategory(transaction) === 'other'"
                 >
                   <header class="move-card-header">
                     <span class="move-type-badge">
-                      <mat-icon aria-hidden="true">{{ moveTypeIcon(transaction.Type) }}</mat-icon>
-                      {{ moveTypeLabel(transaction.Type) }}
+                      <mat-icon aria-hidden="true">{{ moveTypeIcon(transaction) }}</mat-icon>
+                      {{ moveTypeLabel(transaction) }}
                     </span>
                   </header>
 

@@ -3,7 +3,8 @@ import type {
   TransactionDraftPick
 } from '../../core/models/transaction.models';
 
-export type MovesFilter = 'all' | 'trade' | 'waiver' | 'roster';
+export type MoveCategory = 'trade' | 'add' | 'cut' | 'other';
+export type MovesFilter = 'all' | 'trade' | 'add' | 'cut';
 
 export interface MovesFilterOption {
   Id: MovesFilter;
@@ -24,11 +25,8 @@ export interface MovesViewModel {
   TotalCount: number;
   VisibleCount: number;
   TradeCount: number;
-  RosterMoveCount: number;
-  PlayerMoveCount: number;
-  DraftPickCount: number;
+  AddCount: number;
   CutCount: number;
-  WaiverAddCount: number;
   Filters: MovesFilterOption[];
   Groups: MovesDateGroup[];
 }
@@ -40,9 +38,15 @@ export function buildMovesViewModel(
   const normalizedTransactions = [...(transactions ?? [])].sort(
     (left, right) => right.CreatedAt - left.CreatedAt
   );
-  const tradeCount = normalizedTransactions.filter(transaction => transaction.Type === 'trade').length;
-  const waiverCount = normalizedTransactions.filter(transaction => transaction.Type === 'waiver').length;
-  const rosterMoveCount = normalizedTransactions.filter(isRosterMove).length;
+  const tradeCount = normalizedTransactions.filter(
+    transaction => getMoveCategory(transaction) === 'trade'
+  ).length;
+  const addCount = normalizedTransactions.filter(
+    transaction => getMoveCategory(transaction) === 'add'
+  ).length;
+  const cutCount = normalizedTransactions.filter(
+    transaction => getMoveCategory(transaction) === 'cut'
+  ).length;
   const filteredTransactions = normalizedTransactions.filter(transaction =>
     matchesFilter(transaction, selectedFilter)
   );
@@ -61,25 +65,8 @@ export function buildMovesViewModel(
     TotalCount: normalizedTransactions.length,
     VisibleCount: filteredTransactions.length,
     TradeCount: tradeCount,
-    RosterMoveCount: rosterMoveCount,
-    PlayerMoveCount: normalizedTransactions.reduce(
-      (sum, transaction) => sum + countDistinctPlayerMoves(transaction),
-      0
-    ),
-    DraftPickCount: normalizedTransactions.reduce(
-      (sum, transaction) => sum + transaction.DraftPicks.length,
-      0
-    ),
-    CutCount: normalizedTransactions.reduce((sum, transaction) => {
-      return transaction.Type === 'trade'
-        ? sum
-        : sum + countDroppedPlayers(transaction);
-    }, 0),
-    WaiverAddCount: normalizedTransactions.reduce((sum, transaction) => {
-      return transaction.Type === 'waiver'
-        ? sum + countAddedPlayers(transaction)
-        : sum;
-    }, 0),
+    AddCount: addCount,
+    CutCount: cutCount,
     Filters: [
       {
         Id: 'all',
@@ -94,16 +81,16 @@ export function buildMovesViewModel(
         Count: tradeCount
       },
       {
-        Id: 'waiver',
-        Label: 'Waivers',
-        Icon: 'playlist_add_check',
-        Count: waiverCount
+        Id: 'add',
+        Label: 'Adds',
+        Icon: 'person_add',
+        Count: addCount
       },
       {
-        Id: 'roster',
-        Label: 'Adds & cuts',
-        Icon: 'group_add',
-        Count: rosterMoveCount
+        Id: 'cut',
+        Label: 'Cuts',
+        Icon: 'person_remove',
+        Count: cutCount
       }
     ],
     Groups: Array.from(groupsByDate.entries()).map(([dateKey, groupedTransactions]) => ({
@@ -114,33 +101,53 @@ export function buildMovesViewModel(
   };
 }
 
-export function getMoveTypeLabel(type: string): string {
-  switch (type) {
+export function getMoveCategory(transaction: Transaction): MoveCategory {
+  if (transaction.Type === 'trade') {
+    return 'trade';
+  }
+
+  if (countAddedPlayers(transaction) > 0 || transaction.Type === 'add') {
+    return 'add';
+  }
+
+  if (
+    countDroppedPlayers(transaction) > 0
+    || transaction.Type === 'cut'
+    || transaction.Type === 'drop'
+  ) {
+    return 'cut';
+  }
+
+  return 'other';
+}
+
+export function getMoveTypeLabel(transaction: Transaction): string {
+  switch (getMoveCategory(transaction)) {
     case 'trade':
       return 'Trade';
-    case 'waiver':
-      return 'Waiver move';
-    case 'free_agent':
-      return 'Free agent move';
-    case 'commissioner':
-      return 'Commissioner move';
+    case 'add':
+      return 'Add';
+    case 'cut':
+      return 'Cut';
     default:
-      return toTitleCase(type);
+      return transaction.Type === 'commissioner'
+        ? 'Commissioner move'
+        : toTitleCase(transaction.Type);
   }
 }
 
-export function getMoveTypeIcon(type: string): string {
-  switch (type) {
+export function getMoveTypeIcon(transaction: Transaction): string {
+  switch (getMoveCategory(transaction)) {
     case 'trade':
       return 'swap_horiz';
-    case 'waiver':
-      return 'playlist_add_check';
-    case 'free_agent':
+    case 'add':
       return 'person_add';
-    case 'commissioner':
-      return 'admin_panel_settings';
+    case 'cut':
+      return 'person_remove';
     default:
-      return 'sync_alt';
+      return transaction.Type === 'commissioner'
+        ? 'admin_panel_settings'
+        : 'sync_alt';
   }
 }
 
@@ -192,18 +199,14 @@ export function getDraftPickTrackKey(pick: TransactionDraftPick): string {
 function matchesFilter(transaction: Transaction, filter: MovesFilter): boolean {
   switch (filter) {
     case 'trade':
-      return transaction.Type === 'trade';
-    case 'waiver':
-      return transaction.Type === 'waiver';
-    case 'roster':
-      return isRosterMove(transaction);
+      return getMoveCategory(transaction) === 'trade';
+    case 'add':
+      return getMoveCategory(transaction) === 'add';
+    case 'cut':
+      return getMoveCategory(transaction) === 'cut';
     default:
       return true;
   }
-}
-
-function isRosterMove(transaction: Transaction): boolean {
-  return transaction.Type !== 'trade' && transaction.Type !== 'waiver';
 }
 
 function countAddedPlayers(transaction: Transaction): number {
@@ -218,22 +221,6 @@ function countDroppedPlayers(transaction: Transaction): number {
     (sum, participant) => sum + participant.DroppedPlayers.length,
     0
   );
-}
-
-function countDistinctPlayerMoves(transaction: Transaction): number {
-  const playerIDs = new Set<string>();
-
-  for (const participant of transaction.Participants) {
-    for (const player of participant.AddedPlayers) {
-      playerIDs.add(player.PlayerID);
-    }
-
-    for (const player of participant.DroppedPlayers) {
-      playerIDs.add(player.PlayerID);
-    }
-  }
-
-  return playerIDs.size;
 }
 
 function getDraftPickOriginalOwnerShortLabel(pick: TransactionDraftPick): string {

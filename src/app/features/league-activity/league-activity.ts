@@ -21,6 +21,7 @@ import {
   getDraftPickTrackKey,
   getIncomingAssetIcon,
   getIncomingAssetLabel,
+  getMoveCategory,
   getMoveTypeIcon,
   getMoveTypeLabel,
   getOutgoingAssetIcon,
@@ -67,6 +68,7 @@ export class LeagueActivityComponent {
   loadFailed = false;
   selectedFilter: MovesFilter = 'all';
 
+  readonly moveCategory = getMoveCategory;
   readonly moveTypeLabel = getMoveTypeLabel;
   readonly moveTypeIcon = getMoveTypeIcon;
   readonly incomingAssetLabel = getIncomingAssetLabel;
