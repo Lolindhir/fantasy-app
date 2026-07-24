@@ -8,6 +8,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -31,6 +32,9 @@ function Invoke-PastSeasonsIndexRefresh {
 # Logik
 # ===========================================================================
 
+# Draft-Generatoren müssen bereits die korrekten DraftKeys aus Transactions.json erhalten.
+Update-AllTransactionDraftPickTypesFromSleeper
+
 $drafts = Update-DraftsOrderAware
 if ($drafts) {
     $drafts = Set-DraftDisplayStatuses -drafts $drafts
@@ -38,6 +42,9 @@ if ($drafts) {
 }
 
 $historicalDrafts = Update-DraftsHistoricalSeasonsSafeOrderAware
+
+# Fertige Draftdaten liefern konkrete Pickpositionen und ausgewählte Spieler zurück an die Transaktionen.
+Update-AllTransactionDraftPickDetailsFromLocalDrafts
 Invoke-PastSeasonsIndexRefresh
 
 if ($drafts) {
