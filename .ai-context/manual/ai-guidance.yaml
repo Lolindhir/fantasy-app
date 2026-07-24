@@ -25,6 +25,8 @@ guidance:
     - Do not put league-specific rules into ConfigUtils.psm1 when they belong in Metadata.json.
     - Do not treat generated JSON as manually editable source-of-truth data.
     - Do not edit files in .ai-context/generated manually.
+    - Prefer deriving persistent domain facts, cross-feature data and source-of-truth behavior in the PowerShell generation pipeline and exposing them through generated JSON instead of re-deriving them in Angular.
+    - Keep Angular focused on display, interaction, frontend filtering and explicitly documented presentation-only prototypes; do not move generator-owned logic into the frontend merely because the immediate consumer is an Angular component.
 
   documentation:
     - When changing architecture, update .ai-context/manual/decisions.yaml.
