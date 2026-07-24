@@ -21,15 +21,30 @@ For each binding:
 5. Verify freshness according to `freshness_policy`.
 6. Resolve the entity using `entity_join` in declared order.
 7. Read only the declared `signal_mappings`.
-8. Preserve provider, dataset, snapshot timestamp and source fingerprint outside the material-state hash.
-9. Deduplicate sources by `independence_group`.
-10. Fail the profile check when a required binding is missing, stale beyond policy without a successful refresh, or cannot resolve the entity.
+8. Normalize each mapped field to the declared signal `value_type`.
+9. Preserve provider, dataset, snapshot timestamp and source fingerprint outside the material-state hash.
+10. Deduplicate sources by `independence_group`.
+11. Fail the profile check when a required binding is missing, stale beyond policy without a successful refresh, cannot resolve the entity or cannot normalize a mapped value.
 
 ## Roles
 
 - `primary`: authoritative source for the mapped signal. A signal may have at most one primary binding.
 - `supporting`: corroborates or contextualizes a signal but does not replace its primary value.
 - `derived`: computes a signal from already resolved bindings and has no external location.
+
+## Field mappings and normalization
+
+`signal_mappings` maps a normalized signal ID to one exact source field. The target signal's `value_type` controls normalization.
+
+- `integer`: accept a real integer or a documented rank form such as `RB55`, from which the trailing numeric rank is extracted.
+- `number`: parse a numeric value without changing its scale.
+- `string`: normalize to a stable string without changing its meaning.
+- `enum`: accept only values declared in `allowed_values`.
+- `boolean`: accept only documented boolean forms.
+- `list` and `object`: preserve structured values after schema-compatible normalization.
+- A share-valued signal remains in the `0..1` range. The runner must not guess whether an undocumented number is a percentage.
+
+A failed normalization leaves the mapped signal unresolved. The runner must not silently coerce malformed source data.
 
 ## Deterministic market mapping
 
