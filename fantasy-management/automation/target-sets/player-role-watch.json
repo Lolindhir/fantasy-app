@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "player-role-watch",
+  "title": "Player Role Watch",
+  "description": "Manuell kuratierte Spieler, deren Rollen- oder Marktveränderung für das verwaltete Team relevant werden kann.",
+  "enabled": true,
+  "mode": "manual",
+  "defaults": {
+    "profile_bindings": [
+      {
+        "profile_ref": "role-opportunity",
+        "enabled": true,
+        "criteria_overrides": {}
+      },
+      {
+        "profile_ref": "market-movement",
+        "enabled": true,
+        "criteria_overrides": {}
+      }
+    ],
+    "priority": "medium",
+    "notify_on_initial_baseline": false
+  },
+  "manual_targets": [
+    {
+      "id": "tank-bigsby-2026",
+      "enabled": true,
+      "entity": {
+        "type": "player",
+        "display_name": "Tank Bigsby",
+        "identifiers": {
+          "sleeper_id": "9225"
+        },
+        "canonical_ref": null,
+        "attributes": {
+          "nfl_team": "PHI",
+          "position": "RB"
+        }
+      },
+      "profile_bindings": [],
+      "priority": "medium",
+      "decision_context": {
+        "perspective": "managed_team",
+        "relevance": "Möglicher Handcuff eines Spielers des verwalteten Teams und potenzielles Free-Agent-Draft-Target.",
+        "current_position": "Nur als spätes Value- oder Handcuff-Target einplanen.",
+        "effect_rules": [
+          {
+            "when_classification": "role_change",
+            "action": "Draft- und Roster-Priorität anhand der neuen Rollenklasse neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Früheste vertretbare Draft-Runde neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Preisobergrenze gegen den neuen Marktwert prüfen."
+          }
+        ]
+      },
+      "active_window": {
+        "starts_on": null,
+        "ends_on": "2026-09-10",
+        "season_phases": [
+          "Pre Draft",
+          "Draft",
+          "Preseason"
+        ]
+      },
+      "tags": [
+        "player-watch",
+        "handcuff",
+        "free-agent-target"
+      ]
+    }
+  ],
+  "selectors": []
+}
