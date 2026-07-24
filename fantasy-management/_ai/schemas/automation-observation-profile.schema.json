@@ -112,6 +112,19 @@
               "null"
             ]
           },
+          "allowed_values": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": [
+                "string",
+                "number",
+                "integer",
+                "boolean"
+              ]
+            }
+          },
           "source_types": {
             "type": "array",
             "uniqueItems": true,
@@ -120,7 +133,23 @@
               "minLength": 1
             }
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "value_type": {
+                  "const": "enum"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "allowed_values"
+              ]
+            }
+          }
+        ]
       }
     },
     "source_policy": {
@@ -151,6 +180,13 @@
             "minLength": 1
           }
         }
+      }
+    },
+    "source_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source_binding"
       }
     },
     "criteria": {
@@ -322,6 +358,185 @@
           }
         }
       ]
+    },
+    "source_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_type",
+        "provider",
+        "dataset_id",
+        "role",
+        "required",
+        "independence_group",
+        "access",
+        "entity_join",
+        "signal_mappings"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$"
+        },
+        "dataset_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "supporting",
+            "derived"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "independence_group": {
+          "type": "string",
+          "minLength": 1
+        },
+        "access": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "location",
+            "selection_policy"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "repo_latest_pointer",
+                "repo_file",
+                "web",
+                "connector",
+                "derived"
+              ]
+            },
+            "location": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "selection_policy": {
+              "type": "string",
+              "enum": [
+                "latest_successful_snapshot",
+                "current_file",
+                "live_fetch",
+                "connector_current",
+                "derived"
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "repo_latest_pointer",
+                      "repo_file",
+                      "web",
+                      "connector"
+                    ]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "location": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "derived"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "location": {
+                    "type": "null"
+                  },
+                  "selection_policy": {
+                    "const": "derived"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "entity_join": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "signal_mappings": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "freshness_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "refresh_before_analysis"
+          ],
+          "properties": {
+            "max_age_hours": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1
+            },
+            "refresh_before_analysis": {
+              "type": "boolean"
+            }
+          }
+        },
+        "format_context": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
     }
   }
 }
