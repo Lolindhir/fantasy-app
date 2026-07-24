@@ -9,6 +9,7 @@
     "runner_id",
     "enabled",
     "timezone",
+    "managed_team",
     "mode",
     "job_discovery",
     "execution_policy",
@@ -31,6 +32,38 @@
     "timezone": {
       "type": "string",
       "minLength": 1
+    },
+    "managed_team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "identity_field",
+        "team_id",
+        "display_name_policy"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity_field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "team_id": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "display_name_policy": {
+          "type": "string",
+          "enum": [
+            "resolve_current_from_source"
+          ]
+        }
+      }
     },
     "mode": {
       "type": "string",
