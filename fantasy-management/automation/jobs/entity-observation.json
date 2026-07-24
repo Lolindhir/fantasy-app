@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "id": "entity-observation",
+  "title": "Generische Entitätsbeobachtung",
+  "enabled": false,
+  "category": "monitoring",
+  "description": "Löst konfigurierte Target Sets auf, bewertet ihre Observation Profiles und erzeugt nur bei materiellen Zustandsänderungen ein Ereignis.",
+  "trigger": {
+    "type": "interval",
+    "minimum_hours": 24,
+    "retry_when_not_ready": true
+  },
+  "dependencies": [
+    {
+      "path": "public/data/League.json",
+      "required": true,
+      "condition": "Das verwaltete Team und aktueller Ownership-Kontext sind auflösbar."
+    },
+    {
+      "path": "public/data/Timestamps.json",
+      "required": true,
+      "condition": "Für verwendete aktuelle Repo-Daten ist ein plausibler Freshness-Stand verfügbar."
+    },
+    {
+      "path": "fantasy-management/automation/target-sets/player-role-watch.json",
+      "required": true,
+      "condition": "Target Set und alle aktivierten Targets sind valide."
+    },
+    {
+      "path": "fantasy-management/automation/profiles/role-opportunity.json",
+      "required": true,
+      "condition": "Profil ist valide und auf die Entity-Typen anwendbar."
+    },
+    {
+      "path": "fantasy-management/automation/profiles/market-movement.json",
+      "required": true,
+      "condition": "Profil ist valide und auf die Entity-Typen anwendbar."
+    }
+  ],
+  "configuration_refs": [
+    {
+      "kind": "target_set",
+      "path": "fantasy-management/automation/target-sets/player-role-watch.json",
+      "required": true
+    },
+    {
+      "kind": "profile",
+      "path": "fantasy-management/automation/profiles/role-opportunity.json",
+      "required": true
+    },
+    {
+      "kind": "profile",
+      "path": "fantasy-management/automation/profiles/market-movement.json",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/entity-observation.md",
+      "required": true
+    }
+  ],
+  "execution": {
+    "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md",
+    "perspective": "managed_team",
+    "requires_external_research": true,
+    "idempotency_key_template": "{target_id}-{profile_id}-{material_state_hash}",
+    "write_scope": [
+      "fantasy-management/automation/state/entity-observation.json",
+      "fantasy-management/analyses/{season}/observation-events/"
+    ]
+  },
+  "output": {
+    "mode": "analysis_bundle",
+    "markdown_path_template": "fantasy-management/analyses/{season}/observation-events/{date}_{target_id}_{classification}.md",
+    "json_path_template": "fantasy-management/analyses/{season}/observation-events/{date}_{target_id}_{classification}.json",
+    "write_condition": "Nur bei einer nach Profilkriterien materiellen Änderung; die erste Baseline bleibt standardmäßig still."
+  },
+  "notification": {
+    "mode": "material_changes_only",
+    "minimum_severity": "medium",
+    "include_no_change": false
+  },
+  "materiality": {
+    "rules": [
+      "Profile criteria are authoritative for materiality.",
+      "A recommendation change may raise severity but cannot replace missing evidence.",
+      "The first baseline is not a material change unless the target set explicitly enables it."
+    ]
+  }
+}
