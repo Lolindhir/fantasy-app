@@ -34,7 +34,7 @@
     {
       "path": "fantasy-management/automation/profiles/market-movement.json",
       "required": true,
-      "condition": "Profil ist valide und auf die Entity-Typen anwendbar."
+      "condition": "Profil, Source Bindings und Signalzuordnungen sind valide."
     }
   ],
   "configuration_refs": [
@@ -56,6 +56,11 @@
     {
       "kind": "workflow",
       "path": "fantasy-management/automation/workflows/entity-observation.md",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/source-binding-resolution.md",
       "required": true
     }
   ],
