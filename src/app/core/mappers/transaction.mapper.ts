@@ -34,7 +34,11 @@ export function mapRawTransaction(
   const playerById = new Map(players.map(player => [player.ID, player]));
   const adds = raw.Adds ?? {};
   const drops = raw.Drops ?? {};
-  const draftPicks = (raw.DraftPicks ?? []).map(pick => mapDraftPick(pick, teamByRosterId));
+  const draftPicks = (raw.DraftPicks ?? []).map(pick => mapDraftPick(
+    pick,
+    teamByRosterId,
+    playerById
+  ));
   const rosterIDs = collectRosterIDs(raw, adds, drops, draftPicks);
 
   return {
@@ -91,11 +95,13 @@ function mapPlayerAssets(
 
 function mapDraftPick(
   raw: RawTransactionDraftPick,
-  teamByRosterId: Map<number, FantasyTeam>
+  teamByRosterId: Map<number, FantasyTeam>,
+  playerById: Map<string, Player>
 ): TransactionDraftPick {
   const originalOwnerRosterID = normalizeRosterID(raw.OriginalOwnerRosterID) ?? 0;
   const previousOwnerRosterID = normalizeRosterID(raw.PreviousOwnerRosterID) ?? 0;
   const newOwnerRosterID = normalizeRosterID(raw.NewOwnerRosterID) ?? 0;
+  const playerID = raw.PlayerID ?? null;
 
   return {
     ...raw,
@@ -104,7 +110,8 @@ function mapDraftPick(
     NewOwnerRosterID: newOwnerRosterID,
     OriginalOwner: teamByRosterId.get(originalOwnerRosterID),
     PreviousOwner: teamByRosterId.get(previousOwnerRosterID),
-    NewOwner: teamByRosterId.get(newOwnerRosterID)
+    NewOwner: teamByRosterId.get(newOwnerRosterID),
+    Player: playerID ? playerById.get(playerID) : undefined
   };
 }
 

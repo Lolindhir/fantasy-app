@@ -17,14 +17,16 @@ guidance:
     - Do not create, update, delete, move, commit, push, branch, label or otherwise mutate repository state unless the user gives an explicit instruction or confirmation.
     - If the user's wording is ambiguous in German, answer the question first and ask for confirmation before performing the action.
     - Phrases like "mach das", "setze das um", "erstelle den Branch", "committe das" or "ja, bitte umsetzen" count as explicit action instructions.
-    - Examples of non-action questions: "Kannst du ...?", "Geht das ...?", "Wäre es sinnvoll ...?", "Wie würdest du ...?"
-    - Examples of action instructions: "Mach das bitte", "Setze das um", "Erstelle ...", "Committe ...", "Füge ... hinzu".
+    - 'Examples of non-action questions: "Kannst du ...?", "Geht das ...?", "Wäre es sinnvoll ...?", "Wie würdest du ...?"'
+    - 'Examples of action instructions: "Mach das bitte", "Setze das um", "Erstelle ...", "Committe ...", "Füge ... hinzu".'
 
   sourceOfTruth:
     - Do not infer source-of-truth domain ownership from Angular components alone.
     - Do not put league-specific rules into ConfigUtils.psm1 when they belong in Metadata.json.
     - Do not treat generated JSON as manually editable source-of-truth data.
     - Do not edit files in .ai-context/generated manually.
+    - Prefer deriving persistent domain facts, cross-feature data and source-of-truth behavior in the PowerShell generation pipeline and exposing them through generated JSON instead of re-deriving them in Angular.
+    - Keep Angular focused on display, interaction, frontend filtering and explicitly documented presentation-only prototypes; do not move generator-owned logic into the frontend merely because the immediate consumer is an Angular component.
 
   documentation:
     - When changing architecture, update .ai-context/manual/decisions.yaml.

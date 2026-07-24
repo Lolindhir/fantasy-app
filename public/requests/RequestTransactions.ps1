@@ -4,6 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -29,6 +30,11 @@ function Invoke-PastSeasonsIndexRefresh {
 
 #--- Transaktionen für alle Saisons aktualisieren ---
 $updatedTransactions = Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
+
+# Sleeper-Picks dem richtigen Draft zuordnen und mit generierten Pick-Ergebnissen anreichern.
+Update-AllTransactionDraftPickTypesFromSleeper
+Update-AllTransactionDraftPickDetailsFromLocalDrafts
+
 Invoke-PastSeasonsIndexRefresh
 
 if ($updatedTransactions) {

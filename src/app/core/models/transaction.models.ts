@@ -9,6 +9,15 @@ export interface RawTransactionDraftPick {
   DraftKey: string;
   Season: string;
   Round: number;
+  SleeperDraftID?: string | null;
+  PickKey?: string | null;
+  PositionInRound?: number | null;
+  OverallPick?: number | null;
+  DisplayPick?: string | null;
+  PlayerID?: string | null;
+  PlayerName?: string | null;
+  PickStatus?: string | null;
+  SleeperPickNo?: number | null;
   OriginalOwnerRosterID: number | string;
   PreviousOwnerRosterID: number | string;
   NewOwnerRosterID: number | string;
@@ -42,6 +51,7 @@ export interface TransactionDraftPick extends RawTransactionDraftPick {
   OriginalOwner?: FantasyTeam;
   PreviousOwner?: FantasyTeam;
   NewOwner?: FantasyTeam;
+  Player?: Player;
 }
 
 export interface TransactionParticipant {
