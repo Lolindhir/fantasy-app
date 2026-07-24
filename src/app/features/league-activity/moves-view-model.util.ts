@@ -166,7 +166,11 @@ export function getDraftPickLabel(pick: TransactionDraftPick): string {
 }
 
 export function getDraftPickAssetLabel(pick: TransactionDraftPick): string {
-  return `${pick.Season} ${formatDraftType(pick.DraftType)} ${formatRound(pick.Round)}`;
+  const pickReference = pick.DisplayPick || formatRound(pick.Round);
+  const playerName = pick.Player?.Name || pick.PlayerName;
+  const playerSuffix = playerName ? ` · ${playerName}` : '';
+
+  return `${pick.Season} ${formatDraftType(pick.DraftType)} ${pickReference}${playerSuffix}`;
 }
 
 export function getDraftPickOriginalOwnerLabel(pick: TransactionDraftPick): string {
@@ -176,7 +180,7 @@ export function getDraftPickOriginalOwnerLabel(pick: TransactionDraftPick): stri
 }
 
 export function getDraftPickTrackKey(pick: TransactionDraftPick): string {
-  return [
+  return pick.PickKey || [
     pick.DraftKey,
     `R${pick.Round}`,
     `OO${pick.OriginalOwnerRosterID}`,
@@ -257,7 +261,7 @@ function formatDraftType(draftType: string): string {
   const normalized = draftType.toLowerCase();
 
   if (normalized === 'free_agent') {
-    return 'FA';
+    return 'Free Agent';
   }
 
   return toTitleCase(draftType.replace(/_/g, ' '));
