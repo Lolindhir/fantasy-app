@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-entity.schema.json",
+  "title": "Fantasy Management Automation Entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "display_name",
+    "identifiers"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identifiers": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": [
+          "string",
+          "integer"
+        ]
+      }
+    },
+    "canonical_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "attributes": {
+      "type": "object"
+    }
+  }
+}
