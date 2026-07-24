@@ -188,8 +188,9 @@ Ein Job darf nur in den unter `execution.write_scope` angegebenen Bereichen schr
 ```bash
 python fantasy-management/_ai/scripts/validate_automation.py
 
-python -m unittest \
-  fantasy-management._ai.scripts.tests.test_validate_automation \
+python -m unittest discover \
+  -s fantasy-management/_ai/scripts/tests \
+  -p "test_validate_automation.py" \
   -v
 ```
 
