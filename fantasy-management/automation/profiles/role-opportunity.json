@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "id": "role-opportunity",
+  "title": "Rollen- und Opportunity-Entwicklung",
+  "description": "Beobachtet belastbare Veränderungen bei Depth Chart, Einsatz, Aufgabenprofil und Konkurrenzsituation einer Fantasy-relevanten Entität.",
+  "applicable_entity_types": [
+    "player",
+    "position_group",
+    "backfield"
+  ],
+  "evaluator": {
+    "id": "role-opportunity-evaluator",
+    "type": "hybrid",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md#player-role-opportunity-module"
+  },
+  "signals": [
+    {
+      "id": "role.depth_chart",
+      "description": "Aktuelle offizielle oder belastbar berichtete Rollenposition.",
+      "value_type": "string",
+      "unit": null,
+      "source_types": [
+        "official_team",
+        "official_league",
+        "beat_reporter"
+      ]
+    },
+    {
+      "id": "role.first_team_usage",
+      "description": "Anteil oder qualitative Einordnung der Arbeit mit der ersten Einheit.",
+      "value_type": "number",
+      "unit": "share",
+      "source_types": [
+        "beat_reporter",
+        "practice_report",
+        "game_usage"
+      ]
+    },
+    {
+      "id": "role.snap_share",
+      "description": "Snap-Anteil in belastbaren Spielsituationen.",
+      "value_type": "number",
+      "unit": "share",
+      "source_types": [
+        "official_stats",
+        "analytics"
+      ]
+    },
+    {
+      "id": "role.route_share",
+      "description": "Anteil gelaufener Routen oder Passing-Down-Einsatz.",
+      "value_type": "number",
+      "unit": "share",
+      "source_types": [
+        "analytics",
+        "game_usage",
+        "beat_reporter"
+      ]
+    },
+    {
+      "id": "role.touch_share",
+      "description": "Anteil der Carries, Targets oder kombinierten Opportunities.",
+      "value_type": "number",
+      "unit": "share",
+      "source_types": [
+        "official_stats",
+        "analytics"
+      ]
+    },
+    {
+      "id": "role.high_value_usage",
+      "description": "Goal-Line-, Red-Zone-, Two-Minute- oder Third-Down-Einsatz.",
+      "value_type": "object",
+      "unit": null,
+      "source_types": [
+        "official_stats",
+        "analytics",
+        "beat_reporter"
+      ]
+    },
+    {
+      "id": "role.competition",
+      "description": "Veränderungen durch Konkurrenz, Verletzungen, Transactions oder Rosterentscheidungen.",
+      "value_type": "object",
+      "unit": null,
+      "source_types": [
+        "official_team",
+        "official_league",
+        "transaction_report",
+        "injury_report",
+        "beat_reporter"
+      ]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Gesamtkonfidenz der aktuellen Rollenbewertung.",
+      "value_type": "enum",
+      "unit": null,
+      "source_types": [
+        "derived"
+      ]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 2,
+    "allow_single_authoritative_source": true,
+    "preferred_source_types": [
+      "official_team",
+      "official_league",
+      "official_stats",
+      "injury_report",
+      "transaction_report",
+      "beat_reporter",
+      "analytics"
+    ]
+  },
+  "criteria": [
+    {
+      "id": "confirmed-role-class-change",
+      "description": "Eine belastbar bestätigte Rollenklasse hat sich verändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "role.depth_chart",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "role_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "meaningful-first-team-movement",
+      "description": "Der Einsatz mit der ersten Einheit hat sich substanziell verschoben.",
+      "condition": {
+        "signal": "role.first_team_usage",
+        "operator": "absolute_delta_gte",
+        "value": 0.25,
+        "comparison_window": "previous_material_state"
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "opportunity_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "high-value-role-change",
+      "description": "High-value Usage wie Goal-Line- oder Passing-Down-Einsatz hat sich verändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "role.high_value_usage",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "high_value_usage_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "competition-impact",
+      "description": "Eine Verletzung, Transaction oder Rosterentscheidung verändert die Opportunity.",
+      "condition": {
+        "all": [
+          {
+            "signal": "role.competition",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "competition_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    }
+  ],
+  "output_fields": [
+    "role_summary",
+    "role_class",
+    "competition_summary",
+    "usage_summary",
+    "high_value_usage",
+    "confidence"
+  ]
+}
