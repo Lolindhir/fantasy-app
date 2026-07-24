@@ -15,6 +15,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerChatExportUtils.psm1" -ErrorAction Stop -Force
 }
@@ -150,6 +151,10 @@ try {
 
     # --- Transaktionen für aktuelle Saison aktualisieren ---
     $transactionsCurrentSeason = Update-TransactionsCurrentSeason
+    $transactionsCurrentSeason = Update-CurrentTransactionDraftPickTypesFromSleeper `
+        -transactions $transactionsCurrentSeason `
+        -leagueID $LeagueID
+
     if ($transactionsCurrentSeason) {
         Write-Host "Transactions for current season updated." -ForegroundColor Green
     } else {
@@ -162,6 +167,8 @@ try {
         Write-Warning "Update-DraftsOrderAware returned no drafts. Falling back to local Drafts.json."
         $drafts = Get-LeagueDraftsLocal
     }
+
+    Update-CurrentTransactionDraftPickDetails -drafts $drafts | Out-Null
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
