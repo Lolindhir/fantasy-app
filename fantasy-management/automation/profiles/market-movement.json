@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "id": "market-movement",
+  "title": "Markt- und Rankingbewegung",
+  "description": "Beobachtet relevante Bewegungen in Rankings, Marktwerten, Rosterquoten und source-übergreifenden Tiers.",
+  "applicable_entity_types": [
+    "player",
+    "draft_pick",
+    "ranking_source"
+  ],
+  "evaluator": {
+    "id": "market-movement-evaluator",
+    "type": "hybrid",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md#market-movement-module"
+  },
+  "signals": [
+    {
+      "id": "market.dynasty_overall_rank",
+      "description": "Aktuelles Dynasty-Overall-Ranking der konfigurierten Primärquelle.",
+      "value_type": "integer",
+      "unit": "rank",
+      "source_types": [
+        "external_ranking"
+      ]
+    },
+    {
+      "id": "market.position_rank",
+      "description": "Aktuelles Positionsranking.",
+      "value_type": "integer",
+      "unit": "rank",
+      "source_types": [
+        "external_ranking"
+      ]
+    },
+    {
+      "id": "market.value",
+      "description": "Normalisierter oder quellenspezifischer Marktwert.",
+      "value_type": "number",
+      "unit": "source_value",
+      "source_types": [
+        "market_source"
+      ]
+    },
+    {
+      "id": "market.tier",
+      "description": "Aktuelles Markt- oder Konsens-Tier.",
+      "value_type": "string",
+      "unit": null,
+      "source_types": [
+        "external_ranking",
+        "derived"
+      ]
+    },
+    {
+      "id": "market.roster_rate",
+      "description": "Rosterquote in einer dokumentierten Plattform oder Quelle.",
+      "value_type": "number",
+      "unit": "share",
+      "source_types": [
+        "market_source"
+      ]
+    },
+    {
+      "id": "market.source_disagreement",
+      "description": "Abweichung zwischen relevanten unabhängigen Marktquellen.",
+      "value_type": "object",
+      "unit": null,
+      "source_types": [
+        "derived"
+      ]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Gesamtkonfidenz der Marktbewegung.",
+      "value_type": "enum",
+      "unit": null,
+      "source_types": [
+        "derived"
+      ]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 2,
+    "allow_single_authoritative_source": false,
+    "preferred_source_types": [
+      "external_ranking",
+      "market_source",
+      "official_transaction"
+    ]
+  },
+  "criteria": [
+    {
+      "id": "overall-rank-movement",
+      "description": "Das Overall-Ranking hat sich um mindestens 20 Plätze verändert.",
+      "condition": {
+        "signal": "market.dynasty_overall_rank",
+        "operator": "absolute_delta_gte",
+        "value": 20,
+        "comparison_window": "previous_material_state"
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "ranking_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "position-rank-movement",
+      "description": "Das Positionsranking hat sich um mindestens acht Plätze verändert.",
+      "condition": {
+        "signal": "market.position_rank",
+        "operator": "absolute_delta_gte",
+        "value": 8,
+        "comparison_window": "previous_material_state"
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "position_ranking_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "tier-change",
+      "description": "Die Entität ist in ein anderes relevantes Markt-Tier gewechselt.",
+      "condition": {
+        "all": [
+          {
+            "signal": "market.tier",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "market_tier_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "large-source-disagreement",
+      "description": "Zwischen unabhängigen Quellen ist eine neue strategisch relevante Abweichung entstanden.",
+      "condition": {
+        "all": [
+          {
+            "signal": "market.source_disagreement",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "market_disagreement_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    }
+  ],
+  "output_fields": [
+    "market_summary",
+    "dynasty_overall_rank",
+    "position_rank",
+    "market_value",
+    "market_tier",
+    "source_disagreement",
+    "confidence"
+  ]
+}

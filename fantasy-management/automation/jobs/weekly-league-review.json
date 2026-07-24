@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "id": "weekly-league-review",
-  "title": "Wöchentliche Liga- und Mighty-Giants-Auswertung",
+  "title": "Wöchentliche Liga- und Team-Auswertung",
   "enabled": false,
   "category": "league_review",
-  "description": "Erstellt nach einem vollständig aktualisierten Spieltag ein strukturiertes Analysepaket für die Mighty Giants und die gesamte Liga.",
+  "description": "Erstellt nach einem vollständig aktualisierten Spieltag ein strukturiertes Analysepaket für das verwaltete Team und die gesamte Liga.",
   "trigger": {
     "type": "league_week_finalized",
     "league_source": "public/data/League.json",
@@ -16,7 +16,7 @@
     {
       "path": "public/data/League.json",
       "required": true,
-      "condition": "FinalScoredWeek ist größer als last_processed_key"
+      "condition": "FinalScoredWeek ist größer als last_processed_key und das verwaltete Team ist über die stabile Team-ID auflösbar."
     },
     {
       "path": "public/data/Timestamps.json",
@@ -31,7 +31,7 @@
   ],
   "execution": {
     "workflow_ref": "fantasy-management/automation/AGENTS.md#runner-workflow",
-    "perspective": "mighty_giants",
+    "perspective": "managed_team",
     "requires_external_research": false,
     "idempotency_key_template": "{season}-week-{final_scored_week}",
     "write_scope": [

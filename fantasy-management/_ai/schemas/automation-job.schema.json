@@ -60,6 +60,13 @@
         "$ref": "#/$defs/dependency"
       }
     },
+    "configuration_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/configuration_ref"
+      }
+    },
     "execution": {
       "$ref": "#/$defs/execution"
     },
@@ -152,6 +159,35 @@
             "null"
           ],
           "minimum": 0
+        }
+      }
+    },
+    "configuration_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path",
+        "required"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "target_set",
+            "profile",
+            "context",
+            "evaluator",
+            "workflow",
+            "other"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
         }
       }
     },
@@ -341,7 +377,7 @@
         "perspective": {
           "type": "string",
           "enum": [
-            "mighty_giants",
+            "managed_team",
             "league",
             "global",
             "custom"

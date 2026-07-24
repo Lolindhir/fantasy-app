@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-observation-state.schema.json",
+  "title": "Fantasy Management Entity Observation State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "status",
+    "revision",
+    "last_evaluated_at",
+    "last_successful_run",
+    "last_processed_key",
+    "last_input_fingerprints",
+    "pending",
+    "last_error",
+    "last_material_change",
+    "recent_events",
+    "job_state"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "job_id": {
+      "const": "entity-observation"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "never_run",
+        "idle",
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "disabled"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_evaluated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_successful_run": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_processed_key": {
+      "type": [
+        "string",
+        "integer",
+        "null"
+      ]
+    },
+    "last_input_fingerprints": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "pending": {
+      "type": "boolean"
+    },
+    "last_error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "message",
+            "retryable"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "last_material_change": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "severity",
+            "summary"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "severity": {
+              "$ref": "#/$defs/severity"
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decision_effect": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "recent_events": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "type",
+          "severity",
+          "summary"
+        ],
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "evaluated",
+              "skipped",
+              "pending",
+              "output_written",
+              "material_change",
+              "notification_sent",
+              "error",
+              "recovered"
+            ]
+          },
+          "severity": {
+            "$ref": "#/$defs/severity"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "job_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_sets",
+        "targets"
+      ],
+      "properties": {
+        "target_sets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "last_resolved_at",
+              "resolved_target_ids"
+            ],
+            "properties": {
+              "last_resolved_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "resolved_target_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                }
+              }
+            }
+          }
+        },
+        "targets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "entity_fingerprint",
+              "target_set_ids",
+              "last_checked_at",
+              "status",
+              "observations"
+            ],
+            "properties": {
+              "entity_fingerprint": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target_set_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                }
+              },
+              "last_checked_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "never_checked",
+                  "active",
+                  "pending",
+                  "failed",
+                  "disabled",
+                  "expired"
+                ]
+              },
+              "observations": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/profile_state"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "profile_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "last_checked_at",
+        "state_hash",
+        "material_state",
+        "confidence",
+        "source_fingerprints",
+        "last_material_change_at",
+        "last_error"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "never_checked",
+            "baseline",
+            "unchanged",
+            "material_change",
+            "pending",
+            "failed",
+            "disabled"
+          ]
+        },
+        "last_checked_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "state_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "material_state": {
+          "type": "object"
+        },
+        "confidence": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          ]
+        },
+        "source_fingerprints": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "last_material_change_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

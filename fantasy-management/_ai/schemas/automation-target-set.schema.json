@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-target-set.schema.json",
+  "title": "Fantasy Management Automation Target Set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "title",
+    "description",
+    "enabled",
+    "mode",
+    "defaults",
+    "manual_targets",
+    "selectors"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "dynamic",
+        "hybrid"
+      ]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_bindings",
+        "priority",
+        "notify_on_initial_baseline"
+      ],
+      "properties": {
+        "profile_bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profile_binding"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "notify_on_initial_baseline": {
+          "type": "boolean"
+        }
+      }
+    },
+    "manual_targets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/manual_target"
+      }
+    },
+    "selectors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/selector"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "manual"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manual_targets": {
+            "minItems": 1
+          },
+          "selectors": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "dynamic"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manual_targets": {
+            "maxItems": 0
+          },
+          "selectors": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "hybrid"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manual_targets": {
+            "minItems": 1
+          },
+          "selectors": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "display_name",
+        "identifiers"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identifiers": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        },
+        "canonical_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributes": {
+          "type": "object"
+        }
+      }
+    },
+    "profile_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_ref",
+        "enabled"
+      ],
+      "properties": {
+        "profile_ref": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "criteria_overrides": {
+          "type": "object"
+        }
+      }
+    },
+    "active_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "starts_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "ends_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "season_phases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "decision_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "perspective",
+        "relevance"
+      ],
+      "properties": {
+        "perspective": {
+          "type": "string",
+          "enum": [
+            "managed_team",
+            "league",
+            "global",
+            "custom"
+          ]
+        },
+        "relevance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_position": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "effect_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "when_classification",
+              "action"
+            ],
+            "properties": {
+              "when_classification": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "action": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "manual_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "entity",
+        "profile_bindings",
+        "priority",
+        "decision_context"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "entity": {
+          "$ref": "#/$defs/entity"
+        },
+        "profile_bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profile_binding"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "decision_context": {
+          "$ref": "#/$defs/decision_context"
+        },
+        "active_window": {
+          "$ref": "#/$defs/active_window"
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "enabled",
+        "selector_type",
+        "entity_type",
+        "parameters",
+        "profile_bindings",
+        "priority"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "selector_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "entity_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "profile_bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profile_binding"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "decision_context_template": {
+          "$ref": "#/$defs/decision_context"
+        },
+        "active_window": {
+          "$ref": "#/$defs/active_window"
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
