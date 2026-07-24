@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-observation-event.schema.json",
+  "title": "Fantasy Management Observation Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "type",
+    "created_at",
+    "job_id",
+    "target_set_ids",
+    "target_id",
+    "entity",
+    "profile_id",
+    "classification",
+    "severity",
+    "observation",
+    "interpretation",
+    "decision_effect",
+    "evidence",
+    "previous_state",
+    "current_state"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "type": {
+      "const": "observation_event"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "job_id": {
+      "const": "entity-observation"
+    },
+    "target_set_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "display_name",
+        "identifiers"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identifiers": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        },
+        "canonical_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attributes": {
+          "type": "object"
+        }
+      }
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "classification": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "severity": {
+      "$ref": "#/$defs/severity"
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "signals"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signals": {
+          "type": "object"
+        }
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "confidence",
+        "unresolved_conflicts"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "unresolved_conflicts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "decision_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "perspective",
+        "summary",
+        "urgency"
+      ],
+      "properties": {
+        "perspective": {
+          "type": "string",
+          "enum": [
+            "managed_team",
+            "league",
+            "global",
+            "custom"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "previous_action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "new_action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "urgency": {
+          "type": "string",
+          "enum": [
+            "none",
+            "monitor",
+            "next_window",
+            "immediate"
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_type",
+          "title",
+          "publisher",
+          "observed_at",
+          "confidence",
+          "supports"
+        ],
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "publisher": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "supports": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "previous_state": {
+      "type": "object"
+    },
+    "current_state": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    }
+  }
+}
