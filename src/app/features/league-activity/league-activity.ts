@@ -55,7 +55,8 @@ interface MovesSelectionContext {
   templateUrl: './league-activity.html',
   styleUrls: [
     './league-activity.scss',
-    './league-activity-hero.scss'
+    './league-activity-hero.scss',
+    './league-activity-trades.scss'
   ]
 })
 export class LeagueActivityComponent {
