@@ -1,0 +1,45 @@
+id: transactions
+
+title: Transactions
+layer: generated-app-data
+
+responsibility: >
+  Generated completed league moves used by Angular and by draft ownership
+  generation. Draft-pick movements retain their transaction direction and are
+  enriched generator-side with the concrete draft and pick result when that
+  data is available.
+
+owns:
+  - completed transaction identity and chronology
+  - participant roster IDs
+  - player adds and drops
+  - draft-pick movement from previous owner to new owner
+  - stable original draft-pick owner identity
+  - resolved draft type and draft key
+  - concrete pick key, position and display pick
+  - selected player ID and name for completed picks
+
+doesNotOwn:
+  - pending transactions without a reliable source
+  - frontend presentation layout
+  - manually authored league rules
+
+sources:
+  - Sleeper transaction endpoint
+  - public/data/Transactions_Manual.json
+  - Sleeper draft and traded-pick endpoints
+  - public/data/Drafts.json
+  - public/data/past_seasons/Drafts/Drafts_<season>.json
+
+generation:
+  primaryGenerator: public/requests/utils/league/TransactionUtils.psm1
+  draftPickEnrichment: public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1
+  entryPoints:
+    - public/requests/RequestLeague.ps1
+    - public/requests/RequestTransactions.ps1
+    - public/requests/RequestDrafts.ps1
+
+notes:
+  - Angular must consume the generated draft-pick facts instead of deriving draft identity, concrete position or selected player from unrelated frontend state.
+  - Draft-pick enrichment is intentionally optional while a future pick has no exact order or while a draft result is not yet available.
+  - PlayerName is stored as a historical fallback when PlayerID no longer resolves against the current Players.json.
