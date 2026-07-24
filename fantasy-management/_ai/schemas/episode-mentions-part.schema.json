@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/episode-mentions-part.schema.json",
+  "title": "Podcast Episode Mentions Part",
+  "description": "Validates the split-part envelope. Mention payloads are validated once against episode-mentions.schema.json after aggregation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "episode_id",
+    "source_id",
+    "source_name",
+    "part_number",
+    "mentions"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "part_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mentions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}
