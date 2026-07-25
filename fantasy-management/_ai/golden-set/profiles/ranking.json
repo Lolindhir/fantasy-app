@@ -1,0 +1,209 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "ranking",
+  "version": 1,
+  "title": "Ranking and Tier Structure",
+  "description": "Preserves complete reconstructable order, tiers, evaluation criteria, price ranges and host differences.",
+  "scope": {
+    "subject_types": [
+      "player",
+      "team",
+      "position_group",
+      "other"
+    ],
+    "segment_types": [
+      "ranking",
+      "tier_list",
+      "board",
+      "draft_class"
+    ],
+    "take_types": [
+      "ranking_subject",
+      "tier_structure",
+      "board_thesis",
+      "direct_comparison"
+    ]
+  },
+  "principles": [
+    "Reconstruct the complete safely supported order or tier structure.",
+    "Mark uncertain order rather than inventing precision.",
+    "Every ranked subject needs enough explanation to preserve placement, positive case and risk when discussed.",
+    "Keep source board, market order and format-specific order distinct."
+  ],
+  "dimensions": [
+    {
+      "id": "complete_structure",
+      "description": "Complete rank, tier or board structure.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve every safely reconstructable subject and break.",
+      "detection_questions": [
+        "Are all ranked subjects present?",
+        "Is order or tier membership uncertain?"
+      ]
+    },
+    {
+      "id": "evaluation_criteria",
+      "description": "Criteria used to create the ranking.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain explicit criteria and weighting language.",
+      "detection_questions": [
+        "What drives the order: talent, role, price, format or scarcity?"
+      ]
+    },
+    {
+      "id": "subject_rationale",
+      "description": "Reason each subject occupies its place.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the key positive and negative placement reasons.",
+      "detection_questions": [
+        "Why is this subject above or below adjacent options?"
+      ]
+    },
+    {
+      "id": "direct_comparisons",
+      "description": "Head-to-head preferences and tie-breakers.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain comparison direction and criterion.",
+      "detection_questions": [
+        "Which direct choices are stated?"
+      ]
+    },
+    {
+      "id": "tier_breaks",
+      "description": "Meaningful value or confidence drops.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain the break and downstream draft implication.",
+      "detection_questions": [
+        "Where does confidence change sharply?"
+      ]
+    },
+    {
+      "id": "price_ranges",
+      "description": "Rookie picks, rounds, ADP or trade ranges.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve exact or approximate ranges and price sensitivity.",
+      "detection_questions": [
+        "At what range does value change?"
+      ]
+    },
+    {
+      "id": "market_vs_board",
+      "description": "Difference between source ranking and expected market.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep talent/conviction and market behavior separate.",
+      "detection_questions": [
+        "Does need or scarcity move subjects above the source's pure board?"
+      ]
+    },
+    {
+      "id": "format_variants",
+      "description": "Changes by scoring or league format.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve alternate ordering or specialist value.",
+      "detection_questions": [
+        "Does the ranking change by format?"
+      ]
+    },
+    {
+      "id": "host_differences",
+      "description": "Different host rankings or conviction.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve disagreement without manufacturing consensus.",
+      "detection_questions": [
+        "Who differs and why?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Can the complete source ranking or tier structure be reconstructed?",
+    "Does every important subject have enough rationale for its placement?",
+    "Are tier breaks, price ranges and direct comparisons retained?",
+    "Are market order and source preference clearly distinguished?"
+  ],
+  "forbidden_distortions": [
+    "Do not invent exact ranks from unordered discussion.",
+    "Do not omit lower-ranked subjects because conviction is low.",
+    "Do not reduce each player to a one-line verdict when the source gives a deep profile.",
+    "Do not merge host rankings without recording disagreement."
+  ],
+  "extension_signals": [
+    "A new ranking format or board structure appears.",
+    "The source uses a recurring tie-breaker not represented.",
+    "A new market-versus-board distinction matters.",
+    "A ranking episode would be a useful reference case."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
