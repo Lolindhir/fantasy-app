@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-process-review.schema.json",
+  "title": "Podcast Extraction Process Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "review_status",
+    "evaluated_profiles",
+    "findings",
+    "improvement_proposals",
+    "explicit_no_proposals"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "complete",
+        "needs_rework"
+      ]
+    },
+    "evaluated_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "category",
+          "description",
+          "severity"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "source_fidelity",
+              "content_recall",
+              "reasoning_preservation",
+              "nuance_preservation",
+              "structural_fidelity",
+              "entity_breadth",
+              "downstream_usability",
+              "compression_control",
+              "storage",
+              "workflow",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "blocker"
+            ]
+          },
+          "related_segments": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "related_takes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "improvement_proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "type",
+          "target",
+          "proposal",
+          "evidence",
+          "requires_user_approval"
+        ],
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "new_segment_type",
+              "new_subject_type",
+              "new_relation_type",
+              "golden_profile_extension",
+              "new_golden_profile",
+              "new_reference_case",
+              "rule_change",
+              "schema_change",
+              "storage_change",
+              "workflow_change",
+              "other"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proposal": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "requires_user_approval": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      }
+    },
+    "explicit_no_proposals": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "explicit_no_proposals": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "improvement_proposals": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "explicit_no_proposals": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "improvement_proposals": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
