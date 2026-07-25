@@ -25,6 +25,8 @@ export interface MovesViewModel {
   TotalCount: number;
   VisibleCount: number;
   TradeCount: number;
+  PlayerMoveCount: number;
+  DraftPickCount: number;
   AddCount: number;
   CutCount: number;
   Filters: MovesFilterOption[];
@@ -65,6 +67,14 @@ export function buildMovesViewModel(
     TotalCount: normalizedTransactions.length,
     VisibleCount: filteredTransactions.length,
     TradeCount: tradeCount,
+    PlayerMoveCount: normalizedTransactions.reduce(
+      (sum, transaction) => sum + countDistinctPlayerMoves(transaction),
+      0
+    ),
+    DraftPickCount: normalizedTransactions.reduce(
+      (sum, transaction) => sum + transaction.DraftPicks.length,
+      0
+    ),
     AddCount: addCount,
     CutCount: cutCount,
     Filters: [
@@ -221,6 +231,22 @@ function countDroppedPlayers(transaction: Transaction): number {
     (sum, participant) => sum + participant.DroppedPlayers.length,
     0
   );
+}
+
+function countDistinctPlayerMoves(transaction: Transaction): number {
+  const playerIDs = new Set<string>();
+
+  for (const participant of transaction.Participants) {
+    for (const player of participant.AddedPlayers) {
+      playerIDs.add(player.PlayerID);
+    }
+
+    for (const player of participant.DroppedPlayers) {
+      playerIDs.add(player.PlayerID);
+    }
+  }
+
+  return playerIDs.size;
 }
 
 function getDraftPickOriginalOwnerShortLabel(pick: TransactionDraftPick): string {
