@@ -2,10 +2,10 @@
   "schema_version": 1,
   "job_id": "entity-observation",
   "status": "disabled",
-  "revision": 1,
-  "last_evaluated_at": "2026-07-25T06:36:52+02:00",
-  "last_successful_run": "2026-07-25T06:36:52+02:00",
-  "last_processed_key": "manual-baseline:tank-bigsby-2026",
+  "revision": 2,
+  "last_evaluated_at": "2026-07-25T07:04:01+02:00",
+  "last_successful_run": "2026-07-25T07:04:01+02:00",
+  "last_processed_key": "tank-bigsby-2026-role-opportunity-c94f8cebe87fd5555825d409adba2474c81e00760d812fb30367a1c5d4ab94ba",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "383fa3c159b926d13a2eafab449abdd09b5c5705",
     "fantasy-management/automation/profiles/market-movement.json": "ad4b75700de9881155051b637255a9960f412952",
@@ -17,23 +17,41 @@
     "fantasycalc:dynasty-superflex-ppr-8-team:ranking": "473388319b0cd6d1a989d0465db965e2d50ca850",
     "official-eagles-depth-chart": "philadelphiaeagles.com/team/depth-chart:observed-2026-07-24",
     "official-eagles-running-back-preview": "philadelphiaeagles.com/news/eagles-2026-training-camp-position-preview-running-back:published-2026-07-07",
-    "public/data/League.json": "e2e40b0f063c7e4902c5c322f9cd1f224691f16c"
+    "public/data/League.json": "e2e40b0f063c7e4902c5c322f9cd1f224691f16c",
+    "controlled-write-test-fixture": "simulated-bigsby-role-upgrade-v1"
   },
   "pending": false,
   "last_error": null,
-  "last_material_change": null,
+  "last_material_change": {
+    "at": "2026-07-25T07:04:01+02:00",
+    "severity": "medium",
+    "summary": "[SIMULATION] Tank Bigsby wurde im kontrollierten Schreibtest als klarer primärer Backup mit überwiegender First-Team-Nutzung eingestuft.",
+    "decision_effect": "[SIMULATION] Früheste vertretbare FA-Draft-Runde würde von Runde 5 auf Runde 4 angehoben."
+  },
   "recent_events": [
     {
       "at": "2026-07-25T06:36:52+02:00",
       "type": "evaluated",
       "severity": "info",
       "summary": "Manuelle Baseline für Tank Bigsby mit role-opportunity und market-movement erstellt; keine Benachrichtigung und kein Observation Event."
+    },
+    {
+      "at": "2026-07-25T07:04:01+02:00",
+      "type": "material_change",
+      "severity": "medium",
+      "summary": "[SIMULATION] Kontrollierter opportunity_change für Tank Bigsby erkannt."
+    },
+    {
+      "at": "2026-07-25T07:04:01+02:00",
+      "type": "output_written",
+      "severity": "info",
+      "summary": "[SIMULATION] State sowie JSON- und Markdown-Observation-Event atomar geschrieben."
     }
   ],
   "job_state": {
     "target_sets": {
       "player-role-watch": {
-        "last_resolved_at": "2026-07-25T06:36:52+02:00",
+        "last_resolved_at": "2026-07-25T07:04:01+02:00",
         "resolved_target_ids": [
           "tank-bigsby-2026"
         ]
@@ -45,43 +63,43 @@
         "target_set_ids": [
           "player-role-watch"
         ],
-        "last_checked_at": "2026-07-25T06:36:52+02:00",
+        "last_checked_at": "2026-07-25T07:04:01+02:00",
         "status": "active",
         "observations": {
           "role-opportunity": {
-            "status": "baseline",
-            "last_checked_at": "2026-07-25T06:36:52+02:00",
-            "state_hash": "b6718d9ab739067dccbabf6f7f922688dcaeaee5e2781f3a0cab06d616acc771",
+            "status": "material_change",
+            "last_checked_at": "2026-07-25T07:04:01+02:00",
+            "state_hash": "c94f8cebe87fd5555825d409adba2474c81e00760d812fb30367a1c5d4ab94ba",
             "material_state": {
               "role_summary": {
                 "starter": "Saquon Barkley",
                 "listed_depth_chart_order": [
                   "Saquon Barkley",
-                  "Will Shipley",
-                  "Tank Bigsby"
-                ],
-                "depth_chart_type": "official_unofficial"
-              },
-              "role_class": "listed_rb3_open_backup_competition",
-              "competition_summary": {
-                "ahead": [
-                  "Saquon Barkley",
+                  "Tank Bigsby",
                   "Will Shipley"
                 ],
+                "depth_chart_type": "controlled_test_fixture"
+              },
+              "role_class": "simulated_clear_primary_backup",
+              "competition_summary": {
+                "ahead": [
+                  "Saquon Barkley"
+                ],
                 "additional_competitors": [
+                  "Will Shipley",
                   "Dameon Pierce",
                   "Elijah Mitchell"
                 ],
-                "competition_status": "open_before_training_camp"
+                "competition_status": "simulated_bigsby_separated_as_primary_backup"
               },
               "usage_summary": {
-                "training_camp_started": false,
+                "training_camp_started": true,
                 "numeric_first_team_usage_available": false,
                 "game_usage_2026_available": false
               },
-              "first_team_usage_class": "unknown",
+              "first_team_usage_class": "majority",
               "high_value_usage": {
-                "goal_line": "unknown",
+                "goal_line": "rotational",
                 "passing_down": "unknown",
                 "third_down": "unknown",
                 "two_minute": "unknown"
@@ -90,10 +108,10 @@
             },
             "confidence": "medium",
             "source_fingerprints": [
-              "official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24",
-              "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"
+              "test_fixture:controlled-write-test:practice-report-a:v1",
+              "test_fixture:controlled-write-test:practice-report-b:v1"
             ],
-            "last_material_change_at": null,
+            "last_material_change_at": "2026-07-25T07:04:01+02:00",
             "last_error": null
           },
           "market-movement": {

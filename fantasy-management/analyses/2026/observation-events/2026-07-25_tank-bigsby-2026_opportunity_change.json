@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "type": "observation_event",
+  "created_at": "2026-07-25T07:04:01+02:00",
+  "job_id": "entity-observation",
+  "target_set_ids": [
+    "player-role-watch"
+  ],
+  "target_id": "tank-bigsby-2026",
+  "entity": {
+    "type": "player",
+    "display_name": "Tank Bigsby",
+    "identifiers": {
+      "sleeper_id": "9225"
+    },
+    "canonical_ref": null,
+    "attributes": {
+      "nfl_team": "PHI",
+      "position": "RB"
+    }
+  },
+  "profile_id": "role-opportunity",
+  "classification": "opportunity_change",
+  "severity": "medium",
+  "observation": {
+    "summary": "[SIMULATION] Zwei kontrollierte Test-Fundstellen stufen Bigsby als klaren primären Backup mit überwiegender First-Team-Nutzung ein.",
+    "signals": {
+      "role.depth_chart": {
+        "previous": "listed_rb3_open_backup_competition",
+        "current": "simulated_clear_primary_backup"
+      },
+      "role.first_team_usage_class": {
+        "previous": "unknown",
+        "current": "majority"
+      },
+      "role.high_value_usage.goal_line": {
+        "previous": "unknown",
+        "current": "rotational"
+      }
+    }
+  },
+  "interpretation": {
+    "summary": "[SIMULATION] Das würde eine belastbare Separation von Will Shipley und einen relevanten Opportunity-Anstieg bedeuten.",
+    "confidence": "medium",
+    "unresolved_conflicts": []
+  },
+  "decision_effect": {
+    "perspective": "managed_team",
+    "summary": "[SIMULATION] Als Barkley-Handcuff würde Bigsby vom späten Value-Target zum priorisierten FA-Draft-Ziel aufsteigen.",
+    "previous_action": "Nur als spätes Value- oder Handcuff-Target einplanen.",
+    "new_action": "[SIMULATION] Ab FA-Runde 4 aktiv einplanen und nicht bis Runde 5 warten.",
+    "urgency": "next_window"
+  },
+  "evidence": [
+    {
+      "source_type": "test_fixture",
+      "title": "Controlled practice report A",
+      "publisher": "Fantasy Automation Write Test",
+      "url": null,
+      "observed_at": "2026-07-25T07:04:01+02:00",
+      "confidence": "medium",
+      "supports": [
+        "role.first_team_usage_class=majority",
+        "role.depth_chart=simulated_clear_primary_backup"
+      ]
+    },
+    {
+      "source_type": "test_fixture",
+      "title": "Controlled practice report B",
+      "publisher": "Independent Fantasy Automation Test Fixture",
+      "url": null,
+      "observed_at": "2026-07-25T07:04:01+02:00",
+      "confidence": "medium",
+      "supports": [
+        "role.first_team_usage_class=majority",
+        "role.high_value_usage.goal_line=rotational"
+      ]
+    }
+  ],
+  "previous_state": {
+    "role_summary": {
+      "starter": "Saquon Barkley",
+      "listed_depth_chart_order": [
+        "Saquon Barkley",
+        "Will Shipley",
+        "Tank Bigsby"
+      ],
+      "depth_chart_type": "official_unofficial"
+    },
+    "role_class": "listed_rb3_open_backup_competition",
+    "competition_summary": {
+      "ahead": [
+        "Saquon Barkley",
+        "Will Shipley"
+      ],
+      "additional_competitors": [
+        "Dameon Pierce",
+        "Elijah Mitchell"
+      ],
+      "competition_status": "open_before_training_camp"
+    },
+    "usage_summary": {
+      "training_camp_started": false,
+      "numeric_first_team_usage_available": false,
+      "game_usage_2026_available": false
+    },
+    "first_team_usage_class": "unknown",
+    "high_value_usage": {
+      "goal_line": "unknown",
+      "passing_down": "unknown",
+      "third_down": "unknown",
+      "two_minute": "unknown"
+    },
+    "confidence": "medium"
+  },
+  "current_state": {
+    "role_summary": {
+      "starter": "Saquon Barkley",
+      "listed_depth_chart_order": [
+        "Saquon Barkley",
+        "Tank Bigsby",
+        "Will Shipley"
+      ],
+      "depth_chart_type": "controlled_test_fixture"
+    },
+    "role_class": "simulated_clear_primary_backup",
+    "competition_summary": {
+      "ahead": [
+        "Saquon Barkley"
+      ],
+      "additional_competitors": [
+        "Will Shipley",
+        "Dameon Pierce",
+        "Elijah Mitchell"
+      ],
+      "competition_status": "simulated_bigsby_separated_as_primary_backup"
+    },
+    "usage_summary": {
+      "training_camp_started": true,
+      "numeric_first_team_usage_available": false,
+      "game_usage_2026_available": false
+    },
+    "first_team_usage_class": "majority",
+    "high_value_usage": {
+      "goal_line": "rotational",
+      "passing_down": "unknown",
+      "third_down": "unknown",
+      "two_minute": "unknown"
+    },
+    "confidence": "medium"
+  }
+}
