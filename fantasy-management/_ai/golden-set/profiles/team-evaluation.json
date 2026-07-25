@@ -1,0 +1,256 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "team-evaluation",
+  "version": 1,
+  "title": "Team Evaluation",
+  "description": "Preserves organization-, roster-, unit- and environment-level arguments that can affect multiple current or future players.",
+  "scope": {
+    "subject_types": [
+      "team",
+      "unit",
+      "depth_chart",
+      "front_office"
+    ],
+    "segment_types": [
+      "team_preview",
+      "division_preview",
+      "team_deep_dive",
+      "news",
+      "free_agency",
+      "draft_review"
+    ],
+    "take_types": [
+      "team_evaluation",
+      "unit_evaluation",
+      "depth_chart_thesis",
+      "organizational_thesis"
+    ]
+  },
+  "principles": [
+    "A team segment is not merely a list of player mini-takes.",
+    "Preserve organization-wide mechanisms and then link affected players.",
+    "Keep offense, defense, coaching, personnel, cap and time horizon separate when the source does.",
+    "Do not convert broad team context directly into player action recommendations."
+  ],
+  "dimensions": [
+    {
+      "id": "organizational_direction",
+      "description": "Front-office priorities, competitive window and strategic direction.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the direction and the evidence used to infer it.",
+      "detection_questions": [
+        "What is the organization trying to build or change?",
+        "Is the source describing a short rebuild, contention window or uncertainty?"
+      ]
+    },
+    {
+      "id": "coaching_staff",
+      "description": "Head coach, coordinators and staff continuity or change.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain staff roles, responsibilities and source-supported implications.",
+      "detection_questions": [
+        "Who controls the relevant unit?",
+        "Is continuity or change central?"
+      ]
+    },
+    {
+      "id": "scheme_identity",
+      "description": "Offensive or defensive system and tactical identity.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain the system and how it changes role or volume distribution.",
+      "detection_questions": [
+        "What does the team want to do structurally?",
+        "Which personnel groups or concepts matter?"
+      ]
+    },
+    {
+      "id": "personnel_depth_chart",
+      "description": "Roster composition, positional competition and depth.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the depth-chart structure and uncertainty, not only starter names.",
+      "detection_questions": [
+        "Where are the clear roles, competitions or weak points?"
+      ]
+    },
+    {
+      "id": "volume_distribution",
+      "description": "Expected pace, play volume, pass/run mix, target concentration or committee use.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep the source mechanism connecting team behavior to fantasy opportunity.",
+      "detection_questions": [
+        "How is volume distributed?",
+        "Does the source expect concentration or rotation?"
+      ]
+    },
+    {
+      "id": "cap_contracts",
+      "description": "Cap health, major contracts, flexibility and roster-control constraints.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve how financial structure affects retention, additions, cuts or role security.",
+      "detection_questions": [
+        "Which contracts or cap constraints shape decisions?"
+      ]
+    },
+    {
+      "id": "draft_free_agency",
+      "description": "Recent or expected acquisition strategy.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain investments and their interpreted organizational signals.",
+      "detection_questions": [
+        "What did draft capital, free agency or trades reveal?"
+      ]
+    },
+    {
+      "id": "unit_strengths",
+      "description": "Source-supported team or unit advantages.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve strengths and how they can support player production.",
+      "detection_questions": [
+        "What does the team do well and why?"
+      ]
+    },
+    {
+      "id": "unit_weaknesses",
+      "description": "Source-supported team or unit limitations.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve weaknesses, failure paths and affected roles.",
+      "detection_questions": [
+        "What can suppress volume, efficiency or scoring?"
+      ]
+    },
+    {
+      "id": "time_horizon",
+      "description": "Current-season versus future organizational outlook.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Separate current role context from later roster or cap changes.",
+      "detection_questions": [
+        "What changes after this season or contract cycle?"
+      ]
+    },
+    {
+      "id": "affected_players",
+      "description": "Players directly affected by the team-level thesis.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Link players and their relation without replacing the independent team take.",
+      "detection_questions": [
+        "Which players gain, lose or face uncertainty because of this team context?"
+      ]
+    },
+    {
+      "id": "uncertainty",
+      "description": "Open competitions, unknown staff behavior or projection limits.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep uncertainty explicit and source-calibrated.",
+      "detection_questions": [
+        "What remains genuinely unresolved?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Would the team argument remain useful if one current player left the roster?",
+    "Are staff, scheme, depth chart, cap and acquisition strategy independently reusable where discussed?",
+    "Are affected players linked without fragmenting the entire segment into player-only takes?",
+    "Does the article explain how team context changes opportunity and not merely list names?"
+  ],
+  "forbidden_distortions": [
+    "Do not reduce a team preview to isolated player verdicts.",
+    "Do not infer precise player usage from generic team optimism.",
+    "Do not present cap or contract implications not stated or safely supported by the source.",
+    "Do not hide a structural team thesis inside one current player's take."
+  ],
+  "extension_signals": [
+    "A recurring team-building concept lacks a dimension.",
+    "A new unit or organizational subject type is needed.",
+    "The source repeatedly uses cap, ownership or front-office behavior in a new way.",
+    "A team episode needs a new article or segment pattern."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
