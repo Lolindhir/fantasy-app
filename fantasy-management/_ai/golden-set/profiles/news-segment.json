@@ -1,0 +1,203 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "news-segment",
+  "version": 1,
+  "title": "Fantasy-Relevant News Segment",
+  "description": "Preserves the event, the source's interpretation, affected entities, uncertainty and short- versus long-term implications.",
+  "scope": {
+    "subject_types": [
+      "player",
+      "team",
+      "head_coach",
+      "coordinator",
+      "coaching_staff",
+      "contract",
+      "injury",
+      "trade",
+      "free_agency",
+      "front_office"
+    ],
+    "segment_types": [
+      "news",
+      "injury_news",
+      "contract_news",
+      "trade_news",
+      "coach_news"
+    ],
+    "take_types": [
+      "news_subject",
+      "news_interpretation",
+      "injury_thesis",
+      "contract_thesis",
+      "transaction_thesis"
+    ]
+  },
+  "principles": [
+    "Separate the reported event from the hosts' fantasy interpretation.",
+    "Preserve uncertainty and source confidence.",
+    "A short news item may remain short; a long debate must retain its reasoning.",
+    "Keep all substantive news segments, even when they are outside the headline topic."
+  ],
+  "dimensions": [
+    {
+      "id": "event",
+      "description": "The news event or reported change.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "State what happened in source-supported terms.",
+      "detection_questions": [
+        "What is the event?",
+        "Is it confirmed, reported or speculative?"
+      ]
+    },
+    {
+      "id": "source_interpretation",
+      "description": "How the hosts interpret the event.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the source's conclusion and reasoning separately from the event.",
+      "detection_questions": [
+        "Why do the hosts think it matters or not?"
+      ]
+    },
+    {
+      "id": "immediate_effect",
+      "description": "Near-term role, availability or market impact.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain immediate effects and conditions.",
+      "detection_questions": [
+        "What changes now?"
+      ]
+    },
+    {
+      "id": "long_term_effect",
+      "description": "Dynasty or future organizational implications.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Separate long-term view from immediate reaction.",
+      "detection_questions": [
+        "What could change later?"
+      ]
+    },
+    {
+      "id": "affected_entities",
+      "description": "Players, teams, units, coaches or markets affected.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Link direct and indirect subjects with relation context.",
+      "detection_questions": [
+        "Who is affected and how?"
+      ]
+    },
+    {
+      "id": "reliability_uncertainty",
+      "description": "Confidence, coach talk, reporting quality and unresolved details.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve skepticism and missing information.",
+      "detection_questions": [
+        "How reliable is the event or interpretation?"
+      ]
+    },
+    {
+      "id": "market_reaction",
+      "description": "ADP, trade value or sentiment response.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep source price response distinct from player quality.",
+      "detection_questions": [
+        "Does the source expect overreaction or underreaction?"
+      ]
+    },
+    {
+      "id": "format_time_horizon",
+      "description": "Format and time-window differences.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve where the news matters differently by format or horizon.",
+      "detection_questions": [
+        "Is this only Redraft, Dynasty or short-term relevant?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Is the event clearly separated from the podcast's interpretation?",
+    "Are immediate and long-term effects distinguished?",
+    "Are all directly and indirectly affected entities represented?",
+    "Is uncertainty or coach-talk skepticism retained?"
+  ],
+  "forbidden_distortions": [
+    "Do not present speculative coach talk as confirmed usage.",
+    "Do not replace the source event with current outside news unless explicitly verifying.",
+    "Do not over-expand a passing news mention.",
+    "Do not omit a deep news debate because it is outside the episode title."
+  ],
+  "extension_signals": [
+    "A new news type repeatedly appears.",
+    "The source uses a new reliability or rumor framework.",
+    "A recurring event-to-market relation is missing.",
+    "A mixed-news episode would improve reference coverage."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
