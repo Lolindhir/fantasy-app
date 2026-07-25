@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-golden-profile-list.schema.json",
+  "title": "Podcast Golden Set Profile List",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_list_schema_version",
+    "profile_count",
+    "profiles"
+  ],
+  "properties": {
+    "profile_list_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "profile_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "path",
+          "version",
+          "status",
+          "summary"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^profiles/[^/]+\\.json$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "deprecated"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
