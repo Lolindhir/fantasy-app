@@ -1,0 +1,504 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-take-item.schema.json",
+  "title": "Podcast Authored Take Item",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "id",
+    "category",
+    "type",
+    "source_depth",
+    "segment_ids",
+    "primary_subject",
+    "entity",
+    "podcast_take",
+    "reasoning",
+    "risks",
+    "preserved_dimensions",
+    "golden_profiles",
+    "evidence"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "players",
+        "teams",
+        "positions",
+        "nfl",
+        "fantasy",
+        "other"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_depth": {
+      "type": "string",
+      "enum": [
+        "passing",
+        "brief",
+        "substantive",
+        "deep",
+        "structural"
+      ]
+    },
+    "segment_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "primary_subject": {
+      "$ref": "#/$defs/subject"
+    },
+    "related_subjects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "relation"
+        ],
+        "properties": {
+          "subject": {
+            "$ref": "#/$defs/subject"
+          },
+          "relation": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "raw_entity_mention": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entity": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "team": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "position": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entity_resolution": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "status",
+        "method",
+        "confidence"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "ambiguous",
+            "unresolved"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "registry",
+            "external_verification",
+            "context_inference",
+            "manual_confirmation",
+            "none"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "formats": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "podcast_take": {
+      "type": "string",
+      "minLength": 1
+    },
+    "background": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "reasoning": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "positive_case": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "negative_case": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "role_and_context": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "market_context": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "time_horizon": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "format_distinctions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "format",
+          "source_view"
+        ],
+        "properties": {
+          "format": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_view": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "host_views": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "host",
+          "view"
+        ],
+        "properties": {
+          "host": {
+            "type": "string",
+            "minLength": 1
+          },
+          "view": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stance": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target",
+          "comparison"
+        ],
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "comparison": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "preserved_dimensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "golden_profiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "sentiment": {
+      "type": "string"
+    },
+    "conviction": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/evidence"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "primary_subject": {
+            "properties": {
+              "type": {
+                "const": "player"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          }
+        },
+        "required": [
+          "primary_subject"
+        ]
+      },
+      "then": {
+        "required": [
+          "raw_entity_mention",
+          "entity_resolution",
+          "formats",
+          "sentiment",
+          "conviction",
+          "tags"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "subject": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "entity"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "player",
+            "team",
+            "position_group",
+            "head_coach",
+            "coordinator",
+            "coaching_staff",
+            "scheme",
+            "system",
+            "unit",
+            "depth_chart",
+            "front_office",
+            "contract",
+            "cap_situation",
+            "injury",
+            "nfl_draft",
+            "free_agency",
+            "trade",
+            "fantasy_format",
+            "market",
+            "strategy",
+            "league",
+            "college",
+            "other"
+          ]
+        },
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_mentions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entity_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "timestamp_start"
+      ],
+      "properties": {
+        "timestamp_start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp_end": {
+          "type": "string",
+          "minLength": 1
+        },
+        "raw_part": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quote_hint": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
