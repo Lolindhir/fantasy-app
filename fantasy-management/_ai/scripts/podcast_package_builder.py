@@ -1,11 +1,16 @@
 """Deterministic publication builder for podcast extraction work packages."""
 from __future__ import annotations
 
+import copy
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
 
+from episode_coverage_validation import validate_package as validate_coverage_package
+from episode_coverage_validation_common import Report as CoverageReport, calculate_counts, collect_takes
+from episode_package_validation import validate_episode_package
+from episode_package_validation_common import RegistryIndex, Report as PackageReport, rel
 from podcast_pipeline_types import BuildResult, CATEGORIES, PipelineDataError, WorkPackageData, write_json
 from podcast_work_validation import validate_work_package
 
@@ -17,11 +22,20 @@ def generated_episode_markdown(data: WorkPackageData) -> str:
     return "\n\n".join(chunks).rstrip() + "\n"
 
 
+def _entry_point_take(take: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(take)
+    evidence = result.get("evidence")
+    if isinstance(evidence, list):
+        result["evidence_points"] = evidence
+        result["evidence"] = evidence[0] if evidence else {"timestamp_start": "unknown"}
+    return result
+
+
 def generated_takes(data: WorkPackageData) -> dict[str, Any]:
     assert data.publish_request is not None
     categories: dict[str, list[dict[str, Any]]] = {category: [] for category in CATEGORIES}
     for take in data.takes.values():
-        categories[str(take["category"])].append(take)
+        categories[str(take["category"])].append(_entry_point_take(take))
     for category in CATEGORIES:
         categories[category].sort(key=lambda item: str(item.get("id")))
     return {
@@ -46,47 +60,11 @@ def generated_mentions(data: WorkPackageData) -> dict[str, Any]:
     }
 
 
-def mention_counts(mentions: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {
-        "total": len(mentions),
-        "resolved": 0,
-        "ambiguous": 0,
-        "unresolved": 0,
-        "ranking_subjects": 0,
-        "substantive_subjects": 0,
-        "context_only": 0,
-        "with_take_links": 0,
-        "uncovered": 0,
-    }
-    for mention in mentions:
-        status = (mention.get("entity_resolution") or {}).get("status")
-        if status == "confirmed":
-            counts["resolved"] += 1
-        elif status == "ambiguous":
-            counts["ambiguous"] += 1
-        elif status == "unresolved":
-            counts["unresolved"] += 1
-        types = set(mention.get("mention_types", []))
-        if "ranking_subject" in types:
-            counts["ranking_subjects"] += 1
-        if types & {"substantive_take", "news_subject"}:
-            counts["substantive_subjects"] += 1
-        if not types & {"ranking_subject", "substantive_take", "news_subject"}:
-            counts["context_only"] += 1
-        coverage = mention.get("coverage") or {}
-        if coverage.get("subject_take_ids") or coverage.get("context_take_ids"):
-            counts["with_take_links"] += 1
-        if coverage.get("standalone_take_required") and not coverage.get("subject_take_ids"):
-            counts["uncovered"] += 1
-        elif coverage.get("episode_md") and not coverage.get("episode_md_section"):
-            counts["uncovered"] += 1
-    return counts
-
-
 def generated_index(data: WorkPackageData, takes: dict[str, Any], mentions: dict[str, Any]) -> dict[str, Any]:
     assert data.publish_request is not None
     request = data.publish_request
-    counts = mention_counts(mentions["mentions"])
+    take_by_id, _ = collect_takes(takes)
+    counts = calculate_counts(mentions["mentions"], take_by_id)
     return {
         "package_schema_version": request["package_schema_version"],
         "episode_id": request["episode_id"],
@@ -98,14 +76,14 @@ def generated_index(data: WorkPackageData, takes: dict[str, Any], mentions: dict
         "processed_date": request.get("processed_date"),
         "language": request["language"],
         "status": "active_source_package",
-        "package_path": request["target_package_path"],
+        "package_path": request["target_package_path"].rstrip("/") + "/",
         "files": {
             "raw_manifest": "raw/manifest.md",
             "episode_summary": "episode.md",
             "takes": "takes.json",
             "mentions": "mentions.json",
         },
-        "raw_status": "complete",
+        "raw_status": "split_raw_referenced",
         "take_counts": {category: len(takes["take_categories"][category]) for category in CATEGORIES},
         "mention_counts": counts,
         "coverage_audit": {
@@ -117,6 +95,36 @@ def generated_index(data: WorkPackageData, takes: dict[str, Any], mentions: dict
         "knowledge_derivation_status": "not_started",
         "notes": ["Generated deterministically from the podcast work package."],
     }
+
+
+def _validate_generated_package(temp_dir: Path, repo_root: Path, final_index: dict[str, Any]) -> None:
+    staged_index = copy.deepcopy(final_index)
+    staged_index["package_path"] = rel(temp_dir, repo_root).rstrip("/") + "/"
+    write_json(temp_dir / "index.json", staged_index)
+
+    package_report = PackageReport()
+    validate_episode_package(
+        temp_dir,
+        repo_root,
+        repo_root / "fantasy-management/_ai/schemas/episode-takes.schema.json",
+        RegistryIndex(),
+        package_report,
+        False,
+        True,
+    )
+    coverage_report = CoverageReport()
+    validate_coverage_package(
+        temp_dir,
+        repo_root,
+        repo_root / "fantasy-management/_ai/schemas/episode-index.schema.json",
+        repo_root / "fantasy-management/_ai/schemas/episode-mentions.schema.json",
+        coverage_report,
+        True,
+    )
+    errors = [f"{issue.package}: {issue.message}" for issue in package_report.errors + coverage_report.errors]
+    if errors:
+        raise PipelineDataError("generated package failed existing validators: " + "; ".join(errors))
+    write_json(temp_dir / "index.json", final_index)
 
 
 def build_published_package(
@@ -152,6 +160,7 @@ def build_published_package(
         write_json(temp_dir / "index.json", index)
         if index["coverage_audit"]["uncovered_mentions"] != 0:
             raise PipelineDataError("generated package has uncovered required mentions")
+        _validate_generated_package(temp_dir, repo_root, index)
 
         backup_dir: Path | None = None
         if output_dir.exists():
