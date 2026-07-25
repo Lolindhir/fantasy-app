@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-publish-request.schema.json",
+  "title": "Podcast Publish Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "source_name",
+    "year",
+    "title",
+    "language",
+    "status",
+    "target_package_path",
+    "package_schema_version"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 2200
+    },
+    "episode_number": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "published_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "processed_date": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "language": {
+      "type": "string",
+      "const": "de"
+    },
+    "status": {
+      "type": "string",
+      "const": "ready_for_publish"
+    },
+    "target_package_path": {
+      "type": "string",
+      "pattern": "^fantasy-management/sources/podcasts/[^/]+/episodes/[0-9]{4}/[^/]+$"
+    },
+    "package_schema_version": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
