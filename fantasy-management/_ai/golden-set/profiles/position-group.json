@@ -1,0 +1,206 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "position-group",
+  "version": 1,
+  "title": "Position Group or Draft Class",
+  "description": "Preserves class depth, tiers, archetypes, scarcity and strategic implications for a position group.",
+  "scope": {
+    "subject_types": [
+      "position_group"
+    ],
+    "segment_types": [
+      "position_ranking",
+      "draft_class",
+      "position_preview",
+      "tier_discussion"
+    ],
+    "take_types": [
+      "position_group_evaluation",
+      "class_thesis",
+      "scarcity_thesis",
+      "tier_structure"
+    ]
+  },
+  "principles": [
+    "Preserve the group-level thesis independently of individual player profiles.",
+    "Keep talent depth, role depth, draft capital and market scarcity distinct.",
+    "Complete rankings and tiers must be represented when safely reconstructable.",
+    "Format-dependent positional value must remain explicit."
+  ],
+  "dimensions": [
+    {
+      "id": "class_depth",
+      "description": "Depth and quality distribution across the group.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve where confidence drops and why.",
+      "detection_questions": [
+        "How many clear targets or starters does the source see?"
+      ]
+    },
+    {
+      "id": "tier_structure",
+      "description": "Tiers and meaningful breaks.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain tier membership, order certainty and unclear boundaries.",
+      "detection_questions": [
+        "Where are the tier breaks?",
+        "Is order inside a tier firm?"
+      ]
+    },
+    {
+      "id": "archetypes",
+      "description": "Distinct player or role archetypes.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve archetypes and their fantasy relevance.",
+      "detection_questions": [
+        "What types of players exist in the group?"
+      ]
+    },
+    {
+      "id": "talent_vs_situation",
+      "description": "Balance between prospect quality and landing spot.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep talent and opportunity arguments separate.",
+      "detection_questions": [
+        "Is the group weak in talent, situation or both?"
+      ]
+    },
+    {
+      "id": "draft_capital",
+      "description": "NFL investment and its interpretation.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve how draft capital changes confidence.",
+      "detection_questions": [
+        "How does the source use draft capital?"
+      ]
+    },
+    {
+      "id": "role_pathways",
+      "description": "Common routes to snaps or opportunity.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain recurring role mechanisms across the group.",
+      "detection_questions": [
+        "What gets these players on the field?"
+      ]
+    },
+    {
+      "id": "scarcity_market",
+      "description": "Positional scarcity and market behavior.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain how scarcity changes draft price without equating it to talent.",
+      "detection_questions": [
+        "Are players pushed up because alternatives disappear?"
+      ]
+    },
+    {
+      "id": "format_scoring",
+      "description": "Format and scoring dependence.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve specialist value and format-specific changes.",
+      "detection_questions": [
+        "Does PPR, return scoring, TE premium or another rule change the group?"
+      ]
+    },
+    {
+      "id": "risk_profile",
+      "description": "Shared or tier-specific failure risks.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain systemic risks and uncertainty.",
+      "detection_questions": [
+        "What can cause the class or tier to disappoint?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Is the group-level conclusion preserved in addition to player takes?",
+    "Are tier breaks and ordering uncertainty clear?",
+    "Is positional scarcity distinguished from player quality?",
+    "Are shared role paths and risks represented?"
+  ],
+  "forbidden_distortions": [
+    "Do not infer a complete order when the source only provides tiers.",
+    "Do not treat market scarcity as proof of talent.",
+    "Do not omit the group thesis after producing individual player takes.",
+    "Do not flatten format-specific specialist value."
+  ],
+  "extension_signals": [
+    "A new position-specific dimension repeatedly matters.",
+    "A draft-class episode uses a structure not covered by rankings or tiers.",
+    "A scoring format creates a new group-level evaluation category.",
+    "The profile cannot represent class-level uncertainty."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
