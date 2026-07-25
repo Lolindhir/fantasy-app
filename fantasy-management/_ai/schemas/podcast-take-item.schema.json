@@ -13,6 +13,7 @@
     "type",
     "source_depth",
     "segment_ids",
+    "claim_ids",
     "primary_subject",
     "entity",
     "podcast_take",
@@ -67,6 +68,14 @@
     "segment_ids": {
       "type": "array",
       "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "claim_ids": {
+      "type": "array",
       "uniqueItems": true,
       "items": {
         "type": "string",
@@ -348,13 +357,57 @@
     "evidence": {
       "oneOf": [
         {
-          "$ref": "#/$defs/evidence"
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "timestamp_start"
+          ],
+          "properties": {
+            "timestamp_start": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timestamp_end": {
+              "type": "string",
+              "minLength": 1
+            },
+            "raw_part": {
+              "type": "string",
+              "minLength": 1
+            },
+            "quote_hint": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         },
         {
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/evidence"
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "timestamp_start"
+            ],
+            "properties": {
+              "timestamp_start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "timestamp_end": {
+                "type": "string",
+                "minLength": 1
+              },
+              "raw_part": {
+                "type": "string",
+                "minLength": 1
+              },
+              "quote_hint": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         }
       ]
@@ -472,31 +525,6 @@
             "type": "string",
             "minLength": 1
           }
-        }
-      }
-    },
-    "evidence": {
-      "type": "object",
-      "additionalProperties": true,
-      "required": [
-        "timestamp_start"
-      ],
-      "properties": {
-        "timestamp_start": {
-          "type": "string",
-          "minLength": 1
-        },
-        "timestamp_end": {
-          "type": "string",
-          "minLength": 1
-        },
-        "raw_part": {
-          "type": "string",
-          "minLength": 1
-        },
-        "quote_hint": {
-          "type": "string",
-          "minLength": 1
         }
       }
     }
