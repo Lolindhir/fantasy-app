@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-work-status.schema.json",
+  "title": "Podcast Extraction Work Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "year",
+    "phase",
+    "gates",
+    "blockers"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 2200
+    },
+    "phase": {
+      "$ref": "#/$defs/phase"
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_complete",
+        "content_map_complete",
+        "takes_complete",
+        "article_complete",
+        "mention_audit_complete",
+        "content_map_reconciled",
+        "process_review_complete",
+        "ready_for_publish"
+      ],
+      "properties": {
+        "raw_complete": {
+          "type": "boolean"
+        },
+        "content_map_complete": {
+          "type": "boolean"
+        },
+        "takes_complete": {
+          "type": "boolean"
+        },
+        "article_complete": {
+          "type": "boolean"
+        },
+        "mention_audit_complete": {
+          "type": "boolean"
+        },
+        "content_map_reconciled": {
+          "type": "boolean"
+        },
+        "process_review_complete": {
+          "type": "boolean"
+        },
+        "ready_for_publish": {
+          "type": "boolean"
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "blocking"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "related_paths": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "phase_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phase",
+          "recorded_at"
+        ],
+        "properties": {
+          "phase": {
+            "$ref": "#/$defs/phase"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "string",
+      "enum": [
+        "raw_complete",
+        "content_map_complete",
+        "takes_in_progress",
+        "article_in_progress",
+        "mention_audit_in_progress",
+        "quality_review_in_progress",
+        "ready_for_publish",
+        "published",
+        "needs_rework"
+      ]
+    }
+  }
+}
