@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-golden-profile.schema.json",
+  "title": "Podcast Golden Set Quality Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_schema_version",
+    "profile_id",
+    "version",
+    "title",
+    "description",
+    "scope",
+    "principles",
+    "dimensions",
+    "depth_expectations",
+    "review_questions",
+    "forbidden_distortions",
+    "extension_signals",
+    "change_policy"
+  ],
+  "properties": {
+    "profile_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_types",
+        "segment_types",
+        "take_types"
+      ],
+      "properties": {
+        "subject_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "player",
+              "team",
+              "position_group",
+              "head_coach",
+              "coordinator",
+              "coaching_staff",
+              "scheme",
+              "system",
+              "unit",
+              "depth_chart",
+              "front_office",
+              "contract",
+              "cap_situation",
+              "injury",
+              "nfl_draft",
+              "free_agency",
+              "trade",
+              "fantasy_format",
+              "market",
+              "strategy",
+              "league",
+              "college",
+              "other"
+            ]
+          }
+        },
+        "segment_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "take_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "principles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "required_when_source_supports",
+          "applicable_depths",
+          "preservation_expectation",
+          "detection_questions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required_when_source_supports": {
+            "type": "boolean",
+            "const": true
+          },
+          "applicable_depths": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "passing",
+                "brief",
+                "substantive",
+                "deep",
+                "structural"
+              ]
+            }
+          },
+          "preservation_expectation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "detection_questions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "depth_expectations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passing",
+        "brief",
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "properties": {
+        "passing": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "brief": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "substantive": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "deep": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "structural": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "review_questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_distortions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "extension_signals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "change_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_propose_changes",
+        "automatic_changes_allowed",
+        "approval_required"
+      ],
+      "properties": {
+        "may_propose_changes": {
+          "type": "boolean",
+          "const": true
+        },
+        "automatic_changes_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "approval_required": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  }
+}
