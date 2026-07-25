@@ -98,33 +98,38 @@ def generated_index(data: WorkPackageData, takes: dict[str, Any], mentions: dict
 
 
 def _validate_generated_package(temp_dir: Path, repo_root: Path, final_index: dict[str, Any]) -> None:
-    staged_index = copy.deepcopy(final_index)
-    staged_index["package_path"] = rel(temp_dir, repo_root).rstrip("/") + "/"
-    write_json(temp_dir / "index.json", staged_index)
+    validation_dir = Path(tempfile.mkdtemp(prefix="podcast-validate-", dir=repo_root))
+    try:
+        shutil.copytree(temp_dir, validation_dir, dirs_exist_ok=True)
+        staged_index = copy.deepcopy(final_index)
+        staged_index["package_path"] = rel(validation_dir, repo_root).rstrip("/") + "/"
+        write_json(validation_dir / "index.json", staged_index)
 
-    package_report = PackageReport()
-    validate_episode_package(
-        temp_dir,
-        repo_root,
-        repo_root / "fantasy-management/_ai/schemas/episode-takes.schema.json",
-        RegistryIndex(),
-        package_report,
-        False,
-        True,
-    )
-    coverage_report = CoverageReport()
-    validate_coverage_package(
-        temp_dir,
-        repo_root,
-        repo_root / "fantasy-management/_ai/schemas/episode-index.schema.json",
-        repo_root / "fantasy-management/_ai/schemas/episode-mentions.schema.json",
-        coverage_report,
-        True,
-    )
-    errors = [f"{issue.package}: {issue.message}" for issue in package_report.errors + coverage_report.errors]
-    if errors:
-        raise PipelineDataError("generated package failed existing validators: " + "; ".join(errors))
-    write_json(temp_dir / "index.json", final_index)
+        package_report = PackageReport()
+        validate_episode_package(
+            validation_dir,
+            repo_root,
+            repo_root / "fantasy-management/_ai/schemas/episode-takes.schema.json",
+            RegistryIndex(),
+            package_report,
+            False,
+            True,
+        )
+        coverage_report = CoverageReport()
+        validate_coverage_package(
+            validation_dir,
+            repo_root,
+            repo_root / "fantasy-management/_ai/schemas/episode-index.schema.json",
+            repo_root / "fantasy-management/_ai/schemas/episode-mentions.schema.json",
+            coverage_report,
+            True,
+        )
+        errors = [f"{issue.package}: {issue.message}" for issue in package_report.errors + coverage_report.errors]
+        if errors:
+            raise PipelineDataError("generated package failed existing validators: " + "; ".join(errors))
+    finally:
+        if validation_dir.exists():
+            shutil.rmtree(validation_dir)
 
 
 def build_published_package(
