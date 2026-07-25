@@ -1,0 +1,209 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "mock-draft",
+  "version": 1,
+  "title": "Mock Draft and Live Draft",
+  "description": "Preserves pick order, available alternatives, decision logic, team need, market behavior and format context.",
+  "scope": {
+    "subject_types": [
+      "player",
+      "team",
+      "strategy",
+      "market",
+      "fantasy_format"
+    ],
+    "segment_types": [
+      "mock_draft",
+      "live_draft",
+      "rookie_draft",
+      "bestball_draft"
+    ],
+    "take_types": [
+      "draft_pick",
+      "draft_strategy",
+      "market_observation",
+      "reach_fall"
+    ]
+  },
+  "principles": [
+    "Preserve draft order and format context before interpreting individual picks.",
+    "Record alternatives and reasoning when the source discusses them.",
+    "Distinguish source preference from observed market behavior and team need.",
+    "Do not silently stop after the headline ranking segment."
+  ],
+  "dimensions": [
+    {
+      "id": "format_context",
+      "description": "League size, quarterback settings, scoring and draft type.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve all context needed to interpret pick value.",
+      "detection_questions": [
+        "What draft format controls the board?"
+      ]
+    },
+    {
+      "id": "pick_order",
+      "description": "Complete safely reconstructable selections.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain pick number, selected subject and order.",
+      "detection_questions": [
+        "Can the draft be replayed from the extraction?"
+      ]
+    },
+    {
+      "id": "available_alternatives",
+      "description": "Options considered or passed over.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve meaningful alternatives and the reason they lost.",
+      "detection_questions": [
+        "Who else was available?"
+      ]
+    },
+    {
+      "id": "decision_logic",
+      "description": "Reason for each substantive pick.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep talent, need, scarcity, stack, price or strategy reasoning.",
+      "detection_questions": [
+        "Why was the pick made?"
+      ]
+    },
+    {
+      "id": "team_need_roster",
+      "description": "Roster construction or positional need.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain when need affects selection, but distinguish it from pure value.",
+      "detection_questions": [
+        "Did need cause a reach or break a tie?"
+      ]
+    },
+    {
+      "id": "scarcity_market",
+      "description": "Observed market pressure and positional runs.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve how scarcity changes actual draft behavior.",
+      "detection_questions": [
+        "Was a player pushed up or down by market dynamics?"
+      ]
+    },
+    {
+      "id": "reach_fall",
+      "description": "Source judgments on reaches, values and falls.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the benchmark and uncertainty.",
+      "detection_questions": [
+        "Why is a pick early or late?"
+      ]
+    },
+    {
+      "id": "host_differences",
+      "description": "Different selections or reactions.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve disagreement and alternate draft paths.",
+      "detection_questions": [
+        "Would another host choose differently?"
+      ]
+    },
+    {
+      "id": "later_round_implications",
+      "description": "What later availability teaches about strategy.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain source conclusions about waiting, positional depth and construction.",
+      "detection_questions": [
+        "What did later rounds confirm or contradict?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Are format and pick order complete enough to understand the draft?",
+    "Are alternatives and decision logic preserved for substantive choices?",
+    "Are market behavior, team need and source board separated?",
+    "Does the extraction include later-round observations and conclusions?"
+  ],
+  "forbidden_distortions": [
+    "Do not interpret picks without preserving format context.",
+    "Do not present a team-need selection as the source's universal ranking.",
+    "Do not omit later picks that materially inform strategy.",
+    "Do not invent alternatives that were never discussed."
+  ],
+  "extension_signals": [
+    "A new draft format needs additional context.",
+    "A recurring draft decision factor is missing.",
+    "The source uses auction, salary-cap or keeper mechanics not represented.",
+    "A draft segment should become a Golden Set reference."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
