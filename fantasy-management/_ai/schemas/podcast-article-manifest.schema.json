@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-article-manifest.schema.json",
+  "title": "Podcast Article Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "title",
+    "language",
+    "output_path",
+    "section_count",
+    "sections",
+    "status"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "const": "de"
+    },
+    "output_path": {
+      "type": "string",
+      "const": "episode.md"
+    },
+    "section_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "section_id",
+          "order",
+          "path",
+          "segment_ids",
+          "take_ids"
+        ],
+        "properties": {
+          "section_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^article/sections/[^/]+\\.md$"
+          },
+          "segment_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "take_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "heading_level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "complete",
+        "needs_rework"
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
