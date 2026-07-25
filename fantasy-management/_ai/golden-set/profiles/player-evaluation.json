@@ -1,0 +1,303 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "player-evaluation",
+  "version": 1,
+  "title": "Player Evaluation",
+  "description": "Preserves source-supported player history, skills, role, context, risks, market and format distinctions without turning extraction into a final roster recommendation.",
+  "scope": {
+    "subject_types": [
+      "player"
+    ],
+    "segment_types": [
+      "player_analysis",
+      "ranking",
+      "news",
+      "debate",
+      "film_review",
+      "rookie_profile"
+    ],
+    "take_types": [
+      "player_evaluation",
+      "ranking_subject",
+      "news_subject",
+      "role_thesis",
+      "market_view"
+    ]
+  },
+  "principles": [
+    "A player take may be detailed even though it is stored in one small JSON file.",
+    "Preserve every materially discussed player dimension; do not require dimensions absent from the source.",
+    "Separate long-term talent or Dynasty value from immediate role, Redraft value and market price.",
+    "Keep team, coaching, contract and cap context source-centered; player action recommendations belong to later analysis."
+  ],
+  "dimensions": [
+    {
+      "id": "background_development",
+      "description": "College, prospect, career or developmental history used by the source.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the history and explain how the source uses it in the evaluation.",
+      "detection_questions": [
+        "Does the source use college history, recruiting, prior seasons or development to support the view?"
+      ]
+    },
+    {
+      "id": "talent_traits",
+      "description": "Traits, athletic profile, technical strengths and limitations.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the relevant traits and the fantasy mechanism attached to them.",
+      "detection_questions": [
+        "Which abilities or limitations drive the source conclusion?",
+        "Are traits distinguished from situation?"
+      ]
+    },
+    {
+      "id": "production_evidence",
+      "description": "Past production, usage or efficiency evidence.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the production evidence and any warning about sample size or context.",
+      "detection_questions": [
+        "Does the source cite production, touches, targets, efficiency or splits?"
+      ]
+    },
+    {
+      "id": "positive_case",
+      "description": "Reasons the player can gain value or outperform.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the full positive case, not only a positive label.",
+      "detection_questions": [
+        "What must go right?",
+        "Which source-supported advantages create upside?"
+      ]
+    },
+    {
+      "id": "negative_case",
+      "description": "Reasons the player can underperform or lose value.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve substantive counterarguments and limitations.",
+      "detection_questions": [
+        "What argues against the player?",
+        "Which weaknesses are independent of price?"
+      ]
+    },
+    {
+      "id": "role_opportunity",
+      "description": "Expected snaps, touches, targets, assignments or depth-chart role.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve current role, plausible role changes and the mechanism connecting opportunity to fantasy value.",
+      "detection_questions": [
+        "What role does the source expect?",
+        "What event could expand or reduce it?"
+      ]
+    },
+    {
+      "id": "team_depth_chart",
+      "description": "Teammates, competition and organizational context.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep relevant competitors and explain how they affect the player rather than listing names.",
+      "detection_questions": [
+        "Who competes for work?",
+        "Does the team environment cap or support the player?"
+      ]
+    },
+    {
+      "id": "coaching_scheme",
+      "description": "Coach, coordinator, scheme or personnel-use context.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the source's coaching or scheme thesis and link the player as affected context, not as the sole owner of the take.",
+      "detection_questions": [
+        "Does staff philosophy materially affect the player?",
+        "Should a separate coach or scheme take also exist?"
+      ]
+    },
+    {
+      "id": "injury_availability",
+      "description": "Current injury, recovery, durability or availability risk.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain medical uncertainty exactly at source confidence and avoid inventing recovery certainty.",
+      "detection_questions": [
+        "Does the argument depend on health, recovery or durability?"
+      ]
+    },
+    {
+      "id": "contract_cap",
+      "description": "Contract, salary-cap, roster-control or transaction context.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve how contract or cap affects security, competition, trade likelihood or timing.",
+      "detection_questions": [
+        "Does contract structure change the player's role or mobility?"
+      ]
+    },
+    {
+      "id": "time_horizon",
+      "description": "Short-, medium- and long-term distinctions.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Separate immediate season value from multi-year Dynasty value when the source does.",
+      "detection_questions": [
+        "Is the source view different now, later in the season or over multiple years?"
+      ]
+    },
+    {
+      "id": "format_scoring",
+      "description": "Dynasty, Redraft, Bestball, PPR, return-yard or other format distinctions.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve each source-supported split and do not collapse them into one verdict.",
+      "detection_questions": [
+        "Does the evaluation change by format or scoring?"
+      ]
+    },
+    {
+      "id": "market_price",
+      "description": "ADP, rookie pick range, trade cost or market sentiment.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve price sensitivity and distinguish player quality from value at cost.",
+      "detection_questions": [
+        "At what price does the source buy, avoid or reconsider?",
+        "Is the player better than the market or merely good?"
+      ]
+    },
+    {
+      "id": "comparisons",
+      "description": "Direct comparisons, tiers or preferred alternatives.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the comparison and the reason for the preference.",
+      "detection_questions": [
+        "Who is compared directly?",
+        "What criterion breaks the tie?"
+      ]
+    },
+    {
+      "id": "host_views_uncertainty",
+      "description": "Host disagreement, confidence and unresolved questions.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve differing views and uncertainty without forcing consensus.",
+      "detection_questions": [
+        "Do hosts disagree?",
+        "What remains unknown or conditional?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Could a reader reconstruct why the source likes or dislikes the player without opening the transcript?",
+    "Are background, positive case, negative case, risk, role and price preserved when discussed?",
+    "Are Dynasty, Redraft and other format distinctions kept separate?",
+    "Has a team, coach or scheme thesis been inappropriately buried only inside this player take?",
+    "Does the take stop at a verdict where the source supplied a multi-step argument?"
+  ],
+  "forbidden_distortions": [
+    "Do not turn a source evaluation into a Mighty Giants buy, sell, cut or trade recommendation.",
+    "Do not treat opportunity as guaranteed production.",
+    "Do not collapse talent, situation and price into one undifferentiated sentiment.",
+    "Do not omit negative evidence merely because the final source verdict is positive.",
+    "Do not invent missing college, contract, injury or role details."
+  ],
+  "extension_signals": [
+    "A recurring player factor appears that is not represented by an existing dimension.",
+    "A new fantasy format repeatedly changes player conclusions.",
+    "The source uses a new kind of evidence or player-development framework.",
+    "The episode exposes a player-context relationship that should become a reusable relation type."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
