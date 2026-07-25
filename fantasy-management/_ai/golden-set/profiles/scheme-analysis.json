@@ -1,0 +1,196 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "scheme-analysis",
+  "version": 1,
+  "title": "Scheme Analysis",
+  "description": "Preserves how an offensive or defensive system works, what personnel it requires and how it changes fantasy-relevant roles.",
+  "scope": {
+    "subject_types": [
+      "scheme",
+      "system",
+      "unit",
+      "position_group"
+    ],
+    "segment_types": [
+      "scheme_discussion",
+      "team_preview",
+      "film_review",
+      "coaching_change"
+    ],
+    "take_types": [
+      "scheme_thesis",
+      "system_fit",
+      "role_mechanism",
+      "unit_thesis"
+    ]
+  },
+  "principles": [
+    "Describe the mechanism, not only a scheme label.",
+    "Separate scheme from coach identity when the source does.",
+    "Link affected roles and players without reducing the scheme take to one player.",
+    "Preserve fit, misfit, transition and uncertainty."
+  ],
+  "dimensions": [
+    {
+      "id": "scheme_identity",
+      "description": "Named or described system, concepts and structural characteristics.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the defining concepts in source-supported language.",
+      "detection_questions": [
+        "What does the scheme actually do?",
+        "Is the label explained?"
+      ]
+    },
+    {
+      "id": "mechanism",
+      "description": "How the scheme creates or removes opportunities.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain the causal path to snaps, touches, targets, efficiency or scoring.",
+      "detection_questions": [
+        "What mechanism matters for fantasy outcomes?"
+      ]
+    },
+    {
+      "id": "personnel_requirements",
+      "description": "Archetypes, personnel groups and role requirements.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the traits and roles the system needs.",
+      "detection_questions": [
+        "Which player types fit or struggle?"
+      ]
+    },
+    {
+      "id": "role_distribution",
+      "description": "How responsibilities are divided within a unit.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain role specialization, concentration or rotation.",
+      "detection_questions": [
+        "How are carries, routes, targets or blocking responsibilities distributed?"
+      ]
+    },
+    {
+      "id": "volume_efficiency",
+      "description": "Expected effect on volume and efficiency.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep volume and efficiency claims separate.",
+      "detection_questions": [
+        "Does the scheme create more opportunity, better efficiency or both?"
+      ]
+    },
+    {
+      "id": "fit_misfit",
+      "description": "Source-supported entity fit and mismatch.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve why an entity fits or fails to fit.",
+      "detection_questions": [
+        "Which players or positions benefit and why?"
+      ]
+    },
+    {
+      "id": "transition_cost",
+      "description": "Installation, learning curve and continuity.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain timeline and implementation risk.",
+      "detection_questions": [
+        "Is the scheme new?",
+        "What may delay its effect?"
+      ]
+    },
+    {
+      "id": "counterconditions",
+      "description": "Situations where the expected effect may fail.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep limitations and alternative explanations.",
+      "detection_questions": [
+        "What roster, quarterback, line or game-state condition could break the thesis?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Does the extraction explain how the scheme works rather than naming it?",
+    "Are volume and efficiency effects distinguished?",
+    "Are affected roles and personnel requirements preserved?",
+    "Is a structural scheme take independently reusable?"
+  ],
+  "forbidden_distortions": [
+    "Do not use a scheme label as a substitute for reasoning.",
+    "Do not guarantee production from scheme fit.",
+    "Do not merge coach history and current scheme without source support.",
+    "Do not invent technical football detail absent from the source."
+  ],
+  "extension_signals": [
+    "A recurring scheme mechanism is not represented.",
+    "The source introduces a new personnel or role framework.",
+    "The existing subject types cannot express a system or unit concept.",
+    "A scheme discussion requires a new Golden Set reference."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
