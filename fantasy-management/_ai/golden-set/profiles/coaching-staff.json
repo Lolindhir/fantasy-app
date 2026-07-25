@@ -1,0 +1,215 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "coaching-staff",
+  "version": 1,
+  "title": "Coaching Staff",
+  "description": "Preserves coaching changes, historical tendencies, role philosophy and uncertainty about attribution across head coaches and coordinators.",
+  "scope": {
+    "subject_types": [
+      "head_coach",
+      "coordinator",
+      "coaching_staff"
+    ],
+    "segment_types": [
+      "coaching_change",
+      "staff_preview",
+      "team_preview",
+      "news",
+      "scheme_discussion"
+    ],
+    "take_types": [
+      "coach_evaluation",
+      "staff_thesis",
+      "usage_philosophy",
+      "coaching_news"
+    ]
+  },
+  "principles": [
+    "Distinguish head coach, coordinator and complete staff responsibilities.",
+    "Historical tendencies are evidence, not automatic guarantees in a new roster context.",
+    "Preserve independently reusable staff takes when multiple players or positions are affected.",
+    "Keep uncertainty about play-calling and attribution explicit."
+  ],
+  "dimensions": [
+    {
+      "id": "staff_identity_change",
+      "description": "Who joined, left or changed responsibility.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve role and timing of each material staff change.",
+      "detection_questions": [
+        "Who holds which role?",
+        "Who is expected to call plays?"
+      ]
+    },
+    {
+      "id": "historical_tendencies",
+      "description": "Prior pace, pass rate, personnel or positional usage.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the tendency and the context in which it occurred.",
+      "detection_questions": [
+        "What historical evidence does the source use?",
+        "Was it stable across teams or personnel?"
+      ]
+    },
+    {
+      "id": "role_usage",
+      "description": "How the staff deploys positions, committees and specialists.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain the role mechanism and affected positions.",
+      "detection_questions": [
+        "Does the staff concentrate work or rotate?",
+        "Which archetypes receive valuable usage?"
+      ]
+    },
+    {
+      "id": "personnel_grouping",
+      "description": "11, 12, 21 personnel or other grouping preferences.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve grouping implications for snaps and target availability.",
+      "detection_questions": [
+        "Which personnel packages materially affect fantasy roles?"
+      ]
+    },
+    {
+      "id": "pace_and_play_calling",
+      "description": "Tempo, pass/run balance and situational decisions.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep source-supported tendencies and uncertainty around play-calling control.",
+      "detection_questions": [
+        "Who controls pace and play selection?",
+        "How might volume change?"
+      ]
+    },
+    {
+      "id": "player_development_trust",
+      "description": "Rookie usage, veteran preference and developmental history.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the evidence and avoid treating small samples as rules.",
+      "detection_questions": [
+        "Does the staff trust rookies or specialists?",
+        "How does the source support that?"
+      ]
+    },
+    {
+      "id": "continuity_transition",
+      "description": "Installation time, continuity and change risk.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain transition costs and timeline.",
+      "detection_questions": [
+        "Is this a new system?",
+        "How quickly can roles stabilize?"
+      ]
+    },
+    {
+      "id": "affected_units_players",
+      "description": "Positions, units and players affected.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Link affected entities while keeping the coach/staff thesis independent.",
+      "detection_questions": [
+        "Who is directly affected and through what mechanism?"
+      ]
+    },
+    {
+      "id": "attribution_uncertainty",
+      "description": "Uncertainty over whether outcomes came from coach, coordinator, roster or game state.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve attribution limits.",
+      "detection_questions": [
+        "Can the source safely attribute the tendency?",
+        "Are there competing explanations?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Are coaching responsibilities and play-calling ownership accurately distinguished?",
+    "Are historical tendencies presented with context and limitations?",
+    "Can the staff take be reused for multiple affected players?",
+    "Are scheme and coaching claims separated when they are not identical?"
+  ],
+  "forbidden_distortions": [
+    "Do not attribute every historical team outcome to one coach.",
+    "Do not treat a new staff as guaranteed to repeat old usage.",
+    "Do not collapse head coach, coordinator and play caller into one identity.",
+    "Do not produce player recommendations during source extraction."
+  ],
+  "extension_signals": [
+    "A recurring coaching role or responsibility is missing.",
+    "The source introduces a new method for attributing play-calling or development.",
+    "A new staff-level relation to players or units is needed.",
+    "The profile cannot represent committee or personnel-use nuance."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
