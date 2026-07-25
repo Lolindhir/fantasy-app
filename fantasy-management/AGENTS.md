@@ -35,21 +35,22 @@ For Fantasy Management tasks, read these files as needed:
 5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
 6. `fantasy-management/_ai/PODCAST_PACKAGE_STORAGE.md` when podcast package size, splitting, aggregation or storage matters
 7. `fantasy-management/_ai/PODCAST_EXTRACTION_PIPELINE.md` for new podcast work packages, Content Maps, Golden Set evaluation, incremental commits or publication architecture
-8. `fantasy-management/_ai/golden-set/README.md` and `fantasy-management/_ai/golden-set/profile-list.json` when selecting, evaluating or extending podcast quality profiles
-9. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
-10. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
-11. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
-12. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
-13. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
-14. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
-15. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
-16. `fantasy-management/_ai/WORKFLOWS.md`
-17. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-18. relevant source files under `fantasy-management/sources/`
-19. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-20. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
-21. relevant analyses under `fantasy-management/analyses/` when such files exist
-22. relevant decisions under `fantasy-management/decisions/` when such files exist
+8. `fantasy-management/_ai/PODCAST_PIPELINE_TOOLING.md` when validating, building or publishing a pipeline work package
+9. `fantasy-management/_ai/golden-set/README.md` and `fantasy-management/_ai/golden-set/profile-list.json` when selecting, evaluating or extending podcast quality profiles
+10. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
+11. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
+12. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
+13. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
+14. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
+15. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
+16. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
+17. `fantasy-management/_ai/WORKFLOWS.md`
+18. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+19. relevant source files under `fantasy-management/sources/`
+20. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+21. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
+22. relevant analyses under `fantasy-management/analyses/` when such files exist
+23. relevant decisions under `fantasy-management/decisions/` when such files exist
 
 ## Canonical app data
 
@@ -122,6 +123,7 @@ fantasy-management/
     PODCAST_EXTRACTION_RULES.md
     PODCAST_PACKAGE_STORAGE.md
     PODCAST_EXTRACTION_PIPELINE.md
+    PODCAST_PIPELINE_TOOLING.md
     schema-list.json
     source-registry.json
     WORKFLOWS.md
@@ -149,7 +151,9 @@ fantasy-management/
       podcast-content-map-segment.schema.json
       podcast-take-item.schema.json
       podcast-article-manifest.schema.json
+      podcast-mention-segment.schema.json
       podcast-process-review.schema.json
+      podcast-publish-request.schema.json
       podcast-golden-profile.schema.json
       podcast-golden-profile-list.schema.json
   podcast-work/
@@ -207,6 +211,7 @@ fantasy-management/
 - A Content Map is a source-preservation contract for new pipeline packages; it is not Knowledge or a final recommendation.
 - Golden Set profiles evaluate extraction quality and may propose improvements, but canonical rules and profiles change only after explicit user approval.
 - `fantasy-management/_ai/golden-set/profile-list.json` is the canonical list of active Golden Set profiles. Unregistered profile files are drafts or proposals, not active extraction requirements.
+- The local podcast builder may aggregate and validate authored work-package artifacts, but it must not create new editorial interpretation.
 
 ## Language
 
