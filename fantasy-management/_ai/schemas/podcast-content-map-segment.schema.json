@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/podcast-content-map-segment.schema.json",
+  "title": "Podcast Content Map Segment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pipeline_schema_version",
+    "episode_id",
+    "source_id",
+    "segment_id",
+    "order",
+    "title",
+    "segment_type",
+    "source_depth",
+    "source_range",
+    "primary_subjects",
+    "related_subjects",
+    "substantive_claims",
+    "reasoning_obligations",
+    "expected_dimensions",
+    "golden_profiles",
+    "planned_outputs",
+    "status"
+  ],
+  "properties": {
+    "pipeline_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "segment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "segment_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_depth": {
+      "type": "string",
+      "enum": [
+        "passing",
+        "brief",
+        "substantive",
+        "deep",
+        "structural"
+      ]
+    },
+    "source_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_parts"
+      ],
+      "properties": {
+        "raw_parts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^raw/[^/]+\\.(md|txt|json)$"
+          }
+        },
+        "timestamp_start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp_end": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "primary_subjects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/subject"
+      }
+    },
+    "related_subjects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "relation"
+        ],
+        "properties": {
+          "subject": {
+            "$ref": "#/$defs/subject"
+          },
+          "relation": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "substantive_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id",
+          "claim"
+        ],
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subject_refs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uncertainties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "reasoning_obligations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "expected_dimensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "host_differences": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "golden_profiles": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "planned_outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "take_ids",
+        "take_types",
+        "article_section_ids",
+        "mention_segment_id"
+      ],
+      "properties": {
+        "take_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "take_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "article_section_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mention_segment_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mapped",
+        "takes_complete",
+        "article_complete",
+        "mention_audit_complete",
+        "reconciled"
+      ],
+      "properties": {
+        "mapped": {
+          "type": "boolean"
+        },
+        "takes_complete": {
+          "type": "boolean"
+        },
+        "article_complete": {
+          "type": "boolean"
+        },
+        "mention_audit_complete": {
+          "type": "boolean"
+        },
+        "reconciled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "subject": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "entity"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "player",
+            "team",
+            "position_group",
+            "head_coach",
+            "coordinator",
+            "coaching_staff",
+            "scheme",
+            "system",
+            "unit",
+            "depth_chart",
+            "front_office",
+            "contract",
+            "cap_situation",
+            "injury",
+            "nfl_draft",
+            "free_agency",
+            "trade",
+            "fantasy_format",
+            "market",
+            "strategy",
+            "league",
+            "college",
+            "other"
+          ]
+        },
+        "entity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw_mentions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "entity_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
