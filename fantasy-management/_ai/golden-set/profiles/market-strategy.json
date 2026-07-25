@@ -1,0 +1,212 @@
+{
+  "profile_schema_version": 1,
+  "profile_id": "market-strategy",
+  "version": 1,
+  "title": "Fantasy Market and Strategy",
+  "description": "Preserves source strategy, price sensitivity, timing, roster conditions and format dependence without converting it into a final Mighty Giants action.",
+  "scope": {
+    "subject_types": [
+      "strategy",
+      "market",
+      "fantasy_format",
+      "player",
+      "position_group"
+    ],
+    "segment_types": [
+      "strategy",
+      "market_discussion",
+      "trade_strategy",
+      "draft_strategy",
+      "waiver_strategy"
+    ],
+    "take_types": [
+      "strategy_thesis",
+      "market_view",
+      "buy_sell_hold_language",
+      "draft_strategy",
+      "waiver_strategy"
+    ]
+  },
+  "principles": [
+    "Preserve the source strategy and its preconditions.",
+    "Distinguish player evaluation from market value and action language.",
+    "Keep timing, liquidity, roster construction and format dependence.",
+    "Final Mighty Giants decisions require later league-specific analysis."
+  ],
+  "dimensions": [
+    {
+      "id": "market_context",
+      "description": "Current market state, sentiment or positional environment.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the market condition that makes the strategy relevant.",
+      "detection_questions": [
+        "What market inefficiency or behavior is described?"
+      ]
+    },
+    {
+      "id": "price_threshold",
+      "description": "ADP, trade cost, pick range or waiver cost.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain price sensitivity and thresholds.",
+      "detection_questions": [
+        "At what cost does the source action change?"
+      ]
+    },
+    {
+      "id": "action_language",
+      "description": "Buy, sell, hold, fade, stash, watch or trade-chip language.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve exact source intent and strength without turning it into a user recommendation.",
+      "detection_questions": [
+        "What action label does the source use?",
+        "How strong is it?"
+      ]
+    },
+    {
+      "id": "timing",
+      "description": "When to act and what event changes timing.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain timing windows and triggers.",
+      "detection_questions": [
+        "Is the strategy preseason, in-season, before news or after injury?"
+      ]
+    },
+    {
+      "id": "roster_conditions",
+      "description": "Team construction, contender status, handcuff ownership or need.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the conditions under which the strategy applies.",
+      "detection_questions": [
+        "Who should use this strategy and why?"
+      ]
+    },
+    {
+      "id": "format_scoring",
+      "description": "League and scoring dependence.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep format-specific strategy separate.",
+      "detection_questions": [
+        "Does league size, QB/TE setup, PPR or return scoring change the action?"
+      ]
+    },
+    {
+      "id": "liquidity_tradeability",
+      "description": "How easily the asset can be moved and to whom.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain counterparties and trade-chip logic.",
+      "detection_questions": [
+        "Is value concentrated with a specific manager or roster type?"
+      ]
+    },
+    {
+      "id": "alternatives_opportunity_cost",
+      "description": "Alternative players, positions or strategies.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve what the source prefers instead and why.",
+      "detection_questions": [
+        "What is the opportunity cost?"
+      ]
+    },
+    {
+      "id": "risk_failure_path",
+      "description": "How the strategy can fail.",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain downside, uncertainty and invalidating events.",
+      "detection_questions": [
+        "What could make the strategy wrong?"
+      ]
+    }
+  ],
+  "depth_expectations": {
+    "passing": [
+      "Preserve the reference only where it is needed to understand another argument.",
+      "Do not create an artificial standalone evaluation."
+    ],
+    "brief": [
+      "Preserve the conclusion and its immediate qualifier or condition.",
+      "Do not expand beyond what the source supports."
+    ],
+    "substantive": [
+      "Preserve the conclusion plus the meaningful reason, condition, risk or uncertainty supplied by the source.",
+      "Keep format, price or time-horizon distinctions when they materially change the view."
+    ],
+    "deep": [
+      "Preserve the complete major reasoning chain rather than only the final verdict.",
+      "Represent every materially discussed dimension, including competing positive and negative cases.",
+      "Keep disagreements, uncertainty, conditions and failure paths."
+    ],
+    "structural": [
+      "Preserve the broad thesis, its mechanism, its scope and the subjects it affects.",
+      "Keep exceptions, limitations and uncertainty.",
+      "Create independently reusable context takes rather than burying the thesis inside one player."
+    ]
+  },
+  "review_questions": [
+    "Is the source action tied to a price, timing and condition?",
+    "Is market value distinguished from player quality?",
+    "Are format and roster dependencies retained?",
+    "Has the extraction avoided converting source strategy into a final Mighty Giants recommendation?"
+  ],
+  "forbidden_distortions": [
+    "Do not omit price and present a conditional buy as an unconditional buy.",
+    "Do not turn market commentary into objective player truth.",
+    "Do not apply the strategy to Robert's roster during source extraction.",
+    "Do not remove timing or counterpart conditions."
+  ],
+  "extension_signals": [
+    "A new market action or timing framework appears.",
+    "A salary, auction or contract-league mechanic needs its own profile.",
+    "A recurring liquidity or counterparty concept is missing.",
+    "The source introduces a new strategy segment type."
+  ],
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  }
+}
