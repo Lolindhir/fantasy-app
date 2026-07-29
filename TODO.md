@@ -118,6 +118,105 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Kontext: AI-Kontext-Dokumentation soll ausschließlich unter `.ai-context` liegen.
   - Ziel: Doppelte oder auseinanderlaufende Dokumentation vermeiden.
 
+### Fantasy Operations / Architektur und Planung
+
+- [ ] Jobtypen für Monitoring, Workflows und Auswertungen verbindlich voneinander abgrenzen.
+  - Monitoring beobachtet Zustände und erzeugt nur bei materiellen Änderungen Ereignisse.
+  - Workflows erzeugen wiederholbar berechenbare Entscheidungsgrundlagen oder Aktionslisten.
+  - Auswertungen interpretieren abgeschlossene Zeiträume, Spiele, Drafts oder Transaktionen.
+  - Ziel: Für jeden Typ passende Trigger, State-, Output- und Benachrichtigungsregeln definieren, ohne die vollständige Logik in den externen Task-Prompt zu verlagern.
+
+- [ ] Ausbau der Fantasy Operations priorisieren und in umsetzbare Stufen schneiden.
+  - Für jeden Kandidaten festlegen: Zweck, Zielobjekte, Datenquellen, Trigger, Materialität, Output, Benachrichtigung und Write Scope.
+  - Leitplanke: Neue Jobs zunächst deaktiviert anlegen und erst nach Baseline, Testlauf und kontrolliertem Schreibtest aktivieren.
+
+### Fantasy Operations / Monitoring
+
+- [ ] Monitoring für den vollständigen Kader des verwalteten Teams aufbauen.
+  - Beobachten: Verletzungen und Status, NFL-Transaktionen, Rollen- und Depth-Chart-Veränderungen, Snaps und Usage, Konkurrenzsituation, Marktwerte, Rankings und ADP.
+  - Ziel: Nur Veränderungen melden, die Hold-, Shop-, Cut-, Stash-, Lineup- oder Handcuff-Entscheidungen beeinflussen können.
+
+- [ ] Monitoring für die Kader aller gegnerischen Fantasy-Teams aufbauen.
+  - Beobachten: zentrale Verletzungen, Rollenaufstiege und -verluste, Marktbewegungen, Roster-Lücken, Überbesetzung, alters- oder fensterbedingte Risiken und entstehende Trade-Chancen.
+  - Ziel: Keine allgemeine News-Flut, sondern nur für Liga- und Trade-Entscheidungen relevante Veränderungen.
+
+- [ ] Monitoring für alle relevanten Fantasy Free Agents aufbauen.
+  - Ownership weiterhin ausschließlich aus `League.json` über `Roster`, `Reserve` und `Taxi` bestimmen.
+  - Beobachten: neue Chancen durch Verletzungen oder Transaktionen, Usage-Sprünge, Rollenwechsel, Markt- und Rankinganstiege sowie auffällige Add-/Drop-Trends.
+  - Ziel: Neue oder deutlich aufgewertete Kandidaten automatisch zur Prüfung beziehungsweise zum Free-Agent-Board zuführen.
+
+- [ ] Monitoring auf NFL-Team-, Backfield- und Positionsgruppenebene ergänzen.
+  - Kontext: Eine Verletzung, Verpflichtung, Entlassung oder Depth-Chart-Verschiebung kann mehrere Spieler gleichzeitig verändern.
+  - Ziel: Gemeinsame Ursachen einmal erkennen und anschließend alle betroffenen Spielerprofile gezielt neu bewerten.
+
+- [ ] Ligaweite Transaktions- und Ownership-Veränderungen überwachen.
+  - Beobachten: Adds, Drops, Trades, Taxi-/Reserve-Bewegungen und Veränderungen des Draftkapitals.
+  - Ziel: Auswirkungen auf Free-Agent-Verfügbarkeit, Positionsknappheit, Gegnerprofile und potenzielle Trade-Partner ableiten.
+
+### Fantasy Operations / Workflows
+
+- [ ] Wöchentliche Roster-Prüfung für das verwaltete Team entwickeln.
+  - Prüfen: Rollen, Verletzungen, Usage, Marktwert, Alter, Salary/Projected Salary, Cap-Risiko, Roster-Funktion und Ersatzniveau.
+  - Output: aktualisierte Kategorien und konkrete Aktionsliste für Hold, Shop, Package, Stash, Cut und Beobachtung.
+
+- [ ] Wöchentlichen Liga- und Gegner-Roster-Scan entwickeln.
+  - Prüfen: Teamstärken, Schwächen, Positionsüberschüsse, Bedarf, Contender-/Rebuild-Fenster, Cap- und Draftkapital.
+  - Output: priorisierte Trade-Partner, angreifbare Roster-Lücken und relevante Konkurrenzveränderungen.
+
+- [ ] Free-Agent-Board regelmäßig vollständig neu aufbauen und klassifizieren.
+  - Kandidaten vollständig aus den aktuellen unowned Spielern ableiten und nach Position, Rolle, kurzfristiger Nutzbarkeit, Upside, Marktwert, Salary und Ligaformat bewerten.
+  - Output: Tiers, Draft-/Waiver-Priorität, früheste vertretbare Runde und klare Kategorien wie Soforthilfe, Handcuff, Upside-Stash oder Watchlist.
+
+- [ ] Ereignisgesteuerte Neubewertung nach materiellen Monitoring-Events entwickeln.
+  - Beispiel: Eine Verletzung oder Rollenänderung stößt nur die betroffenen Roster-, Free-Agent-, Trade- und Board-Bausteine erneut an.
+  - Ziel: Monitoring nicht nur melden lassen, sondern relevante Folgeprozesse gezielt und idempotent auslösen.
+
+- [ ] Wiederkehrenden Trade-Chancen-Workflow entwickeln.
+  - Eingaben: eigene Shop-/Package-Kandidaten, gegnerischer Bedarf, Marktwerte, Owner-Profile, Draftkapital und jüngste Transaktionen.
+  - Output: realistische Trade-Ideen, sinnvolle Partner, Preisgrenzen und Verhandlungsansatz; keine automatischen Angebote oder Transaktionen.
+
+- [ ] Phasenabhängigen Draft-Vorbereitungsworkflow entwickeln.
+  - Vor Rookie- und Free-Agent-Drafts Boards, Team Needs, verfügbares Kapital, Tier Breaks, Positionsknappheit und Trade-up/-down-Szenarien aktualisieren.
+  - Ziel: kurz vor einem Draft eine aktuelle, ligaangepasste Entscheidungsgrundlage statt eines dauerhaft statischen Boards erzeugen.
+
+- [ ] Cap-, Cut- und Deadline-Workflow entwickeln.
+  - Vor relevanten Fristen Salary, Projected Salary, Cap Space, Cut-/Trade-Kandidaten und Ersatzoptionen prüfen.
+  - Output: priorisierte Maßnahmen mit Frist, Auswirkung und Alternativen.
+
+- [ ] In-Season-Lineup- und Start/Sit-Workflow prüfen.
+  - Nur während der Saison aktuelle Matchups, Verletzungen, Rollen, erwartete Usage und Ligaformat einbeziehen.
+  - Leitplanke: Offseason-Starter aus `League.json` nicht als Qualitäts- oder Rollenwahrheit behandeln.
+
+### Fantasy Operations / Auswertungen
+
+- [ ] Wöchentliches Spieltagsreview für das verwaltete Team entwickeln.
+  - Auswerten: Ergebnis, tatsächliche gegen optimale Aufstellung, liegengelassene Punkte, Start/Sit-Entscheidungen, Spielerentwicklung, Verletzungen und unmittelbare Folgemaßnahmen.
+  - Ziel: Ergebnisglück von Prozessqualität trennen und konkrete Verbesserungen für die Folgewoche ableiten.
+
+- [ ] Wöchentliches ligaweites Spieltagsreview entwickeln.
+  - Auswerten: alle Matchups, höchste und niedrigste Scores, Effizienz, Formtrends, Power Shifts, Standings- und Playoff-Auswirkungen.
+  - Ziel: Veränderungen der echten Konkurrenzlage und neue Trade- oder Roster-Chancen erkennen.
+
+- [ ] Wöchentliche Player-Usage-Auswertung entwickeln.
+  - Snaps, Routes, Targets, Carries, High-Value-Usage und Fantasy-Punkte gegenüberstellen.
+  - Ziel: nachhaltige Rollenveränderungen von punktgetriebenem Zufall sowie Buy-Low-/Sell-High-Signale unterscheiden.
+
+- [ ] Wöchentliches Review der Ligaaktivität entwickeln.
+  - Adds, Drops, Trades, Pick-Bewegungen und relevante Ownership-Veränderungen zusammenfassen und bewerten.
+  - Ziel: Marktverhalten der Liga, veränderte Teamstrategien und verpasste beziehungsweise neue Chancen sichtbar machen.
+
+- [ ] Monatliches beziehungsweise phasenbezogenes Strategiereview entwickeln.
+  - Prüfen: Contender-Fenster, Rosterqualität, Altersstruktur, Positionsrisiken, Cap, Draftkapital, Marktwertentwicklung und Liquidität.
+  - Output: aktualisierte Saisonstrategie und priorisierte nächste Entscheidungen.
+
+- [ ] Draft-Review nach jedem Rookie- und Free-Agent-Draft entwickeln.
+  - Auswerten: eigener Prozess, Board-Abweichungen, Value, Positionsfit, Trades, verpasste Optionen und neue Rosterstruktur.
+  - Später zusätzlich mittel- und langfristige Ergebnisbewertung der Picks vorsehen.
+
+- [ ] Saisonabschlussreview entwickeln.
+  - Auswerten: Teamleistung, Entscheidungen, Trades, Drafts, Free-Agent-Aktionen, Lineup-Prozess, Cap-Management und wichtigste Fehlannahmen.
+  - Ziel: wiederverwendbare Erkenntnisse und konkrete Regel- oder Quellenverbesserungen für die nächste Saison ableiten.
+
 ### Später / Ideen
 
 - [ ] Draft-Kapital-Score und Pick-Werte für Draft-Assets prüfen.
