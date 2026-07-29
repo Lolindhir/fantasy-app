@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "entity-observation",
   "title": "Generische Entitätsbeobachtung",
-  "enabled": false,
+  "enabled": true,
   "category": "monitoring",
   "description": "Löst konfigurierte Target Sets auf, bewertet ihre Observation Profiles und erzeugt nur bei materiellen Zustandsänderungen ein Ereignis.",
   "trigger": {
@@ -61,6 +61,11 @@
     {
       "kind": "workflow",
       "path": "fantasy-management/automation/workflows/source-binding-resolution.md",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/atomic-publication.md",
       "required": true
     }
   ],

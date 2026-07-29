@@ -2,7 +2,7 @@
 
 Purpose: apply reusable observation profiles to configurable entities without coupling the runner to players, one watchlist or one franchise display name.
 
-The job remains disabled until a manual read-only run has established that target resolution, research, criteria evaluation and output proposals behave correctly.
+The first manual baseline and the controlled atomic-write test have been completed. The job is eligible for production execution when both `runner-config.json` and the job definition are enabled.
 
 ## Inputs
 
@@ -64,13 +64,14 @@ For each target/profile pair:
 1. Read the profile signals and source policy.
 2. Resolve current league context from repository data.
 3. Fetch fresh external evidence when required.
-4. Prefer primary or authoritative sources.
-5. Record source type, publisher, observed time and supported signals.
-6. Deduplicate syndicated reports and articles that originate from the same source.
-7. Separate direct facts from reporter interpretation and model inference.
-8. Preserve source conflicts rather than silently reconciling them.
-9. Fail the profile check when mandatory source confidence cannot be met.
-10. Keep the previous good material state when the current evidence is incomplete.
+4. Resolve configured source bindings before using alternative sources.
+5. Prefer primary or authoritative sources for qualitative role evidence.
+6. Record source type, publisher, observed time and supported signals.
+7. Deduplicate syndicated reports and articles that originate from the same source.
+8. Separate direct facts from reporter interpretation and model inference.
+9. Preserve source conflicts rather than silently reconciling them.
+10. Fail the profile check when mandatory source confidence cannot be met.
+11. Keep the previous good material state when current evidence is incomplete.
 
 ## 5. Normalize signals
 
@@ -83,7 +84,7 @@ Do not include:
 - source URLs in the material-state hash;
 - speculative values not supported by evidence.
 
-The normalized material state contains only fields listed in the profile's `output_fields` plus any explicitly approved structured support fields.
+The normalized material state contains only fields listed in the profile's `output_fields` plus explicitly approved structured support fields.
 
 ## 6. Evaluate criteria
 
@@ -157,14 +158,17 @@ fantasy-management/analyses/{season}/observation-events/
 
 The JSON must validate against `automation-observation-event.schema.json`.
 
+Publication must follow `atomic-publication.md`. State, JSON event and Markdown event are one atomic material-change bundle.
+
 Notify only when:
 
 - the job notification rule permits it;
 - severity meets the threshold;
 - the event is not a duplicate;
-- the baseline policy permits it.
+- the baseline policy permits it;
+- the atomic repository publication succeeded.
 
-No-change runs produce no analysis file and no notification.
+No-change runs produce no analysis file, no state heartbeat, no commit and no notification.
 
 ## 10. State update
 
@@ -177,6 +181,8 @@ When write mode is enabled:
 - record bounded operational events;
 - never alter jobs, profiles or target sets.
 
+For material events, the State update must be committed atomically with both event files. A status or changed-error-state write may update only the State when the global state policy permits it.
+
 ## Player role-opportunity module
 
 For `player` entities using `role-opportunity`:
@@ -186,6 +192,7 @@ For `player` entities using `role-opportunity`:
 - inspect official or clearly labeled unofficial depth charts;
 - use established beat reporters for practice roles;
 - prefer repeated first-team usage over isolated clips;
+- use `role.first_team_usage_class` when percentages are unavailable;
 - inspect snaps, routes, touches and high-value usage when games exist;
 - account for competition changes;
 - distinguish coach praise from actual role evidence;
@@ -195,22 +202,25 @@ For `player` entities using `role-opportunity`:
 
 For entities using `market-movement`:
 
+- resolve every configured source binding through `source-binding-resolution.md`;
 - use current dated ranking and market snapshots;
 - keep independent sources independent;
+- do not substitute an unconfigured provider silently;
 - do not average incompatible source formats blindly;
 - translate market changes into the actual league format;
 - require profile thresholds or a documented tier change;
 - distinguish role-driven movement from noise;
 - record disagreement when sources move in opposite directions.
 
-## Initial manual test
+## Production readiness
 
-The first test should:
+Production execution requires all of the following:
 
-1. run in `read_only`;
-2. resolve `player-role-watch`;
-3. evaluate Tank Bigsby with both profiles;
-4. propose a baseline state;
-5. produce no material-change notification unless configuration explicitly says otherwise;
-6. report every source and unresolved conflict;
-7. leave the repository unchanged.
+1. a stored initial baseline for every active target/profile pair;
+2. successful deterministic source-binding resolution;
+3. a successful controlled atomic-write test;
+4. `runner-config.json` in `write_enabled`;
+5. the job definition enabled;
+6. an external scheduled task or runner wakeup.
+
+The repository controls job eligibility and writes. The external task only wakes the runner.
