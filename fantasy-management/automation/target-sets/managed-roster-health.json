@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "managed-roster-health",
   "title": "Managed Roster Health",
-  "description": "Löst den vollständigen aktuellen Kader des verwalteten Teams dynamisch auf und beobachtet Verletzung, Rolle sowie Marktbewegung jedes Spielers.",
+  "description": "Löst den vollständigen aktuellen Kader des verwalteten Teams dynamisch auf und beobachtet Verletzung, Rolle, Dynasty-Marktbewegung sowie Redraft-ADP jedes Spielers.",
   "enabled": true,
   "mode": "dynamic",
   "defaults": {
@@ -43,6 +43,11 @@
         },
         {
           "profile_ref": "market-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "redraft-adp-movement",
           "enabled": true,
           "criteria_overrides": {}
         }
@@ -96,13 +101,22 @@
           {
             "when_classification": "market_disagreement_change",
             "action": "Quellenkonflikt prüfen und Konfidenz der aktuellen Empfehlung neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_change",
+            "action": "Kurzfristigen Draftpreis mit Rolle, Verletzung und Dynasty-Marktwert abgleichen und Win-Now-, Shop- oder Package-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_entry",
+            "action": "Neu entstandene Redraft-Relevanz auf belastbare Rollen- oder News-Signale prüfen und Roster-Funktion neu bewerten."
           }
         ]
       },
       "tags": [
         "managed-roster",
         "player-monitoring",
-        "dynamic-selector"
+        "dynamic-selector",
+        "redraft-adp"
       ]
     }
   ]
