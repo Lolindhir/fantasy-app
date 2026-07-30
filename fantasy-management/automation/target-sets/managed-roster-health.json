@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "id": "managed-roster-health",
+  "title": "Managed Roster Health",
+  "description": "Löst den vollständigen aktuellen Kader des verwalteten Teams dynamisch auf und beobachtet Verletzung, Rolle sowie Marktbewegung jedes Spielers.",
+  "enabled": true,
+  "mode": "dynamic",
+  "defaults": {
+    "profile_bindings": [],
+    "priority": "high",
+    "notify_on_initial_baseline": false
+  },
+  "manual_targets": [],
+  "selectors": [
+    {
+      "id": "managed-team-roster-players",
+      "enabled": true,
+      "selector_type": "managed_team_roster_players",
+      "entity_type": "player",
+      "parameters": {
+        "team_ref": "managed_team",
+        "membership_fields": [
+          "Roster",
+          "Reserve",
+          "Taxi"
+        ],
+        "player_index_path": "public/data/chat/players-relevant/index.json",
+        "stable_identifier": "sleeper_id",
+        "target_id_template": "managed-roster-player-{sleeper_id}",
+        "deduplicate_player_ids": true,
+        "retain_state_when_unselected": true
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "injury-status",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "role-opportunity",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "market-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "high",
+      "decision_context_template": {
+        "perspective": "managed_team",
+        "relevance": "Aktueller Spieler des verwalteten Teams; Veränderungen können Roster-, Lineup-, Hold-, Shop-, Cut-, Stash-, Package- oder Handcuff-Entscheidungen beeinflussen.",
+        "current_position": "Aktuelle Empfehlung aus dem letzten guten Material-State beibehalten, bis belastbare neue Evidenz eine Änderung rechtfertigt.",
+        "effect_rules": [
+          {
+            "when_classification": "injury_status_change",
+            "action": "Roster-, Lineup- und Ersatzbedarf neu bewerten."
+          },
+          {
+            "when_classification": "roster_availability_change",
+            "action": "Kurz- und mittelfristige Verfügbarkeit sowie Ersatz- oder IR-Plan neu bewerten."
+          },
+          {
+            "when_classification": "return_timeline_change",
+            "action": "Erwarteten Einsatzzeitpunkt und Roster-Funktion neu bewerten."
+          },
+          {
+            "when_classification": "role_change",
+            "action": "Roster-Kategorie und Hold-, Shop- oder Package-Empfehlung neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Lineup-, Stash- und Trade-Relevanz anhand der neuen Opportunity neu bewerten."
+          },
+          {
+            "when_classification": "high_value_usage_change",
+            "action": "Startbarkeit und kurzfristigen Wert neu bewerten."
+          },
+          {
+            "when_classification": "competition_change",
+            "action": "Rollenrisiko, Handcuff-Wert und Ersatzniveau neu bewerten."
+          },
+          {
+            "when_classification": "ranking_change",
+            "action": "Hold-, Shop- und Package-Position gegen den neuen Konsens prüfen."
+          },
+          {
+            "when_classification": "position_ranking_change",
+            "action": "Positionswert im Ligaformat neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Trade- und Liquiditätsstrategie gegen das neue Markt-Tier prüfen."
+          },
+          {
+            "when_classification": "market_disagreement_change",
+            "action": "Quellenkonflikt prüfen und Konfidenz der aktuellen Empfehlung neu bewerten."
+          }
+        ]
+      },
+      "tags": [
+        "managed-roster",
+        "player-monitoring",
+        "dynamic-selector"
+      ]
+    }
+  ]
+}
