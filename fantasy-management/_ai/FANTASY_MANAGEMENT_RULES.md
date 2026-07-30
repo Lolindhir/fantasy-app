@@ -39,7 +39,11 @@ Always re-check current sources when relevant: roster, reserve and taxi, draft p
 
 Stored analyses are historical context, not current truth.
 
-Internal league data can be incomplete, stale, generated, or misleading for current player evaluation. Treat internal values as league-specific evidence, not as a final conclusion.
+Treat the canonical repository league data as current by default. An older value in `Timestamps.json`, an older commit or modification date, or the absence of a recent regeneration is not evidence that the league state is stale; unchanged league state legitimately retains older timestamps.
+
+Do not warn about stale or inconsistent league data based on timestamps alone. Question repository currency only when concrete content conflicts across canonical files, required data is missing, a generation process reports failure, or the user states that the repo has not yet incorporated a known change. When such evidence exists, identify the exact conflict instead of inferring staleness from age.
+
+Internal league data is the current league source of truth by default, but it can still be incomplete, generated, or misleading for current player evaluation. Treat internal values as league-specific evidence, not as a final conclusion about player quality or future role.
 
 Assumptions based on league data require a plausibility check against current external sources when they affect a recommendation. External claims require the reverse check against current league data before applying them to Mighty Giants.
 
@@ -278,7 +282,7 @@ When giving player, trade or roster recommendations, separate where useful:
 - age
 - salary as cap factor
 - league-format fit
-- gaps, stale values or unclear fields
+- gaps, concrete content conflicts or unclear fields
 
 ### External sources say
 
@@ -365,6 +369,7 @@ Do not:
 - read draft-pick keys as true pick position without `Drafts.json`
 - confuse `OriginalOwnerRosterID` with current pick ownership
 - present old chat values as current data
+- infer stale league data from timestamps, commit age or an unchanged generation date alone
 - ignore league format
 - ignore 6-team replacement level
 - evaluate players by name only
