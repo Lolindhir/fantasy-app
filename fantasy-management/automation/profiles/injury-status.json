@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "id": "injury-status",
+  "title": "Verletzungs- und Verfügbarkeitsstatus",
+  "description": "Beobachtet belastbare Änderungen bei Verletzungsdesignation, Roster-/Reserve-Status, Trainingsbeteiligung und erwarteter Rückkehr.",
+  "applicable_entity_types": [
+    "player"
+  ],
+  "evaluator": {
+    "id": "injury-status-evaluator",
+    "type": "hybrid",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/injury-status.md"
+  },
+  "signals": [
+    {
+      "id": "injury.availability_class",
+      "description": "Normalisierte aktuelle Verfügbarkeitsklasse.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "available",
+        "limited",
+        "game_time_decision",
+        "unavailable_short_term",
+        "unavailable_long_term",
+        "suspended_or_exempt",
+        "unknown"
+      ],
+      "source_types": [
+        "current_player_data",
+        "official_team",
+        "official_league",
+        "injury_report"
+      ]
+    },
+    {
+      "id": "injury.designation",
+      "description": "Aktuelle offizielle oder verlässlich gemeldete Verletzungsdesignation.",
+      "value_type": "string",
+      "unit": null,
+      "source_types": [
+        "current_player_data",
+        "official_team",
+        "official_league",
+        "injury_report"
+      ]
+    },
+    {
+      "id": "injury.reserve_status",
+      "description": "Aktueller Active-, IR-, PUP-, NFI-, Suspended- oder Exempt-Status.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "active",
+        "injured_reserve",
+        "physically_unable_to_perform",
+        "non_football_injury",
+        "suspended",
+        "exempt",
+        "unknown"
+      ],
+      "source_types": [
+        "current_player_data",
+        "official_team",
+        "official_league",
+        "transaction_report"
+      ]
+    },
+    {
+      "id": "injury.practice_status",
+      "description": "Aktuelle Trainingsbeteiligung, sofern im Saisonkontext verfügbar.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "full",
+        "limited",
+        "did_not_participate",
+        "not_applicable",
+        "unknown"
+      ],
+      "source_types": [
+        "official_team",
+        "official_league",
+        "injury_report",
+        "practice_report"
+      ]
+    },
+    {
+      "id": "injury.body_part",
+      "description": "Betroffene Körperregion, sofern belastbar bekannt.",
+      "value_type": "string",
+      "unit": null,
+      "source_types": [
+        "current_player_data",
+        "official_team",
+        "official_league",
+        "injury_report"
+      ]
+    },
+    {
+      "id": "injury.return_timeline",
+      "description": "Strukturierte erwartete Rückkehr oder nächster belastbarer Prüfpunkt.",
+      "value_type": "object",
+      "unit": null,
+      "source_types": [
+        "official_team",
+        "official_league",
+        "injury_report",
+        "beat_reporter",
+        "derived"
+      ]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Gesamtkonfidenz der aktuellen Verletzungs- und Verfügbarkeitsbewertung.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "source_types": [
+        "derived"
+      ]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 1,
+    "allow_single_authoritative_source": true,
+    "preferred_source_types": [
+      "official_team",
+      "official_league",
+      "injury_report",
+      "transaction_report",
+      "practice_report",
+      "current_player_data",
+      "beat_reporter"
+    ]
+  },
+  "criteria": [
+    {
+      "id": "availability-class-change",
+      "description": "Die belastbare Verfügbarkeitsklasse hat sich geändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "injury.availability_class",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "injury_status_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "reserve-status-change",
+      "description": "Der offizielle Active-, IR-, PUP-, NFI-, Suspended- oder Exempt-Status hat sich geändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "injury.reserve_status",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "roster_availability_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "return-timeline-change",
+      "description": "Die erwartete Rückkehr oder der nächste belastbare Prüfpunkt hat sich entscheidungsrelevant verändert.",
+      "condition": {
+        "all": [
+          {
+            "signal": "injury.return_timeline",
+            "operator": "changed"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "return_timeline_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "practice-availability-change",
+      "description": "Eine neue Trainingsänderung macht den Spieler zu einer belastbaren Game-Time-Entscheidung.",
+      "condition": {
+        "all": [
+          {
+            "signal": "injury.practice_status",
+            "operator": "changed"
+          },
+          {
+            "signal": "injury.availability_class",
+            "operator": "equals",
+            "value": "game_time_decision"
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "injury_status_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    }
+  ],
+  "output_fields": [
+    "injury_summary",
+    "availability_class",
+    "designation",
+    "reserve_status",
+    "practice_status",
+    "return_timeline",
+    "confidence"
+  ]
+}
