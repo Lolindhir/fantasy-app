@@ -3,7 +3,7 @@
 
 The validator checks JSON schemas plus cross-file invariants that schemas alone
 cannot express: job/state pairing, configuration references, profile bindings,
-target identity consistency, managed-team neutrality and write safety.
+manual and dynamic target identity, managed-team neutrality and write safety.
 
 Default usage:
 
@@ -165,6 +165,10 @@ def entity_fingerprint(entity: dict[str, Any]) -> str:
     return f"{entity_type}:{identifier_name}:{identifier_value}"
 
 
+def fingerprint_entity_type(fingerprint: str) -> str:
+    return fingerprint.split(":", 1)[0] if ":" in fingerprint else ""
+
+
 def merged_profile_refs(
     defaults: list[dict[str, Any]],
     target_bindings: list[dict[str, Any]],
@@ -177,26 +181,81 @@ def merged_profile_refs(
     return merged
 
 
+def validated_profile_refs(
+    *,
+    path: Path,
+    owner_label: str,
+    entity_type: str,
+    bindings: dict[str, dict[str, Any]],
+    profiles: dict[str, tuple[Path, dict[str, Any]]],
+    report: Report,
+) -> set[str]:
+    profile_refs: set[str] = set()
+
+    for profile_ref, binding in bindings.items():
+        if not binding.get("enabled", True):
+            continue
+        if profile_ref not in profiles:
+            report.error(
+                path,
+                f"{owner_label} references unknown profile {profile_ref!r}.",
+            )
+            continue
+
+        profile = profiles[profile_ref][1]
+        applicable = profile.get("applicable_entity_types") or []
+        if entity_type not in applicable:
+            report.error(
+                path,
+                f"Profile {profile_ref!r} does not support entity type "
+                f"{entity_type!r} for {owner_label}.",
+            )
+            continue
+
+        profile_refs.add(profile_ref)
+
+    return profile_refs
+
+
 def validate_target_sets(
     target_sets: dict[str, tuple[Path, dict[str, Any]]],
     profiles: dict[str, tuple[Path, dict[str, Any]]],
     report: Report,
-) -> dict[str, dict[str, Any]]:
-    targets: dict[str, dict[str, Any]] = {}
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    manual_targets: dict[str, dict[str, Any]] = {}
+    selector_contracts: list[dict[str, Any]] = []
 
     for target_set_id, (path, target_set) in target_sets.items():
         defaults = target_set.get("defaults") or {}
         default_bindings = defaults.get("profile_bindings") or []
 
         for selector in target_set.get("selectors") or []:
-            for binding in selector.get("profile_bindings") or []:
-                profile_ref = binding.get("profile_ref")
-                if profile_ref not in profiles:
-                    report.error(
-                        path,
-                        f"Selector {selector.get('id')} references unknown profile "
-                        f"{profile_ref!r}.",
-                    )
+            selector_id = str(selector.get("id", "")).strip()
+            entity_type = str(selector.get("entity_type", "")).strip()
+            bindings = merged_profile_refs(
+                default_bindings,
+                selector.get("profile_bindings") or [],
+            )
+            profile_refs = validated_profile_refs(
+                path=path,
+                owner_label=f"Selector {selector_id!r}",
+                entity_type=entity_type,
+                bindings=bindings,
+                profiles=profiles,
+                report=report,
+            )
+            selector_contracts.append(
+                {
+                    "target_set_id": target_set_id,
+                    "selector_id": selector_id,
+                    "entity_type": entity_type,
+                    "profile_refs": profile_refs,
+                    "enabled": bool(
+                        target_set.get("enabled", True)
+                        and selector.get("enabled", True)
+                    ),
+                }
+            )
 
         for target in target_set.get("manual_targets") or []:
             target_id = str(target.get("id", "")).strip()
@@ -206,54 +265,120 @@ def validate_target_sets(
                 report.error(path, f"Target {target_id!r} has no stable entity fingerprint.")
                 continue
 
-            previous = targets.get(target_id)
+            previous = manual_targets.get(target_id)
             if previous and previous["fingerprint"] != fingerprint:
                 report.error(
                     path,
                     f"Target ID {target_id!r} resolves to both "
                     f"{previous['fingerprint']!r} and {fingerprint!r}.",
                 )
-            else:
-                target_info = targets.setdefault(
-                    target_id,
-                    {
-                        "fingerprint": fingerprint,
-                        "entity_type": entity.get("type"),
-                        "target_set_ids": set(),
-                        "profile_refs": set(),
-                    },
-                )
-                target_info["target_set_ids"].add(target_set_id)
+                continue
+
+            target_info = manual_targets.setdefault(
+                target_id,
+                {
+                    "fingerprint": fingerprint,
+                    "entity_type": entity.get("type"),
+                    "target_set_ids": set(),
+                    "profile_refs": set(),
+                },
+            )
+            target_info["target_set_ids"].add(target_set_id)
 
             bindings = merged_profile_refs(
                 default_bindings,
                 target.get("profile_bindings") or [],
             )
-            for profile_ref, binding in bindings.items():
-                if not binding.get("enabled", True):
-                    continue
-                if profile_ref not in profiles:
-                    report.error(
-                        path,
-                        f"Target {target_id!r} references unknown profile "
-                        f"{profile_ref!r}.",
-                    )
-                    continue
+            profile_refs = validated_profile_refs(
+                path=path,
+                owner_label=f"Target {target_id!r}",
+                entity_type=str(entity.get("type", "")).strip(),
+                bindings=bindings,
+                profiles=profiles,
+                report=report,
+            )
+            target_info["profile_refs"].update(profile_refs)
 
-                profile = profiles[profile_ref][1]
-                applicable = profile.get("applicable_entity_types") or []
-                entity_type = entity.get("type")
-                if entity_type not in applicable:
-                    report.error(
-                        path,
-                        f"Profile {profile_ref!r} does not support entity type "
-                        f"{entity_type!r} for target {target_id!r}.",
-                    )
-                    continue
+    return manual_targets, selector_contracts
 
-                targets[target_id]["profile_refs"].add(profile_ref)
 
-    return targets
+def validate_observation_state_targets(
+    state_targets: dict[str, Any],
+    manual_targets: dict[str, dict[str, Any]],
+    selector_contracts: list[dict[str, Any]],
+    report: Report,
+    state_path: Path | str,
+) -> None:
+    contracts_by_set: dict[str, list[dict[str, Any]]] = {}
+    for contract in selector_contracts:
+        contracts_by_set.setdefault(contract["target_set_id"], []).append(contract)
+
+    for target_id, state_target in state_targets.items():
+        configured = manual_targets.get(target_id)
+        state_profiles = set((state_target.get("observations") or {}).keys())
+
+        if configured is not None:
+            if state_target.get("entity_fingerprint") != configured["fingerprint"]:
+                report.error(
+                    state_path,
+                    f"State fingerprint for {target_id!r} does not match configuration.",
+                )
+            if state_profiles != configured["profile_refs"]:
+                report.error(
+                    state_path,
+                    f"State profiles for {target_id!r} are {sorted(state_profiles)}, "
+                    f"expected {sorted(configured['profile_refs'])}.",
+                )
+            continue
+
+        fingerprint = str(state_target.get("entity_fingerprint", ""))
+        entity_type = fingerprint_entity_type(fingerprint)
+        target_set_ids = set(state_target.get("target_set_ids") or [])
+        matching_contracts: list[dict[str, Any]] = []
+        unknown_target_sets: set[str] = set()
+
+        for target_set_id in target_set_ids:
+            contracts = contracts_by_set.get(target_set_id)
+            if not contracts:
+                unknown_target_sets.add(target_set_id)
+                continue
+            matching_contracts.extend(
+                contract
+                for contract in contracts
+                if contract["entity_type"] == entity_type
+            )
+
+        if unknown_target_sets:
+            report.error(
+                state_path,
+                f"Dynamic state target {target_id!r} references unknown selector "
+                f"target sets {sorted(unknown_target_sets)}.",
+            )
+
+        if not matching_contracts:
+            report.error(
+                state_path,
+                f"State contains unknown target {target_id!r}; no dynamic selector "
+                f"supports entity type {entity_type!r} for its target-set IDs.",
+            )
+            continue
+
+        allowed_profiles: set[str] = set()
+        for contract in matching_contracts:
+            allowed_profiles.update(contract["profile_refs"])
+
+        if not state_profiles:
+            report.error(
+                state_path,
+                f"Dynamic state target {target_id!r} has no profile states.",
+            )
+        elif not state_profiles.issubset(allowed_profiles):
+            report.error(
+                state_path,
+                f"State profiles for dynamic target {target_id!r} are "
+                f"{sorted(state_profiles)}, allowed by matching selectors are "
+                f"{sorted(allowed_profiles)}.",
+            )
 
 
 def validate_write_scope(job_path: Path, job: dict[str, Any], report: Report) -> None:
@@ -359,7 +484,11 @@ def validate_automation(root: Path | None = None) -> Report:
         schema_root / "automation-target-set.schema.json",
         report,
     )
-    targets = validate_target_sets(target_sets, profiles, report)
+    manual_targets, selector_contracts = validate_target_sets(
+        target_sets,
+        profiles,
+        report,
+    )
 
     jobs = discover_json_by_id(
         automation_root / "jobs",
@@ -415,26 +544,13 @@ def validate_automation(root: Path | None = None) -> Report:
     )
     if isinstance(observation_state, dict):
         state_targets = ((observation_state.get("job_state") or {}).get("targets") or {})
-        for target_id, state_target in state_targets.items():
-            configured = targets.get(target_id)
-            if configured is None:
-                report.error(
-                    observation_state_path,
-                    f"State contains unknown target {target_id!r}.",
-                )
-                continue
-            if state_target.get("entity_fingerprint") != configured["fingerprint"]:
-                report.error(
-                    observation_state_path,
-                    f"State fingerprint for {target_id!r} does not match configuration.",
-                )
-            state_profiles = set((state_target.get("observations") or {}).keys())
-            if state_profiles != configured["profile_refs"]:
-                report.error(
-                    observation_state_path,
-                    f"State profiles for {target_id!r} are {sorted(state_profiles)}, "
-                    f"expected {sorted(configured['profile_refs'])}.",
-                )
+        validate_observation_state_targets(
+            state_targets,
+            manual_targets,
+            selector_contracts,
+            report,
+            observation_state_path,
+        )
 
     validate_neutral_naming(automation_root, report)
     return report
