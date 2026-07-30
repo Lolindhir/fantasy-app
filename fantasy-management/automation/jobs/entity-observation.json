@@ -50,6 +50,11 @@
       "path": "fantasy-management/automation/profiles/market-movement.json",
       "required": true,
       "condition": "Profil, Source Bindings und Signalzuordnungen sind valide."
+    },
+    {
+      "path": "fantasy-management/automation/profiles/redraft-adp-movement.json",
+      "required": true,
+      "condition": "ADP-Profil, Formatwahl, Source Bindings und Materialitätsschwellen sind valide."
     }
   ],
   "configuration_refs": [
@@ -79,6 +84,11 @@
       "required": true
     },
     {
+      "kind": "profile",
+      "path": "fantasy-management/automation/profiles/redraft-adp-movement.json",
+      "required": true
+    },
+    {
       "kind": "workflow",
       "path": "fantasy-management/automation/workflows/managed-roster-selector.md",
       "required": true
@@ -86,6 +96,11 @@
     {
       "kind": "workflow",
       "path": "fantasy-management/automation/workflows/injury-status.md",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/redraft-adp-movement.md",
       "required": true
     },
     {
