@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "id": "redraft-adp-movement",
+  "title": "Redraft-ADP-Bewegung",
+  "description": "Beobachtet belastbare Veränderungen des kurzfristigen Draftpreises im passenden Redraft-Format, ohne ADP mit Dynasty-Marktwert oder Projektion gleichzusetzen.",
+  "applicable_entity_types": [
+    "player"
+  ],
+  "evaluator": {
+    "id": "redraft-adp-movement-evaluator",
+    "type": "deterministic",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/redraft-adp-movement.md"
+  },
+  "signals": [
+    {
+      "id": "adp.primary_format",
+      "description": "Für die Materialität verwendetes Quellformat: 2-QB für Quarterbacks, PPR für Running Backs, Wide Receiver und Tight Ends.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "ppr_8_team",
+        "two_qb_10_team"
+      ],
+      "source_types": [
+        "derived"
+      ]
+    },
+    {
+      "id": "adp.primary_listed",
+      "description": "Ob der Spieler im aktuell maßgeblichen ADP-Feed gelistet ist.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": [
+        "adp_source",
+        "derived"
+      ]
+    },
+    {
+      "id": "adp.primary_percentile",
+      "description": "Listenlängenbereinigtes ADP-Perzentil des maßgeblichen Feeds auf einer Skala von 0 bis 100, wobei höher einen früheren Draftpreis bedeutet.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": [
+        "derived"
+      ]
+    },
+    {
+      "id": "adp.primary_adp",
+      "description": "Rohe Average Draft Position des maßgeblichen Feeds zur Darstellung und Plausibilisierung.",
+      "value_type": "number",
+      "unit": "overall_pick",
+      "source_types": [
+        "adp_source"
+      ]
+    },
+    {
+      "id": "adp.primary_times_drafted",
+      "description": "Anzahl der beobachteten Drafts des Spielers im maßgeblichen Feed.",
+      "value_type": "integer",
+      "unit": "drafts",
+      "source_types": [
+        "adp_source"
+      ]
+    },
+    {
+      "id": "adp.primary_stdev",
+      "description": "Quellenseitige Streuung der Draftposition im maßgeblichen Feed.",
+      "value_type": "number",
+      "unit": "overall_pick",
+      "source_types": [
+        "adp_source"
+      ]
+    },
+    {
+      "id": "adp.secondary_percentile",
+      "description": "Listenlängenbereinigtes Perzentil des ergänzenden ADP-Feeds für Formatvergleich und Interpretation.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": [
+        "derived"
+      ]
+    },
+    {
+      "id": "adp.format_gap",
+      "description": "Differenz aus 2-QB- und PPR-Perzentil; dient nur als Formatkontext und wird nicht roh mit Marktwerten verrechnet.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": [
+        "derived"
+      ]
+    },
+    {
+      "id": "adp.sample_summary",
+      "description": "Strukturierte Stichproben-, Freshness- und Unsicherheitsinformationen beider ADP-Feeds.",
+      "value_type": "object",
+      "unit": null,
+      "source_types": [
+        "adp_source",
+        "derived"
+      ]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Gesamtkonfidenz der ADP-Beobachtung unter Berücksichtigung von Stichprobe, Freshness, Join-Qualität und Formatnähe.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "source_types": [
+        "derived"
+      ]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 1,
+    "allow_single_authoritative_source": false,
+    "preferred_source_types": [
+      "adp_source",
+      "derived"
+    ]
+  },
+  "source_bindings": [
+    {
+      "id": "ffc-redraft-ppr-8-team",
+      "source_type": "adp_source",
+      "provider": "fantasy_football_calculator",
+      "dataset_id": "redraft-ppr-8-team",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasy-football-calculator",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
+        "selection_policy": "latest_successful_snapshot"
+      },
+      "entity_join": [
+        "source_player_id",
+        "normalized_name_position"
+      ],
+      "signal_mappings": {
+        "adp.primary_listed": "row_presence_when_primary_format",
+        "adp.primary_adp": "adp_when_primary_format",
+        "adp.primary_times_drafted": "times_drafted_when_primary_format",
+        "adp.primary_stdev": "stdev_when_primary_format",
+        "adp.sample_summary": "sample_and_row_fields"
+      },
+      "freshness_policy": {
+        "max_age_hours": 72,
+        "refresh_before_analysis": true
+      },
+      "format_context": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterback_mode": "one_qb",
+        "team_count": 8,
+        "actual_league_team_count": 6,
+        "primary_for_positions": "RB,WR,TE"
+      }
+    },
+    {
+      "id": "ffc-redraft-2qb-10-team",
+      "source_type": "adp_source",
+      "provider": "fantasy_football_calculator",
+      "dataset_id": "redraft-2qb-10-team",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasy-football-calculator",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
+        "selection_policy": "latest_successful_snapshot"
+      },
+      "entity_join": [
+        "source_player_id",
+        "normalized_name_position"
+      ],
+      "signal_mappings": {
+        "adp.primary_listed": "row_presence_when_primary_format",
+        "adp.primary_adp": "adp_when_primary_format",
+        "adp.primary_times_drafted": "times_drafted_when_primary_format",
+        "adp.primary_stdev": "stdev_when_primary_format",
+        "adp.sample_summary": "sample_and_row_fields"
+      },
+      "freshness_policy": {
+        "max_age_hours": 72,
+        "refresh_before_analysis": true
+      },
+      "format_context": {
+        "horizon": "redraft",
+        "scoring": "source_default",
+        "quarterback_mode": "two_qb",
+        "team_count": 10,
+        "actual_league_team_count": 6,
+        "primary_for_positions": "QB"
+      }
+    },
+    {
+      "id": "redraft-adp-derivation",
+      "source_type": "derived",
+      "provider": "observation_runner",
+      "dataset_id": "redraft-adp-normalization",
+      "role": "derived",
+      "required": true,
+      "independence_group": "derived-adp-normalization",
+      "access": {
+        "type": "derived",
+        "location": null,
+        "selection_policy": "derived"
+      },
+      "entity_join": [],
+      "signal_mappings": {
+        "adp.primary_format": "derived_from_player_position",
+        "adp.primary_percentile": "derived_list_length_aware_percentile",
+        "adp.secondary_percentile": "derived_list_length_aware_percentile",
+        "adp.format_gap": "derived_two_qb_minus_ppr_percentile",
+        "adp.sample_summary": "derived_sample_quality_and_freshness",
+        "evidence.confidence": "derived"
+      },
+      "freshness_policy": {
+        "max_age_hours": null,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "percentile_scale": "0_to_100_higher_is_earlier",
+        "primary_format_rule": "QB=two_qb_10_team;RB,WR,TE=ppr_8_team",
+        "two_fixed_te_modeled_by_source": false,
+        "raw_cross_format_average_forbidden": true
+      }
+    }
+  ],
+  "criteria": [
+    {
+      "id": "primary-percentile-movement",
+      "description": "Das listenlängenbereinigte Perzentil im maßgeblichen Format hat sich um mindestens zehn Punkte verändert und die Spieler-Stichprobe ist ausreichend.",
+      "condition": {
+        "all": [
+          {
+            "signal": "adp.primary_percentile",
+            "operator": "absolute_delta_gte",
+            "value": 10,
+            "comparison_window": "previous_material_state"
+          },
+          {
+            "signal": "adp.primary_times_drafted",
+            "operator": "gte",
+            "value": 50
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "redraft_adp_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "large-primary-percentile-movement",
+      "description": "Das listenlängenbereinigte Perzentil im maßgeblichen Format hat sich um mindestens zwanzig Punkte verändert und die Spieler-Stichprobe ist ausreichend.",
+      "condition": {
+        "all": [
+          {
+            "signal": "adp.primary_percentile",
+            "operator": "absolute_delta_gte",
+            "value": 20,
+            "comparison_window": "previous_material_state"
+          },
+          {
+            "signal": "adp.primary_times_drafted",
+            "operator": "gte",
+            "value": 50
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "redraft_adp_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "relevant-primary-entry",
+      "description": "Der Spieler ist neu im maßgeblichen ADP-Feed gelistet und wurde dort bereits mindestens fünfzigmal gedraftet.",
+      "condition": {
+        "all": [
+          {
+            "signal": "adp.primary_listed",
+            "operator": "changed",
+            "comparison_window": "previous_material_state"
+          },
+          {
+            "signal": "adp.primary_listed",
+            "operator": "equals",
+            "value": true
+          },
+          {
+            "signal": "adp.primary_times_drafted",
+            "operator": "gte",
+            "value": 50
+          },
+          {
+            "signal": "evidence.confidence",
+            "operator": "gte",
+            "value": "medium"
+          }
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "redraft_adp_entry"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    }
+  ],
+  "output_fields": [
+    "adp_summary",
+    "primary_format",
+    "primary_listed",
+    "primary_percentile",
+    "primary_adp",
+    "primary_times_drafted",
+    "primary_stdev",
+    "secondary_percentile",
+    "format_gap",
+    "sample_summary",
+    "confidence"
+  ]
+}
