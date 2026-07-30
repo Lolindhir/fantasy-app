@@ -22,9 +22,24 @@
       "condition": "Für verwendete aktuelle Repo-Daten ist ein plausibler Freshness-Stand verfügbar."
     },
     {
+      "path": "public/data/chat/players-relevant/index.json",
+      "required": true,
+      "condition": "Dynamisch ausgewählte Spieler können über aktuelle Player-Chunks eindeutig aufgelöst werden."
+    },
+    {
       "path": "fantasy-management/automation/target-sets/player-role-watch.json",
       "required": true,
       "condition": "Target Set und alle aktivierten Targets sind valide."
+    },
+    {
+      "path": "fantasy-management/automation/target-sets/managed-roster-health.json",
+      "required": true,
+      "condition": "Der vollständige aktuelle Kader des verwalteten Teams kann dynamisch aufgelöst werden."
+    },
+    {
+      "path": "fantasy-management/automation/profiles/injury-status.json",
+      "required": true,
+      "condition": "Verletzungsprofil und Materialitätskriterien sind valide."
     },
     {
       "path": "fantasy-management/automation/profiles/role-opportunity.json",
@@ -44,6 +59,16 @@
       "required": true
     },
     {
+      "kind": "target_set",
+      "path": "fantasy-management/automation/target-sets/managed-roster-health.json",
+      "required": true
+    },
+    {
+      "kind": "profile",
+      "path": "fantasy-management/automation/profiles/injury-status.json",
+      "required": true
+    },
+    {
       "kind": "profile",
       "path": "fantasy-management/automation/profiles/role-opportunity.json",
       "required": true
@@ -51,6 +76,16 @@
     {
       "kind": "profile",
       "path": "fantasy-management/automation/profiles/market-movement.json",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/managed-roster-selector.md",
+      "required": true
+    },
+    {
+      "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/injury-status.md",
       "required": true
     },
     {
