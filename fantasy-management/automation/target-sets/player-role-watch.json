@@ -72,6 +72,80 @@
         "handcuff",
         "free-agent-target"
       ]
+    },
+    {
+      "id": "jonathon-brooks-2026",
+      "enabled": true,
+      "entity": {
+        "type": "player",
+        "display_name": "Jonathon Brooks",
+        "identifiers": {
+          "sleeper_id": "11583"
+        },
+        "canonical_ref": null,
+        "attributes": {
+          "nfl_team": "CAR",
+          "position": "RB"
+        }
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "injury-status",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "redraft-adp-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "high",
+      "decision_context": {
+        "perspective": "managed_team",
+        "relevance": "Explizit vom Nutzer ausgewählter Panthers-Running-Back; Gesundheitsstatus, Rückkehr, Backfield-Rolle, Usage sowie Markt- und ADP-Bewegung können seine Dynasty-Relevanz deutlich verändern.",
+        "current_position": "Beobachtung ohne vorweggenommene Roster-, Draft- oder Trade-Entscheidung.",
+        "effect_rules": [
+          {
+            "when_classification": "injury_status_change",
+            "action": "Gesundheits-, Einsatz- und Stash-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "roster_availability_change",
+            "action": "Verfügbarkeit und unmittelbare Kaderrelevanz neu bewerten."
+          },
+          {
+            "when_classification": "return_timeline_change",
+            "action": "Rückkehrfenster und Geduldshorizont neu bewerten."
+          },
+          {
+            "when_classification": "role_change",
+            "action": "Backfield-Rolle und Dynasty-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Usage-Pfad und mögliche Roster-, Draft- oder Trade-Aktion neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Marktpreis und mögliche Buy-, Hold-, Shop- oder Stash-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_change",
+            "action": "Kurzfristige Rollen- und Win-Now-Erwartung gegen Dynasty-Markt und Gesundheitslage abgleichen."
+          },
+          {
+            "when_classification": "redraft_adp_entry",
+            "action": "Neu entstandene kurzfristige Relevanz auf belastbare Rollen- oder Gesundheitsindikatoren prüfen."
+          }
+        ]
+      },
+      "tags": [
+        "player-watch",
+        "user-selected",
+        "injury-recovery",
+        "panthers-backfield"
+      ]
     }
   ],
   "selectors": []
