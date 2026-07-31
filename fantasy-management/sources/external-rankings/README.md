@@ -27,7 +27,7 @@ Die Ebenen bedeuten:
 
 - `expert-consensus`: Reihenfolge aus Experteneinschätzungen; aktuell FantasyPros.
 - `market-value`: Reihenfolge oder Werte aus beobachtetem Trade-/Marktverhalten; aktuell FantasyCalc. KeepTradeCut ist nur manuelle Referenz.
-- `adp`: Reihenfolge aus beobachteten Draftpositionen; aktuell Fantasy Football Calculator mit getrennten PPR-8-Team- und 2QB-10-Team-Feeds.
+- `adp`: Reihenfolge aus beobachteten Draftpositionen; aktuell Fantasy Football Calculator mit getrennten PPR-8-Team- und 2QB-10-Team-Feeds sowie FantasyPros mit getrennten PPR-Overall- und Half-PPR-Superflex-Composites.
 
 ## Gemeinsamer Kern
 
@@ -35,7 +35,9 @@ Jedes normalisierte Ranking soll mindestens Ranking-Art, Anbieter, Ranking-ID, F
 
 Ranking-Arten dürfen nicht so behandelt werden, als würden sie dasselbe messen. Quellenübergreifende Vergleiche verwenden listenlängenabhängige Perzentile statt roher Rang- oder Wertdifferenzen.
 
-Mehrere Formate desselben Anbieters dürfen ebenfalls nicht ohne Prüfung gemittelt werden. Bei Fantasy Football Calculator unterscheiden sich der PPR- und der 2-QB-Feed gleichzeitig in Teamzahl, Scoringkontext und Quarterback-Anforderung.
+Mehrere Formate desselben Anbieters dürfen ebenfalls nicht ohne Prüfung gemittelt werden. Bei Fantasy Football Calculator unterscheiden sich der PPR- und der 2-QB-Feed gleichzeitig in Teamzahl, Scoringkontext und Quarterback-Anforderung. Bei FantasyPros unterscheiden sich PPR Overall und Half-PPR Superflex in Scoring, Lineup-Anforderung und aktueller Plattformzusammensetzung.
+
+Aggregierte Rankings müssen neben dem veröffentlichten Konsenswert die zugrunde liegende Quellenkomposition, sichtbare Aktualitätsstände, fehlende Einzelwerte und mögliche Überschneidungen mit anderen gespeicherten Quellen erhalten.
 
 ## Speicherregel
 
