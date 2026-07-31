@@ -57,7 +57,7 @@ Before making architecture, data model, generation or frontend changes, read:
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
-- Fantasy Management rules, sources, workflows, stored analyses and decisions belong under `fantasy-management/`.
+- Fantasy Management rules, sources, workflows, stored analyses, decisions and todos belong under `fantasy-management/`.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
 - When updating application documentation:
   - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
@@ -68,10 +68,13 @@ Before making architecture, data model, generation or frontend changes, read:
 
 ## Todo guidance
 
-- Open project todos are maintained in `TODO.md` at the repository root.
+- Application, frontend, generated-data and shared technical-platform todos are maintained in `TODO.md` at the repository root.
+- Fantasy Management and Fantasy Operations todos are maintained in `fantasy-management/TODO.md`.
+- Classify a todo by its purpose and owning context, not merely by its implementation mechanism. A script or GitHub Action whose purpose is to prepare Fantasy Management data belongs in `fantasy-management/TODO.md`.
 - Todos must be written in German.
 - Do not create additional todo lists in `.ai-context` or `docs`.
-- Move information from `TODO.md` into `.ai-context/manual` only when it becomes a durable architecture, domain or source-of-truth decision.
+- Move durable application decisions from `TODO.md` into `.ai-context/manual` when appropriate.
+- Move durable Fantasy Management decisions from `fantasy-management/TODO.md` into the canonical rules, source maps or workflow documentation under `fantasy-management/_ai` when appropriate.
 
 ## Generated files
 
