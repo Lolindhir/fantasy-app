@@ -106,6 +106,62 @@ class ObservationProfileValidatorTests(unittest.TestCase):
                 report.to_json(),
             )
 
+    def test_disjoint_conditional_primary_bindings_are_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "source.json").write_text("{}", encoding="utf-8")
+            profile = base_profile()
+            primary = profile["source_bindings"][0]
+            primary["format_context"] = {
+                "primary_for_positions": "RB,WR,TE",
+            }
+            duplicate = dict(primary)
+            duplicate["id"] = "ranking-qb"
+            duplicate["format_context"] = {
+                "primary_for_positions": "QB",
+            }
+            duplicate["signal_mappings"] = {"market.rank": "Rank"}
+            profile["source_bindings"].append(duplicate)
+            report = Report()
+            validate_profile_source_bindings(
+                Path("profile.json"),
+                profile,
+                root,
+                report,
+            )
+            self.assertFalse(
+                any("exactly one primary binding" in issue.message for issue in report.errors),
+                report.to_json(),
+            )
+
+    def test_overlapping_conditional_primary_bindings_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "source.json").write_text("{}", encoding="utf-8")
+            profile = base_profile()
+            primary = profile["source_bindings"][0]
+            primary["format_context"] = {
+                "primary_for_positions": "QB,RB",
+            }
+            duplicate = dict(primary)
+            duplicate["id"] = "ranking-overlap"
+            duplicate["format_context"] = {
+                "primary_for_positions": "RB,WR",
+            }
+            duplicate["signal_mappings"] = {"market.rank": "Rank"}
+            profile["source_bindings"].append(duplicate)
+            report = Report()
+            validate_profile_source_bindings(
+                Path("profile.json"),
+                profile,
+                root,
+                report,
+            )
+            self.assertTrue(
+                any("exactly one primary binding" in issue.message for issue in report.errors),
+                report.to_json(),
+            )
+
     def test_missing_repository_location_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
