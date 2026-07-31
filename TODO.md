@@ -217,6 +217,18 @@ Diese Datei ist bewusst von `.ai-context` getrennt.
   - Auswerten: Teamleistung, Entscheidungen, Trades, Drafts, Free-Agent-Aktionen, Lineup-Prozess, Cap-Management und wichtigste Fehlannahmen.
   - Ziel: wiederverwendbare Erkenntnisse und konkrete Regel- oder Quellenverbesserungen für die nächste Saison ableiten.
 
+### Fantasy Management / Analysevalidierung
+
+- [ ] Salary-Effizienzthesen nach Abschluss der Saison 2026 verifizieren.
+  - Baseline: `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-07-31-three-year-history-baseline.md` und die gleichnamige JSON-Datei.
+  - Auslöser: Saison 2026 ist abgeschlossen und die vollständigen Saisonstatistiken wurden im Repository erzeugt.
+  - Populationen vergleichen: alle gehaltenen Spieler; mindestens drei vollständige Statistikjahre; mindestens drei Statistikjahre plus `Year >= 5`; mindestens drei Statistikjahre und nicht mehr auf dem ursprünglichen Rookie-/Einstiegsvertrag.
+  - Thesen prüfen: `SALARY-H01` bis `SALARY-H04` einschließlich Stabilität der Grenzwerte, Out-of-Sample-Kalibrierung, Fehlklassifikationen, Positionsunterschiede und Robustheit gegenüber Median, getrimmtem Mittelwert und Perzentilbändern.
+  - Review ablegen unter `fantasy-management/analyses/2026/league-meta/salary-efficiency/reviews/2027-postseason-validation.md` und `.json`; die Baseline nicht überschreiben.
+  - Ergebnisstatus je These: `supported`, `partially_supported`, `rejected` oder `inconclusive`; Evidenzstufe separat auf `one_season_validated` beziehungsweise später `multi_season_validated` setzen.
+  - Danach ausdrücklich entscheiden, welche bestätigten Erkenntnisse nach `knowledge/`, welche methodischen Vorgaben nach Nutzerfreigabe in `FANTASY_MANAGEMENT_RULES.md` und welche bewusst gewählte Standardmethode gegebenenfalls nach `decisions/` überführt werden.
+  - Leitplanke: Numerische Salary-Cut-offs bleiben datierte Analysewerte und werden nicht als zeitlose Regeln übernommen.
+
 ### Später / Ideen
 
 - [ ] Draft-Kapital-Score und Pick-Werte für Draft-Assets prüfen.
