@@ -47,11 +47,36 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 ### Data Generation / League History
 
+- [ ] Saisonabschluss-Archivierung vollständig, atomar und wiederholbar automatisieren.
+  - Kontext: `Players.json`, `Games.json` und `Schedule.json` wurden bisher nach Saisonende über manuelle Einzelaufrufe bzw. Dateiverschiebungen archiviert; bei einem verspäteten Lauf kann der Saisonendzustand bereits durch Offseason-Änderungen verfälscht sein.
+  - Kontext: Drafts und Transactions besitzen bereits eigene historische Generatorpfade, während historische `Standings`- und `Teams`-Dateien im aktuellen `PastSeasonsIndex.json` für die bisherigen Spielzeiten fehlen.
+  - Ziel: Vor dem Wechsel von `LeagueYear` einen kontrollierten Saisonabschluss für Players, Games, Schedule, Standings einschließlich Playoffs und Awards, Teams, Transactions und Drafts durchführen.
+  - Vollständigkeitsprüfung: Nur finalisieren, wenn die Saison abgeschlossen ist und alle für die Ressource erwarteten Wochen, Spiele, Platzierungen und Identitäten vorhanden beziehungsweise bewusst als nicht verfügbar dokumentiert sind.
+  - Wiederholbarkeit: Der Ablauf muss idempotent sein, bestehende finale Saisonstände standardmäßig nicht überschreiben und für bewusste Korrekturen einen expliziten Force-Modus anbieten.
+  - Schutz: Der Wechsel auf eine neue Saison beziehungsweise das Leeren aktiver Games-/Schedule-Daten darf erst erfolgen, wenn der vorherige Saisonabschluss erfolgreich archiviert und validiert wurde.
+  - Ergebnis: Historische Ressourcen unter `public/data/past_seasons` ablegen, `PastSeasonsIndex.json` aktualisieren und den Archivstatus der Saison maschinenlesbar dokumentieren.
+
 - [ ] Player-Snapshot zum Saisonende für historische Moves erzeugen.
   - Kontext: Die Moves-Historie kann historische Transactions laden, löst Spieler aktuell aber weiterhin gegen das jeweils aktuelle `Players.json` auf.
   - Problem: Ausgeschiedene oder später aus dem aktuellen Playerbestand entfernte Spieler können dadurch in historischen Moves nur als `Player <ID>` erscheinen.
-  - Ziel: Am Saisonende einen stabilen, saisonbezogenen Player-Snapshot mit mindestens Player-ID, Name, Position, NFL-Team und Bildreferenz erzeugen und über `PastSeasonsIndex.json` auffindbar machen.
+  - Ziel: Im vollständigen Saisonabschluss einen stabilen, saisonbezogenen Player-Snapshot mit mindestens Player-ID, Name, Position, NFL-Team und Bildreferenz erzeugen und über `PastSeasonsIndex.json` auffindbar machen.
   - Leitplanke: Der Snapshot muss generatorseitig entstehen; Angular darf ihn nur laden und zur historischen Anzeige verwenden.
+  - Abhängigkeit: Der Moves-Snapshot soll aus dem validierten Saisonarchiv entstehen und nicht durch einen späteren Lauf gegen bereits veränderte aktuelle Spielerquellen rekonstruiert werden.
+
+- [ ] Player-Historie und Vorjahres-Fallback dynamisch statt fest über `SeasonMinus1` bis `SeasonMinus3` modellieren.
+  - Kontext: `RequestPlayers.ps1` erwartet aktuell zwingend drei konkrete archivierte Player-Dateien; fehlt eine davon, bricht der gesamte Player-Lauf ab.
+  - Kontext: Vor Woche 1 dient die vergangene Saison bereits als vollständige Punktebasis, anschließend werden aktuelle und letztjährige Werte in den ersten Wochen schrittweise gemischt.
+  - Ziel: Alle verfügbaren historischen Spielzeiten saisonbezogen als Liste oder Map erhalten, während Salary-, Ranking- und Projektionsformeln weiterhin bewusst eine konfigurierbare Auswahl der jüngsten vollständigen Jahre verwenden können.
+  - Fallback: Die jüngste vollständig archivierte Saison als Vorjahresbasis verwenden und fehlende ältere Jahre kontrolliert behandeln, statt den gesamten Lauf unnötig zu beenden oder fehlende Daten still als echte Nullleistung zu interpretieren.
+  - Datenqualität: Unterscheiden zwischen fehlendem Saisonarchiv, Spieler noch nicht in der NFL, vorhandenem Spieler ohne Einsatz und nicht mehr auflösbarer Spieleridentität.
+  - Migration: Bestehende Felder und Frontend-Verträge nur kontrolliert ablösen oder über einen Übergangs-Fallback weiter bedienen.
+
+- [ ] Historische Player-, Games-, Schedule- und League-Daten vor dem bestehenden Archivzeitraum analysieren und soweit möglich nachpflegen.
+  - Kontext: Für 2022 bis 2025 existieren aktuell Player-, Games- und Schedule-Dateien, während Standings und Teams fehlen; Drafts und Transactions reichen ebenfalls nicht für alle Spielzeiten gleich weit zurück.
+  - Ziel: Zunächst eine Coverage-Matrix je Saison und Ressource erstellen und anschließend belastbar rekonstruierbare Daten nach `public/data/past_seasons` übernehmen.
+  - Quellenprüfung: Für Player-Historie getrennt prüfen, welche Daten über Sleeper, bestehende Tank01-/Games-Daten, historische Boxscores oder andere bereits zulässige Quellen mit stabiler ID-Zuordnung verfügbar sind.
+  - Qualitätsstufen: Vollständig rekonstruierbar, nur aggregierte Saisonwerte verfügbar, ohne einzelne Detailfelder wie Snaps verfügbar oder nicht zuverlässig rekonstruierbar.
+  - Leitplanke: Fehlende historische Werte nicht erfinden; Herkunft, Abdeckung und bekannte Lücken je Saison dokumentieren.
 
 - [ ] Hall-of-Fame-/Legacy-Auswertungen generatorseitig modellieren.
   - Kontext: Die Standings-Route erzeugt Hall-of-Fame-Highlights, Award-Legende, All-Time-Regular-Season und Season-Archive aktuell bewusst als Frontend-Prototyp in `league-standings-view.util.ts`.
