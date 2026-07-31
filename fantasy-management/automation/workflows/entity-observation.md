@@ -102,9 +102,10 @@ Supported operators are defined in `automation-criterion.schema.json`.
 
 When no previous profile state exists:
 
-1. store or propose a baseline;
-2. mark the profile state as `baseline`;
-3. do not create an event unless `notify_on_initial_baseline` is true.
+1. treat the missing state as initialization work inside the current due run, not as an incomplete dependency or production-readiness failure;
+2. store or propose a baseline;
+3. mark the profile state as `baseline`;
+4. do not create an event unless `notify_on_initial_baseline` is true.
 
 For later checks:
 
@@ -216,7 +217,7 @@ For entities using `market-movement`:
 
 Production execution requires all of the following:
 
-1. a stored initial baseline for every active target/profile pair;
+1. every active target/profile pair can be resolved and evaluated; a missing stored profile state is initialized as a silent baseline during the current due run and does not block production execution;
 2. successful deterministic source-binding resolution;
 3. a successful controlled atomic-write test;
 4. `runner-config.json` in `write_enabled`;
