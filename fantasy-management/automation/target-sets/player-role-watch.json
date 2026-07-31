@@ -220,6 +220,80 @@
         "panthers-receiver",
         "usage-upside"
       ]
+    },
+    {
+      "id": "aj-barner-2026",
+      "enabled": true,
+      "entity": {
+        "type": "player",
+        "display_name": "AJ Barner",
+        "identifiers": {
+          "sleeper_id": "11603"
+        },
+        "canonical_ref": null,
+        "attributes": {
+          "nfl_team": "SEA",
+          "position": "TE"
+        }
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "injury-status",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "redraft-adp-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "high",
+      "decision_context": {
+        "perspective": "managed_team",
+        "relevance": "Explizit vom Nutzer ausgewählter Seahawks-Tight-End; Gesundheit, Snap- und Route-Anteil, Target-Entwicklung, Konkurrenzsituation sowie Markt- und ADP-Bewegung sind im Zwei-TE-Format besonders relevant.",
+        "current_position": "Beobachtung ohne vorweggenommene Roster-, Draft- oder Trade-Entscheidung.",
+        "effect_rules": [
+          {
+            "when_classification": "injury_status_change",
+            "action": "Gesundheits-, Einsatz- und Roster-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "roster_availability_change",
+            "action": "Verfügbarkeit und unmittelbare Kaderrelevanz neu bewerten."
+          },
+          {
+            "when_classification": "return_timeline_change",
+            "action": "Rückkehrfenster und kurzfristige Nutzbarkeit neu bewerten."
+          },
+          {
+            "when_classification": "role_change",
+            "action": "Tight-End-Rolle, Konkurrenzsituation und Dynasty-Relevanz im Zwei-TE-Format neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Snaps, Routes, Targets und mögliche Roster-, Draft- oder Trade-Aktion neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Marktpreis und mögliche Buy-, Hold-, Shop- oder Stash-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_change",
+            "action": "Kurzfristige Rollen- und Win-Now-Erwartung gegen Dynasty-Markt und Zwei-TE-Ligawert abgleichen."
+          },
+          {
+            "when_classification": "redraft_adp_entry",
+            "action": "Neu entstandene kurzfristige Relevanz auf belastbare Rollen-, Usage- oder News-Signale prüfen."
+          }
+        ]
+      },
+      "tags": [
+        "player-watch",
+        "user-selected",
+        "seahawks-tight-end",
+        "two-te-format"
+      ]
     }
   ],
   "selectors": []

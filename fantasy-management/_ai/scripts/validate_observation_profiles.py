@@ -25,6 +25,45 @@ from validate_automation import (
 )
 
 
+def _primary_positions(binding: dict[str, Any]) -> set[str] | None:
+    """Return the positions for which a binding is conditionally primary."""
+
+    format_context = binding.get("format_context") or {}
+    raw_positions = format_context.get("primary_for_positions")
+
+    if isinstance(raw_positions, str):
+        values = raw_positions.split(",")
+    elif isinstance(raw_positions, list):
+        values = raw_positions
+    else:
+        return None
+
+    positions = {
+        str(value).strip().upper()
+        for value in values
+        if str(value).strip()
+    }
+    return positions or None
+
+
+def _has_disjoint_conditional_primary_bindings(
+    bindings: list[dict[str, Any]],
+) -> bool:
+    """Allow multiple primaries only when their position scopes are explicit and disjoint."""
+
+    if len(bindings) < 2:
+        return False
+
+    covered_positions: set[str] = set()
+    for binding in bindings:
+        positions = _primary_positions(binding)
+        if positions is None or covered_positions.intersection(positions):
+            return False
+        covered_positions.update(positions)
+
+    return True
+
+
 def validate_profile_source_bindings(
     profile_path: Path,
     profile: dict[str, Any],
@@ -48,7 +87,9 @@ def validate_profile_source_bindings(
         return
 
     binding_ids: set[str] = set()
-    roles_by_signal: dict[str, list[str]] = {signal_id: [] for signal_id in signal_by_id}
+    bindings_by_signal: dict[str, list[dict[str, Any]]] = {
+        signal_id: [] for signal_id in signal_by_id
+    }
 
     for binding in bindings:
         binding_id = str(binding.get("id", "")).strip()
@@ -120,21 +161,30 @@ def validate_profile_source_bindings(
                     f"{signal_id!r}.",
                 )
 
-            roles_by_signal[signal_id].append(role)
+            bindings_by_signal[signal_id].append(binding)
 
     for signal_id, signal in signal_by_id.items():
-        roles = roles_by_signal.get(signal_id) or []
+        mapped_bindings = bindings_by_signal.get(signal_id) or []
         source_types = set(signal.get("source_types") or [])
 
-        if not roles:
+        if not mapped_bindings:
             report.error(
                 profile_path,
                 f"Profile declares source_bindings but signal {signal_id!r} is unmapped.",
             )
             continue
 
-        primary_count = roles.count("primary")
-        derived_count = roles.count("derived")
+        primary_bindings = [
+            binding
+            for binding in mapped_bindings
+            if str(binding.get("role", "")).strip() == "primary"
+        ]
+        derived_count = sum(
+            1
+            for binding in mapped_bindings
+            if str(binding.get("role", "")).strip() == "derived"
+        )
+        primary_count = len(primary_bindings)
 
         if source_types == {"derived"}:
             if derived_count != 1:
@@ -147,8 +197,12 @@ def validate_profile_source_bindings(
                     profile_path,
                     f"Derived signal {signal_id!r} cannot have a primary binding.",
                 )
-        else:
-            if primary_count != 1:
+        elif primary_count != 1:
+            conditional_primaries_are_valid = (
+                primary_count > 1
+                and _has_disjoint_conditional_primary_bindings(primary_bindings)
+            )
+            if not conditional_primaries_are_valid:
                 report.error(
                     profile_path,
                     f"Signal {signal_id!r} requires exactly one primary binding; "
