@@ -228,7 +228,7 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Ergebnis: Der ungenutzte Getter wurde beim Umstellen auf das gemeinsame Draft-Pick-Popover entfernt.
 
 - [x] Past Drafts im Frontend auf Basis von `PastSeasonsIndex.json` ergänzen.
-  - Kontext: `PastSeasonsIndex.json` macht verfügbare Draft-Seasons aus `PastSeasonsIndex.json` auffindbar.
+  - Kontext: `PastSeasonsIndex.json` macht verfügbare historische Season-Ressourcen auffindbar.
   - Ergebnis: `/drafts` hat einen dritten Reiter `Past`, lädt verfügbare Draft-Seasons aus `PastSeasonsIndex.json`, bietet eine Season-Auswahl und rendert historische Draft-Cards analog zu Current Drafts mit Overview, Teams und List.
   - Hinweis: Historische Draft-Dateien bleiben getrennt von `Drafts.json` und werden nicht als aktuelle Team-Assets interpretiert.
 
