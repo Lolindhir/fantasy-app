@@ -51,6 +51,7 @@ For Fantasy Management tasks, read these files as needed:
 21. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
 22. relevant analyses under `fantasy-management/analyses/` when such files exist
 23. relevant decisions under `fantasy-management/decisions/` when such files exist
+24. `fantasy-management/TODO.md` when planning, prioritizing or recording open Fantasy Management work
 
 ## Canonical app data
 
@@ -73,6 +74,15 @@ Do not place Fantasy Management outputs, stored analyses, podcast/source extract
 Store them only under:
 
 `fantasy-management/`
+
+## Todo guidance
+
+- Open Fantasy Management and Fantasy Operations work is maintained in `fantasy-management/TODO.md`.
+- Classify todos by their purpose and owning context, not by whether the implementation uses Python, PowerShell, GitHub Actions, ChatGPT tasks or another technical mechanism.
+- A pipeline, materialized dataset or workflow whose purpose is to support Fantasy Management monitoring, analyses or reviews belongs in `fantasy-management/TODO.md` even when the implementation touches shared repository tooling.
+- Application, frontend, generated-app-data and shared technical-platform work remains in the root `TODO.md`.
+- Avoid duplicating the same todo in both files. Add a cross-reference only when one delivery genuinely requires coordinated work in both contexts.
+- Move durable Fantasy Management decisions from the todo list into the relevant canonical rules, source maps or workflow documentation under `fantasy-management/_ai`.
 
 ## Source, knowledge and analysis separation
 
@@ -116,6 +126,7 @@ Use this target structure as a logical layout. Create optional folders only when
 fantasy-management/
   AGENTS.md
   README.md
+  TODO.md
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
