@@ -15,6 +15,16 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration sowie laufzeitabhängige Werte.
   - Ziel: Laufzeitabhängige Werte nicht direkt im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
 
+- [ ] Tank01-Requestbudget und Backup-Key-Fallbacks zentral absichern.
+  - Kontext: Tank01/RapidAPI ist pro Account auf 1.000 Requests pro Monat begrenzt; Sleeper-Zugriffe sind dagegen nicht der knappe Teil.
+  - Kontext: `RequestPlayers.ps1` und `RequestGames.ps1` verwenden bereits einen Haupt-Key und zwei Backup-Keys als sequentielle Fallbacks; vorhandene Daten werden teilweise wiederverwendet, dennoch erzeugt jeder Players-Lauf einen Tank01-Player-List-Request und jeder Games-Lauf einen vollständigen Schedule-Request.
+  - Leitplanke: Neue Generatoren, Saisonabschluss-, Reparatur- und Backfill-Läufe dürfen die Tank01-Frequenz nicht still erhöhen oder vorhandene Backup-Keys als Begründung für zusätzliche Routine-Requests verwenden.
+  - Ziel: Alle Tank01-Aufrufe über einen gemeinsamen Helper führen, Request-Anzahl und verbleibendes Monatsbudget je Key ohne Ausgabe der Schlüsselwerte nachvollziehbar machen und vor jedem größeren Lauf eine Request-Kostenschätzung bereitstellen.
+  - Fallback: Backup-Keys nur sequenziell bei erschöpftem, gesperrtem oder technisch ausgefallenem aktivem Key nutzen; keine parallele Abfrage, kein Fan-out und keine doppelte Beschaffung derselben Daten über mehrere Keys.
+  - Caching: Bereits erzeugte `Players.json`, `Games.json`, `Schedule.json` und Saisonarchive bevorzugen; Tank01 nur für tatsächlich fehlende oder gezielt zu reparierende Daten aufrufen und Antworten endpoint-, saison- und spielbezogen wiederverwenden.
+  - Betrieb: Regelmäßige Sleeper-Abrufe dürfen unabhängig bleiben; zusätzliche Tank01-Läufe, historische Backfills oder Force-Reparaturen müssen manuell, budgetiert und bei zu geringem Restbudget fail-closed erfolgen.
+  - Sicherheit: API-Key-Werte niemals in Logs, Fehlermeldungen, Artefakten oder generierten Dateien ausgeben.
+
 - [ ] `CapDeadlineBufferDays` sauber über `ConfigUtils.psm1` bereitstellen.
   - Kontext: `CapDeadlineBufferDays` liegt als liga-spezifische Regel in `Metadata.json`, wird aber aktuell in `RequestLeague.ps1` direkt aus `Metadata.json` gelesen.
   - Grund: `ConfigUtils.psm1` enthält derzeit noch laufzeitabhängige Werte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
