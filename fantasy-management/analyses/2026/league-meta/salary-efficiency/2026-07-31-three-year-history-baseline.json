@@ -1,0 +1,275 @@
+{
+  "type": "league_meta_analysis",
+  "scope": "fantasy-management",
+  "created": "2026-07-31",
+  "status": "active",
+  "team_context": "league-wide with Mighty Giants perspective",
+  "analysis_id": "salary-efficiency-2026-three-year-baseline",
+  "method_version": "1.0",
+  "evidence_level": "single_snapshot",
+  "data_sources": [
+    "public/data/League.json",
+    "public/data/Metadata.json",
+    "public/data/Players.json",
+    "public/data/chat/players-relevant/index.json",
+    "public/data/chat/players-relevant/players_*.json"
+  ],
+  "summary": "Baseline der positions- und rollenbezogenen Salary-Effizienz auf Basis ausschließlich gehaltener QB, RB, WR und TE mit drei vorhandenen Statistikjahren.",
+  "recommendation": "Die numerischen Cut-offs als datierte Thesen behandeln, nach der Saison 2026 gegen mehrere Populationen replizieren und erst danach über eine Übernahme bestätigter Erkenntnisse in Knowledge oder methodische Regeln entscheiden.",
+  "validity_note": "Momentaufnahme auf Basis des Repository-Zustands vom 31.07.2026. Ausgeschlossene junge Spieler bleiben reale Roster-Assets, werden aber nicht als Benchmark für etablierte Marktverträge verwendet.",
+  "supersedes": null,
+  "data_snapshot": {
+    "repository": "Lolindhir/fantasy-app",
+    "ref": "main",
+    "commit_sha": "f178e650696eec0c412cd79a55195b09015b21c7",
+    "league_data_assumed_current": true
+  },
+  "league_format": {
+    "teams": 6,
+    "starters": {
+      "QB": 2,
+      "RB": 2,
+      "WR": 2,
+      "TE": 2,
+      "FLEX": 4
+    }
+  },
+  "population_filters": {
+    "positions": [
+      "QB",
+      "RB",
+      "WR",
+      "TE"
+    ],
+    "requires_three_statistical_seasons": true,
+    "exclude_fully_empty_season_blocks": true,
+    "exclude_kickers": true,
+    "exclude_original_contracts": false
+  },
+  "population_counts": {
+    "QB": 13,
+    "RB": 28,
+    "WR": 42,
+    "TE": 17,
+    "total": 100
+  },
+  "production_metric": {
+    "name": "availability_adjusted_latest_season_points",
+    "formula": "(FantasyPointsAvgGame + FantasyPointsAvgPotentialGame) / 2",
+    "season": "SeasonMinus1"
+  },
+  "position_thresholds": [
+    {
+      "role": "QB1",
+      "neutral_salary_millions": [
+        35,
+        45
+      ],
+      "expected_points": [
+        19,
+        21
+      ],
+      "critical_condition": "salary > 45 and points < 19"
+    },
+    {
+      "role": "Elite-QB",
+      "neutral_salary_millions": [
+        45,
+        55
+      ],
+      "expected_points": [
+        21,
+        null
+      ],
+      "critical_condition": "salary > 55 without clear elite production"
+    },
+    {
+      "role": "QB2",
+      "neutral_salary_millions": [
+        16,
+        38
+      ],
+      "expected_points": [
+        14,
+        19
+      ],
+      "critical_condition": "salary > 40 and points < 18"
+    },
+    {
+      "role": "RB1",
+      "neutral_salary_millions": [
+        28,
+        38
+      ],
+      "expected_points": [
+        16,
+        22
+      ],
+      "critical_condition": "salary > 30 and points < 16"
+    },
+    {
+      "role": "Elite-RB",
+      "neutral_salary_millions": [
+        40,
+        50
+      ],
+      "expected_points": [
+        20,
+        null
+      ],
+      "critical_condition": "salary > 40 and points < 20"
+    },
+    {
+      "role": "RB2/FLEX",
+      "neutral_salary_millions": [
+        11,
+        22
+      ],
+      "expected_points": [
+        10,
+        14
+      ],
+      "critical_condition": "salary > 22 and points < 12"
+    },
+    {
+      "role": "WR1",
+      "neutral_salary_millions": [
+        25,
+        38
+      ],
+      "expected_points": [
+        16,
+        21
+      ],
+      "critical_condition": "salary > 30 and points < 16"
+    },
+    {
+      "role": "Elite-WR",
+      "neutral_salary_millions": [
+        38,
+        48
+      ],
+      "expected_points": [
+        19,
+        23
+      ],
+      "critical_condition": "salary > 40 and points < 18"
+    },
+    {
+      "role": "WR2/FLEX",
+      "neutral_salary_millions": [
+        10,
+        23
+      ],
+      "expected_points": [
+        11,
+        15
+      ],
+      "critical_condition": "salary > 25 and points < 13"
+    },
+    {
+      "role": "TE1",
+      "neutral_salary_millions": [
+        10,
+        15
+      ],
+      "expected_points": [
+        10,
+        13
+      ],
+      "critical_condition": "salary > 15 and points < 10"
+    },
+    {
+      "role": "Elite-TE",
+      "neutral_salary_millions": [
+        20,
+        28
+      ],
+      "expected_points": [
+        15,
+        null
+      ],
+      "critical_condition": "salary > 20 and points <= 12"
+    },
+    {
+      "role": "TE2",
+      "neutral_salary_millions": [
+        4,
+        11
+      ],
+      "expected_points": [
+        7,
+        10
+      ],
+      "critical_condition": "salary > 12 and points < 8"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "SALARY-H01",
+      "statement": "Spieler ohne drei vollständige Statistikjahre verzerren positionsbezogene Salary-Mediane nach unten, weil Salary häufig durch fehlende Historie oder Vertragszugehörigkeit reduziert ist.",
+      "status": "proposed",
+      "review_after": "2026-season-complete",
+      "validation_result": null
+    },
+    {
+      "id": "SALARY-H02",
+      "statement": "Der Filter auf drei vollständige Statistikjahre erzeugt stabilere Salary-Ertrags-Grenzen als die ungefilterte Gesamtpopulation.",
+      "status": "proposed",
+      "review_after": "2026-season-complete",
+      "validation_result": null
+    },
+    {
+      "id": "SALARY-H03",
+      "statement": "Der Drei-Jahres-Filter allein entfernt den Young-Player-Discount nicht vollständig; ein zusätzlicher Filter auf vertraglich etablierte Spieler liefert eine bessere Veteranen-Marktlinie.",
+      "status": "proposed",
+      "review_after": "2026-season-complete",
+      "validation_result": null
+    },
+    {
+      "id": "SALARY-H04",
+      "statement": "Salary-Cut-offs müssen positions- und produktionsklassenbezogen abgeleitet werden; eine gemeinsame Kennzahl wie Punkte pro Million klassifiziert Rollen systematisch falsch.",
+      "status": "proposed",
+      "review_after": "2026-season-complete",
+      "validation_result": null
+    }
+  ],
+  "validation_plan": {
+    "trigger": "2026 season completed and full season statistics generated",
+    "review_paths": [
+      "fantasy-management/analyses/2026/league-meta/salary-efficiency/reviews/2027-postseason-validation.md",
+      "fantasy-management/analyses/2026/league-meta/salary-efficiency/reviews/2027-postseason-validation.json"
+    ],
+    "populations": {
+      "A": "all held QB, RB, WR and TE",
+      "B": "at least three complete statistical seasons",
+      "C": "at least three statistical seasons and Year >= 5",
+      "D": "at least three statistical seasons and no longer on original rookie or entry contract"
+    },
+    "checks": [
+      "threshold stability",
+      "out-of-sample production calibration",
+      "misclassification frequency and cause",
+      "median versus trimmed mean versus percentile bands",
+      "roster production and cap explanatory power",
+      "position-specific differences"
+    ],
+    "result_statuses": [
+      "supported",
+      "partially_supported",
+      "rejected",
+      "inconclusive"
+    ],
+    "evidence_levels": [
+      "single_snapshot",
+      "one_season_validated",
+      "multi_season_validated"
+    ]
+  },
+  "promotion_policy": {
+    "numeric_thresholds": "remain dated analysis outputs",
+    "knowledge": "only after a separate interpretation step and validation",
+    "rules": "only after validation and explicit user approval",
+    "decisions": "use when a standard method is deliberately selected"
+  }
+}
