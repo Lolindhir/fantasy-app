@@ -11,6 +11,20 @@ Purpose: reusable workflows for Fantasy Management tasks.
 5. Separate stable facts from dynamic values.
 6. Store outputs in the correct Fantasy Management folder.
 
+## Hypothesis and validation workflow
+
+Use this workflow when an analysis produces a plausible but not yet durable empirical conclusion.
+
+1. Store the dated baseline under `fantasy-management/analyses/<year>/` as a human-readable Markdown file and, when structured comparison matters, a machine-readable JSON file.
+2. Record the repository ref or commit, concrete input paths, league format, population filters, method version, metrics, sample sizes, limitations and validity note.
+3. Give every independently testable hypothesis a stable ID and start it with status `proposed`.
+4. Define the future trigger, comparison populations, validation checks, permitted result statuses and expected review paths in the baseline.
+5. Keep the baseline immutable. Later validation must be written to new review files that link to the original analysis instead of rewriting the original result.
+6. Add the future validation task to the root `TODO.md`; do not create a separate todo list under `fantasy-management/`.
+7. Use `supported`, `partially_supported`, `rejected` or `inconclusive` for the later hypothesis result and track evidence strength separately, for example `single_snapshot`, `one_season_validated` or `multi_season_validated`.
+8. Keep dated numerical thresholds and current player conclusions in analyses. Promote only validated, reusable interpretations to `knowledge/` after a separate interpretation step.
+9. Add a durable method to `FANTASY_MANAGEMENT_RULES.md` only after validation and explicit user approval. Store a deliberately selected operating standard under `decisions/` when appropriate.
+
 ## Player analysis workflow
 
 1. Load current league format and scoring.

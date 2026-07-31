@@ -146,6 +146,80 @@
         "injury-recovery",
         "panthers-backfield"
       ]
+    },
+    {
+      "id": "jalen-coker-2026",
+      "enabled": true,
+      "entity": {
+        "type": "player",
+        "display_name": "Jalen Coker",
+        "identifiers": {
+          "sleeper_id": "11643"
+        },
+        "canonical_ref": null,
+        "attributes": {
+          "nfl_team": "CAR",
+          "position": "WR"
+        }
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "injury-status",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "redraft-adp-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "high",
+      "decision_context": {
+        "perspective": "managed_team",
+        "relevance": "Explizit vom Nutzer ausgewählter Panthers-Wide-Receiver; Gesundheit, Einsatzstatus, Zielanteil, Konkurrenzsituation sowie Markt- und ADP-Bewegung können seine Dynasty- und Win-Now-Relevanz deutlich verändern.",
+        "current_position": "Beobachtung ohne vorweggenommene Roster-, Draft- oder Trade-Entscheidung.",
+        "effect_rules": [
+          {
+            "when_classification": "injury_status_change",
+            "action": "Gesundheits-, Einsatz- und Roster-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "roster_availability_change",
+            "action": "Verfügbarkeit und unmittelbare Kaderrelevanz neu bewerten."
+          },
+          {
+            "when_classification": "return_timeline_change",
+            "action": "Rückkehrfenster und kurzfristige Nutzbarkeit neu bewerten."
+          },
+          {
+            "when_classification": "role_change",
+            "action": "Receiver-Rolle, Konkurrenzsituation und Dynasty-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Targets, Routes, Usage-Pfad und mögliche Roster-, Draft- oder Trade-Aktion neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Marktpreis und mögliche Buy-, Hold-, Shop- oder Stash-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_change",
+            "action": "Kurzfristige Rollen- und Win-Now-Erwartung gegen Dynasty-Markt und Teamkontext abgleichen."
+          },
+          {
+            "when_classification": "redraft_adp_entry",
+            "action": "Neu entstandene kurzfristige Relevanz auf belastbare Rollen-, Usage- oder News-Signale prüfen."
+          }
+        ]
+      },
+      "tags": [
+        "player-watch",
+        "user-selected",
+        "panthers-receiver",
+        "usage-upside"
+      ]
     }
   ],
   "selectors": []
