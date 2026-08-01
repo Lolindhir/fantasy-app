@@ -55,11 +55,75 @@ The job-level interval limits how often the job may run. Within a due job:
 - evaluate profiles independently;
 - do not recheck a target/profile pair before any stricter future per-profile cadence unless explicitly configured later.
 
-The initial framework uses the job cadence for every profile. Profile-specific cadence can be added without changing state identity.
+The job cadence does not require an unbounded deep external investigation of every active target/profile pair on every wakeup. Every due run has two stages:
+
+1. a cheap complete scan of current repository inputs, configured snapshot pointers and reusable source fingerprints for all active pairs;
+2. a bounded deep-evaluation batch for pairs that need a new baseline, have changed relevant inputs or require a retry.
+
+The complete cheap scan may load shared files and ranking snapshots once and join all active players in memory. It must not repeat the same repository or provider fetch separately for every player.
+
+### 3.1 Deep-evaluation budget
+
+A single runner wakeup may deeply evaluate at most **12 target/profile pairs**.
+
+Of those 12 slots:
+
+- at most **8** may be used for previously missing initial baselines;
+- remaining capacity is reserved first for already-baselined pairs whose relevant input fingerprints changed;
+- unused reserved capacity may be used for additional retryable pairs, but the total remains 12.
+
+A pair does not consume the deep-evaluation budget when all relevant reusable input fingerprints are unchanged and the profile workflow permits a deterministic unchanged result without new player-specific research.
+
+### 3.2 Deterministic pair ordering
+
+Build the candidate queue in this order:
+
+1. already-baselined pairs with changed relevant input fingerprints or a concrete current change signal;
+2. missing or `never_checked` profile states;
+3. retryable `pending` profile states;
+4. retryable `failed` profile states.
+
+Within each bucket sort by:
+
+1. target priority, highest first;
+2. target ID ascending;
+3. profile ID ascending.
+
+Never let one unavailable pair prevent later independent pairs in the same bounded batch from being evaluated.
+
+### 3.3 Incremental baseline backfill
+
+A missing baseline backlog is normal operational work, not an incomplete dependency and not a failed job.
+
+When more missing pairs exist than fit into the current budget:
+
+1. evaluate and store only the selected bounded batch;
+2. set the job state to `pending` and `pending: true`;
+3. update `last_evaluated_at` and `last_successful_run` because the bounded batch completed successfully;
+4. record one bounded `pending` recent event with completed-pair and remaining-pair counts;
+5. retain all previous good states;
+6. continue the backlog on the next scheduled wakeup;
+7. do not publish an Observation Event or send a user notification for baseline progress alone;
+8. do not pause, disable or delete the external scheduled task merely because a retryable baseline backlog remains.
+
+A successful partial backfill is a successful run with remaining work. It is not an error message condition.
+
+When the final missing pair is baselined, set the job back to `idle` with `pending: false` unless another retryable pair remains.
+
+### 3.4 Pending and failed pairs
+
+When a selected pair cannot meet mandatory source confidence:
+
+1. preserve its previous good material state when one exists;
+2. otherwise create or retain a schema-valid profile state with status `pending`, null hash, empty material state, null confidence and a concise `last_error`;
+3. continue with independent pairs inside the remaining batch budget;
+4. place the retry behind never-attempted missing pairs on later wakeups;
+5. notify only when the error state is new or materially changed and the global notification rules permit it;
+6. never repeatedly notify the same unchanged retryable error.
 
 ## 4. Collect evidence
 
-For each target/profile pair:
+For each selected target/profile pair:
 
 1. Read the profile signals and source policy.
 2. Resolve current league context from repository data.
@@ -73,6 +137,14 @@ For each target/profile pair:
 10. Fail the profile check when mandatory source confidence cannot be met.
 11. Keep the previous good material state when current evidence is incomplete.
 
+Batch source work whenever the profile permits it:
+
+- load each current repo file once per run;
+- load each configured ranking or ADP snapshot once per run;
+- join all selected players against the same loaded dataset;
+- reuse official team, transaction, injury-report or position-group evidence for multiple selected players only when it actually supports each player-specific signal;
+- perform deep player-specific web research only for missing qualitative baselines, changed inputs or concrete change signals.
+
 ## 5. Normalize signals
 
 Return the configured signal IDs with stable value types.
@@ -85,6 +157,16 @@ Do not include:
 - speculative values not supported by evidence.
 
 The normalized material state contains only fields listed in the profile's `output_fields` plus explicitly approved structured support fields.
+
+Serialize normalized material state with deterministic JSON semantics before hashing:
+
+- UTF-8;
+- object keys sorted recursively;
+- compact separators;
+- no insignificant whitespace;
+- no timestamps or source URLs unless an output field explicitly makes them material.
+
+Use SHA-256 over those canonical UTF-8 bytes for `state_hash`.
 
 ## 6. Evaluate criteria
 
@@ -102,8 +184,8 @@ Supported operators are defined in `automation-criterion.schema.json`.
 
 When no previous profile state exists:
 
-1. treat the missing state as initialization work inside the current due run, not as an incomplete dependency or production-readiness failure;
-2. store or propose a baseline;
+1. treat the missing state as initialization work inside the bounded current due run, not as an incomplete dependency or production-readiness failure;
+2. store the normalized successful result as a baseline;
 3. mark the profile state as `baseline`;
 4. do not create an event unless `notify_on_initial_baseline` is true.
 
@@ -171,6 +253,8 @@ Notify only when:
 
 No-change runs produce no analysis file, no state heartbeat, no commit and no notification.
 
+Incremental baseline progress may produce a State-only commit because it is a real durable state change. It produces no analysis file and no notification.
+
 ## 10. State update
 
 When write mode is enabled:
@@ -182,7 +266,17 @@ When write mode is enabled:
 - record bounded operational events;
 - never alter jobs, profiles or target sets.
 
-For material events, the State update must be committed atomically with both event files. A status or changed-error-state write may update only the State when the global state policy permits it.
+For material events, the State update must be committed atomically with both event files. A baseline-progress, status-change or changed-error-state write may update only the State when the global state policy permits it.
+
+Before every State-only baseline-progress write:
+
+1. pin the expected `main` parent commit SHA;
+2. pin the expected State blob SHA;
+3. build the complete replacement State document;
+4. validate it against `automation-observation-state.schema.json` and the cross-file validator;
+5. write only when both expected SHAs still match;
+6. discard and recompute on conflict;
+7. never force-update or merge operational State automatically.
 
 ## Player role-opportunity module
 
@@ -217,11 +311,11 @@ For entities using `market-movement`:
 
 Production execution requires all of the following:
 
-1. every active target/profile pair can be resolved and evaluated; a missing stored profile state is initialized as a silent baseline during the current due run and does not block production execution;
-2. successful deterministic source-binding resolution;
+1. every active target/profile pair can be resolved; missing stored profile states are handled through the bounded incremental baseline backfill and do not block production execution;
+2. successful deterministic source-binding resolution for every pair selected into the current deep-evaluation batch;
 3. a successful controlled atomic-write test;
 4. `runner-config.json` in `write_enabled`;
 5. the job definition enabled;
 6. an external scheduled task or runner wakeup.
 
-The repository controls job eligibility and writes. The external task only wakes the runner.
+The repository controls job eligibility and writes. The external task only wakes the runner. A remaining retryable baseline backlog must not cause the external task to disable itself.
