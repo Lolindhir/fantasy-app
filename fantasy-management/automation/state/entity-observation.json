@@ -1,26 +1,28 @@
 {
   "schema_version": 1,
   "job_id": "entity-observation",
-  "status": "idle",
-  "revision": 2,
-  "last_evaluated_at": "2026-07-25T06:36:52+02:00",
-  "last_successful_run": "2026-07-25T06:36:52+02:00",
-  "last_processed_key": "manual-baseline:tank-bigsby-2026",
+  "status": "pending",
+  "revision": 3,
+  "last_evaluated_at": "2026-08-02T07:01:23+02:00",
+  "last_successful_run": "2026-08-02T07:01:23+02:00",
+  "last_processed_key": "baseline-batch:2026-08-02:aj-barner-2026",
   "last_input_fingerprints": {
-    "fantasy-management/automation/jobs/entity-observation.json": "383fa3c159b926d13a2eafab449abdd09b5c5705",
+    "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
+    "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
     "fantasy-management/automation/profiles/market-movement.json": "ad4b75700de9881155051b637255a9960f412952",
+    "fantasy-management/automation/profiles/redraft-adp-movement.json": "157881821539ac6ccd36a2c6a0855c2db6022c04",
     "fantasy-management/automation/profiles/role-opportunity.json": "004adf07afb5973f26914bc679b96d6f2121b049",
-    "fantasy-management/automation/target-sets/player-role-watch.json": "f548ee1bb199be1a0e1f71954244f6f3ddbd2a23",
-    "fantasypros:dynasty-superflex-ppr:latest-pointer": "fcbecaecbd01c5718eecc7ae0f7ce36f43c184b3",
-    "fantasypros:dynasty-superflex-ppr:ranking": "8c01ff85495b1bf3c30a1849a823108d8f8b7741",
-    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "87165eedad8967977244a9fe142ea0df208bde8f",
-    "fantasycalc:dynasty-superflex-ppr-8-team:ranking": "473388319b0cd6d1a989d0465db965e2d50ca850",
-    "official-eagles-depth-chart": "philadelphiaeagles.com/team/depth-chart:observed-2026-07-24",
-    "official-eagles-running-back-preview": "philadelphiaeagles.com/news/eagles-2026-training-camp-position-preview-running-back:published-2026-07-07",
-    "public/data/League.json": "e2e40b0f063c7e4902c5c322f9cd1f224691f16c"
+    "fantasy-management/automation/target-sets/managed-roster-health.json": "bfd4de0733edca6cf53f353c917a110a384e553f",
+    "fantasy-management/automation/target-sets/player-role-watch.json": "cb5a072305be2fd6128493d2843fb946fdd06e78",
+    "fantasypros:dynasty-superflex-ppr:ranking": "705ae9fc5dc74eae500d52511537f8be75c0f829",
+    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "529610c140654318cc60fe3a12db19e6d4c6043b"
   },
-  "pending": false,
-  "last_error": null,
+  "pending": true,
+  "last_error": {
+    "at": "2026-08-02T07:01:23+02:00",
+    "message": "Manual target 'jalen-coker-2026' configures sleeper_id 11643, but the current player index resolves 11643 to Jaylen Wright; Jalen Coker resolves to sleeper_id 11646. Target evaluation was skipped to prevent writing state for the wrong player.",
+    "retryable": false
+  },
   "last_material_change": null,
   "recent_events": [
     {
@@ -34,23 +36,78 @@
       "type": "evaluated",
       "severity": "info",
       "summary": "Entity-Observation für den produktiven Runner aktiviert; geprüfte Baseline und Material-States bleiben unverändert."
+    },
+    {
+      "at": "2026-08-02T07:01:23+02:00",
+      "type": "pending",
+      "severity": "info",
+      "summary": "Inkrementeller Batch bearbeitet: vier AJ-Barner-Profile bleiben bis zur vollständigen kanonischen Normalisierung und Hashbildung pending; 160 aktive Profilpaare verbleiben."
+    },
+    {
+      "at": "2026-08-02T07:01:23+02:00",
+      "type": "error",
+      "severity": "medium",
+      "summary": "Konfigurationsfehler bei jalen-coker-2026: sleeper_id 11643 gehört laut aktuellem Player-Index zu Jaylen Wright; die Auswertung wurde fail-closed übersprungen."
     }
   ],
   "job_state": {
     "target_sets": {
       "player-role-watch": {
-        "last_resolved_at": "2026-07-25T06:36:52+02:00",
+        "last_resolved_at": "2026-08-02T07:01:23+02:00",
         "resolved_target_ids": [
+          "aj-barner-2026",
+          "jalen-coker-2026",
+          "jonathon-brooks-2026",
           "tank-bigsby-2026"
+        ]
+      },
+      "managed-roster-health": {
+        "last_resolved_at": "2026-08-02T07:01:23+02:00",
+        "resolved_target_ids": [
+          "managed-roster-player-11539",
+          "managed-roster-player-11565",
+          "managed-roster-player-11566",
+          "managed-roster-player-11627",
+          "managed-roster-player-11628",
+          "managed-roster-player-11632",
+          "managed-roster-player-11635",
+          "managed-roster-player-12469",
+          "managed-roster-player-12481",
+          "managed-roster-player-12492",
+          "managed-roster-player-12506",
+          "managed-roster-player-12508",
+          "managed-roster-player-12517",
+          "managed-roster-player-12518",
+          "managed-roster-player-12534",
+          "managed-roster-player-12540",
+          "managed-roster-player-12545",
+          "managed-roster-player-12547",
+          "managed-roster-player-13285",
+          "managed-roster-player-13287",
+          "managed-roster-player-13311",
+          "managed-roster-player-13405",
+          "managed-roster-player-13414",
+          "managed-roster-player-13417",
+          "managed-roster-player-2133",
+          "managed-roster-player-4018",
+          "managed-roster-player-4046",
+          "managed-roster-player-4866",
+          "managed-roster-player-5947",
+          "managed-roster-player-7526",
+          "managed-roster-player-8130",
+          "managed-roster-player-8137",
+          "managed-roster-player-8142",
+          "managed-roster-player-8151",
+          "managed-roster-player-8155",
+          "managed-roster-player-9224",
+          "managed-roster-player-9493"
         ]
       }
     },
     "targets": {
       "tank-bigsby-2026": {
         "entity_fingerprint": "player:sleeper_id:9225",
-        "target_set_ids": [
-          "player-role-watch"
-        ],
+        "target_set_ids": ["player-role-watch"],
         "last_checked_at": "2026-07-25T06:36:52+02:00",
         "status": "active",
         "observations": {
@@ -59,46 +116,16 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6718d9ab739067dccbabf6f7f922688dcaeaee5e2781f3a0cab06d616acc771",
             "material_state": {
-              "role_summary": {
-                "starter": "Saquon Barkley",
-                "listed_depth_chart_order": [
-                  "Saquon Barkley",
-                  "Will Shipley",
-                  "Tank Bigsby"
-                ],
-                "depth_chart_type": "official_unofficial"
-              },
+              "role_summary": {"starter": "Saquon Barkley", "listed_depth_chart_order": ["Saquon Barkley", "Will Shipley", "Tank Bigsby"], "depth_chart_type": "official_unofficial"},
               "role_class": "listed_rb3_open_backup_competition",
-              "competition_summary": {
-                "ahead": [
-                  "Saquon Barkley",
-                  "Will Shipley"
-                ],
-                "additional_competitors": [
-                  "Dameon Pierce",
-                  "Elijah Mitchell"
-                ],
-                "competition_status": "open_before_training_camp"
-              },
-              "usage_summary": {
-                "training_camp_started": false,
-                "numeric_first_team_usage_available": false,
-                "game_usage_2026_available": false
-              },
+              "competition_summary": {"ahead": ["Saquon Barkley", "Will Shipley"], "additional_competitors": ["Dameon Pierce", "Elijah Mitchell"], "competition_status": "open_before_training_camp"},
+              "usage_summary": {"training_camp_started": false, "numeric_first_team_usage_available": false, "game_usage_2026_available": false},
               "first_team_usage_class": "unknown",
-              "high_value_usage": {
-                "goal_line": "unknown",
-                "passing_down": "unknown",
-                "third_down": "unknown",
-                "two_minute": "unknown"
-              },
+              "high_value_usage": {"goal_line": "unknown", "passing_down": "unknown", "third_down": "unknown", "two_minute": "unknown"},
               "confidence": "medium"
             },
             "confidence": "medium",
-            "source_fingerprints": [
-              "official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24",
-              "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"
-            ],
+            "source_fingerprints": ["official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24", "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"],
             "last_material_change_at": null,
             "last_error": null
           },
@@ -107,32 +134,31 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6ec11409d66d906d086dcfb67371b9f06c4d23dc76eb9ce52dcec3da623d5e0",
             "material_state": {
-              "market_summary": {
-                "classification": "deep_stash_handcuff",
-                "roster_rate": 0.9218,
-                "source_context": {
-                  "rank_provider": "fantasypros:dynasty-superflex-ppr",
-                  "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"
-                }
-              },
+              "market_summary": {"classification": "deep_stash_handcuff", "roster_rate": 0.9218, "source_context": {"rank_provider": "fantasypros:dynasty-superflex-ppr", "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"}},
               "dynasty_overall_rank": 194,
               "position_rank": 55,
               "market_value": 1241,
               "market_tier": "11",
-              "source_disagreement": {
-                "status": "no_material_conflict",
-                "comparison_basis": "qualitative_band_alignment"
-              },
+              "source_disagreement": {"status": "no_material_conflict", "comparison_basis": "qualitative_band_alignment"},
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": [
-              "fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741",
-              "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850"
-            ],
+            "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741", "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850"],
             "last_material_change_at": null,
             "last_error": null
           }
+        }
+      },
+      "aj-barner-2026": {
+        "entity_fingerprint": "player:sleeper_id:11603",
+        "target_set_ids": ["player-role-watch"],
+        "last_checked_at": "2026-08-02T07:01:23+02:00",
+        "status": "pending",
+        "observations": {
+          "injury-status": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["current_player_data:players_0007.json:11603", "official_team:seahawks.com:active-roster:observed-2026-08-02"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
+          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:seahawks.com:depth-chart:observed-2026-08-02", "official_team:seahawks.com:player-career:observed-2026-08-02"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
+          "market-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:705ae9fc5dc74eae500d52511537f8be75c0f829", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-01:529610c140654318cc60fe3a12db19e6d4c6043b"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
+          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": [], "last_material_change_at": null, "last_error": "Required ADP snapshot rows were not resolved within the bounded batch; retry after never-checked pairs."}
         }
       }
     }
