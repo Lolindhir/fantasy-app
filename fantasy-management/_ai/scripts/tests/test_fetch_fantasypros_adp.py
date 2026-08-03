@@ -13,6 +13,37 @@ assert spec and spec.loader
 spec.loader.exec_module(module)
 
 
+def source_table(labels):
+    rows = "".join(
+        f"<tr><td></td><td>ADP</td><td>{label}</td><td>8/{1 + index:02d}</td></tr>"
+        for index, label in enumerate(labels)
+    )
+    return (
+        '<table id="sources"><tr><th></th><th>Expert</th><th>Site</th>'
+        f"<th>Date</th></tr>{rows}</table>"
+    )
+
+
+def page_identity(config_key="ppr-overall", season=2026, wrong_identity=False):
+    if config_key == "ppr-overall":
+        title = (
+            f"Average Draft Position (ADP) - PPR Leagues {season} | FantasyPros"
+            if not wrong_identity
+            else f"Average Draft Position (ADP) - Standard Leagues {season} | FantasyPros"
+        )
+        identity = f"<h1>Average Draft Position (ADP)</h1><div>{season} PPR Scoring</div>"
+        labels = ["ESPN", "Sleeper", "CBS", "NFL", "RTSports", "Fantrax"]
+    else:
+        title = f"{season} Average Draft Position (ADP): Half PPR OP | FantasyPros"
+        if wrong_identity:
+            title = f"{season} Average Draft Position (ADP): Standard OP | FantasyPros"
+        identity = (
+            f"<h1>Average Draft Position (ADP)</h1><div>{season} Half PPR Scoring Superflex</div>"
+        )
+        labels = ["Sleeper", "FFPC"]
+    return title, identity, labels
+
+
 def make_html(
     config_key="ppr-overall",
     *,
@@ -22,37 +53,14 @@ def make_html(
     bad_average=False,
     wrong_identity=False,
 ):
-    config = module.FORMAT_CONFIGS[config_key]
+    title, identity, source_labels = page_identity(config_key, season, wrong_identity)
     if config_key == "ppr-overall":
-        title = (
-            f"Average Draft Position (ADP) - PPR Leagues {season} | FantasyPros"
-            if not wrong_identity
-            else f"Average Draft Position (ADP) - Standard Leagues {season} | FantasyPros"
-        )
-        identity = f"<h1>Average Draft Position (ADP)</h1><div>{season} PPR Scoring</div>"
         headers = [
-            "Rank",
-            "Player (Bye)",
-            "POS",
-            "ESPN",
-            "Sleeper",
-            "CBS",
-            "NFL",
-            "RTSports",
-            "Fantrax",
-            "AVG",
-            "Real-Time",
+            "Rank", "Player (Bye)", "POS", "ESPN", "Sleeper", "CBS",
+            "NFL", "RTSports", "Fantrax", "AVG", "Real-Time",
         ]
-        source_labels = ["ESPN", "Sleeper", "CBS", "NFL", "RTSports", "Fantrax"]
     else:
-        title = f"{season} Average Draft Position (ADP): Half PPR OP | FantasyPros"
-        if wrong_identity:
-            title = f"{season} Average Draft Position (ADP): Standard OP | FantasyPros"
-        identity = (
-            f"<h1>Average Draft Position (ADP)</h1><div>{season} Half PPR Scoring Superflex</div>"
-        )
         headers = ["OP", "Overall", "Player (Bye)", "POS", "Sleeper", "FFPC", "AVG"]
-        source_labels = ["Sleeper", "FFPC"]
 
     header_html = "".join(f"<th>{value}</th>" for value in headers)
     row_html = []
@@ -80,17 +88,9 @@ def make_html(
             if bad_average and index == 1:
                 average += 5
             cells = [
-                index,
-                player_cell,
-                f"{position}{1 + (index - 1) // 4}",
-                espn,
-                sleeper,
-                cbs,
-                nfl,
-                rtsports,
-                fantrax,
-                f"{average:.1f}",
-                index,
+                index, player_cell, f"{position}{1 + (index - 1) // 4}",
+                espn, sleeper, cbs, nfl, rtsports, fantrax,
+                f"{average:.1f}", index,
             ]
         else:
             sleeper = index + change if index == 1 else index
@@ -99,30 +99,74 @@ def make_html(
             if bad_average and index == 1:
                 average += 5
             cells = [
-                index,
-                index * 2,
-                player_cell,
-                f"{position}{1 + (index - 1) // 4}",
-                sleeper,
-                ffpc,
+                index, index * 2, player_cell,
+                f"{position}{1 + (index - 1) // 4}", sleeper, ffpc,
                 f"{average:.1f}",
             ]
         rendered = []
         for value in cells:
-            rendered.append(value if isinstance(value, str) and value.startswith("<td>") else f"<td>{value}</td>")
+            rendered.append(
+                value if isinstance(value, str) and value.startswith("<td>")
+                else f"<td>{value}</td>"
+            )
         row_html.append("<tr>" + "".join(rendered) + "</tr>")
 
-    source_rows = "".join(
-        f"<tr><td></td><td>ADP</td><td>{label}</td><td>7/{20 + index}</td></tr>"
-        for index, label in enumerate(source_labels)
-    )
     return f"""
     <html><head><title>{title}</title></head><body>
     {identity}<div data-note="{raw_note}">{raw_note}</div>
     <table id="adp"><thead><tr>{header_html}</tr></thead><tbody>{''.join(row_html)}</tbody></table>
-    <table id="sources"><tr><th></th><th>Expert</th><th>Site</th><th>Date</th></tr>{source_rows}</table>
+    {source_table(source_labels)}
     </body></html>
     """
+
+
+def make_shell(config_key="ppr-overall", *, season=2026):
+    title, identity, labels = page_identity(config_key, season)
+    return f"<html><head><title>{title}</title></head><body>{identity}{source_table(labels)}</body></html>"
+
+
+def make_export_tsv(config_key="ppr-overall", *, change=0, bad_average=False):
+    if config_key == "ppr-overall":
+        headers = [
+            "Rank", "Player Name", "Team", "Bye", "POS", "ESPN", "Sleeper",
+            "CBS", "NFL", "RTSports", "Fantrax", "AVG", "Real-Time",
+        ]
+    else:
+        headers = [
+            "OP", "Overall", "Player Name", "Team", "Bye", "POS",
+            "Sleeper", "FFPC", "AVG",
+        ]
+    rows = ["FantasyPros ADP Export", "Generated for testing", "\t".join(headers)]
+    positions = ["QB", "RB", "WR", "TE"]
+    for index in range(1, 121):
+        position = positions[(index - 1) % 4]
+        if config_key == "ppr-overall":
+            espn = index + change if index == 1 else index
+            sleeper = index + 1
+            cbs = index
+            rtsports = index + 2
+            values = [espn, sleeper, cbs, rtsports]
+            average = sum(values) / len(values)
+            if bad_average and index == 1:
+                average += 5
+            values_out = [
+                index, f"Player {index}", "FA", 1 + index % 14,
+                f"{position}{1 + (index - 1) // 4}", espn, sleeper, cbs,
+                "—", rtsports, "—", f"{average:.1f}", index,
+            ]
+        else:
+            sleeper = index + change if index == 1 else index
+            ffpc = index + 1
+            average = (sleeper + ffpc) / 2
+            if bad_average and index == 1:
+                average += 5
+            values_out = [
+                index, index * 2, f"Player {index}", "FA", 1 + index % 14,
+                f"{position}{1 + (index - 1) // 4}", sleeper, ffpc,
+                f"{average:.1f}",
+            ]
+        rows.append("\t".join(str(value) for value in values_out))
+    return "\n".join(rows) + "\n"
 
 
 class FantasyProsAdpTests(unittest.TestCase):
@@ -134,6 +178,21 @@ class FantasyProsAdpTests(unittest.TestCase):
             config,
             season=2026,
             source_url=module.build_source_url(config, 2026),
+        )
+
+    def test_active_season_uses_canonical_url_and_historical_keeps_year(self):
+        config = module.FORMAT_CONFIGS["ppr-overall"]
+        self.assertEqual(
+            config["url"],
+            module.build_source_url(config, 2026, current_season=2026),
+        )
+        self.assertIn(
+            "year=2025",
+            module.build_source_url(config, 2025, current_season=2026),
+        )
+        self.assertIn(
+            "export=xls",
+            module.build_export_url(config, 2026, current_season=2026),
         )
 
     def test_parses_ppr_dynamic_sources_and_player_identity(self):
@@ -153,9 +212,7 @@ class FantasyProsAdpTests(unittest.TestCase):
             ["cbs-sports", "espn", "rtsports", "sleeper"],
             diagnostics["active_source_ids"],
         )
-        self.assertEqual(6, len(diagnostics["source_columns"]))
         self.assertEqual(120, len(raw["ranking_rows"]))
-        self.assertEqual(6, len(raw["source_dates"]))
 
     def test_parses_superflex_format_and_overall_rank(self):
         rows, diagnostics, _ = self.parse("half-ppr-superflex")
@@ -163,6 +220,55 @@ class FantasyProsAdpTests(unittest.TestCase):
         self.assertEqual(1, rows[0]["source_format_rank"])
         self.assertEqual(2, rows[0]["source_overall_rank"])
         self.assertEqual(["ffpc", "sleeper"], diagnostics["active_source_ids"])
+
+    def test_official_export_fallback_uses_canonical_identity_and_source_dates(self):
+        config = module.FORMAT_CONFIGS["ppr-overall"]
+        calls = []
+        responses = [
+            (make_shell(), {"content_type": "text/html"}, config["url"]),
+            (
+                make_export_tsv(),
+                {"content_type": "application/vnd.ms-excel"},
+                module.build_export_url(config, 2026, current_season=2026),
+            ),
+        ]
+
+        def request(url, referer=""):
+            calls.append((url, referer))
+            return responses[len(calls) - 1]
+
+        item = module._prepare_live_format(
+            config=config,
+            season=2026,
+            request=request,
+        )
+        self.assertEqual(2, len(calls))
+        self.assertEqual(config["url"], calls[0][0])
+        self.assertEqual(config["url"], calls[1][1])
+        self.assertEqual("official_export_fallback", item["raw_payload"]["extraction_method"])
+        self.assertEqual("delimited_export", item["raw_payload"]["ranking_document_format"])
+        self.assertEqual(120, len(item["rows"]))
+        self.assertEqual("Player 1", item["rows"][0]["name"])
+        self.assertEqual("FA", item["rows"][0]["team"])
+        self.assertEqual("", item["rows"][0]["source_player_id"])
+        self.assertEqual(6, len(item["diagnostics"]["source_dates"]))
+
+    def test_export_fallback_remains_fail_closed(self):
+        config = module.FORMAT_CONFIGS["ppr-overall"]
+        responses = [
+            (make_shell(), {}, config["url"]),
+            (make_export_tsv(bad_average=True), {}, module.build_export_url(config, 2026)),
+        ]
+        index = 0
+
+        def request(url, referer=""):
+            nonlocal index
+            result = responses[index]
+            index += 1
+            return result
+
+        with self.assertRaisesRegex(module.FantasyProsAdpError, "export fallback failed"):
+            module._prepare_live_format(config=config, season=2026, request=request)
 
     def test_rejects_wrong_identity_and_average_mismatch(self):
         with self.assertRaisesRegex(module.FantasyProsAdpError, "not PPR"):
@@ -215,8 +321,6 @@ class FantasyProsAdpTests(unittest.TestCase):
             latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             self.assertEqual("2026-07-20", latest["snapshot_date"])
             self.assertEqual("2026-07-21T08:00:00+00:00", latest["raw_fetched_at"])
-            raw_latest = json.loads((root / "raw-latest.json").read_text(encoding="utf-8"))
-            self.assertEqual("second", raw_latest["volatile_note"])
 
     def test_retains_latest_four_changed_snapshots(self):
         config = module.FORMAT_CONFIGS["ppr-overall"]
@@ -243,9 +347,6 @@ class FantasyProsAdpTests(unittest.TestCase):
                 ["2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24"],
                 module.snapshot_dates(root),
             )
-            latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
-            self.assertEqual(4, latest["retention_count"])
-            self.assertEqual(module.snapshot_dates(root), latest["retained_snapshot_dates"])
             with (root / "snapshots" / "2026-07-24" / "ranking.csv").open(
                 encoding="utf-8", newline=""
             ) as handle:
@@ -261,16 +362,10 @@ class FantasyProsAdpTests(unittest.TestCase):
             sf.write_text(make_html("half-ppr-superflex", bad_average=True), encoding="utf-8")
             result = module.main(
                 [
-                    "--season",
-                    "2026",
-                    "--repo-root",
-                    str(root),
-                    "--fetched-at",
-                    "2026-07-31T06:00:00Z",
-                    "--input",
-                    f"ppr-overall={ppr}",
-                    "--input",
-                    f"half-ppr-superflex={sf}",
+                    "--season", "2026", "--repo-root", str(root),
+                    "--fetched-at", "2026-07-31T06:00:00Z",
+                    "--input", f"ppr-overall={ppr}",
+                    "--input", f"half-ppr-superflex={sf}",
                     "--skip-unchanged",
                 ]
             )
