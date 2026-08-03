@@ -10,8 +10,8 @@ from fantasypros_adp_html import FantasyProsAdpError, _clean_text, token
 
 NULL_TOKENS = {"", "-", "—", "–", "n/a", "na", "null"}
 NON_SOURCE_HEADERS = {
-    "rank", "op", "overall", "player", "playerbye", "pos", "position",
-    "avg", "average", "realtime",
+    "rank", "op", "overall", "player", "playername", "playerbye", "playerteambye",
+    "team", "bye", "pos", "position", "avg", "average", "realtime",
 }
 SOURCE_ID_ALIASES = {
     "espn": "espn", "sleeper": "sleeper", "cbs": "cbs-sports",
@@ -20,6 +20,7 @@ SOURCE_ID_ALIASES = {
     "yahoosports": "yahoo", "ffpc": "ffpc",
     "fantasyfootballcalculator": "fantasy-football-calculator",
 }
+
 
 def canonical_source_id(value: str) -> str:
     normalized = token(value)
@@ -78,21 +79,46 @@ def _source_stats(values: list[Decimal]) -> tuple[int | str, int | str, int | st
     )
 
 
-def _extract_player_identity(cell: dict[str, Any]) -> tuple[str, str, str, str, int | str]:
+def _parse_team_bye(text: str) -> tuple[str, int | str]:
+    normalized = _clean_text(text)
+    match = re.search(r"\b([A-Z]{2,3})\s*\((\d{1,2})\)\s*$", normalized)
+    if match:
+        return match.group(1), int(match.group(2))
+    team_only = re.search(r"\b([A-Z]{2,3})\s*$", normalized)
+    return (team_only.group(1), "") if team_only else ("", "")
+
+
+def _extract_player_identity(
+    cell: dict[str, Any],
+    *,
+    team_value: str = "",
+    bye_value: str = "",
+) -> tuple[str, str, str, str, int | str]:
     player_links = [
         link
         for link in cell.get("links", [])
         if "/nfl/players/" in str(link.get("href", ""))
     ]
-    if not player_links:
-        raise FantasyProsAdpError(f"Player link missing in ADP row: {cell.get('text')!r}")
-    primary = player_links[0]
-    name = _clean_text(str(primary.get("text") or ""))
-    href = str(primary.get("href") or "")
-    match = re.search(r"/nfl/players/([^/?#]+)\.php", href)
-    slug = match.group(1) if match else ""
+    name = ""
+    slug = ""
+    if player_links:
+        primary = player_links[0]
+        name = _clean_text(str(primary.get("text") or ""))
+        href = str(primary.get("href") or "")
+        match = re.search(r"/nfl/players/([^/?#]+)\.php", href)
+        slug = match.group(1) if match else ""
+    else:
+        raw_text = _clean_text(str(cell.get("text") or ""))
+        name = raw_text
+        trailing = re.search(r"\s+([A-Z]{2,3})(?:\s*\((\d{1,2})\))?\s*$", raw_text)
+        if trailing:
+            name = raw_text[: trailing.start()].strip()
+            if not team_value:
+                team_value = trailing.group(1)
+            if not bye_value and trailing.group(2):
+                bye_value = trailing.group(2)
     if not name:
-        raise FantasyProsAdpError(f"Player name missing for href {href!r}")
+        raise FantasyProsAdpError(f"Player name missing in ADP row: {cell.get('text')!r}")
 
     player_id = ""
     for attrs in cell.get("element_attrs", []):
@@ -109,16 +135,23 @@ def _extract_player_identity(cell: dict[str, Any]) -> tuple[str, str, str, str, 
             player_id = id_match.group(1)
             break
 
-    text = str(cell.get("text") or "")
-    team, bye = "", ""
-    team_match = re.search(r"\b([A-Z]{2,3})\s*\((\d{1,2})\)\s*$", text)
-    if team_match:
-        team = team_match.group(1)
-        bye = int(team_match.group(2))
-    else:
-        team_only = re.search(r"\b([A-Z]{2,3})\s*$", text)
-        if team_only:
-            team = team_only.group(1)
+    team, bye = _parse_team_bye(str(cell.get("text") or ""))
+    explicit_team = _clean_text(team_value).upper()
+    if explicit_team and re.fullmatch(r"[A-Z]{2,3}", explicit_team):
+        team = explicit_team
+    explicit_bye = _clean_text(bye_value)
+    if explicit_bye:
+        try:
+            parsed_bye = int(explicit_bye)
+        except ValueError as exc:
+            raise FantasyProsAdpError(
+                f"Invalid FantasyPros bye for {name}: {bye_value!r}"
+            ) from exc
+        if not 1 <= parsed_bye <= 18:
+            raise FantasyProsAdpError(
+                f"Invalid FantasyPros bye for {name}: {bye_value!r}"
+            )
+        bye = parsed_bye
     return name, player_id, slug, team, bye
 
 
@@ -193,5 +226,3 @@ def parse_source_dates(table: dict[str, Any] | None) -> list[dict[str, str]]:
             }
         )
     return result
-
-
