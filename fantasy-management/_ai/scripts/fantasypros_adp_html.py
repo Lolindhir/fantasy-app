@@ -1,12 +1,15 @@
-"""HTML table extraction helpers for FantasyPros ADP pages."""
+"""HTML and export-table extraction helpers for FantasyPros ADP pages."""
 
 from __future__ import annotations
 
+import csv
+import io
 import re
 import urllib.parse
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from typing import Any
+
 
 class FantasyProsAdpError(RuntimeError):
     """Raised when a FantasyPros ADP page cannot be trusted or normalized."""
@@ -25,9 +28,40 @@ def parse_timestamp(value: str | None) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def build_source_url(config: dict[str, Any], season: int) -> str:
-    separator = "&" if "?" in config["url"] else "?"
-    return f"{config['url']}{separator}{urllib.parse.urlencode({'year': season})}"
+def _merge_query(url: str, values: dict[str, Any]) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    query = dict(urllib.parse.parse_qsl(parsed.query, keep_blank_values=True))
+    for key, value in values.items():
+        if value is None:
+            query.pop(key, None)
+        else:
+            query[key] = str(value)
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(query), parsed.fragment)
+    )
+
+
+def build_source_url(
+    config: dict[str, Any],
+    season: int,
+    *,
+    current_season: int | None = None,
+) -> str:
+    """Use the canonical no-query URL for the active season."""
+    active = current_season or datetime.now(timezone.utc).year
+    return config["url"] if season == active else _merge_query(config["url"], {"year": season})
+
+
+def build_export_url(
+    config: dict[str, Any],
+    season: int,
+    *,
+    current_season: int | None = None,
+) -> str:
+    return _merge_query(
+        build_source_url(config, season, current_season=current_season),
+        {"export": "xls"},
+    )
 
 
 class _TableParser(HTMLParser):
@@ -121,31 +155,97 @@ def parse_tables(html: str) -> dict[str, Any]:
     try:
         parser.feed(html)
         parser.close()
-    except Exception as exc:  # HTMLParser can surface malformed entity issues.
-        raise FantasyProsAdpError(
-            f"FantasyPros HTML parsing failed: {exc}"
-        ) from exc
+    except Exception as exc:
+        raise FantasyProsAdpError(f"FantasyPros HTML parsing failed: {exc}") from exc
     return {
         "title": parser.title,
         "document_text": parser.document_text,
         "tables": parser.tables,
+        "document_format": "html",
     }
+
+
+def _cell(text: str, tag: str) -> dict[str, Any]:
+    return {
+        "tag": tag,
+        "attrs": {},
+        "text": _clean_text(text),
+        "links": [],
+        "element_attrs": [{}],
+    }
+
+
+def _delimited_rows(payload: str, delimiter: str) -> list[list[str]]:
+    reader = csv.reader(io.StringIO(payload), delimiter=delimiter)
+    return [[_clean_text(value) for value in row] for row in reader if any(value.strip() for value in row)]
+
+
+def parse_export_table(payload: str) -> dict[str, Any]:
+    """Parse the public ``export=xls`` response when it is TSV/CSV text."""
+    candidates: list[list[list[str]]] = []
+    for delimiter in ("\t", ",", ";"):
+        rows = _delimited_rows(payload, delimiter)
+        if rows:
+            candidates.append(rows)
+
+    selected: tuple[list[list[str]], int] | None = None
+    for rows in candidates:
+        for index, row in enumerate(rows):
+            normalized = {token(value) for value in row}
+            has_rank = bool(normalized.intersection({"rank", "op"}))
+            has_player = bool(
+                normalized.intersection({"player", "playername", "playerbye", "playerteambye"})
+            )
+            if has_rank and has_player and normalized.intersection({"avg", "average"}):
+                if selected is None or len(row) > len(selected[0][selected[1]]):
+                    selected = (rows, index)
+                break
+    if selected is None:
+        raise FantasyProsAdpError("FantasyPros ADP export table not found")
+
+    rows, header_index = selected
+    headers = rows[header_index]
+    width = len(headers)
+    table_rows: list[list[dict[str, Any]]] = [[_cell(value, "th") for value in headers]]
+    for row in rows[header_index + 1 :]:
+        if len(row) < width:
+            row = row + [""] * (width - len(row))
+        elif len(row) > width:
+            row = row[:width]
+        table_rows.append([_cell(value, "td") for value in row])
+    return {
+        "title": "",
+        "document_text": _clean_text(" ".join(" ".join(row) for row in rows[:header_index])),
+        "tables": [{"attrs": {"source": "official-export"}, "rows": table_rows}],
+        "document_format": "delimited_export",
+    }
+
+
+def parse_ranking_document(payload: str) -> dict[str, Any]:
+    parsed = parse_tables(payload)
+    try:
+        find_ranking_table(parsed)
+        return parsed
+    except FantasyProsAdpError as exc:
+        if str(exc) != "FantasyPros ADP ranking table not found":
+            raise
+    if re.search(r"<\s*(?:!doctype|html|head|body|table)\b", payload, re.IGNORECASE):
+        raise FantasyProsAdpError("FantasyPros ADP ranking table not found")
+    return parse_export_table(payload)
 
 
 def _header_map(table: dict[str, Any]) -> tuple[list[str], int] | None:
     for index, row in enumerate(table.get("rows", [])):
         headers = [cell.get("text", "") for cell in row]
         normalized = {token(value) for value in headers}
-        if "avg" in normalized and any(
-            value in normalized for value in {"player", "playerbye"}
+        if normalized.intersection({"avg", "average"}) and normalized.intersection(
+            {"player", "playername", "playerbye", "playerteambye"}
         ):
             return headers, index
     return None
 
 
-def find_ranking_table(
-    parsed: dict[str, Any],
-) -> tuple[dict[str, Any], list[str], int]:
+def find_ranking_table(parsed: dict[str, Any]) -> tuple[dict[str, Any], list[str], int]:
     candidates: list[tuple[dict[str, Any], list[str], int]] = []
     for table in parsed["tables"]:
         result = _header_map(table)
@@ -154,9 +254,7 @@ def find_ranking_table(
             candidates.append((table, headers, index))
     if not candidates:
         raise FantasyProsAdpError("FantasyPros ADP ranking table not found")
-    candidates.sort(
-        key=lambda item: len(item[0].get("rows", [])), reverse=True
-    )
+    candidates.sort(key=lambda item: len(item[0].get("rows", [])), reverse=True)
     return candidates[0]
 
 
@@ -169,3 +267,15 @@ def find_source_table(parsed: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+def table_diagnostics(parsed: dict[str, Any]) -> dict[str, Any]:
+    samples: list[list[str]] = []
+    for table in parsed.get("tables", [])[:5]:
+        for row in table.get("rows", [])[:3]:
+            values = [_clean_text(str(cell.get("text", ""))) for cell in row]
+            if values:
+                samples.append(values[:20])
+    return {
+        "document_format": parsed.get("document_format", "unknown"),
+        "table_count": len(parsed.get("tables", [])),
+        "header_samples": samples[:10],
+    }
