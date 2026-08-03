@@ -43,7 +43,7 @@ fantasypros/
 
 Pro Format gilt:
 
-- `raw-latest.json` enthält die vollständig geparste aktuelle öffentliche Ranking-Tabelle einschließlich aller sichtbaren dynamischen Plattformspalten, Spielerlinks und Elementattribute sowie die sichtbare Quellen-/Datumsübersicht.
+- `raw-latest.json` enthält die vollständig geparste aktuelle öffentliche Ranking-Tabelle oder offizielle Exportansicht einschließlich aller sichtbaren dynamischen Plattformspalten sowie die Quellen-/Datumsübersicht der kanonischen Seite.
 - Die vollständige volatile HTML-Seite wird nicht historisiert.
 - Normalisiert werden ausschließlich offensive Spieler der Positionen QB, RB, WR und TE.
 - Historisiert werden `ranking.csv` und `metadata.json` für die vier neuesten inhaltlich veränderten Stände.
@@ -68,6 +68,7 @@ Wichtige Felder:
 - `adp_average`: veröffentlichter FantasyPros-Durchschnitt; wird gegen die vorhandenen Plattformwerte mit Rundungstoleranz validiert.
 - `realtime_value`: sichtbare Real-Time-Spalte, wenn das Format sie veröffentlicht; ihre genaue Methodik bleibt unbestätigt.
 - `source_rank_std`: von uns berechnete Populations-Standardabweichung der vorhandenen Plattformwerte; keine Samplegröße und keine Erfolgswahrscheinlichkeit.
+- `source_player_id` und `player_slug`: werden aus der HTML-Tabelle übernommen. Liefert die offizielle Exportansicht nur Klartext, bleiben diese Felder leer und der Join fällt auf Name, Position und Team zurück.
 
 ## Quellenkomposition
 
@@ -80,6 +81,20 @@ Jeder Snapshot speichert:
 - einen deterministischen `source_composition_fingerprint`.
 
 Ändert sich die Quellenkomposition oder der sichtbare Datenstand, entsteht ein neuer Snapshot auch dann, wenn die normalisierte Reihenfolge zufällig gleich bleibt. Eine spätere Auswertung muss solche Veränderungen als Source-Context-Change kennzeichnen und darf sie nicht allein als Marktbewegung interpretieren.
+
+## Abrufstrategie
+
+Für die aktive Saison wird zuerst die kanonische öffentliche Seite ohne `year`-Parameter mit einem normalen Browser-User-Agent geladen. Historische Saisons verwenden weiterhin den expliziten `year`-Parameter.
+
+Enthält die kanonische Antwort eine vollständige Rankingtabelle, wird sie direkt geparst. Liefert FantasyPros dagegen nur die dynamische Seitenschale ohne Rankingtabelle, gilt ein eng begrenzter Fallback:
+
+1. Die kanonische Seite bleibt verbindlich für Titel, Saison, Formatidentität und sichtbare Quellenstände.
+2. Mit derselben Cookie-Session und der kanonischen Seite als Referer wird die offizielle `export=xls`-Ansicht geladen.
+3. Der Export darf eine HTML-Tabelle oder ein tabulator-/kommagetrenntes Textdokument sein.
+4. Nur der exakt erkannte Fehler „Rankingtabelle fehlt“ aktiviert den Fallback. Andere Identitäts-, Quellen-, Spieler-, Mindestgrößen- oder AVG-Fehler bleiben sofort fail-closed.
+5. `raw-latest.json`, `metadata.json` und `latest.json` dokumentieren die tatsächlich verwendete Extraktionsmethode und beide Abruf-URLs.
+
+Zwischen sämtlichen Live-Requests, einschließlich eines Fallback-Abrufs, liegen standardmäßig fünf Sekunden. Schlägt auch der offizielle Export fehl, enthält die Fehlermeldung beide versuchten URLs und die konkrete Parserursache, aber kein vollständiges HTML-Dokument.
 
 ## Direkter Abruf
 
@@ -97,7 +112,7 @@ python fantasy-management/_ai/scripts/fetch_fantasypros_adp.py \
   --dry-run
 ```
 
-Der Fetcher lädt und validiert beide Formate vollständig, bevor eines geschrieben wird. Zwischen zwei Live-Requests liegen standardmäßig fünf Sekunden. Netzwerk-, Seitenidentitäts-, Tabellen-, Spieler-, Quellen-, Durchschnitts-, Mindestgrößen- oder Schemafehler beenden den Lauf ohne Veröffentlichung eines einseitigen Vergleichs.
+Der Fetcher lädt und validiert beide Formate vollständig, bevor eines geschrieben wird. Netzwerk-, Seitenidentitäts-, Tabellen-/Export-, Spieler-, Quellen-, Durchschnitts-, Mindestgrößen- oder Schemafehler beenden den Lauf ohne Veröffentlichung eines einseitigen Vergleichs.
 
 ## Automatische Aktualisierung
 
