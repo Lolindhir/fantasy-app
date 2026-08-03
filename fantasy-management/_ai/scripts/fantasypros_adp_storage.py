@@ -93,7 +93,7 @@ def build_metadata(
     raw_payload: dict[str, Any],
     fetched_at: datetime,
     source_url: str,
-    response_headers: dict[str, str],
+    response_headers: dict[str, Any],
     csv_text: str,
     raw_text: str,
     season: int,
@@ -147,8 +147,9 @@ def build_metadata(
             "file_name": "raw-latest.json",
             "historical_raw_snapshots": False,
             "semantics": (
-                "Complete parsed public ranking table, player links, dynamic source columns "
-                "and visible source-date table; the full volatile HTML document is not archived."
+                "Complete parsed public ranking table or official export, player identity "
+                "fields, dynamic source columns and visible source-date table; the full "
+                "volatile HTML document is not archived."
             ),
         },
         "normalized_history": {
@@ -160,8 +161,9 @@ def build_metadata(
             "same_day_changes_replace_snapshot": True,
         },
         "extraction_provenance": {
-            "method": "direct_official_public_html_table",
+            "method": raw_payload.get("extraction_method", "unknown"),
             "uses_mirror": False,
+            "official_export_fallback": True,
             "response_headers": response_headers,
         },
         "analysis_usage": {
@@ -200,7 +202,7 @@ def write_format(
     raw_payload: dict[str, Any],
     fetched_at: datetime,
     source_url: str,
-    response_headers: dict[str, str],
+    response_headers: dict[str, Any],
     season: int,
     skip_unchanged: bool,
     retention_count: int = DEFAULT_RETENTION_COUNT,
@@ -239,6 +241,7 @@ def write_format(
                 "freshness_status": "live_fetch",
                 "latest_source_dates": diagnostics["source_dates"],
                 "latest_source_coverage": diagnostics["source_coverage"],
+                "latest_extraction_method": raw_payload.get("extraction_method", "unknown"),
             }
         )
         atomic_write(latest_path, json.dumps(updated, indent=2, ensure_ascii=False) + "\n")
@@ -280,6 +283,7 @@ def write_format(
         ],
         "latest_source_dates": diagnostics["source_dates"],
         "latest_source_coverage": diagnostics["source_coverage"],
+        "latest_extraction_method": raw_payload.get("extraction_method", "unknown"),
         "retained_snapshot_dates": retained,
         "retention_count": retention_count,
         "official_source_url": source_url,
