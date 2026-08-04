@@ -2,10 +2,10 @@
   "schema_version": 1,
   "job_id": "entity-observation",
   "status": "pending",
-  "revision": 3,
-  "last_evaluated_at": "2026-08-02T07:01:23+02:00",
-  "last_successful_run": "2026-08-02T07:01:23+02:00",
-  "last_processed_key": "baseline-batch:2026-08-02:aj-barner-2026",
+  "revision": 4,
+  "last_evaluated_at": "2026-08-04T07:01:12+02:00",
+  "last_successful_run": "2026-08-04T07:01:12+02:00",
+  "last_processed_key": "baseline-batch:2026-08-04:jonathon-brooks-2026",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -13,16 +13,14 @@
     "fantasy-management/automation/profiles/redraft-adp-movement.json": "157881821539ac6ccd36a2c6a0855c2db6022c04",
     "fantasy-management/automation/profiles/role-opportunity.json": "004adf07afb5973f26914bc679b96d6f2121b049",
     "fantasy-management/automation/target-sets/managed-roster-health.json": "bfd4de0733edca6cf53f353c917a110a384e553f",
-    "fantasy-management/automation/target-sets/player-role-watch.json": "cb5a072305be2fd6128493d2843fb946fdd06e78",
-    "fantasypros:dynasty-superflex-ppr:ranking": "705ae9fc5dc74eae500d52511537f8be75c0f829",
-    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "529610c140654318cc60fe3a12db19e6d4c6043b"
+    "fantasy-management/automation/target-sets/player-role-watch.json": "5fe8b6970d3d8ae30460032485894e580676c4b3",
+    "fantasypros:dynasty-superflex-ppr:latest-pointer": "0ccaca874fbac9352a89ddb2fed3b4f5f339291a",
+    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "d8ee18ff6fd0f298b07665d5e028bdba3df7b12c",
+    "ffc:redraft-ppr-8-team:latest-pointer": "f126677067fb28926a4f4566279326635d0c7f24",
+    "ffc:redraft-2qb-10-team:latest-pointer": "c929270ef1587c4e1956e206b1c925408992917f"
   },
   "pending": true,
-  "last_error": {
-    "at": "2026-08-02T07:01:23+02:00",
-    "message": "Manual target 'jalen-coker-2026' configures sleeper_id 11643, but the current player index resolves 11643 to Jaylen Wright; Jalen Coker resolves to sleeper_id 11646. Target evaluation was skipped to prevent writing state for the wrong player.",
-    "retryable": false
-  },
+  "last_error": null,
   "last_material_change": null,
   "recent_events": [
     {
@@ -47,13 +45,25 @@
       "at": "2026-08-02T07:01:23+02:00",
       "type": "error",
       "severity": "medium",
-      "summary": "Konfigurationsfehler bei jalen-coker-2026: sleeper_id 11643 gehört laut aktuellem Player-Index zu Jaylen Wright; die Auswertung wurde fail-closed übersprungen."
+      "summary": "Konfigurationsfehler bei jalen-coker-2026: sleeper_id 11643 gehörte zu Jaylen Wright; die Auswertung wurde fail-closed übersprungen."
+    },
+    {
+      "at": "2026-08-04T07:01:12+02:00",
+      "type": "recovered",
+      "severity": "info",
+      "summary": "Der frühere Identitätsfehler für jalen-coker-2026 ist behoben; sleeper_id 11646 löst aktuell eindeutig Jalen Coker auf."
+    },
+    {
+      "at": "2026-08-04T07:01:12+02:00",
+      "type": "pending",
+      "severity": "info",
+      "summary": "Bounded Batch abgeschlossen: Tank Bigsby ohne materielles Signal geprüft; acht fehlende Coker-/Brooks-Profile mit aktueller Evidenz angelegt und bis zur reproduzierbaren kanonischen Hashbildung pending gehalten. 148 nie geprüfte und 12 retryable Profilpaare verbleiben."
     }
   ],
   "job_state": {
     "target_sets": {
       "player-role-watch": {
-        "last_resolved_at": "2026-08-02T07:01:23+02:00",
+        "last_resolved_at": "2026-08-04T07:01:12+02:00",
         "resolved_target_ids": [
           "aj-barner-2026",
           "jalen-coker-2026",
@@ -62,7 +72,7 @@
         ]
       },
       "managed-roster-health": {
-        "last_resolved_at": "2026-08-02T07:01:23+02:00",
+        "last_resolved_at": "2026-08-04T07:01:12+02:00",
         "resolved_target_ids": [
           "managed-roster-player-11539",
           "managed-roster-player-11565",
@@ -159,6 +169,30 @@
           "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:seahawks.com:depth-chart:observed-2026-08-02", "official_team:seahawks.com:player-career:observed-2026-08-02"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
           "market-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:705ae9fc5dc74eae500d52511537f8be75c0f829", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-01:529610c140654318cc60fe3a12db19e6d4c6043b"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
           "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": [], "last_material_change_at": null, "last_error": "Required ADP snapshot rows were not resolved within the bounded batch; retry after never-checked pairs."}
+        }
+      },
+      "jalen-coker-2026": {
+        "entity_fingerprint": "player:sleeper_id:11646",
+        "target_set_ids": ["player-role-watch"],
+        "last_checked_at": "2026-08-04T07:01:12+02:00",
+        "status": "pending",
+        "observations": {
+          "injury-status": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["current_player_data:players_0009.json:11646", "official_team:panthers.com:offense-preview:published-2026-07-16"], "last_material_change_at": null, "last_error": "Current evidence supports active availability with no known injury, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:panthers.com:offense-preview:published-2026-07-16", "reuters:panthers-brazzell-season-ending-injury:published-2026-07-30"], "last_material_change_at": null, "last_error": "Current evidence supports an established top-two receiver role and increased opportunity after the Brazzell injury, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "market-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:rank-133", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-03:value-1518"], "last_material_change_at": null, "last_error": "Both required market sources resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["ffc:redraft-ppr-8-team:2026-08-03:rank-125", "ffc:redraft-2qb-10-team:2026-08-03:rank-143"], "last_material_change_at": null, "last_error": "Both ADP rows and samples resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."}
+        }
+      },
+      "jonathon-brooks-2026": {
+        "entity_fingerprint": "player:sleeper_id:11583",
+        "target_set_ids": ["player-role-watch"],
+        "last_checked_at": "2026-08-04T07:01:12+02:00",
+        "status": "pending",
+        "observations": {
+          "injury-status": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_league:nfl.com:brooks-cleared:published-2026-04-29", "official_team:panthers.com:camp-padded-practice:published-2026-07-28"], "last_material_change_at": null, "last_error": "Current authoritative evidence supports clearance and full-pads participation, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:panthers.com:offense-preview:published-2026-07-16", "official_team:panthers.com:brooks-camp-play:published-2026-07-28"], "last_material_change_at": null, "last_error": "Current evidence supports an active complementary backfield competition behind Chuba Hubbard, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "market-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:rank-138", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-03:value-1908"], "last_material_change_at": null, "last_error": "Both required market sources resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."},
+          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["ffc:redraft-ppr-8-team:2026-08-03:rank-119", "ffc:redraft-2qb-10-team:2026-08-03:rank-147"], "last_material_change_at": null, "last_error": "Both ADP rows and samples resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."}
         }
       }
     }
