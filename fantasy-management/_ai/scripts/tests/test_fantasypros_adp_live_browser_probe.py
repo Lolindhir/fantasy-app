@@ -1,4 +1,4 @@
-"""Temporary PR-only ChromeDriver diagnostic for live FantasyPros ADP pages."""
+"""Temporary PR-only ChromeDriver diagnostic for live FantasyPros ADP controls."""
 
 import json
 import os
@@ -10,7 +10,6 @@ import time
 import unittest
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
 
 BRANCH = "agent/fix-fantasypros-adp-browser-render"
 PPR_URL = "https://www.fantasypros.com/nfl/adp/ppr-overall.php"
@@ -22,10 +21,10 @@ def free_port():
         return handle.getsockname()[1]
 
 
-def http_json(base_url, method, path, payload=None, timeout=20):
+def request_json(base, method, path, payload=None, timeout=30):
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
-        base_url + path,
+        base + path,
         data=body,
         method=method,
         headers={"Content-Type": "application/json; charset=utf-8"},
@@ -35,41 +34,29 @@ def http_json(base_url, method, path, payload=None, timeout=20):
     return json.loads(raw) if raw else {}
 
 
-class ChromeDriverSession:
-    def __init__(self):
-        self.process = None
-        self.base_url = ""
-        self.session_id = ""
-        self.driver_log = ""
-
+class Driver:
     def __enter__(self):
         executable = shutil.which("chromedriver")
         if not executable:
-            raise RuntimeError("chromedriver not found on GitHub runner")
+            raise RuntimeError("chromedriver not found")
         port = free_port()
-        self.base_url = f"http://127.0.0.1:{port}"
+        self.base = f"http://127.0.0.1:{port}"
+        self.session = ""
         self.process = subprocess.Popen(
             [executable, f"--port={port}", "--allowed-ips="],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
         deadline = time.monotonic() + 15
         while time.monotonic() < deadline:
             try:
-                status = http_json(self.base_url, "GET", "/status", timeout=2)
-                if status.get("value", {}).get("ready"):
+                if request_json(self.base, "GET", "/status", timeout=2).get("value", {}).get("ready"):
                     break
-            except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+            except Exception:
                 time.sleep(0.25)
-        else:
-            raise RuntimeError("chromedriver did not become ready")
-
-        created = http_json(
-            self.base_url,
+        created = request_json(
+            self.base,
             "POST",
             "/session",
             {
@@ -84,173 +71,122 @@ class ChromeDriverSession:
                                 "--disable-dev-shm-usage",
                                 "--disable-gpu",
                                 "--disable-extensions",
-                                "--disable-default-apps",
-                                "--disable-sync",
-                                "--hide-scrollbars",
-                                "--mute-audio",
                                 "--window-size=1920,1080",
                             ]
                         },
                     }
                 }
             },
-            timeout=30,
         )
-        value = created.get("value", {})
-        self.session_id = value.get("sessionId") or created.get("sessionId") or ""
-        if not self.session_id:
-            raise RuntimeError(f"chromedriver session creation failed: {created}")
+        self.session = created.get("value", {}).get("sessionId", "")
+        if not self.session:
+            raise RuntimeError(f"could not create ChromeDriver session: {created}")
         return self
 
-    def command(self, method, suffix, payload=None, timeout=30):
-        return http_json(
-            self.base_url,
+    def command(self, method, suffix, payload=None, timeout=45):
+        return request_json(
+            self.base,
             method,
-            f"/session/{self.session_id}{suffix}",
+            f"/session/{self.session}{suffix}",
             payload,
-            timeout=timeout,
+            timeout,
         ).get("value")
 
-    def navigate(self, url):
-        self.command("POST", "/url", {"url": url}, timeout=45)
-
-    def execute(self, script):
-        return self.command(
-            "POST", "/execute/sync", {"script": script, "args": []}, timeout=30
-        )
-
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(self, *_):
         try:
-            if self.session_id:
+            if self.session:
                 self.command("DELETE", "", timeout=5)
         except Exception:
             pass
-        if self.process is not None:
+        try:
+            os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+            self.process.wait(timeout=5)
+        except Exception:
             try:
-                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
-                self.process.wait(timeout=5)
+                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
             except Exception:
-                try:
-                    os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                except Exception:
-                    pass
-            if self.process.stdout is not None:
-                try:
-                    self.driver_log = self.process.stdout.read()[-4000:]
-                except Exception:
-                    self.driver_log = ""
+                pass
 
 
-DIAGNOSTIC_SCRIPT = r"""
+SCRIPT = r"""
 const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
-const tables = Array.from(document.querySelectorAll('table')).map((table, index) => {
-  let dataTable = null;
-  let isDataTable = false;
-  let pageInfo = null;
-  let dataLength = null;
-  let settings = null;
-  try {
-    if (window.jQuery && jQuery.fn && jQuery.fn.dataTable && jQuery.fn.dataTable.isDataTable(table)) {
-      isDataTable = true;
-      dataTable = jQuery(table).DataTable();
-      pageInfo = dataTable.page.info();
-      dataLength = dataTable.rows().data().length;
-      const rawSettings = dataTable.settings()[0];
-      settings = {
-        displayLength: rawSettings?._iDisplayLength ?? null,
-        displayStart: rawSettings?._iDisplayStart ?? null,
-        recordsTotal: rawSettings?.fnRecordsTotal ? rawSettings.fnRecordsTotal() : null,
-        recordsDisplay: rawSettings?.fnRecordsDisplay ? rawSettings.fnRecordsDisplay() : null,
-        serverSide: rawSettings?.oFeatures?.bServerSide ?? null,
-        deferRender: rawSettings?.oFeatures?.bDeferRender ?? null,
-        scroller: Boolean(rawSettings?.oScroller),
-        ajaxSource: rawSettings?.sAjaxSource ?? rawSettings?.ajax ?? null,
-        columns: Array.from(rawSettings?.aoColumns ?? []).map(column => ({
-          title: clean(column.sTitle),
-          data: typeof column.mData === 'string' ? column.mData : typeof column.mData,
-          name: clean(column.sName),
-        })),
-      };
-    }
-  } catch (error) {
-    settings = {error: clean(error)};
-  }
-  return {
-    index,
-    id: table.id,
-    className: table.className,
-    bodyRowCount: table.tBodies[0]?.rows.length ?? 0,
-    totalDomRowCount: table.rows.length,
-    headers: Array.from(table.querySelectorAll('thead th')).map(cell => clean(cell.innerText || cell.textContent)),
-    firstRows: Array.from(table.querySelectorAll('tbody tr')).slice(0, 8).map(row =>
-      Array.from(row.cells).map(cell => clean(cell.innerText || cell.textContent))
-    ),
-    isDataTable,
-    pageInfo,
-    dataLength,
-    settings,
-  };
-});
-
-const candidates = [];
-const inspectArray = (owner, key, value) => {
-  if (!Array.isArray(value) || value.length < 20) return;
-  const first = value.find(item => item && typeof item === 'object');
-  candidates.push({
-    owner,
-    key,
-    length: value.length,
-    firstKeys: first ? Object.keys(first).slice(0, 60) : [],
+const attrs = element => Object.fromEntries(Array.from(element?.attributes ?? []).map(attr => [attr.name, attr.value]));
+const describe = element => element ? {
+  tag: element.tagName,
+  text: clean(element.innerText || element.textContent).slice(0, 1000),
+  href: element.href || '',
+  className: element.className || '',
+  id: element.id || '',
+  attributes: attrs(element),
+} : null;
+const table = document.querySelector('table.mcu-table') || document.querySelector('table');
+const ancestors = [];
+let current = table;
+for (let depth = 0; current && depth < 7; depth++, current = current.parentElement) {
+  ancestors.push({
+    depth,
+    tag: current.tagName,
+    id: current.id || '',
+    className: current.className || '',
+    attributes: attrs(current),
+    textTail: clean(current.innerText || current.textContent).slice(-2000),
+    childTags: Array.from(current.children).map(child => ({tag: child.tagName, id: child.id || '', className: child.className || '', text: clean(child.innerText || child.textContent).slice(0, 300)})).slice(0, 30),
   });
-};
-for (const key of Object.keys(window)) {
-  if (candidates.length >= 100) break;
-  let value;
-  try { value = window[key]; } catch (_) { continue; }
-  inspectArray('window', key, value);
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    for (const nestedKey of ['players', 'data', 'rankings', 'rows', 'items', 'aaData']) {
-      try { inspectArray(key, nestedKey, value[nestedKey]); } catch (_) {}
-    }
-  }
 }
-
-const resources = performance.getEntriesByType('resource')
-  .map(entry => entry.name)
-  .filter(name => /adp|rank|player|ajax|api|json|data/i.test(name))
+const interesting = Array.from(document.querySelectorAll('a,button,[role="button"],select,input'))
+  .map(describe)
+  .filter(item => /more|all|next|load|view|unlock|premium|subscribe|sign|export|download|page|rank|adp/i.test(`${item.text} ${item.href} ${item.className} ${JSON.stringify(item.attributes)}`))
   .slice(0, 150);
-
+const forms = Array.from(document.forms).map(form => ({
+  action: form.action,
+  method: form.method,
+  id: form.id,
+  className: form.className,
+  controls: Array.from(form.elements).map(control => describe(control)).slice(0, 50),
+})).slice(0, 30);
+const tableHtml = table?.parentElement?.parentElement?.outerHTML || table?.outerHTML || '';
+const scripts = Array.from(document.scripts).map((script, index) => ({
+  index,
+  src: script.src || '',
+  type: script.type || '',
+  length: script.textContent?.length || 0,
+  hasTopPlayer: /Jahmyr Gibbs|Bijan Robinson/.test(script.textContent || ''),
+  hasRankMarkers: /rank_ave|adpData|player_name|mcu-table|reports__table/i.test(script.textContent || ''),
+  matchingContext: (() => {
+    const text = script.textContent || '';
+    const match = text.search(/Jahmyr Gibbs|rank_ave|adpData|player_name|reports__table/i);
+    return match >= 0 ? clean(text.slice(Math.max(0, match - 300), match + 1000)) : '';
+  })(),
+})).filter(item => item.hasTopPlayer || item.hasRankMarkers || /adp|rank|report|table/i.test(item.src)).slice(0, 80);
 return {
-  readyState: document.readyState,
-  title: document.title,
   url: location.href,
-  bodyTextPrefix: clean(document.body?.innerText).slice(0, 1500),
-  tables,
-  candidates,
-  resources,
-  windowKeys: Object.keys(window).filter(key => /adp|rank|player|data|draft/i.test(key)).slice(0, 200),
-  jqueryVersion: window.jQuery?.fn?.jquery ?? null,
-  dataTablesVersion: window.jQuery?.fn?.dataTable?.version ?? null,
-  timestamp: new Date().toISOString(),
+  title: document.title,
+  tableRows: table?.tBodies[0]?.rows.length ?? null,
+  tableAttributes: attrs(table),
+  ancestors,
+  interesting,
+  forms,
+  tableHtmlLength: tableHtml.length,
+  tableHtmlPrefix: clean(tableHtml).slice(0, 12000),
+  tableHtmlSuffix: clean(tableHtml).slice(-6000),
+  scripts,
 };
 """
 
 
 @unittest.skipUnless(
-    os.environ.get("GITHUB_ACTIONS") == "true"
-    and os.environ.get("GITHUB_HEAD_REF") == BRANCH,
-    "temporary live probe runs only on its dedicated pull-request branch",
+    os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("GITHUB_HEAD_REF") == BRANCH,
+    "temporary live probe",
 )
-class FantasyProsAdpLiveBrowserProbe(unittest.TestCase):
-    def test_inspect_current_ppr_data_model(self):
-        with ChromeDriverSession() as driver:
-            driver.navigate(PPR_URL)
-            time.sleep(15)
-            diagnostic = driver.execute(DIAGNOSTIC_SCRIPT)
-            self.fail(
-                "FantasyPros ADP ChromeDriver diagnostic: "
-                + json.dumps(diagnostic, ensure_ascii=False, sort_keys=True)
+class LiveControlsProbe(unittest.TestCase):
+    def test_inspect_controls_around_public_adp_table(self):
+        with Driver() as driver:
+            driver.command("POST", "/url", {"url": PPR_URL})
+            time.sleep(12)
+            diagnostic = driver.command(
+                "POST", "/execute/sync", {"script": SCRIPT, "args": []}
             )
+            self.fail("FantasyPros ADP controls diagnostic: " + json.dumps(diagnostic, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
