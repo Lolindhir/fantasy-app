@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.cookiejar
 import urllib.error
 import urllib.request
 from typing import Any
@@ -13,11 +14,14 @@ SOURCE_NAME = "FantasyPros"
 SOURCE_ROOT = "fantasy-management/sources/external-rankings/adp/fantasypros"
 ANALYSIS_METADATA = f"{SOURCE_ROOT}/analysis-metadata.json"
 DIRECT_FETCHER = "fantasy-management/_ai/scripts/fetch_fantasypros_adp.py"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 ACTUAL_LEAGUE_TEAM_COUNT = 6
 DEFAULT_RETENTION_COUNT = 4
 OFFENSIVE_POSITIONS = {"QB", "RB", "WR", "TE"}
-USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+)
 
 FORMAT_CONFIGS: dict[str, dict[str, Any]] = {
     "ppr-overall": {
@@ -69,38 +73,64 @@ CSV_FIELDS = [
     "actual_league_team_count",
 ]
 
-def fetch_html(
-    config: dict[str, Any],
-    season: int,
+
+def create_http_opener() -> urllib.request.OpenerDirector:
+    jar = http.cookiejar.CookieJar()
+    return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+
+def fetch_url(
+    url: str,
+    *,
     timeout: int,
+    opener: urllib.request.OpenerDirector | None = None,
+    referer: str = "",
 ) -> tuple[str, dict[str, str], str]:
-    url = build_source_url(config, season)
-    request = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-    )
+    request_headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": (
+            "text/html,application/xhtml+xml,application/vnd.ms-excel,"
+            "text/csv,text/plain;q=0.9,*/*;q=0.8"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+    if referer:
+        request_headers["Referer"] = referer
+    request = urllib.request.Request(url, headers=request_headers)
+    client = opener or create_http_opener()
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with client.open(request, timeout=timeout) as response:
+            raw = response.read()
             charset = response.headers.get_content_charset() or "utf-8"
-            html = response.read().decode(charset, errors="replace")
+            try:
+                payload = raw.decode(charset)
+            except (LookupError, UnicodeDecodeError):
+                payload = raw.decode("utf-8-sig", errors="replace")
             headers = {
                 "etag": response.headers.get("ETag") or "",
                 "last_modified": response.headers.get("Last-Modified") or "",
                 "content_type": response.headers.get("Content-Type") or "",
+                "content_disposition": response.headers.get("Content-Disposition") or "",
             }
+            final_url = response.geturl()
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise FantasyProsAdpError(
-            f"FantasyPros ADP fetch failed for {config['ranking_id']}: {exc}"
-        ) from exc
-    if not html.strip():
-        raise FantasyProsAdpError(
-            f"FantasyPros returned an empty page for {config['ranking_id']}"
-        )
-    return html, headers, url
+        raise FantasyProsAdpError(f"FantasyPros ADP fetch failed for {url}: {exc}") from exc
+    if not payload.strip():
+        raise FantasyProsAdpError(f"FantasyPros returned an empty response for {url}")
+    return payload, headers, final_url
+
+
+def fetch_html(
+    config: dict[str, Any],
+    season: int,
+    timeout: int,
+    *,
+    opener: urllib.request.OpenerDirector | None = None,
+) -> tuple[str, dict[str, str], str]:
+    url = build_source_url(config, season)
+    return fetch_url(url, timeout=timeout, opener=opener)
 
 
 def validate_source_identity(
@@ -134,4 +164,3 @@ def validate_source_identity(
         raise FantasyProsAdpError(
             f"FantasyPros page is not PPR for {config['ranking_id']}"
         )
-

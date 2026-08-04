@@ -13,11 +13,14 @@ from fantasypros_adp_config import (
     SOURCE_NAME,
     SOURCE_ROOT,
     USER_AGENT,
+    create_http_opener,
     fetch_html,
+    fetch_url,
     validate_source_identity,
 )
 from fantasypros_adp_html import (
     FantasyProsAdpError,
+    build_export_url,
     build_source_url,
     parse_timestamp,
 )
@@ -37,8 +40,11 @@ __all__ = [
     "SOURCE_ROOT",
     "USER_AGENT",
     "FantasyProsAdpError",
+    "build_export_url",
     "build_source_url",
+    "create_http_opener",
     "fetch_html",
+    "fetch_url",
     "parse_adp_page",
     "parse_timestamp",
     "validate_source_identity",

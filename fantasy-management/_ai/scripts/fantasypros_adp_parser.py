@@ -24,33 +24,45 @@ from fantasypros_adp_html import (
     FantasyProsAdpError,
     find_ranking_table,
     find_source_table,
+    parse_ranking_document,
     parse_tables,
+    table_diagnostics,
     token,
 )
 from fantasypros_adp_config import validate_source_identity
 
+
+def _index_for(headers: list[str], aliases: set[str]) -> int | None:
+    return next(
+        (index for index, value in enumerate(headers) if token(value) in aliases),
+        None,
+    )
+
+
 def parse_adp_page(
-    html: str,
+    payload: str,
     config: dict[str, Any],
     *,
     season: int,
     source_url: str,
+    identity_html: str | None = None,
+    extraction_method: str = "canonical_public_html_table",
+    ranking_fetch_url: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
-    parsed = parse_tables(html)
-    table, headers, header_index = find_ranking_table(parsed)
-    validate_source_identity(parsed, config, season, headers)
+    ranking_parsed = parse_ranking_document(payload)
+    identity_parsed = parse_tables(identity_html) if identity_html is not None else ranking_parsed
+    table, headers, header_index = find_ranking_table(ranking_parsed)
+    validate_source_identity(identity_parsed, config, season, headers)
 
     header_lookup = {token(value): index for index, value in enumerate(headers)}
-    player_index = next(
-        (index for index, value in enumerate(headers) if token(value) in {"player", "playerbye"}),
-        None,
+    player_index = _index_for(
+        headers, {"player", "playername", "playerbye", "playerteambye"}
     )
-    position_index = next(
-        (index for index, value in enumerate(headers) if token(value) in {"pos", "position"}),
-        None,
-    )
+    position_index = _index_for(headers, {"pos", "position"})
+    team_index = _index_for(headers, {"team", "tm"})
+    bye_index = _index_for(headers, {"bye", "byeweek"})
     rank_index = header_lookup.get(token(config["rank_header"]))
-    avg_index = header_lookup.get("avg")
+    avg_index = header_lookup.get("avg", header_lookup.get("average"))
     realtime_index = header_lookup.get("realtime")
     overall_index = (
         header_lookup.get(token(config["overall_header"]))
@@ -84,7 +96,13 @@ def parse_adp_page(
             continue
         if source_format_rank is None:
             continue
-        name, player_id, slug, team, bye = _extract_player_identity(cells[int(player_index)])
+        team_value = cells[int(team_index)].get("text", "") if team_index is not None else ""
+        bye_value = cells[int(bye_index)].get("text", "") if bye_index is not None else ""
+        name, player_id, slug, team, bye = _extract_player_identity(
+            cells[int(player_index)],
+            team_value=team_value,
+            bye_value=bye_value,
+        )
         position, position_rank = _parse_position(
             cells[int(position_index)].get("text", ""), name
         )
@@ -96,15 +114,17 @@ def parse_adp_page(
             raise FantasyProsAdpError(f"Duplicate FantasyPros player identity: {identity}")
         seen_players.add(identity)
 
-        source_ranks: dict[str, int | None] = {}
+        source_ranks: dict[str, int | str | None] = {}
         numeric_source_ranks: list[Decimal] = []
         source_labels: dict[str, str] = {}
         for index, label, source_id in source_columns:
             parsed_rank = parse_optional_decimal(
                 cells[index].get("text"), f"{label} rank", name
             )
-            source_ranks[source_id] = int(parsed_rank) if parsed_rank is not None and parsed_rank == parsed_rank.to_integral_value() else (
-                decimal_csv(parsed_rank) if parsed_rank is not None else None
+            source_ranks[source_id] = (
+                int(parsed_rank)
+                if parsed_rank is not None and parsed_rank == parsed_rank.to_integral_value()
+                else (decimal_csv(parsed_rank) if parsed_rank is not None else None)
             )
             source_labels[source_id] = label
             if parsed_rank is not None:
@@ -178,7 +198,7 @@ def parse_adp_page(
     if len({row["Rank"] for row in rows}) != len(rows):
         raise FantasyProsAdpError("Normalized FantasyPros ranks are not unique")
 
-    source_dates = parse_source_dates(find_source_table(parsed))
+    source_dates = parse_source_dates(find_source_table(identity_parsed))
     source_labels = {source_id: label for _, label, source_id in source_columns}
     active_sources = sorted(source_id for source_id, count in source_coverage.items() if count)
     composition_payload = {
@@ -202,15 +222,24 @@ def parse_adp_page(
         "active_source_ids": active_sources,
         "source_dates": source_dates,
         "source_composition_fingerprint": composition_fingerprint,
+        "ranking_document": table_diagnostics(ranking_parsed),
+        "identity_document": table_diagnostics(identity_parsed),
+        "extraction_method": extraction_method,
     }
     raw_payload = {
-        "schema_version": 1,
-        "source_url": source_url,
-        "page_title": parsed["title"],
+        "schema_version": 2,
+        "official_source_url": source_url,
+        "ranking_fetch_url": ranking_fetch_url or source_url,
+        "extraction_method": extraction_method,
+        "page_title": identity_parsed["title"],
+        "ranking_page_title": ranking_parsed["title"],
+        "ranking_document_format": ranking_parsed.get("document_format", "unknown"),
         "ranking_headers": headers,
         "ranking_rows": raw_rows,
         "source_dates": source_dates,
         "source_columns": diagnostics["source_columns"],
-        "document_identity_excerpt": parsed["document_text"][:2000],
+        "document_identity_excerpt": identity_parsed["document_text"][:2000],
+        "ranking_document_diagnostics": diagnostics["ranking_document"],
+        "identity_document_diagnostics": diagnostics["identity_document"],
     }
     return rows, diagnostics, raw_payload
