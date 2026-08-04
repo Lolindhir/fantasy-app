@@ -7,8 +7,10 @@ raw-latest.json; normalized history retains the latest four changed snapshots.
 
 The active-season canonical page is attempted first. If FantasyPros returns its
 JavaScript page shell without a ranking table, the fetcher reuses the same
-cookie session and falls back to the official ``export=xls`` response. The
-canonical page remains the source for page identity and visible source dates.
+cookie session and tries the official ``export=xls`` response. If that response
+also contains only the page shell, a locally installed headless Chrome/Chromium
+renders the canonical page and returns the resulting DOM. The canonical page
+remains the source for page identity and visible source dates in every mode.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+from fantasypros_adp_browser import render_adp_page_with_browser  # noqa: E402
 from fantasypros_adp_core import (  # noqa: E402
     CSV_FIELDS,
     DEFAULT_RETENTION_COUNT,
@@ -107,6 +110,7 @@ def _prepare_live_format(
     config: dict[str, Any],
     season: int,
     request: Callable[[str, str], tuple[str, dict[str, str], str]],
+    render: Callable[[str], tuple[str, dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     official_url = build_source_url(config, season)
     canonical_payload, canonical_headers, canonical_final_url = request(official_url, "")
@@ -124,6 +128,7 @@ def _prepare_live_format(
     except FantasyProsAdpError as exc:
         if str(exc) != MISSING_TABLE_ERROR:
             raise
+
         export_url = build_export_url(config, season)
         export_payload, export_headers, export_final_url = request(
             export_url, canonical_final_url
@@ -138,19 +143,50 @@ def _prepare_live_format(
                 extraction_method="official_export_fallback",
                 ranking_fetch_url=export_final_url,
             )
-        except FantasyProsAdpError as fallback_exc:
-            raise FantasyProsAdpError(
-                "FantasyPros canonical ADP page contained no ranking table and "
-                f"the official export fallback failed for {config['ranking_id']}: "
-                f"{fallback_exc}; canonical_url={canonical_final_url}; "
-                f"export_url={export_final_url}"
-            ) from fallback_exc
-        response_headers = {
-            "canonical": canonical_headers,
-            "ranking_export": export_headers,
-        }
-        ranking_fetch_url = export_final_url
-        raw_payload["fallback_reason"] = MISSING_TABLE_ERROR
+        except FantasyProsAdpError as export_exc:
+            if str(export_exc) != MISSING_TABLE_ERROR or render is None:
+                raise FantasyProsAdpError(
+                    "FantasyPros canonical ADP page contained no ranking table and "
+                    f"the official export fallback failed for {config['ranking_id']}: "
+                    f"{export_exc}; canonical_url={canonical_final_url}; "
+                    f"export_url={export_final_url}"
+                ) from export_exc
+
+            try:
+                rendered_payload, browser_metadata = render(official_url)
+                rows, diagnostics, raw_payload = parse_adp_page(
+                    rendered_payload,
+                    config,
+                    season=season,
+                    source_url=official_url,
+                    identity_html=canonical_payload,
+                    extraction_method="headless_browser_dom_fallback",
+                    ranking_fetch_url=official_url,
+                )
+            except FantasyProsAdpError as browser_exc:
+                raise FantasyProsAdpError(
+                    "FantasyPros canonical ADP page and official export both contained "
+                    f"no ranking table, and browser rendering failed for "
+                    f"{config['ranking_id']}: {browser_exc}; "
+                    f"canonical_url={canonical_final_url}; export_url={export_final_url}"
+                ) from browser_exc
+
+            response_headers = {
+                "canonical": canonical_headers,
+                "ranking_export": export_headers,
+                "browser_render": browser_metadata,
+            }
+            ranking_fetch_url = official_url
+            raw_payload["fallback_reason"] = (
+                f"{MISSING_TABLE_ERROR}; official export also contained no ranking table"
+            )
+        else:
+            response_headers = {
+                "canonical": canonical_headers,
+                "ranking_export": export_headers,
+            }
+            ranking_fetch_url = export_final_url
+            raw_payload["fallback_reason"] = MISSING_TABLE_ERROR
 
     raw_payload["fetch_provenance"] = {
         "official_source_url": official_url,
@@ -187,6 +223,13 @@ def main(argv: list[str] | None = None) -> int:
             delay_seconds=args.request_delay_seconds,
         )
 
+        def live_render(url: str) -> tuple[str, dict[str, Any]]:
+            # Keep the same polite minimum spacing before opening a browser,
+            # which performs its own page and JavaScript data requests.
+            if args.request_delay_seconds:
+                time.sleep(args.request_delay_seconds)
+            return render_adp_page_with_browser(url, timeout=args.timeout)
+
         for key, config in FORMAT_CONFIGS.items():
             if key in saved:
                 payload = saved[key].read_text(encoding="utf-8")
@@ -212,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
                     config=config,
                     season=args.season,
                     request=live_request,
+                    render=live_render,
                 )
             item["key"] = key
             item["raw_payload"]["fetched_at"] = fetched_at.isoformat()
