@@ -27,7 +27,7 @@ Die Ebenen bedeuten:
 
 - `expert-consensus`: Reihenfolge aus Experteneinschätzungen; aktuell FantasyPros.
 - `market-value`: Reihenfolge oder Werte aus beobachtetem Trade-/Marktverhalten; aktuell FantasyCalc. KeepTradeCut ist nur manuelle Referenz.
-- `adp`: Reihenfolge aus beobachteten Draftpositionen; aktuell Fantasy Football Calculator mit getrennten PPR-8-Team- und 2QB-10-Team-Feeds sowie FantasyPros mit getrennten PPR-Overall- und Half-PPR-Superflex-Composites.
+- `adp`: Reihenfolge aus beobachteten Draftpositionen; aktuell Fantasy Football Calculator mit getrennten PPR-8-Team- und 2QB-10-Team-Feeds.
 
 ## Gemeinsamer Kern
 
@@ -35,9 +35,23 @@ Jedes normalisierte Ranking soll mindestens Ranking-Art, Anbieter, Ranking-ID, F
 
 Ranking-Arten dürfen nicht so behandelt werden, als würden sie dasselbe messen. Quellenübergreifende Vergleiche verwenden listenlängenabhängige Perzentile statt roher Rang- oder Wertdifferenzen.
 
-Mehrere Formate desselben Anbieters dürfen ebenfalls nicht ohne Prüfung gemittelt werden. Bei Fantasy Football Calculator unterscheiden sich der PPR- und der 2-QB-Feed gleichzeitig in Teamzahl, Scoringkontext und Quarterback-Anforderung. Bei FantasyPros unterscheiden sich PPR Overall und Half-PPR Superflex in Scoring, Lineup-Anforderung und aktueller Plattformzusammensetzung.
+Mehrere Formate desselben Anbieters dürfen ebenfalls nicht ohne Prüfung gemittelt werden. Bei Fantasy Football Calculator unterscheiden sich der PPR- und der 2-QB-Feed gleichzeitig in Teamzahl, Scoringkontext und Quarterback-Anforderung.
 
 Aggregierte Rankings müssen neben dem veröffentlichten Konsenswert die zugrunde liegende Quellenkomposition, sichtbare Aktualitätsstände, fehlende Einzelwerte und mögliche Überschneidungen mit anderen gespeicherten Quellen erhalten.
+
+## Geprüfte, aber nicht aktive Quelle: FantasyPros ADP
+
+Der anonyme FantasyPros-ADP-Report ist seit der Live-Prüfung vom 4. August 2026 keine vollständige automatisierbare Quelle:
+
+- Die kanonischen ADP-Seiten liefern anonym nur fünf Spielerzeilen.
+- Der eingebettete Report-Payload enthält ebenfalls nur diese fünf Zeilen.
+- Die Seite zeigt anschließend ausdrücklich eine Account-Sperre mit dem Hinweis, dass ein kostenloses Konto den Report freischaltet.
+- Die frühere `export=xls`-Ansicht liefert dem GitHub-Runner keinen vollständigen Export.
+- Es gibt im anonymen Browserzustand keine Pagination, keinen versteckten Vollbestand und keinen öffentlichen XHR-Datensatz mit der vollständigen Tabelle.
+
+Ein Top-5-Ausschnitt darf weder gespeichert noch als vollständiges Ranking interpretiert werden. Ohne ausdrücklich freigegebene Login- oder API-Secrets wird daher kein FantasyPros-ADP-Fetcher oder Workflow betrieben. Für den automatisierten ADP-Kontext bleibt Fantasy Football Calculator die aktive Quelle.
+
+Eine erneute Integration ist erst zu prüfen, wenn FantasyPros wieder einen vollständigen anonymen Report veröffentlicht oder der Nutzer den Einsatz eines authentifizierten offiziellen Zugangs ausdrücklich freigibt.
 
 ## Speicherregel
 
