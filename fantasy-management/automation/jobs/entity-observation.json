@@ -55,6 +55,21 @@
       "path": "fantasy-management/automation/profiles/redraft-adp-movement.json",
       "required": true,
       "condition": "ADP-Profil, Formatwahl, Source Bindings und Materialitätsschwellen sind valide."
+    },
+    {
+      "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json",
+      "required": true,
+      "condition": "Zeitbudget, gruppierte Bootstrap-Phasen und Checkpoint-Regeln sind valide."
+    },
+    {
+      "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
+      "required": true,
+      "condition": "Der deterministische vollständige Replacement-State-Writer ist verfügbar."
+    },
+    {
+      "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
+      "required": true,
+      "condition": "Checkpoint-Eingaben können vor der State-Erzeugung validiert werden."
     }
   ],
   "configuration_refs": [
@@ -110,6 +125,26 @@
     },
     {
       "kind": "workflow",
+      "path": "fantasy-management/automation/workflows/entity-observation-bootstrap.md",
+      "required": true
+    },
+    {
+      "kind": "other",
+      "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json",
+      "required": true
+    },
+    {
+      "kind": "evaluator",
+      "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
+      "required": true
+    },
+    {
+      "kind": "other",
+      "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
+      "required": true
+    },
+    {
+      "kind": "workflow",
       "path": "fantasy-management/automation/workflows/source-binding-resolution.md",
       "required": true
     },
@@ -145,9 +180,10 @@
       "Profile criteria are authoritative for materiality.",
       "A recommendation change may raise severity but cannot replace missing evidence.",
       "The first baseline is not a material change unless the target set explicitly enables it.",
-      "A missing stored state for an active target/profile pair is processed through the bounded incremental baseline backfill and is not an incomplete dependency or production-readiness failure.",
-      "A successful partial baseline batch is a successful pending run, may write State-only progress and must not create an Observation Event or user notification.",
-      "A remaining retryable baseline backlog must not pause or disable the external scheduled runner wakeup."
+      "While active pairs lack a good initial state, entity-observation-bootstrap.json and entity-observation-bootstrap.md supersede the fixed deep-evaluation pair budget and control a time-budgeted source-grouped bootstrap.",
+      "A successful bootstrap checkpoint is a successful pending run, may write State-only progress and must not create an Observation Event or user notification.",
+      "Every bootstrap checkpoint must use the deterministic complete replacement State helper, full schema and cross-file validation, and optimistic parent and State-blob SHA checks.",
+      "A remaining retryable baseline backlog or a technical checkpoint failure must not pause or disable the external scheduled runner wakeup."
     ]
   }
 }
