@@ -80,6 +80,7 @@ The checkpoint must include:
 - the pinned current `main` parent commit SHA;
 - the pinned current State blob SHA;
 - one unique result for every included target/profile pair;
+- the complete expected active profile-ID set for every included target;
 - canonical structured material states rather than prose summaries;
 - source fingerprints and confidence;
 - the resulting top-level pending status;
@@ -104,7 +105,7 @@ The helper:
 
 1. rejects a stale State revision;
 2. preserves every untouched State section;
-3. rejects duplicate pair results or changed entity fingerprints;
+3. rejects duplicate pair results, incomplete profile contracts, or changed entity fingerprints;
 4. calculates SHA-256 over recursively sorted compact canonical JSON material states;
 5. preserves the previous good material state on retryable failures when configured;
 6. increments the State revision exactly once per checkpoint;
