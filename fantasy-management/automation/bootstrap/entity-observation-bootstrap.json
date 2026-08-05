@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "id": "entity-observation-bootstrap",
+  "job_id": "entity-observation",
+  "enabled": true,
+  "activation": {
+    "when": "missing_initial_baselines",
+    "supersedes_pair_budget": true
+  },
+  "runtime_budget": {
+    "soft_minutes": 85,
+    "hard_minutes": 110,
+    "safety_pair_cap": 500
+  },
+  "priority_order": [
+    "changed_baselined_pairs",
+    "concrete_change_signals",
+    "missing_initial_baselines",
+    "retryable_pending_pairs",
+    "retryable_failed_pairs"
+  ],
+  "phases": [
+    {
+      "id": "market-batch",
+      "profiles": ["market-movement"],
+      "group_by": "profile",
+      "checkpoint_after_group": true,
+      "continue_until_budget": true
+    },
+    {
+      "id": "redraft-adp-batch",
+      "profiles": ["redraft-adp-movement"],
+      "group_by": "profile",
+      "checkpoint_after_group": true,
+      "continue_until_budget": true
+    },
+    {
+      "id": "injury-batch",
+      "profiles": ["injury-status"],
+      "group_by": "nfl_team",
+      "checkpoint_after_group": true,
+      "continue_until_budget": true
+    },
+    {
+      "id": "role-opportunity-batch",
+      "profiles": ["role-opportunity"],
+      "group_by": "nfl_team_position_group",
+      "checkpoint_after_group": true,
+      "continue_until_budget": true
+    }
+  ],
+  "checkpoint_publication": {
+    "state_batch_schema": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
+    "state_batch_helper": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
+    "state_schema": "fantasy-management/_ai/schemas/automation-observation-state.schema.json",
+    "cross_file_validator": "fantasy-management/_ai/scripts/validate_automation.py",
+    "publication_workflow": "fantasy-management/automation/workflows/atomic-publication.md",
+    "require_complete_replacement_state": true,
+    "require_parent_sha_match": true,
+    "require_state_blob_sha_match": true
+  },
+  "completion": {
+    "condition": "all_active_pairs_have_baseline_or_good_state",
+    "next_mode": "normal_monitoring"
+  }
+}

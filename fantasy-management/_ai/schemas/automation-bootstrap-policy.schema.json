@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/automation-bootstrap-policy.schema.json",
+  "title": "Fantasy Management Observation Bootstrap Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "job_id",
+    "enabled",
+    "activation",
+    "runtime_budget",
+    "priority_order",
+    "phases",
+    "checkpoint_publication",
+    "completion"
+  ],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "job_id": {"const": "entity-observation"},
+    "enabled": {"type": "boolean"},
+    "activation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "supersedes_pair_budget"],
+      "properties": {
+        "when": {"const": "missing_initial_baselines"},
+        "supersedes_pair_budget": {"type": "boolean", "const": true}
+      }
+    },
+    "runtime_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soft_minutes", "hard_minutes", "safety_pair_cap"],
+      "properties": {
+        "soft_minutes": {"type": "integer", "minimum": 15, "maximum": 100},
+        "hard_minutes": {"type": "integer", "minimum": 30, "maximum": 120},
+        "safety_pair_cap": {"type": "integer", "minimum": 50, "maximum": 1000}
+      }
+    },
+    "priority_order": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "changed_baselined_pairs",
+          "concrete_change_signals",
+          "missing_initial_baselines",
+          "retryable_pending_pairs",
+          "retryable_failed_pairs"
+        ]
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "profiles",
+          "group_by",
+          "checkpoint_after_group",
+          "continue_until_budget"
+        ],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+          "profiles": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          },
+          "group_by": {
+            "type": "string",
+            "enum": ["profile", "nfl_team", "nfl_team_position_group"]
+          },
+          "checkpoint_after_group": {"type": "boolean", "const": true},
+          "continue_until_budget": {"type": "boolean", "const": true}
+        }
+      }
+    },
+    "checkpoint_publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_batch_schema",
+        "state_batch_helper",
+        "state_schema",
+        "cross_file_validator",
+        "publication_workflow",
+        "require_complete_replacement_state",
+        "require_parent_sha_match",
+        "require_state_blob_sha_match"
+      ],
+      "properties": {
+        "state_batch_schema": {"type": "string", "minLength": 1},
+        "state_batch_helper": {"type": "string", "minLength": 1},
+        "state_schema": {"type": "string", "minLength": 1},
+        "cross_file_validator": {"type": "string", "minLength": 1},
+        "publication_workflow": {"type": "string", "minLength": 1},
+        "require_complete_replacement_state": {"type": "boolean", "const": true},
+        "require_parent_sha_match": {"type": "boolean", "const": true},
+        "require_state_blob_sha_match": {"type": "boolean", "const": true}
+      }
+    },
+    "completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "next_mode"],
+      "properties": {
+        "condition": {"const": "all_active_pairs_have_baseline_or_good_state"},
+        "next_mode": {"const": "normal_monitoring"}
+      }
+    }
+  }
+}
