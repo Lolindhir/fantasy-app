@@ -220,13 +220,61 @@ KeepTradeCut belongs under:
 
 Its current status is `manual_reference_only`. Do not create an automated fetcher or workflow unless the published automation policy changes or explicit permission is obtained.
 
-### ADP sources
+### Fantasy Football Calculator ADP snapshots
 
-ADP is an external ranking kind. The first implemented provider must be stored under:
+Fantasy Football Calculator is the active automated ADP provider.
 
-`fantasy-management/sources/external-rankings/adp/<provider>/<format>/`
+Stored source area:
 
-ADP measures observed draft cost and must remain distinct from expert consensus and trade-market value even though all are normalized as rankings.
+`fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/`
+
+Available ranking IDs:
+
+- `redraft-ppr-8-team`: observed Full-PPR mock-draft cost in the nearest supported small-league format
+- `redraft-2qb-10-team`: observed 2-QB mock-draft cost used primarily for quarterback-scarcity context
+
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `raw-latest.json` only when the complete latest API payload or excluded source positions matter.
+
+Refresh both formats together with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+```
+
+Canonical source documentation:
+
+- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md`
+- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json`
+
+Operational rules:
+
+- treat Fantasy Football Calculator as observed mock-draft cost, not expert consensus, trade-market value or points projection
+- do not average the PPR-8-team and 2QB-10-team feeds because team count, scoring context and quarterback requirements differ simultaneously
+- use the PPR-8-team feed as the closest supported small-league and Full-PPR proxy for RB, WR and TE draft cost
+- use the 2QB-10-team feed as additional quarterback-scarcity evidence, not as a direct model of the six-team league
+- apply the actual six-team replacement level and two fixed QB and two fixed TE starters only during analysis; do not mutate source ADP values
+- two fixed TE starters are not represented by either feed and require a separate league-format adjustment
+- consider `times_drafted`, source sample window, `high`, `low` and `stdev` before treating small ADP movements as material
+- join players through confirmed source-player mappings or normalized name plus position; Fantasy Football Calculator IDs are source identifiers, not Sleeper IDs
+- visibly attribute Fantasy Football Calculator whenever its ADP values are shown
+
+### FantasyPros ADP restriction
+
+FantasyPros ADP is not an active automated or stored ranking source.
+
+The live source check on 4 August 2026 established that anonymous access exposes only five player rows. The rendered page and its embedded report payload contain the same five-player excerpt, followed by an account gate. The former `export=xls` route does not provide a complete anonymous export on the GitHub runner.
+
+Operational consequences:
+
+- do not use or store the anonymous FantasyPros top-five excerpt as a complete ADP ranking
+- do not recreate a FantasyPros ADP crawler, parser, provider directory or workflow from the current anonymous pages
+- do not substitute FantasyPros ECR fields for ADP
+- use Fantasy Football Calculator as the active automated ADP source
+- reconsider FantasyPros ADP only when a complete anonymous official feed becomes available or the user explicitly approves an authenticated official access method and its required secrets
+
+The durable investigation record and common ranking rules are documented in:
+
+`fantasy-management/sources/external-rankings/README.md`
 
 ## Fantasy Management internal sources
 
