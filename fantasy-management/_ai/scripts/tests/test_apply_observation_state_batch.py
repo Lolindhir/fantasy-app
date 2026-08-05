@@ -72,6 +72,12 @@ class ObservationStateBatchTests(unittest.TestCase):
                     "target_id": "new-player",
                     "entity_fingerprint": "player:sleeper_id:2",
                     "target_set_ids": ["managed-roster-health"],
+                    "expected_profile_ids": [
+                        "injury-status",
+                        "market-movement",
+                        "redraft-adp-movement",
+                        "role-opportunity",
+                    ],
                     "profile_id": "market-movement",
                     "outcome": "baseline",
                     "material_state": {"tier": "10", "value": 1234},
@@ -108,6 +114,12 @@ class ObservationStateBatchTests(unittest.TestCase):
             "observations"
         ]["market-movement"]
         self.assertEqual("baseline", profile["status"])
+        new_target = replacement["job_state"]["targets"]["new-player"]
+        self.assertEqual("pending", new_target["status"])
+        self.assertEqual(
+            "never_checked",
+            new_target["observations"]["injury-status"]["status"],
+        )
         self.assertEqual(
             material_state_hash({"tier": "10", "value": 1234}),
             profile["state_hash"],
@@ -136,6 +148,7 @@ class ObservationStateBatchTests(unittest.TestCase):
                 "target_id": "existing-player",
                 "entity_fingerprint": "player:sleeper_id:1",
                 "target_set_ids": ["managed-roster-health"],
+                "expected_profile_ids": ["market-movement"],
                 "profile_id": "market-movement",
                 "outcome": "pending",
                 "source_fingerprints": ["retry-source"],
@@ -159,6 +172,7 @@ class ObservationStateBatchTests(unittest.TestCase):
                 "target_id": "existing-player",
                 "entity_fingerprint": "player:sleeper_id:999",
                 "target_set_ids": ["managed-roster-health"],
+                "expected_profile_ids": ["market-movement"],
                 "profile_id": "market-movement",
                 "outcome": "unchanged",
                 "material_state": {"value": 10},
