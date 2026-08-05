@@ -165,6 +165,19 @@ def _profile_state_from_result(
     }
 
 
+def _never_checked_profile_state() -> dict[str, Any]:
+    return {
+        "status": "never_checked",
+        "last_checked_at": None,
+        "state_hash": None,
+        "material_state": {},
+        "confidence": None,
+        "source_fingerprints": [],
+        "last_material_change_at": None,
+        "last_error": None,
+    }
+
+
 def _target_status(observations: dict[str, dict[str, Any]]) -> str:
     statuses = {profile_state.get("status") for profile_state in observations.values()}
     if "failed" in statuses:
@@ -223,6 +236,12 @@ def apply_checkpoint(
     for pair in checkpoint["pair_results"]:
         target_id = pair["target_id"]
         profile_id = pair["profile_id"]
+        expected_profile_ids = set(pair["expected_profile_ids"])
+        if profile_id not in expected_profile_ids:
+            raise StateBatchError(
+                f"Profile {profile_id!r} is not included in expected_profile_ids "
+                f"for {target_id!r}."
+            )
         pair_key = (target_id, profile_id)
         if pair_key in seen_pairs:
             raise StateBatchError(
@@ -238,7 +257,10 @@ def apply_checkpoint(
                 "target_set_ids": sorted(set(pair["target_set_ids"])),
                 "last_checked_at": evaluated_at,
                 "status": "pending",
-                "observations": {},
+                "observations": {
+                    expected_profile_id: _never_checked_profile_state()
+                    for expected_profile_id in sorted(expected_profile_ids)
+                },
             }
             targets[target_id] = target
         else:
@@ -254,6 +276,11 @@ def apply_checkpoint(
             )
 
         observations = target.setdefault("observations", {})
+        for expected_profile_id in expected_profile_ids:
+            observations.setdefault(
+                expected_profile_id,
+                _never_checked_profile_state(),
+            )
         previous = observations.get(profile_id)
         observations[profile_id] = _profile_state_from_result(
             previous,
