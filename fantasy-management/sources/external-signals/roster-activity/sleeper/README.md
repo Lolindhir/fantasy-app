@@ -155,9 +155,32 @@ Sleeper Trending is an event detector and research trigger. It must not independ
 
 A relevant trend should trigger targeted verification against current injury, role, opportunity, NFL news, Dynasty market and Redraft ADP context.
 
-## Scheduling follow-up
+## Automated workflow
 
-The desired production order is:
+The active workflow is:
+
+```text
+.github/workflows/update-sleeper-trending.yml
+```
+
+It can be started manually through `workflow_dispatch` and runs daily at:
+
+```text
+06:35 Europe/Berlin
+```
+
+The scheduled Fantasy Operations Monitoring starts at 07:00 Europe/Berlin. The signal refresh therefore has a planned safety margin of 25 minutes.
+
+GitHub schedules are expressed in UTC. The workflow uses paired UTC cron entries and a Berlin-offset gate so exactly one scheduled run is selected during both CET and CEST:
+
+```text
+04:35 UTC during CEST
+05:35 UTC during CET
+```
+
+Before fetching, the workflow runs the source-specific unit tests. It stages only the Sleeper roster-activity source directory and creates a generated-data commit only after a successful validated fetch.
+
+The broader desired production order remains:
 
 ```text
 league/source refreshes
@@ -167,4 +190,4 @@ league/source refreshes
 → scheduled monitoring
 ```
 
-Ranking and signal refreshes should finish shortly before the scheduled monitoring run so monitoring reads the newest successful source states. Actual GitHub Actions scheduling and dependency orchestration require a separate, explicitly approved workflow change.
+This workflow establishes the Sleeper-signal step. Coordinated rescheduling or dependency orchestration across all ranking and derived-data workflows remains a separate follow-up.
