@@ -4,11 +4,23 @@
   "title": "Fantasy Operations External Signal Catalog",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "catalog_id", "purpose", "sources"],
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "purpose",
+    "sources"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
-    "catalog_id": {"const": "fantasy-operations-external-signal-catalog"},
-    "purpose": {"type": "string", "minLength": 1},
+    "schema_version": {
+      "const": 1
+    },
+    "catalog_id": {
+      "const": "fantasy-operations-external-signal-catalog"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
     "sources": {
       "type": "array",
       "minItems": 1,
@@ -32,44 +44,127 @@
           "interpretation"
         ],
         "properties": {
-          "source_id": {"type": "string", "minLength": 1},
-          "active": {"type": "boolean"},
-          "provider": {"type": "string", "minLength": 1},
-          "dataset_id": {"type": "string", "minLength": 1},
-          "location": {"type": "string", "minLength": 1},
-          "rows_field": {"type": "string", "minLength": 1},
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "location": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rows_field": {
+            "type": "string",
+            "minLength": 1
+          },
           "timestamp_fields": {
             "type": "array",
             "minItems": 1,
-            "items": {"type": "string", "minLength": 1}
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
-          "source_player_id_field": {"type": "string", "minLength": 1},
-          "attribution_field": {"type": "string", "minLength": 1},
-          "comparison_contract": {"const": "top_n_activity_v1"},
+          "source_player_id_field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attribution_field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "comparison_contract": {
+            "const": "top_n_activity_v1"
+          },
           "signal_fields": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["target", "source_field", "type"],
+              "required": [
+                "target",
+                "source_field",
+                "type"
+              ],
               "properties": {
-                "target": {"type": "string", "minLength": 1},
-                "source_field": {"type": "string", "minLength": 1},
-                "type": {"enum": ["text", "number", "boolean"]}
+                "target": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_field": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "enum": [
+                    "text",
+                    "number",
+                    "boolean"
+                  ]
+                }
               }
             }
           },
-          "unresolved_identity_severity": {"enum": ["none", "info", "warning", "error"]},
+          "non_player_entity_rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source_id_regex",
+                "entity_type",
+                "handling"
+              ],
+              "properties": {
+                "source_id_regex": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "entity_type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "handling": {
+                  "const": "exclude"
+                }
+              }
+            }
+          },
+          "unresolved_identity_severity": {
+            "enum": [
+              "none",
+              "info",
+              "warning",
+              "error"
+            ]
+          },
           "freshness": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["max_age_hours"],
+            "required": [
+              "max_age_hours"
+            ],
             "properties": {
-              "max_age_hours": {"type": "integer", "minimum": 1}
+              "max_age_hours": {
+                "type": "integer",
+                "minimum": 1
+              }
             }
           },
-          "interpretation": {"type": "object"}
+          "interpretation": {
+            "type": "object"
+          }
         }
       }
     }
