@@ -191,3 +191,35 @@ Use owner registry, owner profiles, negotiation history and league-format notes 
 8. Keep independent external sources in independent workflows so one unavailable source does not block another.
 9. Treat all external rankings and market values as dated context, not permanent truth.
 10. Reconcile source format with the actual six-team, fixed-2QB, fixed-2TE league during analysis instead of mutating source values.
+
+## External signal refresh workflow
+
+1. Read `fantasy-management/sources/external-signals/README.md`, the source-specific README and machine-readable analysis metadata.
+2. Fetch only the provider's documented public API with the source-specific query configuration.
+3. Keep the global source snapshot independent of `League.json`; league ownership and Mighty-Giants relevance belong to a downstream materialization step.
+4. Fetch and validate every required activity/profile payload before publishing any part of the new source state.
+5. Fail closed on network, schema, identity, duplicate, numeric or completeness errors and retain the previous successful state.
+6. Treat the first successful run and every incompatible configuration change as a silent baseline that is not eligible for a material player event.
+7. Compare only snapshots with the same schema, provider and query configuration.
+8. Preserve top-N semantics: absence means outside the returned list, not zero activity.
+9. Treat rolling-window count deltas as differences between overlapping windows, not transactions since the prior fetch.
+10. Use source deltas only as targeted research triggers; do not turn them directly into add, drop, trade, hold, shop or cut recommendations.
+11. Join `sleeper_player_id` to current player and league data only after source publication; retain unresolved IDs as data-quality findings.
+12. Run source-specific unit tests before publishing generated data.
+13. Attribute the provider in stored metadata and user-facing analysis.
+
+## Monitoring input freshness and orchestration
+
+The intended production order is:
+
+```text
+league/source refreshes
+→ external ranking refreshes
+→ external signal refreshes
+→ derived player/ownership materialization
+→ scheduled monitoring
+```
+
+Ranking and signal refreshes should finish shortly before the scheduled monitoring run so monitoring reads the newest successful inputs. Keep independent source refreshes failure-isolated, preserve their last good states and let the monitoring freshness gate decide whether a missing or stale required input blocks, limits or merely annotates the run.
+
+Actual GitHub Actions schedules, dependencies and activation require a separate explicit approval. Documentation, scripts, tests and manual baselines may be prepared before that workflow approval.
