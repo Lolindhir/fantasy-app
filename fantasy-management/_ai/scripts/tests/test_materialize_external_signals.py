@@ -18,43 +18,122 @@ from materialize_external_signals import (  # noqa: E402
 
 
 class ExternalSignalMaterializationTests(unittest.TestCase):
-    def test_build_resolves_identity_ownership_views_and_changes(self) -> None:
+    def test_build_resolves_identity_ownership_views_changes_and_exclusions(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self._write_fixture(root)
             data, quality = build(root, config_path)
 
-            players = {player["player_id"]: player for player in data["players"]}
-            self.assertEqual("mighty_giants", players["1"]["ownership"]["status"])
-            self.assertEqual("opponent_rostered", players["4"]["ownership"]["status"])
-            self.assertEqual("fantasy_free_agent", players["5"]["ownership"]["status"])
-            self.assertEqual("unresolved", players["999"]["identity_status"])
+            players = {
+                player["player_id"]: player
+                for player in data["players"]
+            }
+            self.assertEqual(
+                "mighty_giants",
+                players["1"]["ownership"]["status"],
+            )
+            self.assertEqual(
+                "opponent_rostered",
+                players["4"]["ownership"]["status"],
+            )
+            self.assertEqual(
+                "fantasy_free_agent",
+                players["5"]["ownership"]["status"],
+            )
+            self.assertEqual(
+                "unresolved",
+                players["999"]["identity_status"],
+            )
             self.assertTrue(
-                players["6"]["source_signals"]["sleeper-trending"]["changes"]["add"]["left_top_n"]
+                players["6"]["source_signals"]["sleeper-trending"][
+                    "changes"
+                ]["add"]["left_top_n"]
             )
 
+            self.assertNotIn("NE", players)
             add_view = data["views"]["sleeper-trending"]["add"]
             self.assertEqual("QB One", add_view[0]["name"])
-            self.assertEqual("mighty_giants", add_view[0]["ownership_status"])
+            self.assertEqual(
+                "mighty_giants",
+                add_view[0]["ownership_status"],
+            )
             self.assertEqual(4, len(add_view))
+            self.assertNotIn(
+                "NE",
+                {row["player_id"] for row in add_view},
+            )
+
+            self.assertEqual(
+                1,
+                data["summary"]["excluded_non_player_entities"],
+            )
+            self.assertEqual(
+                {"team_defense": 1},
+                data["summary"][
+                    "excluded_non_player_entities_by_type"
+                ],
+            )
+            source_state = data["source_states"][0]
+            self.assertEqual(5, source_state["row_count"])
+            self.assertEqual(
+                {
+                    "count": 1,
+                    "by_type": {"team_defense": 1},
+                    "entity_ids": ["NE"],
+                },
+                source_state["excluded_non_player_entities"],
+            )
 
             self.assertEqual("ok", quality["status"])
-            sleeper_quality = quality["coverage"]["external_signals"]["sleeper-trending"]
-            self.assertEqual(4, sleeper_quality["row_count"])
+            sleeper_quality = quality["coverage"][
+                "external_signals"
+            ]["sleeper-trending"]
+            self.assertEqual(5, sleeper_quality["row_count"])
+            self.assertEqual(
+                1,
+                sleeper_quality[
+                    "excluded_non_player_entities"
+                ]["count"],
+            )
             self.assertFalse(sleeper_quality["baseline"])
-            self.assertTrue(sleeper_quality["material_event_eligible"])
+            self.assertTrue(
+                sleeper_quality["material_event_eligible"]
+            )
+            unresolved_ids = {
+                issue["player_id"]
+                for issue in quality["issues"]
+                if issue.get("kind")
+                == "unresolved_external_signal_player"
+            }
+            self.assertEqual({"6", "999"}, unresolved_ids)
 
             data_again, quality_again = build(root, config_path)
-            self.assertEqual(canonical_json(data), canonical_json(data_again))
-            self.assertEqual(canonical_json(quality), canonical_json(quality_again))
+            self.assertEqual(
+                canonical_json(data),
+                canonical_json(data_again),
+            )
+            self.assertEqual(
+                canonical_json(quality),
+                canonical_json(quality_again),
+            )
 
     def test_duplicate_source_ids_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self._write_fixture(root)
-            catalog_path = root / "fantasy-management/_ai/operations-external-signal-catalog.json"
-            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-            catalog["sources"].append(dict(catalog["sources"][0]))
+            catalog_path = (
+                root
+                / "fantasy-management/_ai/"
+                "operations-external-signal-catalog.json"
+            )
+            catalog = json.loads(
+                catalog_path.read_text(encoding="utf-8")
+            )
+            catalog["sources"].append(
+                dict(catalog["sources"][0])
+            )
             self._write_json(catalog_path, catalog)
             with self.assertRaisesRegex(
                 ExternalSignalMaterializationError,
@@ -67,12 +146,38 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             root = Path(directory)
             config_path = self._write_fixture(root)
             source_path = root / "signals/sleeper.json"
-            source = json.loads(source_path.read_text(encoding="utf-8"))
-            source["players"].append(dict(source["players"][0]))
+            source = json.loads(
+                source_path.read_text(encoding="utf-8")
+            )
+            source["players"].append(
+                dict(source["players"][0])
+            )
             self._write_json(source_path, source)
             with self.assertRaisesRegex(
                 ExternalSignalMaterializationError,
                 "duplicate player identity 1",
+            ):
+                build(root, config_path)
+
+    def test_invalid_non_player_regex_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+            catalog_path = (
+                root
+                / "fantasy-management/_ai/"
+                "operations-external-signal-catalog.json"
+            )
+            catalog = json.loads(
+                catalog_path.read_text(encoding="utf-8")
+            )
+            catalog["sources"][0]["non_player_entity_rules"][
+                0
+            ]["source_id_regex"] = "["
+            self._write_json(catalog_path, catalog)
+            with self.assertRaisesRegex(
+                ExternalSignalMaterializationError,
+                "invalid non-player entity regex",
             ):
                 build(root, config_path)
 
@@ -103,13 +208,30 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
         self._write_json(
             root / "public/data/Players.json",
             [
-                {"ID": "1", "Name": "QB One", "Position": "QB", "TeamAbbr": "AAA"},
-                {"ID": "4", "Name": "WR Four", "Position": "WR", "TeamAbbr": "BBB"},
-                {"ID": "5", "Name": "WR Five", "Position": "WR", "TeamAbbr": "CCC"},
+                {
+                    "ID": "1",
+                    "Name": "QB One",
+                    "Position": "QB",
+                    "TeamAbbr": "AAA",
+                },
+                {
+                    "ID": "4",
+                    "Name": "WR Four",
+                    "Position": "WR",
+                    "TeamAbbr": "BBB",
+                },
+                {
+                    "ID": "5",
+                    "Name": "WR Five",
+                    "Position": "WR",
+                    "TeamAbbr": "CCC",
+                },
             ],
         )
         self._write_json(
-            root / "fantasy-management/generated/operations/data-quality.json",
+            root
+            / "fantasy-management/generated/operations/"
+            "data-quality.json",
             {
                 "schema_version": 1,
                 "report_id": "fantasy-operations-data-quality",
@@ -132,16 +254,25 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                     self._signal_player("4", 2, 90),
                     self._signal_player("5", 3, 80),
                     self._signal_player("999", 4, 70),
+                    self._signal_player("NE", 5, 60),
                 ],
                 "comparison": {
                     "baseline": False,
                     "comparable": True,
-                    "reason": "same_configuration_previous_snapshot_available",
-                    "previous_generated_at": "2026-08-05T12:00:00Z",
+                    "reason": (
+                        "same_configuration_previous_snapshot_available"
+                    ),
+                    "previous_generated_at": (
+                        "2026-08-05T12:00:00Z"
+                    ),
                     "material_event_eligible": True,
                     "activity": {
                         "add": {
-                            "entered_top_n": ["5", "999"],
+                            "entered_top_n": [
+                                "5",
+                                "999",
+                                "NE",
+                            ],
                             "left_top_n": ["6"],
                             "rank_changed": [
                                 {
@@ -164,40 +295,75 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "fantasy-management/_ai/operations-external-signal-catalog.json",
+            root
+            / "fantasy-management/_ai/"
+            "operations-external-signal-catalog.json",
             {
                 "schema_version": 1,
-                "catalog_id": "fantasy-operations-external-signal-catalog",
+                "catalog_id": (
+                    "fantasy-operations-external-signal-catalog"
+                ),
                 "purpose": "fixture",
                 "sources": [self._catalog_source()],
             },
         )
-        config_path = root / "fantasy-management/automation/external-signal-materialization.json"
+        config_path = (
+            root
+            / "fantasy-management/automation/"
+            "external-signal-materialization.json"
+        )
         self._write_json(
             config_path,
             {
                 "schema_version": 1,
-                "managed_team": {"identity_field": "TeamID", "team_id": 1},
+                "managed_team": {
+                    "identity_field": "TeamID",
+                    "team_id": 1,
+                },
                 "sources": {
                     "league": "public/data/League.json",
                     "players": "public/data/Players.json",
-                    "base_quality": "fantasy-management/generated/operations/data-quality.json",
+                    "base_quality": (
+                        "fantasy-management/generated/operations/"
+                        "data-quality.json"
+                    ),
                 },
-                "signal_catalog": "fantasy-management/_ai/operations-external-signal-catalog.json",
+                "signal_catalog": (
+                    "fantasy-management/_ai/"
+                    "operations-external-signal-catalog.json"
+                ),
                 "outputs": {
-                    "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json",
-                    "data_quality": "fantasy-management/generated/operations/data-quality.json",
+                    "external_signal_relevance": (
+                        "fantasy-management/generated/operations/"
+                        "external-signal-relevance.json"
+                    ),
+                    "data_quality": (
+                        "fantasy-management/generated/operations/"
+                        "data-quality.json"
+                    ),
                 },
             },
         )
         return config_path
 
     @staticmethod
-    def _signal_player(player_id: str, rank: int, count: int) -> dict[str, object]:
+    def _signal_player(
+        player_id: str,
+        rank: int,
+        count: int,
+    ) -> dict[str, object]:
         return {
             "sleeper_player_id": player_id,
-            "add": {"status": "listed", "rank": rank, "count": count},
-            "drop": {"status": "not_listed", "rank": None, "count": None},
+            "add": {
+                "status": "listed",
+                "rank": rank,
+                "count": count,
+            },
+            "drop": {
+                "status": "not_listed",
+                "rank": None,
+                "count": None,
+            },
         }
 
     @staticmethod
@@ -214,12 +380,43 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             "attribution_field": "attribution",
             "comparison_contract": "top_n_activity_v1",
             "signal_fields": [
-                {"target": "add_status", "source_field": "add.status", "type": "text"},
-                {"target": "add_rank", "source_field": "add.rank", "type": "number"},
-                {"target": "add_count", "source_field": "add.count", "type": "number"},
-                {"target": "drop_status", "source_field": "drop.status", "type": "text"},
-                {"target": "drop_rank", "source_field": "drop.rank", "type": "number"},
-                {"target": "drop_count", "source_field": "drop.count", "type": "number"},
+                {
+                    "target": "add_status",
+                    "source_field": "add.status",
+                    "type": "text",
+                },
+                {
+                    "target": "add_rank",
+                    "source_field": "add.rank",
+                    "type": "number",
+                },
+                {
+                    "target": "add_count",
+                    "source_field": "add.count",
+                    "type": "number",
+                },
+                {
+                    "target": "drop_status",
+                    "source_field": "drop.status",
+                    "type": "text",
+                },
+                {
+                    "target": "drop_rank",
+                    "source_field": "drop.rank",
+                    "type": "number",
+                },
+                {
+                    "target": "drop_count",
+                    "source_field": "drop.count",
+                    "type": "number",
+                },
+            ],
+            "non_player_entity_rules": [
+                {
+                    "source_id_regex": "^[A-Z]{2,3}$",
+                    "entity_type": "team_defense",
+                    "handling": "exclude",
+                }
             ],
             "unresolved_identity_severity": "info",
             "freshness": {"max_age_hours": 30},
@@ -229,7 +426,10 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
     @staticmethod
     def _write_json(path: Path, value: object) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(value), encoding="utf-8")
+        path.write_text(
+            json.dumps(value),
+            encoding="utf-8",
+        )
 
 
 if __name__ == "__main__":
