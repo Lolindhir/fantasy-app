@@ -37,13 +37,21 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ziel: Monitoring, Reviews und Analysen greifen auf dieselben stabilen Contracts zu, statt eigene inkompatible Zwischenformate zu erzeugen.
 
 - [ ] Regelmäßigen Source-Refresh als technische Datenpipeline konsolidieren.
-  - Aktualisieren: aktuelle League-/Roster-/Transaction-Daten sowie vorhandene FantasyPros-, FantasyCalc- und Fantasy-Football-Calculator-Snapshots.
+  - Aktualisieren: aktuelle League-/Roster-/Transaction-Daten sowie vorhandene FantasyPros-, FantasyCalc-, Fantasy-Football-Calculator- und Sleeper-Trending-Snapshots.
   - Bestehende Fetcher weiterverwenden und nur orchestral zusammenführen; keine doppelte Abruflogik in ChatGPT-Prompts oder Analysejobs.
   - Output: nachvollziehbarer Quellenstand mit erfolgreichem oder kontrolliert fehlgeschlagenem Refresh je Datenquelle.
 
+- [ ] Ranking- und Signal-Refreshes kurz vor dem geplanten Monitoring-Lauf orchestrieren.
+  - Zielreihenfolge: League-/Source-Refresh → externe Rankings → Sleeper Trending und weitere Signale → Derived Player-/Ownership-Datasets → Monitoring.
+  - Ranking- und Signal-Läufe sollen mit ausreichendem Sicherheitsabstand vor dem Monitoring enden, damit der Monitoring-Lauf auf den neuesten erfolgreichen Datenständen aufsetzt.
+  - Quellen bleiben fehlerisoliert; ein Ausfall darf keine teilweise Quelle veröffentlichen und soll den letzten guten Stand erhalten.
+  - Vor Monitoring muss ein Freshness-Gate entscheiden, ob ein fehlender oder veralteter Eingang den Lauf blockiert, einschränkt oder nur kennzeichnet.
+  - Konkrete GitHub-Actions-Zeitpläne, Abhängigkeiten und Aktivierung erst nach separater ausdrücklicher Freigabe umsetzen.
+
 - [ ] Zentrales materialisiertes Player-Signal-Dataset aufbauen.
-  - Zusammenführen: stabile Spieler-ID, Position und NFL-Team, League Ownership, Verletzungsstatus, Rollen-/Usage-Signale, Dynasty-Ranking, Marktwert, Redraft-ADP und jeweilige Quellenstände.
+  - Zusammenführen: stabile Spieler-ID, Position und NFL-Team, League Ownership, Verletzungsstatus, Rollen-/Usage-Signale, Dynasty-Ranking, Marktwert, Redraft-ADP, Sleeper-Add-/Drop-Aktivität und jeweilige Quellenstände.
   - Berechnen: listenlängenbereinigte Perzentile, Deltas zum vorherigen Snapshot, Tiers, Sample-Qualität, Quellenabweichungen, Freshness und fehlende Joins.
+  - Top-N-Abwesenheit bei Aktivitätssignalen nicht als Null-Aktivität behandeln.
   - Keine Hold-, Shop-, Cut- oder Start/Sit-Empfehlungen in dieser Schicht erzeugen.
   - Ziel: zentrale wiederverwendbare Grundlage für Roster-Monitoring, Free-Agent-Board, Gegneranalyse und Reviews.
 
@@ -54,7 +62,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 
 - [ ] Vollständiges Free-Agent-Dataset materialisieren.
   - Ownership ausschließlich aus allen `Roster`-, `Reserve`- und `Taxi`-Listen in `League.json` ableiten.
-  - Für alle unowned relevanten Spieler Rankings, Marktwert, ADP, Verletzung, Rolle, Usage, Salary und Veränderungen vorbereiten.
+  - Für alle unowned relevanten Spieler Rankings, Marktwert, ADP, Add-/Drop-Aktivität, Verletzung, Rolle, Usage, Salary und Veränderungen vorbereiten.
   - Ziel: Das spätere Free-Agent-Board klassifiziert einen bereits vollständigen Kandidatenbestand und muss die Population nicht bei jedem Lauf neu zusammensuchen.
 
 - [ ] Liga- und Gegner-Roster-Dataset materialisieren.
