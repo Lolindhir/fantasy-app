@@ -1,0 +1,81 @@
+name: Materialize Fantasy Operations Inputs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - public/data/League.json
+      - public/data/Players.json
+      - public/data/Timestamps.json
+      - fantasy-management/sources/external-rankings/**
+      - fantasy-management/automation/input-materialization.json
+      - fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
+      - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
+      - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
+      - fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md
+      - .github/workflows/materialize-fantasy-operations-inputs.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fantasy-operations-input-materialization
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run focused unit tests
+        run: >-
+          python -m unittest
+          fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
+          -v
+
+      - name: Commit generated inputs when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            python fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
+            git add \
+              fantasy-management/generated/operations/managed-roster-signals.json \
+              fantasy-management/generated/operations/data-quality.json
+
+            if git diff --cached --quiet; then
+              echo "No Fantasy Operations input changes."
+              exit 0
+            fi
+
+            git commit -m "data(fantasy-operations): materialize inputs"
+
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            echo "Push race on attempt ${attempt}; rebuilding from current main."
+            git reset --hard origin/main
+          done
+
+          echo "Unable to publish materialized Fantasy Operations inputs after 3 attempts." >&2
+          exit 1
