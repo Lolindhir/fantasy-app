@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json",
+  "title": "Fantasy Operations External Signal Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "catalog_id", "purpose", "sources"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "catalog_id": {"const": "fantasy-operations-external-signal-catalog"},
+    "purpose": {"type": "string", "minLength": 1},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "active",
+          "provider",
+          "dataset_id",
+          "location",
+          "rows_field",
+          "timestamp_fields",
+          "source_player_id_field",
+          "attribution_field",
+          "comparison_contract",
+          "signal_fields",
+          "unresolved_identity_severity",
+          "freshness",
+          "interpretation"
+        ],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "active": {"type": "boolean"},
+          "provider": {"type": "string", "minLength": 1},
+          "dataset_id": {"type": "string", "minLength": 1},
+          "location": {"type": "string", "minLength": 1},
+          "rows_field": {"type": "string", "minLength": 1},
+          "timestamp_fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "source_player_id_field": {"type": "string", "minLength": 1},
+          "attribution_field": {"type": "string", "minLength": 1},
+          "comparison_contract": {"const": "top_n_activity_v1"},
+          "signal_fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["target", "source_field", "type"],
+              "properties": {
+                "target": {"type": "string", "minLength": 1},
+                "source_field": {"type": "string", "minLength": 1},
+                "type": {"enum": ["text", "number", "boolean"]}
+              }
+            }
+          },
+          "unresolved_identity_severity": {"enum": ["none", "info", "warning", "error"]},
+          "freshness": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["max_age_hours"],
+            "properties": {
+              "max_age_hours": {"type": "integer", "minimum": 1}
+            }
+          },
+          "interpretation": {"type": "object"}
+        }
+      }
+    }
+  }
+}
