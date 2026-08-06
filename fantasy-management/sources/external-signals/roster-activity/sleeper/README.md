@@ -113,7 +113,9 @@ It includes:
 - entered/left-top-N, rank and count changes after the baseline;
 - readable `views.sleeper-trending.add` and `views.sleeper-trending.drop` arrays ordered by rank.
 
-Unresolved source IDs remain visible as information-level quality findings. A player appearing on more than one fantasy roster is an error.
+Sleeper can return NFL team-defense entities whose IDs are uppercase team abbreviations such as `NE` or `CLE`. The external-signal catalog classifies IDs matching `^[A-Z]{2,3}$` as `team_defense` and excludes them from player identity, ownership and free-agent views. They remain auditable through the separate `excluded_non_player_entities` counts in the source state and quality coverage.
+
+Only unmatched player-like source IDs remain visible as information-level `unresolved_external_signal_player` findings. A player appearing on more than one fantasy roster is an error.
 
 Materialize manually with:
 
@@ -160,7 +162,7 @@ The fetcher fails closed on:
 
 Both add and drop payloads must validate before either output is replaced. A failed run leaves the last successful files unchanged and must not create monitoring events.
 
-The downstream materializer also fails closed on invalid catalog configuration, duplicate source identities, invalid row arrays or missing required league/player inputs.
+The downstream materializer also fails closed on invalid catalog configuration, invalid non-player entity regexes, duplicate source identities, invalid row arrays or missing required league/player inputs.
 
 ## Retention
 
