@@ -59,7 +59,7 @@ python fantasy-management/_ai/scripts/fetch_sleeper_trending.py \
 
 The fetcher performs both required requests before publishing a new successful state.
 
-## Output files
+## Source output files
 
 The first successful execution creates:
 
@@ -70,7 +70,7 @@ latest.json
 
 `raw-latest.json` stores the latest validated add and drop responses with query configuration, source URLs, response headers, fetch time and attribution.
 
-`latest.json` stores the normalized union of both top-N lists. Each player has separate `add` and `drop` objects.
+`latest.json` stores the normalized union of both top-N lists. Each player has separate `add` and `drop` objects. The source-local file intentionally retains stable Sleeper IDs instead of duplicating mutable player and ownership data.
 
 Example:
 
@@ -91,6 +91,36 @@ Example:
 ```
 
 `not_listed` never means zero activity. It means only that the player was outside the returned top-N list for that activity type and query configuration.
+
+## Derived readable output
+
+After every successful source refresh, the Fantasy Operations materialization workflow creates:
+
+```text
+fantasy-management/generated/operations/external-signal-relevance.json
+```
+
+This is the human- and monitoring-facing dataset. It joins the Sleeper ID with current `Players.json` and derives ownership from every `Roster`, `Reserve` and `Taxi` list in `League.json`.
+
+It includes:
+
+- player name;
+- position;
+- NFL team;
+- identity resolution status;
+- `mighty_giants`, `opponent_rostered` or `fantasy_free_agent` ownership;
+- current Add and Drop rank/count;
+- entered/left-top-N, rank and count changes after the baseline;
+- readable `views.sleeper-trending.add` and `views.sleeper-trending.drop` arrays ordered by rank.
+
+Unresolved source IDs remain visible as information-level quality findings. A player appearing on more than one fantasy roster is an error.
+
+Materialize manually with:
+
+```bash
+python fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
+python fantasy-management/_ai/scripts/materialize_external_signals.py
+```
 
 ## Baseline and comparison semantics
 
@@ -130,24 +160,13 @@ The fetcher fails closed on:
 
 Both add and drop payloads must validate before either output is replaced. A failed run leaves the last successful files unchanged and must not create monitoring events.
 
+The downstream materializer also fails closed on invalid catalog configuration, duplicate source identities, invalid row arrays or missing required league/player inputs.
+
 ## Retention
 
-Only the newest Raw and normalized state is stored. Git history retains prior committed states.
+Only the newest Raw and normalized source state is stored. Git history retains prior committed states.
 
 If long-term trend analysis is added later, it should use a compact aggregate time series rather than duplicating complete daily top-N snapshots.
-
-## Player identity and league joins
-
-The stable source identity is Sleeper `player_id`, normalized as `sleeper_player_id`.
-
-The fetcher intentionally does not read `League.json` or player files. A later materialization layer must join the global signal to current league data and derive one of the following league-facing states:
-
-- `mighty_giants`
-- `opponent_rostered`
-- `fantasy_free_agent`
-- `unresolved`
-
-Unknown player IDs must remain visible as data-quality findings rather than being silently discarded.
 
 ## Decision use
 
@@ -155,39 +174,24 @@ Sleeper Trending is an event detector and research trigger. It must not independ
 
 A relevant trend should trigger targeted verification against current injury, role, opportunity, NFL news, Dynasty market and Redraft ADP context.
 
-## Automated workflow
+## Scheduling
 
-The active workflow is:
+Active workflow:
 
 ```text
 .github/workflows/update-sleeper-trending.yml
 ```
 
-It can be started manually through `workflow_dispatch` and runs daily at:
+It targets 06:35 Europe/Berlin. Its generated-data push triggers:
 
 ```text
-06:35 Europe/Berlin
+.github/workflows/materialize-fantasy-operations-inputs.yml
 ```
 
-The scheduled Fantasy Operations Monitoring starts at 07:00 Europe/Berlin. The signal refresh therefore has a planned safety margin of 25 minutes.
-
-GitHub schedules are expressed in UTC. The workflow uses paired UTC cron entries and a Berlin-offset gate so exactly one scheduled run is selected during both CET and CEST:
+The intended order is:
 
 ```text
-04:35 UTC during CEST
-05:35 UTC during CET
+Sleeper signal refresh
+→ identity and ownership materialization
+→ scheduled monitoring at 07:00 Europe/Berlin
 ```
-
-Before fetching, the workflow runs the source-specific unit tests. It stages only the Sleeper roster-activity source directory and creates a generated-data commit only after a successful validated fetch.
-
-The broader desired production order remains:
-
-```text
-league/source refreshes
-→ external ranking refreshes
-→ Sleeper signal refresh
-→ derived player/ownership materialization
-→ scheduled monitoring
-```
-
-This workflow establishes the Sleeper-signal step. Coordinated rescheduling or dependency orchestration across all ranking and derived-data workflows remains a separate follow-up.

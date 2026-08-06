@@ -10,13 +10,13 @@ The repository must not depend on a specific AI provider, AI SDK, hosted model, 
 
 ### 1. Source refresh
 
-Existing source workflows refresh league, roster, transaction, player, market, ranking, ADP, schedule, game and usage inputs.
+Existing source workflows refresh league, roster, transaction, player, market, ranking, ADP, schedule, game, usage and external activity inputs.
 
 Source refreshers own acquisition and source-local normalization. They do not make roster recommendations.
 
 ### 2. Deterministic materialization
 
-Versioned scripts join refreshed inputs into provider-neutral datasets. Materialization may calculate identifiers, percentiles, deltas, tiers, quality flags, provenance and input fingerprints.
+Versioned scripts join refreshed inputs into provider-neutral datasets. Materialization may calculate identifiers, ownership, percentiles, deltas, tiers, quality flags, provenance and input fingerprints.
 
 Materialization must not:
 
@@ -26,23 +26,30 @@ Materialization must not:
 - create Hold, Shop, Cut, Add, Start or Sit recommendations;
 - turn a missing source row into a negative player judgment.
 
-The first materialized contract is:
+Current materialized contracts:
 
 ```text
 fantasy-management/generated/operations/managed-roster-signals.json
-```
-
-Its companion quality report is:
-
-```text
+fantasy-management/generated/operations/external-signal-relevance.json
 fantasy-management/generated/operations/data-quality.json
 ```
+
+`managed-roster-signals.json` contains prepared data for the complete Mighty Giants roster.
+
+`external-signal-relevance.json` resolves global external-signal player IDs to current player identity and league ownership. It contains readable add/drop views and complete per-player signal details for:
+
+- Mighty Giants players;
+- opponent-rostered players;
+- fantasy free agents;
+- unresolved player identities.
+
+`data-quality.json` covers both ranking/ADP materialization and external-signal identity/ownership quality.
 
 ### 3. External research and analysis
 
 An external analyst may read the current materialized datasets, perform fresh research and interpret qualitative signals such as injury context, practice participation, role, opportunity, coaching comments and depth-chart changes.
 
-External analysis is working output. It is not automatically repository truth.
+External activity is a prioritization and research trigger. It is not an automatic roster recommendation.
 
 ### 4. Notification
 
@@ -56,38 +63,44 @@ A durable write to State, Knowledge, Decisions, boards, baselines or stored revi
 
 The approved write is then performed interactively with the normal repository validation and publication rules.
 
-## Operations Source Catalog
+## Source catalogs
 
-The canonical machine-readable source integration contract is:
+Ranking, market-value and ADP materialization is declared in:
 
 ```text
 fantasy-management/_ai/operations-source-catalog.json
 ```
 
-It owns the technical rules for every materialized external dataset:
+External signal relevance is declared in:
 
-- source identity, provider and dataset identity;
-- active/inactive status;
-- latest-pointer location and timestamp fields;
-- applicable entity types and player positions;
-- expected absence semantics such as `not_applicable`, `not_listed` and `ambiguous_join`;
-- ordered join strategies;
-- output section, output key and signal mappings;
-- primary-source roles by position;
-- minimum row count, warning severity and freshness policy;
-- format context needed for later interpretation.
+```text
+fantasy-management/_ai/operations-external-signal-catalog.json
+```
 
-The materializer must not contain provider names, source IDs, source paths, position-specific provider selection or source-specific signal fields. It loads all active catalog entries generically.
+The catalogs own source identity, provider, dataset identity, paths, timestamps, signal mappings, identity fields, expected absence semantics, freshness and interpretation context. Provider names and source paths must not be embedded in monitoring prompts or recommendation logic.
 
-Adding another source with an already supported normalized CSV and latest-pointer contract requires only:
+The external-signal materializer supports the normalized `top_n_activity_v1` comparison contract. It preserves:
 
-1. a source refresh/normalization output;
-2. one catalog entry;
-3. an optional profile binding when the source changes evaluation policy.
+- current top-N membership;
+- `entered_top_n` and `left_top_n` changes;
+- rank changes;
+- count changes;
+- silent baseline and material-event eligibility state.
 
-The materializer, monitoring prompt and runner configuration must remain unchanged. A code change is allowed only when a genuinely new access type, join strategy, transform or normalized contract is introduced.
+A player absent from a top-N list is not assigned zero activity.
 
-Position applicability is declarative. For example, current Dynasty ranking and ADP feeds apply to QB, RB, WR and TE. Kicker absence is therefore `not_applicable`, not a data-quality warning and not a negative player signal.
+## Identity and ownership rule
+
+External signal identity is resolved through the configured stable player ID. Current league ownership is derived only from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+
+Permitted ownership states are:
+
+- `mighty_giants`;
+- `opponent_rostered`;
+- `fantasy_free_agent`;
+- `multiple_rosters` as a data-quality error.
+
+An unresolved player remains in the dataset as an explicit data-quality finding and is never silently discarded.
 
 ## Injury-data rule
 
@@ -106,6 +119,20 @@ These fields are useful for candidate detection and prioritization. They are not
 Generated Fantasy Operations datasets are reproducible read models. They contain provenance and input fingerprints and are rewritten only when semantic input or output content changes.
 
 They do not replace the canonical current league data under `public/data/` or the canonical source snapshots under `fantasy-management/sources/`.
+
+## Production order
+
+The intended daily order is:
+
+```text
+league/source refreshes
+→ external ranking refreshes
+→ external signal refreshes
+→ deterministic materialization
+→ scheduled monitoring
+```
+
+The Sleeper Trending workflow runs before the monitoring window. Its push triggers Fantasy Operations materialization, which publishes the enriched external-signal dataset before monitoring reads it.
 
 ## Legacy observation runner
 
