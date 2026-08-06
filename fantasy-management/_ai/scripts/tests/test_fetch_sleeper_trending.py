@@ -145,6 +145,15 @@ class SleeperTrendingTests(unittest.TestCase):
             )
             self.assertEqual(module.ATTRIBUTION, stored["attribution"])
 
+    def test_corrupt_previous_state_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            latest_path = Path(directory) / "latest.json"
+            latest_path.write_text("{not-json", encoding="utf-8")
+            with self.assertRaisesRegex(
+                module.SleeperTrendingFetchError, "invalid JSON"
+            ):
+                module.load_previous_latest(latest_path)
+
     def test_configuration_change_creates_new_baseline(self):
         previous = {
             "schema_version": module.SCHEMA_VERSION,
