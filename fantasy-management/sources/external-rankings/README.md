@@ -55,7 +55,7 @@ Der Audit fand jedoch keine offiziell dokumentierte vollständige API und keinen
 
 Der vollständige Audit und die Regeln für eine spätere Neubewertung stehen unter:
 
-`fantasy-management/sources/external-rankings/adp/dynasty-data-lab/SOURCE_AUDIT.md`
+`fantasy-management/sources/external-rankings/audits/dynasty-data-lab.md`
 
 ## Geprüfte, aber nicht aktive Quelle: FantasyPros ADP
 
