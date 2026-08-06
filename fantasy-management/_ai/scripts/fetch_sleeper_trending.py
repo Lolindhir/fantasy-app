@@ -485,13 +485,27 @@ def build_latest_document(
 
 
 def load_previous_latest(path: Path) -> dict[str, Any] | None:
-    if not path.is_file():
+    if not path.exists():
         return None
+    if not path.is_file():
+        raise SleeperTrendingFetchError(
+            f"Existing Sleeper latest state is not a file: {path}"
+        )
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    return payload if isinstance(payload, dict) else None
+    except OSError as exc:
+        raise SleeperTrendingFetchError(
+            f"Cannot read existing Sleeper latest state: {path}: {exc}"
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise SleeperTrendingFetchError(
+            f"Existing Sleeper latest state is invalid JSON: {path}: {exc}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise SleeperTrendingFetchError(
+            f"Existing Sleeper latest state is not an object: {path}"
+        )
+    return payload
 
 
 def render_json(payload: dict[str, Any]) -> str:
