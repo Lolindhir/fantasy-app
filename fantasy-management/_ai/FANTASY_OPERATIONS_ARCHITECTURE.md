@@ -102,6 +102,14 @@ Permitted ownership states are:
 
 An unresolved player remains in the dataset as an explicit data-quality finding and is never silently discarded.
 
+## Non-player entity rule
+
+An external source may expose entities that participate in the provider activity feed but are not player entities for the managed league format, such as NFL team defenses.
+
+These entities must be classified declaratively in `operations-external-signal-catalog.json`. A matching entity is excluded from player identity resolution, ownership assignment, free-agent views and player-level monitoring. The source row remains accounted for through separate `excluded_non_player_entities` counts and entity-type metadata.
+
+Invalid classification rules fail closed. A provider-specific non-player pattern must not be embedded directly in monitoring or recommendation logic.
+
 ## Injury-data rule
 
 `public/data/Players.json` currently contains a structured secondary injury signal from the existing player refresh pipeline:
