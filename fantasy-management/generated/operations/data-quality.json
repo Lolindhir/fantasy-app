@@ -2,7 +2,7 @@
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
   "generated_at": "2026-08-06T15:34:10Z",
-  "input_fingerprint": "e52d6008c6f0078171cb38bec68a8fbea92f6885f81b79c04b64bb712b77af62",
+  "input_fingerprint": "ae3db0f9a1c5a0964854b553525acc407f7b167d6e852d9ad7d4b4e8dd569df9",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 37,
@@ -39,9 +39,80 @@
         "not_applicable_players": 1,
         "ambiguous_players": 0
       }
+    },
+    "external_signals": {
+      "sleeper-trending": {
+        "row_count": 159,
+        "resolved_players": 151,
+        "unresolved_players": 8,
+        "ownership": {
+          "fantasy_free_agent": 125,
+          "mighty_giants": 7,
+          "opponent_rostered": 27
+        },
+        "baseline": true,
+        "material_event_eligible": false
+      }
     }
   },
-  "issues": [],
+  "issues": [
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "NE"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "CLE"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "DET"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "JAX"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "MIN"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "2227"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "13300"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "13403"
+    }
+  ],
   "source_freshness": [
     {
       "id": "league",
@@ -102,12 +173,18 @@
       "id": "ffc-redraft-2qb-10-team_ranking",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-08-06/ranking.csv",
       "source_timestamp": "2026-08-06T08:50:37.617738Z"
+    },
+    {
+      "id": "external_signal_sleeper-trending",
+      "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
+      "source_timestamp": "2026-08-06T12:56:18.452970Z"
     }
   ],
   "interpretation_limits": [
     "Structured injury data is a secondary signal and not a substitute for current external verification.",
     "Role and opportunity are intentionally not inferred by this deterministic materialization.",
     "Source applicability, expected absence and warning severity are declared in the Operations Source Catalog.",
-    "A not_listed or not_applicable result is not a negative player evaluation."
+    "A not_listed or not_applicable result is not a negative player evaluation.",
+    "External roster-activity signals are research triggers and not automatic add, drop, trade, hold, shop or cut recommendations."
   ]
 }
