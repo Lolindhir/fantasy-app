@@ -102,14 +102,14 @@ Check `public/data/Timestamps.json` before larger analyses when data freshness m
 
 ## External fantasy sources
 
-External sources may be used for expert, market, ADP, injury, news or plausibility context. They supplement current league data and never override it automatically.
+External sources may be used for expert, market, ADP, activity, injury, news or plausibility context. They supplement current league data and never override it automatically.
 
 Always:
 
-- fetch dynamic external rankings, values, ADP, injuries and news fresh when used
+- fetch dynamic external rankings, values, ADP, activity signals, injuries and news fresh when used
 - cite external claims in user-facing responses
 - explain what each source measures
-- do not store dynamic external values as permanent truth
+- do not store dynamic external values or signals as permanent truth
 - reconcile every source with the actual league format and Mighty Giants context
 
 ### External-ranking hierarchy
@@ -133,6 +133,24 @@ Provider comes second because one provider can publish more than one ranking kin
 The canonical hierarchy and common rules are documented in:
 
 `fantasy-management/sources/external-rankings/README.md`
+
+### External-signal hierarchy
+
+External activities and events that do not evaluate player or asset quality belong under:
+
+```text
+fantasy-management/sources/external-signals/<signal_kind>/<provider>/
+```
+
+The current active signal kind is:
+
+- `roster-activity`: observed add/drop or comparable platform activity
+
+Source signals remain provider-global. Mighty Giants ownership, opponent ownership and fantasy-free-agent status are derived only later by joining the normalized signal with current `League.json` and player data.
+
+The canonical hierarchy and common rules are documented in:
+
+`fantasy-management/sources/external-signals/README.md`
 
 ### FantasyPros expert-consensus snapshots
 
@@ -257,6 +275,50 @@ Operational rules:
 - consider `times_drafted`, source sample window, `high`, `low` and `stdev` before treating small ADP movements as material
 - join players through confirmed source-player mappings or normalized name plus position; Fantasy Football Calculator IDs are source identifiers, not Sleeper IDs
 - visibly attribute Fantasy Football Calculator whenever its ADP values are shown
+
+### Sleeper Trending Players roster-activity signal
+
+Sleeper Trending Players is the active automated external roster-activity signal.
+
+Stored source area:
+
+`fantasy-management/sources/external-signals/roster-activity/sleeper/`
+
+Default signal configuration:
+
+- platform-wide NFL activity
+- separate add and drop lists
+- rolling 24-hour lookback
+- top 100 results per activity type
+- daily refresh target
+
+Refresh both activity types with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+```
+
+The first successful run creates `raw-latest.json` and `latest.json` as a silent baseline. Later compatible runs compare source membership, ranks and counts with the previous successful state.
+
+Canonical source documentation:
+
+- `fantasy-management/sources/external-signals/roster-activity/sleeper/README.md`
+- `fantasy-management/sources/external-signals/roster-activity/sleeper/SOURCE_AUDIT.md`
+- `fantasy-management/sources/external-signals/roster-activity/sleeper/analysis-metadata.json`
+
+Operational rules:
+
+- treat the source as global activity and attention, not as a ranking, value, projection or league-specific fact
+- fetch add and drop successfully before publishing either output
+- fail closed and retain the previous successful state after any incomplete or invalid refresh
+- keep missing top-N entries as `not_listed` with null rank and count; never convert absence to zero activity
+- compare only identical schema, provider, lookback and limit configurations
+- interpret count deltas as differences between overlapping rolling windows, not new transactions since the prior fetch
+- join to current league ownership only downstream through `sleeper_player_id`
+- retain unresolved IDs as data-quality findings
+- use trends only as targeted research and monitoring triggers
+- never derive automatic add, drop, trade, hold, shop or cut actions from this source alone
+- attribute stored and user-facing uses with `Trending data provided by Sleeper`
 
 ### FantasyPros ADP restriction
 

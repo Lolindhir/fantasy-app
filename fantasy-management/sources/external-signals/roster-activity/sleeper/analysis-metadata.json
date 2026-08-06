@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "provider": "sleeper",
+  "display_name": "Sleeper Trending Players",
+  "source_kind": "external_signal",
+  "signal_kind": "roster_activity",
+  "scope": "platform_wide",
+  "sport": "nfl",
+  "ranking": false,
+  "cost": "free",
+  "authentication": "none",
+  "automation_status": "approved_with_constraints",
+  "official_api": {
+    "base_url": "https://api.sleeper.app/v1/players/nfl/trending",
+    "activity_types": [
+      "add",
+      "drop"
+    ],
+    "lookback_hours": 24,
+    "limit": 100,
+    "attribution": "Trending data provided by Sleeper"
+  },
+  "fetcher": "fantasy-management/_ai/scripts/fetch_sleeper_trending.py",
+  "outputs": {
+    "raw_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/raw-latest.json",
+    "normalized_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
+    "raw_retention": "latest_only",
+    "normalized_retention": "latest_only"
+  },
+  "identity": {
+    "source_field": "player_id",
+    "normalized_field": "sleeper_player_id",
+    "league_join_stage": "downstream_materialization"
+  },
+  "interpretation": {
+    "measures": "platform-wide add or drop activity inside a rolling lookback window",
+    "does_not_measure": [
+      "player quality",
+      "dynasty value",
+      "redraft value",
+      "trade value",
+      "adp",
+      "projection",
+      "Mighty Giants league ownership"
+    ],
+    "not_listed_semantics": "outside_returned_top_n_not_zero_activity",
+    "count_delta_semantics": "difference_between_overlapping_rolling_windows"
+  },
+  "baseline": {
+    "first_successful_run_is_silent": true,
+    "configuration_change_resets_baseline": true,
+    "comparison_keys": [
+      "schema_version",
+      "provider",
+      "lookback_hours",
+      "limit"
+    ]
+  },
+  "failure_policy": {
+    "mode": "fail_closed",
+    "both_activity_types_required": true,
+    "retain_previous_successful_state": true,
+    "partial_publish_allowed": false
+  },
+  "allowed_access": [
+    "documented_public_api"
+  ],
+  "disallowed_access": [
+    "website_scraping",
+    "private_or_undocumented_endpoints",
+    "account_session_automation"
+  ],
+  "downstream_use": [
+    "managed_roster_monitoring_trigger",
+    "free_agent_monitoring_trigger",
+    "opponent_monitoring_trigger",
+    "targeted_current_context_research"
+  ],
+  "scheduling_note": "Refresh external rankings and signals shortly before scheduled monitoring; implement actual GitHub Actions orchestration only after separate explicit approval."
+}
