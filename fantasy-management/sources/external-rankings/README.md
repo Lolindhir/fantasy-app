@@ -39,6 +39,14 @@ Mehrere Formate desselben Anbieters dürfen ebenfalls nicht ohne Prüfung gemitt
 
 Aggregierte Rankings müssen neben dem veröffentlichten Konsenswert die zugrunde liegende Quellenkomposition, sichtbare Aktualitätsstände, fehlende Einzelwerte und mögliche Überschneidungen mit anderen gespeicherten Quellen erhalten.
 
+## Quellen-Audits
+
+Audits für geprüfte, aber nicht aktive Rankingquellen liegen zentral unter:
+
+`fantasy-management/sources/external-rankings/audits/`
+
+Provider-Verzeichnisse unter `expert-consensus/`, `market-value/` und `adp/` sind aktiven oder tatsächlich gespeicherten Quellen vorbehalten.
+
 ## Geprüfte, aber nicht aktive Quelle: Dynasty Data Lab
 
 Dynasty Data Lab wurde am 6. August 2026 als mögliche kostenlose Dynasty-Startup-ADP-Quelle geprüft.
