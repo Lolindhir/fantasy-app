@@ -9,7 +9,7 @@
   "ranking": false,
   "cost": "free",
   "authentication": "none",
-  "automation_status": "approved_with_constraints",
+  "automation_status": "active",
   "official_api": {
     "base_url": "https://api.sleeper.app/v1/players/nfl/trending",
     "activity_types": [
@@ -21,6 +21,15 @@
     "attribution": "Trending data provided by Sleeper"
   },
   "fetcher": "fantasy-management/_ai/scripts/fetch_sleeper_trending.py",
+  "workflow": {
+    "path": ".github/workflows/update-sleeper-trending.yml",
+    "manual_dispatch": true,
+    "schedule_timezone": "Europe/Berlin",
+    "scheduled_local_time": "06:35",
+    "monitoring_local_time": "07:00",
+    "safety_margin_minutes": 25,
+    "dst_strategy": "paired_utc_crons_with_berlin_offset_gate"
+  },
   "outputs": {
     "raw_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/raw-latest.json",
     "normalized_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
@@ -76,5 +85,5 @@
     "opponent_monitoring_trigger",
     "targeted_current_context_research"
   ],
-  "scheduling_note": "Refresh external rankings and signals shortly before scheduled monitoring; implement actual GitHub Actions orchestration only after separate explicit approval."
+  "scheduling_note": "Sleeper Trending refreshes daily at 06:35 Europe/Berlin, 25 minutes before the 07:00 monitoring run. Broader cross-source orchestration remains a separate follow-up."
 }
