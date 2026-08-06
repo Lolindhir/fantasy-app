@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "external-signal-relevance",
   "generated_at": "2026-08-06T12:56:18.452970Z",
-  "input_fingerprint": "c4ad091fcc38a5b80fb4c3b37989bcb5389bc7c7a738999a992c1036f959fb8f",
+  "input_fingerprint": "fc9cb04949db7b90749dba6c8bab25573319bf54725206e07a76ad02fb3bb953",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -18,13 +18,13 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "ffeec9b234ee83105907ecb190caab8e9296751a8950fd9f1cdafa47ee73a997",
+      "content_sha256": "6af9a805206d3967cdf6a64c730b13ecf8df95c1f204bbbdeab4bb2f634f4a28",
       "source_timestamp": null
     },
     {
       "id": "external_signal_catalog",
       "path": "fantasy-management/_ai/operations-external-signal-catalog.json",
-      "content_sha256": "6548d4a4f234c2c7ae859ecf50f813da822526ac53b5f59dc61204ccbec6b61b",
+      "content_sha256": "7531f681accda17439b0489550880117941d6178d0411d6e0e8d84acf7ca309d",
       "source_timestamp": null
     },
     {
@@ -42,6 +42,20 @@
       "source_timestamp": "2026-08-06T12:56:18.452970Z",
       "attribution": "Trending data provided by Sleeper",
       "row_count": 159,
+      "materialized_entity_count": 154,
+      "excluded_non_player_entities": {
+        "count": 5,
+        "by_type": {
+          "team_defense": 5
+        },
+        "entity_ids": [
+          "CLE",
+          "DET",
+          "JAX",
+          "MIN",
+          "NE"
+        ]
+      },
       "comparison": {
         "baseline": true,
         "comparable": false,
@@ -49,15 +63,26 @@
         "previous_generated_at": null,
         "material_event_eligible": false,
         "rolling_window_warning": null
+      },
+      "resolved_players": 151,
+      "unresolved_players": 3,
+      "ownership": {
+        "fantasy_free_agent": 120,
+        "mighty_giants": 7,
+        "opponent_rostered": 27
       }
     }
   ],
   "summary": {
-    "players": 159,
+    "players": 154,
     "resolved_players": 151,
-    "unresolved_players": 8,
+    "unresolved_players": 3,
+    "excluded_non_player_entities": 5,
+    "excluded_non_player_entities_by_type": {
+      "team_defense": 5
+    },
     "ownership": {
-      "fantasy_free_agent": 125,
+      "fantasy_free_agent": 120,
       "mighty_giants": 7,
       "opponent_rostered": 27
     }
@@ -463,32 +488,12 @@
           "owner_teams": []
         },
         {
-          "rank": 37,
-          "player_id": "DET",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
-          "count": 2520,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
           "rank": 38,
           "player_id": "10219",
           "name": "Chris Rodriguez",
           "position": "RB",
           "nfl_team": "JAX",
           "count": 2484,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
-          "rank": 39,
-          "player_id": "JAX",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
-          "count": 2376,
           "ownership_status": "fantasy_free_agent",
           "owner_teams": []
         },
@@ -1167,16 +1172,6 @@
           "position": "QB",
           "nfl_team": "NYJ",
           "count": 1004,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
-          "rank": 95,
-          "player_id": "MIN",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
-          "count": 1000,
           "ownership_status": "fantasy_free_agent",
           "owner_teams": []
         },
@@ -2283,16 +2278,6 @@
           "owner_teams": []
         },
         {
-          "rank": 87,
-          "player_id": "CLE",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
-          "count": 1862,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
           "rank": 88,
           "player_id": "12471",
           "name": "DJ Giddens",
@@ -2348,16 +2333,6 @@
           "position": "RB",
           "nfl_team": "PHI",
           "count": 1816,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
-          "rank": 93,
-          "player_id": "NE",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
-          "count": 1806,
           "ownership_status": "fantasy_free_agent",
           "owner_teams": []
         },
@@ -8297,227 +8272,12 @@
           }
         }
       }
-    },
-    {
-      "player_id": "CLE",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-08-06T12:56:18.452970Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "not_listed",
-            "add_rank": null,
-            "add_count": null,
-            "drop_status": "listed",
-            "drop_rank": 87,
-            "drop_count": 1862
-          },
-          "changes": {},
-          "comparison": {
-            "baseline": true,
-            "comparable": false,
-            "reason": "no_previous_successful_snapshot",
-            "previous_generated_at": null,
-            "material_event_eligible": false,
-            "rolling_window_warning": null
-          }
-        }
-      }
-    },
-    {
-      "player_id": "DET",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-08-06T12:56:18.452970Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "listed",
-            "add_rank": 37,
-            "add_count": 2520,
-            "drop_status": "not_listed",
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {},
-          "comparison": {
-            "baseline": true,
-            "comparable": false,
-            "reason": "no_previous_successful_snapshot",
-            "previous_generated_at": null,
-            "material_event_eligible": false,
-            "rolling_window_warning": null
-          }
-        }
-      }
-    },
-    {
-      "player_id": "JAX",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-08-06T12:56:18.452970Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "listed",
-            "add_rank": 39,
-            "add_count": 2376,
-            "drop_status": "not_listed",
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {},
-          "comparison": {
-            "baseline": true,
-            "comparable": false,
-            "reason": "no_previous_successful_snapshot",
-            "previous_generated_at": null,
-            "material_event_eligible": false,
-            "rolling_window_warning": null
-          }
-        }
-      }
-    },
-    {
-      "player_id": "MIN",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-08-06T12:56:18.452970Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "listed",
-            "add_rank": 95,
-            "add_count": 1000,
-            "drop_status": "not_listed",
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {},
-          "comparison": {
-            "baseline": true,
-            "comparable": false,
-            "reason": "no_previous_successful_snapshot",
-            "previous_generated_at": null,
-            "material_event_eligible": false,
-            "rolling_window_warning": null
-          }
-        }
-      }
-    },
-    {
-      "player_id": "NE",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-08-06T12:56:18.452970Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "not_listed",
-            "add_rank": null,
-            "add_count": null,
-            "drop_status": "listed",
-            "drop_rank": 93,
-            "drop_count": 1806
-          },
-          "changes": {},
-          "comparison": {
-            "baseline": true,
-            "comparable": false,
-            "reason": "no_previous_successful_snapshot",
-            "previous_generated_at": null,
-            "material_event_eligible": false,
-            "rolling_window_warning": null
-          }
-        }
-      }
     }
   ],
   "quality": {
     "status": "ok",
-    "issue_count": 8,
+    "issue_count": 3,
     "issues": [
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "NE"
-      },
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "CLE"
-      },
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "DET"
-      },
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "JAX"
-      },
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "MIN"
-      },
       {
         "domain": "external_signal_materialization",
         "severity": "info",

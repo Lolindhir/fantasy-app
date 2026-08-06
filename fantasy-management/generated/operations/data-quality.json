@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-08-06T15:34:10Z",
-  "input_fingerprint": "ae3db0f9a1c5a0964854b553525acc407f7b167d6e852d9ad7d4b4e8dd569df9",
+  "generated_at": "2026-08-06T23:50:26Z",
+  "input_fingerprint": "3dcf36195e31dc53c2b2a5d258ea8805ba8d1632c7982932167e8417bd34d518",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 37,
@@ -43,10 +43,24 @@
     "external_signals": {
       "sleeper-trending": {
         "row_count": 159,
+        "materialized_entity_count": 154,
         "resolved_players": 151,
-        "unresolved_players": 8,
+        "unresolved_players": 3,
+        "excluded_non_player_entities": {
+          "count": 5,
+          "by_type": {
+            "team_defense": 5
+          },
+          "entity_ids": [
+            "CLE",
+            "DET",
+            "JAX",
+            "MIN",
+            "NE"
+          ]
+        },
         "ownership": {
-          "fantasy_free_agent": 125,
+          "fantasy_free_agent": 120,
           "mighty_giants": 7,
           "opponent_rostered": 27
         },
@@ -56,41 +70,6 @@
     }
   },
   "issues": [
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "NE"
-    },
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "CLE"
-    },
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "DET"
-    },
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "JAX"
-    },
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "MIN"
-    },
     {
       "domain": "external_signal_materialization",
       "severity": "info",
@@ -122,12 +101,12 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "source_timestamp": "2026-08-06T13:42:32Z"
+      "source_timestamp": "2026-08-06T23:50:26Z"
     },
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "source_timestamp": "2026-08-06T15:34:10Z"
+      "source_timestamp": "2026-08-06T23:50:26Z"
     },
     {
       "id": "operations_source_catalog",
@@ -185,6 +164,7 @@
     "Role and opportunity are intentionally not inferred by this deterministic materialization.",
     "Source applicability, expected absence and warning severity are declared in the Operations Source Catalog.",
     "A not_listed or not_applicable result is not a negative player evaluation.",
-    "External roster-activity signals are research triggers and not automatic add, drop, trade, hold, shop or cut recommendations."
+    "External roster-activity signals are research triggers and not automatic add, drop, trade, hold, shop or cut recommendations.",
+    "Catalog-classified non-player entities are excluded from player identity, ownership and free-agent views and reported separately."
   ]
 }
