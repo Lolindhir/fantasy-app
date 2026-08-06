@@ -69,6 +69,10 @@ Der anonyme FantasyPros-ADP-Report ist seit der Live-Prüfung vom 4. August 2026
 
 Ein Top-5-Ausschnitt darf weder gespeichert noch als vollständiges Ranking interpretiert werden. Ohne ausdrücklich freigegebene Login- oder API-Secrets wird daher kein FantasyPros-ADP-Fetcher oder Workflow betrieben. Für den automatisierten ADP-Kontext bleibt Fantasy Football Calculator die aktive Quelle.
 
+Der vollständige Audit steht unter:
+
+`fantasy-management/sources/external-rankings/audits/fantasypros-adp.md`
+
 Eine erneute Integration ist erst zu prüfen, wenn FantasyPros wieder einen vollständigen anonymen Report veröffentlicht oder der Nutzer den Einsatz eines authentifizierten offiziellen Zugangs ausdrücklich freigibt.
 
 ## Speicherregel
