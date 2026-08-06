@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "catalog_id": "fantasy-operations-source-catalog",
+  "purpose": "Declarative registry for provider-neutral Fantasy Operations input sources. Source applicability, joins, signal mappings, freshness and expected absence belong here rather than in runner logic.",
+  "sources": [
+    {
+      "source_id": "fantasypros-dynasty-superflex-ppr",
+      "active": true,
+      "source_kind": "expert_consensus",
+      "provider": "fantasypros",
+      "dataset_id": "dynasty-superflex-ppr",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["fetched_at", "ranking_fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["QB", "RB", "WR", "TE"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "market",
+        "key": "fantasypros",
+        "signals": [
+          {"target": "overall_rank", "source_field": "Rank", "type": "number"},
+          {"target": "position_rank", "source_field": "position_rank", "type": "text"},
+          {"target": "tier", "source_field": "tier", "type": "text"}
+        ]
+      },
+      "roles": {},
+      "quality": {"minimum_rows": 100, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 48},
+      "format_context": {"horizon": "dynasty", "scoring": "ppr", "quarterback_mode": "superflex"}
+    },
+    {
+      "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+      "active": true,
+      "source_kind": "market_value",
+      "provider": "fantasycalc",
+      "dataset_id": "dynasty-superflex-ppr-8-team",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["QB", "RB", "WR", "TE"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "id", "method": "sleeper_id", "player_field": "ID", "source_field": "sleeper_id"},
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "market",
+        "key": "fantasycalc",
+        "signals": [
+          {"target": "overall_rank", "source_field": "Rank", "type": "number"},
+          {"target": "position_rank", "source_field": "position_rank", "type": "number"},
+          {"target": "tier", "source_field": "tier", "type": "text"},
+          {"target": "value", "source_field": "value", "type": "number"},
+          {"target": "trend_30_day", "source_field": "trend_30_day", "type": "number"},
+          {"target": "roster_percent", "source_field": "roster_percent", "type": "number"},
+          {"target": "trade_frequency", "source_field": "trade_frequency", "type": "number"}
+        ]
+      },
+      "roles": {},
+      "quality": {"minimum_rows": 100, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 48},
+      "format_context": {"horizon": "dynasty", "scoring": "ppr", "quarterback_mode": "superflex", "team_count": 8}
+    },
+    {
+      "source_id": "ffc-redraft-ppr-8-team",
+      "active": true,
+      "source_kind": "adp",
+      "provider": "fantasy-football-calculator",
+      "dataset_id": "redraft-ppr-8-team",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["QB", "RB", "WR", "TE"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "redraft_adp",
+        "key": "ppr_8_team",
+        "signals": [
+          {"target": "rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
+          {"target": "adp", "source_field": "adp", "type": "number"},
+          {"target": "times_drafted", "source_field": "times_drafted", "type": "number"},
+          {"target": "stdev", "source_field": "stdev", "type": "number"},
+          {"target": "sample_total_drafts", "source_field": "sample_total_drafts", "type": "number"},
+          {"target": "sample_start_date", "source_field": "sample_start_date", "type": "text"},
+          {"target": "sample_end_date", "source_field": "sample_end_date", "type": "text"}
+        ]
+      },
+      "roles": {"primary_for_positions": ["RB", "WR", "TE"]},
+      "quality": {"minimum_rows": 50, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 72},
+      "format_context": {"horizon": "redraft", "scoring": "ppr", "quarterback_mode": "one_qb", "team_count": 8, "actual_league_team_count": 6}
+    },
+    {
+      "source_id": "ffc-redraft-2qb-10-team",
+      "active": true,
+      "source_kind": "adp",
+      "provider": "fantasy-football-calculator",
+      "dataset_id": "redraft-2qb-10-team",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["QB", "RB", "WR", "TE"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "redraft_adp",
+        "key": "two_qb_10_team",
+        "signals": [
+          {"target": "rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
+          {"target": "adp", "source_field": "adp", "type": "number"},
+          {"target": "times_drafted", "source_field": "times_drafted", "type": "number"},
+          {"target": "stdev", "source_field": "stdev", "type": "number"},
+          {"target": "sample_total_drafts", "source_field": "sample_total_drafts", "type": "number"},
+          {"target": "sample_start_date", "source_field": "sample_start_date", "type": "text"},
+          {"target": "sample_end_date", "source_field": "sample_end_date", "type": "text"}
+        ]
+      },
+      "roles": {"primary_for_positions": ["QB"]},
+      "quality": {"minimum_rows": 50, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 72},
+      "format_context": {"horizon": "redraft", "scoring": "source_default", "quarterback_mode": "two_qb", "team_count": 10, "actual_league_team_count": 6}
+    }
+  ],
+  "derived_views": {
+    "redraft_adp": {
+      "primary_source_rule": "roles.primary_for_positions",
+      "format_gap": {"left_source_id": "ffc-redraft-2qb-10-team", "right_source_id": "ffc-redraft-ppr-8-team", "signal": "percentile"}
+    }
+  }
+}
