@@ -56,6 +56,39 @@ A durable write to State, Knowledge, Decisions, boards, baselines or stored revi
 
 The approved write is then performed interactively with the normal repository validation and publication rules.
 
+## Operations Source Catalog
+
+The canonical machine-readable source integration contract is:
+
+```text
+fantasy-management/_ai/operations-source-catalog.json
+```
+
+It owns the technical rules for every materialized external dataset:
+
+- source identity, provider and dataset identity;
+- active/inactive status;
+- latest-pointer location and timestamp fields;
+- applicable entity types and player positions;
+- expected absence semantics such as `not_applicable`, `not_listed` and `ambiguous_join`;
+- ordered join strategies;
+- output section, output key and signal mappings;
+- primary-source roles by position;
+- minimum row count, warning severity and freshness policy;
+- format context needed for later interpretation.
+
+The materializer must not contain provider names, source IDs, source paths, position-specific provider selection or source-specific signal fields. It loads all active catalog entries generically.
+
+Adding another source with an already supported normalized CSV and latest-pointer contract requires only:
+
+1. a source refresh/normalization output;
+2. one catalog entry;
+3. an optional profile binding when the source changes evaluation policy.
+
+The materializer, monitoring prompt and runner configuration must remain unchanged. A code change is allowed only when a genuinely new access type, join strategy, transform or normalized contract is introduced.
+
+Position applicability is declarative. For example, current Dynasty ranking and ADP feeds apply to QB, RB, WR and TE. Kicker absence is therefore `not_applicable`, not a data-quality warning and not a negative player signal.
+
 ## Injury-data rule
 
 `public/data/Players.json` currently contains a structured secondary injury signal from the existing player refresh pipeline:
