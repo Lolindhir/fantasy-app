@@ -3,7 +3,9 @@
 
 The script performs deterministic data preparation only. It does not browse the
 web, call an AI service, make fantasy recommendations, or persist monitoring
-state. Its output is a neutral read model for external research and analysis.
+state. External source behavior is declared in the Operations Source Catalog;
+adding another source with an existing normalized contract must not require a
+materializer code change.
 """
 
 from __future__ import annotations
@@ -23,7 +25,11 @@ from typing import Any, Iterable
 
 
 SCHEMA_VERSION = 1
+CATALOG_SCHEMA_VERSION = 1
 NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
+SEVERITIES = {"none", "info", "warning", "error"}
+SIGNAL_TYPES = {"text", "number", "boolean"}
+JOIN_TYPES = {"id", "name_position"}
 
 
 class MaterializationError(RuntimeError):
@@ -37,6 +43,15 @@ class SourceFile:
     relative_path: str
     content_sha256: str
     source_timestamp: str | None
+
+
+@dataclass(frozen=True)
+class LoadedCatalogSource:
+    definition: dict[str, Any]
+    pointer_source: SourceFile
+    ranking_source: SourceFile
+    rows: list[dict[str, str]]
+    index: dict[str, Any]
 
 
 def canonical_json(value: Any) -> str:
@@ -132,7 +147,10 @@ def max_timestamp(values: Iterable[Any]) -> str | None:
 
 
 def source_file(source_id: str, path: Path, root: Path, timestamp: Any = None) -> SourceFile:
-    content = path.read_text(encoding="utf-8")
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise MaterializationError(f"Missing required source file: {path}") from exc
     return SourceFile(
         id=source_id,
         path=path,
@@ -140,51 +158,6 @@ def source_file(source_id: str, path: Path, root: Path, timestamp: Any = None) -
         content_sha256=sha256_text(content),
         source_timestamp=max_timestamp([timestamp]),
     )
-
-
-def index_rows(rows: list[dict[str, str]], *, sleeper_field: str | None = None) -> dict[str, Any]:
-    by_sleeper: dict[str, dict[str, str]] = {}
-    by_name_position: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
-    for row in rows:
-        if sleeper_field:
-            sleeper_id = optional_text(row.get(sleeper_field))
-            if sleeper_id:
-                by_sleeper[sleeper_id] = row
-        key = (normalize_name(row.get("name")), str(row.get("position") or "").upper())
-        if key[0] and key[1]:
-            by_name_position[key].append(row)
-    return {
-        "by_sleeper": by_sleeper,
-        "by_name_position": by_name_position,
-        "row_count": len(rows),
-    }
-
-
-def match_row(
-    player: dict[str, Any],
-    index: dict[str, Any],
-    *,
-    allow_sleeper: bool,
-) -> tuple[dict[str, str] | None, str, list[str]]:
-    player_id = str(player.get("ID") or "")
-    if allow_sleeper and player_id and player_id in index["by_sleeper"]:
-        return index["by_sleeper"][player_id], "sleeper_id", []
-
-    key = (normalize_name(player.get("Name")), str(player.get("Position") or "").upper())
-    candidates = index["by_name_position"].get(key, [])
-    if len(candidates) == 1:
-        return candidates[0], "normalized_name_position", []
-    if len(candidates) > 1:
-        team = str(player.get("TeamAbbr") or "").upper()
-        team_candidates = [
-            row
-            for row in candidates
-            if str(row.get("team") or "").upper() == team
-        ]
-        if len(team_candidates) == 1:
-            return team_candidates[0], "normalized_name_position_team", []
-        return None, "ambiguous", [str(row.get("name") or "") for row in candidates]
-    return None, "missing", []
 
 
 def percentile(rank: Any, row_count: int) -> float | None:
@@ -197,12 +170,207 @@ def percentile(rank: Any, row_count: int) -> float | None:
     return round(max(0.0, min(100.0, value)), 2)
 
 
-def derive_injury_signal(player: dict[str, Any]) -> dict[str, Any]:
-    details = (
-        player.get("InjuryDetails")
-        if isinstance(player.get("InjuryDetails"), dict)
-        else {}
+def convert_signal(value: Any, signal_type: str) -> Any:
+    if signal_type == "number":
+        return optional_number(value)
+    if signal_type == "boolean":
+        return optional_bool(value)
+    if signal_type == "text":
+        return optional_text(value)
+    raise MaterializationError(f"Unsupported signal type: {signal_type}")
+
+
+def validate_catalog(catalog: dict[str, Any]) -> None:
+    if catalog.get("schema_version") != CATALOG_SCHEMA_VERSION:
+        raise MaterializationError("Unexpected Operations Source Catalog schema version")
+    sources = catalog.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise MaterializationError("Operations Source Catalog must contain sources")
+
+    seen_ids: set[str] = set()
+    primary_positions: dict[str, str] = {}
+    for source in sources:
+        source_id = optional_text(source.get("source_id"))
+        if not source_id:
+            raise MaterializationError("Catalog source has no source_id")
+        if source_id in seen_ids:
+            raise MaterializationError(f"Duplicate catalog source_id: {source_id}")
+        seen_ids.add(source_id)
+
+        if not isinstance(source.get("active"), bool):
+            raise MaterializationError(f"Catalog source {source_id} has invalid active flag")
+        if not source.get("active"):
+            continue
+
+        access = source.get("access") or {}
+        if access.get("type") != "repo_latest_pointer":
+            raise MaterializationError(f"Catalog source {source_id} uses unsupported access type")
+        if not optional_text(access.get("location")):
+            raise MaterializationError(f"Catalog source {source_id} has no location")
+        if not optional_text(access.get("ranking_path_field")):
+            raise MaterializationError(f"Catalog source {source_id} has no ranking_path_field")
+        timestamp_fields = access.get("timestamp_fields")
+        if not isinstance(timestamp_fields, list) or not timestamp_fields:
+            raise MaterializationError(f"Catalog source {source_id} has no timestamp_fields")
+
+        applicability = source.get("applicability") or {}
+        positions = applicability.get("positions")
+        if not isinstance(positions, list) or not positions:
+            raise MaterializationError(f"Catalog source {source_id} must declare applicable positions")
+
+        join = source.get("join") or {}
+        strategies = join.get("strategies")
+        if not isinstance(strategies, list) or not strategies:
+            raise MaterializationError(f"Catalog source {source_id} must declare join strategies")
+        for strategy in strategies:
+            if strategy.get("type") not in JOIN_TYPES:
+                raise MaterializationError(f"Catalog source {source_id} has unsupported join strategy")
+            if not optional_text(strategy.get("method")):
+                raise MaterializationError(f"Catalog source {source_id} join strategy has no method")
+            if strategy.get("type") == "id":
+                if not optional_text(strategy.get("player_field")) or not optional_text(strategy.get("source_field")):
+                    raise MaterializationError(f"Catalog source {source_id} id join is incomplete")
+            else:
+                for field in ("name_field", "position_field"):
+                    if not optional_text(strategy.get(field)):
+                        raise MaterializationError(f"Catalog source {source_id} name join is incomplete")
+
+        output = source.get("output") or {}
+        if not optional_text(output.get("section")) or not optional_text(output.get("key")):
+            raise MaterializationError(f"Catalog source {source_id} must declare output section and key")
+        signals = output.get("signals")
+        if not isinstance(signals, list) or not signals:
+            raise MaterializationError(f"Catalog source {source_id} must declare signal mappings")
+        targets: set[str] = set()
+        for signal in signals:
+            target = optional_text(signal.get("target"))
+            if not target or target in targets:
+                raise MaterializationError(f"Catalog source {source_id} has invalid signal target")
+            targets.add(target)
+            if signal.get("type") not in SIGNAL_TYPES:
+                raise MaterializationError(f"Catalog source {source_id} has invalid signal type")
+            if not optional_text(signal.get("source_field")):
+                raise MaterializationError(f"Catalog source {source_id} signal {target} has no source_field")
+            transform = signal.get("transform")
+            if transform not in (None, "percentile_from_rank"):
+                raise MaterializationError(f"Catalog source {source_id} signal {target} has invalid transform")
+
+        quality = source.get("quality") or {}
+        for key in ("missing_severity", "ambiguous_severity", "row_count_severity"):
+            if quality.get(key, "none") not in SEVERITIES:
+                raise MaterializationError(f"Catalog source {source_id} has invalid {key}")
+
+        roles = source.get("roles") or {}
+        if output.get("section") == "redraft_adp":
+            for position in roles.get("primary_for_positions") or []:
+                normalized_position = str(position).upper()
+                if normalized_position in primary_positions:
+                    raise MaterializationError(
+                        "Multiple primary redraft ADP sources for position "
+                        f"{normalized_position}: {primary_positions[normalized_position]} and {source_id}"
+                    )
+                primary_positions[normalized_position] = source_id
+
+    derived_views = catalog.get("derived_views") or {}
+    gap = ((derived_views.get("redraft_adp") or {}).get("format_gap") or {})
+    if gap:
+        for key in ("left_source_id", "right_source_id", "signal"):
+            if not optional_text(gap.get(key)):
+                raise MaterializationError(f"redraft_adp.format_gap has no {key}")
+        for source_key in ("left_source_id", "right_source_id"):
+            if gap[source_key] not in seen_ids:
+                raise MaterializationError(f"redraft_adp.format_gap references unknown source {gap[source_key]}")
+
+
+def build_source_index(rows: list[dict[str, str]], strategies: list[dict[str, Any]]) -> dict[str, Any]:
+    indexes: list[dict[str, Any]] = []
+    for strategy in strategies:
+        if strategy["type"] == "id":
+            by_id: dict[str, list[dict[str, str]]] = defaultdict(list)
+            source_field = strategy["source_field"]
+            for row in rows:
+                source_id = optional_text(row.get(source_field))
+                if source_id:
+                    by_id[source_id].append(row)
+            indexes.append({"strategy": strategy, "values": by_id})
+            continue
+
+        by_name_position: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+        for row in rows:
+            key = (
+                normalize_name(row.get(strategy["name_field"])),
+                str(row.get(strategy["position_field"]) or "").upper(),
+            )
+            if key[0] and key[1]:
+                by_name_position[key].append(row)
+        indexes.append({"strategy": strategy, "values": by_name_position})
+    return {"indexes": indexes, "row_count": len(rows)}
+
+
+def match_source_row(player: dict[str, Any], source: LoadedCatalogSource) -> tuple[dict[str, str] | None, str, list[str]]:
+    ambiguous_candidates: list[str] = []
+    for item in source.index["indexes"]:
+        strategy = item["strategy"]
+        values = item["values"]
+        if strategy["type"] == "id":
+            player_value = optional_text(player.get(strategy["player_field"]))
+            if not player_value:
+                continue
+            candidates = values.get(player_value, [])
+        else:
+            key = (
+                normalize_name(player.get("Name")),
+                str(player.get("Position") or "").upper(),
+            )
+            candidates = values.get(key, [])
+
+        if len(candidates) == 1:
+            return candidates[0], strategy["method"], []
+        if len(candidates) <= 1:
+            continue
+
+        if strategy["type"] == "name_position" and optional_text(strategy.get("team_field")):
+            team = str(player.get("TeamAbbr") or "").upper()
+            team_candidates = [
+                row
+                for row in candidates
+                if str(row.get(strategy["team_field"]) or "").upper() == team
+            ]
+            if len(team_candidates) == 1:
+                return team_candidates[0], f"{strategy['method']}_team", []
+
+        ambiguous_candidates = [
+            str(row.get(strategy.get("name_field") or "name") or "")
+            for row in candidates
+        ]
+
+    if ambiguous_candidates:
+        return None, "ambiguous", ambiguous_candidates
+    return None, "missing", []
+
+
+def resolve_catalog_source(root: Path, definition: dict[str, Any]) -> LoadedCatalogSource:
+    source_id = definition["source_id"]
+    access = definition["access"]
+    pointer_file = root / access["location"]
+    pointer = load_json(pointer_file)
+    ranking_path = optional_text(pointer.get(access["ranking_path_field"]))
+    if not ranking_path:
+        raise MaterializationError(f"Pointer for {source_id} has no {access['ranking_path_field']}")
+    ranking_file = root / ranking_path
+    timestamp = max_timestamp(pointer.get(field) for field in access["timestamp_fields"])
+    rows = load_csv(ranking_file)
+    return LoadedCatalogSource(
+        definition=definition,
+        pointer_source=source_file(f"{source_id}_pointer", pointer_file, root, timestamp),
+        ranking_source=source_file(f"{source_id}_ranking", ranking_file, root, timestamp),
+        rows=rows,
+        index=build_source_index(rows, definition["join"]["strategies"]),
     )
+
+
+def derive_injury_signal(player: dict[str, Any]) -> dict[str, Any]:
+    details = player.get("InjuryDetails") if isinstance(player.get("InjuryDetails"), dict) else {}
     injured = bool(player.get("Injured"))
     designation = optional_text(details.get("Designation"))
     description = optional_text(details.get("Description"))
@@ -232,138 +400,173 @@ def derive_injury_signal(player: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def extract_market(
-    player: dict[str, Any],
-    fp_index: dict[str, Any],
-    fc_index: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    issues: list[dict[str, Any]] = []
-    fp_row, fp_join, fp_candidates = match_row(player, fp_index, allow_sleeper=False)
-    fc_row, fc_join, fc_candidates = match_row(player, fc_index, allow_sleeper=True)
-
-    if not fp_row:
-        issues.append(
-            {"source": "fantasypros", "kind": fp_join, "candidates": fp_candidates}
-        )
-    if not fc_row:
-        issues.append(
-            {"source": "fantasycalc", "kind": fc_join, "candidates": fc_candidates}
-        )
-
-    return {
-        "fantasypros": {
-            "listed": fp_row is not None,
-            "join_method": fp_join,
-            "overall_rank": optional_number(fp_row.get("Rank")) if fp_row else None,
-            "position_rank": optional_text(fp_row.get("position_rank")) if fp_row else None,
-            "tier": optional_text(fp_row.get("tier")) if fp_row else None,
-        },
-        "fantasycalc": {
-            "listed": fc_row is not None,
-            "join_method": fc_join,
-            "overall_rank": optional_number(fc_row.get("Rank")) if fc_row else None,
-            "position_rank": optional_number(fc_row.get("position_rank")) if fc_row else None,
-            "tier": optional_text(fc_row.get("tier")) if fc_row else None,
-            "value": optional_number(fc_row.get("value")) if fc_row else None,
-            "trend_30_day": optional_number(fc_row.get("trend_30_day")) if fc_row else None,
-            "roster_percent": optional_number(fc_row.get("roster_percent")) if fc_row else None,
-            "trade_frequency": optional_number(fc_row.get("trade_frequency")) if fc_row else None,
-        },
-    }, issues
-
-
-def extract_adp(
-    player: dict[str, Any],
-    ppr_index: dict[str, Any],
-    two_qb_index: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    issues: list[dict[str, Any]] = []
-    ppr_row, ppr_join, ppr_candidates = match_row(
-        player, ppr_index, allow_sleeper=False
-    )
-    two_row, two_join, two_candidates = match_row(
-        player, two_qb_index, allow_sleeper=False
-    )
-    position = str(player.get("Position") or "").upper()
-    primary_id = "two_qb_10_team" if position == "QB" else "ppr_8_team"
-    primary_row = two_row if position == "QB" else ppr_row
-
-    if not ppr_row:
-        issues.append(
-            {"source": "ffc_ppr_8_team", "kind": ppr_join, "candidates": ppr_candidates}
-        )
-    if not two_row and position == "QB":
-        issues.append(
-            {
-                "source": "ffc_two_qb_10_team",
-                "kind": two_join,
-                "candidates": two_candidates,
-            }
-        )
-
-    def row_view(
-        row: dict[str, str] | None,
-        join_method: str,
-        row_count: int,
-    ) -> dict[str, Any]:
-        return {
-            "listed": row is not None,
-            "join_method": join_method,
-            "rank": optional_number(row.get("Rank")) if row else None,
-            "percentile": percentile(row.get("Rank"), row_count) if row else None,
-            "adp": optional_number(row.get("adp")) if row else None,
-            "times_drafted": optional_number(row.get("times_drafted")) if row else None,
-            "stdev": optional_number(row.get("stdev")) if row else None,
-            "sample_total_drafts": (
-                optional_number(row.get("sample_total_drafts")) if row else None
-            ),
-            "sample_start_date": (
-                optional_text(row.get("sample_start_date")) if row else None
-            ),
-            "sample_end_date": (
-                optional_text(row.get("sample_end_date")) if row else None
-            ),
-        }
-
-    ppr_view = row_view(ppr_row, ppr_join, ppr_index["row_count"])
-    two_view = row_view(two_row, two_join, two_qb_index["row_count"])
-    primary_view = two_view if position == "QB" else ppr_view
-    return {
-        "primary_format": primary_id,
-        "primary_listed": primary_row is not None,
-        "primary": primary_view,
-        "ppr_8_team": ppr_view,
-        "two_qb_10_team": two_view,
-        "format_gap": (
-            round(
-                float(two_view["percentile"]) - float(ppr_view["percentile"]),
-                2,
-            )
-            if two_view["percentile"] is not None
-            and ppr_view["percentile"] is not None
-            else None
-        ),
-    }, issues
-
-
-def resolve_pointer(
-    root: Path,
+def severity_issue(
+    severity: str,
+    *,
+    kind: str,
     source_id: str,
-    pointer_path: str,
-    timestamp_fields: list[str],
-) -> tuple[SourceFile, SourceFile, list[dict[str, str]]]:
-    pointer_file = root / pointer_path
-    pointer = load_json(pointer_file)
-    ranking_path = optional_text(pointer.get("ranking_file"))
-    if not ranking_path:
-        raise MaterializationError(f"Pointer has no ranking_file: {pointer_file}")
-    ranking_file = root / ranking_path
-    timestamp = max_timestamp(pointer.get(field) for field in timestamp_fields)
+    player_id: str | None = None,
+    candidates: list[str] | None = None,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    if severity == "none":
+        return None
+    issue: dict[str, Any] = {"severity": severity, "kind": kind, "source": source_id}
+    if player_id is not None:
+        issue["player_id"] = player_id
+    if candidates:
+        issue["candidates"] = candidates
+    if details:
+        issue.update(details)
+    return issue
+
+
+def source_applicable(player: dict[str, Any], definition: dict[str, Any]) -> bool:
+    position = str(player.get("Position") or "").upper()
+    positions = {str(item).upper() for item in definition["applicability"]["positions"]}
+    return position in positions
+
+
+def evaluate_source_for_player(player: dict[str, Any], source: LoadedCatalogSource) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    definition = source.definition
+    source_id = definition["source_id"]
+    signal_values = {mapping["target"]: None for mapping in definition["output"]["signals"]}
+
+    if not source_applicable(player, definition):
+        return (
+            {
+                "source_id": source_id,
+                "source_kind": definition["source_kind"],
+                "provider": definition["provider"],
+                "dataset_id": definition["dataset_id"],
+                "applicable": False,
+                "coverage_status": definition["absence_policy"]["inapplicable"],
+                "listed": False,
+                "join_method": "not_applicable",
+                "signals": signal_values,
+                "format_context": definition.get("format_context") or {},
+            },
+            None,
+        )
+
+    row, join_method, candidates = match_source_row(player, source)
+    if row is None:
+        if join_method == "ambiguous":
+            severity = definition["quality"].get("ambiguous_severity", "warning")
+            coverage_status = definition["absence_policy"]["ambiguous"]
+            kind = "ambiguous_join"
+        else:
+            severity = definition["quality"].get("missing_severity", "none")
+            coverage_status = definition["absence_policy"]["missing"]
+            kind = "not_listed"
+        return (
+            {
+                "source_id": source_id,
+                "source_kind": definition["source_kind"],
+                "provider": definition["provider"],
+                "dataset_id": definition["dataset_id"],
+                "applicable": True,
+                "coverage_status": coverage_status,
+                "listed": False,
+                "join_method": join_method,
+                "signals": signal_values,
+                "format_context": definition.get("format_context") or {},
+            },
+            severity_issue(
+                severity,
+                kind=kind,
+                source_id=source_id,
+                player_id=str(player.get("ID") or ""),
+                candidates=candidates,
+            ),
+        )
+
+    for mapping in definition["output"]["signals"]:
+        raw_value = row.get(mapping["source_field"])
+        if mapping.get("transform") == "percentile_from_rank":
+            signal_values[mapping["target"]] = percentile(raw_value, source.index["row_count"])
+        else:
+            signal_values[mapping["target"]] = convert_signal(raw_value, mapping["type"])
+
     return (
-        source_file(f"{source_id}_pointer", pointer_file, root, timestamp),
-        source_file(f"{source_id}_ranking", ranking_file, root, timestamp),
-        load_csv(ranking_file),
+        {
+            "source_id": source_id,
+            "source_kind": definition["source_kind"],
+            "provider": definition["provider"],
+            "dataset_id": definition["dataset_id"],
+            "applicable": True,
+            "coverage_status": "listed",
+            "listed": True,
+            "join_method": join_method,
+            "signals": signal_values,
+            "format_context": definition.get("format_context") or {},
+        },
+        None,
     )
+
+
+def flatten_source_result(result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source_id": result["source_id"],
+        "coverage_status": result["coverage_status"],
+        "applicable": result["applicable"],
+        "listed": result["listed"],
+        "join_method": result["join_method"],
+        **result["signals"],
+    }
+
+
+def derive_adp_view(
+    player: dict[str, Any],
+    catalog: dict[str, Any],
+    loaded_sources: list[LoadedCatalogSource],
+    source_results: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    position = str(player.get("Position") or "").upper()
+    formats: dict[str, dict[str, Any]] = {}
+    primary_source: LoadedCatalogSource | None = None
+
+    for source in loaded_sources:
+        definition = source.definition
+        if definition["output"]["section"] != "redraft_adp":
+            continue
+        source_id = definition["source_id"]
+        output_key = definition["output"]["key"]
+        formats[output_key] = flatten_source_result(source_results[source_id])
+        primary_positions = {str(item).upper() for item in (definition.get("roles") or {}).get("primary_for_positions", [])}
+        if position in primary_positions:
+            primary_source = source
+
+    primary_key: str | None = None
+    primary_source_id: str | None = None
+    primary: dict[str, Any] | None = None
+    if primary_source is not None:
+        primary_source_id = primary_source.definition["source_id"]
+        primary_key = primary_source.definition["output"]["key"]
+        primary = formats[primary_key]
+
+    gap_value: float | None = None
+    gap_definition = (((catalog.get("derived_views") or {}).get("redraft_adp") or {}).get("format_gap") or {})
+    if gap_definition:
+        left = source_results.get(gap_definition["left_source_id"])
+        right = source_results.get(gap_definition["right_source_id"])
+        signal = gap_definition["signal"]
+        left_value = (left or {}).get("signals", {}).get(signal)
+        right_value = (right or {}).get("signals", {}).get(signal)
+        if left_value is not None and right_value is not None:
+            gap_value = round(float(left_value) - float(right_value), 2)
+
+    result: dict[str, Any] = {
+        "primary_format": primary_key,
+        "primary_source_id": primary_source_id,
+        "primary_applicability": "applicable" if primary_source is not None else "not_applicable",
+        "primary_listed": bool(primary and primary["listed"]),
+        "primary": primary,
+        "formats": formats,
+        "format_gap": gap_value,
+    }
+    result.update(formats)
+    return result
 
 
 def validate_output(data: dict[str, Any]) -> None:
@@ -387,16 +590,29 @@ def validate_output(data: dict[str, Any]) -> None:
         raise MaterializationError("Output contains duplicate player IDs")
 
 
+def quality_status(issues: list[dict[str, Any]]) -> str:
+    if any(issue["severity"] == "error" for issue in issues):
+        return "error"
+    if any(issue["severity"] == "warning" for issue in issues):
+        return "warning"
+    return "ok"
+
+
 def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     config = load_json(config_path)
-    sources = config["sources"]
-    league_path = root / sources["league"]
-    players_path = root / sources["players"]
-    timestamps_path = root / sources["timestamps"]
+    if config.get("schema_version") != 2:
+        raise MaterializationError("Unexpected input materialization config schema version")
+    core_sources = config["sources"]
+    league_path = root / core_sources["league"]
+    players_path = root / core_sources["players"]
+    timestamps_path = root / core_sources["timestamps"]
+    catalog_path = root / config["source_catalog"]
 
     league = load_json(league_path)
     players = load_json(players_path)
     timestamps = load_json(timestamps_path)
+    catalog = load_json(catalog_path)
+    validate_catalog(catalog)
     if not isinstance(players, list):
         raise MaterializationError("Players input must be a JSON array")
 
@@ -404,40 +620,17 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     team_id = str(managed_config["team_id"])
     teams = league.get("Teams") or []
     managed_team = next(
-        (
-            team
-            for team in teams
-            if str(team.get(managed_config["identity_field"])) == team_id
-        ),
+        (team for team in teams if str(team.get(managed_config["identity_field"])) == team_id),
         None,
     )
     if managed_team is None:
         raise MaterializationError(f"Managed team {team_id} not found")
 
-    fp_pointer_source, fp_ranking_source, fp_rows = resolve_pointer(
-        root,
-        "fantasypros",
-        sources["fantasypros_latest"],
-        ["fetched_at", "ranking_fetched_at", "snapshot_date"],
-    )
-    fc_pointer_source, fc_ranking_source, fc_rows = resolve_pointer(
-        root,
-        "fantasycalc",
-        sources["fantasycalc_latest"],
-        ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"],
-    )
-    ppr_pointer_source, ppr_ranking_source, ppr_rows = resolve_pointer(
-        root,
-        "ffc_ppr",
-        sources["adp_ppr_latest"],
-        ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"],
-    )
-    two_pointer_source, two_ranking_source, two_rows = resolve_pointer(
-        root,
-        "ffc_two_qb",
-        sources["adp_two_qb_latest"],
-        ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"],
-    )
+    loaded_sources = [
+        resolve_catalog_source(root, definition)
+        for definition in catalog["sources"]
+        if definition.get("active")
+    ]
 
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
@@ -450,15 +643,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             root,
             max_timestamp(timestamps.values()) if isinstance(timestamps, dict) else None,
         ),
-        fp_pointer_source,
-        fp_ranking_source,
-        fc_pointer_source,
-        fc_ranking_source,
-        ppr_pointer_source,
-        ppr_ranking_source,
-        two_pointer_source,
-        two_ranking_source,
+        source_file("operations_source_catalog", catalog_path, root),
     ]
+    for source in loaded_sources:
+        source_files.extend([source.pointer_source, source.ranking_source])
 
     player_lookup = {
         str(player.get("ID")): player
@@ -473,40 +661,73 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
                 sections_by_player[str(player_id)].append(section_name)
     starters = {str(player_id) for player_id in managed_team.get("Starter") or []}
 
-    fp_index = index_rows(fp_rows)
-    fc_index = index_rows(fc_rows, sleeper_field="sleeper_id")
-    ppr_index = index_rows(ppr_rows)
-    two_index = index_rows(two_rows)
+    quality_issues: list[dict[str, Any]] = []
+    source_coverage: dict[str, dict[str, int]] = {
+        source.definition["source_id"]: {
+            "applicable_players": 0,
+            "listed_players": 0,
+            "not_listed_players": 0,
+            "not_applicable_players": 0,
+            "ambiguous_players": 0,
+        }
+        for source in loaded_sources
+    }
+    for source in loaded_sources:
+        minimum_rows = int(source.definition["quality"].get("minimum_rows", 0))
+        if source.index["row_count"] < minimum_rows:
+            issue = severity_issue(
+                source.definition["quality"].get("row_count_severity", "error"),
+                kind="unexpected_row_count",
+                source_id=source.definition["source_id"],
+                details={"actual_rows": source.index["row_count"], "minimum_rows": minimum_rows},
+            )
+            if issue:
+                quality_issues.append(issue)
 
     output_players: list[dict[str, Any]] = []
-    quality_issues: list[dict[str, Any]] = []
+    primary_adp_applicable = 0
+    primary_adp_listed = 0
     for player_id in sorted(sections_by_player, key=lambda value: (len(value), value)):
         player = player_lookup.get(player_id)
         if player is None:
-            quality_issues.append(
-                {"severity": "error", "kind": "missing_player", "player_id": player_id}
-            )
+            quality_issues.append({"severity": "error", "kind": "missing_player", "player_id": player_id})
             continue
 
-        market, market_issues = extract_market(player, fp_index, fc_index)
-        adp, adp_issues = extract_adp(player, ppr_index, two_index)
-        for issue in market_issues + adp_issues:
-            quality_issues.append(
-                {
-                    "severity": "warning",
-                    "kind": "source_join",
-                    "player_id": player_id,
-                    **issue,
-                }
-            )
+        source_results: dict[str, dict[str, Any]] = {}
+        market: dict[str, dict[str, Any]] = {}
+        for source in loaded_sources:
+            definition = source.definition
+            source_id = definition["source_id"]
+            result, issue = evaluate_source_for_player(player, source)
+            source_results[source_id] = result
+            if issue:
+                quality_issues.append(issue)
+
+            coverage = source_coverage[source_id]
+            if not result["applicable"]:
+                coverage["not_applicable_players"] += 1
+            else:
+                coverage["applicable_players"] += 1
+                if result["listed"]:
+                    coverage["listed_players"] += 1
+                elif result["join_method"] == "ambiguous":
+                    coverage["ambiguous_players"] += 1
+                else:
+                    coverage["not_listed_players"] += 1
+
+            if definition["output"]["section"] == "market":
+                market[definition["output"]["key"]] = flatten_source_result(result)
+
+        redraft_adp = derive_adp_view(player, catalog, loaded_sources, source_results)
+        if redraft_adp["primary_applicability"] == "applicable":
+            primary_adp_applicable += 1
+            if redraft_adp["primary_listed"]:
+                primary_adp_listed += 1
 
         injury = derive_injury_signal(player)
         research_reasons = ["role_opportunity_requires_qualitative_context"]
         if injury["external_verification_priority"] == "high":
-            research_reasons.insert(
-                0,
-                "current_structured_injury_signal_requires_verification",
-            )
+            research_reasons.insert(0, "current_structured_injury_signal_requires_verification")
 
         output_players.append(
             {
@@ -521,14 +742,13 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
                     "age": optional_number(player.get("Age")),
                     "years_experience": optional_number(player.get("Year")),
                     "salary": optional_number(player.get("Salary")),
-                    "salary_projected": optional_number(
-                        player.get("SalaryProjected")
-                    ),
+                    "salary_projected": optional_number(player.get("SalaryProjected")),
                     "is_free_agent": optional_bool(player.get("IsFreeAgent")),
                 },
                 "injury": injury,
+                "source_signals": source_results,
                 "market": market,
-                "redraft_adp": adp,
+                "redraft_adp": redraft_adp,
                 "external_research": {
                     "injury_priority": injury["external_verification_priority"],
                     "role_opportunity_priority": "routine",
@@ -548,6 +768,19 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     ]
     generated_at = max_timestamp(item.source_timestamp for item in source_files)
     input_fingerprint = sha256_text(canonical_json(source_records))
+    coverage = {
+        "managed_roster_ids": len(sections_by_player),
+        "resolved_players": len(output_players),
+        "players_with_current_injury_signal": sum(
+            1
+            for item in output_players
+            if item["injury"]["coverage_status"] != "no_current_injury_signal"
+        ),
+        "primary_adp_applicable": primary_adp_applicable,
+        "primary_adp_listed": primary_adp_listed,
+        "sources": source_coverage,
+    }
+    status = quality_status(quality_issues)
     data = {
         "schema_version": SCHEMA_VERSION,
         "dataset_id": "managed-roster-signals",
@@ -562,38 +795,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         "sources": source_records,
         "players": output_players,
         "quality": {
-            "status": (
-                "error"
-                if any(issue["severity"] == "error" for issue in quality_issues)
-                else ("warning" if quality_issues else "ok")
-            ),
+            "status": status,
             "issue_count": len(quality_issues),
             "issues": quality_issues,
-            "coverage": {
-                "managed_roster_ids": len(sections_by_player),
-                "resolved_players": len(output_players),
-                "players_with_current_injury_signal": sum(
-                    1
-                    for item in output_players
-                    if item["injury"]["coverage_status"]
-                    != "no_current_injury_signal"
-                ),
-                "fantasypros_listed": sum(
-                    1
-                    for item in output_players
-                    if item["market"]["fantasypros"]["listed"]
-                ),
-                "fantasycalc_listed": sum(
-                    1
-                    for item in output_players
-                    if item["market"]["fantasycalc"]["listed"]
-                ),
-                "primary_adp_listed": sum(
-                    1
-                    for item in output_players
-                    if item["redraft_adp"]["primary_listed"]
-                ),
-            },
+            "coverage": coverage,
         },
     }
     validate_output(data)
@@ -603,8 +808,8 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         "report_id": "fantasy-operations-data-quality",
         "generated_at": generated_at,
         "input_fingerprint": input_fingerprint,
-        "status": data["quality"]["status"],
-        "coverage": data["quality"]["coverage"],
+        "status": status,
+        "coverage": coverage,
         "issues": quality_issues,
         "source_freshness": [
             {
@@ -617,7 +822,8 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         "interpretation_limits": [
             "Structured injury data is a secondary signal and not a substitute for current external verification.",
             "Role and opportunity are intentionally not inferred by this deterministic materialization.",
-            "Missing ranking or ADP rows are represented as data-quality issues, not as negative player evaluations.",
+            "Source applicability, expected absence and warning severity are declared in the Operations Source Catalog.",
+            "A not_listed or not_applicable result is not a negative player evaluation.",
         ],
     }
     return data, quality_report
@@ -634,21 +840,13 @@ def write_json_if_changed(path: Path, data: dict[str, Any]) -> bool:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--root",
-        type=Path,
-        default=Path(__file__).resolve().parents[3],
-    )
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[3])
     parser.add_argument(
         "--config",
         type=Path,
         default=Path("fantasy-management/automation/input-materialization.json"),
     )
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="Fail when generated files are not current.",
-    )
+    parser.add_argument("--check", action="store_true", help="Fail when generated files are not current.")
     return parser.parse_args(argv)
 
 
@@ -680,16 +878,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     changed = [
-        (
-            relative_to_root(output_path, root)
-            if write_json_if_changed(output_path, data)
-            else None
-        ),
-        (
-            relative_to_root(quality_path, root)
-            if write_json_if_changed(quality_path, quality)
-            else None
-        ),
+        relative_to_root(output_path, root) if write_json_if_changed(output_path, data) else None,
+        relative_to_root(quality_path, root) if write_json_if_changed(quality_path, quality) else None,
     ]
     written = [path for path in changed if path]
     if written:
