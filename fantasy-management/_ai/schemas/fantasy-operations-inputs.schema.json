@@ -15,19 +15,19 @@
     "quality"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "dataset_id": { "const": "managed-roster-signals" },
-    "generated_at": { "type": ["string", "null"], "format": "date-time" },
-    "input_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "managed-roster-signals"},
+    "generated_at": {"type": ["string", "null"], "format": "date-time"},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "managed_team": {
       "type": "object",
       "additionalProperties": false,
       "required": ["team_id", "name", "abbreviation", "player_count"],
       "properties": {
-        "team_id": { "type": ["integer", "string"] },
-        "name": { "type": ["string", "null"] },
-        "abbreviation": { "type": ["string", "null"] },
-        "player_count": { "type": "integer", "minimum": 0 }
+        "team_id": {"type": ["integer", "string"]},
+        "name": {"type": ["string", "null"]},
+        "abbreviation": {"type": ["string", "null"]},
+        "player_count": {"type": "integer", "minimum": 0}
       }
     },
     "sources": {
@@ -37,10 +37,10 @@
         "additionalProperties": false,
         "required": ["id", "path", "content_sha256", "source_timestamp"],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "path": { "type": "string", "minLength": 1 },
-          "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-          "source_timestamp": { "type": ["string", "null"], "format": "date-time" }
+          "id": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "source_timestamp": {"type": ["string", "null"], "format": "date-time"}
         }
       }
     },
@@ -63,17 +63,17 @@
           "external_research"
         ],
         "properties": {
-          "player_id": { "type": "string", "minLength": 1 },
-          "name": { "type": ["string", "null"] },
-          "position": { "type": ["string", "null"] },
-          "nfl_team": { "type": ["string", "null"] },
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"type": ["string", "null"]},
+          "nfl_team": {"type": ["string", "null"]},
           "roster_sections": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["roster", "reserve", "taxi"] }
+            "items": {"enum": ["roster", "reserve", "taxi"]}
           },
-          "is_starter": { "type": "boolean" },
-          "app_data": { "type": "object" },
+          "is_starter": {"type": "boolean"},
+          "app_data": {"type": "object"},
           "injury": {
             "type": "object",
             "required": [
@@ -87,9 +87,13 @@
               "limitations"
             ]
           },
-          "market": { "type": "object" },
-          "redraft_adp": { "type": "object" },
-          "external_research": { "type": "object" }
+          "source_signals": {
+            "type": "object",
+            "additionalProperties": {"type": "object"}
+          },
+          "market": {"type": "object"},
+          "redraft_adp": {"type": "object"},
+          "external_research": {"type": "object"}
         }
       }
     },
@@ -98,10 +102,10 @@
       "additionalProperties": false,
       "required": ["status", "issue_count", "issues", "coverage"],
       "properties": {
-        "status": { "enum": ["ok", "warning", "error"] },
-        "issue_count": { "type": "integer", "minimum": 0 },
-        "issues": { "type": "array" },
-        "coverage": { "type": "object" }
+        "status": {"enum": ["ok", "warning", "error"]},
+        "issue_count": {"type": "integer", "minimum": 0},
+        "issues": {"type": "array"},
+        "coverage": {"type": "object"}
       }
     }
   }

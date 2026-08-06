@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "fantasy-operations-input-materialization",
   "managed_team": {
     "identity_field": "TeamID",
@@ -8,12 +8,9 @@
   "sources": {
     "league": "public/data/League.json",
     "players": "public/data/Players.json",
-    "timestamps": "public/data/Timestamps.json",
-    "fantasypros_latest": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
-    "fantasycalc_latest": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
-    "adp_ppr_latest": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
-    "adp_two_qb_latest": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json"
+    "timestamps": "public/data/Timestamps.json"
   },
+  "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
   "outputs": {
     "managed_roster_signals": "fantasy-management/generated/operations/managed-roster-signals.json",
     "data_quality": "fantasy-management/generated/operations/data-quality.json"
