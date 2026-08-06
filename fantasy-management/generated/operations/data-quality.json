@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "report_id": "fantasy-operations-data-quality",
+  "generated_at": "2026-08-06T04:09:57Z",
+  "input_fingerprint": "634bc5b714e54f07e948fb153989f2c13e4f18c67861159ec238fdfa509024e8",
+  "status": "warning",
+  "coverage": {
+    "managed_roster_ids": 37,
+    "resolved_players": 37,
+    "players_with_current_injury_signal": 9,
+    "fantasypros_listed": 36,
+    "fantasycalc_listed": 36,
+    "primary_adp_listed": 27
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "4018",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11539",
+      "source": "fantasypros",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11539",
+      "source": "fantasycalc",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11539",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11565",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11565",
+      "source": "ffc_two_qb_10_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "11627",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "12492",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "12540",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "12547",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "13285",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "13311",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    },
+    {
+      "severity": "warning",
+      "kind": "missing",
+      "player_id": "13405",
+      "source": "ffc_ppr_8_team",
+      "candidates": []
+    }
+  ],
+  "source_freshness": [
+    {
+      "id": "league",
+      "path": "public/data/League.json",
+      "source_timestamp": "2026-07-31T07:36:08Z"
+    },
+    {
+      "id": "players",
+      "path": "public/data/Players.json",
+      "source_timestamp": "2026-08-05T19:15:26Z"
+    },
+    {
+      "id": "timestamps",
+      "path": "public/data/Timestamps.json",
+      "source_timestamp": "2026-08-06T04:09:57Z"
+    },
+    {
+      "id": "fantasypros_pointer",
+      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
+      "source_timestamp": "2026-08-05T07:49:23.094059Z"
+    },
+    {
+      "id": "fantasypros_ranking",
+      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-08-05/ranking.csv",
+      "source_timestamp": "2026-08-05T07:49:23.094059Z"
+    },
+    {
+      "id": "fantasycalc_pointer",
+      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
+      "source_timestamp": "2026-08-05T08:06:00.075034Z"
+    },
+    {
+      "id": "fantasycalc_ranking",
+      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-08-05/ranking.csv",
+      "source_timestamp": "2026-08-05T08:06:00.075034Z"
+    },
+    {
+      "id": "ffc_ppr_pointer",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_ppr_ranking",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/snapshots/2026-08-05/ranking.csv",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_two_qb_pointer",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_two_qb_ranking",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-08-05/ranking.csv",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    }
+  ],
+  "interpretation_limits": [
+    "Structured injury data is a secondary signal and not a substitute for current external verification.",
+    "Role and opportunity are intentionally not inferred by this deterministic materialization.",
+    "Missing ranking or ADP rows are represented as data-quality issues, not as negative player evaluations."
+  ]
+}

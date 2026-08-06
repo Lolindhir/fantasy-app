@@ -1,0 +1,3862 @@
+{
+  "schema_version": 1,
+  "dataset_id": "managed-roster-signals",
+  "generated_at": "2026-08-06T04:09:57Z",
+  "input_fingerprint": "634bc5b714e54f07e948fb153989f2c13e4f18c67861159ec238fdfa509024e8",
+  "managed_team": {
+    "team_id": 1,
+    "name": "Mighty Giants",
+    "abbreviation": "MiG",
+    "player_count": 37
+  },
+  "sources": [
+    {
+      "id": "league",
+      "path": "public/data/League.json",
+      "content_sha256": "ef9709dbda6000b9261162335d2e2e285a81c46ccea293cd42380a1e55cb6673",
+      "source_timestamp": "2026-07-31T07:36:08Z"
+    },
+    {
+      "id": "players",
+      "path": "public/data/Players.json",
+      "content_sha256": "e3af9aa54f55e1484881df67da09bfdd7aacf1883c27324d4baddd8818791cf8",
+      "source_timestamp": "2026-08-05T19:15:26Z"
+    },
+    {
+      "id": "timestamps",
+      "path": "public/data/Timestamps.json",
+      "content_sha256": "a91c6e40df7c20a790422aa74403f556272d3907873820d24f79d0287028f289",
+      "source_timestamp": "2026-08-06T04:09:57Z"
+    },
+    {
+      "id": "fantasypros_pointer",
+      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
+      "content_sha256": "70e7b0f74af9ce6664ba3b9bfda1d404f319c99bfce8b96a012d1073ae45137b",
+      "source_timestamp": "2026-08-05T07:49:23.094059Z"
+    },
+    {
+      "id": "fantasypros_ranking",
+      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-08-05/ranking.csv",
+      "content_sha256": "e9bb53bc9d593c1ce326a27d6587cb71bb8fe8481f1518407a0366f774ac4321",
+      "source_timestamp": "2026-08-05T07:49:23.094059Z"
+    },
+    {
+      "id": "fantasycalc_pointer",
+      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
+      "content_sha256": "6a01f19bcaa005104b91a08b7d5bc67a61b72dab6d65d2a45535184f68ced4ca",
+      "source_timestamp": "2026-08-05T08:06:00.075034Z"
+    },
+    {
+      "id": "fantasycalc_ranking",
+      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-08-05/ranking.csv",
+      "content_sha256": "1413f4ff64656366d48fd512536b930bc5631a7740ec1bd663307416724771ab",
+      "source_timestamp": "2026-08-05T08:06:00.075034Z"
+    },
+    {
+      "id": "ffc_ppr_pointer",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
+      "content_sha256": "a3dc1c580de97cd8bd58d1a9240377513a889b436262b5633fd3c0f780900af9",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_ppr_ranking",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/snapshots/2026-08-05/ranking.csv",
+      "content_sha256": "4602f1e69f1f711fef2435be66c0cad4331560b59ce9e538cedf0a51ebf8ede1",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_two_qb_pointer",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
+      "content_sha256": "b4aac80bd1d38a80810def1a7a7532baf4186de6887d734b42baae58c8c368ef",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    },
+    {
+      "id": "ffc_two_qb_ranking",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-08-05/ranking.csv",
+      "content_sha256": "24a1c47aeb36b0655583c3dd102cbcb3f3cb2aabf241c26525f8150a1db35ebe",
+      "source_timestamp": "2026-08-05T08:48:50.721233Z"
+    }
+  ],
+  "players": [
+    {
+      "player_id": "2133",
+      "name": "Davante Adams",
+      "position": "WR",
+      "nfl_team": "LAR",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 33.6,
+        "years_experience": 13,
+        "salary": 29267625,
+        "salary_projected": 28400672,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 110,
+          "position_rank": "WR43",
+          "tier": "8"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 115,
+          "position_rank": 35,
+          "tier": "23",
+          "value": 2149,
+          "trend_30_day": 180,
+          "roster_percent": 0.9985,
+          "trade_frequency": 0.0117
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 42,
+          "percentile": 79.6,
+          "adp": 41.1,
+          "times_drafted": 309,
+          "stdev": 3.9,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 42,
+          "percentile": 79.6,
+          "adp": 41.1,
+          "times_drafted": 309,
+          "stdev": 3.9,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 54,
+          "percentile": 71.35,
+          "adp": 53.9,
+          "times_drafted": 93,
+          "stdev": 6,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -8.25
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "4018",
+      "name": "Joe Mixon",
+      "position": "RB",
+      "nfl_team": "HOU",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 30,
+        "years_experience": 10,
+        "salary": 19101350,
+        "salary_projected": 0,
+        "is_free_agent": true
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 339,
+          "position_rank": "RB100",
+          "tier": "14"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 400,
+          "position_rank": 91,
+          "tier": "41",
+          "value": 179,
+          "trend_30_day": -188,
+          "roster_percent": 0.7588,
+          "trade_frequency": 0.0005
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "4046",
+      "name": "Patrick Mahomes",
+      "position": "QB",
+      "nfl_team": "KC",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 30.9,
+        "years_experience": 10,
+        "salary": 44848342,
+        "salary_projected": 46899613,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Jul 29: Mahomes (knee) is participating in 11-on-11 team drills during Wednesday's training camp practice, Matt McMullen of the Chiefs' official site reports.",
+        "reported_date": null,
+        "return_date": "20260815",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 13,
+          "position_rank": "QB8",
+          "tier": "3"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 27,
+          "position_rank": 9,
+          "tier": "10",
+          "value": 5200,
+          "trend_30_day": -112,
+          "roster_percent": 0.9995,
+          "trade_frequency": 0.0086
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "two_qb_10_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 17,
+          "percentile": 91.35,
+          "adp": 16.7,
+          "times_drafted": 113,
+          "stdev": 6.2,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 99,
+          "percentile": 51.24,
+          "adp": 96.9,
+          "times_drafted": 468,
+          "stdev": 12.9,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 17,
+          "percentile": 91.35,
+          "adp": 16.7,
+          "times_drafted": 113,
+          "stdev": 6.2,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": 40.11
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "4866",
+      "name": "Saquon Barkley",
+      "position": "RB",
+      "nfl_team": "PHI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 29.5,
+        "years_experience": 9,
+        "salary": 35976403,
+        "salary_projected": 36736735,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 64,
+          "position_rank": "RB14",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 56,
+          "position_rank": 14,
+          "tier": "14",
+          "value": 3771,
+          "trend_30_day": -98,
+          "roster_percent": 0.9994,
+          "trade_frequency": 0.0149
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 19,
+          "percentile": 91.04,
+          "adp": 18.7,
+          "times_drafted": 1039,
+          "stdev": 3.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 19,
+          "percentile": 91.04,
+          "adp": 18.7,
+          "times_drafted": 1039,
+          "stdev": 3.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 26,
+          "percentile": 86.49,
+          "adp": 26.4,
+          "times_drafted": 477,
+          "stdev": 4.1,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -4.55
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "5947",
+      "name": "Jakobi Meyers",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 29.7,
+        "years_experience": 8,
+        "salary": 18301250,
+        "salary_projected": 16426001,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 124,
+          "position_rank": "WR53",
+          "tier": "9"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 195,
+          "position_rank": 62,
+          "tier": "29",
+          "value": 1404,
+          "trend_30_day": -101,
+          "roster_percent": 0.9956,
+          "trade_frequency": 0.0084
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 80,
+          "percentile": 60.7,
+          "adp": 76.7,
+          "times_drafted": 206,
+          "stdev": 6.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 80,
+          "percentile": 60.7,
+          "adp": 76.7,
+          "times_drafted": 206,
+          "stdev": 6.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 105,
+          "percentile": 43.78,
+          "adp": 104.4,
+          "times_drafted": 86,
+          "stdev": 14.1,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -16.92
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "7526",
+      "name": "Jaylen Waddle",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 27.7,
+        "years_experience": 6,
+        "salary": 16863528,
+        "salary_projected": 15750078,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 56,
+          "position_rank": "WR25",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 73,
+          "position_rank": 25,
+          "tier": "17",
+          "value": 3254,
+          "trend_30_day": 211,
+          "roster_percent": 0.9993,
+          "trade_frequency": 0.0199
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 48,
+          "percentile": 76.62,
+          "adp": 49,
+          "times_drafted": 731,
+          "stdev": 5.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 48,
+          "percentile": 76.62,
+          "adp": 49,
+          "times_drafted": 731,
+          "stdev": 5.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 72,
+          "percentile": 61.62,
+          "adp": 71.4,
+          "times_drafted": 282,
+          "stdev": 7.5,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -15.0
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "8130",
+      "name": "Trey McBride",
+      "position": "TE",
+      "nfl_team": "ARI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 26.7,
+        "years_experience": 5,
+        "salary": 27306050,
+        "salary_projected": 38529568,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 36,
+          "position_rank": "TE2",
+          "tier": "5"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 16,
+          "position_rank": 2,
+          "tier": "7",
+          "value": 6672,
+          "trend_30_day": -145,
+          "roster_percent": 0.9994,
+          "trade_frequency": 0.0083
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 37,
+          "percentile": 82.09,
+          "adp": 35.2,
+          "times_drafted": 788,
+          "stdev": 6.1,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 37,
+          "percentile": 82.09,
+          "adp": 35.2,
+          "times_drafted": 788,
+          "stdev": 6.1,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 69,
+          "percentile": 63.24,
+          "adp": 65.3,
+          "times_drafted": 351,
+          "stdev": 13.1,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -18.85
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "8137",
+      "name": "George Pickens",
+      "position": "WR",
+      "nfl_team": "DAL",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 25.4,
+        "years_experience": 5,
+        "salary": 25063200,
+        "salary_projected": 31607875,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 37,
+          "position_rank": "WR12",
+          "tier": "5"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 38,
+          "position_rank": 12,
+          "tier": "12",
+          "value": 4560,
+          "trend_30_day": 2,
+          "roster_percent": 0.9995,
+          "trade_frequency": 0.0132
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 22,
+          "percentile": 89.55,
+          "adp": 21.3,
+          "times_drafted": 401,
+          "stdev": 2.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 22,
+          "percentile": 89.55,
+          "adp": 21.3,
+          "times_drafted": 401,
+          "stdev": 2.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 35,
+          "percentile": 81.62,
+          "adp": 35,
+          "times_drafted": 95,
+          "stdev": 4.9,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -7.93
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "8142",
+      "name": "Alec Pierce",
+      "position": "WR",
+      "nfl_team": "IND",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 26.3,
+        "years_experience": 5,
+        "salary": 9259339,
+        "salary_projected": 12650450,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Jul 28: Colts GM Chris Ballard said Tuesday that Pierce (ankle) is a \"week or so away\" from practicing, Mike Chappell of Fox 59 News Indianapolis reports.",
+        "reported_date": null,
+        "return_date": "20260813",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 87,
+          "position_rank": "WR33",
+          "tier": "7"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 118,
+          "position_rank": 36,
+          "tier": "24",
+          "value": 2094,
+          "trend_30_day": -70,
+          "roster_percent": 0.9946,
+          "trade_frequency": 0.0117
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 56,
+          "percentile": 72.64,
+          "adp": 55.7,
+          "times_drafted": 189,
+          "stdev": 5.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 56,
+          "percentile": 72.64,
+          "adp": 55.7,
+          "times_drafted": 189,
+          "stdev": 5.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 77,
+          "percentile": 58.92,
+          "adp": 74.9,
+          "times_drafted": 43,
+          "stdev": 9.3,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -13.72
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "8151",
+      "name": "Kenneth Walker",
+      "position": "RB",
+      "nfl_team": "KC",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 25.8,
+        "years_experience": 5,
+        "salary": 19578153,
+        "salary_projected": 17716128,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240501",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 38,
+          "position_rank": "RB9",
+          "tier": "5"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 40,
+          "position_rank": 9,
+          "tier": "13",
+          "value": 4425,
+          "trend_30_day": 286,
+          "roster_percent": 0.9997,
+          "trade_frequency": 0.0142
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 28,
+          "percentile": 86.57,
+          "adp": 26.7,
+          "times_drafted": 1339,
+          "stdev": 3.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 28,
+          "percentile": 86.57,
+          "adp": 26.7,
+          "times_drafted": 1339,
+          "stdev": 3.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 40,
+          "percentile": 78.92,
+          "adp": 41.5,
+          "times_drafted": 397,
+          "stdev": 6.6,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -7.65
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "8155",
+      "name": "Breece Hall",
+      "position": "RB",
+      "nfl_team": "NYJ",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 25.2,
+        "years_experience": 5,
+        "salary": 26827813,
+        "salary_projected": 23018112,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 46,
+          "position_rank": "RB10",
+          "tier": "5"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 51,
+          "position_rank": 12,
+          "tier": "14",
+          "value": 3818,
+          "trend_30_day": -73,
+          "roster_percent": 0.9989,
+          "trade_frequency": 0.0156
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 29,
+          "percentile": 86.07,
+          "adp": 28.1,
+          "times_drafted": 178,
+          "stdev": 2.9,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 29,
+          "percentile": 86.07,
+          "adp": 28.1,
+          "times_drafted": 178,
+          "stdev": 2.9,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 46,
+          "percentile": 75.68,
+          "adp": 47.9,
+          "times_drafted": 101,
+          "stdev": 4.1,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -10.39
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "9224",
+      "name": "Chase Brown",
+      "position": "RB",
+      "nfl_team": "CIN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 26.4,
+        "years_experience": 4,
+        "salary": 22344612,
+        "salary_projected": 32468368,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240501",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 51,
+          "position_rank": "RB11",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 44,
+          "position_rank": 11,
+          "tier": "13",
+          "value": 4170,
+          "trend_30_day": 325,
+          "roster_percent": 0.9993,
+          "trade_frequency": 0.0135
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 13,
+          "percentile": 94.03,
+          "adp": 12.3,
+          "times_drafted": 560,
+          "stdev": 2.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 13,
+          "percentile": 94.03,
+          "adp": 12.3,
+          "times_drafted": 560,
+          "stdev": 2.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 38,
+          "percentile": 80.0,
+          "adp": 39.3,
+          "times_drafted": 437,
+          "stdev": 6.3,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -14.03
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "9493",
+      "name": "Puka Nacua",
+      "position": "WR",
+      "nfl_team": "LAR",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 25.2,
+        "years_experience": 4,
+        "salary": 43898450,
+        "salary_projected": 51758333,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 10,
+          "position_rank": "WR3",
+          "tier": "2"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 6,
+          "position_rank": 3,
+          "tier": "3",
+          "value": 8494,
+          "trend_30_day": 91,
+          "roster_percent": 0.9999,
+          "trade_frequency": 0.0078
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 3,
+          "percentile": 99.0,
+          "adp": 2.7,
+          "times_drafted": 213,
+          "stdev": 0.8,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 3,
+          "percentile": 99.0,
+          "adp": 2.7,
+          "times_drafted": 213,
+          "stdev": 0.8,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 7,
+          "percentile": 96.76,
+          "adp": 6.4,
+          "times_drafted": 243,
+          "stdev": 2.6,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -2.24
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11539",
+      "name": "Jake Bates",
+      "position": "K",
+      "nfl_team": "DET",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 27.4,
+        "years_experience": 4,
+        "salary": 4420256,
+        "salary_projected": 6906806,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": false,
+          "join_method": "missing",
+          "overall_rank": null,
+          "position_rank": null,
+          "tier": null
+        },
+        "fantasycalc": {
+          "listed": false,
+          "join_method": "missing",
+          "overall_rank": null,
+          "position_rank": null,
+          "tier": null,
+          "value": null,
+          "trend_30_day": null,
+          "roster_percent": null,
+          "trade_frequency": null
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11565",
+      "name": "J.J. McCarthy",
+      "position": "QB",
+      "nfl_team": "MIN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.5,
+        "years_experience": 3,
+        "salary": 7226335,
+        "salary_projected": 11291148,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240501",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 196,
+          "position_rank": "QB32",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 176,
+          "position_rank": 31,
+          "tier": "28",
+          "value": 1532,
+          "trend_30_day": -60,
+          "roster_percent": 0.9752,
+          "trade_frequency": 0.0053
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "two_qb_10_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11566",
+      "name": "Jayden Daniels",
+      "position": "QB",
+      "nfl_team": "WSH",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 25.6,
+        "years_experience": 3,
+        "salary": 24766957,
+        "salary_projected": 30732800,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 3,
+          "position_rank": "QB3",
+          "tier": "1"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 14,
+          "position_rank": 4,
+          "tier": "7",
+          "value": 6723,
+          "trend_30_day": -130,
+          "roster_percent": 0.9999,
+          "trade_frequency": 0.0062
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "two_qb_10_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 12,
+          "percentile": 94.05,
+          "adp": 12.4,
+          "times_drafted": 233,
+          "stdev": 2.6,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 72,
+          "percentile": 64.68,
+          "adp": 71.6,
+          "times_drafted": 245,
+          "stdev": 7.8,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 12,
+          "percentile": 94.05,
+          "adp": 12.4,
+          "times_drafted": 233,
+          "stdev": 2.6,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": 29.37
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11627",
+      "name": "Troy Franklin",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.5,
+        "years_experience": 3,
+        "salary": 6882050,
+        "salary_projected": 10753203,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 174,
+          "position_rank": "WR69",
+          "tier": "10"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 285,
+          "position_rank": 90,
+          "tier": "34",
+          "value": 896,
+          "trend_30_day": -214,
+          "roster_percent": 0.9504,
+          "trade_frequency": 0.0036
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11628",
+      "name": "Marvin Harrison",
+      "position": "WR",
+      "nfl_team": "ARI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24,
+        "years_experience": 3,
+        "salary": 8198415,
+        "salary_projected": 12416806,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 65,
+          "position_rank": "WR27",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 78,
+          "position_rank": 27,
+          "tier": "18",
+          "value": 3158,
+          "trend_30_day": -188,
+          "roster_percent": 0.9995,
+          "trade_frequency": 0.0233
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 64,
+          "percentile": 68.66,
+          "adp": 62.9,
+          "times_drafted": 464,
+          "stdev": 6.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 64,
+          "percentile": 68.66,
+          "adp": 62.9,
+          "times_drafted": 464,
+          "stdev": 6.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 86,
+          "percentile": 54.05,
+          "adp": 84,
+          "times_drafted": 217,
+          "stdev": 6.3,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -14.61
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11632",
+      "name": "Malik Nabers",
+      "position": "WR",
+      "nfl_team": "NYG",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 23,
+        "years_experience": 3,
+        "salary": 13993064,
+        "salary_projected": 17018750,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Jul 30: Nabers (knee) said Thursday that he \"felt great\" after practicing Wednesday for the first time since having his torn ACL surgically repaired in October, Matt Citak of the Giants' official site reports.",
+        "reported_date": null,
+        "return_date": "20260815",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 19,
+          "position_rank": "WR6",
+          "tier": "3"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 15,
+          "position_rank": 5,
+          "tier": "7",
+          "value": 6713,
+          "trend_30_day": 154,
+          "roster_percent": 0.9999,
+          "trade_frequency": 0.0134
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 36,
+          "percentile": 82.59,
+          "adp": 34.6,
+          "times_drafted": 875,
+          "stdev": 4.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 36,
+          "percentile": 82.59,
+          "adp": 34.6,
+          "times_drafted": 875,
+          "stdev": 4.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 64,
+          "percentile": 65.95,
+          "adp": 62.5,
+          "times_drafted": 317,
+          "stdev": 12.7,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -16.64
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "11635",
+      "name": "Ladd McConkey",
+      "position": "WR",
+      "nfl_team": "LAC",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.7,
+        "years_experience": 3,
+        "salary": 12989450,
+        "salary_projected": 19127112,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 42,
+          "position_rank": "WR16",
+          "tier": "5"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 46,
+          "position_rank": 14,
+          "tier": "14",
+          "value": 3994,
+          "trend_30_day": 323,
+          "roster_percent": 0.9997,
+          "trade_frequency": 0.0159
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 45,
+          "percentile": 78.11,
+          "adp": 44.1,
+          "times_drafted": 951,
+          "stdev": 4.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 45,
+          "percentile": 78.11,
+          "adp": 44.1,
+          "times_drafted": 951,
+          "stdev": 4.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 70,
+          "percentile": 62.7,
+          "adp": 66,
+          "times_drafted": 242,
+          "stdev": 8,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -15.41
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12469",
+      "name": "Dylan Sampson",
+      "position": "RB",
+      "nfl_team": "CLE",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 21.9,
+        "years_experience": 2,
+        "salary": 1132512,
+        "salary_projected": 1769551,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 170,
+          "position_rank": "RB47",
+          "tier": "10"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 221,
+          "position_rank": 50,
+          "tier": "30",
+          "value": 1254,
+          "trend_30_day": -121,
+          "roster_percent": 0.9799,
+          "trade_frequency": 0.006
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 178,
+          "percentile": 11.94,
+          "adp": 162.2,
+          "times_drafted": 38,
+          "stdev": 15.1,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 178,
+          "percentile": 11.94,
+          "adp": 162.2,
+          "times_drafted": 38,
+          "stdev": 15.1,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12481",
+      "name": "Cam Skattebo",
+      "position": "RB",
+      "nfl_team": "NYG",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.5,
+        "years_experience": 2,
+        "salary": 8086901,
+        "salary_projected": 12635783,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 78,
+          "position_rank": "RB18",
+          "tier": "7"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 65,
+          "position_rank": 16,
+          "tier": "16",
+          "value": 3481,
+          "trend_30_day": 229,
+          "roster_percent": 0.9994,
+          "trade_frequency": 0.0164
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 32,
+          "percentile": 84.58,
+          "adp": 30.7,
+          "times_drafted": 302,
+          "stdev": 3.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 32,
+          "percentile": 84.58,
+          "adp": 30.7,
+          "times_drafted": 302,
+          "stdev": 3.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 53,
+          "percentile": 71.89,
+          "adp": 53.3,
+          "times_drafted": 210,
+          "stdev": 5.9,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -12.69
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.7,
+        "years_experience": 2,
+        "salary": 1142568,
+        "salary_projected": 1785263,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 187,
+          "position_rank": "WR76",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 290,
+          "position_rank": 91,
+          "tier": "34",
+          "value": 854,
+          "trend_30_day": -193,
+          "roster_percent": 0.9322,
+          "trade_frequency": 0.0036
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12506",
+      "name": "Harold Fannin",
+      "position": "TE",
+      "nfl_team": "CLE",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 22,
+        "years_experience": 2,
+        "salary": 7618006,
+        "salary_projected": 11903134,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 67,
+          "position_rank": "TE6",
+          "tier": "7"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 70,
+          "position_rank": 6,
+          "tier": "17",
+          "value": 3297,
+          "trend_30_day": 171,
+          "roster_percent": 0.999,
+          "trade_frequency": 0.0095
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 82,
+          "percentile": 59.7,
+          "adp": 80.1,
+          "times_drafted": 88,
+          "stdev": 8.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 82,
+          "percentile": 59.7,
+          "adp": 80.1,
+          "times_drafted": 88,
+          "stdev": 8.2,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 103,
+          "percentile": 44.86,
+          "adp": 102.6,
+          "times_drafted": 39,
+          "stdev": 9.4,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -14.84
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12508",
+      "name": "Jaxson Dart",
+      "position": "QB",
+      "nfl_team": "NYG",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 23.2,
+        "years_experience": 2,
+        "salary": 14053835,
+        "salary_projected": 21959117,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 23,
+          "position_rank": "QB12",
+          "tier": "4"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 30,
+          "position_rank": 10,
+          "tier": "11",
+          "value": 4953,
+          "trend_30_day": -81,
+          "roster_percent": 0.9994,
+          "trade_frequency": 0.0108
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "two_qb_10_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 27,
+          "percentile": 85.95,
+          "adp": 27,
+          "times_drafted": 97,
+          "stdev": 5.3,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 105,
+          "percentile": 48.26,
+          "adp": 103.9,
+          "times_drafted": 354,
+          "stdev": 13,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 27,
+          "percentile": 85.95,
+          "adp": 27,
+          "times_drafted": 97,
+          "stdev": 5.3,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": 37.69
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12517",
+      "name": "Colston Loveland",
+      "position": "TE",
+      "nfl_team": "CHI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 22.3,
+        "years_experience": 2,
+        "salary": 4540089,
+        "salary_projected": 7093889,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 49,
+          "position_rank": "TE3",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 29,
+          "position_rank": 3,
+          "tier": "11",
+          "value": 5065,
+          "trend_30_day": 36,
+          "roster_percent": 0.9987,
+          "trade_frequency": 0.0112
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 61,
+          "percentile": 70.15,
+          "adp": 61.4,
+          "times_drafted": 738,
+          "stdev": 9.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 61,
+          "percentile": 70.15,
+          "adp": 61.4,
+          "times_drafted": 738,
+          "stdev": 9.7,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 81,
+          "percentile": 56.76,
+          "adp": 79.5,
+          "times_drafted": 143,
+          "stdev": 10.9,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -13.39
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12518",
+      "name": "Tyler Warren",
+      "position": "TE",
+      "nfl_team": "IND",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.2,
+        "years_experience": 2,
+        "salary": 7106450,
+        "salary_projected": 11103828,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 57,
+          "position_rank": "TE4",
+          "tier": "6"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 37,
+          "position_rank": 4,
+          "tier": "12",
+          "value": 4614,
+          "trend_30_day": 2,
+          "roster_percent": 0.9996,
+          "trade_frequency": 0.011
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 68,
+          "percentile": 66.67,
+          "adp": 66.8,
+          "times_drafted": 734,
+          "stdev": 9.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 68,
+          "percentile": 66.67,
+          "adp": 66.8,
+          "times_drafted": 734,
+          "stdev": 9.5,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 89,
+          "percentile": 52.43,
+          "adp": 88.4,
+          "times_drafted": 244,
+          "stdev": 8.4,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -14.24
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12534",
+      "name": "Kyle Monangai",
+      "position": "RB",
+      "nfl_team": "CHI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.2,
+        "years_experience": 2,
+        "salary": 4302222,
+        "salary_projected": 6722222,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 127,
+          "position_rank": "RB29",
+          "tier": "9"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 152,
+          "position_rank": 32,
+          "tier": "27",
+          "value": 1723,
+          "trend_30_day": -108,
+          "roster_percent": 0.997,
+          "trade_frequency": 0.0152
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 102,
+          "percentile": 49.75,
+          "adp": 99.7,
+          "times_drafted": 545,
+          "stdev": 11.3,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 102,
+          "percentile": 49.75,
+          "adp": 99.7,
+          "times_drafted": 545,
+          "stdev": 11.3,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 112,
+          "percentile": 40.0,
+          "adp": 110.3,
+          "times_drafted": 228,
+          "stdev": 11.4,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -9.75
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12540",
+      "name": "Chimere Dike",
+      "position": "WR",
+      "nfl_team": "TEN",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.6,
+        "years_experience": 2,
+        "salary": 181001,
+        "salary_projected": 282815,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 215,
+          "position_rank": "WR89",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 316,
+          "position_rank": 95,
+          "tier": "36",
+          "value": 737,
+          "trend_30_day": -93,
+          "roster_percent": 0.9043,
+          "trade_frequency": 0.0035
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12545",
+      "name": "Tyler Shough",
+      "position": "QB",
+      "nfl_team": "NO",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 26.9,
+        "years_experience": 2,
+        "salary": 7520735,
+        "salary_projected": 11751148,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 69,
+          "position_rank": "QB21",
+          "tier": "7"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 79,
+          "position_rank": 19,
+          "tier": "18",
+          "value": 3122,
+          "trend_30_day": 7,
+          "roster_percent": 0.9956,
+          "trade_frequency": 0.0135
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "two_qb_10_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 50,
+          "percentile": 73.51,
+          "adp": 51,
+          "times_drafted": 321,
+          "stdev": 11.5,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 134,
+          "percentile": 33.83,
+          "adp": 137.2,
+          "times_drafted": 178,
+          "stdev": 9.6,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 50,
+          "percentile": 73.51,
+          "adp": 51,
+          "times_drafted": 321,
+          "stdev": 11.5,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": 39.68
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "12547",
+      "name": "Kyle Williams",
+      "position": "WR",
+      "nfl_team": "NE",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.7,
+        "years_experience": 2,
+        "salary": 156800,
+        "salary_projected": 245000,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 228,
+          "position_rank": "WR95",
+          "tier": "12"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 327,
+          "position_rank": 100,
+          "tier": "37",
+          "value": 623,
+          "trend_30_day": -172,
+          "roster_percent": 0.8798,
+          "trade_frequency": 0.0027
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13285",
+      "name": "Malachi Fields",
+      "position": "WR",
+      "nfl_team": "NYG",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 22.9,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 201,
+          "position_rank": "WR80",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 264,
+          "position_rank": 83,
+          "tier": "32",
+          "value": 1021,
+          "trend_30_day": -111,
+          "roster_percent": 0.9832,
+          "trade_frequency": 0.0036
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13287",
+      "name": "Jeremiyah Love",
+      "position": "RB",
+      "nfl_team": "ARI",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": true,
+      "app_data": {
+        "status": "Active",
+        "age": 21.2,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 24,
+          "position_rank": "RB4",
+          "tier": "4"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 12,
+          "position_rank": 4,
+          "tier": "7",
+          "value": 6860,
+          "trend_30_day": 66,
+          "roster_percent": 1,
+          "trade_frequency": 0.0067
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 25,
+          "percentile": 88.06,
+          "adp": 25.2,
+          "times_drafted": 297,
+          "stdev": 3,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 25,
+          "percentile": 88.06,
+          "adp": 25.2,
+          "times_drafted": 297,
+          "stdev": 3,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 45,
+          "percentile": 76.22,
+          "adp": 46.4,
+          "times_drafted": 152,
+          "stdev": 5.9,
+          "sample_total_drafts": 2324,
+          "sample_start_date": "2026-07-06",
+          "sample_end_date": "2026-08-05"
+        },
+        "format_gap": -11.84
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13311",
+      "name": "Chris Bell",
+      "position": "WR",
+      "nfl_team": "MIA",
+      "roster_sections": [
+        "reserve",
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 22.2,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Aug 4: Offensive coordinator Bobby Slowik noted Tuesday that Bell (knee) is still \"a long way's away,\" C. Isaiah Smalls II of the Miami Herald reports.",
+        "reported_date": null,
+        "return_date": "20260815",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 158,
+          "position_rank": "WR65",
+          "tier": "10"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 220,
+          "position_rank": 68,
+          "tier": "30",
+          "value": 1254,
+          "trend_30_day": -155,
+          "roster_percent": 0.9908,
+          "trade_frequency": 0.0035
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13405",
+      "name": "Kaytron Allen",
+      "position": "RB",
+      "nfl_team": "WSH",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.6,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 192,
+          "position_rank": "RB53",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 300,
+          "position_rank": 64,
+          "tier": "34",
+          "value": 828,
+          "trend_30_day": -189,
+          "roster_percent": 0.9875,
+          "trade_frequency": 0.0028
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": false,
+        "primary": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "ppr_8_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13414",
+      "name": "Kaelon Black",
+      "position": "RB",
+      "nfl_team": "SF",
+      "roster_sections": [
+        "roster",
+        "taxi"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 24.8,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 3: Black is missing Monday's practice due to an adductor injury, Nick Wagoner of ESPN.com reports.",
+        "reported_date": null,
+        "return_date": "20260813",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 234,
+          "position_rank": "RB69",
+          "tier": "12"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 253,
+          "position_rank": 58,
+          "tier": "32",
+          "value": 1071,
+          "trend_30_day": 155,
+          "roster_percent": 0.9343,
+          "trade_frequency": 0.004
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 175,
+          "percentile": 13.43,
+          "adp": 161.8,
+          "times_drafted": 12,
+          "stdev": 18.4,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 175,
+          "percentile": 13.43,
+          "adp": 161.8,
+          "times_drafted": 12,
+          "stdev": 18.4,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
+      "player_id": "13417",
+      "name": "De'Zhaun Stribling",
+      "position": "WR",
+      "nfl_team": "SF",
+      "roster_sections": [
+        "roster",
+        "taxi"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 23.6,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 3: Stribling (hamstring) remains day-to-day and won't practice Monday, Nick Wagoner of ESPN.com reports.",
+        "reported_date": null,
+        "return_date": "20260813",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 143,
+          "position_rank": "WR60",
+          "tier": "9"
+        },
+        "fantasycalc": {
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 146,
+          "position_rank": 49,
+          "tier": "26",
+          "value": 1803,
+          "trend_30_day": 363,
+          "roster_percent": 0.9841,
+          "trade_frequency": 0.011
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_listed": true,
+        "primary": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 163,
+          "percentile": 19.4,
+          "adp": 159.6,
+          "times_drafted": 64,
+          "stdev": 19,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "ppr_8_team": {
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 163,
+          "percentile": 19.4,
+          "adp": 159.6,
+          "times_drafted": 64,
+          "stdev": 19,
+          "sample_total_drafts": 4622,
+          "sample_start_date": "2026-07-29",
+          "sample_end_date": "2026-08-05"
+        },
+        "two_qb_10_team": {
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        },
+        "format_gap": null
+      },
+      "external_research": {
+        "injury_priority": "high",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "current_structured_injury_signal_requires_verification",
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    }
+  ],
+  "quality": {
+    "status": "warning",
+    "issue_count": 13,
+    "issues": [
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "4018",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11539",
+        "source": "fantasypros",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11539",
+        "source": "fantasycalc",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11539",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11565",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11565",
+        "source": "ffc_two_qb_10_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "11627",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "12492",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "12540",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "12547",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "13285",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "13311",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      },
+      {
+        "severity": "warning",
+        "kind": "missing",
+        "player_id": "13405",
+        "source": "ffc_ppr_8_team",
+        "candidates": []
+      }
+    ],
+    "coverage": {
+      "managed_roster_ids": 37,
+      "resolved_players": 37,
+      "players_with_current_injury_signal": 9,
+      "fantasypros_listed": 36,
+      "fantasycalc_listed": 36,
+      "primary_adp_listed": 27
+    }
+  }
+}
