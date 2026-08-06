@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "catalog_id": "fantasy-operations-external-signal-catalog",
+  "purpose": "Declarative registry for normalized external signals that are joined to current player identity and league ownership for Fantasy Operations.",
+  "sources": [
+    {
+      "source_id": "sleeper-trending",
+      "active": true,
+      "provider": "sleeper",
+      "dataset_id": "nfl-roster-activity-24h-top100",
+      "location": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
+      "rows_field": "players",
+      "timestamp_fields": [
+        "generated_at"
+      ],
+      "source_player_id_field": "sleeper_player_id",
+      "attribution_field": "attribution",
+      "comparison_contract": "top_n_activity_v1",
+      "signal_fields": [
+        {
+          "target": "add_status",
+          "source_field": "add.status",
+          "type": "text"
+        },
+        {
+          "target": "add_rank",
+          "source_field": "add.rank",
+          "type": "number"
+        },
+        {
+          "target": "add_count",
+          "source_field": "add.count",
+          "type": "number"
+        },
+        {
+          "target": "drop_status",
+          "source_field": "drop.status",
+          "type": "text"
+        },
+        {
+          "target": "drop_rank",
+          "source_field": "drop.rank",
+          "type": "number"
+        },
+        {
+          "target": "drop_count",
+          "source_field": "drop.count",
+          "type": "number"
+        }
+      ],
+      "unresolved_identity_severity": "info",
+      "freshness": {
+        "max_age_hours": 30
+      },
+      "interpretation": {
+        "scope": "platform_wide",
+        "ranking": false,
+        "top_n_only": true,
+        "rolling_window": true,
+        "league_join": "downstream_materialization"
+      }
+    }
+  ]
+}
