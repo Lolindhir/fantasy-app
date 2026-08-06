@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json",
+  "title": "Provider-neutral Fantasy Operations managed-roster signals",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "managed_team",
+    "sources",
+    "players",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "dataset_id": { "const": "managed-roster-signals" },
+    "generated_at": { "type": ["string", "null"], "format": "date-time" },
+    "input_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "managed_team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "name", "abbreviation", "player_count"],
+      "properties": {
+        "team_id": { "type": ["integer", "string"] },
+        "name": { "type": ["string", "null"] },
+        "abbreviation": { "type": ["string", "null"] },
+        "player_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "content_sha256", "source_timestamp"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "source_timestamp": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "nfl_team",
+          "roster_sections",
+          "is_starter",
+          "app_data",
+          "injury",
+          "market",
+          "redraft_adp",
+          "external_research"
+        ],
+        "properties": {
+          "player_id": { "type": "string", "minLength": 1 },
+          "name": { "type": ["string", "null"] },
+          "position": { "type": ["string", "null"] },
+          "nfl_team": { "type": ["string", "null"] },
+          "roster_sections": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["roster", "reserve", "taxi"] }
+          },
+          "is_starter": { "type": "boolean" },
+          "app_data": { "type": "object" },
+          "injury": {
+            "type": "object",
+            "required": [
+              "coverage_status",
+              "is_injured",
+              "designation",
+              "description",
+              "reported_date",
+              "return_date",
+              "external_verification_priority",
+              "limitations"
+            ]
+          },
+          "market": { "type": "object" },
+          "redraft_adp": { "type": "object" },
+          "external_research": { "type": "object" }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "issue_count", "issues", "coverage"],
+      "properties": {
+        "status": { "enum": ["ok", "warning", "error"] },
+        "issue_count": { "type": "integer", "minimum": 0 },
+        "issues": { "type": "array" },
+        "coverage": { "type": "object" }
+      }
+    }
+  }
+}
