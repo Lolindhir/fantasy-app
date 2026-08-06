@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/external-signal-relevance.schema.json",
+  "title": "Fantasy Operations external signal relevance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "managed_team",
+    "sources",
+    "source_states",
+    "summary",
+    "views",
+    "players",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "external-signal-relevance"},
+    "generated_at": {"type": ["string", "null"], "format": "date-time"},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "managed_team": {"type": "object"},
+    "sources": {"type": "array"},
+    "source_states": {"type": "array"},
+    "summary": {
+      "type": "object",
+      "required": ["players", "resolved_players", "unresolved_players", "ownership"]
+    },
+    "views": {"type": "object"},
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "nfl_team",
+          "identity_status",
+          "ownership",
+          "source_signals"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"type": ["string", "null"]},
+          "nfl_team": {"type": ["string", "null"]},
+          "identity_status": {"enum": ["resolved", "unresolved"]},
+          "ownership": {
+            "type": "object",
+            "required": ["status", "teams"],
+            "properties": {
+              "status": {
+                "enum": [
+                  "mighty_giants",
+                  "opponent_rostered",
+                  "fantasy_free_agent",
+                  "multiple_rosters"
+                ]
+              },
+              "teams": {"type": "array"}
+            }
+          },
+          "source_signals": {"type": "object"}
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["status", "issue_count", "issues"]
+    }
+  }
+}
