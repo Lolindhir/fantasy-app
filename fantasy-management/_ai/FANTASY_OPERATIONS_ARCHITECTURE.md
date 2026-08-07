@@ -124,9 +124,27 @@ These fields are useful for candidate detection and prioritization. They are not
 
 ## Generated-data rule
 
-Generated Fantasy Operations datasets are reproducible read models. They contain provenance and input fingerprints and are rewritten only when semantic input or output content changes.
+`fantasy-management/generated/**` is reserved exclusively for fully reproducible derived outputs. Every artifact stored there must be rebuildable from versioned source data, configuration and deterministic repository tooling.
 
-They do not replace the canonical current league data under `public/data/` or the canonical source snapshots under `fantasy-management/sources/`.
+Generated artifacts may contain provenance, input fingerprints, joins, normalized views, derived metrics and quality findings. They must not contain manually maintained evaluations, recommendations, decisions, Knowledge, human-authored baselines or stored reviews.
+
+Manually curated or interpretive artifacts remain in their owning Fantasy Management areas such as `knowledge/`, `analyses/`, `decisions/`, source packages or other explicitly documented canonical locations.
+
+Current generated layout:
+
+```text
+fantasy-management/generated/
+└── operations/
+    ├── managed-roster-signals.json
+    ├── external-signal-relevance.json
+    └── data-quality.json
+```
+
+`generated/operations/` owns deterministic read models prepared specifically for Fantasy Operations. These files do not replace canonical current league data under `public/data/` or canonical source snapshots under `fantasy-management/sources/`.
+
+If the amount or variety of deterministic generated data grows materially, `fantasy-management/generated/` may be extended with additional domain-specific subdirectories rather than mixing unrelated outputs into `operations/`. Examples include a future `reports/`, `indexes/` or another clearly owned generated domain. A `podcasts/` generated namespace is permitted only for strictly reproducible derived podcast artifacts; authored source packages, editorial extraction, Knowledge and analyses must remain in their existing non-generated locations.
+
+New generated subdirectories must follow the same reproducibility rule and should be created only when real artifacts require them; do not create empty placeholder folders.
 
 ## Production order
 
