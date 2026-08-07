@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-08-07T05:18:36Z",
-  "input_fingerprint": "1321d069d6fed46b285a7f8a01d43b6dbcae68002b2b6ce8b7693e194b572178",
+  "generated_at": "2026-08-07T05:56:36.995757Z",
+  "input_fingerprint": "14e396c5df12205d160ab6e2113b3b05fd2a7e5e0c0d69335d4f4c216fb55765",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 37,
@@ -42,10 +42,10 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 159,
-        "materialized_entity_count": 154,
-        "resolved_players": 151,
-        "unresolved_players": 3,
+        "row_count": 160,
+        "materialized_entity_count": 165,
+        "resolved_players": 161,
+        "unresolved_players": 4,
         "excluded_non_player_entities": {
           "count": 5,
           "by_type": {
@@ -60,12 +60,12 @@
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 120,
+          "fantasy_free_agent": 129,
           "mighty_giants": 7,
-          "opponent_rostered": 27
+          "opponent_rostered": 29
         },
-        "baseline": true,
-        "material_event_eligible": false
+        "baseline": false,
+        "material_event_eligible": true
       }
     }
   },
@@ -83,6 +83,13 @@
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
       "player_id": "13300"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "13354"
     },
     {
       "domain": "external_signal_materialization",
@@ -156,7 +163,7 @@
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-08-06T12:56:18.452970Z"
+      "source_timestamp": "2026-08-07T05:56:36.995757Z"
     }
   ],
   "interpretation_limits": [
