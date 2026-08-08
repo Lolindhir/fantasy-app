@@ -79,31 +79,11 @@ jobs:
             python fantasy-management/_ai/scripts/materialize_external_signals.py
             python fantasy-management/_ai/scripts/build_player_signal_dataset.py
 
-            python - <<'PY'
-          import json
-          from pathlib import Path
-
-          from jsonschema import Draft202012Validator
-
-          data_path = Path("fantasy-management/generated/operations/player-signals.json")
-          schema_path = Path("fantasy-management/_ai/schemas/player-signal-dataset.schema.json")
-
-          if not data_path.is_file() or data_path.stat().st_size == 0:
-              raise SystemExit("player-signals.json is missing or empty after materialization")
-
-          data = json.loads(data_path.read_text(encoding="utf-8"))
-          schema = json.loads(schema_path.read_text(encoding="utf-8"))
-          Draft202012Validator(schema).validate(data)
-
-          player_count = data.get("population", {}).get("player_count")
-          players = data.get("players")
-          if not isinstance(player_count, int) or player_count <= 0:
-              raise SystemExit("player-signals.json contains no operational player population")
-          if not isinstance(players, list) or len(players) != player_count:
-              raise SystemExit("player-signals.json player_count does not match players length")
-
-          print(f"Validated player-signals.json with {player_count} players.")
-          PY
+            test -s fantasy-management/generated/operations/player-signals.json || {
+              echo "player-signals.json is missing or empty after materialization" >&2
+              exit 1
+            }
+            python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/player-signals.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/player-signal-dataset.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=data["population"]["player_count"]; assert count > 0 and len(data["players"]) == count, "invalid player-signals population"; print(f"Validated player-signals.json with {count} players.")'
 
             git add \
               fantasy-management/generated/operations/managed-roster-signals.json \
