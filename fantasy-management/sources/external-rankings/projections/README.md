@@ -17,4 +17,4 @@ Die Reihenfolge entsteht aus erwarteter statistischer oder Fantasy-Produktion f�
 ## Aktive Provider
 
 - `fftoday`: aktuell `redraft-kicker-preseason`; weitere öffentlich verfügbare FFToday-Positionen sind auditiert, aber noch nicht aktiv materialisiert.
-- `cbs-sports`: `redraft-kicker-preseason` ist als zweiter direkter Kicker-Projection-Provider vorbereitet; QB/RB/WR/TE/DST sind als spätere Erweiterung auditiert. Die erste echte Source-Materialisierung erfolgt durch den CBS-Fetcher, nicht durch manuell erzeugte Snapshot-Dateien.
+- `cbs-sports`: aktuell `redraft-kicker-preseason`; die erste echte Source-Materialisierung erfolgt durch den automatischen CBS-Refresh-Workflow. QB/RB/WR/TE/DST sind als spätere Erweiterung auditiert.
