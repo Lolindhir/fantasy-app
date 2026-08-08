@@ -22,6 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from fantasy_football_calculator_adp_core import (  # noqa: E402
+    CSV_FIELDS,
     DEFAULT_MAX_STALE_DAYS,
     FORMAT_CONFIGS,
     FantasyFootballCalculatorFetchError,
