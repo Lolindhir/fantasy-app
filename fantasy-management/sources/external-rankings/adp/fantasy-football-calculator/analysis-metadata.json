@@ -110,7 +110,23 @@
       "market_adp_gap",
       "qb_format_gap",
       "adp_uncertainty"
-    ]
+    ],
+    "expert_adp_gap": {
+      "definition": "FantasyPros Redraft percentile minus matching FFC ADP percentile on a scale where higher is better.",
+      "positive_interpretation": "Experts rank the player relatively higher than the observed mock-draft market."
+    },
+    "market_adp_gap": {
+      "definition": "FantasyCalc Redraft percentile minus matching FFC ADP percentile on a scale where higher is better.",
+      "positive_interpretation": "Observed trade-market value is relatively stronger than mock-draft cost."
+    },
+    "qb_format_gap": {
+      "definition": "FFC 2-QB percentile minus FFC PPR percentile.",
+      "warning": "This is not a pure quarterback effect because team count and source scoring context also differ."
+    },
+    "kicker_projection_adp_gap": {
+      "definition": "A future Kicker Projection percentile minus FFC Kicker ADP percentile.",
+      "warning": "Only compare Kicker-only lists; do not mix the Kicker list with offensive cross-position percentiles."
+    }
   },
   "league_adjustments": [
     "Apply six-team replacement-level context after reading the eight-team PPR and ten-team 2-QB source formats.",
@@ -125,7 +141,8 @@
     "Mock-draft participants and sample sizes may not represent the Mighty Giants league.",
     "ADP describes acquisition cost, not expected points or dynasty trade value.",
     "Kicker player-level samples can be materially smaller than the overall draft sample.",
-    "NFL teams, player identities and optional fields can change without a published API schema version."
+    "NFL teams, player identities and optional fields can change without a published API schema version.",
+    "The source documents daily updates but its public API documentation is older than the current 2026 data pages."
   ],
   "attribution": {
     "requested": true,
