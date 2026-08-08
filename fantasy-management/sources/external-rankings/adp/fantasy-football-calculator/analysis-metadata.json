@@ -5,6 +5,7 @@
   "ranking_kind": "adp",
   "applies_to_ranking_ids": [
     "redraft-ppr-8-team",
+    "redraft-ppr-8-team-kicker",
     "redraft-2qb-10-team"
   ],
   "source_measurement": {
@@ -20,15 +21,28 @@
     "actual_scoring": "ppr",
     "actual_fixed_qb_starters": 2,
     "actual_fixed_te_starters": 2,
+    "actual_fixed_kicker_starters": 1,
     "redraft-ppr-8-team": {
       "source_format": "ppr",
       "source_team_count": 8,
+      "position_scope": ["QB", "RB", "WR", "TE"],
       "primary_signal": "small_league_full_ppr_draft_cost",
       "limitation": "Normal one-QB mock drafts understate quarterback scarcity for Mighty Giants."
+    },
+    "redraft-ppr-8-team-kicker": {
+      "source_format": "ppr",
+      "source_team_count": 8,
+      "position_scope": ["K"],
+      "source_position": "PK",
+      "primary_signal": "kicker_draft_cost",
+      "additional_network_request": false,
+      "reuses_source_payload_from": "redraft-ppr-8-team",
+      "limitation": "Kicker ADP can have smaller player-level samples than the offensive draft pool."
     },
     "redraft-2qb-10-team": {
       "source_format": "2qb",
       "source_team_count": 10,
+      "position_scope": ["QB", "RB", "WR", "TE"],
       "primary_signal": "two_qb_draft_cost_and_quarterback_scarcity",
       "limitation": "Ten teams and source-default scoring are not the actual six-team Full-PPR league."
     },
@@ -43,34 +57,25 @@
   "normalized_history": {
     "archived": true,
     "granularity": "daily_latest_changed_ranking",
-    "files": [
-      "ranking.csv",
-      "metadata.json"
-    ],
+    "files": ["ranking.csv", "metadata.json"],
     "skip_new_snapshot_when_normalized_ranking_unchanged": true
   },
   "rank_semantics": {
     "source_rank": {
-      "usage": "Original position in the complete provider player array, including source-only DEF/PK entries."
+      "usage": "Original position in the complete provider player array, including source-only positions."
     },
     "Rank": {
       "unique": true,
-      "usage": "Deterministic offensive-player ranking and list-length-aware percentile input.",
+      "usage": "Deterministic ranking within the active ranking scope and list-length-aware percentile input.",
       "normalization": "adp ascending, times_drafted descending, source_player_id"
     }
   },
   "normalized_position_scope": {
-    "included": [
-      "QB",
-      "RB",
-      "WR",
-      "TE"
-    ],
-    "excluded_but_retained_in_raw": [
-      "DEF",
-      "PK"
-    ],
-    "reason": "Mighty Giants does not roster DEF or PK and offensive cross-source percentiles should not be distorted by those positions."
+    "offensive_rankings": ["QB", "RB", "WR", "TE"],
+    "kicker_ranking": ["K"],
+    "source_kicker_position": "PK",
+    "excluded_but_retained_in_raw": ["DEF"],
+    "rule": "Kickers are ranked separately and must not distort offensive cross-position percentiles."
   },
   "player_join": {
     "preferred": "confirmed_source_player_id_mapping",
@@ -85,13 +90,8 @@
     "insufficient_sample_below": 10,
     "default_max_sample_age_days": 45,
     "uncertainty_fields": [
-      "times_drafted",
-      "high",
-      "low",
-      "stdev",
-      "sample_total_drafts",
-      "sample_start_date",
-      "sample_end_date"
+      "times_drafted", "high", "low", "stdev",
+      "sample_total_drafts", "sample_start_date", "sample_end_date"
     ]
   },
   "cross_source_comparison": {
@@ -99,9 +99,11 @@
     "normalize_rankings": "list_length_aware_percentile_using_Rank",
     "do_not_compare_raw_adp_to_market_value": true,
     "do_not_average_ppr_and_2qb_feeds": true,
+    "compare_kicker_only_with_kicker_rankings": true,
     "recommended_metrics": [
       "ffc_ppr_adp_percentile",
       "ffc_2qb_adp_percentile",
+      "ffc_kicker_adp_percentile",
       "fantasypros_redraft_percentile",
       "fantasycalc_redraft_percentile",
       "expert_adp_gap",
@@ -120,6 +122,10 @@
     "qb_format_gap": {
       "definition": "FFC 2-QB percentile minus FFC PPR percentile.",
       "warning": "This is not a pure quarterback effect because team count and source scoring context also differ."
+    },
+    "kicker_projection_adp_gap": {
+      "definition": "A future Kicker Projection percentile minus FFC Kicker ADP percentile.",
+      "warning": "Only compare Kicker-only lists; do not mix the Kicker list with offensive cross-position percentiles."
     }
   },
   "league_adjustments": [
@@ -127,12 +133,14 @@
     "Use the 2-QB feed primarily to understand quarterback scarcity.",
     "Use the PPR feed primarily to understand small-league Full-PPR draft cost.",
     "Apply additional scarcity for two fixed tight-end starters separately.",
+    "Evaluate the Kicker ranking in the context of one fixed K starter and high replacement availability.",
     "Do not turn ADP into an automatic draft, waiver or trade recommendation."
   ],
   "limitations": [
     "The public API does not expose one format combining six teams, Full PPR, two quarterbacks and two tight ends.",
     "Mock-draft participants and sample sizes may not represent the Mighty Giants league.",
     "ADP describes acquisition cost, not expected points or dynasty trade value.",
+    "Kicker player-level samples can be materially smaller than the overall draft sample.",
     "NFL teams, player identities and optional fields can change without a published API schema version.",
     "The source documents daily updates but its public API documentation is older than the current 2026 data pages."
   ],

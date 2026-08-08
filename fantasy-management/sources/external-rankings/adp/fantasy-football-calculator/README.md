@@ -8,18 +8,21 @@ Fantasy Football Calculator berechnet ADP aus menschlichen Picks in Mock Drafts.
 
 ## Verwendete Formate
 
-| Ranking-ID | API-Format | Teamzahl | Primäre Rolle |
-|---|---:|---:|---|
-| `redraft-ppr-8-team` | `ppr` | 8 | kleiner Liga- und Full-PPR-Draftmarkt |
-| `redraft-2qb-10-team` | `2qb` | 10 | 2-QB-Draftmarkt und QB-Knappheit |
+| Ranking-ID | API-Format | Teamzahl | Scope | Primäre Rolle |
+|---|---:|---:|---|---|
+| `redraft-ppr-8-team` | `ppr` | 8 | QB/RB/WR/TE | kleiner Liga- und Full-PPR-Draftmarkt |
+| `redraft-ppr-8-team-kicker` | `ppr` | 8 | K | Kicker-Draftmarkt |
+| `redraft-2qb-10-team` | `2qb` | 10 | QB/RB/WR/TE | 2-QB-Draftmarkt und QB-Knappheit |
 
-Die reale Liga hat sechs Teams, Full PPR, zwei feste QB- und zwei feste TE-Startplätze. Fantasy Football Calculator bietet kein einzelnes öffentliches ADP-Format, das diese Eigenschaften kombiniert.
+Die reale Liga hat sechs Teams, Full PPR, zwei feste QB-, zwei feste TE- und einen festen Kicker-Startplatz. Fantasy Football Calculator bietet kein einzelnes öffentliches ADP-Format, das diese Eigenschaften kombiniert.
 
-Die beiden Feeds werden deshalb **nicht gemittelt**:
+Die offensiven PPR- und 2-QB-Feeds werden deshalb **nicht gemittelt**:
 
 - `redraft-ppr-8-team` ist der nächstgelegene unterstützte Proxy für kleine Liga und Full PPR, bildet aber normale 1-QB-Drafts ab.
 - `redraft-2qb-10-team` bildet die QB-Knappheit besser ab, verwendet aber zehn Teams und ist kein dokumentierter kombinierter PPR-Feed.
 - Zwei feste TE-Startplätze werden von keinem der beiden Feeds modelliert und müssen erst in der ligaindividuellen Analyse berücksichtigt werden.
+
+Das Kicker-Ranking wird **ohne zusätzlichen FFC-Request** aus demselben offiziellen `ppr`, 8-Team, `position=all`-Payload materialisiert, der bereits für `redraft-ppr-8-team` geladen wird. FFC kennzeichnet Kicker dort als `PK`; die normalisierte Kicker-Liste verwendet `K` passend zum internen Player-Modell.
 
 ## Ablagestruktur
 
@@ -30,22 +33,20 @@ fantasy-football-calculator/
 ├── redraft-ppr-8-team/
 │   ├── raw-latest.json
 │   ├── latest.json
-│   └── snapshots/
-│       └── YYYY-MM-DD/
-│           ├── ranking.csv
-│           └── metadata.json
+│   └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
+├── redraft-ppr-8-team-kicker/
+│   ├── raw-latest.json
+│   ├── latest.json
+│   └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
 └── redraft-2qb-10-team/
     ├── raw-latest.json
     ├── latest.json
-    └── snapshots/
-        └── YYYY-MM-DD/
-            ├── ranking.csv
-            └── metadata.json
+    └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
 ```
 
 ## Speicherregeln
 
-Für jedes Format gilt:
+Für jedes Ranking gilt:
 
 - `raw-latest.json` enthält ausschließlich die neueste vollständige offizielle API-Antwort und wird nach jedem erfolgreichen Abruf ersetzt.
 - Historische Raw-Payloads werden nicht gespeichert.
@@ -53,6 +54,7 @@ Für jedes Format gilt:
 - Historisiert werden nur `ranking.csv` und `metadata.json`.
 - Wenn sich die normalisierte Rankingliste nicht verändert, wird kein neuer historischer Snapshot angelegt; `raw-latest.json` und die Raw-Freshness in `latest.json` werden trotzdem aktualisiert.
 - Mehrere Änderungen am selben Kalendertag ersetzen den Snapshot dieses Tages.
+- Das Kicker-Verzeichnis behält denselben vollständigen PPR-Raw-Payload für direkte Provenance, obwohl der Netzwerkabruf nur einmal erfolgt.
 
 ## Normalisierte Rankingliste
 
@@ -65,10 +67,12 @@ name,Rank,source_rank,position,team,source_player_id,adp,adp_formatted,times_dra
 Rangsemantik:
 
 - `source_rank` ist die ursprüngliche Position im vollständigen Source-Array.
-- `Rank` ist unser eindeutiger normalisierter Rang unter den offensiven Spielern.
+- `Rank` ist ein eindeutiger normalisierter Rang im jeweiligen Ranking-Scope.
+- Offense: QB/RB/WR/TE gemeinsam nach ADP.
+- Kicker: ausschließlich Kicker nach ADP.
 - Sortierung: `adp` aufsteigend, danach `times_drafted` absteigend und `source_player_id`.
 
-Die vollständige Raw-Antwort kann zusätzlich DEF und PK enthalten. Diese Einträge bleiben verlustfrei in `raw-latest.json`, werden aber nicht in die normalisierte Rankingliste übernommen, weil die Mighty-Giants-Liga sie nicht rostert und sie offensive Cross-Source-Perzentile verzerren würden.
+Die vollständige Raw-Antwort kann zusätzlich DEF enthalten. DEF bleibt verlustfrei in `raw-latest.json`, wird aber nicht als aktives Ranking materialisiert. Kicker werden nicht mehr als bloß ausgeschlossene Raw-Einträge behandelt, sondern separat gerankt.
 
 ## Sample und Unsicherheit
 
@@ -88,6 +92,8 @@ Zusätzlich werden aus `meta` gespeichert:
 
 Die Metadaten klassifizieren die Stichprobe als `high_sample`, `medium_sample`, `low_sample` oder `insufficient_sample`. Ein kleiner Sample bleibt sichtbar und wird nicht als hohe Sicherheit interpretiert. Ein Datensatz mit einem mehr als 45 Tage alten Sample-Ende wird standardmäßig fail-closed abgelehnt.
 
+Beim Kicker-Ranking bleibt `times_drafted` besonders wichtig: eine sichtbare ADP bei sehr wenigen Kicker-Picks ist ein schwächeres Marktsignal als eine ähnlich platzierte ADP mit großer Stichprobe.
+
 ## Join-Regeln
 
 Bevorzugte Spielerzuordnung:
@@ -104,6 +110,8 @@ Die FFC-Spieler-ID ist eine Quellenkennung und keine Sleeper-ID.
 python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
 ```
 
+Der Befehl materialisiert die beiden bisherigen offensiven Rankings und das Kicker-Ranking. Das Kicker-Ranking verwendet dabei den bereits geladenen 8-Team-PPR-Payload und erzeugt keinen dritten API-Request.
+
 Prüfmodi:
 
 ```bash
@@ -114,11 +122,11 @@ python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py \
   --dry-run
 ```
 
-Der Fetcher lädt und validiert beide Formate vollständig, bevor Dateien geschrieben werden. Netzwerk-, JSON-, Source-Identity-, Teamzahl-, Saison-, Sample-Freshness-, ID-, Positions- oder Plausibilitätsfehler beenden den Lauf ohne Veröffentlichung eines unvollständigen Vergleichs.
+Der Fetcher lädt und validiert beide Source-Formate vollständig, bevor Dateien geschrieben werden. Netzwerk-, JSON-, Source-Identity-, Teamzahl-, Saison-, Sample-Freshness-, ID-, Positions- oder Plausibilitätsfehler beenden den Lauf ohne Veröffentlichung eines unvollständigen Vergleichs.
 
 ## Automatische Aktualisierung
 
-Der GitHub-Actions-Workflow `Update Fantasy Football Calculator ADP` läuft täglich um `06:07 UTC` und kann manuell gestartet werden. Er testet den Fetcher, aktualisiert beide Formate im selben Job und committed ausschließlich den ADP-Quellenbereich.
+Der bestehende GitHub-Actions-Workflow `Update Fantasy Football Calculator ADP` läuft täglich und kann manuell gestartet werden. Weil der Kicker-Materializer im bestehenden Fetcher hängt und der Workflow den vollständigen Provider-Bereich committed, ist kein zusätzlicher FFC-Workflow und kein zusätzlicher Netzwerkabruf erforderlich.
 
 ## Quellenübergreifende Auswertung
 
@@ -128,7 +136,7 @@ ADP ist ein Ranking, misst aber etwas anderes als die vorhandenen Quellen:
 - FantasyCalc: beobachteter Trade-Marktwert
 - Fantasy Football Calculator: beobachtete Mock-Draftkosten
 
-Vergleiche verwenden listenlängenabhängige Perzentile, niemals rohe Rang- oder Wertdifferenzen. Der Abstand zwischen PPR- und 2-QB-ADP ist kein reiner QB-Effekt, weil sich gleichzeitig Teamzahl und Source-Format unterscheiden.
+Vergleiche verwenden listenlängenabhängige Perzentile, niemals rohe Rang- oder Wertdifferenzen. Das Kicker-Ranking wird nur gegen andere Kicker-Rankings normalisiert und nicht in offensive Cross-Position-Perzentile gemischt.
 
 ## Attribution und Nutzung
 
