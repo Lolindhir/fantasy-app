@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Fetch and normalize Fantasy Football Calculator ADP rankings.
 
-Stores independent PPR 8-team and 2-QB 10-team redraft signals. Each format
-keeps only the latest raw response and archives changed normalized rankings.
+Stores independent PPR 8-team and 2-QB 10-team redraft signals. The PPR payload
+also materializes a separate kicker-only ranking without an additional request.
+Each ranking keeps only the latest raw response and archives changed normalized
+rankings.
 """
 
 from __future__ import annotations
@@ -20,23 +22,20 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from fantasy_football_calculator_adp_core import (  # noqa: E402
-    ANALYSIS_METADATA,
-    CSV_FIELDS,
     DEFAULT_MAX_STALE_DAYS,
-    DIRECT_FETCHER,
     FORMAT_CONFIGS,
-    SCHEMA_VERSION,
     FantasyFootballCalculatorFetchError,
     build_source_url,
     fetch_payload,
     parse_players,
     parse_timestamp,
-    request_parameters,
     validate_payload,
 )
-from fantasy_football_calculator_adp_storage import (  # noqa: E402
-    ranking_root,
-    write_format,
+from fantasy_football_calculator_adp_storage import write_format  # noqa: E402
+from fantasy_football_calculator_kicker_adp import (  # noqa: E402
+    FantasyFootballCalculatorKickerError,
+    parse_kickers,
+    write_kicker_format,
 )
 
 
@@ -91,6 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         repo_root = args.repo_root.resolve()
         saved = parse_input_mapping(args.input)
         prepared: list[dict[str, Any]] = []
+        kicker_prepared: dict[str, Any] | None = None
 
         # Validate both source formats before publishing either one.
         for key, config in FORMAT_CONFIGS.items():
@@ -128,6 +128,22 @@ def main(argv: list[str] | None = None) -> int:
                 "diagnostics": diagnostics,
             })
 
+            if key == "ppr-8-team":
+                kicker_rows, kicker_diagnostics = parse_kickers(payload, sample)
+                kicker_prepared = {
+                    "payload": payload,
+                    "response_headers": response_headers,
+                    "source_url": source_url,
+                    "sample": sample,
+                    "rows": kicker_rows,
+                    "diagnostics": kicker_diagnostics,
+                }
+
+        if kicker_prepared is None:
+            raise FantasyFootballCalculatorKickerError(
+                "PPR 8-team payload was not prepared for kicker materialization"
+            )
+
         if args.dry_run:
             for item in prepared:
                 counts = Counter(row["position"] for row in item["rows"])
@@ -141,6 +157,13 @@ def main(argv: list[str] | None = None) -> int:
                         for position in sorted(counts)
                     )
                 )
+            print(
+                "FFC ADP ranking=redraft-ppr-8-team-kicker "
+                f"rows={len(kicker_prepared['rows'])} "
+                f"drafts={kicker_prepared['sample']['total_drafts']} "
+                f"quality={kicker_prepared['sample']['quality']} "
+                f"K={len(kicker_prepared['rows'])}"
+            )
             return 0
 
         for item in prepared:
@@ -161,9 +184,27 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[ffc-adp:{item['key']}] {action}")
             for path in paths:
                 print(path)
+
+        kicker_paths, kicker_created = write_kicker_format(
+            repo_root=repo_root,
+            rows=kicker_prepared["rows"],
+            payload=kicker_prepared["payload"],
+            sample=kicker_prepared["sample"],
+            diagnostics=kicker_prepared["diagnostics"],
+            fetched_at=fetched_at,
+            source_url=kicker_prepared["source_url"],
+            response_headers=kicker_prepared["response_headers"],
+            season=args.season,
+            skip_unchanged=args.skip_unchanged,
+        )
+        kicker_action = "snapshot-created" if kicker_created else "ranking-unchanged"
+        print(f"[ffc-adp:ppr-8-team-kicker] {kicker_action}")
+        for path in kicker_paths:
+            print(path)
         return 0
     except (
         FantasyFootballCalculatorFetchError,
+        FantasyFootballCalculatorKickerError,
         OSError,
         ValueError,
         json.JSONDecodeError,
