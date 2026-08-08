@@ -27,6 +27,7 @@
         "key": "fantasypros",
         "signals": [
           {"target": "overall_rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
           {"target": "position_rank", "source_field": "position_rank", "type": "text"},
           {"target": "tier", "source_field": "tier", "type": "text"}
         ]
@@ -61,6 +62,7 @@
         "key": "fantasycalc",
         "signals": [
           {"target": "overall_rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
           {"target": "position_rank", "source_field": "position_rank", "type": "number"},
           {"target": "tier", "source_field": "tier", "type": "text"},
           {"target": "value", "source_field": "value", "type": "number"},
@@ -149,12 +151,146 @@
       "quality": {"minimum_rows": 50, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
       "freshness": {"max_age_hours": 72},
       "format_context": {"horizon": "redraft", "scoring": "source_default", "quarterback_mode": "two_qb", "team_count": 10, "actual_league_team_count": 6}
+    },
+    {
+      "source_id": "ffc-redraft-ppr-8-team-kicker",
+      "active": true,
+      "source_kind": "adp",
+      "provider": "fantasy-football-calculator",
+      "dataset_id": "redraft-ppr-8-team-kicker",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team-kicker/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["K"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "redraft_adp",
+        "key": "kicker_ppr_8_team",
+        "signals": [
+          {"target": "rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
+          {"target": "adp", "source_field": "adp", "type": "number"},
+          {"target": "times_drafted", "source_field": "times_drafted", "type": "number"},
+          {"target": "high", "source_field": "high", "type": "number"},
+          {"target": "low", "source_field": "low", "type": "number"},
+          {"target": "stdev", "source_field": "stdev", "type": "number"},
+          {"target": "sample_total_drafts", "source_field": "sample_total_drafts", "type": "number"},
+          {"target": "sample_start_date", "source_field": "sample_start_date", "type": "text"},
+          {"target": "sample_end_date", "source_field": "sample_end_date", "type": "text"}
+        ]
+      },
+      "roles": {"primary_for_positions": ["K"]},
+      "quality": {"minimum_rows": 10, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 72},
+      "format_context": {"horizon": "redraft", "scoring": "ppr", "quarterback_mode": "one_qb", "team_count": 8, "actual_league_team_count": 6, "position_scope": "K"}
+    },
+    {
+      "source_id": "fftoday-redraft-kicker-preseason",
+      "active": true,
+      "source_kind": "projection",
+      "provider": "fftoday",
+      "dataset_id": "redraft-kicker-preseason",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/projections/fftoday/redraft-kicker-preseason/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "source_updated_date", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["K"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "projections",
+        "key": "fftoday",
+        "signals": [
+          {"target": "rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
+          {"target": "bye", "source_field": "bye", "type": "number"},
+          {"target": "fgm", "source_field": "fgm", "type": "number"},
+          {"target": "fga", "source_field": "fga", "type": "number"},
+          {"target": "fg_pct", "source_field": "fg_pct", "type": "number"},
+          {"target": "epm", "source_field": "epm", "type": "number"},
+          {"target": "epa", "source_field": "epa", "type": "number"},
+          {"target": "projected_fantasy_points", "source_field": "projected_fantasy_points", "type": "number"},
+          {"target": "source_updated_date", "source_field": "source_updated_date", "type": "text"}
+        ]
+      },
+      "roles": {},
+      "quality": {"minimum_rows": 20, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 72},
+      "format_context": {"horizon": "season", "position_scope": "K", "scoring": "provider_default"}
+    },
+    {
+      "source_id": "cbs-sports-redraft-kicker-preseason",
+      "active": true,
+      "source_kind": "projection",
+      "provider": "cbs-sports",
+      "dataset_id": "redraft-kicker-preseason",
+      "access": {
+        "type": "repo_latest_pointer",
+        "location": "fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-kicker-preseason/latest.json",
+        "ranking_path_field": "ranking_file",
+        "timestamp_fields": ["ranking_fetched_at", "raw_fetched_at", "fetched_at", "snapshot_date"]
+      },
+      "applicability": {"entity_types": ["player"], "positions": ["K"]},
+      "absence_policy": {"inapplicable": "not_applicable", "missing": "not_listed", "ambiguous": "ambiguous_join"},
+      "join": {
+        "strategies": [
+          {"type": "name_position", "method": "normalized_name_position", "name_field": "name", "position_field": "position", "team_field": "team"}
+        ]
+      },
+      "output": {
+        "section": "projections",
+        "key": "cbs_sports",
+        "signals": [
+          {"target": "rank", "source_field": "Rank", "type": "number"},
+          {"target": "percentile", "source_field": "Rank", "type": "number", "transform": "percentile_from_rank"},
+          {"target": "games_played", "source_field": "games_played", "type": "number"},
+          {"target": "fgm", "source_field": "fgm", "type": "number"},
+          {"target": "fga", "source_field": "fga", "type": "number"},
+          {"target": "longest_field_goal", "source_field": "longest_field_goal", "type": "number"},
+          {"target": "fg_1_19_made", "source_field": "fg_1_19_made", "type": "number"},
+          {"target": "fg_1_19_attempts", "source_field": "fg_1_19_attempts", "type": "number"},
+          {"target": "fg_20_29_made", "source_field": "fg_20_29_made", "type": "number"},
+          {"target": "fg_20_29_attempts", "source_field": "fg_20_29_attempts", "type": "number"},
+          {"target": "fg_30_39_made", "source_field": "fg_30_39_made", "type": "number"},
+          {"target": "fg_30_39_attempts", "source_field": "fg_30_39_attempts", "type": "number"},
+          {"target": "fg_40_49_made", "source_field": "fg_40_49_made", "type": "number"},
+          {"target": "fg_40_49_attempts", "source_field": "fg_40_49_attempts", "type": "number"},
+          {"target": "fg_50_plus_made", "source_field": "fg_50_plus_made", "type": "number"},
+          {"target": "fg_50_plus_attempts", "source_field": "fg_50_plus_attempts", "type": "number"},
+          {"target": "xpm", "source_field": "xpm", "type": "number"},
+          {"target": "xpa", "source_field": "xpa", "type": "number"},
+          {"target": "projected_fantasy_points", "source_field": "projected_fantasy_points", "type": "number"},
+          {"target": "projected_fantasy_points_per_game", "source_field": "projected_fantasy_points_per_game", "type": "number"}
+        ]
+      },
+      "roles": {},
+      "quality": {"minimum_rows": 20, "missing_severity": "none", "ambiguous_severity": "warning", "row_count_severity": "error"},
+      "freshness": {"max_age_hours": 72},
+      "format_context": {"horizon": "season", "position_scope": "K", "scoring": "provider_default", "source_format": "nonppr"}
     }
   ],
   "derived_views": {
     "redraft_adp": {
       "primary_source_rule": "roles.primary_for_positions",
       "format_gap": {"left_source_id": "ffc-redraft-2qb-10-team", "right_source_id": "ffc-redraft-ppr-8-team", "signal": "percentile"}
+    },
+    "projections": {
+      "consensus_signal": "percentile",
+      "provider_points_policy": "keep_separate"
     }
   }
 }
