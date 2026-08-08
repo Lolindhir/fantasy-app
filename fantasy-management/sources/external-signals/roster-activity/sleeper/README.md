@@ -184,11 +184,13 @@ Active workflow:
 .github/workflows/update-sleeper-trending.yml
 ```
 
-It targets 06:35 Europe/Berlin. Its generated-data push triggers:
+Der sichtbare Workflow-Name ist `FM • Signal • Sleeper Trending`. Er zielt DST-sicher auf 06:20 Europe/Berlin. Sein Generated-Data-Push triggert:
 
 ```text
 .github/workflows/materialize-fantasy-operations-inputs.yml
 ```
+
+Der nachgelagerte Workflow heißt sichtbar `FM • Materialize • Operations Inputs`.
 
 The intended order is:
 
