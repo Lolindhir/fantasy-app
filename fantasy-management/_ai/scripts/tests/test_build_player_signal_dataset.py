@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import jsonschema
+
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "build_player_signal_dataset.py"
 SCRIPT_DIR = SCRIPT_PATH.parent
@@ -370,6 +372,24 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual(rostered["role"]["sleeper_depth_chart_order"], 1)
             self.assertEqual(rostered["role"]["interpretation"], "nominal_depth_chart_only_not_usage")
             self.assertEqual(rostered["source_signals"]["cbs-k"]["freshness"]["status"], "current")
+
+    def test_current_repository_inputs_build_and_validate(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        config_path = root / "fantasy-management/automation/player-signal-materialization.json"
+        schema_path = root / "fantasy-management/_ai/schemas/player-signal-dataset.schema.json"
+
+        result = MODULE.build(root, config_path)
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        jsonschema.Draft202012Validator(schema).validate(result)
+
+        self.assertGreater(result["population"]["player_count"], 100)
+        self.assertNotEqual(result["quality"]["status"], "error")
+        kickers = [player for player in result["players"] if player["position"] == "K"]
+        self.assertTrue(kickers)
+        self.assertTrue(any(player["ownership"]["status"] == "fantasy_free_agent" for player in kickers))
+        self.assertTrue(
+            any(player["projections"]["summary"]["listed_provider_count"] >= 1 for player in kickers)
+        )
 
 
 if __name__ == "__main__":
