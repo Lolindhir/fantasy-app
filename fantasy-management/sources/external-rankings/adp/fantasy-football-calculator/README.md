@@ -126,7 +126,7 @@ Der Fetcher lädt und validiert beide Source-Formate vollständig, bevor Dateien
 
 ## Automatische Aktualisierung
 
-Der bestehende GitHub-Actions-Workflow `Update Fantasy Football Calculator ADP` läuft täglich und kann manuell gestartet werden. Weil der Kicker-Materializer im bestehenden Fetcher hängt und der Workflow den vollständigen Provider-Bereich committed, ist kein zusätzlicher FFC-Workflow und kein zusätzlicher Netzwerkabruf erforderlich.
+Der bestehende GitHub-Actions-Workflow `FM • Ranking • FFC ADP` läuft täglich und kann manuell gestartet werden. Weil der Kicker-Materializer im bestehenden Fetcher hängt und der Workflow den vollständigen Provider-Bereich committed, ist kein zusätzlicher FFC-Workflow und kein zusätzlicher Netzwerkabruf erforderlich.
 
 ## Quellenübergreifende Auswertung
 

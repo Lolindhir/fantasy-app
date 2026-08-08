@@ -1,9 +1,9 @@
-name: Update Sleeper Trending
+name: FM • Signal • Sleeper Trending
 
 on:
   schedule:
-    - cron: "35 4 * * *"  # 06:35 Europe/Berlin während CEST
-    - cron: "35 5 * * *"  # 06:35 Europe/Berlin während CET
+    - cron: "20 4 * * *"  # 06:20 Europe/Berlin während CEST
+    - cron: "20 5 * * *"  # 06:20 Europe/Berlin während CET
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -34,9 +34,9 @@ jobs:
 
           berlin_offset="$(TZ=Europe/Berlin date +%z)"
           if [[ "$berlin_offset" == "+0200" ]]; then
-            expected_schedule="35 4 * * *"
+            expected_schedule="20 4 * * *"
           elif [[ "$berlin_offset" == "+0100" ]]; then
-            expected_schedule="35 5 * * *"
+            expected_schedule="20 5 * * *"
           else
             echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
             exit 1
@@ -44,7 +44,7 @@ jobs:
 
           if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled run selected for 06:35 Europe/Berlin."
+            echo "Scheduled run selected for 06:20 Europe/Berlin."
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "Companion DST cron skipped for current Berlin offset $berlin_offset."

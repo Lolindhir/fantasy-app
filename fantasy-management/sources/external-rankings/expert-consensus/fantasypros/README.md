@@ -40,7 +40,7 @@ python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py
 
 Die offiziellen öffentlichen Seiten werden direkt aus dem eingebetteten `ecrData`-Payload gelesen. Es gibt keinen Mirror-Fallback. Netzwerk-, Source-Identity-, Schema-, Format- und Plausibilitätsfehler blockieren die Veröffentlichung eines neuen `latest.json`-Stands.
 
-Der Workflow `Update FantasyPros Rankings` testet und aktualisiert beide Rankings täglich im selben Job. Schlägt einer der Abrufe fehl, wird kein einseitiger Vergleich committed.
+Der Workflow `FM • Ranking • FantasyPros ECR` testet und aktualisiert beide Rankings täglich im selben Job. Schlägt einer der Abrufe fehl, wird kein einseitiger Vergleich committed.
 
 ## Snapshot-Dateien
 
