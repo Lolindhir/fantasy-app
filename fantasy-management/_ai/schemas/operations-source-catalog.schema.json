@@ -164,6 +164,15 @@
               }
             }
           }
+        },
+        "projections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["consensus_signal", "provider_points_policy"],
+          "properties": {
+            "consensus_signal": {"const": "percentile"},
+            "provider_points_policy": {"const": "keep_separate"}
+          }
         }
       }
     }

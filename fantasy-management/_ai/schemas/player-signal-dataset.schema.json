@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/player-signal-dataset.schema.json",
+  "title": "Fantasy Operations Player Signal Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "managed_team",
+    "population",
+    "sources",
+    "players",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "player-signals"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "managed_team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "name"],
+      "properties": {
+        "team_id": {"type": ["integer", "string", "null"]},
+        "name": {"type": ["string", "null"]}
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player_count", "positions", "inclusion_rule", "reason_counts"],
+      "properties": {
+        "player_count": {"type": "integer", "minimum": 0},
+        "positions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "inclusion_rule": {"type": "string"},
+        "reason_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sourceFile"}
+    },
+    "players": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/player"}
+    },
+    "quality": {"$ref": "#/$defs/quality"}
+  },
+  "$defs": {
+    "sourceFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "content_sha256", "source_timestamp"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_timestamp": {"type": ["string", "null"]}
+      }
+    },
+    "ownershipTeam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "team_name", "team_abbreviation", "roster_sections"],
+      "properties": {
+        "team_id": {"type": ["integer", "string", "null"]},
+        "team_name": {"type": ["string", "null"]},
+        "team_abbreviation": {"type": ["string", "null"]},
+        "roster_sections": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "teams"],
+      "properties": {
+        "status": {"enum": ["fantasy_free_agent", "mighty_giants", "opponent_rostered", "multiple_rosters"]},
+        "teams": {"type": "array", "items": {"$ref": "#/$defs/ownershipTeam"}}
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_timestamp", "max_age_hours", "age_hours_at_materialization", "status"],
+      "properties": {
+        "source_timestamp": {"type": ["string", "null"]},
+        "max_age_hours": {"type": ["integer", "null"], "minimum": 1},
+        "age_hours_at_materialization": {"type": ["number", "null"], "minimum": 0},
+        "status": {"enum": ["current", "stale", "unknown"]}
+      }
+    },
+    "sourceResult": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "source_kind",
+        "provider",
+        "dataset_id",
+        "applicable",
+        "coverage_status",
+        "listed",
+        "join_method",
+        "signals",
+        "format_context",
+        "freshness"
+      ],
+      "properties": {
+        "source_id": {"type": "string"},
+        "source_kind": {"type": "string"},
+        "provider": {"type": "string"},
+        "dataset_id": {"type": "string"},
+        "applicable": {"type": "boolean"},
+        "coverage_status": {"type": "string"},
+        "listed": {"type": "boolean"},
+        "join_method": {"type": "string"},
+        "signals": {"type": "object"},
+        "format_context": {"type": "object"},
+        "freshness": {"$ref": "#/$defs/freshness"}
+      },
+      "additionalProperties": true
+    },
+    "activityItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "rank", "count"],
+      "properties": {
+        "status": {"enum": ["listed", "not_listed"]},
+        "rank": {"type": ["number", "null"]},
+        "count": {"type": ["number", "null"]}
+      }
+    },
+    "activity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "provider",
+        "dataset_id",
+        "source_timestamp",
+        "comparison",
+        "coverage_status",
+        "listed",
+        "add",
+        "drop",
+        "absence_semantics"
+      ],
+      "properties": {
+        "source_id": {"type": "string"},
+        "provider": {"type": ["string", "null"]},
+        "dataset_id": {"type": ["string", "null"]},
+        "source_timestamp": {"type": ["string", "null"]},
+        "comparison": {"type": "object"},
+        "coverage_status": {"enum": ["listed_in_current_union", "not_listed_in_current_union"]},
+        "listed": {"type": "boolean"},
+        "add": {"$ref": "#/$defs/activityItem"},
+        "drop": {"$ref": "#/$defs/activityItem"},
+        "absence_semantics": {"type": "string"}
+      }
+    },
+    "player": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "player_id",
+        "name",
+        "position",
+        "nfl_team",
+        "population_reasons",
+        "ownership",
+        "app_data",
+        "injury",
+        "role",
+        "source_signals",
+        "market",
+        "redraft_adp",
+        "projections",
+        "activity"
+      ],
+      "properties": {
+        "player_id": {"type": "string", "minLength": 1},
+        "name": {"type": ["string", "null"]},
+        "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+        "nfl_team": {"type": ["string", "null"]},
+        "population_reasons": {
+          "type": "array",
+          "items": {"enum": ["has_nfl_team", "league_owned", "listed_in_external_source", "present_in_external_signal"]},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "ownership": {"$ref": "#/$defs/ownership"},
+        "app_data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "age", "years_experience", "salary", "salary_projected", "is_free_agent_source_field", "espn_id"],
+          "properties": {
+            "status": {"type": ["string", "null"]},
+            "age": {"type": ["number", "null"]},
+            "years_experience": {"type": ["number", "null"]},
+            "salary": {"type": ["number", "null"]},
+            "salary_projected": {"type": ["number", "null"]},
+            "is_free_agent_source_field": {"type": ["boolean", "null"]},
+            "espn_id": {"type": ["string", "null"]}
+          }
+        },
+        "injury": {"type": "object"},
+        "role": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sleeper_depth_chart_position", "sleeper_depth_chart_order", "coverage_status", "interpretation"],
+          "properties": {
+            "sleeper_depth_chart_position": {"type": ["string", "null"]},
+            "sleeper_depth_chart_order": {"type": ["number", "null"]},
+            "coverage_status": {"enum": ["available", "not_available"]},
+            "interpretation": {"const": "nominal_depth_chart_only_not_usage"}
+          }
+        },
+        "source_signals": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/sourceResult"}
+        },
+        "market": {"type": "object"},
+        "redraft_adp": {"type": "object"},
+        "projections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["providers", "summary"],
+          "properties": {
+            "providers": {"type": "object"},
+            "summary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["applicable_provider_count", "listed_provider_count", "consensus_percentile", "percentile_spread", "provider_fantasy_points_policy"],
+              "properties": {
+                "applicable_provider_count": {"type": "integer", "minimum": 0},
+                "listed_provider_count": {"type": "integer", "minimum": 0},
+                "consensus_percentile": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+                "percentile_spread": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+                "provider_fantasy_points_policy": {"const": "kept_separate_not_averaged"}
+              }
+            }
+          }
+        },
+        "activity": {"$ref": "#/$defs/activity"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "issue_count", "issues", "source_coverage", "ownership", "positions", "population_reasons", "external_signal_upstream_status"],
+      "properties": {
+        "status": {"enum": ["ok", "warning", "error"]},
+        "issue_count": {"type": "integer", "minimum": 0},
+        "issues": {"type": "array", "items": {"type": "object"}},
+        "source_coverage": {"type": "object"},
+        "ownership": {"type": "object"},
+        "positions": {"type": "object"},
+        "population_reasons": {"type": "object"},
+        "external_signal_upstream_status": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
