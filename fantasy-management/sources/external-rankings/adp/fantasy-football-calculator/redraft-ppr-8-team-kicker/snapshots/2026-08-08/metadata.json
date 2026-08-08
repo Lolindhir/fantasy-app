@@ -3,8 +3,8 @@
   "source_id": "fantasy-football-calculator",
   "source_name": "Fantasy Football Calculator",
   "ranking_kind": "adp",
-  "ranking_id": "redraft-ppr-8-team",
-  "ranking_name": "Fantasy Football Calculator Redraft PPR 8-Team ADP",
+  "ranking_id": "redraft-ppr-8-team-kicker",
+  "ranking_name": "Fantasy Football Calculator Redraft PPR 8-Team Kicker ADP",
   "ranking_type": "observed_mock_draft_average_draft_position",
   "official_source_url": "https://fantasyfootballcalculator.com/",
   "api_url": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=8&year=2026&position=all",
@@ -13,11 +13,12 @@
   "format": {
     "dynasty": false,
     "scoring": "ppr",
-    "two_qb": false,
+    "position": "K",
+    "source_position": "PK",
     "source_team_count": 8,
     "actual_league_team_count": 6,
     "team_count_usage": "nearest_supported_proxy",
-    "fixed_two_te_modeled_by_source": false
+    "actual_fixed_kicker_starters": 1
   },
   "sample": {
     "type": "PPR",
@@ -34,12 +35,9 @@
     "ranking_file": "ranking.csv",
     "metadata_file": "metadata.json",
     "raw_latest_file": "../../raw-latest.json",
-    "row_count": 211,
+    "row_count": 20,
     "position_counts": {
-      "QB": 30,
-      "RB": 68,
-      "TE": 25,
-      "WR": 88
+      "K": 20
     },
     "csv_columns": [
       "name",
@@ -62,54 +60,16 @@
       "sample_start_date",
       "sample_end_date"
     ],
-    "ranking_sha256": "8f85b30c807995a77344dae89e43745039a693e826e05126c1fb98df4506b733",
+    "ranking_sha256": "18f5280edd306c98c938e231f55825403b6e4bcfd1837ada6b864ffe4eace01b",
     "source_raw_sha256_at_snapshot": "ac8aef0e3c08de84e51d1ffe822dfac0d749fb858aaa72f44d450ed6b3c16eec",
     "diagnostics": {
       "source_player_count": 256,
-      "normalized_player_count": 211,
-      "source_position_counts": {
-        "DEF": 25,
-        "PK": 20,
-        "QB": 30,
-        "RB": 68,
-        "TE": 25,
-        "WR": 88
-      },
-      "excluded_position_counts": {
-        "DEF": 25,
-        "PK": 20
-      },
-      "normalized_rank_unique": true
+      "normalized_player_count": 20,
+      "normalized_position": "K",
+      "source_position": "PK",
+      "normalized_rank_unique": true,
+      "reuses_ppr_all_position_payload": true
     }
-  },
-  "raw_schema": {
-    "top_level_keys": [
-      "meta",
-      "players",
-      "status"
-    ],
-    "meta_keys": [
-      "end_date",
-      "rounds",
-      "start_date",
-      "teams",
-      "total_drafts",
-      "type"
-    ],
-    "player_count": 256,
-    "player_field_names": [
-      "adp",
-      "adp_formatted",
-      "bye",
-      "high",
-      "low",
-      "name",
-      "player_id",
-      "position",
-      "stdev",
-      "team",
-      "times_drafted"
-    ]
   },
   "raw_retention": {
     "policy": "latest_only",
@@ -125,8 +85,9 @@
     "skip_unchanged": true
   },
   "extraction_provenance": {
-    "method": "direct_official_rest_api",
-    "uses_mirror": false,
+    "method": "derived_from_same_official_ppr_all_position_api_payload",
+    "additional_network_request": false,
+    "source_ranking_id": "redraft-ppr-8-team",
     "response_headers": {
       "etag": "",
       "last_modified": "Sat, 08 Aug 2026 18:59:58 GMT",
@@ -134,14 +95,14 @@
     }
   },
   "analysis_usage": {
-    "role": "Observed human mock-draft cost and uncertainty context",
-    "primary_use": "small_league_full_ppr_draft_cost",
+    "role": "Observed kicker mock-draft cost and uncertainty context",
+    "primary_use": "kicker_draft_cost",
     "not_expert_consensus": true,
     "not_trade_market_value": true,
     "not_projection": true,
     "comparison_contract": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json",
-    "rank_comparison": "Use list-length-aware percentiles; never average the PPR and 2-QB feeds.",
-    "league_adjustment": "Apply six-team replacement level and fixed two-QB/two-TE context during analysis."
+    "rank_comparison": "Compare K-only ranks through list-length-aware percentiles.",
+    "league_adjustment": "Apply six-team replacement level and one fixed kicker starter during analysis."
   },
   "attribution": {
     "requested": true,
