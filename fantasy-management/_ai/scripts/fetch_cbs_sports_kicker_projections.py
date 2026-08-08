@@ -182,6 +182,12 @@ def _optional_integer(value: str, field: str, name: str) -> int | None:
     return _integer(value, field, name)
 
 
+def _optional_decimal(value: str, field: str, name: str) -> Decimal | None:
+    if value.strip() in {"", "-", "–", "—"}:
+        return None
+    return _decimal(value, field, name)
+
+
 def _csv_number(value: Decimal) -> int | str:
     if value == value.to_integral_value():
         return int(value)
@@ -307,18 +313,26 @@ def parse_projection_html(
             raise CBSSportsProjectionError(f"CBS Sports FGM exceeds FGA for {player_name}")
         longest = _optional_integer(longest_s, "longest field goal", player_name)
 
-        distance_values = [
-            _decimal(fg_1_19_made_s, "FG 1-19 made", player_name),
-            _decimal(fg_1_19_attempts_s, "FG 1-19 attempts", player_name),
-            _decimal(fg_20_29_made_s, "FG 20-29 made", player_name),
-            _decimal(fg_20_29_attempts_s, "FG 20-29 attempts", player_name),
-            _decimal(fg_30_39_made_s, "FG 30-39 made", player_name),
-            _decimal(fg_30_39_attempts_s, "FG 30-39 attempts", player_name),
-            _decimal(fg_40_49_made_s, "FG 40-49 made", player_name),
-            _decimal(fg_40_49_attempts_s, "FG 40-49 attempts", player_name),
-            _decimal(fg_50_plus_made_s, "FG 50+ made", player_name),
-            _decimal(fg_50_plus_attempts_s, "FG 50+ attempts", player_name),
+        raw_distance_values = [
+            _optional_decimal(fg_1_19_made_s, "FG 1-19 made", player_name),
+            _optional_decimal(fg_1_19_attempts_s, "FG 1-19 attempts", player_name),
+            _optional_decimal(fg_20_29_made_s, "FG 20-29 made", player_name),
+            _optional_decimal(fg_20_29_attempts_s, "FG 20-29 attempts", player_name),
+            _optional_decimal(fg_30_39_made_s, "FG 30-39 made", player_name),
+            _optional_decimal(fg_30_39_attempts_s, "FG 30-39 attempts", player_name),
+            _optional_decimal(fg_40_49_made_s, "FG 40-49 made", player_name),
+            _optional_decimal(fg_40_49_attempts_s, "FG 40-49 attempts", player_name),
+            _optional_decimal(fg_50_plus_made_s, "FG 50+ made", player_name),
+            _optional_decimal(fg_50_plus_attempts_s, "FG 50+ attempts", player_name),
         ]
+        if any(value is None for value in raw_distance_values):
+            if fgm != 0 or fga != 0:
+                raise CBSSportsProjectionError(
+                    f"CBS Sports missing distance buckets for non-zero projection: {player_name}"
+                )
+            distance_values = [Decimal("0") for _ in raw_distance_values]
+        else:
+            distance_values = [value for value in raw_distance_values if value is not None]
         for offset in range(0, len(distance_values), 2):
             if distance_values[offset] > distance_values[offset + 1]:
                 raise CBSSportsProjectionError(
