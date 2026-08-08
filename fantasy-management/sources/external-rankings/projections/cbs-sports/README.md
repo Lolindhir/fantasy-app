@@ -4,7 +4,7 @@ Dieser Bereich speichert normalisierte CBS-Sports-Projections als `ranking_kind:
 
 ## Aktiver Scope
 
-Aktuell ist ausschließlich das Kicker-Ranking vorbereitet:
+Aktuell wird ausschließlich das Kicker-Ranking materialisiert:
 
 | Ranking-ID | Position | Horizont | Reihenfolge |
 |---|---|---|---|
@@ -104,7 +104,7 @@ python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --i
 
 ## Automatische Aktualisierung
 
-Ein eigener GitHub-Actions-Workflow ist noch nicht Teil dieses Changes. Workflow-Dateien werden gemäß Repository-Regel erst nach ausdrücklicher Freigabe des konkreten CBS-Workflows erstellt oder geändert.
+Der GitHub-Actions-Workflow `Update CBS Sports Projections` aktualisiert den CBS-Kicker-Projections-Bereich täglich um 06:37 UTC und kann zusätzlich manuell über `workflow_dispatch` gestartet werden. Er führt zuerst die CBS-spezifischen Unit-Tests aus, ruft anschließend den Fetcher mit `--skip-unchanged` auf und committed ausschließlich `fantasy-management/sources/external-rankings/projections/cbs-sports/` über den Generated-Data-Scope `cbs-projections`.
 
 ## Interpretation
 
