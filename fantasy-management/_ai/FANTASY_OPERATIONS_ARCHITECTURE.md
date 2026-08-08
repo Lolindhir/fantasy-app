@@ -31,6 +31,7 @@ Current published materialized contracts:
 ```text
 fantasy-management/generated/operations/managed-roster-signals.json
 fantasy-management/generated/operations/external-signal-relevance.json
+fantasy-management/generated/operations/player-signals.json
 fantasy-management/generated/operations/data-quality.json
 ```
 
@@ -45,7 +46,7 @@ fantasy-management/generated/operations/data-quality.json
 
 `data-quality.json` covers both ranking/ADP materialization and external-signal identity/ownership quality.
 
-A central player-signal contract is now prepared in versioned configuration, schema, builder and tests:
+The central player-signal contract is published by the same deterministic Fantasy Operations materialization workflow from its versioned configuration, schema and builder:
 
 ```text
 fantasy-management/automation/player-signal-materialization.json
@@ -54,7 +55,7 @@ fantasy-management/_ai/scripts/build_player_signal_dataset.py
 → fantasy-management/generated/operations/player-signals.json
 ```
 
-Production publication of `player-signals.json` is intentionally not enabled by this implementation. Adding it to a GitHub Actions write path requires separate explicit workflow approval.
+The workflow builds `external-signal-relevance.json` before `player-signals.json`, so the central contract consumes the freshly materialized activity and ownership context from the same run. All generated outputs are staged and published together through the existing retry/rebuild write path.
 
 The central player-signal dataset is league-wide rather than managed-roster-only. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
 
@@ -187,13 +188,8 @@ fantasy-management/generated/
 └── operations/
     ├── managed-roster-signals.json
     ├── external-signal-relevance.json
+    ├── player-signals.json
     └── data-quality.json
-```
-
-Prepared next generated contract after explicit publication approval:
-
-```text
-fantasy-management/generated/operations/player-signals.json
 ```
 
 `generated/operations/` owns deterministic read models prepared specifically for Fantasy Operations. These files do not replace canonical current league data under `public/data/` or canonical source snapshots under `fantasy-management/sources/`.
@@ -214,7 +210,7 @@ league/source refreshes
 → scheduled monitoring
 ```
 
-The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger the currently active Fantasy Operations materialization. When `player-signals.json` is approved for production publication, it should be built after the source and external-signal states it consumes and before analyses such as Free-Agent or Kicker Streaming evaluation.
+The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance and the central player-signal dataset in dependency order before publishing changed generated outputs. Downstream Free-Agent and Kicker Streaming analyses should read `player-signals.json` rather than reconstructing the same ranking, projection, ownership and activity joins independently.
 
 ## Legacy observation runner
 
