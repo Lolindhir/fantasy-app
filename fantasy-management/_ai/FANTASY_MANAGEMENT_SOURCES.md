@@ -61,7 +61,25 @@ For broad player lists, waiver/free-agent boards and candidate generation, use:
 
 For a single player, load the relevant chunk or exact current player record before drawing conclusions.
 
-Important player fields may include ID, name fields, NFL team, position, age, salary, projected salary, status, injury fields, games played/potential, snaps, attempts, fantasy points, point history, game history, ranking, grading, FantasyPros and ESPN fields.
+Important player fields may include ID, name fields, NFL team, position, age, salary, projected salary, status, injury fields, games played/potential, snaps, attempts, fantasy points, point history, game history, ranking, grading, FantasyPros and ESPN fields, plus `ESPNID`, `SleeperDepthChartPosition` and `SleeperDepthChartOrder` when present.
+
+### Sleeper player metadata and nominal depth-chart fields
+
+`public/requests/RequestPlayers.ps1` already loads the Sleeper NFL player payload used during player generation. The generated player record can persist the following raw Sleeper-backed fields without an additional source request:
+
+- `ESPNID` from Sleeper `espn_id`
+- `SleeperDepthChartPosition` from Sleeper `depth_chart_position`
+- `SleeperDepthChartOrder` from Sleeper `depth_chart_order`
+
+Operational rules:
+
+- Treat `ESPNID` as optional supplemental identity metadata. Sleeper does not populate it reliably for every current player, so it must not be the sole identity key or automatically override an already confirmed player mapping.
+- Treat `SleeperDepthChartPosition` as the source-provided nominal football slot or alignment. For wide receivers this can distinguish values such as `LWR`, `RWR` and `SWR`.
+- Treat `SleeperDepthChartOrder` as the source-provided nominal team-wide hierarchy within the player's fantasy position. The interpretation and recommendation safeguards are defined in `FANTASY_MANAGEMENT_RULES.md`.
+- Null or partial depth-chart fields are valid source states and are not automatically data-quality failures; free agents, roster transitions, camp competitions and unresolved depth charts can legitimately remain incomplete.
+- Sleeper depth-chart values are dynamic role observations, not permanent player truth. Re-read current generated player data when role matters instead of carrying an older order forward from memory or stored analysis.
+- Depth-chart position and order are nominal role signals only. Do not treat them as direct evidence of snap share, routes, targets, carries, goal-line work or expected fantasy opportunity.
+- When Sleeper depth-chart data conflicts with current transactions, official team information, observed usage or strong current role reporting, preserve the conflict and validate it instead of silently preferring the numeric order.
 
 ## Fantasy free-agent source rules
 
