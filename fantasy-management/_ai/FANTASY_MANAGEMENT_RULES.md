@@ -128,6 +128,21 @@ Always add a plausibility layer before turning player data into a recommendation
 - check whether external rankings, ADP or news make sense in this league's scoring, roster size and replacement-level context
 - state unresolved conflicts plainly
 
+### Sleeper depth-chart interpretation
+
+Current generated player data may expose the Sleeper fields `SleeperDepthChartPosition` and `SleeperDepthChartOrder`.
+
+Interpret them as follows unless current evidence shows a source anomaly:
+
+- `SleeperDepthChartPosition` describes the nominal football depth-chart slot or alignment. For wide receivers this can be more specific than the fantasy position, for example `LWR`, `RWR` or `SWR`.
+- `SleeperDepthChartOrder` is the nominal team-wide hierarchy within the player's fantasy position and can therefore be used as structured evidence for labels such as QB1/QB2, RB1/RB2, WR1/WR2/WR3, TE1/TE2 or K1.
+- For wide receivers, do not interpret `RWR / 2` as "second player at RWR" by default. Treat the slot and the position-wide order as separate dimensions: for example `RWR / 2` means nominal right-side receiver and team-wide WR2.
+- A missing depth-chart position or order is not automatically a source error. Free agents, roster transitions, camp competitions and unresolved depth-chart states can legitimately produce null or partial values.
+- Depth-chart hierarchy is a nominal role signal only. It is not direct evidence of snap share, routes, targets, carries, passing-down work, goal-line work or expected fantasy opportunity.
+- Never convert `SleeperDepthChartOrder = 1` directly into "highest opportunity" or a fantasy recommendation without usage, injury, competition and current team-context checks when those matter.
+- When Sleeper depth-chart data conflicts with stronger current roster transactions, official team information, observed usage or well-supported current role reporting, identify the conflict and lower confidence instead of silently trusting the numeric order.
+- For role/opportunity monitoring, use Sleeper depth-chart changes as a structured trigger or nominal-role component and combine them with usage/news evidence before treating a change as materially fantasy-relevant.
+
 ## 9. Player-list and free-agent rule
 
 For broad player lists, free-agent drafts, waiver boards and candidate generation:
@@ -375,6 +390,8 @@ Do not:
 - evaluate players by name only
 - overvalue prospects just because salary is low
 - undervalue veterans automatically when they help a contender window
+- treat Sleeper depth-chart order as direct proof of expected fantasy opportunity or usage
+- collapse `SleeperDepthChartPosition` and `SleeperDepthChartOrder` into one meaning for wide receivers
 
 ## 21. Standard single-player analysis structure
 
