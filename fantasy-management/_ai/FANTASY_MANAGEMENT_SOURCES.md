@@ -120,11 +120,11 @@ Check `public/data/Timestamps.json` before larger analyses when data freshness m
 
 ## External fantasy sources
 
-External sources may be used for expert, market, ADP, activity, injury, news or plausibility context. They supplement current league data and never override it automatically.
+External sources may be used for expert, market, ADP, projection, activity, injury, news or plausibility context. They supplement current league data and never override it automatically.
 
 Always:
 
-- fetch dynamic external rankings, values, ADP, activity signals, injuries and news fresh when used
+- fetch dynamic external rankings, values, ADP, projections, activity signals, injuries and news fresh when used
 - cite external claims in user-facing responses
 - explain what each source measures
 - do not store dynamic external values or signals as permanent truth
@@ -145,6 +145,7 @@ Active and reserved ranking kinds:
 - `expert-consensus`: ordering derived from expert opinions
 - `market-value`: ordering or values derived from trade/crowd market behavior
 - `adp`: ordering derived from observed draft positions
+- `projections`: ordering derived from expected statistical or fantasy production for a defined horizon
 
 Provider comes second because one provider can publish more than one ranking kind and several providers can publish the same kind. Format comes last and records horizon, scoring, league-size and lineup assumptions.
 
@@ -266,12 +267,13 @@ Stored source area:
 
 Available ranking IDs:
 
-- `redraft-ppr-8-team`: observed Full-PPR mock-draft cost in the nearest supported small-league format
+- `redraft-ppr-8-team`: observed Full-PPR mock-draft cost in the nearest supported small-league format for QB/RB/WR/TE
+- `redraft-ppr-8-team-kicker`: Kicker-only ADP derived from the same PPR 8-team all-position API payload without an additional network request
 - `redraft-2qb-10-team`: observed 2-QB mock-draft cost used primarily for quarterback-scarcity context
 
 For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `raw-latest.json` only when the complete latest API payload or excluded source positions matter.
 
-Refresh both formats together with:
+Refresh all active FFC rankings together with:
 
 ```bash
 python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
@@ -286,13 +288,51 @@ Operational rules:
 
 - treat Fantasy Football Calculator as observed mock-draft cost, not expert consensus, trade-market value or points projection
 - do not average the PPR-8-team and 2QB-10-team feeds because team count, scoring context and quarterback requirements differ simultaneously
-- use the PPR-8-team feed as the closest supported small-league and Full-PPR proxy for RB, WR and TE draft cost
+- use the PPR-8-team offensive feed as the closest supported small-league and Full-PPR proxy for RB, WR and TE draft cost
 - use the 2QB-10-team feed as additional quarterback-scarcity evidence, not as a direct model of the six-team league
-- apply the actual six-team replacement level and two fixed QB and two fixed TE starters only during analysis; do not mutate source ADP values
-- two fixed TE starters are not represented by either feed and require a separate league-format adjustment
-- consider `times_drafted`, source sample window, `high`, `low` and `stdev` before treating small ADP movements as material
+- use `redraft-ppr-8-team-kicker` only as a Kicker-market ranking and normalize it against other Kicker rankings, not against the offensive cross-position list
+- materialize the Kicker ranking from the already fetched PPR payload; do not add a separate FFC request for it
+- apply the actual six-team replacement level, two fixed QB, two fixed TE and one fixed K starter only during analysis; do not mutate source ADP values
+- consider `times_drafted`, source sample window, `high`, `low` and `stdev` before treating small ADP movements as material, especially for kickers
 - join players through confirmed source-player mappings or normalized name plus position; Fantasy Football Calculator IDs are source identifiers, not Sleeper IDs
 - visibly attribute Fantasy Football Calculator whenever its ADP values are shown
+
+### FFToday projection snapshots
+
+FFToday is the active automated Projection provider for the initial Kicker scope.
+
+Stored source area:
+
+`fantasy-management/sources/external-rankings/projections/fftoday/`
+
+Active ranking ID:
+
+- `redraft-kicker-preseason`: provider Regular-Season Kicker projections ordered by projected FFToday fantasy points, with FGM/FGA/FG%/EPM/EPA retained
+
+The audited public Projection area also exposes QB, RB, WR, TE, DEF and IDP projections. Those positions are confirmed expansion candidates but are not yet active stored rankings.
+
+Refresh with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
+```
+
+Canonical source documentation:
+
+- `fantasy-management/sources/external-rankings/projections/README.md`
+- `fantasy-management/sources/external-rankings/projections/fftoday/README.md`
+- `fantasy-management/sources/external-rankings/projections/fftoday/SOURCE_AUDIT.md`
+- `fantasy-management/sources/external-rankings/projections/fftoday/analysis-metadata.json`
+
+Operational rules:
+
+- treat FFToday Projections as expected production, not expert consensus, ADP or trade-market value
+- use only the public non-authenticated page; do not create or automate a My-FFToday login or custom-scoring profile
+- retain individual Kicker statistics separately from provider `FPts`
+- do not treat FFToday `FPts` as Mighty-Giants league scoring unless scoring formulas are explicitly reconciled
+- fail closed on source-identity, freshness, row-count, duplicate-ID, numerical-plausibility or unexpected-pagination failures
+- retain only the newest Raw HTML and archive changed normalized ranking/metadata snapshots
+- compare the Kicker Projection ranking only with Kicker-specific rankings such as FFC Kicker ADP
 
 ### Sleeper Trending Players roster-activity signal
 
