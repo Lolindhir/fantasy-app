@@ -336,13 +336,13 @@ Operational rules:
 
 ### CBS Sports projection snapshots
 
-CBS Sports is a prepared direct Projection provider for the initial Kicker scope. The fetcher and storage contract are implemented; an automatic GitHub-Actions refresh still requires separate explicit workflow approval.
+CBS Sports is an active automated Projection provider for the initial Kicker scope. The GitHub-Actions workflow `Update CBS Sports Projections` refreshes the source daily at 06:37 UTC and also supports manual `workflow_dispatch` runs.
 
 Stored source area:
 
 `fantasy-management/sources/external-rankings/projections/cbs-sports/`
 
-Prepared ranking ID:
+Active ranking ID:
 
 - `redraft-kicker-preseason`: provider Regular-Season Kicker projections ordered by projected CBS fantasy points, retaining FGM/FGA, five field-goal distance buckets, XPM/XPA, FPTS and FPPG
 
