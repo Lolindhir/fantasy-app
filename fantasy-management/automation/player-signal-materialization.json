@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "materialization_id": "fantasy-operations-player-signal-materialization",
+  "managed_team": {
+    "team_id": 1
+  },
+  "sources": {
+    "league": "public/data/League.json",
+    "players": "public/data/Players.json",
+    "timestamps": "public/data/Timestamps.json",
+    "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json"
+  },
+  "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
+  "population": {
+    "positions": ["QB", "RB", "WR", "TE", "K"],
+    "include_if": [
+      "has_nfl_team",
+      "league_owned",
+      "listed_in_external_source",
+      "present_in_external_signal"
+    ]
+  },
+  "output": {
+    "player_signals": "fantasy-management/generated/operations/player-signals.json"
+  }
+}
