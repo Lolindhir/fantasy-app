@@ -1,8 +1,9 @@
-name: Update FantasyPros Rankings
+name: FM • Ranking • FantasyPros ECR
 
 on:
   schedule:
-    - cron: "17 5 * * *"  # täglich um 05:17 UTC
+    - cron: "20 3 * * *"  # 05:20 Europe/Berlin während CEST
+    - cron: "20 4 * * *"  # 05:20 Europe/Berlin während CET
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -18,18 +19,52 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Resolve Berlin schedule window
+        id: schedule_gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+        run: |
+          if [[ "$EVENT_NAME" != "schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run: schedule gate passed."
+            exit 0
+          fi
+
+          berlin_offset="$(TZ=Europe/Berlin date +%z)"
+          if [[ "$berlin_offset" == "+0200" ]]; then
+            expected_schedule="20 3 * * *"
+          elif [[ "$berlin_offset" == "+0100" ]]; then
+            expected_schedule="20 4 * * *"
+          else
+            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
+            exit 1
+          fi
+
+          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Scheduled run selected for 05:20 Europe/Berlin."
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
+          fi
+
       - name: Checkout repository
+        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Python
+        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Test FantasyPros fetchers
+        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python -m unittest discover
           -s fantasy-management/_ai/scripts/tests
@@ -37,11 +72,13 @@ jobs:
           -v
 
       - name: Update FantasyPros rankings
+        if: steps.schedule_gate.outputs.run == 'true'
         run: |
           python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
           python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
 
       - name: Commit and push updates
+        if: steps.schedule_gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
