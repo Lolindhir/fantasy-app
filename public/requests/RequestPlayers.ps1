@@ -1073,6 +1073,9 @@ foreach ($tankEntry in $tankPlayers) {
         Picture                      = $tankEntry.espnHeadshot
         FantasyPros                  = $tankEntry.fantasyProsLink
         ESPN                         = $tankEntry.espnLink
+        ESPNID                       = $sleeperEntry.espn_id
+        SleeperDepthChartPosition    = $sleeperEntry.depth_chart_position
+        SleeperDepthChartOrder       = $sleeperEntry.depth_chart_order
         College                      = $sleeperEntry.college
         HighSchool                   = $sleeperEntry.high_school
         Injured                      = $injured

@@ -156,6 +156,9 @@ export interface RawPlayer {
   Number: string;
   FantasyPros: string;
   ESPN: string;
+  ESPNID?: string | null;
+  SleeperDepthChartPosition?: string | null;
+  SleeperDepthChartOrder?: number | null;
   College: string;
   HighSchool: string;
   Injured: boolean;
