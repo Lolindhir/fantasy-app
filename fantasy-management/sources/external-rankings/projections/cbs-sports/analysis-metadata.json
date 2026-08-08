@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "source_id": "cbs-sports",
+  "source_name": "CBS Sports",
+  "ranking_kind": "projections",
+  "applies_to_ranking_ids": [
+    "redraft-kicker-preseason"
+  ],
+  "source_measurement": {
+    "type": "provider_regular_season_stat_projections",
+    "ordering_basis": "source_fantasy_points_descending",
+    "not_expert_consensus": true,
+    "not_adp": true,
+    "not_trade_market_value": true,
+    "not_league_specific_truth": true
+  },
+  "active_scope": {
+    "season_mode": "current_preseason_full_regular_season",
+    "positions": [
+      "K"
+    ],
+    "confirmed_but_not_active_positions": [
+      "QB",
+      "RB",
+      "WR",
+      "TE",
+      "DST"
+    ]
+  },
+  "format_context": {
+    "source_scoring_label": "Non-PPR",
+    "actual_league_team_count": 6,
+    "actual_fixed_kicker_starters": 1,
+    "custom_scoring_used": false,
+    "source_points_are_provider_specific": true,
+    "individual_kicking_stats_retained": true,
+    "distance_bucket_projections_retained": true
+  },
+  "public_access": {
+    "method": "public_html_table",
+    "login_required_for_active_feed": false,
+    "documented_public_projection_api_confirmed": false,
+    "internal_browser_endpoints_used": false
+  },
+  "freshness": {
+    "source_update_timestamp_available": false,
+    "use_fetch_timestamp": true,
+    "store_http_provenance": true,
+    "refresh_before_value_sensitive_analysis": true
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.html",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "granularity": "daily_latest_changed_ranking",
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_new_snapshot_when_normalized_ranking_unchanged": true
+  },
+  "rank_semantics": {
+    "source_rank": {
+      "usage": "Visible row order on the successfully parsed CBS Sports kicker projection page."
+    },
+    "Rank": {
+      "unique": true,
+      "usage": "Deterministic K-only projection ranking and list-length-aware percentile input.",
+      "normalization": "projected_fantasy_points descending, FGM descending, XPM descending, source_player_id"
+    }
+  },
+  "player_join": {
+    "preferred": "cbs_source_player_id_from_official_nfl_player_link",
+    "fallback": "normalized_name_plus_position",
+    "plausibility_check": "nfl_team",
+    "source_player_id_is_sleeper_id": false
+  },
+  "quality_gates": {
+    "minimum_kicker_rows": 20,
+    "require_source_title_identity": true,
+    "require_non_ppr_context": true,
+    "require_expected_kicker_headers": true,
+    "require_unique_source_player_ids": true,
+    "fail_if_pagination_appears": true,
+    "validate_makes_not_above_attempts": true,
+    "validate_fppg_rounding": true,
+    "allow_missing_distance_buckets_only_for_zero_fgm_fga": true
+  },
+  "cross_source_comparison": {
+    "preferred_snapshot_alignment": "same_day",
+    "normalize_rankings": "list_length_aware_percentile_using_Rank",
+    "recommended_kicker_comparisons": [
+      "cbs_projection_percentile",
+      "fftoday_projection_percentile",
+      "ffc_kicker_adp_percentile",
+      "projection_provider_gap",
+      "projection_adp_gap"
+    ],
+    "independence_note": "CBS Sports is a direct projection provider. FantasyPros Projection Consensus may itself include CBS Sports, so do not count both as independent CBS evidence in a composite without explicit de-duplication."
+  },
+  "league_adjustments": [
+    "Keep CBS distance-bucket, FGM/FGA and XPM/XPA projections independent of the provider fantasy-point formula.",
+    "Do not treat CBS FPTS as the Mighty Giants league scoring result unless the scoring formulas are explicitly reconciled.",
+    "Apply the six-team replacement level and one fixed kicker starter during analysis.",
+    "Use current kicker job and competition evidence separately from the projection ranking."
+  ],
+  "limitations": [
+    "The audited public page does not expose a reliable projection-specific Updated timestamp.",
+    "No documented public Projection API contract was confirmed on the audited CBS Sports surface.",
+    "The HTML parser depends on the public table and official CBS NFL player-link structure.",
+    "Projection values are provider estimates and can change materially during training camp and the season."
+  ],
+  "audit_file": "fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md"
+}
