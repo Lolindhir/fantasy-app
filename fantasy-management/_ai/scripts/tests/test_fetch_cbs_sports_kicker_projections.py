@@ -19,17 +19,22 @@ def fixture(*, changed=False, duplicate=False, next_page=False, wrong_title=Fals
         if duplicate and index == 1:
             player_id = 2815718
         gp = 17
-        fgm = max(10, 39 - index)
-        fga = fgm + 4
-        xpm = max(20, 50 - index)
-        xpa = xpm + 1
-        points = fgm * 3 + xpm - (1 if changed and index == 0 else 0)
-        fppg = round(points / gp, 1)
-        made_bins = [0.3, 8.0, 10.0, 11.0, max(0.0, fgm - 29.3)]
-        attempt_bins = [0.3, 8.5, 10.5, 11.5, max(0.0, fgm - 27.3)]
-        values = []
-        for made, attempt in zip(made_bins, attempt_bins):
-            values.extend([made, attempt])
+        if index == 23:
+            fgm = fga = xpm = xpa = points = 0
+            fppg = 0.0
+            values = ["—"] * 10
+        else:
+            fgm = max(10, 39 - index)
+            fga = fgm + 4
+            xpm = max(20, 50 - index)
+            xpa = xpm + 1
+            points = fgm * 3 + xpm - (1 if changed and index == 0 else 0)
+            fppg = round(points / gp, 1)
+            made_bins = [0.3, 8.0, 10.0, 11.0, max(0.0, fgm - 29.3)]
+            attempt_bins = [0.3, 8.5, 10.5, 11.5, max(0.0, fgm - 27.3)]
+            values = []
+            for made, attempt in zip(made_bins, attempt_bins):
+                values.extend([made, attempt])
         rows.append(
             '<tr>'
             f'<td><a href="/nfl/players/{player_id}/kicker-{index}/">K. {index}</a> '
@@ -72,6 +77,7 @@ class CBSSportsTests(unittest.TestCase):
         self.assertEqual(1, rows[0]['Rank'])
         self.assertEqual('2815718', rows[0]['source_player_id'])
         self.assertEqual('', rows[0]['longest_field_goal'])
+        self.assertEqual(0, rows[-1]['fg_50_plus_attempts'])
         self.assertFalse(diagnostics['source_update_timestamp_available'])
 
     def test_rejects_wrong_identity_duplicate_pagination_and_bad_stats(self):
