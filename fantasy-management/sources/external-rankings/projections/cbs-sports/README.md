@@ -104,7 +104,7 @@ python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --i
 
 ## Automatische Aktualisierung
 
-Der GitHub-Actions-Workflow `Update CBS Sports Projections` aktualisiert den CBS-Kicker-Projections-Bereich täglich um 06:37 UTC und kann zusätzlich manuell über `workflow_dispatch` gestartet werden. Er führt zuerst die CBS-spezifischen Unit-Tests aus, ruft anschließend den Fetcher mit `--skip-unchanged` auf und committed ausschließlich `fantasy-management/sources/external-rankings/projections/cbs-sports/` über den Generated-Data-Scope `cbs-projections`.
+Der GitHub-Actions-Workflow `FM • Projection • CBS Sports` aktualisiert den CBS-Kicker-Projections-Bereich täglich um 06:08 Europe/Berlin und kann zusätzlich manuell über `workflow_dispatch` gestartet werden. Er führt zuerst die CBS-spezifischen Unit-Tests aus, ruft anschließend den Fetcher mit `--skip-unchanged` auf und committed ausschließlich `fantasy-management/sources/external-rankings/projections/cbs-sports/` über den Generated-Data-Scope `cbs-projections`.
 
 ## Interpretation
 
