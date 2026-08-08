@@ -100,7 +100,7 @@ python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --inpu
 
 ## Automatische Aktualisierung
 
-Der GitHub-Actions-Workflow `Update FFToday Projections` aktualisiert den aktiven Projection-Bereich täglich und kann manuell gestartet werden. Er führt zuerst die Source-spezifischen Unit-Tests aus und committed ausschließlich `fantasy-management/sources/external-rankings/projections/fftoday/`.
+Der GitHub-Actions-Workflow `FM • Projection • FFToday` aktualisiert den aktiven Projection-Bereich täglich und kann manuell gestartet werden. Er führt zuerst die Source-spezifischen Unit-Tests aus und committed ausschließlich `fantasy-management/sources/external-rankings/projections/fftoday/`.
 
 ## Interpretation
 
