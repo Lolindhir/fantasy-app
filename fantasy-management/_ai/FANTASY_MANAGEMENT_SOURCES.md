@@ -336,7 +336,7 @@ Operational rules:
 
 ### CBS Sports projection snapshots
 
-CBS Sports is an active automated Projection provider for the initial Kicker scope. The GitHub-Actions workflow `Update CBS Sports Projections` refreshes the source daily at 06:37 UTC and also supports manual `workflow_dispatch` runs.
+CBS Sports is an active automated Projection provider for the initial Kicker scope. The GitHub-Actions workflow `FM • Projection • CBS Sports` refreshes the source daily at 06:08 Europe/Berlin and also supports manual `workflow_dispatch` runs.
 
 Stored source area:
 
