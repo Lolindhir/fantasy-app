@@ -46,7 +46,15 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ranking- und Signal-Läufe sollen mit ausreichendem Sicherheitsabstand vor dem Monitoring enden, damit der Monitoring-Lauf auf den neuesten erfolgreichen Datenständen aufsetzt.
   - Quellen bleiben fehlerisoliert; ein Ausfall darf keine teilweise Quelle veröffentlichen und soll den letzten guten Stand erhalten.
   - Vor Monitoring muss ein Freshness-Gate entscheiden, ob ein fehlender oder veralteter Eingang den Lauf blockiert, einschränkt oder nur kennzeichnet.
+  - Aktive Morgenstaffelung für den 07:00-Europe/Berlin-Monitoring-Lauf: Players 05:05 → FantasyPros 05:20 → FantasyCalc 05:32 → FFC ADP 05:44 → FFToday 05:56 → CBS Sports 06:08 → Sleeper Trending 06:20; die Operations-Inputs werden weiterhin ereignisgetrieben materialisiert.
+  - Die Management-Zeitfenster werden DST-sicher auf Europe/Berlin ausgerichtet; bestehende zusätzliche App-Refreshes bleiben davon unabhängig bestehen.
   - Konkrete GitHub-Actions-Zeitpläne, Abhängigkeiten und Aktivierung erst nach separater ausdrücklicher Freigabe umsetzen.
+
+- [ ] Konkurrierende Generated-Data-Pushes auf `main` robust behandeln.
+  - Problem: `APP • Data • League` kann alle zehn Minuten schreiben, während unabhängige APP- und FM-Quellen ebenfalls von eigenen Checkouts nach `main` pushen; zeitliche Staffelung reduziert, beseitigt aber keine Push-Races.
+  - Ziel: Für alle schreibenden Generated-Data-Workflows einen gemeinsamen, idempotenten Retry-/Rebase-/Rebuild- oder Serialisierungsmechanismus definieren, sodass kein erfolgreicher Quelllauf an einem inzwischen veralteten Branch-Head scheitert und keine fremden Änderungen überschrieben werden.
+  - Referenz: `FM • Materialize • Operations Inputs` behandelt Push-Races bereits mit Fetch/Reset/Rebuild und bis zu drei Versuchen; prüfen, welche Teile davon in eine gemeinsame Write-Strategie übernommen werden sollen.
+  - Leitplanke: Cross-Workflow-Concurrency darf unabhängige Quellen nicht unnötig blockieren und muss No-op-Läufe sowie den jeweils letzten guten Source-State erhalten.
 
 - [ ] Zentrales materialisiertes Player-Signal-Dataset aufbauen.
   - Zusammenführen: stabile Spieler-ID, Position und NFL-Team, League Ownership, Verletzungsstatus, Rollen-/Usage-Signale, Dynasty-Ranking, Marktwert, Redraft-ADP, Sleeper-Add-/Drop-Aktivität und jeweilige Quellenstände.
