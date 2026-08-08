@@ -25,6 +25,7 @@ from fantasy_football_calculator_adp_core import (  # noqa: E402
     CSV_FIELDS,
     DEFAULT_MAX_STALE_DAYS,
     FORMAT_CONFIGS,
+    SCHEMA_VERSION,
     FantasyFootballCalculatorFetchError,
     build_source_url,
     fetch_payload,
