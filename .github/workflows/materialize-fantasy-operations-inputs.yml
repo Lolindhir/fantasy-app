@@ -13,16 +13,20 @@ on:
       - fantasy-management/sources/external-signals/**
       - fantasy-management/automation/input-materialization.json
       - fantasy-management/automation/external-signal-materialization.json
+      - fantasy-management/automation/player-signal-materialization.json
       - fantasy-management/_ai/operations-source-catalog.json
       - fantasy-management/_ai/operations-external-signal-catalog.json
       - fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
       - fantasy-management/_ai/scripts/materialize_external_signals.py
+      - fantasy-management/_ai/scripts/build_player_signal_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
       - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
+      - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
       - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
       - fantasy-management/_ai/schemas/operations-source-catalog.schema.json
       - fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json
       - fantasy-management/_ai/schemas/external-signal-relevance.schema.json
+      - fantasy-management/_ai/schemas/player-signal-dataset.schema.json
       - fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md
       - .github/workflows/materialize-fantasy-operations-inputs.yml
 
@@ -53,6 +57,7 @@ jobs:
           python -m unittest \
             fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py \
             fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py \
+            fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py \
             -v
 
       - name: Commit generated inputs when changed
@@ -69,9 +74,11 @@ jobs:
 
             python fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
             python fantasy-management/_ai/scripts/materialize_external_signals.py
+            python fantasy-management/_ai/scripts/build_player_signal_dataset.py
             git add \
               fantasy-management/generated/operations/managed-roster-signals.json \
               fantasy-management/generated/operations/external-signal-relevance.json \
+              fantasy-management/generated/operations/player-signals.json \
               fantasy-management/generated/operations/data-quality.json
 
             if git diff --cached --quiet; then

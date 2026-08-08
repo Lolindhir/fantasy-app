@@ -391,6 +391,21 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             any(player["projections"]["summary"]["listed_provider_count"] >= 1 for player in kickers)
         )
 
+    def test_production_workflow_materializes_player_signals_after_external_signals(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+
+        external_command = "python fantasy-management/_ai/scripts/materialize_external_signals.py"
+        player_command = "python fantasy-management/_ai/scripts/build_player_signal_dataset.py"
+        player_output = "fantasy-management/generated/operations/player-signals.json"
+
+        self.assertIn("fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py", workflow)
+        self.assertIn(external_command, workflow)
+        self.assertIn(player_command, workflow)
+        self.assertLess(workflow.index(external_command), workflow.index(player_command))
+        self.assertIn(player_output, workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

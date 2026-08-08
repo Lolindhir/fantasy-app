@@ -56,15 +56,6 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Referenz: `FM • Materialize • Operations Inputs` behandelt Push-Races bereits mit Fetch/Reset/Rebuild und bis zu drei Versuchen; prüfen, welche Teile davon in eine gemeinsame Write-Strategie übernommen werden sollen.
   - Leitplanke: Cross-Workflow-Concurrency darf unabhängige Quellen nicht unnötig blockieren und muss No-op-Läufe sowie den jeweils letzten guten Source-State erhalten.
 
-- [ ] Zentrales materialisiertes Player-Signal-Dataset aufbauen.
-  - Technischer Contract vorbereitet: `player-signal-materialization.json`, Schema, deterministischer Builder und Unit-Tests für eine ligaweite QB/RB/WR/TE/K-Population.
-  - Zusammenführen: stabile Spieler-ID, Position und NFL-Team, League Ownership, Verletzungsstatus, nominale Sleeper-Depth-Chart-Signale, Dynasty-Ranking, Marktwert, Redraft-ADP, FFToday-/CBS-Projections, Sleeper-Add-/Drop-Aktivität und jeweilige Quellenstände.
-  - Berechnen: listenlängenbereinigte Perzentile, Projection-Provider-Abweichung und Freshness am Materialisierungszeitpunkt; Provider-Fantasy-Punkte bleiben wegen unterschiedlicher Scoring-Verträge getrennt.
-  - Offen: produktive Veröffentlichung von `generated/operations/player-signals.json` nach separater Workflow-Freigabe sowie historische Deltas/Tiers und gezielte Behandlung bestätigter Source-Alias-/Join-Lücken.
-  - Top-N-Abwesenheit bei Aktivitätssignalen nicht als Null-Aktivität behandeln.
-  - Keine Hold-, Shop-, Cut-, Add-, Start- oder Sit-Empfehlungen in dieser Schicht erzeugen.
-  - Ziel: zentrale wiederverwendbare Grundlage für Roster-Monitoring, Free-Agent-Board, Gegneranalyse, Kicker Streaming und Reviews.
-
 - [ ] Kompaktes Managed-Roster-Dataset materialisieren.
   - Dynamisch die deduplizierte Union aus `Roster`, `Reserve` und `Taxi` des `managed_team` auflösen.
   - Pro Spieler das zentrale Player-Signal-Dataset mit Salary, Projected Salary, aktuellem Rosterbereich und ligaformatbezogenen Strukturinformationen verbinden.
@@ -204,6 +195,12 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Leitplanke: Numerische Salary-Cut-offs bleiben datierte Analysewerte und werden nicht als zeitlose Regeln übernommen.
 
 ## Erledigt / Archiv
+
+- [x] Zentrales materialisiertes Player-Signal-Dataset aufbauen und produktiv veröffentlichen.
+  - Ergebnis: Ligaweite QB/RB/WR/TE/K-Population mit stabiler Spieler-ID, NFL-Team, League Ownership, Injury-/Depth-Chart-Signalen, Dynasty-Ranking, Marktwert, Redraft-ADP, FFToday-/CBS-Projections, Sleeper-Add-/Drop-Aktivität und Quellenständen.
+  - Ergebnis: Listenlängenbereinigte Perzentile, Projection-Provider-Abweichung und Freshness werden deterministisch berechnet; Provider-Fantasy-Punkte bleiben getrennt und Top-N-Abwesenheit wird nicht als Nullaktivität behandelt.
+  - Ergebnis: `FM • Materialize • Operations Inputs` baut `player-signals.json` nach der aktuellen External-Signal-Materialisierung und veröffentlicht alle geänderten Operations-Inputs über denselben Retry-/Rebuild-Pfad.
+  - Leitplanke: Der Datensatz erzeugt keine Hold-, Shop-, Cut-, Add-, Start- oder Sit-Empfehlungen; historische Deltas/Tiers und bestätigte Alias-/Join-Verbesserungen bleiben bei Bedarf spätere Erweiterungen.
 
 - [x] Vollständiges Roster-Monitoring für das verwaltete Team einrichten.
   - Ergebnis: Der dynamische Selector löst bei jedem Lauf die deduplizierte Union aus `Roster`, `Reserve` und `Taxi` des `managed_team` auf.
