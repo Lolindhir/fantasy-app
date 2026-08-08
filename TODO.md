@@ -11,6 +11,12 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 ### Data Generation / Infrastruktur
 
+- [ ] GitHub Actions auf aktuelle Node-24-kompatible Action-Versionen aktualisieren.
+  - Kontext: GitHub Actions warnt aktuell unter anderem bei `actions/checkout@v4` und `actions/setup-python@v5`, dass deren Node-20-Runtime-Ziel deprecated ist und vom Runner bereits auf Node 24 erzwungen wird.
+  - Ziel: Repository-weit verwendete Actions inventarisieren und auf Major-/Release-Versionen aktualisieren, die Node 24 offiziell unterstützen, bevor die erzwungene Kompatibilität zu einem harten Fehler wird.
+  - Validierung: Release Notes und Breaking Changes je Action prüfen; CI-, Deploy- und schreibende Datenworkflows nach der Umstellung separat validieren.
+  - Leitplanke: Runtime-/Action-Upgrades nicht mit fachlichen Workflow-Änderungen vermischen und keine bestehenden Secrets, Trigger, Zeitpläne oder Write-Semantiken still verändern.
+
 - [ ] Laufzeit-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration sowie laufzeitabhängige Werte.
   - Ziel: Laufzeitabhängige Werte nicht direkt im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
