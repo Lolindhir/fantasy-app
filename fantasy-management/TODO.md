@@ -37,7 +37,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ziel: Monitoring, Reviews und Analysen greifen auf dieselben stabilen Contracts zu, statt eigene inkompatible Zwischenformate zu erzeugen.
 
 - [ ] Regelmäßigen Source-Refresh als technische Datenpipeline konsolidieren.
-  - Aktualisieren: aktuelle League-/Roster-/Transaction-Daten sowie vorhandene FantasyPros-, FantasyCalc-, Fantasy-Football-Calculator-, FFToday-Projections- und Sleeper-Trending-Snapshots.
+  - Aktualisieren: aktuelle League-/Roster-/Transaction-Daten sowie vorhandene FantasyPros-, FantasyCalc-, Fantasy-Football-Calculator-, FFToday-Projections-, CBS-Sports-Projections- und Sleeper-Trending-Snapshots.
   - Bestehende Fetcher weiterverwenden und nur orchestral zusammenführen; keine doppelte Abruflogik in ChatGPT-Prompts oder Analysejobs.
   - Output: nachvollziehbarer Quellenstand mit erfolgreichem oder kontrolliert fehlgeschlagenem Refresh je Datenquelle.
 
