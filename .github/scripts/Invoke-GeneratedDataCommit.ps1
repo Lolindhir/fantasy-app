@@ -14,6 +14,7 @@ param(
         "fantasypros-rankings",
         "fantasycalc-rankings",
         "ffc-adp-rankings",
+        "fftoday-projections",
         "sleeper-trending"
     )]
     [string]$Scope
@@ -37,6 +38,7 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
         "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
         "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
+        "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
