@@ -334,6 +334,45 @@ Operational rules:
 - retain only the newest Raw HTML and archive changed normalized ranking/metadata snapshots
 - compare the Kicker Projection ranking only with Kicker-specific rankings such as FFC Kicker ADP
 
+### CBS Sports projection snapshots
+
+CBS Sports is an active automated Projection provider for the initial Kicker scope. The GitHub-Actions workflow `Update CBS Sports Projections` refreshes the source daily at 06:37 UTC and also supports manual `workflow_dispatch` runs.
+
+Stored source area:
+
+`fantasy-management/sources/external-rankings/projections/cbs-sports/`
+
+Active ranking ID:
+
+- `redraft-kicker-preseason`: provider Regular-Season Kicker projections ordered by projected CBS fantasy points, retaining FGM/FGA, five field-goal distance buckets, XPM/XPA, FPTS and FPPG
+
+The audited public Projection area also exposes QB, RB, WR, TE and DST projections. Those positions are confirmed expansion candidates but are not yet active stored rankings.
+
+Refresh directly with:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
+```
+
+Canonical source documentation:
+
+- `fantasy-management/sources/external-rankings/projections/README.md`
+- `fantasy-management/sources/external-rankings/projections/cbs-sports/README.md`
+- `fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md`
+- `fantasy-management/sources/external-rankings/projections/cbs-sports/analysis-metadata.json`
+
+Operational rules:
+
+- treat CBS Sports Projections as expected production, not expert consensus, ADP or trade-market value
+- use the public Non-PPR projection page without login; Kicker source stats remain provider-specific evidence
+- retain FGM/FGA, XPM/XPA and the five CBS field-goal distance buckets separately from provider `FPTS`
+- preserve decimal distance-bucket projections; accept CBS `—` bucket values only for a true FGM/FGA zero-projection and normalize those buckets to zero
+- do not treat CBS `FPTS` as Mighty-Giants league scoring unless scoring formulas are explicitly reconciled
+- CBS exposes no reliable visible projection-updated timestamp on the audited page; store fetch time and HTTP provenance and do not invent `source_updated_date`
+- fail closed on source-identity, header, row-count, duplicate-ID, numerical-plausibility or unexpected-pagination failures
+- retain only the newest Raw HTML and archive changed normalized ranking/metadata snapshots
+- do not double-weight CBS Sports and a later Projection Consensus when that consensus already includes CBS Sports
+
 ### Sleeper Trending Players roster-activity signal
 
 Sleeper Trending Players is the active automated external roster-activity signal.

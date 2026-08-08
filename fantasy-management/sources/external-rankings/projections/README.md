@@ -12,7 +12,9 @@ Die Reihenfolge entsteht aus erwarteter statistischer oder Fantasy-Produktion f�
 - Positionsspezifische Rankings werden nur innerhalb derselben Position per listenlängenabhängigem Perzentil verglichen.
 - Projection-Werte sind dynamisch und werden vor entscheidungsrelevanten Analysen frisch geladen.
 - Ein Projection Ranking ist kein Expert Consensus, kein ADP und kein Trade-Marktwert.
+- Direkte Provider-Projections und ein späterer Projection-Consensus dürfen nicht als unabhängige Stimmen doppelt gewichtet werden, wenn der Consensus denselben Provider bereits enthält.
 
 ## Aktive Provider
 
 - `fftoday`: aktuell `redraft-kicker-preseason`; weitere öffentlich verfügbare FFToday-Positionen sind auditiert, aber noch nicht aktiv materialisiert.
+- `cbs-sports`: aktuell `redraft-kicker-preseason`; die erste echte Source-Materialisierung erfolgt durch den automatischen CBS-Refresh-Workflow. QB/RB/WR/TE/DST sind als spätere Erweiterung auditiert.
