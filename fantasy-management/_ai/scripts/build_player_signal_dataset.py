@@ -250,6 +250,41 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         if isinstance(issue, dict):
             quality_issues.append({**issue, "origin": "external_signal_relevance"})
 
+    for source in loaded_sources:
+        source_id = source.definition["source_id"]
+        minimum_rows = int((source.definition.get("quality") or {}).get("minimum_rows", 0))
+        if source.index["row_count"] < minimum_rows:
+            issue = ops.severity_issue(
+                source.definition["quality"].get("row_count_severity", "error"),
+                kind="unexpected_row_count",
+                source_id=source_id,
+                details={"actual_rows": source.index["row_count"], "minimum_rows": minimum_rows},
+            )
+            if issue:
+                quality_issues.append(issue)
+
+        freshness = freshness_view(source, generated_at)
+        if freshness["status"] == "stale":
+            quality_issues.append(
+                {
+                    "severity": "warning",
+                    "kind": "stale_source",
+                    "source": source_id,
+                    "source_timestamp": freshness["source_timestamp"],
+                    "age_hours_at_materialization": freshness["age_hours_at_materialization"],
+                    "max_age_hours": freshness["max_age_hours"],
+                }
+            )
+        elif freshness["status"] == "unknown":
+            quality_issues.append(
+                {
+                    "severity": "info",
+                    "kind": "unknown_source_freshness",
+                    "source": source_id,
+                    "source_timestamp": freshness["source_timestamp"],
+                }
+            )
+
     source_coverage: dict[str, Counter[str]] = {
         source.definition["source_id"]: Counter() for source in loaded_sources
     }
