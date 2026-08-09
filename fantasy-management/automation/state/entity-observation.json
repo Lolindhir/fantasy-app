@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "job_id": "entity-observation",
-  "status": "pending",
-  "revision": 4,
-  "last_evaluated_at": "2026-08-04T07:01:12+02:00",
+  "status": "idle",
+  "revision": 5,
+  "last_evaluated_at": "2026-08-09T23:32:00+02:00",
   "last_successful_run": "2026-08-04T07:01:12+02:00",
-  "last_processed_key": "baseline-batch:2026-08-04:jonathon-brooks-2026",
+  "last_processed_key": "interactive-approved-baseline:2026-08-09",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -13,13 +13,9 @@
     "fantasy-management/automation/profiles/redraft-adp-movement.json": "157881821539ac6ccd36a2c6a0855c2db6022c04",
     "fantasy-management/automation/profiles/role-opportunity.json": "004adf07afb5973f26914bc679b96d6f2121b049",
     "fantasy-management/automation/target-sets/managed-roster-health.json": "bfd4de0733edca6cf53f353c917a110a384e553f",
-    "fantasy-management/automation/target-sets/player-role-watch.json": "5fe8b6970d3d8ae30460032485894e580676c4b3",
-    "fantasypros:dynasty-superflex-ppr:latest-pointer": "0ccaca874fbac9352a89ddb2fed3b4f5f339291a",
-    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "d8ee18ff6fd0f298b07665d5e028bdba3df7b12c",
-    "ffc:redraft-ppr-8-team:latest-pointer": "f126677067fb28926a4f4566279326635d0c7f24",
-    "ffc:redraft-2qb-10-team:latest-pointer": "c929270ef1587c4e1956e206b1c925408992917f"
+    "fantasy-management/automation/target-sets/player-role-watch.json": "5fe8b6970d3d8ae30460032485894e580676c4b3"
   },
-  "pending": true,
+  "pending": false,
   "last_error": null,
   "last_material_change": null,
   "recent_events": [
@@ -58,6 +54,12 @@
       "type": "pending",
       "severity": "info",
       "summary": "Bounded Batch abgeschlossen: Tank Bigsby ohne materielles Signal geprüft; acht fehlende Coker-/Brooks-Profile mit aktueller Evidenz angelegt und bis zur reproduzierbaren kanonischen Hashbildung pending gehalten. 148 nie geprüfte und 12 retryable Profilpaare verbleiben."
+    },
+    {
+      "at": "2026-08-09T23:32:00+02:00",
+      "type": "evaluated",
+      "severity": "info",
+      "summary": "Nach interaktiver Freigabe wurden die bestätigten qualitativen Baselines für Joe Mixon, Jaylen Waddle, Chris Bell und De'Zhaun Stribling in den kanonischen Entity-Observation-State übernommen; nicht bestätigte Legacy-Bootstrap-Pending-Zwischenstände wurden entfernt."
     }
   ],
   "job_state": {
@@ -65,59 +67,25 @@
       "player-role-watch": {
         "last_resolved_at": "2026-08-04T07:01:12+02:00",
         "resolved_target_ids": [
-          "aj-barner-2026",
-          "jalen-coker-2026",
-          "jonathon-brooks-2026",
           "tank-bigsby-2026"
         ]
       },
       "managed-roster-health": {
-        "last_resolved_at": "2026-08-04T07:01:12+02:00",
+        "last_resolved_at": "2026-08-09T23:32:00+02:00",
         "resolved_target_ids": [
-          "managed-roster-player-11539",
-          "managed-roster-player-11565",
-          "managed-roster-player-11566",
-          "managed-roster-player-11627",
-          "managed-roster-player-11628",
-          "managed-roster-player-11632",
-          "managed-roster-player-11635",
-          "managed-roster-player-12469",
-          "managed-roster-player-12481",
-          "managed-roster-player-12492",
-          "managed-roster-player-12506",
-          "managed-roster-player-12508",
-          "managed-roster-player-12517",
-          "managed-roster-player-12518",
-          "managed-roster-player-12534",
-          "managed-roster-player-12540",
-          "managed-roster-player-12545",
-          "managed-roster-player-12547",
-          "managed-roster-player-13285",
-          "managed-roster-player-13287",
-          "managed-roster-player-13311",
-          "managed-roster-player-13405",
-          "managed-roster-player-13414",
-          "managed-roster-player-13417",
-          "managed-roster-player-2133",
           "managed-roster-player-4018",
-          "managed-roster-player-4046",
-          "managed-roster-player-4866",
-          "managed-roster-player-5947",
           "managed-roster-player-7526",
-          "managed-roster-player-8130",
-          "managed-roster-player-8137",
-          "managed-roster-player-8142",
-          "managed-roster-player-8151",
-          "managed-roster-player-8155",
-          "managed-roster-player-9224",
-          "managed-roster-player-9493"
+          "managed-roster-player-13311",
+          "managed-roster-player-13417"
         ]
       }
     },
     "targets": {
       "tank-bigsby-2026": {
         "entity_fingerprint": "player:sleeper_id:9225",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "player-role-watch"
+        ],
         "last_checked_at": "2026-07-25T06:36:52+02:00",
         "status": "active",
         "observations": {
@@ -126,16 +94,46 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6718d9ab739067dccbabf6f7f922688dcaeaee5e2781f3a0cab06d616acc771",
             "material_state": {
-              "role_summary": {"starter": "Saquon Barkley", "listed_depth_chart_order": ["Saquon Barkley", "Will Shipley", "Tank Bigsby"], "depth_chart_type": "official_unofficial"},
+              "role_summary": {
+                "starter": "Saquon Barkley",
+                "listed_depth_chart_order": [
+                  "Saquon Barkley",
+                  "Will Shipley",
+                  "Tank Bigsby"
+                ],
+                "depth_chart_type": "official_unofficial"
+              },
               "role_class": "listed_rb3_open_backup_competition",
-              "competition_summary": {"ahead": ["Saquon Barkley", "Will Shipley"], "additional_competitors": ["Dameon Pierce", "Elijah Mitchell"], "competition_status": "open_before_training_camp"},
-              "usage_summary": {"training_camp_started": false, "numeric_first_team_usage_available": false, "game_usage_2026_available": false},
+              "competition_summary": {
+                "ahead": [
+                  "Saquon Barkley",
+                  "Will Shipley"
+                ],
+                "additional_competitors": [
+                  "Dameon Pierce",
+                  "Elijah Mitchell"
+                ],
+                "competition_status": "open_before_training_camp"
+              },
+              "usage_summary": {
+                "training_camp_started": false,
+                "numeric_first_team_usage_available": false,
+                "game_usage_2026_available": false
+              },
               "first_team_usage_class": "unknown",
-              "high_value_usage": {"goal_line": "unknown", "passing_down": "unknown", "third_down": "unknown", "two_minute": "unknown"},
+              "high_value_usage": {
+                "goal_line": "unknown",
+                "passing_down": "unknown",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
               "confidence": "medium"
             },
             "confidence": "medium",
-            "source_fingerprints": ["official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24", "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"],
+            "source_fingerprints": [
+              "official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24",
+              "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"
+            ],
             "last_material_change_at": null,
             "last_error": null
           },
@@ -144,55 +142,196 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6ec11409d66d906d086dcfb67371b9f06c4d23dc76eb9ce52dcec3da623d5e0",
             "material_state": {
-              "market_summary": {"classification": "deep_stash_handcuff", "roster_rate": 0.9218, "source_context": {"rank_provider": "fantasypros:dynasty-superflex-ppr", "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"}},
+              "market_summary": {
+                "classification": "deep_stash_handcuff",
+                "roster_rate": 0.9218,
+                "source_context": {
+                  "rank_provider": "fantasypros:dynasty-superflex-ppr",
+                  "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"
+                }
+              },
               "dynasty_overall_rank": 194,
               "position_rank": 55,
               "market_value": 1241,
               "market_tier": "11",
-              "source_disagreement": {"status": "no_material_conflict", "comparison_basis": "qualitative_band_alignment"},
+              "source_disagreement": {
+                "status": "no_material_conflict",
+                "comparison_basis": "qualitative_band_alignment"
+              },
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741", "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850"],
+            "source_fingerprints": [
+              "fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741",
+              "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850"
+            ],
             "last_material_change_at": null,
             "last_error": null
           }
         }
       },
-      "aj-barner-2026": {
-        "entity_fingerprint": "player:sleeper_id:11603",
-        "target_set_ids": ["player-role-watch"],
-        "last_checked_at": "2026-08-02T07:01:23+02:00",
-        "status": "pending",
+      "managed-roster-player-4018": {
+        "entity_fingerprint": "player:sleeper_id:4018",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-07T13:59:00+02:00",
+        "status": "active",
         "observations": {
-          "injury-status": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["current_player_data:players_0007.json:11603", "official_team:seahawks.com:active-roster:observed-2026-08-02"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
-          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:seahawks.com:depth-chart:observed-2026-08-02", "official_team:seahawks.com:player-career:observed-2026-08-02"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
-          "market-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:705ae9fc5dc74eae500d52511537f8be75c0f829", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-01:529610c140654318cc60fe3a12db19e6d4c6043b"], "last_material_change_at": null, "last_error": "Evidence resolved, but canonical material-state hashing could not be completed in this bounded execution environment."},
-          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-02T07:01:23+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": [], "last_material_change_at": null, "last_error": "Required ADP snapshot rows were not resolved within the bounded batch; retry after never-checked pairs."}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-07T13:59:00+02:00",
+            "state_hash": "167f32bcfdbb47fdb70917d82c27e0f5ee028e07a20082e1da40011ba28609a2",
+            "material_state": {
+              "injury_summary": "Komplette Saison 2025 wegen einer Fußverletzung verpasst; im März 2026 mit Non-Football-Injury-Designation von Houston entlassen und zum Beobachtungszeitpunkt ohne NFL-Team.",
+              "availability_class": "unknown",
+              "designation": "historical_non_football_injury_release",
+              "reserve_status": "unknown",
+              "practice_status": "not_applicable",
+              "return_timeline": {
+                "status": "no_confirmed_return_timeline",
+                "next_checkpoint": "NFL-Verpflichtung oder belastbares medizinisches/Workout-Update"
+              },
+              "nfl_roster_status": "free_agent",
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:houstontexans.com:transaction:2026-03-06",
+              "official_league:nfl.com:joe-mixon:observed-2026-08-07"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       },
-      "jalen-coker-2026": {
-        "entity_fingerprint": "player:sleeper_id:11646",
-        "target_set_ids": ["player-role-watch"],
-        "last_checked_at": "2026-08-04T07:01:12+02:00",
-        "status": "pending",
+      "managed-roster-player-7526": {
+        "entity_fingerprint": "player:sleeper_id:7526",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-07T13:59:00+02:00",
+        "status": "active",
         "observations": {
-          "injury-status": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["current_player_data:players_0009.json:11646", "official_team:panthers.com:offense-preview:published-2026-07-16"], "last_material_change_at": null, "last_error": "Current evidence supports active availability with no known injury, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:panthers.com:offense-preview:published-2026-07-16", "reuters:panthers-brazzell-season-ending-injury:published-2026-07-30"], "last_material_change_at": null, "last_error": "Current evidence supports an established top-two receiver role and increased opportunity after the Brazzell injury, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "market-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:rank-133", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-03:value-1518"], "last_material_change_at": null, "last_error": "Both required market sources resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["ffc:redraft-ppr-8-team:2026-08-03:rank-125", "ffc:redraft-2qb-10-team:2026-08-03:rank-143"], "last_material_change_at": null, "last_error": "Both ADP rows and samples resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-07T13:59:00+02:00",
+            "state_hash": "3ce0a07be4366bc55b8d004d503ed91388c44a73f47bb9dd4c9b4b1e78866f65",
+            "material_state": {
+              "injury_summary": "Kurzfristige Muskelzerrung im Bein; Training ausgesetzt, erwartete Abwesenheit nach damaligem Team-Update ungefähr vier bis fünf Tage.",
+              "availability_class": "unavailable_short_term",
+              "designation": "leg_muscle_strain",
+              "reserve_status": "active",
+              "practice_status": "did_not_participate",
+              "return_timeline": {
+                "status": "expected_short_term_return",
+                "estimated_days": "4-5",
+                "next_checkpoint": "Rückkehr ins Training"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "team_coach_report:sean-payton:waddle-leg-strain:published-2026-08-06"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       },
-      "jonathon-brooks-2026": {
-        "entity_fingerprint": "player:sleeper_id:11583",
-        "target_set_ids": ["player-role-watch"],
-        "last_checked_at": "2026-08-04T07:01:12+02:00",
-        "status": "pending",
+      "managed-roster-player-13311": {
+        "entity_fingerprint": "player:sleeper_id:13311",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-08T00:00:00+02:00",
+        "status": "active",
         "observations": {
-          "injury-status": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_league:nfl.com:brooks-cleared:published-2026-04-29", "official_team:panthers.com:camp-padded-practice:published-2026-07-28"], "last_material_change_at": null, "last_error": "Current authoritative evidence supports clearance and full-pads participation, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "role-opportunity": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["official_team:panthers.com:offense-preview:published-2026-07-16", "official_team:panthers.com:brooks-camp-play:published-2026-07-28"], "last_material_change_at": null, "last_error": "Current evidence supports an active complementary backfield competition behind Chuba Hubbard, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "market-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["fantasypros:dynasty-superflex-ppr:2026-08-01:rank-138", "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-03:value-1908"], "last_material_change_at": null, "last_error": "Both required market sources resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."},
-          "redraft-adp-movement": {"status": "pending", "last_checked_at": "2026-08-04T07:01:12+02:00", "state_hash": null, "material_state": {}, "confidence": null, "source_fingerprints": ["ffc:redraft-ppr-8-team:2026-08-03:rank-119", "ffc:redraft-2qb-10-team:2026-08-03:rank-147"], "last_material_change_at": null, "last_error": "Both ADP rows and samples resolved successfully, but canonical material-state hashing was not reproducibly available in this execution environment."}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-08T00:00:00+02:00",
+            "state_hash": "b0d0cbfe1fd9e6a67b9e605fdbee9617e6373b18ae3a58751e3162e19dbd41f9",
+            "material_state": {
+              "injury_summary": "ACL-Reha deutlich fortgeschritten. Nach zuvor vorsichtigerem Zeitplan wurde eine mögliche Rückkehr noch in der Preseason in Aussicht gestellt; vollständige Trainings- oder Spielfreigabe war noch nicht bestätigt.",
+              "availability_class": "unavailable_short_term",
+              "designation": "acl_rehab",
+              "reserve_status": "non_football_injury",
+              "practice_status": "unknown",
+              "return_timeline": {
+                "status": "possible_preseason_return",
+                "next_checkpoint": "NFI-Aktivierung oder erste vollständige Team-Trainingsbeteiligung"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "official_team:miamidolphins.com:jeff-hafley-chris-bell-update:published-2026-08-07"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "managed-roster-player-13417": {
+        "entity_fingerprint": "player:sleeper_id:13417",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-09T00:00:00+02:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-09T00:00:00+02:00",
+            "state_hash": "9b12e11b884e9cf2687d7af5f68983053c48afc66f7cc0a39735ceaa7cfd5c9a",
+            "material_state": {
+              "injury_summary": "Hamstring-Problematik deutlich verbessert; wieder Teilnahme an 11-on-11-Teamdrills. Positives Return-to-practice-Signal, aber keine sichere Bestätigung vollständiger Belastbarkeit.",
+              "availability_class": "limited",
+              "designation": "hamstring",
+              "reserve_status": "active",
+              "practice_status": "unknown",
+              "return_timeline": {
+                "status": "returned_to_team_drills",
+                "next_checkpoint": "volle Trainingsfreigabe oder aussagekräftige Preseason-Rolle"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "practice_report:49ers:stribling-11-on-11:observed-2026-08-08"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-09T00:00:00+02:00",
+            "state_hash": "1228ba19099963950fa19d866249226d7788bef38ed80737ef55f5e4799ea6e2",
+            "material_state": {
+              "role_summary": "Striblings Weg zu frühen offensiven Reps hat sich durch den saisonbeendenden Ausfall von Ricky Pearsall deutlich geöffnet.",
+              "role_class": "prospect_with_expanded_early_opportunity",
+              "competition_summary": {
+                "material_change": "ricky_pearsall_season_ending_injury",
+                "impact": "receiver_rotation_opportunity_increased"
+              },
+              "usage_summary": {
+                "team_drills": "returned_to_11_on_11",
+                "preseason_role": "not_yet_confirmed"
+              },
+              "first_team_usage_class": "unknown",
+              "high_value_usage": {
+                "status": "unknown"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:49ers.com:stribling-camp-context:observed-2026-08-09",
+              "news:reuters:ricky-pearsall-season-ending-injury:2026-08"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       }
     }
