@@ -168,6 +168,19 @@ Permitted ownership states are:
 
 An unresolved player remains in the external-signal dataset as an explicit data-quality finding and is never silently discarded. A central player row is keyed by the current app/Sleeper player ID; source join gaps remain quality/coverage information rather than being guessed away.
 
+## NFL roster-status interpretation rule
+
+`public/data/Players.json` contains several source-specific fields that describe different aspects of NFL player status and must not be collapsed into one roster-status inference.
+
+- `IsFreeAgent` is normalized from the Tank01 `isFreeAgent` signal and is the repository's direct structured NFL free-agent signal.
+- `Status` is sourced independently from Sleeper player metadata. A value such as `Active` must not be interpreted by itself as proof that the player is currently under contract with an NFL team.
+- `TeamID` and `TeamAbbr` are sourced independently from Tank01 team metadata. They may remain populated for a player whose `IsFreeAgent` value is `true`; their presence does not override the free-agent signal or by itself prove a current NFL contract.
+- Deterministic Operations materialization must preserve the explicit free-agent signal, for example as `app_data.is_free_agent`, rather than infer NFL roster status only from team or Sleeper-status fields.
+- Monitoring and analysis must explicitly consider `IsFreeAgent` when determining current NFL roster status. Do not report a repository data-quality error merely because `TeamAbbr`/`TeamID` or `Status = Active` coexist with `IsFreeAgent = true`.
+- When these fields conflict with a decision-relevant current transaction or roster claim, verify the current NFL status against fresh authoritative transaction, league or team evidence and preserve the conflict instead of silently selecting one field.
+
+This rule concerns **NFL roster status only**. Fantasy-league ownership and fantasy-free-agent availability remain derived exclusively from the union of every team's `Roster`, `Reserve` and `Taxi` lists in `League.json`; `Players.json -> IsFreeAgent` must never be used as fantasy-league availability.
+
 ## Non-player entity rule
 
 An external source may expose entities that participate in the provider activity feed but are not player entities for the managed league format, such as NFL team defenses.
