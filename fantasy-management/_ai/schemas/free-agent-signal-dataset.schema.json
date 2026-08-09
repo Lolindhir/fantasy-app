@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mighty-giants.local/schemas/free-agent-signal-dataset.schema.json",
+  "title": "Fantasy Operations Free-Agent Signal Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "sources",
+    "population",
+    "players",
+    "quality",
+    "interpretation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "free-agent-signals"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "minLength": 64, "maxLength": 64},
+    "sources": {"type": "array", "items": {"type": "object"}},
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player_count", "positions", "ownership_rule"],
+      "properties": {
+        "player_count": {"type": "integer", "minimum": 0},
+        "positions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "ownership_rule": {"type": "string"}
+      }
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["player_id", "position", "ownership", "role", "redraft_adp", "projections"],
+        "properties": {
+          "player_id": {"type": "string"},
+          "position": {"type": "string"},
+          "ownership": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {"status": {"const": "fantasy_free_agent"}}
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upstream_status", "upstream_issue_count"],
+      "properties": {
+        "upstream_status": {"type": ["string", "null"]},
+        "upstream_issue_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["players_is_free_agent_source_field_used_for_availability", "recommendation_eligible"],
+      "properties": {
+        "players_is_free_agent_source_field_used_for_availability": {"const": false},
+        "recommendation_eligible": {"const": false}
+      }
+    }
+  }
+}
