@@ -98,6 +98,27 @@ A durable write to State, Knowledge, Decisions, boards, baselines or stored revi
 
 The approved write is then performed interactively with the normal repository validation and publication rules.
 
+For qualitative observations that use the existing entity-observation profile model, the canonical persisted approved baseline state is:
+
+```text
+fantasy-management/automation/state/entity-observation.json
+```
+
+This State is durable comparison memory for later monitoring and for other agents. It is not generated data and it is not an authorization for autonomous writes.
+
+An approved interactive observation-State write must:
+
+- persist only the specifically approved target/profile observations;
+- normalize `material_state` according to the applicable profile `output_fields` and workflow rules;
+- calculate `state_hash` with the existing canonical compact sorted-JSON SHA-256 contract;
+- preserve unrelated previous good states and existing input provenance;
+- increment the State revision exactly once for the complete logical State change;
+- validate the complete replacement State against `automation-observation-state.schema.json` and the repository cross-file validator;
+- pin the current target-branch parent commit and current State blob before publication;
+- publish only by a non-forced fast-forward and recompute on concurrency conflicts.
+
+A missing target/profile baseline does not activate or authorize autonomous bootstrap work. Scheduled monitoring may form an internal first-observation baseline for comparison during that run, but durable persistence still requires explicit approval unless a later architecture decision deliberately changes this rule.
+
 ## Source catalogs
 
 Ranking, market-value, ADP and projection materialization is declared in:
@@ -214,4 +235,22 @@ The morning workflows are scheduled in Europe/Berlin order before the 07:00 moni
 
 ## Legacy observation runner
 
-The former autonomous State-writing observation runner is retained only as historical configuration while migration is in progress. It must operate read-only and must not attempt autonomous State publication.
+The former autonomous State-writing observation runner is retained only as historical configuration while migration is in progress. Its autonomous execution path must operate read-only and must not attempt State, event, Knowledge, Decision or board publication.
+
+The legacy boundary applies to autonomous execution, not to every artifact created by that framework. Until an explicit replacement architecture is approved, the following contracts remain reusable for human-approved persistence and comparison:
+
+- `fantasy-management/automation/state/entity-observation.json` as the canonical approved qualitative observation baseline State;
+- target and profile identity plus normalization semantics where they remain applicable;
+- `automation-observation-state.schema.json`;
+- canonical material-State hashing semantics;
+- cross-file validation and optimistic-concurrency publication safeguards.
+
+The following legacy behaviors are not part of scheduled production monitoring and must not be triggered merely because baselines are missing:
+
+- autonomous Observation Bootstrap execution;
+- autonomous incremental baseline backfill;
+- autonomous State-only checkpoint publication;
+- autonomous Replacement-State-Writer execution;
+- autonomous Observation Event bundle publication.
+
+Legacy workflow and helper files may remain in the repository as historical implementation contracts while migration is incomplete. Their existence does not override this architecture or the current `runner-config.json` mode.
