@@ -2,10 +2,10 @@
   "schema_version": 1,
   "job_id": "entity-observation",
   "status": "idle",
-  "revision": 5,
-  "last_evaluated_at": "2026-08-09T23:32:00+02:00",
+  "revision": 6,
+  "last_evaluated_at": "2026-08-10T00:21:00+02:00",
   "last_successful_run": "2026-08-04T07:01:12+02:00",
-  "last_processed_key": "interactive-approved-baseline:2026-08-09",
+  "last_processed_key": "interactive-approved-repair:2026-08-10",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -13,7 +13,11 @@
     "fantasy-management/automation/profiles/redraft-adp-movement.json": "157881821539ac6ccd36a2c6a0855c2db6022c04",
     "fantasy-management/automation/profiles/role-opportunity.json": "004adf07afb5973f26914bc679b96d6f2121b049",
     "fantasy-management/automation/target-sets/managed-roster-health.json": "bfd4de0733edca6cf53f353c917a110a384e553f",
-    "fantasy-management/automation/target-sets/player-role-watch.json": "5fe8b6970d3d8ae30460032485894e580676c4b3"
+    "fantasy-management/automation/target-sets/player-role-watch.json": "5fe8b6970d3d8ae30460032485894e580676c4b3",
+    "fantasypros:dynasty-superflex-ppr:latest-pointer": "0ccaca874fbac9352a89ddb2fed3b4f5f339291a",
+    "fantasycalc:dynasty-superflex-ppr-8-team:latest-pointer": "d8ee18ff6fd0f298b07665d5e028bdba3df7b12c",
+    "ffc:redraft-ppr-8-team:latest-pointer": "f126677067fb28926a4f4566279326635d0c7f24",
+    "ffc:redraft-2qb-10-team:latest-pointer": "c929270ef1587c4e1956e206b1c925408992917f"
   },
   "pending": false,
   "last_error": null,
@@ -60,6 +64,12 @@
       "type": "evaluated",
       "severity": "info",
       "summary": "Nach interaktiver Freigabe wurden die bestätigten qualitativen Baselines für Joe Mixon, Jaylen Waddle, Chris Bell und De'Zhaun Stribling in den kanonischen Entity-Observation-State übernommen; nicht bestätigte Legacy-Bootstrap-Pending-Zwischenstände wurden entfernt."
+    },
+    {
+      "at": "2026-08-10T00:21:00+02:00",
+      "type": "evaluated",
+      "severity": "info",
+      "summary": "Interaktive Reparatur des Entity-Observation-State nach Audit: Revision korrigiert, entfernte Input-Provenienz wiederhergestellt, Joe Mixon auf die kanonischen Injury-Output-Felder normalisiert und Source-Fingerprints deterministisch sortiert; bestätigte Baselines inhaltlich beibehalten."
     }
   ],
   "job_state": {
@@ -198,8 +208,8 @@
             },
             "confidence": "high",
             "source_fingerprints": [
-              "fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741",
-              "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850"
+              "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850",
+              "fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741"
             ],
             "last_material_change_at": null,
             "last_error": null
@@ -217,7 +227,7 @@
           "injury-status": {
             "status": "baseline",
             "last_checked_at": "2026-08-07T13:59:00+02:00",
-            "state_hash": "167f32bcfdbb47fdb70917d82c27e0f5ee028e07a20082e1da40011ba28609a2",
+            "state_hash": "1b9934ee2cc3e17ce675aafbd1c9f73dee48ca5ba67b934a3aa691e558f727bc",
             "material_state": {
               "injury_summary": "Komplette Saison 2025 wegen einer Fußverletzung verpasst; im März 2026 mit Non-Football-Injury-Designation von Houston entlassen und zum Beobachtungszeitpunkt ohne NFL-Team.",
               "availability_class": "unknown",
@@ -228,13 +238,12 @@
                 "status": "no_confirmed_return_timeline",
                 "next_checkpoint": "NFL-Verpflichtung oder belastbares medizinisches/Workout-Update"
               },
-              "nfl_roster_status": "free_agent",
               "confidence": "high"
             },
             "confidence": "high",
             "source_fingerprints": [
-              "official_team:houstontexans.com:transaction:2026-03-06",
-              "official_league:nfl.com:joe-mixon:observed-2026-08-07"
+              "official_league:nfl.com:joe-mixon:observed-2026-08-07",
+              "official_team:houstontexans.com:transaction:2026-03-06"
             ],
             "last_material_change_at": null,
             "last_error": null
@@ -362,8 +371,8 @@
             },
             "confidence": "high",
             "source_fingerprints": [
-              "official_team:49ers.com:stribling-camp-context:observed-2026-08-09",
-              "news:reuters:ricky-pearsall-season-ending-injury:2026-08"
+              "news:reuters:ricky-pearsall-season-ending-injury:2026-08",
+              "official_team:49ers.com:stribling-camp-context:observed-2026-08-09"
             ],
             "last_material_change_at": null,
             "last_error": null
