@@ -1,8 +1,25 @@
 # Entity Observation Workflow
 
-Purpose: apply reusable observation profiles to configurable entities without coupling the runner to players, one watchlist or one franchise display name.
+Purpose: apply reusable observation profiles to configurable entities without coupling the observation model to players, one watchlist or one franchise display name.
 
-The first manual baseline and the controlled atomic-write test have been completed. The job is eligible for production execution when both `runner-config.json` and the job definition are enabled.
+## Current operating status
+
+This document contains two things that must be kept separate:
+
+1. the still-reused **entity-observation contract** for target identity, profile normalization, material-state hashing, evidence quality and persisted approved baselines;
+2. the **former autonomous runner execution model**, which is now legacy.
+
+`fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md` is authoritative for current production behavior. The scheduled Fantasy Operations monitoring is read-only. It must not autonomously run baseline backfill, the Observation Bootstrap, the Replacement-State-Writer, State-only checkpoints or Observation Event publication.
+
+The canonical persisted approved qualitative baseline State remains:
+
+```text
+fantasy-management/automation/state/entity-observation.json
+```
+
+A durable change to that State happens only after explicit human approval and is performed interactively with full State validation and optimistic-concurrency safeguards.
+
+Historically, the first manual baseline and controlled atomic-write test made the generic runner eligible for `write_enabled` production execution. PR #94 later deliberately returned the runner to `read_only` and disabled autonomous bootstrap as part of the provider-neutral migration. The historical mechanics below remain documented where useful, but they do not override the current Architecture or `runner-config.json`.
 
 ## Inputs
 
@@ -11,7 +28,8 @@ The first manual baseline and the controlled atomic-write test have been complet
 - all required `configuration_refs`
 - `fantasy-management/automation/state/entity-observation.json`
 - current repository data under `public/data/`
-- fresh external sources required by each profile
+- current provider-neutral Operations datasets when applicable;
+- fresh external sources required by each profile.
 
 ## 1. Resolve managed context
 
@@ -24,7 +42,7 @@ The first manual baseline and the controlled atomic-write test have been complet
 
 ## 2. Resolve target sets
 
-For every required target set:
+For every relevant target set:
 
 1. Validate the target set.
 2. Skip it when disabled.
@@ -45,81 +63,62 @@ A canonical entity fingerprint should prefer stable identifiers:
 
 For players, prefer `sleeper_id` when present.
 
-## 3. Determine due targets and profiles
+## 3. Determine targets and profiles
 
-The job-level interval limits how often the job may run. Within a due job:
+The target/profile model remains useful for deciding what can be compared and how. The old autonomous runner additionally used job cadence, deep-evaluation budgets and a persisted missing-baseline queue. Those queue-management rules are legacy and are not a scheduled-monitoring write policy today.
 
-- skip disabled or expired targets;
-- skip disabled profile bindings;
-- permit target-level threshold overrides;
-- evaluate profiles independently;
-- do not recheck a target/profile pair before any stricter future per-profile cadence unless explicitly configured later.
+### 3.1 Legacy deep-evaluation budget
 
-The job cadence does not require an unbounded deep external investigation of every active target/profile pair on every wakeup. Every due run has two stages:
-
-1. a cheap complete scan of current repository inputs, configured snapshot pointers and reusable source fingerprints for all active pairs;
-2. a bounded deep-evaluation batch for pairs that need a new baseline, have changed relevant inputs or require a retry.
-
-The complete cheap scan may load shared files and ranking snapshots once and join all active players in memory. It must not repeat the same repository or provider fetch separately for every player.
-
-### 3.1 Deep-evaluation budget
-
-A single runner wakeup may deeply evaluate at most **12 target/profile pairs**.
+The former runner limited one wakeup to at most **12 target/profile pairs** for deep evaluation.
 
 Of those 12 slots:
 
-- at most **8** may be used for previously missing initial baselines;
-- remaining capacity is reserved first for already-baselined pairs whose relevant input fingerprints changed;
-- unused reserved capacity may be used for additional retryable pairs, but the total remains 12.
+- at most **8** could be used for previously missing initial baselines;
+- remaining capacity was reserved first for already-baselined pairs whose relevant input fingerprints changed;
+- unused reserved capacity could be used for additional retryable pairs, while the total remained 12.
 
-A pair does not consume the deep-evaluation budget when all relevant reusable input fingerprints are unchanged and the profile workflow permits a deterministic unchanged result without new player-specific research.
+A pair did not consume the deep-evaluation budget when all relevant reusable input fingerprints were unchanged and the profile workflow permitted a deterministic unchanged result without new player-specific research.
 
-### 3.2 Deterministic pair ordering
+This budget is historical runner behavior. Current scheduled monitoring may prioritize research from the provider-neutral prepared datasets and the task's explicit monitoring rules instead.
 
-Build the candidate queue in this order:
+### 3.2 Legacy deterministic pair ordering
+
+The former autonomous candidate queue used this order:
 
 1. already-baselined pairs with changed relevant input fingerprints or a concrete current change signal;
 2. missing or `never_checked` profile states;
 3. retryable `pending` profile states;
 4. retryable `failed` profile states.
 
-Within each bucket sort by:
+Within each bucket it sorted by target priority, target ID and profile ID.
 
-1. target priority, highest first;
-2. target ID ascending;
-3. profile ID ascending.
+This ordering remains useful historical context but does not authorize autonomous persistence.
 
-Never let one unavailable pair prevent later independent pairs in the same bounded batch from being evaluated.
+### 3.3 Legacy incremental baseline backfill
 
-### 3.3 Incremental baseline backfill
+The old write-enabled runner treated a missing baseline backlog as normal operational work and could persist bounded batches across scheduled wakeups.
 
-A missing baseline backlog is normal operational work, not an incomplete dependency and not a failed job.
+That behavior is no longer active. Under the current Architecture:
 
-When more missing pairs exist than fit into the current budget:
+- missing persisted baselines do not block scheduled monitoring;
+- missing baselines do not activate Bootstrap or State-only checkpoint publication;
+- scheduled monitoring may form an internal first-observation baseline for the current run;
+- first observation alone is silent;
+- a currently observed state may still be reported immediately when it is already materially decision-relevant;
+- durable baseline persistence requires explicit approval.
 
-1. evaluate and store only the selected bounded batch;
-2. set the job state to `pending` and `pending: true`;
-3. update `last_evaluated_at` and `last_successful_run` because the bounded batch completed successfully;
-4. record one bounded `pending` recent event with completed-pair and remaining-pair counts;
-5. retain all previous good states;
-6. continue the backlog on the next scheduled wakeup;
-7. do not publish an Observation Event or send a user notification for baseline progress alone;
-8. do not pause, disable or delete the external scheduled task merely because a retryable baseline backlog remains.
+The earlier `pending` backfill mechanics remain historical runner documentation only.
 
-A successful partial backfill is a successful run with remaining work. It is not an error message condition.
+### 3.4 Pending and failed evidence
 
-When the final missing pair is baselined, set the job back to `idle` with `pending: false` unless another retryable pair remains.
+When a current evaluation cannot meet mandatory source confidence:
 
-### 3.4 Pending and failed pairs
+1. preserve a previous good material state when one exists;
+2. do not replace a good baseline with unsupported assumptions;
+3. surface a new or materially changed technical/evidence problem only when notification rules justify it;
+4. do not repeatedly notify an unchanged retryable problem.
 
-When a selected pair cannot meet mandatory source confidence:
-
-1. preserve its previous good material state when one exists;
-2. otherwise create or retain a schema-valid profile state with status `pending`, null hash, empty material state, null confidence and a concise `last_error`;
-3. continue with independent pairs inside the remaining batch budget;
-4. place the retry behind never-attempted missing pairs on later wakeups;
-5. notify only when the error state is new or materially changed and the global notification rules permit it;
-6. never repeatedly notify the same unchanged retryable error.
+The historical runner could persist `pending` or `failed` operational states. Scheduled read-only monitoring does not autonomously persist those transitions.
 
 ## 4. Collect evidence
 
@@ -127,23 +126,24 @@ For each selected target/profile pair:
 
 1. Read the profile signals and source policy.
 2. Resolve current league context from repository data.
-3. Fetch fresh external evidence when required.
-4. Resolve configured source bindings before using alternative sources.
-5. Prefer primary or authoritative sources for qualitative role evidence.
-6. Record source type, publisher, observed time and supported signals.
-7. Deduplicate syndicated reports and articles that originate from the same source.
-8. Separate direct facts from reporter interpretation and model inference.
-9. Preserve source conflicts rather than silently reconciling them.
-10. Fail the profile check when mandatory source confidence cannot be met.
-11. Keep the previous good material state when current evidence is incomplete.
+3. Use current provider-neutral materialized inputs where applicable.
+4. Fetch fresh external evidence when required.
+5. Resolve configured source bindings before using alternative sources when those bindings remain relevant.
+6. Prefer primary or authoritative sources for qualitative role evidence.
+7. Record source type, publisher, observed time and supported signals.
+8. Deduplicate syndicated reports and articles that originate from the same source.
+9. Separate direct facts from reporter interpretation and model inference.
+10. Preserve source conflicts rather than silently reconciling them.
+11. Fail the profile check when mandatory source confidence cannot be met.
+12. Keep the previous good material state when current evidence is incomplete.
 
 Batch source work whenever the profile permits it:
 
 - load each current repo file once per run;
-- load each configured ranking or ADP snapshot once per run;
+- load each configured ranking, ADP, projection or external-signal dataset once per run;
 - join all selected players against the same loaded dataset;
 - reuse official team, transaction, injury-report or position-group evidence for multiple selected players only when it actually supports each player-specific signal;
-- perform deep player-specific web research only for missing qualitative baselines, changed inputs or concrete change signals.
+- perform deep player-specific web research only for missing qualitative context, changed inputs or concrete change signals.
 
 ## 5. Normalize signals
 
@@ -168,13 +168,15 @@ Serialize normalized material state with deterministic JSON semantics before has
 
 Use SHA-256 over those canonical UTF-8 bytes for `state_hash`.
 
+These normalization and hashing semantics remain active for approved interactive baseline persistence.
+
 ## 6. Evaluate criteria
 
-1. Apply target overrides to profile defaults.
+1. Apply target overrides to profile defaults when applicable.
 2. Evaluate atomic and grouped criteria.
 3. Use profile source policy as a mandatory gate.
 4. A criterion classification describes the type of material change.
-5. Multiple matching criteria may be combined into one event when they describe the same underlying change.
+5. Multiple matching criteria may be combined when they describe the same underlying change.
 6. Use the highest justified severity.
 7. A recommendation change cannot make weak evidence material by itself.
 
@@ -182,24 +184,32 @@ Supported operators are defined in `automation-criterion.schema.json`.
 
 ## 7. Baseline and comparison
 
-When no previous profile state exists:
+### Current scheduled-monitoring behavior
 
-1. treat the missing state as initialization work inside the bounded current due run, not as an incomplete dependency or production-readiness failure;
-2. store the normalized successful result as a baseline;
-3. mark the profile state as `baseline`;
-4. do not create an event unless `notify_on_initial_baseline` is true.
+When no previous persisted profile state exists:
 
-For later checks:
+1. treat the current successful observation as an internal comparison baseline for the run;
+2. do not notify merely because the pair was observed for the first time;
+3. do not persist it automatically;
+4. still notify when the current state itself is clearly materially decision-relevant under the current monitoring rules;
+5. propose the exact durable baseline change when persistence would prevent duplicate future notifications;
+6. persist only after explicit human approval.
 
-1. hash normalized material state;
-2. compare it to the stored state hash;
-3. treat an identical hash as unchanged;
-4. apply criteria to actual signal changes;
-5. create an event only when at least one material criterion matches.
+For later checks against a persisted approved state:
+
+1. normalize and hash the current material state;
+2. compare it to the stored state hash and actual semantic fields;
+3. treat an identical material state as unchanged;
+4. apply materiality criteria to actual signal changes;
+5. notify only when a new or materially changed development meets the current notification policy.
+
+### Historical autonomous-runner behavior
+
+The former write-enabled runner automatically stored a successful missing baseline and marked it `baseline`. That automatic persistence behavior is legacy and is not part of scheduled production monitoring.
 
 ## 8. Separate observation, interpretation and decision effect
 
-Every event must contain three distinct layers.
+Every material development should keep three distinct layers.
 
 ### Observation
 
@@ -227,56 +237,61 @@ For `managed_team`:
 
 1. resolve the current team by stable ID;
 2. load current roster, ownership, format, salary, picks and relevant decisions;
-3. apply the target's effect rules;
+3. apply relevant effect rules;
 4. state whether action changes and how urgently;
 5. use the current franchise name only in prose when helpful.
 
 ## 9. Output and notification
 
-A material change produces matching Markdown and JSON under:
+### Current scheduled-monitoring behavior
+
+A scheduled monitoring notification is external output and does not itself modify repository State or create an Observation Event bundle.
+
+When a new material development is found:
+
+- notify according to the current monitoring task and Architecture;
+- include the proposed durable repository change;
+- do not write State, JSON events or Markdown events before approval;
+- do not repeat an unchanged already-known state.
+
+No-change runs remain silent and produce no repository heartbeat.
+
+### Historical autonomous event publication
+
+The former write-enabled runner produced matching Markdown and JSON under:
 
 ```text
 fantasy-management/analyses/{season}/observation-events/
 ```
 
-The JSON must validate against `automation-observation-event.schema.json`.
+and published State + JSON event + Markdown event atomically through `atomic-publication.md` before notifying.
 
-Publication must follow `atomic-publication.md`. State, JSON event and Markdown event are one atomic material-change bundle.
+That autonomous event-publication ordering is legacy. The event schema and atomic-publication workflow remain historical contracts and may still be used if a future explicitly approved stored event workflow requires them.
 
-Notify only when:
+## 10. Human-approved State update
 
-- the job notification rule permits it;
-- severity meets the threshold;
-- the event is not a duplicate;
-- the baseline policy permits it;
-- the atomic repository publication succeeded.
+After explicit approval, an interactive qualitative baseline write may update:
 
-No-change runs produce no analysis file, no state heartbeat, no commit and no notification.
+```text
+fantasy-management/automation/state/entity-observation.json
+```
 
-Incremental baseline progress may produce a State-only commit because it is a real durable state change. It produces no analysis file and no notification.
+For that write:
 
-## 10. State update
+- persist only the approved target/profile scope;
+- increment revision exactly once for the complete logical State change;
+- preserve unrelated previous good states and input fingerprints;
+- retain previous good material state on unresolved evidence rather than inventing a replacement;
+- calculate every changed `state_hash` from canonical normalized JSON;
+- validate the complete replacement State against `automation-observation-state.schema.json` and `validate_automation.py` cross-file rules;
+- pin the expected target-branch parent commit SHA and current State blob SHA;
+- publish only by non-forced fast-forward;
+- discard and recompute on concurrency conflict;
+- do not alter jobs, profiles, target sets or generated data as a side effect.
 
-When write mode is enabled:
+An approved interactive baseline write is not an autonomous runner execution and must not advance `last_successful_run` merely because persistence succeeded.
 
-- update only `state/entity-observation.json`;
-- increment revision only for a real state change;
-- update target/profile states independently;
-- retain the previous good state on profile failure;
-- record bounded operational events;
-- never alter jobs, profiles or target sets.
-
-For material events, the State update must be committed atomically with both event files. A baseline-progress, status-change or changed-error-state write may update only the State when the global state policy permits it.
-
-Before every State-only baseline-progress write:
-
-1. pin the expected `main` parent commit SHA;
-2. pin the expected State blob SHA;
-3. build the complete replacement State document;
-4. validate it against `automation-observation-state.schema.json` and the cross-file validator;
-5. write only when both expected SHAs still match;
-6. discard and recompute on conflict;
-7. never force-update or merge operational State automatically.
+The historical Replacement-State-Writer and Bootstrap checkpoint path are not invoked automatically by scheduled monitoring.
 
 ## Player role-opportunity module
 
@@ -297,8 +312,8 @@ For `player` entities using `role-opportunity`:
 
 For entities using `market-movement`:
 
-- resolve every configured source binding through `source-binding-resolution.md`;
-- use current dated ranking and market snapshots;
+- prefer the current provider-neutral prepared market signals when available;
+- use current dated ranking and market snapshots when source-level verification is needed;
 - keep independent sources independent;
 - do not substitute an unconfigured provider silently;
 - do not average incompatible source formats blindly;
@@ -307,15 +322,17 @@ For entities using `market-movement`:
 - distinguish role-driven movement from noise;
 - record disagreement when sources move in opposite directions.
 
-## Production readiness
+## Current production readiness
 
-Production execution requires all of the following:
+Current scheduled monitoring does **not** require every active target/profile pair to have a persisted baseline. It requires:
 
-1. every active target/profile pair can be resolved; missing stored profile states are handled through the bounded incremental baseline backfill and do not block production execution;
-2. successful deterministic source-binding resolution for every pair selected into the current deep-evaluation batch;
-3. a successful controlled atomic-write test;
-4. `runner-config.json` in `write_enabled`;
-5. the job definition enabled;
-6. an external scheduled task or runner wakeup.
+1. current provider-neutral prepared inputs and their quality report to be usable for the requested scope;
+2. current repository identity and ownership context to resolve the relevant player;
+3. fresh external verification where qualitative injury, availability, role or opportunity evidence is required;
+4. read-only execution for the scheduled run;
+5. comparison against approved persisted baselines where they exist;
+6. explicit human approval before any durable repository write.
 
-The repository controls job eligibility and writes. The external task only wakes the runner. A remaining retryable baseline backlog must not cause the external task to disable itself.
+## Legacy autonomous production readiness
+
+The former autonomous runner additionally required `runner-config.json` in `write_enabled`, an enabled job, automatic baseline-backfill mechanics, controlled atomic-write testing and an external wakeup. Those requirements document the retired autonomous write path and are not conditions for current scheduled monitoring.
