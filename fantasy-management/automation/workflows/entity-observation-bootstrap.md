@@ -1,8 +1,16 @@
 # Entity Observation Bootstrap Workflow
 
+## Current status
+
+**Disabled legacy workflow.** The machine-readable policy `fantasy-management/automation/bootstrap/entity-observation-bootstrap.json` is currently `enabled: false`, and `FANTASY_OPERATIONS_ARCHITECTURE.md` explicitly prohibits autonomous bootstrap or baseline-backfill execution in scheduled monitoring.
+
+Missing target/profile baselines do **not** activate this workflow in the current production architecture. Scheduled monitoring remains read-only, may build an internal first-observation comparison state for the current run, and proposes any durable baseline write for explicit human approval.
+
+This document is retained as a historical implementation contract for the former autonomous bootstrap and for its useful deterministic checkpoint, hashing, validation and optimistic-concurrency semantics. It may not override the current Architecture or `runner-config.json`. Re-enabling this bootstrap would be a separate architecture/configuration change requiring explicit approval.
+
 Purpose: initialize missing observation baselines efficiently without weakening state validation, publication safety, or monitoring priority.
 
-This workflow is active only while at least one active target/profile pair has no good stored baseline. While active, it supersedes the fixed deep-evaluation pair budget in sections 3.1 and 3.3 of `entity-observation.md`. All other source, evidence, materiality, notification, and write-safety rules remain binding.
+Historically, this workflow was active while at least one active target/profile pair had no good stored baseline and superseded the fixed deep-evaluation pair budget in sections 3.1 and 3.3 of `entity-observation.md`. The rules below describe that legacy autonomous execution model and are not an activation condition today.
 
 The machine-readable policy is:
 
@@ -90,7 +98,7 @@ Unpublished findings from a failed checkpoint are not state and must not be reus
 
 ## 5. Generate the complete replacement State
 
-Use:
+The historical helper is:
 
 ```text
 python fantasy-management/_ai/scripts/apply_observation_state_batch.py \
@@ -111,11 +119,11 @@ The helper:
 6. increments the State revision exactly once per checkpoint;
 7. validates the complete replacement document against the observation-State schema.
 
-The helper performs no research and makes no fantasy recommendation.
+The helper performs no research and makes no fantasy recommendation. Its historical presence does not authorize scheduled monitoring to execute it.
 
 ## 6. Cross-file validation and publication
 
-Before every checkpoint publication:
+The former autonomous checkpoint publication contract was:
 
 1. place the generated complete replacement State at the canonical State path in a disposable or controlled working tree;
 2. run `fantasy-management/_ai/scripts/validate_automation.py` against that complete tree;
@@ -129,13 +137,13 @@ Before every checkpoint publication:
 
 If either SHA changed, discard the prepared replacement, reload `main`, and recalculate the next checkpoint. Never merge operational State automatically.
 
-A bootstrap checkpoint is State-only. It creates no Observation Event and no user notification.
+Historically, a bootstrap checkpoint was State-only and created no Observation Event or user notification. In the current architecture, scheduled monitoring does not publish such checkpoints at all.
 
 ## 7. Resume behavior
 
-After every successful checkpoint, use the newly committed State as the only continuation source. Re-resolve the remaining queue against the current `main` branch.
+The historical autonomous behavior after a successful checkpoint was to use the newly committed State as the only continuation source and re-resolve the remaining queue against current `main`.
 
-When a later group fails:
+When a later group failed:
 
 - retain all earlier published checkpoints;
 - do not roll back successful progress;
@@ -143,18 +151,17 @@ When a later group fails:
 - leave the external daily task enabled;
 - resume from the last committed checkpoint on the next wakeup.
 
+This resume behavior remains historical documentation and is not current scheduled-monitoring behavior while bootstrap is disabled.
+
 ## 8. Bootstrap completion
 
-Bootstrap ends when every active target/profile pair has either:
+Historically, bootstrap ended when every active target/profile pair had either:
 
 - a valid baseline or later good material State; or
 - a retryable state that preserves a previous good material State.
 
-Pairs with no good State remain bootstrap work even when they are marked pending.
+Pairs with no good State remained bootstrap work even when marked pending.
 
-After completion:
+After completion the old runner returned to fingerprint- and event-oriented monitoring.
 
-- return to the normal fingerprint- and event-oriented monitoring workflow;
-- no fixed small pair budget is needed for unchanged pairs;
-- deep research is limited to changed inputs, concrete signals, and retries;
-- State-only bootstrap checkpoint commits stop.
+Under the current architecture there is no requirement to bootstrap every active pair before scheduled monitoring can operate. Persist only specifically approved qualitative baselines unless a future explicit architecture decision changes that policy.
