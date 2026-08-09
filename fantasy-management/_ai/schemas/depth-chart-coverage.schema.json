@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mighty-giants.local/schemas/depth-chart-coverage.schema.json",
+  "title": "Sleeper Depth-Chart Coverage Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "sources",
+    "population",
+    "records",
+    "interpretation"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "depth-chart-coverage"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "minLength": 64, "maxLength": 64},
+    "sources": {"type": "array", "items": {"type": "object"}},
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player_count", "available", "available_percent", "status_counts", "by_position"],
+      "properties": {
+        "player_count": {"type": "integer", "minimum": 0},
+        "available": {"type": "integer", "minimum": 0},
+        "available_percent": {"type": "number", "minimum": 0, "maximum": 100},
+        "status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "by_position": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["total", "available", "available_percent", "status_counts"],
+            "properties": {
+              "total": {"type": "integer", "minimum": 0},
+              "available": {"type": "integer", "minimum": 0},
+              "available_percent": {"type": "number", "minimum": 0, "maximum": 100},
+              "status_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+            }
+          }
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "nfl_team",
+          "sleeper_depth_chart_position",
+          "sleeper_depth_chart_order",
+          "coverage_status",
+          "interpretation"
+        ],
+        "properties": {
+          "player_id": {"type": "string"},
+          "name": {"type": ["string", "null"]},
+          "position": {"type": "string"},
+          "nfl_team": {"type": ["string", "null"]},
+          "sleeper_depth_chart_position": {"type": ["string", "null"]},
+          "sleeper_depth_chart_order": {"type": ["number", "null"]},
+          "coverage_status": {"enum": ["full", "position_only", "order_only", "unavailable"]},
+          "interpretation": {"const": "nominal_depth_chart_only_not_usage"}
+        }
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["semantic", "usage_truth", "recommendation_eligible", "missing_semantics"],
+      "properties": {
+        "semantic": {"type": "string"},
+        "usage_truth": {"const": false},
+        "recommendation_eligible": {"const": false},
+        "missing_semantics": {"type": "string"}
+      }
+    }
+  }
+}
