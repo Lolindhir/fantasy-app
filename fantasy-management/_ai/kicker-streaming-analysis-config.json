@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "analysis_id": "kicker-streaming",
+  "source": "fantasy-management/generated/operations/kicker-streaming-inputs.json",
+  "baseline": {
+    "minimum_core_signal_count": 2,
+    "shortlist_free_agent_count": 8,
+    "weights": {
+      "cbs_league_scoring_percentile": 0.42,
+      "fftoday_projection_percentile": 0.37,
+      "ffc_kicker_adp_percentile": 0.21
+    },
+    "activity_policy": "research_tiebreaker_only"
+  },
+  "weekly": {
+    "weights": {
+      "baseline_score": 0.35,
+      "matchup_score": 0.10,
+      "offense_scoring_environment_score": 0.15,
+      "field_goal_opportunity_score": 0.20,
+      "weather_stadium_score": 0.10,
+      "qb_injury_context_score": 0.10
+    },
+    "switch_threshold_points": 5.0,
+    "allowed_job_security": [
+      "confirmed_starter",
+      "probable_starter"
+    ],
+    "disqualifying_player_injury_status": [
+      "out"
+    ]
+  },
+  "persistence": {
+    "default": "stdout_only",
+    "repository_analysis_write_requires_explicit_approval": true
+  }
+}
