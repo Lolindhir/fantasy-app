@@ -89,6 +89,19 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 7. Verify top candidates.
 8. Store under `analyses/YYYY/free-agent-boards/` when requested.
 
+## Kicker Streaming analysis workflow
+
+1. Load `fantasy-management/generated/operations/kicker-streaming-inputs.json` as the canonical prepared Kicker candidate set. Do not rebuild fantasy availability from `Players.json -> IsFreeAgent`.
+2. Run `fantasy-management/_ai/scripts/analyze_kicker_streaming.py` without weekly context to produce the baseline ranking and research shortlist. The default execution is stdout-only.
+3. Treat the baseline as prioritization, not a waiver recommendation. It combines CBS projections recalculated into current league-scoring bounds, FFToday projection rank and FFC Kicker ADP. Sleeper add activity is only a research tiebreaker.
+4. Research the held kicker and the shortlisted free agents for the current week. Verify schedule/matchup, expected team scoring environment, field-goal opportunity, weather/stadium, current kicking job and relevant player/QB/injury context from fresh sources.
+5. Record the researched values in a temporary weekly-context document that validates against `fantasy-management/_ai/schemas/kicker-weekly-context.schema.json` and pins `source_input_fingerprint` to the current Kicker input contract.
+6. Run the analysis again with `--weekly-context`. Job security is an eligibility gate; a player with an unconfirmed current kicking job must not win a switch recommendation merely because of preseason projections or ADP.
+7. Require the configured material score advantage before recommending a switch when the held kicker remains eligible. If the held kicker fails the current job/injury gate, prefer the best verified eligible free agent.
+8. Output either a clear `switch_recommended`, `no_switch_recommended`, or `insufficient_context`. A baseline-only run must return `weekly_context_required`.
+9. Keep provider fantasy points separate. Do not average provider FPTS or silently treat them as Mighty-Giants league points.
+10. Store a dated Kicker Streaming analysis under `analyses/YYYY/kicker-streaming/` only when explicitly approved; otherwise keep the run ephemeral.
+
 ## Podcast workflow
 
 Use for Stoned Lack, Down Set Talk, Football Bromance and future sources.
