@@ -1,0 +1,533 @@
+{
+  "schema_version": 1,
+  "id": "kicker-signal-movement",
+  "title": "Kicker Signal Movement",
+  "description": "Beobachtet materielle Veränderungen bei aktuell gehaltenen und tatsächlich verfügbaren Fantasy-Free-Agent-Kickern. Das Profil nutzt den liga-spezifischen Kicker-Streaming-Input und die bestehende Baseline-Engine als tägliche Veränderungssignale; es erzeugt keine wöchentliche Start-/Sit- oder Add-/Drop-Entscheidung.",
+  "applicable_entity_types": [
+    "player"
+  ],
+  "evaluator": {
+    "id": "kicker-signal-movement-evaluator",
+    "type": "hybrid",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/kicker-daily-monitoring.md"
+  },
+  "signals": [
+    {
+      "id": "kicker.availability",
+      "description": "Aktuelle Fantasy-Liga-Verfügbarkeit aus dem Kicker-Streaming-Contract: gehalten oder echter Fantasy Free Agent.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["held", "free_agent"],
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.nfl_team",
+      "description": "Aktuelles NFL-Team des Kickers.",
+      "value_type": "string",
+      "unit": null,
+      "source_types": ["fantasy_operations", "official_team"]
+    },
+    {
+      "id": "kicker.nominal_k1",
+      "description": "Ob der strukturierte nominale Sleeper-Depth-Chart den Spieler aktuell als K1 führt; dies ist nur ein Trigger und kein alleiniger Job-Sicherheitsnachweis.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "kicker.injury_flag",
+      "description": "Ob der materialisierte Player-/Kicker-Contract ein positives Verletzungssignal enthält.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.ffc_percentile",
+      "description": "Listenlängenbereinigtes Kicker-ADP-Perzentil von Fantasy Football Calculator; höher bedeutet früheren Draftpreis.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.ffc_rank",
+      "description": "Aktueller Rang im FFC-Kicker-ADP-Feed.",
+      "value_type": "number",
+      "unit": "rank",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.ffc_times_drafted",
+      "description": "Anzahl beobachteter Drafts des Spielers im FFC-Kicker-ADP-Feed.",
+      "value_type": "integer",
+      "unit": "drafts",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.fftoday_percentile",
+      "description": "Listenlängenbereinigtes FFToday-Kicker-Projektionsperzentil.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.cbs_percentile",
+      "description": "Listenlängenbereinigtes CBS-Sports-Kicker-Projektionsperzentil.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.projection_consensus_percentile",
+      "description": "Provider-neutral vorbereiteter Projektionskonsens aus vergleichbaren Rang-Perzentilen. Provider-Fantasy-Punkte bleiben getrennt.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "kicker.projection_provider_count",
+      "description": "Anzahl aktuell gelisteter anwendbarer Projektionsprovider für den Kicker.",
+      "value_type": "integer",
+      "unit": "providers",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.projection_percentile_spread",
+      "description": "Abstand zwischen den vergleichbaren Projektionsperzentilen der Provider als Unsicherheitssignal.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "kicker.sleeper_add_top20",
+      "description": "Ob der Spieler aktuell in den Top 20 der Sleeper-Add-Aktivität liegt. Rolling-window Counts werden nicht als neue Adds seit dem letzten Lauf interpretiert.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "kicker.sleeper_add_top10",
+      "description": "Ob der Spieler aktuell in den Top 10 der Sleeper-Add-Aktivität liegt.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "kicker.baseline_score",
+      "description": "Aktueller provider-neutraler Kicker-Baseline-Score der bestehenden Kicker-Streaming-Engine ohne Wochenkontext.",
+      "value_type": "number",
+      "unit": "score_points",
+      "source_types": ["derived"]
+    },
+    {
+      "id": "kicker.baseline_rank",
+      "description": "Aktueller Baseline-Rang innerhalb der gehaltenen und verfügbaren Kicker-Population.",
+      "value_type": "integer",
+      "unit": "rank",
+      "source_types": ["derived"]
+    },
+    {
+      "id": "kicker.research_shortlist",
+      "description": "Ob der Kicker aktuell in der bestehenden Baseline-Research-Shortlist liegt; die Shortlist ist ein Research-Prioritätssignal und keine Add-Empfehlung.",
+      "value_type": "boolean",
+      "unit": null,
+      "source_types": ["derived"]
+    },
+    {
+      "id": "kicker.job_security",
+      "description": "Frisch verifizierter aktueller Kicker-Jobstatus, wenn ein konkreter Trigger eine externe Prüfung rechtfertigt. Stabile No-op-Läufe dürfen not_checked verwenden.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["confirmed_starter", "probable_starter", "competition", "uncertain", "not_current_starter", "not_checked"],
+      "source_types": ["official_team", "official_league", "transaction_report", "injury_report", "derived"]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Konfidenz der aktuellen Kicker-Beobachtung unter Berücksichtigung von Contract-Qualität, Quellen-Freshness, Baseline-Signalabdeckung und gegebenenfalls externer Job-Verifikation.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["low", "medium", "high"],
+      "source_types": ["derived"]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 1,
+    "allow_single_authoritative_source": true,
+    "preferred_source_types": [
+      "fantasy_operations",
+      "derived",
+      "official_team",
+      "official_league",
+      "transaction_report",
+      "injury_report"
+    ]
+  },
+  "source_bindings": [
+    {
+      "id": "kicker-streaming-inputs-current",
+      "source_type": "fantasy_operations",
+      "provider": "fantasy_operations",
+      "dataset_id": "kicker-streaming-inputs",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasy-operations-kicker-inputs",
+      "access": {
+        "type": "repo_file",
+        "location": "fantasy-management/generated/operations/kicker-streaming-inputs.json",
+        "selection_policy": "current_file"
+      },
+      "entity_join": ["player_id"],
+      "signal_mappings": {
+        "kicker.availability": "candidate.availability",
+        "kicker.nfl_team": "candidate.nfl_team",
+        "kicker.nominal_k1": "candidate.role.sleeper_depth_chart_order_equals_1",
+        "kicker.injury_flag": "candidate.injury.is_injured",
+        "kicker.ffc_percentile": "candidate.redraft_adp.primary.percentile",
+        "kicker.ffc_rank": "candidate.redraft_adp.primary.rank",
+        "kicker.ffc_times_drafted": "candidate.redraft_adp.primary.times_drafted",
+        "kicker.fftoday_percentile": "candidate.projections.providers.fftoday.percentile",
+        "kicker.cbs_percentile": "candidate.projections.providers.cbs_sports.percentile",
+        "kicker.projection_consensus_percentile": "candidate.projections.summary.consensus_percentile",
+        "kicker.projection_provider_count": "candidate.projections.summary.listed_provider_count",
+        "kicker.projection_percentile_spread": "candidate.projections.summary.percentile_spread",
+        "kicker.sleeper_add_top20": "candidate.activity.add.rank_lte_20",
+        "kicker.sleeper_add_top10": "candidate.activity.add.rank_lte_10"
+      },
+      "freshness_policy": {
+        "max_age_hours": 30,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "position": "K",
+        "availability_contract": "held_plus_actual_fantasy_free_agents",
+        "league_scoring_reconciled": true,
+        "provider_points_policy": "kept_separate_not_averaged"
+      }
+    },
+    {
+      "id": "kicker-baseline-analysis",
+      "source_type": "derived",
+      "provider": "kicker_streaming_analyzer",
+      "dataset_id": "kicker-streaming-baseline",
+      "role": "derived",
+      "required": true,
+      "independence_group": "derived-kicker-baseline",
+      "access": {
+        "type": "derived",
+        "location": null,
+        "selection_policy": "derived"
+      },
+      "entity_join": [],
+      "signal_mappings": {
+        "kicker.baseline_score": "analyze_kicker_streaming.baseline_score",
+        "kicker.baseline_rank": "analyze_kicker_streaming.baseline_rank",
+        "kicker.research_shortlist": "analyze_kicker_streaming.research_shortlist_ids_contains_player",
+        "evidence.confidence": "analyze_kicker_streaming.baseline_confidence"
+      },
+      "freshness_policy": {
+        "max_age_hours": null,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "mode": "baseline_only",
+        "weekly_recommendation_forbidden": true,
+        "activity_policy": "research_tiebreaker_only"
+      }
+    },
+    {
+      "id": "official-kicker-job-verification",
+      "source_type": "official_team",
+      "provider": "official_nfl_team",
+      "dataset_id": "current-kicker-job",
+      "role": "supporting",
+      "required": false,
+      "independence_group": "official-kicker-job",
+      "access": {
+        "type": "web",
+        "location": "Official NFL/team roster, transaction, depth-chart and injury sources for the player's current NFL team",
+        "selection_policy": "live_fetch"
+      },
+      "entity_join": ["player_id"],
+      "signal_mappings": {
+        "kicker.job_security": "current_verified_kicker_job_status"
+      },
+      "freshness_policy": {
+        "max_age_hours": 24,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "triggered_research_only": true,
+        "nominal_sleeper_depth_chart_is_not_sufficient_job_proof": true
+      }
+    }
+  ],
+  "criteria": [
+    {
+      "id": "held-kicker-nominal-job-risk",
+      "description": "Der gehaltene Kicker verliert den nominalen K1-Status. Vor einer Benachrichtigung muss der aktuelle Job extern verifiziert werden.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.availability", "operator": "equals", "value": "held"},
+          {"signal": "kicker.nominal_k1", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "kicker.nominal_k1", "operator": "equals", "value": false}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_job_risk_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "require_external_job_verification_before_notification": true
+      }
+    },
+    {
+      "id": "held-kicker-injury-signal",
+      "description": "Für den gehaltenen Kicker erscheint ein neues positives strukturiertes Verletzungssignal.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.availability", "operator": "equals", "value": "held"},
+          {"signal": "kicker.injury_flag", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "kicker.injury_flag", "operator": "equals", "value": true}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_injury_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "require_external_injury_verification_before_notification": true
+      }
+    },
+    {
+      "id": "kicker-nfl-team-change",
+      "description": "Der NFL-Team-Kontext eines aktuell gehaltenen oder verfügbaren Kickers hat sich verändert.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.nfl_team", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_team_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "require_external_job_verification_before_notification": true
+      }
+    },
+    {
+      "id": "free-agent-enters-research-shortlist",
+      "description": "Ein verfügbarer Kicker steigt neu in die bestehende Kicker-Research-Shortlist auf.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.availability", "operator": "equals", "value": "free_agent"},
+          {"signal": "kicker.research_shortlist", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "kicker.research_shortlist", "operator": "equals", "value": true},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_shortlist_entry"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "prioritize_job_verification": true
+      }
+    },
+    {
+      "id": "material-baseline-score-movement",
+      "description": "Der provider-neutrale Kicker-Baseline-Score bewegt sich um mindestens zehn Punkte.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.baseline_score", "operator": "absolute_delta_gte", "value": 10, "comparison_window": "previous_material_state"},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_baseline_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "large-baseline-score-movement",
+      "description": "Der provider-neutrale Kicker-Baseline-Score bewegt sich um mindestens zwanzig Punkte.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.baseline_score", "operator": "absolute_delta_gte", "value": 20, "comparison_window": "previous_material_state"},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_baseline_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "material-ffc-adp-movement",
+      "description": "Das Kicker-ADP-Perzentil bewegt sich um mindestens fünfzehn Punkte bei ausreichender Spieler-Stichprobe.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.ffc_percentile", "operator": "absolute_delta_gte", "value": 15, "comparison_window": "previous_material_state"},
+          {"signal": "kicker.ffc_times_drafted", "operator": "gte", "value": 50},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_adp_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "material-projection-consensus-movement",
+      "description": "Der vergleichbare Projektionskonsens bewegt sich um mindestens fünfzehn Perzentilpunkte bei mindestens zwei gelisteten Projektionsprovidern.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.projection_consensus_percentile", "operator": "absolute_delta_gte", "value": 15, "comparison_window": "previous_material_state"},
+          {"signal": "kicker.projection_provider_count", "operator": "gte", "value": 2},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_projection_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "sleeper-add-top20-entry",
+      "description": "Ein Kicker steigt neu in die Top 20 der Sleeper-Add-Aktivität auf. Das ist ein Research-Prioritätssignal, keine Qualitäts- oder Add-Empfehlung.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.sleeper_add_top20", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "kicker.sleeper_add_top20", "operator": "equals", "value": true},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_activity_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "prioritize_job_verification": true
+      }
+    },
+    {
+      "id": "sleeper-add-top10-entry",
+      "description": "Ein Kicker steigt neu in die Top 10 der Sleeper-Add-Aktivität auf und erhält erhöhte Research-Priorität.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.sleeper_add_top10", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "kicker.sleeper_add_top10", "operator": "equals", "value": true},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_activity_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true,
+        "prioritize_job_verification": true
+      }
+    },
+    {
+      "id": "verified-held-job-downgrade",
+      "description": "Eine frische externe Prüfung bestätigt, dass der gehaltene Kicker nicht mehr sicher als aktueller Starter einzuordnen ist.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.availability", "operator": "equals", "value": "held"},
+          {"signal": "kicker.job_security", "operator": "changed", "comparison_window": "previous_material_state"},
+          {
+            "any": [
+              {"signal": "kicker.job_security", "operator": "equals", "value": "competition"},
+              {"signal": "kicker.job_security", "operator": "equals", "value": "uncertain"},
+              {"signal": "kicker.job_security", "operator": "equals", "value": "not_current_starter"}
+            ]
+          },
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "high",
+        "classification": "kicker_job_security_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    },
+    {
+      "id": "verified-free-agent-job-upgrade",
+      "description": "Eine frische externe Prüfung bestätigt für einen verfügbaren Kicker einen neuen oder verbesserten Starterstatus.",
+      "condition": {
+        "all": [
+          {"signal": "kicker.availability", "operator": "equals", "value": "free_agent"},
+          {"signal": "kicker.job_security", "operator": "changed", "comparison_window": "previous_material_state"},
+          {
+            "any": [
+              {"signal": "kicker.job_security", "operator": "equals", "value": "confirmed_starter"},
+              {"signal": "kicker.job_security", "operator": "equals", "value": "probable_starter"}
+            ]
+          },
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {
+        "is_material": true,
+        "severity": "medium",
+        "classification": "kicker_job_security_change"
+      },
+      "effect": {
+        "recalculate_decision_context": true
+      }
+    }
+  ],
+  "output_fields": [
+    "availability",
+    "nfl_team",
+    "nominal_k1",
+    "injury_flag",
+    "ffc_percentile",
+    "ffc_rank",
+    "ffc_times_drafted",
+    "fftoday_percentile",
+    "cbs_percentile",
+    "projection_consensus_percentile",
+    "projection_provider_count",
+    "projection_percentile_spread",
+    "sleeper_add_top20",
+    "sleeper_add_top10",
+    "baseline_score",
+    "baseline_rank",
+    "research_shortlist",
+    "job_security",
+    "confidence"
+  ]
+}
