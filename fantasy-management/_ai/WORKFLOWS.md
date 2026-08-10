@@ -91,16 +91,104 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 
 ## Kicker Streaming analysis workflow
 
+The Kicker Streaming engine is a positionsspezifischer decision component. It is not a standalone weekly orchestration target and must not bypass the overall roster/waiver decision.
+
 1. Load `fantasy-management/generated/operations/kicker-streaming-inputs.json` as the canonical prepared Kicker candidate set. Do not rebuild fantasy availability from `Players.json -> IsFreeAgent`.
 2. Run `fantasy-management/_ai/scripts/analyze_kicker_streaming.py` without weekly context to produce the baseline ranking and research shortlist. The default execution is stdout-only.
 3. Treat the baseline as prioritization, not a waiver recommendation. It combines CBS projections recalculated into current league-scoring bounds, FFToday projection rank and FFC Kicker ADP. Sleeper add activity is only a research tiebreaker.
-4. Research the held kicker and the shortlisted free agents for the current week. Verify schedule/matchup, expected team scoring environment, field-goal opportunity, weather/stadium, current kicking job and relevant player/QB/injury context from fresh sources.
-5. Record the researched values in a temporary weekly-context document that validates against `fantasy-management/_ai/schemas/kicker-weekly-context.schema.json` and pins `source_input_fingerprint` to the current Kicker input contract.
-6. Run the analysis again with `--weekly-context`. Job security is an eligibility gate; a player with an unconfirmed current kicking job must not win a switch recommendation merely because of preseason projections or ADP.
-7. Require the configured material score advantage before recommending a switch when the held kicker remains eligible. If the held kicker fails the current job/injury gate, prefer the best verified eligible free agent.
-8. Output either a clear `switch_recommended`, `no_switch_recommended`, or `insufficient_context`. A baseline-only run must return `weekly_context_required`.
-9. Keep provider fantasy points separate. Do not average provider FPTS or silently treat them as Mighty-Giants league points.
-10. Store a dated Kicker Streaming analysis under `analyses/YYYY/kicker-streaming/` only when explicitly approved; otherwise keep the run ephemeral.
+4. For a concrete Weekly Lineup + Waiver decision, build the deterministic Kicker research plan and research the held kicker plus shortlisted free agents for the target week.
+5. Verify schedule/matchup, expected team scoring environment, field-goal opportunity, venue/roof, weather when exposed, current kicking job and relevant player/QB/injury context from fresh sources.
+6. Record the researched values in a temporary weekly-context document that validates against `fantasy-management/_ai/schemas/kicker-weekly-context.schema.json` and pins both source and research-plan fingerprints.
+7. Use `run_kicker_weekly_analysis.py` as the supported gated path. Job security is an eligibility gate; a player with an unconfirmed current kicking job must not win a switch recommendation merely because of preseason projections or ADP.
+8. Require the configured material score advantage before recommending a switch when the held kicker remains eligible. If the held kicker is on bye, use the explicit held-bye path rather than a fake zero score or job-security failure.
+9. Output either a clear `switch_recommended`, `no_switch_recommended`, or `insufficient_context`. A baseline-only run must return `weekly_context_required`.
+10. Keep provider fantasy points separate. Do not average provider FPTS or silently treat them as Mighty-Giants league points.
+11. Hand the Kicker result back to the overarching Weekly Lineup + Waiver workflow, which must still evaluate the drop/bench-slot opportunity cost before a final roster transaction recommendation.
+12. Store a dated Kicker Streaming analysis under `analyses/YYYY/kicker-streaming/` only when explicitly approved; otherwise keep the run ephemeral.
+
+## Daily Monitoring workflow
+
+Canonical architecture reference:
+
+```text
+fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md
+```
+
+Purpose: identify material changes and research priorities without making the final weekly transaction or lineup decision.
+
+1. Let the scheduled source-refresh and materialization layers prepare the latest successful current inputs.
+2. Resolve the active `entity-observation` target sets and profiles.
+3. Reuse provider-neutral materialized inputs rather than independently rebuilding joins in monitoring.
+4. Compare current signals with the last good comparable state where one exists.
+5. Keep first observations and unchanged states silent.
+6. Run fresh qualitative research only when required by the profile or when a concrete change signal makes it decision-relevant.
+7. Emit only material developments with the observation, evidence quality, interpretation and affected future decision class separated.
+8. Do not issue Start/Sit, Add/Drop or Waiver decisions from Daily Monitoring alone.
+9. Route a material event toward the later appropriate decision process: Roster Review, Free-Agent Board, Trade analysis or Weekly Lineup + Waiver.
+10. Keep scheduled monitoring read-only; durable State or event writes require explicit approval under the current Architecture.
+
+### Kicker Daily Monitoring module
+
+Kicker is the first positionsspezifischer Daily-Monitoring module built on this boundary.
+
+Use:
+
+```text
+fantasy-management/automation/target-sets/kicker-daily-monitoring.json
+fantasy-management/automation/profiles/kicker-signal-movement.json
+fantasy-management/automation/workflows/kicker-daily-monitoring.md
+```
+
+The module observes the held kicker plus all actual fantasy-free-agent kickers from the current `kicker-streaming-inputs.json` contract.
+
+It may monitor:
+
+- baseline score/rank and shortlist entry;
+- FFC Kicker ADP;
+- FFToday/CBS projections and provider-neutral percentile consensus;
+- Sleeper add activity as research priority;
+- nominal K1 and structured injury triggers;
+- NFL-team changes;
+- triggered fresh job-security verification.
+
+It must not pull weekly matchup, weather, field-goal opportunity or concrete start/sit logic into the normal daily material state.
+
+## Weekly Lineup + Waiver workflow
+
+This is the future concrete weekly decision workflow for the complete managed roster, not a Kicker-specific scheduler.
+
+Canonical architecture reference:
+
+```text
+fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md
+```
+
+Target sequence:
+
+1. Load current league scoring, roster rules, managed roster and actual fantasy-free-agent population.
+2. Resolve the target NFL week and schedule.
+3. Resolve availability, bye and injury constraints before ranking startable players.
+4. Load current usage/opportunity, role, matchup and projection context.
+5. Apply positionsspezifische modules where they add real information.
+6. Determine the best legal starting lineup before considering roster moves.
+7. Evaluate free-agent upgrades against the actual current starter/bench alternatives.
+8. For every potential Add, identify the player who would need to be dropped and evaluate that player's bench/upside/scarcity/injury-insurance/trade-value opportunity cost.
+9. Recommend a Waiver/Add/Drop only when the overall roster benefit is positive, not merely because one position has a small isolated score advantage.
+10. Recompute the final lineup after approved/recommended moves.
+11. Provide starters, bench, Waiver Adds and corresponding Drops, alternatives, confidence, bye/injury risks and time-critical actions.
+
+### Kicker special case inside Weekly Lineup + Waiver
+
+Default: hold one kicker.
+
+- keep a stable good kicker when no material weekly advantage exists;
+- stream when a verified free agent has a material weekly advantage;
+- use explicit bye/job-loss/injury special paths;
+- only hold two kickers when preserving the longer-term kicker is worth more than the non-kicker bench slot that must be sacrificed.
+
+The Kicker engine can compare kickers. The Weekly Lineup + Waiver workflow must decide whether the roster cost of the move is justified.
+
+The concrete timing, Waiver-window cadence, late-injury rechecks and any automatic orchestration remain open TODOs and require separate approval before workflow-file changes.
 
 ## Podcast workflow
 
