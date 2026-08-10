@@ -15,6 +15,7 @@ def fixture(
     duplicate: bool = False,
     next_page: bool = False,
     source_position: str | None = None,
+    negative_field: str | None = None,
 ) -> str:
     config = module.POSITIONS[position]
     row_position = source_position or position
@@ -25,7 +26,9 @@ def fixture(
             player_id = 1000
         values = []
         for field in config["fields"]:
-            if field == "games_played":
+            if negative_field == field and index == 0:
+                value = -1
+            elif field == "games_played":
                 value = 17
             elif field == "projected_fantasy_points":
                 value = 170 - index
@@ -67,6 +70,17 @@ class CBSSportsOffenseTests(unittest.TestCase):
         self.assertEqual("RB", rows[0]["position"])
         self.assertEqual("FB", rows[0]["source_position"])
         self.assertEqual("DAL", rows[0]["team"])
+
+    def test_signed_yardage_is_preserved_but_counts_remain_nonnegative(self):
+        rows, _ = module.parse_projection_html(
+            fixture("WR", negative_field="rush_yards"), position="WR", season=2026
+        )
+        first = next(row for row in rows if row["source_player_id"] == "1000")
+        self.assertEqual(-1, first["rush_yards"])
+        with self.assertRaisesRegex(module.ProjectionError, "Invalid CBS rush_attempts"):
+            module.parse_projection_html(
+                fixture("WR", negative_field="rush_attempts"), position="WR", season=2026
+            )
 
     def test_position_contracts_have_distinct_source_routes_and_ranking_ids(self):
         urls = set()
