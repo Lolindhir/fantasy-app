@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/kicker-streaming-inputs.schema.json",
+  "title": "Fantasy Operations Kicker Streaming Inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "managed_team",
+    "league",
+    "population",
+    "candidates",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "kicker-streaming-inputs"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "managed_team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "name"],
+      "properties": {
+        "team_id": {"type": ["integer", "string", "null"]},
+        "name": {"type": ["string", "null"]}
+      }
+    },
+    "league": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["season", "phase", "current_week", "kicker_scoring", "projection_reconciliation"],
+      "properties": {
+        "season": {"type": ["string", "number", "null"]},
+        "phase": {"type": ["string", "null"]},
+        "current_week": {"type": ["integer", "number", "null"]},
+        "kicker_scoring": {"type": "object", "additionalProperties": {"type": "number"}},
+        "projection_reconciliation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cbs_sports", "fftoday", "provider_points_policy"],
+          "properties": {
+            "cbs_sports": {"const": "50_plus_bucket_requires_50_59_vs_60_plus_bounds"},
+            "fftoday": {"const": "no_distance_buckets_requires_field_goal_scoring_bounds"},
+            "provider_points_policy": {"const": "keep_separate_not_league_scoring"}
+          }
+        }
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "held_count", "free_agent_count", "candidate_count"],
+      "properties": {
+        "position": {"const": "K"},
+        "held_count": {"type": "integer", "minimum": 0},
+        "free_agent_count": {"type": "integer", "minimum": 0},
+        "candidate_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "nfl_team",
+          "availability",
+          "ownership",
+          "injury",
+          "role",
+          "market",
+          "redraft_adp",
+          "projections",
+          "activity",
+          "league_scoring_projection"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "nfl_team": {"type": ["string", "null"]},
+          "availability": {"enum": ["held", "free_agent"]},
+          "ownership": {"type": "object"},
+          "injury": {"type": "object"},
+          "role": {"type": "object"},
+          "market": {"type": "object"},
+          "redraft_adp": {"type": "object"},
+          "projections": {"type": "object"},
+          "activity": {"type": "object"},
+          "league_scoring_projection": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cbs_sports", "fftoday"],
+            "properties": {
+              "cbs_sports": {"$ref": "#/$defs/scoringProjection"},
+              "fftoday": {"$ref": "#/$defs/scoringProjection"}
+            }
+          }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "player_signal_quality",
+        "free_agent_quality",
+        "candidate_ids_unique",
+        "free_agents_match_upstream"
+      ],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "player_signal_quality": {"enum": ["ok", "warning"]},
+        "free_agent_quality": {"enum": ["ok", "warning"]},
+        "candidate_ids_unique": {"const": true},
+        "free_agents_match_upstream": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "scoringProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "points_min",
+        "points_max",
+        "provider_projected_fantasy_points",
+        "reason"
+      ],
+      "properties": {
+        "status": {"enum": ["not_available", "exact", "bounded"]},
+        "points_min": {"type": ["number", "null"]},
+        "points_max": {"type": ["number", "null"]},
+        "provider_projected_fantasy_points": {"type": ["number", "null"]},
+        "reason": {"type": "string"},
+        "components": {"type": "object"}
+      }
+    }
+  }
+}
