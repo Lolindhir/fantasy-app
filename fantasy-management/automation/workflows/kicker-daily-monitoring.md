@@ -122,7 +122,7 @@ Kleine Rangbewegungen ohne belastbare Stichprobe sind kein materielles Ereignis.
 - Provider-Count;
 - Percentile Spread als Unsicherheitssignal.
 
-Provider-Fantasy-Punkte werden weiterhin nicht gemittelt und nicht als Mighty-Giants-Ligapunkte ausgegeben.
+Provider-Fantasy-Punkte werden weiterhin nicht gemittelt und nicht als Ligapunkte des verwalteten Teams ausgegeben.
 
 ### Sleeper Activity
 
