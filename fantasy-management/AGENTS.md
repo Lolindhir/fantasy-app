@@ -224,6 +224,13 @@ fantasy-management/
 - `fantasy-management/_ai/golden-set/profile-list.json` is the canonical list of active Golden Set profiles. Unregistered profile files are drafts or proposals, not active extraction requirements.
 - The local podcast builder may aggregate and validate authored work-package artifacts, but it must not create new editorial interpretation.
 
+## GitHub connector large-file guard
+
+- A GitHub connector response with `content: ""` must not be treated as proof that a repository file is empty when the reported file `size` is greater than zero.
+- Before classifying a generated, runtime or analysis artifact as empty, cross-check the reported size and, when available, the blob SHA/content or another authoritative materialization/runtime result.
+- If the connector cannot return the file body because the file is too large or unsupported, report the body as unavailable through the connector rather than describing the file as empty.
+- This guard applies especially to generated operational artifacts such as `fantasy-management/generated/operations/player-signals.json` and `fantasy-management/generated/operations/free-agent-signals.json`.
+
 ## Language
 
 Use German for human-facing Fantasy Management notes, summaries, todo entries, podcast episode summaries, take indexes, rollups and recommendations unless the user explicitly asks otherwise.
