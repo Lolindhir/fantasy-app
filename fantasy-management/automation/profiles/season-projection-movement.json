@@ -34,14 +34,14 @@
     },
     {
       "id": "projection.fftoday_core_points",
-      "description": "Mit aktuellem Mighty-Giants-Scoring aus den vergleichbar projizierten FFToday-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
+      "description": "Mit aktuellem Liga-Scoring aus den vergleichbar projizierten FFToday-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
       "value_type": "number",
       "unit": "fantasy_points",
       "source_types": ["fantasy_operations", "derived"]
     },
     {
       "id": "projection.cbs_core_points",
-      "description": "Mit aktuellem Mighty-Giants-Scoring aus den vergleichbar projizierten CBS-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
+      "description": "Mit aktuellem Liga-Scoring aus den vergleichbar projizierten CBS-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
       "value_type": "number",
       "unit": "fantasy_points",
       "source_types": ["fantasy_operations", "derived"]
@@ -88,12 +88,39 @@
         "refresh_before_analysis": false
       },
       "format_context": {
-        "positions": ["QB", "RB", "WR", "TE"],
+        "positions": "QB,RB,WR,TE",
         "horizon": "regular_season",
         "actual_league_team_count": 6,
         "league_scoring_recalculated": true,
         "provider_points_policy": "kept_separate_not_averaged",
         "league_core_points_policy": "shared_projected_components_only_no_imputation"
+      }
+    },
+    {
+      "id": "season-projection-confidence",
+      "source_type": "derived",
+      "provider": "observation_runner",
+      "dataset_id": "season-projection-confidence",
+      "role": "derived",
+      "required": true,
+      "independence_group": "derived-season-projection-confidence",
+      "access": {
+        "type": "derived",
+        "location": null,
+        "selection_policy": "derived"
+      },
+      "entity_join": [],
+      "signal_mappings": {
+        "evidence.confidence": "derived_from_provider_count_freshness_join_quality_and_spread"
+      },
+      "freshness_policy": {
+        "max_age_hours": null,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "one_current_provider_can_reach_medium": true,
+        "two_current_providers_preferred": true,
+        "large_spread_reduces_interpretive_confidence": true
       }
     }
   ],
