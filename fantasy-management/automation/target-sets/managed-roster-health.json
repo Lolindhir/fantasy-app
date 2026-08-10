@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "managed-roster-health",
   "title": "Managed Roster Health",
-  "description": "Löst den vollständigen aktuellen Kader des verwalteten Teams dynamisch auf und beobachtet Verletzung, Rolle, Dynasty-Marktbewegung sowie Redraft-ADP jedes Spielers.",
+  "description": "Löst den vollständigen aktuellen Kader des verwalteten Teams dynamisch auf und beobachtet Verletzung, Rolle, Dynasty-Marktbewegung, Redraft-ADP sowie erwartete Saisonproduktion jedes Spielers.",
   "enabled": true,
   "mode": "dynamic",
   "defaults": {
@@ -19,11 +19,7 @@
       "entity_type": "player",
       "parameters": {
         "team_ref": "managed_team",
-        "membership_fields": [
-          "Roster",
-          "Reserve",
-          "Taxi"
-        ],
+        "membership_fields": ["Roster", "Reserve", "Taxi"],
         "player_index_path": "public/data/chat/players-relevant/index.json",
         "stable_identifier": "sleeper_id",
         "target_id_template": "managed-roster-player-{sleeper_id}",
@@ -31,26 +27,11 @@
         "retain_state_when_unselected": true
       },
       "profile_bindings": [
-        {
-          "profile_ref": "injury-status",
-          "enabled": true,
-          "criteria_overrides": {}
-        },
-        {
-          "profile_ref": "role-opportunity",
-          "enabled": true,
-          "criteria_overrides": {}
-        },
-        {
-          "profile_ref": "market-movement",
-          "enabled": true,
-          "criteria_overrides": {}
-        },
-        {
-          "profile_ref": "redraft-adp-movement",
-          "enabled": true,
-          "criteria_overrides": {}
-        }
+        {"profile_ref": "injury-status", "enabled": true, "criteria_overrides": {}},
+        {"profile_ref": "role-opportunity", "enabled": true, "criteria_overrides": {}},
+        {"profile_ref": "market-movement", "enabled": true, "criteria_overrides": {}},
+        {"profile_ref": "redraft-adp-movement", "enabled": true, "criteria_overrides": {}},
+        {"profile_ref": "season-projection-movement", "enabled": true, "criteria_overrides": {}}
       ],
       "priority": "high",
       "decision_context_template": {
@@ -58,66 +39,24 @@
         "relevance": "Aktueller Spieler des verwalteten Teams; Veränderungen können Roster-, Lineup-, Hold-, Shop-, Cut-, Stash-, Package- oder Handcuff-Entscheidungen beeinflussen.",
         "current_position": "Aktuelle Empfehlung aus dem letzten guten Material-State beibehalten, bis belastbare neue Evidenz eine Änderung rechtfertigt.",
         "effect_rules": [
-          {
-            "when_classification": "injury_status_change",
-            "action": "Roster-, Lineup- und Ersatzbedarf neu bewerten."
-          },
-          {
-            "when_classification": "roster_availability_change",
-            "action": "Kurz- und mittelfristige Verfügbarkeit sowie Ersatz- oder IR-Plan neu bewerten."
-          },
-          {
-            "when_classification": "return_timeline_change",
-            "action": "Erwarteten Einsatzzeitpunkt und Roster-Funktion neu bewerten."
-          },
-          {
-            "when_classification": "role_change",
-            "action": "Roster-Kategorie und Hold-, Shop- oder Package-Empfehlung neu bewerten."
-          },
-          {
-            "when_classification": "opportunity_change",
-            "action": "Lineup-, Stash- und Trade-Relevanz anhand der neuen Opportunity neu bewerten."
-          },
-          {
-            "when_classification": "high_value_usage_change",
-            "action": "Startbarkeit und kurzfristigen Wert neu bewerten."
-          },
-          {
-            "when_classification": "competition_change",
-            "action": "Rollenrisiko, Handcuff-Wert und Ersatzniveau neu bewerten."
-          },
-          {
-            "when_classification": "ranking_change",
-            "action": "Hold-, Shop- und Package-Position gegen den neuen Konsens prüfen."
-          },
-          {
-            "when_classification": "position_ranking_change",
-            "action": "Positionswert im Ligaformat neu bewerten."
-          },
-          {
-            "when_classification": "market_tier_change",
-            "action": "Trade- und Liquiditätsstrategie gegen das neue Markt-Tier prüfen."
-          },
-          {
-            "when_classification": "market_disagreement_change",
-            "action": "Quellenkonflikt prüfen und Konfidenz der aktuellen Empfehlung neu bewerten."
-          },
-          {
-            "when_classification": "redraft_adp_change",
-            "action": "Kurzfristigen Draftpreis mit Rolle, Verletzung und Dynasty-Marktwert abgleichen und Win-Now-, Shop- oder Package-Relevanz neu bewerten."
-          },
-          {
-            "when_classification": "redraft_adp_entry",
-            "action": "Neu entstandene Redraft-Relevanz auf belastbare Rollen- oder News-Signale prüfen und Roster-Funktion neu bewerten."
-          }
+          {"when_classification": "injury_status_change", "action": "Roster-, Lineup- und Ersatzbedarf neu bewerten."},
+          {"when_classification": "roster_availability_change", "action": "Kurz- und mittelfristige Verfügbarkeit sowie Ersatz- oder IR-Plan neu bewerten."},
+          {"when_classification": "return_timeline_change", "action": "Erwarteten Einsatzzeitpunkt und Roster-Funktion neu bewerten."},
+          {"when_classification": "role_change", "action": "Roster-Kategorie und Hold-, Shop- oder Package-Empfehlung neu bewerten."},
+          {"when_classification": "opportunity_change", "action": "Lineup-, Stash- und Trade-Relevanz anhand der neuen Opportunity neu bewerten."},
+          {"when_classification": "high_value_usage_change", "action": "Startbarkeit und kurzfristigen Wert neu bewerten."},
+          {"when_classification": "competition_change", "action": "Rollenrisiko, Handcuff-Wert und Ersatzniveau neu bewerten."},
+          {"when_classification": "ranking_change", "action": "Hold-, Shop- und Package-Position gegen den neuen Konsens prüfen."},
+          {"when_classification": "position_ranking_change", "action": "Positionswert im Ligaformat neu bewerten."},
+          {"when_classification": "market_tier_change", "action": "Trade- und Liquiditätsstrategie gegen das neue Markt-Tier prüfen."},
+          {"when_classification": "market_disagreement_change", "action": "Quellenkonflikt prüfen und Konfidenz der aktuellen Empfehlung neu bewerten."},
+          {"when_classification": "redraft_adp_change", "action": "Kurzfristigen Draftpreis mit Rolle, Verletzung und Dynasty-Marktwert abgleichen und Win-Now-, Shop- oder Package-Relevanz neu bewerten."},
+          {"when_classification": "redraft_adp_entry", "action": "Neu entstandene Redraft-Relevanz auf belastbare Rollen- oder News-Signale prüfen und Roster-Funktion neu bewerten."},
+          {"when_classification": "season_projection_change", "action": "Geänderte Produktionserwartung mit Rolle, Injury, Usage, ADP und Liga-Ersatzniveau abgleichen und betroffene Roster- oder Weekly-Decision-Klasse neu öffnen."},
+          {"when_classification": "season_projection_coverage_change", "action": "Neue Multi-Provider-Abdeckung als verbesserte Research-Basis nutzen, ohne daraus allein eine Spieleraufwertung abzuleiten."}
         ]
       },
-      "tags": [
-        "managed-roster",
-        "player-monitoring",
-        "dynamic-selector",
-        "redraft-adp"
-      ]
+      "tags": ["managed-roster", "player-monitoring", "dynamic-selector", "redraft-adp", "season-projections"]
     }
   ]
 }
