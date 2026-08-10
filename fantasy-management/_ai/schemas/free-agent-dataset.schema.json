@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/free-agent-dataset.schema.json",
+  "title": "Fantasy Operations Free Agent Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "source",
+    "population",
+    "players",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "free-agent-signals"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataset_id", "path", "input_fingerprint"],
+      "properties": {
+        "dataset_id": {"const": "player-signals"},
+        "path": {"type": "string", "minLength": 1},
+        "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_player_count",
+        "player_count",
+        "positions",
+        "position_counts",
+        "selection_rule"
+      ],
+      "properties": {
+        "source_player_count": {"type": "integer", "minimum": 1},
+        "player_count": {"type": "integer", "minimum": 0},
+        "positions": {
+          "type": "array",
+          "items": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+          "uniqueItems": true
+        },
+        "position_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "selection_rule": {
+          "const": "configured fantasy positions with ownership.status == fantasy_free_agent in player-signals"
+        }
+      }
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "ownership",
+          "app_data",
+          "injury",
+          "role",
+          "source_signals",
+          "market",
+          "redraft_adp",
+          "projections",
+          "activity"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+          "ownership": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {
+              "status": {"const": "fantasy_free_agent"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "source_quality_status",
+        "source_issue_count",
+        "selection_count_matches_source"
+      ],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "source_quality_status": {"enum": ["ok", "warning"]},
+        "source_issue_count": {"type": "integer", "minimum": 0},
+        "selection_count_matches_source": {"const": true}
+      }
+    }
+  }
+}
