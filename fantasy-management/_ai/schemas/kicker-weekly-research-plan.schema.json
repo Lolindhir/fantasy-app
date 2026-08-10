@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/kicker-weekly-research-plan.schema.json",
+  "title": "Kicker Weekly Research Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "source_input_fingerprint",
+    "season",
+    "week",
+    "population",
+    "candidates",
+    "research_policy",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "kicker-weekly-research-plan"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "season": {"type": ["string", "integer"]},
+    "week": {"type": "integer", "minimum": 1, "maximum": 18},
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["held_count", "shortlisted_free_agent_count", "candidate_count"],
+      "properties": {
+        "held_count": {"type": "integer", "minimum": 0},
+        "shortlisted_free_agent_count": {"type": "integer", "minimum": 0},
+        "candidate_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "nfl_team",
+          "availability",
+          "baseline_rank",
+          "baseline_score",
+          "schedule",
+          "venue_research",
+          "research_requirements"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "nfl_team": {"type": ["string", "null"]},
+          "availability": {"enum": ["held", "free_agent"]},
+          "baseline_rank": {"type": ["integer", "null"], "minimum": 1},
+          "baseline_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+          "schedule": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "game_id",
+              "opponent",
+              "team_side",
+              "home",
+              "away",
+              "kickoff_epoch",
+              "game_date",
+              "game_time",
+              "neutral_site",
+              "espn_id",
+              "espn_link",
+              "cbs_link"
+            ],
+            "properties": {
+              "status": {"enum": ["scheduled", "bye"]},
+              "game_id": {"type": ["string", "null"]},
+              "opponent": {"type": ["string", "null"]},
+              "team_side": {"enum": ["home", "away", "bye"]},
+              "home": {"type": ["string", "null"]},
+              "away": {"type": ["string", "null"]},
+              "kickoff_epoch": {"type": ["number", "null"]},
+              "game_date": {"type": ["string", "null"]},
+              "game_time": {"type": ["string", "null"]},
+              "neutral_site": {"type": "boolean"},
+              "espn_id": {"type": ["string", "null"]},
+              "espn_link": {"type": ["string", "null"]},
+              "cbs_link": {"type": ["string", "null"]}
+            }
+          },
+          "venue_research": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["required", "reason", "expected_home_team", "neutral_site_override_required"],
+            "properties": {
+              "required": {"const": true},
+              "reason": {"type": "string", "minLength": 1},
+              "expected_home_team": {"type": ["string", "null"]},
+              "neutral_site_override_required": {"type": "boolean"}
+            }
+          },
+          "research_requirements": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "research_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_ready_max_hours_before_kickoff",
+        "weather_max_age_hours",
+        "job_security_max_age_hours",
+        "player_injury_max_age_hours",
+        "qb_injury_max_age_hours",
+        "venue_max_age_hours",
+        "venue_policy",
+        "weather_policy",
+        "official_evidence_priority"
+      ],
+      "properties": {
+        "decision_ready_max_hours_before_kickoff": {"type": "number", "minimum": 0},
+        "weather_max_age_hours": {"type": "number", "minimum": 0},
+        "job_security_max_age_hours": {"type": "number", "minimum": 0},
+        "player_injury_max_age_hours": {"type": "number", "minimum": 0},
+        "qb_injury_max_age_hours": {"type": "number", "minimum": 0},
+        "venue_max_age_hours": {"type": "number", "minimum": 0},
+        "venue_policy": {"type": "string", "minLength": 1},
+        "weather_policy": {"type": "string", "minLength": 1},
+        "official_evidence_priority": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "candidate_ids_unique", "scheduled_candidates_resolved", "bye_candidates_supported"],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "candidate_ids_unique": {"const": true},
+        "scheduled_candidates_resolved": {"const": true},
+        "bye_candidates_supported": {"const": true}
+      }
+    }
+  }
+}
