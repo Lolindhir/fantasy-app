@@ -281,6 +281,21 @@ fantasy-management/generated/
 
 `generated/operations/` owns deterministic read models prepared specifically for Fantasy Operations. These files do not replace canonical current league data under `public/data/` or canonical source snapshots under `fantasy-management/sources/`.
 
+### Generated-artifact read verification
+
+Tool- oder Transportdarstellung ist nicht automatisch Dateizustand. Insbesondere bei großen Generated-Artefakten darf ein leerer oder ausgelassener Inline-`content`-Wert eines Connectors, einer API-Antwort oder einer UI-Vorschau **nicht** allein als Beleg für eine leere Repository-Datei oder eine echte Nullpopulation verwendet werden.
+
+Vor einer Aussage wie „Datei ist leer“, „Feed enthält null Spieler“ oder „Publish hat einen leeren Contract erzeugt“ muss der tatsächliche aktuelle Artefaktzustand verifiziert werden. Zulässige Verifikation ist insbesondere:
+
+- aktuellen Repository-Ref und Blob-SHA auflösen;
+- Blob-Inhalt oder verlässliche Byte-/Dateigröße lesen;
+- bei strukturierten Contracts den Inhalt mit dem vorgesehenen Parser beziehungsweise Schema prüfen;
+- bei widersprüchlicher Tooldarstellung einen zweiten verlässlichen Read-Pfad verwenden.
+
+Eine Connector-Trunkierung, ausgelassene Inline-Darstellung oder Antwortbegrenzung ist ein **Tooling-/Transportbefund**, kein Fantasy-Operations-Datenqualitätsbefund. Sie darf weder einen Datenqualitäts-TODO noch eine Spieler-/Populationsempfehlung auslösen, solange der tatsächliche Blob nicht entsprechend verifiziert wurde.
+
+Umgekehrt bleibt eine verifiziert leere oder strukturell unerwartete Generated-Datei ein echter Fail-Closed-Fall und muss nach den normalen Datenqualitätsregeln behandelt werden.
+
 If the amount or variety of deterministic generated data grows materially, `fantasy-management/generated/` may be extended with additional domain-specific subdirectories rather than mixing unrelated outputs into `operations/`. Examples include a future `reports/`, `indexes/` or another clearly owned generated domain. A `podcasts/` generated namespace is permitted only for strictly reproducible derived podcast artifacts; authored source packages, editorial extraction, Knowledge and analyses must remain in their existing non-generated locations.
 
 New generated subdirectories must follow the same reproducibility rule and should be created only when real artifacts require them; do not create empty placeholder folders.
