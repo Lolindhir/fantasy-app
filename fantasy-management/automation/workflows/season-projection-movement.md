@@ -28,7 +28,7 @@ Keep three dimensions separate:
 
 1. **Provider projection rank / percentile**: each provider's ordering by its own expected production.
 2. **Projection consensus percentile**: arithmetic mean of the available provider position percentiles, used only as a provider-neutral rank signal.
-3. **Mighty-Giants core points**: league scoring applied to projected raw stats shared by the active providers.
+3. **Managed-team core points**: current league scoring applied to projected raw stats shared by the active providers.
 
 Do not average provider fantasy-point totals. Their scoring contracts are different.
 
@@ -76,11 +76,11 @@ If multiple criteria match, publish one event at the highest justified severity.
 For a material event:
 
 1. state direction and size of the consensus-percentile movement;
-2. show each provider's rank/percentile and current league-scoring core points when available;
+2. include each provider's rank/percentile and current league-scoring core points when available;
 3. state provider spread and coverage count;
 4. compare the signal with role, injury, usage, ADP and dynasty-market context when those states are available;
 5. distinguish a production-expectation change from a market-price change;
-6. translate relevance into the actual six-team, 2-QB, 2-TE, 4-FLEX Mighty-Giants context;
+6. translate relevance into the actual six-team, 2-QB, 2-TE, 4-FLEX managed-team context;
 7. route the event to later roster, free-agent, trade or weekly-decision research as appropriate.
 
 ## 7. Decision boundary
