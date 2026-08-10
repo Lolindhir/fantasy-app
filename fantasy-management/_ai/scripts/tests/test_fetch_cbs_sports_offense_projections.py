@@ -63,13 +63,15 @@ class CBSSportsOffenseTests(unittest.TestCase):
                 self.assertEqual(1, rows[0]["Rank"])
                 self.assertFalse(diagnostics["source_update_timestamp_available"])
 
-    def test_rb_page_allows_fullback_source_rows(self):
-        rows, _ = module.parse_projection_html(
-            fixture("RB", source_position="FB"), position="RB", season=2026
-        )
-        self.assertEqual("RB", rows[0]["position"])
-        self.assertEqual("FB", rows[0]["source_position"])
-        self.assertEqual("DAL", rows[0]["team"])
+    def test_hybrid_pages_preserve_fullback_source_position(self):
+        for position in ("RB", "TE"):
+            with self.subTest(position=position):
+                rows, _ = module.parse_projection_html(
+                    fixture(position, source_position="FB"), position=position, season=2026
+                )
+                self.assertEqual(position, rows[0]["position"])
+                self.assertEqual("FB", rows[0]["source_position"])
+                self.assertEqual("DAL", rows[0]["team"])
 
     def test_signed_yardage_is_preserved_but_counts_remain_nonnegative(self):
         rows, _ = module.parse_projection_html(
