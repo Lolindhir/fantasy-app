@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "research_id": "kicker-weekly-context",
+  "inputs": {
+    "kicker_streaming": "fantasy-management/generated/operations/kicker-streaming-inputs.json",
+    "schedule": "public/data/Schedule.json",
+    "analysis_config": "fantasy-management/_ai/kicker-streaming-analysis-config.json"
+  },
+  "shortlist": {
+    "include_all_held": true,
+    "free_agent_count_from_analysis_config": true
+  },
+  "schedule": {
+    "season_type": "Regular Season",
+    "week_label_template": "Week {week}",
+    "team_match_fields": ["home", "away"],
+    "zero_games_semantics": "bye",
+    "multiple_games_semantics": "error"
+  },
+  "research": {
+    "decision_ready_max_hours_before_kickoff": 168,
+    "weather_max_age_hours": 24,
+    "job_security_max_age_hours": 24,
+    "player_injury_max_age_hours": 24,
+    "qb_injury_max_age_hours": 24,
+    "venue_max_age_hours": 168,
+    "required_factors": [
+      "venue_and_roof",
+      "weather",
+      "job_security",
+      "player_injury",
+      "matchup",
+      "offense_scoring_environment",
+      "field_goal_opportunity",
+      "qb_injury_context"
+    ],
+    "venue_policy": "verify_current_game_venue_and_roof; neutral_site_requires_explicit_override",
+    "weather_policy": "fresh_local_forecast_for_verified_venue; indoor_closed_roof_may_neutralize_weather",
+    "official_evidence_priority": [
+      "nfl_or_team",
+      "official_injury_report",
+      "official_weather_service"
+    ]
+  },
+  "persistence": {
+    "research_plan": "generated_reproducible",
+    "weekly_context": "ephemeral_by_default",
+    "repository_analysis_write_requires_explicit_approval": true
+  }
+}
