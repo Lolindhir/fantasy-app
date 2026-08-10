@@ -18,6 +18,8 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Automatisierte Analysen und Entscheidungsprozesse interpretieren aktuelle Daten vorausschauend für Roster-, Trade-, Draft-, Cap-, Free-Agent- oder Lineup-Entscheidungen.
   - Reviews und Auswertungen interpretieren abgeschlossene Zeiträume, Spiele, Drafts, Transaktionen oder Entscheidungen rückblickend.
   - GitHub Actions dienen nur als Orchestrierung; dauerhafte Logik, Verträge und Schwellen gehören in versionierte Skripte und Konfigurationen.
+  - Verbindliche Trennung: Positionsspezifische Module liefern Signale und Vergleichslogik; Daily Monitoring erkennt materielle Änderungen; endgültige Start/Sit-, Add/Drop-, Waiver- und Roster-Entscheidungen gehören in einen übergeordneten Entscheidungsworkflow.
+  - Referenz: `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`.
 
 - [ ] Zielarchitektur und Ausbaureihenfolge der Fantasy Operations festlegen.
   - Für jeden Baustein definieren: Zweck, Trigger, Eingabedatensätze, Output-Vertrag, Freshness, Idempotenz, Write Scope, Fehlerverhalten und Benachrichtigung.
@@ -73,6 +75,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Prüfen: fehlende Snapshots, veraltete Quellen, unerwartet kleine Feeds, Schemaänderungen, doppelte oder ungelöste Spieleridentitäten, fehlende Joins und inkonsistente Input-Fingerprints.
   - Fehler sollen nach Quelle und betroffenem Derived Dataset strukturiert vorliegen, damit Monitoring nicht aus unvollständigen Daten falsche Änderungen ableitet.
   - Ziel: Analysen können vorab erkennen, ob ihre vorbereitete Datenbasis vollständig, eingeschränkt oder nicht verwendbar ist.
+  - Zusätzlich den aktuell beobachteten Fall absichern, dass veröffentlichte Derived Zwischenfiles wie `player-signals.json` oder `free-agent-signals.json` leer sein können, während ein nachgelagerter letzter guter Contract noch vorhanden ist: Ursache, Publish-Semantik und Last-Good-State-Verhalten prüfen; kein Consumer darf leere Files still als echte Nullpopulation interpretieren.
 
 - [ ] Konkrete GitHub-Actions-Orchestrierung für die Datenpipelines entwerfen und separat freigeben.
   - Erst nach stabilen Skripten, Contracts und lokalen beziehungsweise Branch-Tests festlegen, welche Pipeline täglich, wöchentlich, ereignisgesteuert oder manuell läuft.
@@ -80,6 +83,15 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - No-op-Läufe sollen keine unnötigen Daten- oder Commit-Änderungen erzeugen; echte Dataset-Änderungen müssen nachvollziehbar und atomar veröffentlicht werden.
 
 ### Monitoring
+
+- [ ] Daily Monitoring Workflow positionsübergreifend vollständig konsolidieren und operationalisieren.
+  - Zweck: ausschließlich materielle Veränderungen erkennen, Research priorisieren und die betroffene spätere Entscheidungsklasse benennen; keine finalen Start/Sit-, Add/Drop-, Waiver- oder Trade-Entscheidungen im Monitoring selbst.
+  - Populationen: vollständiger Managed Roster; relevante Fantasy Free Agents; gegnerische Fantasy-Roster; ligaweite Ownership-/Transactions; NFL-Team-/Backfield-/Positionsgruppen-Kontext, wenn eine gemeinsame Ursache mehrere Spieler betrifft.
+  - Signale je nach Position: Injury/Availability, Rolle/Opportunity, Usage, Markt, ADP, Projections, NFL-Team/Transactions, Fantasy-Ownership, externe Activity sowie positionsspezifische Signale.
+  - Materialität: keine Zahlenrauschen- oder No-op-Meldungen; neue Baselines bleiben still; qualitative Live-Recherche nur bei fehlenden Daten, konkreten Änderungstriggern oder entscheidungsrelevanter Uncertainty.
+  - Aktiver Kicker-Teil: `kicker-daily-monitoring` beobachtet gehaltenen Kicker plus tatsächliche Fantasy-Free-Agent-Kicker mit Kicker-Baseline, FFC ADP, FFToday, CBS, Sleeper Activity, Injury, nominalem K1 und triggerbasierter Job-Verifikation. Dieser Teil ist mit diesem Ausbau erledigt und soll als Muster für weitere positionsspezifische Module dienen.
+  - Noch offen: Free-Agent-Monitoring für QB/RB/WR/TE vollständig anbinden; Gegner-/Liga-Ownership-Monitoring; NFL-Team-/Positionsgruppen-Events; einheitliche Event-Bündelung und Priorisierung über mehrere Profile; gezielte Folgeanalyse nach Monitoring-Event.
+  - Referenz: `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`.
 
 - [ ] Monitoring für die Kader aller gegnerischen Fantasy-Teams aufbauen.
   - Bevorzugt auf dem materialisierten Liga- und Gegner-Roster-Dataset aufbauen.
@@ -90,6 +102,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Kandidaten und Ownership aus dem vollständigen materialisierten Free-Agent-Dataset übernehmen.
   - Beobachten: neue Chancen durch Verletzungen oder Transaktionen, Usage-Sprünge, Rollenwechsel, Markt-, Ranking- und ADP-Anstiege sowie auffällige Add-/Drop-Trends.
   - Ziel: Neue oder deutlich aufgewertete Kandidaten automatisch zur Prüfung beziehungsweise zum Free-Agent-Board zuführen.
+  - Kicker sind bereits als eigener positionsspezifischer Teil über `kicker-daily-monitoring` abgedeckt; dieser Todo betrifft insbesondere die vollständige QB/RB/WR/TE-Population und gemeinsame Priorisierungsregeln.
 
 - [ ] Monitoring auf NFL-Team-, Backfield- und Positionsgruppenebene ergänzen.
   - Kontext: Eine Verletzung, Verpflichtung, Entlassung oder Depth-Chart-Verschiebung kann mehrere Spieler gleichzeitig verändern.
@@ -98,6 +111,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 - [ ] Ligaweite Transaktions- und Ownership-Veränderungen überwachen.
   - Beobachten: Adds, Drops, Trades, Taxi-/Reserve-Bewegungen und Veränderungen des Draftkapitals.
   - Ziel: Betroffene Materialisierungen aktualisieren und Auswirkungen auf Free-Agent-Verfügbarkeit, Positionsknappheit, Gegnerprofile und potenzielle Trade-Partner ableiten lassen.
+  - Kicker-Grenze: Wenn ein bisher verfügbarer Kicker von einem Gegner aufgenommen wird, soll diese allgemeine Ownership-Schicht die Availability-Änderung melden; das Kicker-Streaming-Profil erfindet dafür keine zweite Liga-Transaction-Logik.
 
 ### Automatisierte Analysen und Entscheidungsprozesse
 
@@ -107,6 +121,7 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Eingabe: materialisiertes Managed-Roster-Dataset sowie relevante Entscheidungen und aktuelle League-Phase.
   - Prüfen: Rollen, Verletzungen, Usage, Marktwert, ADP, Alter, Salary/Projected Salary, Cap-Risiko, Roster-Funktion und Ersatzniveau.
   - Output: aktualisierte Kategorien und konkrete Aktionsliste für Hold, Shop, Package, Stash, Cut und Beobachtung.
+  - Abgrenzung: strategischer und mittelfristiger als der Weekly Lineup + Waiver Workflow; nicht bloß Start/Sit für die nächste Woche.
 
 - [ ] Wöchentlichen Liga- und Gegner-Roster-Scan entwickeln.
   - Eingabe: materialisiertes Liga- und Gegner-Roster-Dataset.
@@ -117,18 +132,22 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Eingabe: vollständiges materialisiertes Free-Agent-Dataset.
   - Kandidaten nach Position, Rolle, kurzfristiger Nutzbarkeit, Upside, Marktwert, ADP, Salary und Ligaformat bewerten.
   - Output: Tiers, Draft-/Waiver-Priorität, früheste vertretbare Runde und klare Kategorien wie Soforthilfe, Handcuff, Upside-Stash oder Watchlist.
+  - Abgrenzung: breiter Markt-/Talentüberblick; nicht identisch mit dem konkreten wöchentlichen Waiver-Move für die nächste Aufstellung.
 
-- [ ] Wöchentliche Kicker-Streaming-Analyse vor dem Spieltag vollständig operationalisieren.
-  - Aktive Grundlage: `kicker-streaming-inputs.json` enthält den gehaltenen Kicker und alle tatsächlichen Fantasy-Free-Agent-Kicker mit liga-reconciled CBS-Bounds, FFToday, FFC-Kicker-ADP, Sleeper Activity, Injury und nominaler Rolle.
-  - Baseline-/Decision-Engine: `analyze_kicker_streaming.py` erzeugt eine Research-Shortlist und gibt ohne aktuellen Wochenkontext ausdrücklich `weekly_context_required` zurück.
-  - Wochenkontext: Matchup, Team-Offense und erwartete Scoring-Umgebung, Field-Goal-Opportunity, Stadion/Wetter, aktuelle Job-Sicherheit sowie relevante Verletzungs-/QB-Kontexte frisch recherchieren und gegen den aktuellen Input-Fingerprint binden.
-  - Job-Sicherheit ist ein Eligibility-Gate; Sleeper-Depth-Chart und Add-Aktivität allein dürfen keinen Wechsel auslösen.
-  - Liga-Scoring: Provider-FPTS bleiben getrennt; CBS wird anhand seiner Distanz-Buckets auf die Liga-Wertung abgebildet, unvermeidbare 50+ Unsicherheit bleibt als Range; FFToday wird nicht durch erfundene Distanzannahmen pseudo-exakt gemacht.
-  - Output: klare Wechsel-Empfehlung mit bester verifizierter Alternative und Begründung oder ausdrücklich `kein Wechsel empfohlen`, wenn der gehaltene Kicker besser beziehungsweise nicht materiell schlechter ist.
-  - Noch offen: den aktuellen Wochenkontext regelmäßig beschaffen, den Analysezeitpunkt im Waiver-/Lineup-Fenster festlegen und eine mögliche automatische Orchestrierung separat freigeben. Ein optionaler Spieltags-Check soll nur bei materiellen Änderungen wie Wetter, Verletzung oder Kicker-Jobwechsel laufen.
+- [ ] Weekly Lineup + Waiver Workflow entwickeln und später separat operationalisieren.
+  - Zweck: für die konkrete NFL-Woche die beste legale Startaufstellung und nur die dafür beziehungsweise für klar positive Roster-Upgrades nötigen Waiver-/Add-/Drop-Moves gemeinsam bestimmen.
+  - Inputs: aktueller Managed Roster, tatsächliche Fantasy-Free-Agent-Population, League-Scoring/Roster-Regeln, Schedule/Week, aktuelle Injury-/Availability-Daten, Usage/Opportunity, aktuelle Rankings/Projections und positionsspezifische Analysebausteine.
+  - Reihenfolge: Availability/Bye klären → startbare Population bestimmen → Weekly Projection/Opportunity bewerten → beste legale Startaufstellung → Free-Agent-Upgrades prüfen → Drop Opportunity Cost bewerten → Waiver-/Add-/Drop-Empfehlungen → finale Starter/Bench- und Backup-Empfehlung.
+  - Output: empfohlene Startaufstellung, zentrale Start/Sit-Entscheidungen, Waiver Adds mit zugehörigen Drops, Alternativen, Injury-/Bye-Risiken, Kicker Hold/Stream, Confidence und zeitkritische nächste Aktion.
+  - Kicker-Sonderfall: bestehende Kicker-Streaming-Engine als Untermodul verwenden; Normalfall ein Kicker; stabilen Kicker behalten, wenn kein materieller Weekly-Vorteil existiert; bei klarem Vorteil streamen; Bye/Jobverlust/Injury über explizite Sonderpfade behandeln.
+  - Zwei-Kicker-Ausnahme: nur wenn der übergeordnete Workflow feststellt, dass das Behalten eines längerfristig wertvollen Kickers die Opportunity Cost des zusätzlich belegten Bench-Slots übersteigt. Die Kicker-Engine allein darf diese Entscheidung nicht treffen.
+  - Drop-Prinzip: Ein positionsspezifischer Upgrade-Score ist nie allein ausreichend; der Wert des Spielers, der für den Move weichen müsste, ist Teil der finalen Entscheidung.
+  - Noch festzulegen: Hauptanalysezeitpunkt im Waiver-/Lineup-Fenster, Umgang mit Thursday-/Saturday-/International-Games, Late-Injury-/Late-Swap-Recheck, gewünschte Event-Trigger und Benachrichtigungsformat.
+  - Eine automatische Orchestrierung oder Änderung an `.github/workflows/**` erst nach separater ausdrücklicher Freigabe.
+  - Referenz: `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` und für Kicker `fantasy-management/_ai/KICKER_STREAMING_WEEKLY_CONTEXT.md`.
 
 - [ ] Ereignisgesteuerte Neubewertung nach materiellen Monitoring-Events entwickeln.
-  - Beispiel: Eine Verletzung oder Rollenänderung aktualisiert zuerst die betroffenen Derived Datasets und stößt danach nur die betroffenen Roster-, Free-Agent-, Trade- und Board-Analysen erneut an.
+  - Beispiel: Eine Verletzung oder Rollenänderung aktualisiert zuerst die betroffenen Derived Datasets und stößt danach nur die betroffenen Roster-, Free-Agent-, Trade-, Weekly-Lineup- oder Board-Analysen erneut an.
   - Ziel: Monitoring nicht nur melden lassen, sondern Folgeanalysen gezielt, datenbasiert und idempotent auslösen.
 
 - [ ] Wiederkehrende Trade-Chancen-Analyse entwickeln.
@@ -143,8 +162,9 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Vor relevanten Fristen Salary, Projected Salary, Cap Space, Cut-/Trade-Kandidaten und vorbereitete Ersatzoptionen prüfen.
   - Output: priorisierte Maßnahmen mit Frist, Auswirkung und Alternativen.
 
-- [ ] In-Season-Lineup- und Start/Sit-Analyse prüfen.
-  - Nur während der Saison aktuelle Matchups, Verletzungen, vorbereitete Usage-Trends, erwartete Rolle und Ligaformat einbeziehen.
+- [ ] In-Season-Lineup- und Start/Sit-Analyse als Teil des Weekly Lineup + Waiver Workflows umsetzen.
+  - Während der Saison aktuelle Matchups, Verletzungen, vorbereitete Usage-Trends, erwartete Rolle und Ligaformat einbeziehen.
+  - Nicht als parallelen zweiten Lineup-Prozess neben `Weekly Lineup + Waiver` aufbauen.
   - Leitplanke: Offseason-Starter aus `League.json` nicht als Qualitäts- oder Rollenwahrheit behandeln.
 
 ### Automatisierte Reviews und Auswertungen
@@ -191,6 +211,18 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Leitplanke: Numerische Salary-Cut-offs bleiben datierte Analysewerte und werden nicht als zeitlose Regeln übernommen.
 
 ## Erledigt / Archiv
+
+- [x] Kicker-spezifische Daily-Signale in das bestehende Monitoring integrieren.
+  - Ergebnis: neues dynamisches Target Set `kicker-daily-monitoring` für den gehaltenen Kicker plus alle tatsächlichen Fantasy-Free-Agent-Kicker aus `kicker-streaming-inputs.json`.
+  - Ergebnis: neues Profil `kicker-signal-movement` überwacht Kicker-Baseline, FFC-Kicker-ADP, FFToday/CBS-Projections, Projection Consensus, Sleeper Activity, Injury, nominal K1, NFL-Team und triggerbasierte aktuelle Job Security.
+  - Ergebnis: die bestehende Baseline-Engine wird wiederverwendet; es existiert keine zweite Kicker-Scoring-Formel im Monitoring.
+  - Ergebnis: Kicker Daily Monitoring ist in `entity-observation` verdrahtet und bleibt read-only; keine Weekly-Matchup-/Weather-Bewertung, keine automatische Start/Sit- oder Add/Drop-Entscheidung.
+  - Leitplanke: finale Kicker-Hold-/Stream-Entscheidung gehört als Untermodul in `Weekly Lineup + Waiver`.
+
+- [x] Kicker-Streaming-Analysebaustein fachlich und technisch vorbereiten.
+  - Ergebnis: `kicker-streaming-inputs.json`, Baseline-/Decision-Engine, Weekly Research Plan, Venue-/Weather-/Job-/Injury-Freshness-Gates und held-Bye-Sonderfall sind implementiert.
+  - Ergebnis: Provider-FPTS bleiben getrennt; CBS-/FFToday-Scoringunsicherheit wird transparent modelliert; Job Security ist Eligibility-Gate; Sleeper Activity bleibt Research-Tiebreaker.
+  - Ergebnis: Es wird bewusst kein eigenständiger produktiver Kicker-Wochenworkflow mehr als Ziel verfolgt. Die Engine ist ein positionsspezifisches Untermodul des geplanten `Weekly Lineup + Waiver` Gesamtworkflows.
 
 - [x] Zentrales materialisiertes Player-Signal-Dataset aufbauen und produktiv veröffentlichen.
   - Ergebnis: Ligaweite QB/RB/WR/TE/K-Population mit stabiler Spieler-ID, NFL-Team, League Ownership, Injury-/Depth-Chart-Signalen, Dynasty-Ranking, Marktwert, Redraft-ADP, FFToday-/CBS-Projections, Sleeper-Add-/Drop-Aktivität und Quellenständen.
