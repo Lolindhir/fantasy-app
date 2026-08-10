@@ -52,6 +52,20 @@ class FFTodayOffenseTests(unittest.TestCase):
                 self.assertEqual("2026-08-06", diagnostics["source_updated_date"])
                 self.assertIsNone(next_href)
 
+    def test_position_contracts_have_distinct_source_routes_and_ranking_ids(self):
+        urls = set()
+        ranking_ids = set()
+        for position, config in module.POSITIONS.items():
+            with self.subTest(position=position):
+                url = module.source_url(position, 2026)
+                self.assertIn(f"PosID={config['pos_id']}", url)
+                self.assertIn("Season=2026", url)
+                self.assertEqual(f"redraft-{position.lower()}-preseason", module.ranking_id(position))
+                urls.add(url)
+                ranking_ids.add(module.ranking_id(position))
+        self.assertEqual(len(module.POSITIONS), len(urls))
+        self.assertEqual(len(module.POSITIONS), len(ranking_ids))
+
     def test_next_page_is_discovered(self):
         _, _, next_href = module.parse_page(
             fixture("TE", next_page=True), position="TE", season=2026, fetched_at=self.fetched()
