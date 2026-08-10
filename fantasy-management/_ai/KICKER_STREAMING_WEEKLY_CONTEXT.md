@@ -79,7 +79,9 @@ The research plan retains:
 - ESPN game ID/link;
 - CBS game link.
 
-The research-plan layer supports explicit bye detection. A held-Kicker bye still needs a dedicated recommendation-engine case before the weekly decision wrapper should be considered complete for bye weeks; do not disguise a bye as a job-security failure.
+A held-Kicker bye is an explicit schedule state, not a job-security or injury failure. In a decision-ready bye week, the held Bye-Kicker is omitted from the scored weekly-context player rows because matchup, weather and Field-Goal-opportunity scores would be fictional. The gated runner instead selects the highest-scoring verified eligible **scheduled** free-agent alternative as a one-week stream. No numerical score delta against the Bye-Kicker is invented.
+
+If no verified eligible scheduled free-agent alternative is available, the recommendation remains `insufficient_context` rather than treating the held Kicker as a zero-score comparison or as having lost the kicking job.
 
 ## Venue and roof
 
@@ -123,6 +125,8 @@ Current job-security evidence and Kicker injury evidence should normally be no m
 
 An explicit `not_current_starter` or disqualifying injury state prevents the candidate from becoming an eligible recommended alternative.
 
+The held-Kicker bye path does not require fake job/injury or scoring fields for the held Kicker. The schedule-derived Bye status is sufficient to establish that he cannot score in that week; job-security semantics remain unchanged.
+
 ## Matchup, offense and Field-Goal opportunity
 
 The weekly context separately scores:
@@ -158,12 +162,16 @@ A separate validator checks more than JSON shape. For `decision_ready` it verifi
 
 - season/week and candidate membership against the plan;
 - exact game ID for every researched scheduled candidate;
-- held-Kicker presence and at least one researched free-agent alternative;
+- every non-bye held Kicker is present;
+- a held Bye-Kicker may be omitted from the scored context and is identified from the research plan;
+- at least one researched **scheduled** free-agent alternative is present;
 - the 168-hour decision window;
 - venue freshness;
 - 24-hour Kicker job, Kicker injury and QB/injury freshness;
 - 24-hour weather freshness when weather is applicable;
 - that exposed venues actually have applicable weather research.
+
+A Bye candidate must not be inserted into a decision-ready scored context with fabricated weekly scores. If a Bye candidate row is present in `decision_ready`, validation fails closed.
 
 Validation command:
 
@@ -183,6 +191,8 @@ python fantasy-management/_ai/scripts/run_kicker_weekly_analysis.py \
 ```
 
 The wrapper validates the research context first and only then invokes `analyze_kicker_streaming.py`. A preliminary, stale, mismatched or too-early context therefore cannot produce a normal weekly Add/Drop recommendation through the supported path.
+
+When the single held Kicker has Bye, the wrapper post-processes the otherwise gated weekly ranking and returns `switch_recommended` only when at least one verified eligible scheduled free agent exists. The reason includes `held_kicker_bye_week`; `score_delta` remains `null` because a Bye is not a comparable weekly projection. The wording explicitly describes a one-week stream rather than a Job-/Injury-driven replacement.
 
 Without a complete current weekly context, the underlying engine remains at `weekly_context_required` or `insufficient_context` and must not produce a forced Add/Drop recommendation.
 
