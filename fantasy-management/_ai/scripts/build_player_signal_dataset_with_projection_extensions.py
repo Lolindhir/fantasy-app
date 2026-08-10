@@ -5,11 +5,14 @@ The canonical player-signal builder remains responsible for population, joins, q
 ownership and output shape. This adapter composes declared source-catalog extensions and
 enriches applicable offensive projection providers with comparable Mighty-Giants core
 points calculated only from stats that both active projection providers actually publish.
+
+Configured extension sources whose first snapshot has not been materialized yet are kept
+as an explicit warning instead of making the entire Operations materialization unusable.
+As soon as their latest pointer exists, they become normal active inputs automatically.
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -94,13 +97,15 @@ def league_scoring_view(position: str, result: dict[str, Any], scoring: dict[str
         multiplier = _score_value(scoring, scoring_key)
         contribution = float(signal_value) * multiplier
         points += contribution
-        included.append({
-            "signal": signal_name,
-            "scoring_key": scoring_key,
-            "projected_stat": signal_value,
-            "multiplier": multiplier,
-            "points": round(contribution, 3),
-        })
+        included.append(
+            {
+                "signal": signal_name,
+                "scoring_key": scoring_key,
+                "projected_stat": signal_value,
+                "multiplier": multiplier,
+                "points": round(contribution, 3),
+            }
+        )
 
     if missing:
         return {
@@ -113,7 +118,11 @@ def league_scoring_view(position: str, result: dict[str, Any], scoring: dict[str
         }
 
     excluded = [
-        {"scoring_key": key, "multiplier": _score_value(scoring, key), "reason": "not projected comparably by both active providers"}
+        {
+            "scoring_key": key,
+            "multiplier": _score_value(scoring, key),
+            "reason": "not projected comparably by both active providers",
+        }
         for key in EXCLUDED_SCORING_KEYS[position]
         if _score_value(scoring, key) != 0
     ]
@@ -165,6 +174,12 @@ def projection_view_factory(scoring: dict[str, Any]):
     return projection_view
 
 
+def _extension_source_is_materialized(root: Path, definition: dict[str, Any]) -> bool:
+    access = definition.get("access") if isinstance(definition.get("access"), dict) else {}
+    location = access.get("location")
+    return isinstance(location, str) and bool(location) and (root / location).is_file()
+
+
 def build(root: Path, config_path: Path) -> dict[str, Any]:
     real_load_json = ops.load_json
     config = real_load_json(config_path)
@@ -175,13 +190,25 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     merged_catalog = deepcopy(base_catalog)
     extension_source_records: list[ops.SourceFile] = []
+    pending_sources: list[dict[str, str]] = []
     for index, extension_path in enumerate(extension_paths, start=1):
         extension = real_load_json(extension_path)
         ops.validate_catalog(extension)
-        merged_catalog["sources"].extend(extension["sources"])
         extension_source_records.append(
             ops.source_file(f"operations_source_catalog_extension_{index}", extension_path, root)
         )
+        for definition in extension["sources"]:
+            if not definition.get("active"):
+                continue
+            if _extension_source_is_materialized(root, definition):
+                merged_catalog["sources"].append(definition)
+            else:
+                pending_sources.append(
+                    {
+                        "source_id": str(definition.get("source_id") or "unknown"),
+                        "location": str((definition.get("access") or {}).get("location") or ""),
+                    }
+                )
     ops.validate_catalog(merged_catalog)
 
     league = real_load_json(root / config["sources"]["league"])
@@ -202,31 +229,50 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         ops.load_json = original_load_json
         base.projection_view = original_projection_view
 
+    for pending in pending_sources:
+        result["quality"]["issues"].append(
+            {
+                "severity": "warning",
+                "kind": "configured_projection_source_not_materialized",
+                "source": pending["source_id"],
+                "location": pending["location"],
+            }
+        )
+    if pending_sources:
+        result["quality"]["issue_count"] = len(result["quality"]["issues"])
+        result["quality"]["status"] = ops.quality_status(result["quality"]["issues"])
+
     if extension_source_records:
         result["sources"].extend(base.source_record(source) for source in extension_source_records)
-        fingerprint_payload = {
-            "config": config,
-            "sources": result["sources"],
-            "players": [
-                {
-                    "player_id": player["player_id"],
-                    "population_reasons": player["population_reasons"],
-                    "ownership": player["ownership"],
-                    "source_signals": player["source_signals"],
-                    "activity": player["activity"],
-                }
-                for player in result["players"]
-            ],
-        }
-        result["input_fingerprint"] = ops.sha256_text(ops.canonical_json(fingerprint_payload))
-        base.validate_output(result)
+
+    fingerprint_payload = {
+        "config": config,
+        "sources": result["sources"],
+        "players": [
+            {
+                "player_id": player["player_id"],
+                "population_reasons": player["population_reasons"],
+                "ownership": player["ownership"],
+                "source_signals": player["source_signals"],
+                "activity": player["activity"],
+            }
+            for player in result["players"]
+        ],
+        "pending_extension_sources": pending_sources,
+    }
+    result["input_fingerprint"] = ops.sha256_text(ops.canonical_json(fingerprint_payload))
+    base.validate_output(result)
     return result
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[3])
-    parser.add_argument("--config", type=Path, default=Path("fantasy-management/automation/player-signal-materialization.json"))
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("fantasy-management/automation/player-signal-materialization.json"),
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     root = args.root.resolve()
@@ -234,7 +280,10 @@ def main() -> int:
     config = ops.load_json(config_path)
     result = build(root, config_path)
     if args.check:
-        print(f"Validated {len(result['players'])} players; quality={result['quality']['status']}; issues={result['quality']['issue_count']}.")
+        print(
+            f"Validated {len(result['players'])} players; quality={result['quality']['status']}; "
+            f"issues={result['quality']['issue_count']}."
+        )
         return 0
     output_path = root / config["output"]["player_signals"]
     base.write_json(output_path, result)
