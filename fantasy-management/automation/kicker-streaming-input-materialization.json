@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "materialization_id": "fantasy-operations-kicker-streaming-inputs",
+  "managed_team": {
+    "team_id": 1
+  },
+  "sources": {
+    "league": "public/data/League.json",
+    "player_signals": "fantasy-management/generated/operations/player-signals.json",
+    "free_agent_signals": "fantasy-management/generated/operations/free-agent-signals.json"
+  },
+  "population": {
+    "position": "K",
+    "held_selector": "managed_team",
+    "free_agent_ownership_status": "fantasy_free_agent"
+  },
+  "output": {
+    "kicker_streaming_inputs": "fantasy-management/generated/operations/kicker-streaming-inputs.json"
+  }
+}
