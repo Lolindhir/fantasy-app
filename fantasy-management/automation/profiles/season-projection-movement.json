@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "id": "season-projection-movement",
+  "title": "Season-Projection-Bewegung",
+  "description": "Beobachtet materielle Veränderungen der erwarteten Regular-Season-Produktion für QB/RB/WR/TE. Projection Consensus, Provider-Streuung und liga-spezifisch neu berechnete Core Points bleiben getrennt von ADP, Dynasty-Marktwert und Expert Consensus.",
+  "applicable_entity_types": ["player"],
+  "evaluator": {
+    "id": "season-projection-movement-evaluator",
+    "type": "deterministic",
+    "version": 1,
+    "workflow_ref": "fantasy-management/automation/workflows/season-projection-movement.md"
+  },
+  "signals": [
+    {
+      "id": "projection.consensus_percentile",
+      "description": "Provider-neutraler Mittelwert der listenlängenbereinigten Positionsperzentile der aktuell gelisteten Projection-Provider.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "projection.provider_count",
+      "description": "Anzahl aktuell gelisteter anwendbarer Projection-Provider.",
+      "value_type": "integer",
+      "unit": "providers",
+      "source_types": ["fantasy_operations"]
+    },
+    {
+      "id": "projection.percentile_spread",
+      "description": "Abstand zwischen höchstem und niedrigstem Provider-Perzentil als strukturiertes Unsicherheits- und Konfliktsignal.",
+      "value_type": "number",
+      "unit": "percentile_points",
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "projection.fftoday_core_points",
+      "description": "Mit aktuellem Mighty-Giants-Scoring aus den vergleichbar projizierten FFToday-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
+      "value_type": "number",
+      "unit": "fantasy_points",
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "projection.cbs_core_points",
+      "description": "Mit aktuellem Mighty-Giants-Scoring aus den vergleichbar projizierten CBS-Core-Stats neu berechnete Saisonpunkte; nicht projizierte Komponenten werden nicht imputiert.",
+      "value_type": "number",
+      "unit": "fantasy_points",
+      "source_types": ["fantasy_operations", "derived"]
+    },
+    {
+      "id": "evidence.confidence",
+      "description": "Konfidenz der Projection-Beobachtung aus Provider-Abdeckung, Freshness, Join-Qualität und Provider-Streuung.",
+      "value_type": "enum",
+      "unit": null,
+      "allowed_values": ["low", "medium", "high"],
+      "source_types": ["derived"]
+    }
+  ],
+  "source_policy": {
+    "minimum_confidence": "medium",
+    "minimum_independent_sources": 1,
+    "allow_single_authoritative_source": true,
+    "preferred_source_types": ["fantasy_operations", "derived"]
+  },
+  "source_bindings": [
+    {
+      "id": "player-signals-season-projections",
+      "source_type": "fantasy_operations",
+      "provider": "fantasy_operations",
+      "dataset_id": "player-signals",
+      "role": "primary",
+      "required": true,
+      "independence_group": "fantasy-operations-projection-view",
+      "access": {
+        "type": "repo_file",
+        "location": "fantasy-management/generated/operations/player-signals.json",
+        "selection_policy": "current_file"
+      },
+      "entity_join": ["player_id"],
+      "signal_mappings": {
+        "projection.consensus_percentile": "player.projections.summary.consensus_percentile",
+        "projection.provider_count": "player.projections.summary.listed_provider_count",
+        "projection.percentile_spread": "player.projections.summary.percentile_spread",
+        "projection.fftoday_core_points": "player.projections.providers.fftoday.league_scoring.core_points",
+        "projection.cbs_core_points": "player.projections.providers.cbs_sports.league_scoring.core_points"
+      },
+      "freshness_policy": {
+        "max_age_hours": 30,
+        "refresh_before_analysis": false
+      },
+      "format_context": {
+        "positions": ["QB", "RB", "WR", "TE"],
+        "horizon": "regular_season",
+        "actual_league_team_count": 6,
+        "league_scoring_recalculated": true,
+        "provider_points_policy": "kept_separate_not_averaged",
+        "league_core_points_policy": "shared_projected_components_only_no_imputation"
+      }
+    }
+  ],
+  "criteria": [
+    {
+      "id": "material-consensus-movement",
+      "description": "Das Projection-Consensus-Perzentil hat sich gegenüber dem letzten materiellen Zustand um mindestens zehn Punkte verändert.",
+      "condition": {
+        "all": [
+          {"signal": "projection.consensus_percentile", "operator": "absolute_delta_gte", "value": 10, "comparison_window": "previous_material_state"},
+          {"signal": "projection.provider_count", "operator": "gte", "value": 1},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {"is_material": true, "severity": "medium", "classification": "season_projection_change"},
+      "effect": {"recalculate_decision_context": true}
+    },
+    {
+      "id": "large-consensus-movement",
+      "description": "Das Projection-Consensus-Perzentil hat sich gegenüber dem letzten materiellen Zustand um mindestens zwanzig Punkte verändert.",
+      "condition": {
+        "all": [
+          {"signal": "projection.consensus_percentile", "operator": "absolute_delta_gte", "value": 20, "comparison_window": "previous_material_state"},
+          {"signal": "projection.provider_count", "operator": "gte", "value": 1},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {"is_material": true, "severity": "high", "classification": "season_projection_change"},
+      "effect": {"recalculate_decision_context": true}
+    },
+    {
+      "id": "new-multi-provider-coverage",
+      "description": "Ein Spieler erhält erstmals belastbare Abdeckung durch beide aktiven Projection-Provider; dies öffnet eine neue Research-Basis, ist aber keine automatische Spieleraufwertung.",
+      "condition": {
+        "all": [
+          {"signal": "projection.provider_count", "operator": "changed", "comparison_window": "previous_material_state"},
+          {"signal": "projection.provider_count", "operator": "gte", "value": 2},
+          {"signal": "evidence.confidence", "operator": "gte", "value": "medium"}
+        ]
+      },
+      "materiality": {"is_material": true, "severity": "medium", "classification": "season_projection_coverage_change"},
+      "effect": {"recalculate_decision_context": true}
+    }
+  ],
+  "output_fields": [
+    "projection_summary",
+    "consensus_percentile",
+    "provider_count",
+    "percentile_spread",
+    "fftoday_core_points",
+    "cbs_core_points",
+    "confidence"
+  ]
+}
