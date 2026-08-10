@@ -52,6 +52,19 @@ class CBSSportsOffenseTests(unittest.TestCase):
                 self.assertEqual(1, rows[0]["Rank"])
                 self.assertFalse(diagnostics["source_update_timestamp_available"])
 
+    def test_position_contracts_have_distinct_source_routes_and_ranking_ids(self):
+        urls = set()
+        ranking_ids = set()
+        for position in module.POSITIONS:
+            with self.subTest(position=position):
+                url = module.source_url(position, 2026)
+                self.assertIn(f"/stats/{position}/2026/season/projections/nonppr/", url)
+                self.assertEqual(f"redraft-{position.lower()}-preseason", module.ranking_id(position))
+                urls.add(url)
+                ranking_ids.add(module.ranking_id(position))
+        self.assertEqual(len(module.POSITIONS), len(urls))
+        self.assertEqual(len(module.POSITIONS), len(ranking_ids))
+
     def test_duplicate_and_pagination_fail_closed(self):
         with self.assertRaisesRegex(module.ProjectionError, "Duplicate"):
             module.parse_projection_html(fixture("QB", duplicate=True), position="QB", season=2026)
