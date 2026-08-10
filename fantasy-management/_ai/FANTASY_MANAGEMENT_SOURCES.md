@@ -299,23 +299,30 @@ Operational rules:
 
 ### FFToday projection snapshots
 
-FFToday is the active automated Projection provider for the initial Kicker scope.
+FFToday is an active automated Projection provider for QB, RB, WR, TE and K.
 
 Stored source area:
 
 `fantasy-management/sources/external-rankings/projections/fftoday/`
 
-Active ranking ID:
+Active ranking IDs:
 
+- `redraft-qb-preseason`: provider Regular-Season QB projections with passing and rushing raw stats retained
+- `redraft-rb-preseason`: provider Regular-Season RB projections with rushing and receiving raw stats retained
+- `redraft-wr-preseason`: provider Regular-Season WR projections with receiving and rushing raw stats retained
+- `redraft-te-preseason`: provider Regular-Season TE projections with receiving raw stats retained
 - `redraft-kicker-preseason`: provider Regular-Season Kicker projections ordered by projected FFToday fantasy points, with FGM/FGA/FG%/EPM/EPA retained
 
-The audited public Projection area also exposes QB, RB, WR, TE, DEF and IDP projections. Those positions are confirmed expansion candidates but are not yet active stored rankings.
+The audited public Projection area also exposes DEF and IDP projections. Those positions remain outside the current active league-lineup scope.
 
 Refresh with:
 
 ```bash
 python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
+python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
 ```
+
+The workflow `FM • Projection • FFToday` refreshes the source daily before monitoring and also runs once after a fetcher, fetcher test or workflow-contract change reaches `main`.
 
 Canonical source documentation:
 
@@ -328,30 +335,36 @@ Operational rules:
 
 - treat FFToday Projections as expected production, not expert consensus, ADP or trade-market value
 - use only the public non-authenticated page; do not create or automate a My-FFToday login or custom-scoring profile
-- retain individual Kicker statistics separately from provider `FPts`
-- do not treat FFToday `FPts` as Mighty-Giants league scoring unless scoring formulas are explicitly reconciled
-- fail closed on source-identity, freshness, row-count, duplicate-ID, numerical-plausibility or unexpected-pagination failures
+- retain position-specific raw statistics separately from provider `FPts`
+- do not treat FFToday `FPts` as Mighty-Giants league scoring
+- for QB/RB/WR/TE, calculate league-specific `core_points` only in the Derived Operations layer from scoring-relevant raw stats that are comparably available from the active providers; never impute unprojected components
+- offensive FFToday feeds may span multiple public pages; follow the public `Next Page` chain completely and fail closed on loops, duplicate Source IDs, inconsistent source dates or implausibly small populations
 - retain only the newest Raw HTML and archive changed normalized ranking/metadata snapshots
-- compare the Kicker Projection ranking only with Kicker-specific rankings such as FFC Kicker ADP
+- compare Projection rankings only within the same position through list-length-aware percentiles
 
 ### CBS Sports projection snapshots
 
-CBS Sports is an active automated Projection provider for the initial Kicker scope. The GitHub-Actions workflow `FM • Projection • CBS Sports` refreshes the source daily at 06:08 Europe/Berlin and also supports manual `workflow_dispatch` runs.
+CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. The GitHub-Actions workflow `FM • Projection • CBS Sports` refreshes the source daily at 06:08 Europe/Berlin, supports manual `workflow_dispatch` runs and also runs once after its fetcher, fetcher test or workflow contract changes on `main`.
 
 Stored source area:
 
 `fantasy-management/sources/external-rankings/projections/cbs-sports/`
 
-Active ranking ID:
+Active ranking IDs:
 
+- `redraft-qb-preseason`: provider Regular-Season QB projections with passing and rushing raw stats retained
+- `redraft-rb-preseason`: provider Regular-Season RB projections with rushing, targets and receiving raw stats retained
+- `redraft-wr-preseason`: provider Regular-Season WR projections with targets, receiving and rushing raw stats retained
+- `redraft-te-preseason`: provider Regular-Season TE projections with targets and receiving raw stats retained
 - `redraft-kicker-preseason`: provider Regular-Season Kicker projections ordered by projected CBS fantasy points, retaining FGM/FGA, five field-goal distance buckets, XPM/XPA, FPTS and FPPG
 
-The audited public Projection area also exposes QB, RB, WR, TE and DST projections. Those positions are confirmed expansion candidates but are not yet active stored rankings.
+The audited public Projection area also exposes DST projections. DST remains outside the current active league-lineup scope.
 
 Refresh directly with:
 
 ```bash
 python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
+python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
 ```
 
 Canonical source documentation:
@@ -364,14 +377,16 @@ Canonical source documentation:
 Operational rules:
 
 - treat CBS Sports Projections as expected production, not expert consensus, ADP or trade-market value
-- use the public Non-PPR projection page without login; Kicker source stats remain provider-specific evidence
-- retain FGM/FGA, XPM/XPA and the five CBS field-goal distance buckets separately from provider `FPTS`
-- preserve decimal distance-bucket projections; accept CBS `—` bucket values only for a true FGM/FGA zero-projection and normalize those buckets to zero
-- do not treat CBS `FPTS` as Mighty-Giants league scoring unless scoring formulas are explicitly reconciled
+- use the public Non-PPR projection pages without login; source stats and provider points remain provider-specific evidence
+- retain position-specific offensive raw stats separately from provider `FPTS`/`FPPG`
+- retain Kicker FGM/FGA, XPM/XPA and the five CBS field-goal distance buckets separately from provider `FPTS`
+- preserve decimal Kicker distance-bucket projections; accept CBS `—` bucket values only for a true FGM/FGA zero-projection and normalize those buckets to zero
+- do not treat CBS `FPTS` as Mighty-Giants league scoring
+- for QB/RB/WR/TE, calculate league-specific `core_points` only in the Derived Operations layer from scoring-relevant raw stats that are comparably available from the active providers; never impute unprojected components
 - CBS exposes no reliable visible projection-updated timestamp on the audited page; store fetch time and HTTP provenance and do not invent `source_updated_date`
-- fail closed on source-identity, header, row-count, duplicate-ID, numerical-plausibility or unexpected-pagination failures
+- fail closed on source-identity, row-count, duplicate-ID, numerical-plausibility or unexpected-pagination failures
 - retain only the newest Raw HTML and archive changed normalized ranking/metadata snapshots
-- do not double-weight CBS Sports and a later Projection Consensus when that consensus already includes CBS Sports
+- do not double-weight CBS Sports and a Projection Consensus when that consensus already includes CBS Sports
 
 ### Sleeper Trending Players roster-activity signal
 
