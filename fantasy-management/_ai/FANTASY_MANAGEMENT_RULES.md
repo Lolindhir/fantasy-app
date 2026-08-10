@@ -422,3 +422,61 @@ Use this structure when helpful:
 8. external context that changes player/team assumptions
 9. plausibility check and unresolved conflicts
 10. concrete recommendations
+
+## 23. Monitoring-, Positionsmodul- und Weekly-Decision-Grenze
+
+Positionsspezifische Analysebausteine, Daily Monitoring und konkrete wöchentliche Entscheidungen sind dauerhaft getrennte Ebenen.
+
+### Daily Monitoring
+
+Daily Monitoring soll materielle Veränderungen erkennen, Research priorisieren und benennen, welche spätere Entscheidung neu geprüft werden muss.
+
+Daily Monitoring darf insbesondere:
+
+- Injury-, Role-, Usage-, Market-, ADP-, Projection-, Activity-, Team- und Ownership-Veränderungen beobachten;
+- positionsspezifische Signale verwenden;
+- bei konkretem Trigger frische qualitative Verifikation auslösen;
+- eine spätere Roster-, Waiver-, Trade- oder Lineup-Prüfung priorisieren.
+
+Daily Monitoring darf nicht allein aufgrund eines Signals endgültig entscheiden:
+
+- Start/Sit;
+- Add/Drop;
+- Waiver Claim;
+- Roster Cut;
+- positionsübergreifende Opportunity Cost.
+
+Ein Monitoring-Event bedeutet deshalb grundsätzlich: **neu bewerten**, nicht automatisch: **Transaktion ausführen**.
+
+### Positionsspezifische Module
+
+Ein positionsspezifisches Modul darf eigene Kandidaten-, Scoring-, Eligibility- und Research-Logik besitzen, muss aber seine Grenze zum Gesamtroster wahren.
+
+Kicker ist der aktuelle Referenzfall:
+
+- Kicker Daily Monitoring beobachtet Baseline, FFC-Kicker-ADP, FFToday/CBS-Projections, Sleeper Activity, Injury, nominalen K1-Status und bei Trigger aktuelle Job Security.
+- Die Kicker-Streaming-Engine bewertet im Weekly Context den gehaltenen Kicker gegen tatsächliche Fantasy-Free-Agent-Kicker.
+- Ohne Weekly Context darf keine Wechsel-Empfehlung aus Daily-/Preseason-Signalen erzeugt werden.
+- Ein guter stabiler Kicker wird nicht automatisch jede Woche gegen einen minimal höher bewerteten Streamer getauscht; ein Wechsel benötigt einen materiellen Vorteil oder einen expliziten Sonderfall wie Bye, Jobverlust oder disqualifizierende Verletzung.
+
+### Weekly Lineup + Waiver
+
+Die endgültige wöchentliche Start/Sit- und Waiver-Entscheidung gehört in einen übergeordneten Workflow, der alle Positionen und den vollständigen Rosterpreis gemeinsam bewertet.
+
+Er muss insbesondere berücksichtigen:
+
+- beste legale Startaufstellung;
+- tatsächliche Fantasy-Free-Agent-Verfügbarkeit;
+- Bye und Injury/Availability;
+- Weekly Matchup und Opportunity;
+- positionsspezifische Module;
+- den Spieler, der für einen Add gedroppt werden müsste;
+- Bench-Slot-, Upside-, Scarcity-, Injury-Insurance- und Trade-Value-Opportunity-Cost.
+
+Für Kicker gilt als Default genau ein gehaltener Kicker. Zwei Kicker sind nur dann vertretbar, wenn der übergeordnete Weekly Workflow ausdrücklich feststellt, dass das Behalten eines längerfristig wertvollen Kickers die Opportunity Cost des zusätzlich belegten Bench-Slots übersteigt, zum Beispiel zur Bye-Überbrückung.
+
+Die Kicker-Engine darf diese Zwei-Kicker-/Drop-Entscheidung nicht allein treffen, weil sie den Wert des zu opfernden Nicht-Kickers nicht kennt.
+
+Kanonische Detaildokumentation:
+
+`fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`
