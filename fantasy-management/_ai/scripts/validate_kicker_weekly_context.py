@@ -88,6 +88,14 @@ def validate_context(
         for player_id, candidate in plan_candidates.items()
         if candidate.get("availability") == "held"
     }
+    held_bye_ids = {
+        player_id
+        for player_id in held_ids
+        if isinstance(plan_candidates[player_id].get("schedule"), dict)
+        and plan_candidates[player_id]["schedule"].get("status") == "bye"
+    }
+    required_held_context_ids = held_ids - held_bye_ids
+
     context_players = context.get("players") if isinstance(context.get("players"), list) else []
     context_ids: set[str] = set()
     for player in context_players:
@@ -98,12 +106,15 @@ def validate_context(
             raise KickerWeeklyContextValidationError(f"Weekly context contains duplicate player: {player_id}")
         context_ids.add(player_id)
 
-    if not held_ids.issubset(context_ids):
-        raise KickerWeeklyContextValidationError("Weekly context must include every held Kicker from the research plan")
+    if not required_held_context_ids.issubset(context_ids):
+        raise KickerWeeklyContextValidationError("Weekly context must include every non-bye held Kicker from the research plan")
     if require_decision_ready and not any(
-        plan_candidates[player_id].get("availability") == "free_agent" for player_id in context_ids
+        plan_candidates[player_id].get("availability") == "free_agent"
+        and isinstance(plan_candidates[player_id].get("schedule"), dict)
+        and plan_candidates[player_id]["schedule"].get("status") == "scheduled"
+        for player_id in context_ids
     ):
-        raise KickerWeeklyContextValidationError("Decision-ready context requires at least one researched free-agent alternative")
+        raise KickerWeeklyContextValidationError("Decision-ready context requires at least one researched scheduled free-agent alternative")
 
     checked_at = parse_datetime(context.get("checked_at"), "checked_at")
     policy = research_config.get("research") if isinstance(research_config.get("research"), dict) else {}
@@ -124,7 +135,7 @@ def validate_context(
         if schedule_status == "bye":
             if context_status == "decision_ready":
                 raise KickerWeeklyContextValidationError(
-                    f"Decision-ready context cannot score bye-week candidate {player_id}; held-bye recommendation support is a separate engine case"
+                    f"Decision-ready context must omit bye-week candidate {player_id}; bye status comes from the research plan"
                 )
             continue
         if schedule_status != "scheduled":
@@ -186,6 +197,7 @@ def validate_context(
         "context_status": context_status,
         "player_count": len(context_players),
         "scheduled_player_count": scheduled_count,
+        "held_bye_player_ids": sorted(held_bye_ids),
         "research_plan_fingerprint_match": True,
         "source_input_fingerprint_match": True,
         "decision_ready": context_status == "decision_ready",
