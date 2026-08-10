@@ -294,6 +294,85 @@
         "seahawks-tight-end",
         "two-te-format"
       ]
+    },
+    {
+      "id": "jk-dobbins-2026",
+      "enabled": true,
+      "entity": {
+        "type": "player",
+        "display_name": "J.K. Dobbins",
+        "identifiers": {
+          "sleeper_id": "6806"
+        },
+        "canonical_ref": null,
+        "attributes": {
+          "nfl_team": "DEN",
+          "position": "RB"
+        }
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "injury-status",
+          "enabled": true,
+          "criteria_overrides": {}
+        },
+        {
+          "profile_ref": "redraft-adp-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "high",
+      "decision_context": {
+        "perspective": "managed_team",
+        "relevance": "Explizit vom Nutzer ausgewählter Broncos-Running-Back; Gesundheit, Trainingsstatus, Backfield-Rolle, Konkurrenzsituation sowie Dynasty-Markt und Redraft-ADP können seine kurzfristige und mittelfristige Relevanz für die Mighty Giants deutlich verändern.",
+        "current_position": "Dauerhaft beobachten, ohne eine Add-, Draft-, Trade- oder Roster-Entscheidung vorwegzunehmen.",
+        "effect_rules": [
+          {
+            "when_classification": "injury_status_change",
+            "action": "Gesundheits-, Einsatz- und Roster-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "roster_availability_change",
+            "action": "NFL-Verfügbarkeit und unmittelbare Fantasy-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "return_timeline_change",
+            "action": "Rückkehr- oder Belastbarkeitsfenster neu bewerten."
+          },
+          {
+            "when_classification": "role_change",
+            "action": "Backfield-Rolle und Dynasty-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "opportunity_change",
+            "action": "Usage-Pfad und mögliche Add-, Draft- oder Trade-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "competition_change",
+            "action": "Konkurrenzsituation und erwartbares Volumen neu bewerten."
+          },
+          {
+            "when_classification": "market_tier_change",
+            "action": "Dynasty-Marktpreis und mögliche Buy-, Hold-, Shop- oder Add-Relevanz neu bewerten."
+          },
+          {
+            "when_classification": "redraft_adp_change",
+            "action": "Kurzfristige Rollen- und Win-Now-Erwartung gegen Dynasty-Markt und Gesundheitslage abgleichen."
+          },
+          {
+            "when_classification": "redraft_adp_entry",
+            "action": "Neu entstandene kurzfristige Relevanz auf belastbare Rollen-, Usage- oder Gesundheitssignale prüfen."
+          }
+        ]
+      },
+      "tags": [
+        "player-watch",
+        "user-selected",
+        "broncos-backfield",
+        "injury-history",
+        "win-now-upside"
+      ]
     }
   ],
   "selectors": []
