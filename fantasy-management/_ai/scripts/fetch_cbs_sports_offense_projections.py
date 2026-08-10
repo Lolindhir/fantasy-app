@@ -42,7 +42,7 @@ POSITIONS = {
     },
     "TE": {
         "label": "Tight End",
-        "source_positions": ["TE"],
+        "source_positions": ["TE", "FB"],
         "fields": ["games_played", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"],
     },
 }
