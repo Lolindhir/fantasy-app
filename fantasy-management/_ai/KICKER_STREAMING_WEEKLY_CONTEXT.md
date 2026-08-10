@@ -38,6 +38,13 @@ fantasy-management/_ai/schemas/kicker-weekly-research-plan.schema.json
 
 The builder defaults to stdout. A generated file may be written explicitly when needed, but no workflow activation is implied by this contract.
 
+Example:
+
+```bash
+python fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py \
+  --output /tmp/kicker-weekly-research-plan.json
+```
+
 ## Candidate selection
 
 The research plan must use the same baseline functions and shortlist settings as `analyze_kicker_streaming.py`.
@@ -72,6 +79,8 @@ The research plan retains:
 - ESPN game ID/link;
 - CBS game link.
 
+The research-plan layer supports explicit bye detection. A held-Kicker bye still needs a dedicated recommendation-engine case before the weekly decision wrapper should be considered complete for bye weeks; do not disguise a bye as a job-security failure.
+
 ## Venue and roof
 
 `Schedule.json` currently does not carry game-venue or roof metadata. Do not infer a venue only from the home team and store it as fact.
@@ -88,7 +97,7 @@ Preferred evidence order:
 2. official stadium/venue information;
 3. reputable game listings only when official evidence is unavailable.
 
-The research result should capture venue name, location, roof type/state when relevant and whether outdoor weather can materially affect kicking conditions.
+The weekly context stores venue name, location, roof type/state, weather exposure, source type and verification time separately from the numerical weather/stadium score.
 
 ## Weather
 
@@ -110,7 +119,7 @@ Kicker job security is an eligibility gate, not a small scoring bonus.
 
 Before a Kicker can be treated as an eligible weekly alternative, verify current job status. Prefer current official roster/depth-chart/team information. If camp competition or recent reporting makes the job ambiguous, preserve that ambiguity as `competition` or `uncertain` instead of assuming a starter.
 
-Current job-security evidence and Kicker injury evidence should normally be no more than 24 hours old at the weekly-context check.
+Current job-security evidence and Kicker injury evidence should normally be no more than 24 hours old at the weekly-context check. The structured context stores separate verification timestamps for Kicker job, Kicker injury and QB/injury context.
 
 An explicit `not_current_starter` or disqualifying injury state prevents the candidate from becoming an eligible recommended alternative.
 
@@ -132,7 +141,7 @@ Field-Goal opportunity should describe the likelihood of Kicker attempts, not si
 
 QB/injury context should capture material changes to expected scoring environment, not reward or punish a Kicker merely because an unrelated player has an injury designation.
 
-## Weekly context handoff
+## Weekly context validation and handoff
 
 The final researched context must validate against:
 
@@ -140,16 +149,42 @@ The final researched context must validate against:
 fantasy-management/_ai/schemas/kicker-weekly-context.schema.json
 ```
 
-It must retain evidence per player and bind to the current `kicker-streaming-inputs.json -> input_fingerprint`.
+It must bind to both:
 
-The recommendation engine is then run with:
+- the current `kicker-streaming-inputs.json -> input_fingerprint`;
+- the exact `kicker-weekly-research-plan -> input_fingerprint` used for the research.
+
+A separate validator checks more than JSON shape. For `decision_ready` it verifies:
+
+- season/week and candidate membership against the plan;
+- exact game ID for every researched scheduled candidate;
+- held-Kicker presence and at least one researched free-agent alternative;
+- the 168-hour decision window;
+- venue freshness;
+- 24-hour Kicker job, Kicker injury and QB/injury freshness;
+- 24-hour weather freshness when weather is applicable;
+- that exposed venues actually have applicable weather research.
+
+Validation command:
 
 ```bash
-python fantasy-management/_ai/scripts/analyze_kicker_streaming.py \
-  --weekly-context <weekly-context.json>
+python fantasy-management/_ai/scripts/validate_kicker_weekly_context.py \
+  <weekly-context.json> \
+  --research-plan <research-plan.json> \
+  --require-decision-ready
 ```
 
-Without a complete current weekly context, the engine remains at `weekly_context_required` or `insufficient_context` and must not produce a forced Add/Drop recommendation.
+For an actual recommendation, use the gated wrapper rather than calling the score engine directly:
+
+```bash
+python fantasy-management/_ai/scripts/run_kicker_weekly_analysis.py \
+  --weekly-context <weekly-context.json> \
+  --research-plan <research-plan.json>
+```
+
+The wrapper validates the research context first and only then invokes `analyze_kicker_streaming.py`. A preliminary, stale, mismatched or too-early context therefore cannot produce a normal weekly Add/Drop recommendation through the supported path.
+
+Without a complete current weekly context, the underlying engine remains at `weekly_context_required` or `insufficient_context` and must not produce a forced Add/Drop recommendation.
 
 ## Persistence and automation boundary
 
