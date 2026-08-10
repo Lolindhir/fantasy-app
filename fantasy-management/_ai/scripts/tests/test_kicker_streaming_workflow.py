@@ -6,7 +6,7 @@ from pathlib import Path
 
 class KickerStreamingWorkflowTests(unittest.TestCase):
     def test_production_workflow_materializes_kicker_inputs_after_free_agents(self) -> None:
-        root = Path(__file__).resolve().parents[3]
+        root = Path(__file__).resolve().parents[4]
         workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
 
