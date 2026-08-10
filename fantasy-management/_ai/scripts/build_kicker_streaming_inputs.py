@@ -75,8 +75,8 @@ def validate_config(config: dict[str, Any]) -> None:
     population = config.get("population") if isinstance(config.get("population"), dict) else {}
     if population.get("position") != "K":
         raise KickerStreamingInputError("Kicker Streaming population must use position K")
-    if population.get("held_ownership_status") != "mighty_giants":
-        raise KickerStreamingInputError("Held kicker ownership must be mighty_giants")
+    if population.get("held_selector") != "managed_team":
+        raise KickerStreamingInputError("Held kicker selector must use managed_team")
     if population.get("free_agent_ownership_status") != "fantasy_free_agent":
         raise KickerStreamingInputError("Free-agent kicker ownership must be fantasy_free_agent")
 
@@ -98,6 +98,15 @@ def ownership_status(player: dict[str, Any]) -> str | None:
     ownership = player.get("ownership") if isinstance(player.get("ownership"), dict) else {}
     value = ownership.get("status")
     return str(value) if value is not None else None
+
+
+def owned_by_team(player: dict[str, Any], team_id: str) -> bool:
+    ownership = player.get("ownership") if isinstance(player.get("ownership"), dict) else {}
+    teams = ownership.get("teams") if isinstance(ownership.get("teams"), list) else []
+    return any(
+        isinstance(team, dict) and str(team.get("team_id")) == team_id
+        for team in teams
+    )
 
 
 def kicker_scoring(league: dict[str, Any]) -> dict[str, float]:
@@ -349,7 +358,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         for player in player_signals["players"]
         if isinstance(player, dict)
         and player.get("position") == "K"
-        and ownership_status(player) == "mighty_giants"
+        and owned_by_team(player, managed_team_id)
     ]
     free_agent_players = [
         player
