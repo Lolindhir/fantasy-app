@@ -32,6 +32,8 @@ Current published materialized contracts:
 fantasy-management/generated/operations/managed-roster-signals.json
 fantasy-management/generated/operations/external-signal-relevance.json
 fantasy-management/generated/operations/player-signals.json
+fantasy-management/generated/operations/free-agent-signals.json
+fantasy-management/generated/operations/kicker-streaming-inputs.json
 fantasy-management/generated/operations/data-quality.json
 ```
 
@@ -78,13 +80,62 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
+The complete Fantasy Free-Agent contract is derived from the same current `player-signals.json` without re-reading `Players.json -> IsFreeAgent` as league availability:
+
+```text
+fantasy-management/automation/free-agent-materialization.json
+fantasy-management/_ai/schemas/free-agent-dataset.schema.json
+fantasy-management/_ai/scripts/build_free_agent_dataset.py
+→ fantasy-management/generated/operations/free-agent-signals.json
+```
+
+The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`, where ownership itself comes from the union of every league team’s Roster/Reserve/Taxi lists.
+
+The active Kicker Streaming input contract is built after the free-agent contract from the held managed-team kicker and all actual fantasy-free-agent kickers:
+
+```text
+fantasy-management/automation/kicker-streaming-input-materialization.json
+fantasy-management/_ai/schemas/kicker-streaming-inputs.schema.json
+fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
+→ fantasy-management/generated/operations/kicker-streaming-inputs.json
+```
+
+It carries the existing market, ADP, projection, activity, injury and nominal-role signals into one candidate set and reconciles raw Kicker projection statistics with the current league scoring where source detail permits it. CBS `50+` field goals remain bounded because the league distinguishes 50-59 from 60+; FFToday field-goal totals remain bounded because no distance buckets are supplied. Provider fantasy points remain separate.
+
+The productive materialization dependency order is:
+
+```text
+external-signal-relevance.json
+→ player-signals.json
+→ free-agent-signals.json
+→ kicker-streaming-inputs.json
+```
+
+Each step consumes the freshly rebuilt upstream output from the same retry/rebuild run before the changed generated artifacts are staged and published together.
+
 ### 3. External research and analysis
 
 An external analyst may read the current materialized datasets, perform fresh research and interpret qualitative signals such as injury context, practice participation, role, opportunity, coaching comments and depth-chart changes.
 
 External activity is a prioritization and research trigger. It is not an automatic roster recommendation.
 
-A later Kicker Streaming analysis belongs in this layer. It may combine the central player-signal dataset and a complete fantasy-free-agent dataset with current weekly schedule, matchup, team scoring environment, weather/stadium, job security and Mighty-Giants kicker scoring. The deterministic player-signal layer itself must not produce an add/drop recommendation.
+Kicker Streaming belongs in this layer. The deterministic input contract already supplies the held kicker, every current fantasy-free-agent kicker, FFC Kicker ADP, separate FFToday/CBS projections, activity, nominal role and current Mighty-Giants Kicker scoring. The analysis layer adds current weekly schedule, matchup, team scoring environment, field-goal opportunity, weather/stadium, job security and relevant QB/injury context.
+
+The on-demand analysis method is versioned in:
+
+```text
+fantasy-management/_ai/kicker-streaming-analysis-config.json
+fantasy-management/_ai/schemas/kicker-weekly-context.schema.json
+fantasy-management/_ai/schemas/kicker-streaming-analysis.schema.json
+fantasy-management/_ai/scripts/analyze_kicker_streaming.py
+```
+
+The analysis deliberately has two stages:
+
+1. A baseline ranking uses the currently materialized projection and Kicker-ADP signals to produce a research shortlist. Sleeper add activity is only a research tiebreaker and is not converted into automatic player quality.
+2. A weekly decision is allowed only after explicit current context is supplied for the held kicker and researched alternatives. Job security is an eligibility gate. Matchup, offense, field-goal opportunity, weather/stadium and QB/injury context contribute to the weekly score.
+
+Without weekly context the analysis returns `weekly_context_required` and must not manufacture a switch recommendation from preseason or provider-only signals. Repository persistence is not automatic; the script defaults to stdout-only, and any durable analysis write remains subject to the human-approved persistence rule below.
 
 ### 4. Notification
 
@@ -223,6 +274,8 @@ fantasy-management/generated/
     ├── managed-roster-signals.json
     ├── external-signal-relevance.json
     ├── player-signals.json
+    ├── free-agent-signals.json
+    ├── kicker-streaming-inputs.json
     └── data-quality.json
 ```
 
@@ -244,7 +297,7 @@ league/source refreshes
 → scheduled monitoring
 ```
 
-The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance and the central player-signal dataset in dependency order before publishing changed generated outputs. Downstream Free-Agent and Kicker Streaming analyses should read `player-signals.json` rather than reconstructing the same ranking, projection, ownership and activity joins independently.
+The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset and Kicker Streaming inputs in dependency order before publishing changed generated outputs. Downstream Free-Agent and Kicker Streaming analyses should read these materialized contracts rather than reconstructing the same ranking, projection, ownership and activity joins independently.
 
 ## Legacy observation runner
 

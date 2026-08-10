@@ -61,11 +61,6 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Pro Spieler das zentrale Player-Signal-Dataset mit Salary, Projected Salary, aktuellem Rosterbereich und ligaformatbezogenen Strukturinformationen verbinden.
   - Output soll fehlende oder unvollständige Signale ausdrücklich markieren und keine Empfehlung vorwegnehmen.
 
-- [ ] Vollständiges Free-Agent-Dataset materialisieren.
-  - Ownership ausschließlich aus allen `Roster`-, `Reserve`- und `Taxi`-Listen in `League.json` ableiten.
-  - Für alle unowned relevanten Spieler Rankings, Marktwert, ADP, Projections, Add-/Drop-Aktivität, Verletzung, Rolle, Usage, Salary und Veränderungen aus dem zentralen Player-Signal-Dataset vorbereiten.
-  - Ziel: Das spätere Free-Agent-Board und Kicker Streaming klassifizieren einen bereits vollständigen Kandidatenbestand und müssen die Population nicht bei jedem Lauf neu zusammensuchen.
-
 - [ ] Liga- und Gegner-Roster-Dataset materialisieren.
   - Für jedes Fantasy-Team Rosterstruktur, Positionsverteilung, Alter, Salary/Cap, Draftkapital, Marktwertsignale, Verletzungen und aktuelle Rosterbereiche vorbereiten.
   - Deterministische Strukturkennzahlen wie Überbesetzung, dünne Positionen oder Konzentrationsrisiken dürfen berechnet werden; Trade-Empfehlungen bleiben der Analyseschicht vorbehalten.
@@ -123,13 +118,14 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Kandidaten nach Position, Rolle, kurzfristiger Nutzbarkeit, Upside, Marktwert, ADP, Salary und Ligaformat bewerten.
   - Output: Tiers, Draft-/Waiver-Priorität, früheste vertretbare Runde und klare Kategorien wie Soforthilfe, Handcuff, Upside-Stash oder Watchlist.
 
-- [ ] Wöchentliche Kicker-Streaming-Analyse vor dem Spieltag entwickeln.
-  - Eingabe: zentraler Player-Signal-Datensatz, vollständiges Free-Agent-Dataset, eigener aktueller Kicker und aktuelle Wochen-/Schedule-Daten.
-  - Kandidaten: nur tatsächlich verfügbare Fantasy-Free-Agent-Kicker gegen den aktuell gehaltenen Kicker vergleichen; keine Verfügbarkeit aus `Players.json -> IsFreeAgent` ableiten.
-  - Bewerten: FFC-Kicker-ADP als sekundäres Markt-/Stabilitätssignal, getrennte FFToday-/CBS-Projections, aktuelles Matchup, Team-Offense und erwartete Scoring-Umgebung, Field-Goal-Opportunity, Stadion/Wetter, Job-Sicherheit sowie relevante Verletzungs-/QB-Kontexte.
-  - Liga-Scoring: verfügbare rohe Kicker-Projections nach Möglichkeit mit der tatsächlichen Mighty-Giants-Kickerwertung neu berechnen; Provider-FPTS nicht still als Ligapunkte übernehmen oder zwischen Providern mitteln.
-  - Output: klare Wechsel-Empfehlung mit bester verfügbarer Alternative und Begründung oder ausdrücklich `kein Wechsel empfohlen`, wenn der gehaltene Kicker besser beziehungsweise nicht materiell schlechter ist.
-  - Timing: primärer Hinweis im wöchentlichen Waiver-/Lineup-Entscheidungsfenster; optionaler zweiter Check am Spieltag nur bei materiellen Änderungen wie Wetter, Verletzung oder Kicker-Jobwechsel.
+- [ ] Wöchentliche Kicker-Streaming-Analyse vor dem Spieltag vollständig operationalisieren.
+  - Aktive Grundlage: `kicker-streaming-inputs.json` enthält den gehaltenen Kicker und alle tatsächlichen Fantasy-Free-Agent-Kicker mit liga-reconciled CBS-Bounds, FFToday, FFC-Kicker-ADP, Sleeper Activity, Injury und nominaler Rolle.
+  - Baseline-/Decision-Engine: `analyze_kicker_streaming.py` erzeugt eine Research-Shortlist und gibt ohne aktuellen Wochenkontext ausdrücklich `weekly_context_required` zurück.
+  - Wochenkontext: Matchup, Team-Offense und erwartete Scoring-Umgebung, Field-Goal-Opportunity, Stadion/Wetter, aktuelle Job-Sicherheit sowie relevante Verletzungs-/QB-Kontexte frisch recherchieren und gegen den aktuellen Input-Fingerprint binden.
+  - Job-Sicherheit ist ein Eligibility-Gate; Sleeper-Depth-Chart und Add-Aktivität allein dürfen keinen Wechsel auslösen.
+  - Liga-Scoring: Provider-FPTS bleiben getrennt; CBS wird anhand seiner Distanz-Buckets auf die Liga-Wertung abgebildet, unvermeidbare 50+ Unsicherheit bleibt als Range; FFToday wird nicht durch erfundene Distanzannahmen pseudo-exakt gemacht.
+  - Output: klare Wechsel-Empfehlung mit bester verifizierter Alternative und Begründung oder ausdrücklich `kein Wechsel empfohlen`, wenn der gehaltene Kicker besser beziehungsweise nicht materiell schlechter ist.
+  - Noch offen: den aktuellen Wochenkontext regelmäßig beschaffen, den Analysezeitpunkt im Waiver-/Lineup-Fenster festlegen und eine mögliche automatische Orchestrierung separat freigeben. Ein optionaler Spieltags-Check soll nur bei materiellen Änderungen wie Wetter, Verletzung oder Kicker-Jobwechsel laufen.
 
 - [ ] Ereignisgesteuerte Neubewertung nach materiellen Monitoring-Events entwickeln.
   - Beispiel: Eine Verletzung oder Rollenänderung aktualisiert zuerst die betroffenen Derived Datasets und stößt danach nur die betroffenen Roster-, Free-Agent-, Trade- und Board-Analysen erneut an.
@@ -201,6 +197,17 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Ergebnis: Listenlängenbereinigte Perzentile, Projection-Provider-Abweichung und Freshness werden deterministisch berechnet; Provider-Fantasy-Punkte bleiben getrennt und Top-N-Abwesenheit wird nicht als Nullaktivität behandelt.
   - Ergebnis: `FM • Materialize • Operations Inputs` baut `player-signals.json` nach der aktuellen External-Signal-Materialisierung und veröffentlicht alle geänderten Operations-Inputs über denselben Retry-/Rebuild-Pfad.
   - Leitplanke: Der Datensatz erzeugt keine Hold-, Shop-, Cut-, Add-, Start- oder Sit-Empfehlungen; historische Deltas/Tiers und bestätigte Alias-/Join-Verbesserungen bleiben bei Bedarf spätere Erweiterungen.
+
+- [x] Vollständiges Fantasy-Free-Agent-Dataset materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `free-agent-signals.json` wird deterministisch aus dem zentralen Player-Signal-Dataset erzeugt und enthält ausschließlich `ownership.status == fantasy_free_agent`.
+  - Ergebnis: Rankings, Marktwert, ADP, Projections, Activity, Injury, Rolle und Freshness bleiben pro Spieler vollständig erhalten; `Players.json -> IsFreeAgent` wird nicht als Fantasy-Verfügbarkeit verwendet.
+  - Ergebnis: `FM • Materialize • Operations Inputs` baut und validiert den Free-Agent-Contract direkt nach `player-signals.json` und veröffentlicht ihn über denselben Retry-/Rebuild-Pfad.
+
+- [x] Kicker-Streaming-Kandidatencontract materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `kicker-streaming-inputs.json` kombiniert den aktuell gehaltenen Mighty-Giants-Kicker mit allen tatsächlichen Fantasy-Free-Agent-Kickern.
+  - Ergebnis: CBS-/FFToday-Projections, FFC-Kicker-ADP, Sleeper Activity, Injury und nominale Rolle stehen für die Analyseschicht in einem Contract bereit; Provider-FPTS bleiben getrennt.
+  - Ergebnis: CBS 50+ und FFToday ohne Distanz-Buckets werden als transparente Liga-Scoring-Ranges statt als erfundene exakte Punkte behandelt.
+  - Ergebnis: Der Contract wird nach `free-agent-signals.json` gebaut, validiert und produktiv veröffentlicht.
 
 - [x] Vollständiges Roster-Monitoring für das verwaltete Team einrichten.
   - Ergebnis: Der dynamische Selector löst bei jedem Lauf die deduplizierte Union aus `Roster`, `Reserve` und `Taxi` des `managed_team` auf.
