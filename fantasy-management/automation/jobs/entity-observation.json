@@ -27,6 +27,11 @@
       "condition": "Dynamisch ausgewählte Spieler können über aktuelle Player-Chunks eindeutig aufgelöst werden."
     },
     {
+      "path": "fantasy-management/generated/operations/player-signals.json",
+      "required": true,
+      "condition": "Der zentrale Player-Signal-Contract ist vorhanden, nicht leer und für Projection-Monitoring innerhalb der Profil-Freshness verwendbar."
+    },
+    {
       "path": "fantasy-management/generated/operations/kicker-streaming-inputs.json",
       "required": true,
       "condition": "Der aktuelle liga-spezifische Kicker-Contract ist für held und tatsächliche Fantasy-Free-Agent-Kicker vorhanden, nicht leer und innerhalb der Profil-Freshness verwendbar."
@@ -67,6 +72,11 @@
       "condition": "ADP-Profil, Formatwahl, Source Bindings und Materialitätsschwellen sind valide."
     },
     {
+      "path": "fantasy-management/automation/profiles/season-projection-movement.json",
+      "required": true,
+      "condition": "Projection-Profil, Player-Signal-Binding, Liga-Scoring-Abgrenzung und Materialitätsschwellen sind valide."
+    },
+    {
       "path": "fantasy-management/automation/profiles/kicker-signal-movement.json",
       "required": true,
       "condition": "Kicker-Profil, liga-spezifischer Input, Baseline-Wiederverwendung und Materialitätsschwellen sind valide."
@@ -88,101 +98,27 @@
     }
   ],
   "configuration_refs": [
-    {
-      "kind": "target_set",
-      "path": "fantasy-management/automation/target-sets/player-role-watch.json",
-      "required": true
-    },
-    {
-      "kind": "target_set",
-      "path": "fantasy-management/automation/target-sets/managed-roster-health.json",
-      "required": true
-    },
-    {
-      "kind": "target_set",
-      "path": "fantasy-management/automation/target-sets/kicker-daily-monitoring.json",
-      "required": true
-    },
-    {
-      "kind": "profile",
-      "path": "fantasy-management/automation/profiles/injury-status.json",
-      "required": true
-    },
-    {
-      "kind": "profile",
-      "path": "fantasy-management/automation/profiles/role-opportunity.json",
-      "required": true
-    },
-    {
-      "kind": "profile",
-      "path": "fantasy-management/automation/profiles/market-movement.json",
-      "required": true
-    },
-    {
-      "kind": "profile",
-      "path": "fantasy-management/automation/profiles/redraft-adp-movement.json",
-      "required": true
-    },
-    {
-      "kind": "profile",
-      "path": "fantasy-management/automation/profiles/kicker-signal-movement.json",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/managed-roster-selector.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/injury-status.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/redraft-adp-movement.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/kicker-daily-monitoring.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/entity-observation.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/entity-observation-bootstrap.md",
-      "required": true
-    },
-    {
-      "kind": "other",
-      "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json",
-      "required": true
-    },
-    {
-      "kind": "evaluator",
-      "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
-      "required": true
-    },
-    {
-      "kind": "other",
-      "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/source-binding-resolution.md",
-      "required": true
-    },
-    {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/atomic-publication.md",
-      "required": true
-    }
+    {"kind": "target_set", "path": "fantasy-management/automation/target-sets/player-role-watch.json", "required": true},
+    {"kind": "target_set", "path": "fantasy-management/automation/target-sets/managed-roster-health.json", "required": true},
+    {"kind": "target_set", "path": "fantasy-management/automation/target-sets/kicker-daily-monitoring.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/injury-status.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/role-opportunity.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/market-movement.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/redraft-adp-movement.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/season-projection-movement.json", "required": true},
+    {"kind": "profile", "path": "fantasy-management/automation/profiles/kicker-signal-movement.json", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/managed-roster-selector.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/injury-status.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/redraft-adp-movement.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/season-projection-movement.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/kicker-daily-monitoring.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/entity-observation.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/entity-observation-bootstrap.md", "required": true},
+    {"kind": "other", "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json", "required": true},
+    {"kind": "evaluator", "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py", "required": true},
+    {"kind": "other", "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/source-binding-resolution.md", "required": true},
+    {"kind": "workflow", "path": "fantasy-management/automation/workflows/atomic-publication.md", "required": true}
   ],
   "execution": {
     "workflow_ref": "fantasy-management/automation/workflows/entity-observation.md",
@@ -211,6 +147,7 @@
       "A recommendation change may raise severity but cannot replace missing evidence.",
       "The first baseline is not a material change unless the target set explicitly enables it.",
       "Positionsspezifische Monitoring-Profile beobachten Veränderungen; endgültige Start/Sit-, Add/Drop- und Waiver-Entscheidungen gehören in den übergeordneten Entscheidungsworkflow.",
+      "Season Projection Monitoring darf erwartete Produktion, Provider-Consensus und liga-spezifische Core Points als Veränderungssignale nutzen, aber Projection nicht mit ADP, Dynasty-Marktwert oder einer finalen Weekly-Entscheidung gleichsetzen.",
       "Kicker Daily Monitoring darf Baseline-, ADP-, Projection-, Activity-, Injury- und Job-Signale priorisieren, aber keinen Weekly Context oder automatischen Kicker-Wechsel vortäuschen.",
       "While active pairs lack a good initial state, entity-observation-bootstrap.json and entity-observation-bootstrap.md supersede the fixed deep-evaluation pair budget and control a time-budgeted source-grouped bootstrap.",
       "A successful bootstrap checkpoint is a successful pending run, may write State-only progress and must not create an Observation Event or user notification.",
