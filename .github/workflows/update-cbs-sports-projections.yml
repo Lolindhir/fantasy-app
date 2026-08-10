@@ -16,7 +16,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Resolve Berlin schedule window
@@ -63,17 +63,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test CBS Sports projection fetcher
+      - name: Test CBS Sports projection fetchers
         if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python -m unittest
           fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_kicker_projections.py
+          fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_offense_projections.py
           -v
 
-      - name: Update CBS Sports projections
+      - name: Update CBS Sports kicker projections
         if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py
+          --skip-unchanged
+
+      - name: Update CBS Sports offensive projections
+        if: steps.schedule_gate.outputs.run == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py
           --skip-unchanged
 
       - name: Commit and push updates
