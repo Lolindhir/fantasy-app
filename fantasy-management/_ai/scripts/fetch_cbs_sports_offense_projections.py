@@ -25,12 +25,28 @@ SCHEMA_VERSION = 1
 SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/cbs-sports"
 USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
 POSITIONS = {
-    "QB": {"label": "Quarterback", "fields": ["games_played", "pass_attempts", "pass_completions", "pass_yards", "pass_yards_per_game", "pass_touchdowns", "interceptions", "passer_rating", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"]},
-    "RB": {"label": "Running Back", "fields": ["games_played", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"]},
-    "WR": {"label": "Wide Receiver", "fields": ["games_played", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"]},
-    "TE": {"label": "Tight End", "fields": ["games_played", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"]},
+    "QB": {
+        "label": "Quarterback",
+        "source_positions": ["QB"],
+        "fields": ["games_played", "pass_attempts", "pass_completions", "pass_yards", "pass_yards_per_game", "pass_touchdowns", "interceptions", "passer_rating", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"],
+    },
+    "RB": {
+        "label": "Running Back",
+        "source_positions": ["RB", "FB"],
+        "fields": ["games_played", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"],
+    },
+    "WR": {
+        "label": "Wide Receiver",
+        "source_positions": ["WR"],
+        "fields": ["games_played", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "rush_attempts", "rush_yards", "rush_average", "rush_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"],
+    },
+    "TE": {
+        "label": "Tight End",
+        "source_positions": ["TE"],
+        "fields": ["games_played", "targets", "receptions", "receiving_yards", "receiving_yards_per_game", "receiving_average", "receiving_touchdowns", "fumbles_lost", "projected_fantasy_points", "projected_fantasy_points_per_game"],
+    },
 }
-BASE_FIELDS = ["name", "Rank", "source_rank", "position", "team", "source_player_id"]
+BASE_FIELDS = ["name", "Rank", "source_rank", "position", "source_position", "team", "source_player_id"]
 
 
 class ProjectionError(RuntimeError):
@@ -137,6 +153,7 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
         raise ProjectionError(f"CBS {position} projections became paginated")
 
     player_href = re.compile(r"/nfl/players/(\d+)/", re.IGNORECASE)
+    source_position_team = re.compile(r"\b(QB|RB|FB|WR|TE)\s+([A-Z]{2,3})\b")
     rows: list[dict[str, Any]] = []
     ids: set[str] = set()
     for cells in parser.rows:
@@ -160,9 +177,15 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
             raise ProjectionError(f"Duplicate CBS player id: {player_id}")
         ids.add(player_id)
         player_cell_text = str(cells[player_index]["text"])
-        team_match = re.search(rf"\b{position}\s+([A-Z]{{2,3}})\b", player_cell_text)
-        if not team_match:
-            raise ProjectionError(f"CBS team could not be resolved for {player_name}: {player_cell_text!r}")
+        position_team_match = source_position_team.search(player_cell_text)
+        if not position_team_match:
+            raise ProjectionError(f"CBS position/team could not be resolved for {player_name}: {player_cell_text!r}")
+        source_position = position_team_match.group(1)
+        if source_position not in config["source_positions"]:
+            raise ProjectionError(
+                f"Unexpected CBS source position {source_position} on {position} page for {player_name}"
+            )
+        team = position_team_match.group(2)
         following = [str(cell["text"]).strip() for cell in cells[player_index + 1:]]
         fields = config["fields"]
         if len(following) < len(fields):
@@ -180,7 +203,8 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
             "Rank": 0,
             "source_rank": len(rows) + 1,
             "position": position,
-            "team": team_match.group(1),
+            "source_position": source_position,
+            "team": team,
             "source_player_id": player_id,
             **parsed,
             "season": season,
