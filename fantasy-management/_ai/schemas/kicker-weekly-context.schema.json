@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/kicker-weekly-context.schema.json",
+  "title": "Kicker Streaming Weekly Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_input_fingerprint",
+    "season",
+    "week",
+    "checked_at",
+    "players"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "season": {"type": ["string", "integer"]},
+    "week": {"type": "integer", "minimum": 1, "maximum": 18},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "players": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "job_security",
+          "player_injury_status",
+          "matchup_score",
+          "offense_scoring_environment_score",
+          "field_goal_opportunity_score",
+          "weather_stadium_score",
+          "qb_injury_context_score",
+          "evidence"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "job_security": {
+            "enum": [
+              "confirmed_starter",
+              "probable_starter",
+              "competition",
+              "uncertain",
+              "not_current_starter"
+            ]
+          },
+          "player_injury_status": {
+            "enum": ["clear", "monitor", "questionable", "out"]
+          },
+          "matchup_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "offense_scoring_environment_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "field_goal_opportunity_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "weather_stadium_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "qb_injury_context_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "notes": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_type", "note", "checked_at"],
+              "properties": {
+                "source_type": {
+                  "enum": [
+                    "official",
+                    "schedule",
+                    "weather",
+                    "projection",
+                    "news",
+                    "analysis",
+                    "other"
+                  ]
+                },
+                "note": {"type": "string", "minLength": 1},
+                "reference": {"type": ["string", "null"]},
+                "checked_at": {"type": "string", "format": "date-time"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
