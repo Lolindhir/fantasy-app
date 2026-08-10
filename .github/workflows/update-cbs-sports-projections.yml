@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "8 4 * * *"  # 06:08 Europe/Berlin während CEST
     - cron: "8 5 * * *"  # 06:08 Europe/Berlin während CET
+  push:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py
+      - fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_kicker_projections.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_offense_projections.py
+      - .github/workflows/update-cbs-sports-projections.yml
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -28,7 +37,7 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" != "schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Manual run: schedule gate passed."
+            echo "Non-scheduled run: schedule gate passed."
             exit 0
           fi
 
