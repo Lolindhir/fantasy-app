@@ -15,6 +15,8 @@
   "properties": {
     "schema_version": {"const": 1},
     "source_input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "research_plan_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "context_status": {"enum": ["preliminary", "decision_ready"]},
     "season": {"type": ["string", "integer"]},
     "week": {"type": "integer", "minimum": 1, "maximum": 18},
     "checked_at": {"type": "string", "format": "date-time"},
@@ -37,6 +39,7 @@
         ],
         "properties": {
           "player_id": {"type": "string", "minLength": 1},
+          "game_id": {"type": ["string", "null"]},
           "job_security": {
             "enum": [
               "confirmed_starter",
@@ -46,14 +49,47 @@
               "not_current_starter"
             ]
           },
+          "job_security_checked_at": {"type": "string", "format": "date-time"},
           "player_injury_status": {
             "enum": ["clear", "monitor", "questionable", "out"]
           },
+          "player_injury_checked_at": {"type": "string", "format": "date-time"},
+          "qb_injury_checked_at": {"type": "string", "format": "date-time"},
           "matchup_score": {"type": "number", "minimum": 0, "maximum": 100},
           "offense_scoring_environment_score": {"type": "number", "minimum": 0, "maximum": 100},
           "field_goal_opportunity_score": {"type": "number", "minimum": 0, "maximum": 100},
           "weather_stadium_score": {"type": "number", "minimum": 0, "maximum": 100},
           "qb_injury_context_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "venue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "location", "roof_type", "roof_state", "weather_exposure", "checked_at", "source_type"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "location": {"type": "string", "minLength": 1},
+              "roof_type": {"enum": ["open_air", "fixed_roof", "retractable", "unknown"]},
+              "roof_state": {"enum": ["open", "closed", "fixed", "not_applicable", "unknown"]},
+              "weather_exposure": {"enum": ["exposed", "protected", "uncertain"]},
+              "checked_at": {"type": "string", "format": "date-time"},
+              "source_type": {"enum": ["official", "schedule", "news", "other"]},
+              "reference": {"type": ["string", "null"]}
+            }
+          },
+          "weather": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["applicable", "checked_at", "source_type", "summary"],
+            "properties": {
+              "applicable": {"type": "boolean"},
+              "checked_at": {"type": "string", "format": "date-time"},
+              "source_type": {"enum": ["official_weather_service", "weather", "other"]},
+              "summary": {"type": "string", "minLength": 1},
+              "wind_mph": {"type": ["number", "null"], "minimum": 0},
+              "precip_probability_pct": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+              "temperature_f": {"type": ["number", "null"]},
+              "reference": {"type": ["string", "null"]}
+            }
+          },
           "notes": {
             "type": "array",
             "items": {"type": "string"}
