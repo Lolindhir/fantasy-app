@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/kicker-streaming-analysis.schema.json",
+  "title": "Kicker Streaming Analysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "mode",
+    "evaluated_at",
+    "input_fingerprint",
+    "source",
+    "league",
+    "methodology",
+    "ranking",
+    "research_shortlist_ids",
+    "recommendation",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "analysis_id": {"const": "kicker-streaming"},
+    "mode": {"enum": ["baseline", "weekly"]},
+    "evaluated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "dataset_id", "input_fingerprint"],
+      "properties": {
+        "path": {"type": "string"},
+        "dataset_id": {"const": "kicker-streaming-inputs"},
+        "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "league": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["season", "phase", "week", "managed_team"],
+      "properties": {
+        "season": {"type": ["string", "number", "null"]},
+        "phase": {"type": ["string", "null"]},
+        "week": {"type": ["integer", "number", "null"]},
+        "managed_team": {"type": "object"}
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_weights",
+        "minimum_core_signal_count",
+        "activity_policy",
+        "weekly_weights",
+        "switch_threshold_points",
+        "job_security_gate"
+      ],
+      "properties": {
+        "baseline_weights": {"type": "object", "additionalProperties": {"type": "number"}},
+        "minimum_core_signal_count": {"type": "integer", "minimum": 1},
+        "activity_policy": {"const": "research_tiebreaker_only"},
+        "weekly_weights": {"type": "object", "additionalProperties": {"type": "number"}},
+        "switch_threshold_points": {"type": "number", "minimum": 0},
+        "job_security_gate": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      }
+    },
+    "ranking": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "nfl_team",
+          "availability",
+          "baseline_rank",
+          "weekly_rank",
+          "baseline_score",
+          "baseline_core_signal_count",
+          "baseline_confidence",
+          "signals",
+          "nominal_role",
+          "injury",
+          "weekly"
+        ],
+        "properties": {
+          "player_id": {"type": "string"},
+          "name": {"type": ["string", "null"]},
+          "nfl_team": {"type": ["string", "null"]},
+          "availability": {"enum": ["held", "free_agent"]},
+          "baseline_rank": {"type": ["integer", "null"], "minimum": 1},
+          "weekly_rank": {"type": ["integer", "null"], "minimum": 1},
+          "baseline_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+          "baseline_core_signal_count": {"type": "integer", "minimum": 0, "maximum": 3},
+          "baseline_confidence": {"enum": ["high", "medium", "low"]},
+          "signals": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cbs_league_scoring_midpoint",
+              "cbs_league_scoring_percentile",
+              "fftoday_projection_percentile",
+              "ffc_kicker_adp_percentile",
+              "sleeper_add_activity_percentile"
+            ],
+            "properties": {
+              "cbs_league_scoring_midpoint": {"type": ["number", "null"]},
+              "cbs_league_scoring_percentile": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+              "fftoday_projection_percentile": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+              "ffc_kicker_adp_percentile": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+              "sleeper_add_activity_percentile": {"type": ["number", "null"], "minimum": 0, "maximum": 100}
+            }
+          },
+          "nominal_role": {"type": "object"},
+          "injury": {"type": "object"},
+          "weekly": {
+            "type": ["object", "null"],
+            "properties": {
+              "job_security": {"type": "string"},
+              "player_injury_status": {"type": "string"},
+              "eligible": {"type": "boolean"},
+              "weekly_component_score": {"type": "number", "minimum": 0, "maximum": 100},
+              "final_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+              "risk_flags": {"type": "array", "items": {"type": "string"}},
+              "evidence_count": {"type": "integer", "minimum": 1}
+            },
+            "required": [
+              "job_security",
+              "player_injury_status",
+              "eligible",
+              "weekly_component_score",
+              "final_score",
+              "risk_flags",
+              "evidence_count"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "research_shortlist_ids": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "held_player_id",
+        "target_player_id",
+        "score_delta",
+        "reason_codes",
+        "summary"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "weekly_context_required",
+            "switch_recommended",
+            "no_switch_recommended",
+            "insufficient_context"
+          ]
+        },
+        "held_player_id": {"type": ["string", "null"]},
+        "target_player_id": {"type": ["string", "null"]},
+        "score_delta": {"type": ["number", "null"]},
+        "reason_codes": {"type": "array", "items": {"type": "string"}},
+        "summary": {"type": "string"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_quality",
+        "held_count",
+        "comparable_candidate_count",
+        "weekly_context_player_count",
+        "weekly_context_fingerprint_match"
+      ],
+      "properties": {
+        "source_quality": {"enum": ["ok", "warning"]},
+        "held_count": {"type": "integer", "minimum": 0},
+        "comparable_candidate_count": {"type": "integer", "minimum": 0},
+        "weekly_context_player_count": {"type": "integer", "minimum": 0},
+        "weekly_context_fingerprint_match": {"type": ["boolean", "null"]}
+      }
+    }
+  }
+}
