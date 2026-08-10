@@ -21,13 +21,30 @@ class KickerStreamingInputTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
-    def player(self, player_id: str, name: str, ownership_status: str) -> dict:
+    def player(
+        self,
+        player_id: str,
+        name: str,
+        ownership_status: str,
+        *,
+        owned_team_id: int | None = None,
+    ) -> dict:
+        teams = []
+        if owned_team_id is not None:
+            teams.append(
+                {
+                    "team_id": owned_team_id,
+                    "team_name": "Mighty Giants" if owned_team_id == 1 else "Opponent",
+                    "team_abbreviation": "MiG" if owned_team_id == 1 else "OPP",
+                    "roster_sections": ["Roster"],
+                }
+            )
         return {
             "player_id": player_id,
             "name": name,
             "position": "K",
             "nfl_team": "AAA",
-            "ownership": {"status": ownership_status, "teams": []},
+            "ownership": {"status": ownership_status, "teams": teams},
             "injury": {},
             "role": {
                 "sleeper_depth_chart_position": "K",
@@ -91,9 +108,9 @@ class KickerStreamingInputTests(unittest.TestCase):
         }
 
     def prepare_root(self, root: Path, *, fingerprint_match: bool = True) -> Path:
-        held = self.player("1", "Held Kicker", "mighty_giants")
+        held = self.player("1", "Held Kicker", "mighty_giants", owned_team_id=1)
         free = self.player("2", "Free Kicker", "fantasy_free_agent")
-        opponent = self.player("3", "Opponent Kicker", "opponent_rostered")
+        opponent = self.player("3", "Opponent Kicker", "opponent_rostered", owned_team_id=2)
         player_fingerprint = "a" * 64
         self.write_json(
             root,
@@ -150,7 +167,7 @@ class KickerStreamingInputTests(unittest.TestCase):
                 },
                 "population": {
                     "position": "K",
-                    "held_ownership_status": "mighty_giants",
+                    "held_selector": "managed_team",
                     "free_agent_ownership_status": "fantasy_free_agent",
                 },
                 "output": {
