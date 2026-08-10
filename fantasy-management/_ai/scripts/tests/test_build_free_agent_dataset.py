@@ -149,6 +149,24 @@ class FreeAgentDatasetTests(unittest.TestCase):
             result["population"]["player_count"],
         )
 
+    def test_production_workflow_materializes_free_agents_after_player_signals(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+
+        player_command = "python fantasy-management/_ai/scripts/build_player_signal_dataset.py"
+        free_agent_command = "python fantasy-management/_ai/scripts/build_free_agent_dataset.py"
+        free_agent_output = "fantasy-management/generated/operations/free-agent-signals.json"
+
+        self.assertIn("fantasy-management/automation/free-agent-materialization.json", workflow)
+        self.assertIn("fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py", workflow)
+        self.assertIn("fantasy-management/_ai/schemas/free-agent-dataset.schema.json", workflow)
+        self.assertIn(player_command, workflow)
+        self.assertIn(free_agent_command, workflow)
+        self.assertLess(workflow.index(player_command), workflow.index(free_agent_command))
+        self.assertIn(free_agent_output, workflow)
+        self.assertIn("fantasy_free_agent", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
