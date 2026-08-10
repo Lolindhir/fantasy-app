@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "id": "kicker-daily-monitoring",
+  "title": "Kicker Daily Monitoring",
+  "description": "Löst den aktuell gehaltenen Kicker und alle tatsächlich verfügbaren Fantasy-Free-Agent-Kicker aus dem liga-spezifischen Kicker-Streaming-Contract dynamisch auf und beobachtet materielle Kicker-Signale im täglichen Monitoring.",
+  "enabled": true,
+  "mode": "dynamic",
+  "defaults": {
+    "profile_bindings": [],
+    "priority": "medium",
+    "notify_on_initial_baseline": false
+  },
+  "manual_targets": [],
+  "selectors": [
+    {
+      "id": "actionable-kicker-candidates",
+      "enabled": true,
+      "selector_type": "kicker_streaming_candidates",
+      "entity_type": "player",
+      "parameters": {
+        "source_path": "fantasy-management/generated/operations/kicker-streaming-inputs.json",
+        "dataset_id": "kicker-streaming-inputs",
+        "position": "K",
+        "availability": ["held", "free_agent"],
+        "stable_identifier": "player_id",
+        "target_id_template": "kicker-monitor-{player_id}",
+        "deduplicate_player_ids": true,
+        "retain_state_when_unselected": true,
+        "fail_closed_when_source_missing_or_empty": true,
+        "require_candidate_count_match": true
+      },
+      "profile_bindings": [
+        {
+          "profile_ref": "kicker-signal-movement",
+          "enabled": true,
+          "criteria_overrides": {}
+        }
+      ],
+      "priority": "medium",
+      "decision_context_template": {
+        "perspective": "managed_team",
+        "relevance": "Aktuell gehaltener oder tatsächlich verfügbarer Fantasy-Free-Agent-Kicker. Daily Monitoring soll materielle Änderungen erkennen und priorisieren, aber keine wöchentliche Start-/Sit- oder Add-/Drop-Entscheidung vorwegnehmen.",
+        "current_position": "Daily Monitoring beobachtet und meldet nur relevante Veränderungen. Die endgültige Kicker-Hold-/Stream-Entscheidung gehört in den übergeordneten Weekly Lineup + Waiver Workflow.",
+        "effect_rules": [
+          {
+            "when_classification": "kicker_job_risk_change",
+            "action": "Aktuellen Kicker-Job frisch verifizieren und für die nächste Waiver-/Lineup-Entscheidung priorisieren."
+          },
+          {
+            "when_classification": "kicker_injury_change",
+            "action": "Verletzungsstatus frisch verifizieren und Ersatzbedarf für die nächste Waiver-/Lineup-Entscheidung prüfen."
+          },
+          {
+            "when_classification": "kicker_team_change",
+            "action": "NFL-Team-, Job- und Scoring-Environment-Kontext neu prüfen."
+          },
+          {
+            "when_classification": "kicker_shortlist_entry",
+            "action": "Neuen Free-Agent-Kandidaten als Research-Priorität für die nächste Weekly Lineup + Waiver Analyse markieren."
+          },
+          {
+            "when_classification": "kicker_baseline_change",
+            "action": "Kicker-Baseline und Quellenbewegung prüfen; noch keine automatische Add-/Drop-Entscheidung treffen."
+          },
+          {
+            "when_classification": "kicker_adp_change",
+            "action": "ADP-Bewegung gegen Projektionen, Jobstatus und Sample-Größe plausibilisieren."
+          },
+          {
+            "when_classification": "kicker_projection_change",
+            "action": "Projektionsänderung quellengetrennt prüfen und in die nächste Weekly Lineup + Waiver Analyse einfließen lassen."
+          },
+          {
+            "when_classification": "kicker_activity_change",
+            "action": "Sleeper-Aktivität als Research-Priorität behandeln und Job-/Rollenursache prüfen; keine Qualität aus Adds allein ableiten."
+          },
+          {
+            "when_classification": "kicker_job_security_change",
+            "action": "Verifizierten Jobstatus in die nächste Kicker-/Waiver-Entscheidung übernehmen."
+          }
+        ]
+      },
+      "tags": [
+        "kicker",
+        "daily-monitoring",
+        "free-agent-monitoring",
+        "streaming-signals",
+        "dynamic-selector"
+      ]
+    }
+  ]
+}
