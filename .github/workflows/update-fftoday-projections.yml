@@ -13,13 +13,22 @@ on:
       - fantasy-management/_ai/scripts/tests/test_fetch_fftoday_kicker_projections.py
       - fantasy-management/_ai/scripts/tests/test_fetch_fftoday_offense_projections.py
       - .github/workflows/update-fftoday-projections.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py
+      - fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_fftoday_kicker_projections.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_fftoday_offense_projections.py
+      - .github/workflows/update-fftoday-projections.yml
   workflow_dispatch: # manueller Start
 
 permissions:
   contents: write
 
 concurrency:
-  group: update-fftoday-projections
+  group: update-fftoday-projections-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -64,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_PUSH }}
+          token: ${{ github.secrets.PAT_PUSH || github.token }}
 
       - name: Setup Python
         if: steps.schedule_gate.outputs.run == 'true'
@@ -80,20 +89,20 @@ jobs:
           fantasy-management/_ai/scripts/tests/test_fetch_fftoday_offense_projections.py
           -v
 
-      - name: Update FFToday kicker projections
+      - name: Fetch and validate FFToday kicker projections
         if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py
           --skip-unchanged
 
-      - name: Update FFToday offensive projections
+      - name: Fetch and validate FFToday offensive projections
         if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py
           --skip-unchanged
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true'
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
