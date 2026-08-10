@@ -75,7 +75,6 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Prüfen: fehlende Snapshots, veraltete Quellen, unerwartet kleine Feeds, Schemaänderungen, doppelte oder ungelöste Spieleridentitäten, fehlende Joins und inkonsistente Input-Fingerprints.
   - Fehler sollen nach Quelle und betroffenem Derived Dataset strukturiert vorliegen, damit Monitoring nicht aus unvollständigen Daten falsche Änderungen ableitet.
   - Ziel: Analysen können vorab erkennen, ob ihre vorbereitete Datenbasis vollständig, eingeschränkt oder nicht verwendbar ist.
-  - Zusätzlich den aktuell beobachteten Fall absichern, dass veröffentlichte Derived Zwischenfiles wie `player-signals.json` oder `free-agent-signals.json` leer sein können, während ein nachgelagerter letzter guter Contract noch vorhanden ist: Ursache, Publish-Semantik und Last-Good-State-Verhalten prüfen; kein Consumer darf leere Files still als echte Nullpopulation interpretieren.
 
 - [ ] Konkrete GitHub-Actions-Orchestrierung für die Datenpipelines entwerfen und separat freigeben.
   - Erst nach stabilen Skripten, Contracts und lokalen beziehungsweise Branch-Tests festlegen, welche Pipeline täglich, wöchentlich, ereignisgesteuert oder manuell läuft.
