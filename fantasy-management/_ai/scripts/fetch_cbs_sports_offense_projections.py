@@ -47,6 +47,15 @@ POSITIONS = {
     },
 }
 BASE_FIELDS = ["name", "Rank", "source_rank", "position", "source_position", "team", "source_player_id"]
+SIGNED_FIELDS = {
+    "pass_yards",
+    "pass_yards_per_game",
+    "rush_yards",
+    "rush_average",
+    "receiving_yards",
+    "receiving_yards_per_game",
+    "receiving_average",
+}
 
 
 class ProjectionError(RuntimeError):
@@ -120,7 +129,7 @@ def fetch_html(url: str, timeout: int = 30) -> tuple[str, dict[str, str]]:
         raise ProjectionError(f"CBS Sports fetch failed: {exc}") from exc
 
 
-def _number(value: str, field: str, name: str) -> Decimal:
+def _number(value: str, field: str, name: str, *, allow_negative: bool = False) -> Decimal:
     cleaned = value.replace(",", "").replace("%", "").strip()
     if cleaned in {"", "-", "–", "—"}:
         return Decimal("0")
@@ -128,7 +137,7 @@ def _number(value: str, field: str, name: str) -> Decimal:
         parsed = Decimal(cleaned)
     except (InvalidOperation, ValueError) as exc:
         raise ProjectionError(f"Invalid CBS {field} for {name}: {value!r}") from exc
-    if not parsed.is_finite() or parsed < 0:
+    if not parsed.is_finite() or (parsed < 0 and not allow_negative):
         raise ProjectionError(f"Invalid CBS {field} for {name}: {value!r}")
     return parsed
 
@@ -190,7 +199,12 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
         fields = config["fields"]
         if len(following) < len(fields):
             raise ProjectionError(f"Unexpected CBS {position} row shape for {player_name}: {following!r}")
-        parsed = {field: _csv_number(_number(value, field, player_name)) for field, value in zip(fields, following[:len(fields)])}
+        parsed = {
+            field: _csv_number(
+                _number(value, field, player_name, allow_negative=field in SIGNED_FIELDS)
+            )
+            for field, value in zip(fields, following[:len(fields)])
+        }
         games = Decimal(str(parsed["games_played"]))
         points = Decimal(str(parsed["projected_fantasy_points"]))
         points_per_game = Decimal(str(parsed["projected_fantasy_points_per_game"]))
