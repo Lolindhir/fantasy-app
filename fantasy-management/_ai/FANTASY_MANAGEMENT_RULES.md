@@ -78,6 +78,21 @@ Implications:
 - Depth still matters because many weekly slots must be filled.
 - Kickers are usually replaceable unless the data shows a special reason.
 
+### Replacement-level and marginal-gain guardrail
+
+External Superflex, 2QB or other format-adjusted overall rankings are starting points for player value, not direct league-specific draft, waiver or trade boards.
+
+Before using a format-driven positional premium in a recommendation:
+
+- derive actual positional scarcity from current league size, fixed starter requirements, flex eligibility, roster depth and the current rostered/free-agent player pool;
+- treat the presence of multiple startable players at the same position in the fantasy free-agent pool as evidence that league-specific replacement level may be materially higher than generic market rankings imply;
+- in shallow leagues, especially this 6-team format, explicitly downweight generic Superflex QB scarcity when the real league pool shows abundant startable QB replacement;
+- compare a candidate against the weakest relevant Mighty Giants starter, flex option or scarce-position backup threshold rather than against an abstract positional rank alone;
+- distinguish **starting-lineup marginal gain**, **depth/injury-insurance value**, **dynasty/market/trade-asset value** and **strategic/blocking value** instead of collapsing them into one player rank;
+- do not recommend the highest generic overall-ranked player as the best Mighty Giants move unless either the league-specific marginal gain or the asset/liquidity case justifies that choice.
+
+This guardrail applies to QB, TE and every other position whose generic external value is materially affected by format-driven scarcity.
+
 Core question:
 
 Can this player regularly provide a meaningful weekly contribution in this 2QB / 2TE / 4Flex format, serve as valuable scarce-position backup, or be used as a trade asset for an upgrade?
@@ -377,6 +392,7 @@ Do not:
 - name external rankings without live checking when current values matter
 - use internal league data for player role assumptions without external plausibility checks when role matters
 - use external rankings or news without checking league ownership, scoring, roster size, salary/cap and Mighty Giants fit
+- treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual 6-team replacement level and Mighty Giants marginal gain
 - invent ADP, rankings, market values or injury news
 - treat Stoned Lack takes as final recommendations
 - infer players from bad transcript names without verification
