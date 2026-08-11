@@ -43,11 +43,13 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 2. Load owner registry, profiles and negotiation history.
 3. Load current Mighty Giants roster, picks and cap context.
 4. Resolve draft-pick metadata.
-5. Load relevant Knowledge and source evidence.
-6. Compare points, long-term value, roster construction, salary, liquidity and counterparty fit.
-7. Add current market context when needed.
-8. Give a clear Mighty Giants recommendation.
-9. Store under `analyses/YYYY/trades/` when requested.
+5. When the counterparty holds multiple reasonably substitutable targets, compare them first and set an internal preference order plus an individual price ceiling for each target before proposing a deal.
+6. In multi-target situations, do not prematurely signal that one player is a must-have unless doing so is strategically useful or the user explicitly prefers that player; use the negotiation to learn which comparable asset the counterparty is most willing to move.
+7. Load relevant Knowledge and source evidence.
+8. Compare points, long-term value, roster construction, salary, liquidity and counterparty fit.
+9. Add current market context when needed.
+10. Give a clear Mighty Giants recommendation.
+11. Store under `analyses/YYYY/trades/` when requested.
 
 ## Roster audit workflow
 
