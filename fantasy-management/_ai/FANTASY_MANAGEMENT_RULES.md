@@ -97,6 +97,22 @@ Core question:
 
 Can this player regularly provide a meaningful weekly contribution in this 2QB / 2TE / 4Flex format, serve as valuable scarce-position backup, or be used as a trade asset for an upgrade?
 
+### Free-Agent Draft pick opportunity-cost guardrail
+
+Free-Agent Draft picks are a distinct asset type and must not inherit the value of a same-numbered Rookie Draft pick or a generic external pick label.
+
+When a Free-Agent Draft pick is part of a trade, draft or roster recommendation:
+
+- resolve the pick's exact overall position through current `League.json -> Teams[].DraftPicks` joined to `Drafts.json -> Picks[]`;
+- build the current fantasy-free-agent population by excluding every player owned on any roster, reserve or taxi list;
+- estimate the realistic player shelf likely to remain at that exact overall selection rather than valuing the pick only by round label;
+- adjust that shelf for actual league replacement level, positional needs, likely manager behavior and positional drafting tendencies when evidence exists;
+- treat the estimated shelf as an opportunity-cost range, not as a deterministic draft forecast;
+- compare a trade target against that shelf across Mighty Giants lineup gain, depth value, dynasty/liquidity value and roster fit;
+- recommend moving the pick only when the received asset sufficiently beats the league-specific draft alternative for the intended purpose.
+
+Generic external values for a label such as `2026 Pick 2.04` may be used only when they represent the same asset type and format. Do not use a generic Rookie Draft pick value as a proxy for a Free-Agent Draft pick with the same displayed round and slot.
+
 ## 6. Salary rule
 
 Salary is a relevant roster-management and cap-management signal, especially in the off-season around the cap deadline. Salary is not a direct quality measure and is not a reliable standalone player-evaluation signal.
@@ -142,6 +158,27 @@ Always add a plausibility layer before turning player data into a recommendation
 - check whether the internal team, status, injury and role context still matches current external information
 - check whether external rankings, ADP or news make sense in this league's scoring, roster size and replacement-level context
 - state unresolved conflicts plainly
+
+### Opportunity provenance guardrail
+
+Historical production must be interpreted together with how the opportunity was created, especially for rookies, breakouts, backups and players with only one meaningful season of usage.
+
+When production materially affects a recommendation, check whether snaps, routes, targets, carries or other opportunity were opened by:
+
+- teammate injuries or season-long absences;
+- suspensions;
+- trades, releases or roster turnover;
+- temporary depth-chart vacancies;
+- unusually favorable game-script or short-term roster conditions.
+
+Distinguish where possible between:
+
+- **earned opportunity**: the player won and retained a meaningful role against available competition;
+- **vacated opportunity**: meaningful volume became available because normal competition was absent or temporarily removed.
+
+Production from vacated opportunity remains evidence that a player could function in an NFL role and should not be discarded. It must not, however, be projected forward automatically when the missing competition returns or the temporary vacancy closes.
+
+When opportunity was mixed, state the dependency explicitly, evaluate the returning competition and lower forward-looking confidence until the player demonstrates that the role is retained under more normal conditions.
 
 ### Sleeper depth-chart interpretation
 
@@ -380,6 +417,8 @@ Usually replaceable.
 
 Flexible assets. Resolve true current pick ownership through `League.json -> Teams[].DraftPicks` joined to `Drafts.json -> Picks[]`.
 
+For Free-Agent Draft picks, also apply the Free-Agent Draft pick opportunity-cost guardrail above; displayed round/slot alone is not sufficient valuation evidence.
+
 ## 20. Common mistakes to avoid
 
 Do not:
@@ -393,6 +432,8 @@ Do not:
 - use internal league data for player role assumptions without external plausibility checks when role matters
 - use external rankings or news without checking league ownership, scoring, roster size, salary/cap and Mighty Giants fit
 - treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual 6-team replacement level and Mighty Giants marginal gain
+- value a Free-Agent Draft pick as if it were a same-numbered Rookie Draft pick or generic pick asset without deriving its actual league-specific free-agent shelf
+- project a breakout or young player's historical production forward without checking whether the opportunity was earned against normal competition or created by injuries, suspensions, roster turnover or temporary vacancies
 - invent ADP, rankings, market values or injury news
 - treat Stoned Lack takes as final recommendations
 - infer players from bad transcript names without verification
