@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-08-14T05:44:14.840621Z",
-  "input_fingerprint": "5bc8963bd83668298c387c3a3afb90d95beb401f07bfad07dd43c59a2c19f260",
+  "generated_at": "2026-08-14T05:52:19Z",
+  "input_fingerprint": "b65b2ff8d4e0aceab7c5ccf3a57a24b6426b51c8da849512fc14ffa6e1fc4375",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 37,
@@ -63,27 +63,25 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 159,
+        "row_count": 158,
         "materialized_entity_count": 168,
-        "resolved_players": 165,
-        "unresolved_players": 3,
+        "resolved_players": 166,
+        "unresolved_players": 2,
         "excluded_non_player_entities": {
-          "count": 5,
+          "count": 3,
           "by_type": {
-            "team_defense": 5
+            "team_defense": 3
           },
           "entity_ids": [
-            "CLE",
             "DET",
             "JAX",
-            "MIN",
-            "NE"
+            "MIN"
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 129,
+          "fantasy_free_agent": 132,
           "mighty_giants": 8,
-          "opponent_rostered": 31
+          "opponent_rostered": 28
         },
         "baseline": false,
         "material_event_eligible": true
@@ -91,13 +89,6 @@
     }
   },
   "issues": [
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "13300"
-    },
     {
       "domain": "external_signal_materialization",
       "severity": "info",
@@ -127,7 +118,7 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "source_timestamp": "2026-08-14T04:57:55Z"
+      "source_timestamp": "2026-08-14T05:52:19Z"
     },
     {
       "id": "operations_source_catalog",
@@ -207,7 +198,7 @@
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-08-13T05:53:01.594552Z"
+      "source_timestamp": "2026-08-14T05:50:45.815385Z"
     }
   ],
   "interpretation_limits": [
