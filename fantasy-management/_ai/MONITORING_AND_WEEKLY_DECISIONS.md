@@ -136,6 +136,44 @@ Sie wird priorisiert bei:
 - starkem Ranking-/ADP-/Projection-/Activity-Signal;
 - bereits bekannter Competition/Uncertainty, deren Auflösung entscheidungsrelevant ist.
 
+### Free-Agent-Eskalation in dauerhaftes Monitoring
+
+Fantasy Free Agents können zunächst nur durch aktuelle Derived Signals, Sleeper Activity, Markt-/ADP-/Projection-Bewegung oder qualitative Recherche auffallen, ohne bereits als dauerhaftes `player-role-watch`-Target konfiguriert zu sein.
+
+Daily Monitoring muss deshalb zwischen **temporärer Auffälligkeit** und **dauerhaft beobachtungswürdigem Kandidaten** unterscheiden.
+
+Ein Fantasy Free Agent soll zur dauerhaften Aufnahme in `fantasy-management/automation/target-sets/player-role-watch.json` vorgeschlagen werden, wenn mindestens einer dieser Pfade erfüllt ist:
+
+1. **wiederholte relevante Auffälligkeit**
+   - der Spieler fällt in mehr als einem erfolgreichen Monitoringlauf mit weiterhin relevanten Signalen auf; und
+   - die Auffälligkeit lässt sich nicht nur durch normales Plattformrauschen oder eine einmalige Add-/Drop-Welle erklären; und
+   - Rolle, Opportunity, Injury-Kontext, Usage, Markt, ADP, Projections oder ein anderer belastbarer Faktor rechtfertigen weitere Beobachtung auch dann, wenn das ursprüngliche Trending-Signal wieder verschwindet.
+
+2. **ein einzelnes klar materielles Ereignis**
+   - ein belastbares neues Ereignis verändert den erwartbaren Fantasy-Pfad deutlich genug, dass weiteres tägliches Beobachten unabhängig von Wiederholung sinnvoll ist;
+   - Beispiele sind ein neu geöffneter Starter-/Rotationspfad durch Verletzung oder Transaction, wiederholte First-Team-Usage, ein klarer Preseason-/Game-Usage-Sprung, eine relevante NFL-Verpflichtung oder eine andere strukturelle Opportunity-Veränderung.
+
+Ein einzelnes schwaches Sleeper-Trending-, Ranking-, ADP- oder Projection-Signal reicht **nicht** automatisch für die Aufnahme ins dauerhafte Watch-Set. Solche Signale dürfen Research auslösen, müssen aber qualitativ gegen Rolle, Usage, Teamkontext und tatsächliche Fantasy-Verfügbarkeit plausibilisiert werden.
+
+Ein Vorschlag zur dauerhaften Aufnahme soll mindestens enthalten:
+
+- Spieleridentität und aktuelle Fantasy-Verfügbarkeit;
+- den konkreten Auslöser oder die wiederholte Signalkette;
+- warum kurzfristige Signalbeobachtung nicht mehr ausreicht;
+- welche Profile dauerhaft relevant sind, insbesondere `role-opportunity`, `injury-status`, `market-movement` und/oder `redraft-adp-movement`;
+- den empfohlenen Monitoring-Horizont oder die Bedingung, unter der die Watch wieder beendet werden kann;
+- die vorgeschlagene stabile Target-ID.
+
+Die Aufnahme selbst ist eine **dauerhafte Konfigurationsänderung** und bleibt genehmigungspflichtig:
+
+- Scheduled Daily Monitoring darf ein neues `player-role-watch`-Target niemals autonom schreiben;
+- nach ausdrücklicher Nutzerfreigabe sollen Target-Konfiguration und bestätigte qualitative Erstbaseline nach Möglichkeit im selben kontrollierten Persistierungsvorgang hergestellt werden;
+- eine Erstbaseline allein erzeugt kein Nutzer-Event;
+- ein Spieler wird nicht automatisch wieder aus dem Watch-Set entfernt, nur weil sein Sleeper-Trending-Signal nachlässt;
+- eine spätere Entfernung oder Deaktivierung soll auf gelöster Opportunity, klar verlorener Relevanz, abgelaufenem Beobachtungsfenster oder ausdrücklicher Nutzerentscheidung beruhen.
+
+Diese Regel soll insbesondere verhindern, dass neu entdeckte Kandidaten nach einem einzelnen Daily Run wieder aus dem qualitativen Blickfeld fallen, obwohl sich eine echte Rollen- oder Opportunity-These entwickelt hat.
+
 ## 3. Kicker im Daily Monitoring
 
 Kicker sind ab jetzt ein positionsspezifisches Daily-Monitoring-Modul im bestehenden `entity-observation`-System.
