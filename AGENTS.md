@@ -52,6 +52,7 @@ Before making architecture, data model, generation or frontend changes, read:
 
 ## Documentation routing
 
+- `CHAT_START.md` is a static external/project entry pointer. Do not modify it as part of normal rule, workflow, routing or documentation changes; update it only when the user explicitly requests a change to that entry pointer itself.
 - `AGENTS.md` is the first file agents must read before making repository changes.
 - `.ai-context` is the canonical root for application AI context documentation.
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
