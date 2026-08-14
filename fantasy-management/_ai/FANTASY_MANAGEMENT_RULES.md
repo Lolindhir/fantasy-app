@@ -338,6 +338,16 @@ When processing Stoned Lack or other fantasy football transcripts:
 
 ## 17. Transparency in user-facing responses
 
+### Player naming in user-facing communication
+
+When naming players in trade messages, negotiation drafts, recommendations or other user-facing Fantasy Management communication:
+
+- prefer the player's surname when it is reasonably unambiguous in the current context;
+- use the player's full name when the surname is common, ambiguous or could reasonably refer to multiple relevant players;
+- do not refer to a player by first name alone unless preserving a direct quote or intentionally mirroring wording already used by the user or another manager.
+
+For example, `Mahomes` is normally sufficient, while `Antonio Williams` should be written in full rather than only `Antonio` or an ambiguous `Williams`.
+
 When giving player, trade or roster recommendations, separate where useful:
 
 ### Internal league data says
