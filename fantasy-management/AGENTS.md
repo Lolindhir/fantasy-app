@@ -28,6 +28,8 @@ Fantasy Management includes:
 
 For Fantasy Management tasks, read these files as needed:
 
+For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tendency or counterparty-communication task, `fantasy-management/_ai/TRADE_NEGOTIATION_RULES.md` is additionally mandatory and must be read before applying owner profiles or negotiation history.
+
 1. `fantasy-management/AGENTS.md`
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
@@ -130,6 +132,7 @@ fantasy-management/
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
+    TRADE_NEGOTIATION_RULES.md
     PODCAST_SOURCE_MODEL.md
     PODCAST_EXTRACTION_RULES.md
     PODCAST_PACKAGE_STORAGE.md
