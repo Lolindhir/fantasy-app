@@ -30,6 +30,8 @@ For Fantasy Management tasks, read these files as needed:
 
 For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tendency or counterparty-communication task, `fantasy-management/_ai/TRADE_NEGOTIATION_RULES.md` is additionally mandatory and must be read before applying owner profiles or negotiation history.
 
+For any Fantasy Operations, Daily Monitoring, Free-Agent Monitoring, Weekly Lineup/Waiver separation or monitoring-triggered watchlist task, `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` is additionally mandatory and must be read before evaluating monitoring materiality, proposing durable watch targets or separating monitoring from final roster decisions.
+
 1. `fantasy-management/AGENTS.md`
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
