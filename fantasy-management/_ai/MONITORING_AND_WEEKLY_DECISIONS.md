@@ -174,6 +174,31 @@ Die Aufnahme selbst ist eine **dauerhafte Konfigurationsänderung** und bleibt g
 
 Diese Regel soll insbesondere verhindern, dass neu entdeckte Kandidaten nach einem einzelnen Daily Run wieder aus dem qualitativen Blickfeld fallen, obwohl sich eine echte Rollen- oder Opportunity-These entwickelt hat.
 
+### Preseason-Usage-Signal-Klassifizierung
+
+Preseason-Ergebnisse werden nicht primär nach Boxscore-Produktion bewertet, sondern danach, ob sie belastbare Information über Rolle, Hierarchie oder Opportunity liefern. Das Monitoring soll Preseason-Evidenz deshalb mit stabilen Signaltypen erfassen und unterschiedliche Evidenzstärken nicht vermischen.
+
+Verwende insbesondere folgende Klassifizierungen:
+
+- `first_team_snap_share`: numerisch belastbarer Snap-Anteil mit der ersten Einheit oder klar dokumentierte vollständige Teilnahme an einem First-Team-Drive. Starkes Usage-Signal, aber keine regulärsaisonale Startergarantie.
+- `held_out_with_starters`: ein Spieler wird gemeinsam mit etablierten Startern geschont, während direkte Konkurrenten spielen. Relevantes indirektes Hierarchie-Signal, aber allein kein Beweis für eine feste Starter- oder Backup-Rolle; Verletzung, Belastungssteuerung und Sonderteams-Kontext müssen gegengeprüft werden.
+- `starter_drive_targets`: Targets, Routes, Carries oder andere Opportunities auf Drives der ersten Einheit. Wiederholte oder strukturell passende Nutzung wiegt deutlich stärker als reine Yards oder Touchdowns gegen spätere Units.
+- `backup_hierarchy_change`: belastbare Veränderung der unmittelbaren Backup- oder Rotationsreihenfolge, etwa klarer RB2-, WR3- oder TE2-Einsatz. Bei verletzungsbedingt fehlender Konkurrenz muss die Hierarchie als vorläufig gekennzeichnet werden.
+- `injury_opened_opportunity`: zusätzliche Opportunity entsteht durch Verletzung, Ausfall oder Abwesenheit eines Konkurrenten. Nach der allgemeinen Opportunity-Provenance-Regel muss zwischen verdienter Rolle und vorübergehend freigewordener Rolle unterschieden werden; die Rückkehr des Konkurrenten ist ein eigener Recheck-Trigger.
+- `box_score_splash`: auffällige Yards, Touchdowns oder einzelne Big Plays ohne belastbaren Rollen- oder Hierarchiekontext. Dieses Signal ist allein schwach und darf weder ein dauerhaftes Watch-Target noch eine Draft-/Add-Empfehlung begründen.
+
+Gewichtungsregel:
+
+> belastbare First-Team-/Hierarchie-Evidenz > wiederholte Starter-Drive-Opportunity > indirekte Schonungs-/Camp-Evidenz > reine Boxscore-Produktion.
+
+Zusätzliche Leitplanken:
+
+- Ein einzelnes Big Play darf nicht als Rollenaufstieg behandelt werden.
+- Wiederholte First-Team-Nutzung über Training und Spiel oder über mehrere Spiele kann einen einzelnen schwächeren Datenpunkt deutlich aufwerten.
+- `held_out_with_starters` muss immer gegen Verletzungsstatus und bekannte Belastungssteuerung plausibilisiert werden.
+- Bei `injury_opened_opportunity` darf aktuelles Volumen nicht automatisch auf die Zeit nach Rückkehr des fehlenden Konkurrenten fortgeschrieben werden.
+- Preseason-Usage kann Research-Priorität, Watch-Status und spätere Board-Priorität verändern, trifft aber im Daily Monitoring keine finale Add-/Drop- oder Draft-Entscheidung.
+
 ## 3. Kicker im Daily Monitoring
 
 Kicker sind ab jetzt ein positionsspezifisches Daily-Monitoring-Modul im bestehenden `entity-observation`-System.
