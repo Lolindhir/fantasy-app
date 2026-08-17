@@ -12,6 +12,8 @@ on:
       - public/data/League.json
       - public/data/Players.json
       - public/data/Timestamps.json
+      - fantasy-management/sources/external-rankings/**
+      - fantasy-management/sources/external-signals/**
       - fantasy-management/automation/input-materialization.json
       - fantasy-management/automation/external-signal-materialization.json
       - fantasy-management/automation/player-signal-materialization.json
@@ -30,6 +32,7 @@ on:
       - fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/build_free_agent_movement_events.py
       - fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
+      - fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py
       - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
       - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
@@ -39,6 +42,7 @@ on:
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py
       - fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py
       - fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py
+      - fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py
       - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
       - fantasy-management/_ai/schemas/operations-source-catalog.schema.json
       - fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json
@@ -54,65 +58,73 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: fantasy-operations-input-materialization
-  cancel-in-progress: true
-
 jobs:
-  materialize:
+  gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    outputs:
+      run: ${{ steps.trigger_gate.outputs.run }}
+      reason: ${{ steps.trigger_gate.outputs.reason }}
     steps:
-      - name: Resolve Berlin consolidation window
-        id: schedule_gate
+      - name: Checkout repository for trigger classification
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve materialization trigger
+        id: trigger_gate
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
           SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
         run: |
-          if [[ "$EVENT_NAME" != "schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Non-scheduled run: consolidation gate passed."
-            exit 0
+          set -euo pipefail
+
+          args=(
+            --event-name "$EVENT_NAME"
+            --schedule-expression "$SCHEDULE_EXPRESSION"
+          )
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            if [[ -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+              mapfile -t changed_files < <(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")
+              for changed_file in "${changed_files[@]}"; do
+                args+=(--changed-file "$changed_file")
+              done
+            fi
           fi
 
-          berlin_offset="$(TZ=Europe/Berlin date +%z)"
-          if [[ "$berlin_offset" == "+0200" ]]; then
-            expected_schedule="45 4 * * *"
-          elif [[ "$berlin_offset" == "+0100" ]]; then
-            expected_schedule="45 5 * * *"
-          else
-            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
-            exit 1
-          fi
+          decision="$(python3 fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py "${args[@]}")"
+          echo "$decision"
+          while IFS= read -r output_line; do
+            echo "$output_line" >> "$GITHUB_OUTPUT"
+          done <<< "$decision"
 
-          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled consolidation selected for 06:45 Europe/Berlin."
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
-          fi
-
+  materialize:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: fantasy-operations-input-materialization
+      cancel-in-progress: true
+    steps:
       - name: Checkout repository
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Set up Python
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install validation dependencies
-        if: steps.schedule_gate.outputs.run == 'true'
         run: python -m pip install jsonschema
 
       - name: Run focused unit tests
-        if: steps.schedule_gate.outputs.run == 'true'
         run: |
           python -m unittest \
             fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py \
@@ -124,10 +136,10 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py \
             fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py \
             fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py \
+            fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py \
             -v
 
       - name: Commit generated inputs when changed
-        if: steps.schedule_gate.outputs.run == 'true'
         shell: bash
         run: |
           set -euo pipefail

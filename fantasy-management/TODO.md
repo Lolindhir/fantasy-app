@@ -41,7 +41,8 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 - [ ] Regelmäßigen Source-Refresh als technische Datenpipeline konsolidieren.
   - Aktualisieren: aktuelle League-/Roster-/Transaction-Daten sowie vorhandene FantasyPros-, FantasyCalc-, Fantasy-Football-Calculator-, FFToday-Projections-, CBS-Sports-Projections- und Sleeper-Trending-Snapshots.
   - Bestehende Fetcher weiterverwenden und nur orchestral zusammenführen; keine doppelte Abruflogik in ChatGPT-Prompts oder Analysejobs.
-  - Output: nachvollziehbarer Quellenstand mit erfolgreichem oder kontrolliert fehlgeschlagenem Refresh je Datenquelle.
+  - Erledigt: Die externen Morgenquellen bleiben fehlerisolierte Einzel-Fetcher, werden aber vor dem 07:00-Monitoring in einem gemeinsamen 06:45-Europe/Berlin-Materialisierungsstand zusammengeführt; verspätete oder tagsüber manuell aktualisierte externe Quellen materialisieren außerhalb des Morgenfensters sofort.
+  - Output weiterhin offen: nachvollziehbarer Quellenstand mit erfolgreichem oder kontrolliert fehlgeschlagenem Refresh je Datenquelle.
 
 - [ ] Automatisiertes Einlesen ausgewählter Fantasy-Artikel als spätere Source-Pipeline prüfen.
   - Geeignete Publisher, Feeds oder wiederkehrende Artikelserien identifizieren, bei denen neue oder aktualisierte Beiträge zuverlässig erkannt und eingelesen werden können.
@@ -56,9 +57,11 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ranking- und Signal-Läufe sollen mit ausreichendem Sicherheitsabstand vor dem Monitoring enden, damit der Monitoring-Lauf auf den neuesten erfolgreichen Datenständen aufsetzt.
   - Quellen bleiben fehlerisoliert; ein Ausfall darf keine teilweise Quelle veröffentlichen und soll den letzten guten Stand erhalten.
   - Vor Monitoring muss ein Freshness-Gate entscheiden, ob ein fehlender oder veralteter Eingang den Lauf blockiert, einschränkt oder nur kennzeichnet.
-  - Aktive Morgenstaffelung für den 07:00-Europe/Berlin-Monitoring-Lauf: Players 05:05 → FantasyPros 05:20 → FantasyCalc 05:32 → FFC ADP 05:44 → FFToday 05:56 → CBS Sports 06:08 → Sleeper Trending 06:20; die Operations-Inputs werden weiterhin ereignisgetrieben materialisiert.
+  - Aktive Morgenstaffelung für den 07:00-Europe/Berlin-Monitoring-Lauf: Players 05:05 → FantasyPros 05:20 → FantasyCalc 05:32 → FFC ADP 05:44 → FFToday 05:56 → CBS Sports 06:08 → Sleeper Trending 06:20 → konsolidierte Operations-Materialisierung 06:45.
+  - Externe Source-only-Pushes unter `external-rankings/**` und `external-signals/**` werden von 05:00 bis 06:45 Europe/Berlin nur durch einen leichten Trigger-Gate-Lauf klassifiziert und nicht vollständig materialisiert; außerhalb dieses Fensters materialisieren sie sofort. League-/Players-/Timestamps- und Materializer-Code-/Config-/Schema-Änderungen bleiben jederzeit sofortige Trigger.
+  - Gate und eigentlicher Materialize-Job sind getrennt; Concurrency-Cancellation gilt nur für echte Materialisierungen, sodass ein absichtlich übersprungener Morgen-Source-Run keinen laufenden relevanten Build abbrechen kann.
   - Die Management-Zeitfenster werden DST-sicher auf Europe/Berlin ausgerichtet; bestehende zusätzliche App-Refreshes bleiben davon unabhängig bestehen.
-  - Konkrete GitHub-Actions-Zeitpläne, Abhängigkeiten und Aktivierung erst nach separater ausdrücklicher Freigabe umsetzen.
+  - Noch offen: das vorgelagerte Freshness-Gate und die explizite per-Source Erfolgs-/Fehlerübersicht vor Monitoring.
 
 - [ ] Konkurrierende Generated-Data-Pushes auf `main` robust behandeln.
   - Problem: `APP • Data • League` kann alle zehn Minuten schreiben, während unabhängige APP- und FM-Quellen ebenfalls von eigenen Checkouts nach `main` pushen; zeitliche Staffelung reduziert, beseitigt aber keine Push-Races.
@@ -84,9 +87,9 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Fehler sollen nach Quelle und betroffenem Derived Dataset strukturiert vorliegen, damit Monitoring nicht aus unvollständigen Daten falsche Änderungen ableitet.
   - Ziel: Analysen können vorab erkennen, ob ihre vorbereitete Datenbasis vollständig, eingeschränkt oder nicht verwendbar ist.
 
-- [ ] Konkrete GitHub-Actions-Orchestrierung für die Datenpipelines entwerfen und separat freigeben.
-  - Erst nach stabilen Skripten, Contracts und lokalen beziehungsweise Branch-Tests festlegen, welche Pipeline täglich, wöchentlich, ereignisgesteuert oder manuell läuft.
-  - GitHub-Actions-Dateien nur nach ausdrücklicher Freigabe des jeweiligen Workflow-Änderungsumfangs erstellen, ändern oder aktivieren.
+- [ ] Konkrete GitHub-Actions-Orchestrierung für die Datenpipelines weiterentwickeln und Änderungen separat freigeben.
+  - Für weitere Pipelines nach stabilen Skripten, Contracts und Branch-Tests festlegen, welche täglich, wöchentlich, ereignisgesteuert oder manuell laufen.
+  - Die Morning-Source-/Materialization-Orchestrierung ist freigegeben und produktiv umgesetzt; weitere GitHub-Actions-Änderungen bleiben an die ausdrückliche Freigabe des jeweiligen Umfangs gebunden.
   - No-op-Läufe sollen keine unnötigen Daten- oder Commit-Änderungen erzeugen; echte Dataset-Änderungen müssen nachvollziehbar und atomar veröffentlicht werden.
 
 ### Monitoring
@@ -229,6 +232,13 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Leitplanke: Numerische Salary-Cut-offs bleiben datierte Analysewerte und werden nicht als zeitlose Regeln übernommen.
 
 ## Erledigt / Archiv
+
+- [x] Morning-Source-Refresh und Operations-Materialisierung hybrid orchestrieren.
+  - Ergebnis: Externe Ranking-/Projection-/Activity-Source-only-Pushes werden zwischen 05:00 und 06:45 Europe/Berlin gebündelt; um 06:45 läuft ein DST-sicherer konsolidierter Materializer vor dem 07:00-Monitoring.
+  - Ergebnis: Externe Source-only-Pushes außerhalb des Morgenfensters materialisieren sofort. Damit lösen tagsüber manuell gestartete oder nach 06:45 verspätet veröffentlichte Source-Refreshes unmittelbar einen Catch-up-Build aus.
+  - Ergebnis: League-, Players-, Timestamps- sowie Materializer-Code-/Config-/Schema-Änderungen bleiben jederzeit sofortige Trigger.
+  - Ergebnis: Der leichte Trigger-Gate-Job läuft außerhalb der Materializer-Concurrency; nur echte Materialisierungen verwenden `cancel-in-progress`, sodass ein absichtlich übersprungener Source-Run keinen laufenden relevanten Build abbrechen kann.
+  - Ergebnis: Die Triggerentscheidung liegt testbar in `resolve_fantasy_operations_materialization_trigger.py`; Morgenfenster, DST-Companion-Cron, Outside-Window-Catch-up, Mixed-/League-Push und manueller Materializer-Dispatch sind durch Unit-Tests abgedeckt.
 
 - [x] Positionsübergreifende Free-Agent-Movement-Events materialisieren und produktiv veröffentlichen.
   - Ergebnis: `free-agent-movement-events.json` vergleicht den aktuellen `free-agent-movement-signals.json`-State mit dem vorherigen erfolgreichen Movement-State und emittiert nur `new`, `changed`, `structural_change` oder `resolved`.
