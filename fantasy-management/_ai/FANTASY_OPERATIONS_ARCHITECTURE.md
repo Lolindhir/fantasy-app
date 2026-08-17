@@ -33,6 +33,7 @@ fantasy-management/generated/operations/managed-roster-signals.json
 fantasy-management/generated/operations/external-signal-relevance.json
 fantasy-management/generated/operations/player-signals.json
 fantasy-management/generated/operations/free-agent-signals.json
+fantasy-management/generated/operations/free-agent-movement-signals.json
 fantasy-management/generated/operations/kicker-streaming-inputs.json
 fantasy-management/generated/operations/data-quality.json
 ```
@@ -91,7 +92,32 @@ fantasy-management/_ai/scripts/build_free_agent_dataset.py
 
 The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`, where ownership itself comes from the union of every league team’s Roster/Reserve/Taxi lists.
 
-The active Kicker Streaming input contract is built after the free-agent contract from the held managed-team kicker and all actual fantasy-free-agent kickers:
+The position-inclusive Free-Agent Movement Discovery contract is built from the complete current free-agent population and the existing normalized ranking/projection snapshot histories:
+
+```text
+fantasy-management/automation/free-agent-movement-materialization.json
+fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json
+fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
+→ fantasy-management/generated/operations/free-agent-movement-signals.json
+```
+
+The Movement contract evaluates every current fantasy free agent at QB, RB, WR, TE and K through one shared Discovery-, Materiality- and Prioritization architecture. Kicker is not a separate discovery population or workflow. Position-specific sources, normalizations and thresholds remain valid features inside the common pipeline.
+
+The deterministic Movement layer currently prepares:
+
+- historical 1/3/7/14/30-day ADP changes using the position-appropriate feed;
+- Dynasty expert-consensus rank/position-rank/tier changes and market-value movement;
+- Season Projection consensus/provider/core-points movement where source detail permits league-scoring recalculation;
+- cross-signal confirmation and divergence across Redraft ADP, Dynasty market and Season Projections;
+- a position-specific small-league replacement-proximity proxy from currently league-owned player percentiles, keeping signal families separate instead of collapsing them into one player value;
+- exact day-over-day changes in NFL team, structured injury fields and nominal Sleeper depth-chart role when the previous successful `free-agent-signals.json` is available;
+- Sleeper Activity only as corroboration/research context, never as a discovery prerequisite or player-quality score.
+
+Materiality thresholds are read from the existing versioned `redraft-adp-movement`, `market-movement`, `season-projection-movement` and Kicker movement profiles instead of being copied into a second rule set. The Movement output is a research-prioritization contract and explicitly does not emit a final roster recommendation.
+
+The first productive run on 2026-08-17 evaluated 1,201 actual fantasy free agents and emitted 322 research discoveries. That breadth is an observed calibration input for later event deduplication and shortlist tuning, not evidence that every discovery deserves a user notification.
+
+The active Kicker Streaming input contract is built after the free-agent and movement contracts from the held managed-team kicker and all actual fantasy-free-agent kickers:
 
 ```text
 fantasy-management/automation/kicker-streaming-input-materialization.json
@@ -102,20 +128,25 @@ fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
 
 It carries the existing market, ADP, projection, activity, injury and nominal-role signals into one candidate set and reconciles raw Kicker projection statistics with the current league scoring where source detail permits it. CBS `50+` field goals remain bounded because the league distinguishes 50-59 from 60+; FFToday field-goal totals remain bounded because no distance buckets are supplied. Provider fantasy points remain separate.
 
+Kicker Streaming is downstream position-specific analysis. Its existence does not create a second Free-Agent Discovery path; Free-Agent Movement Discovery remains common across QB/RB/WR/TE/K.
+
 The productive materialization dependency order is:
 
 ```text
 external-signal-relevance.json
 → player-signals.json
 → free-agent-signals.json
+→ free-agent-movement-signals.json
 → kicker-streaming-inputs.json
 ```
 
-Each step consumes the freshly rebuilt upstream output from the same retry/rebuild run before the changed generated artifacts are staged and published together.
+Each step consumes the freshly rebuilt upstream output from the same retry/rebuild run before the changed generated artifacts are staged and published together. Before rebuilding `free-agent-signals.json`, the productive workflow copies the previous successful file to runner-temporary storage so Movement Discovery can derive exact day-over-day structural deltas without turning that temporary comparison state into a manually maintained baseline artifact.
 
 ### 3. External research and analysis
 
 An external analyst may read the current materialized datasets, perform fresh research and interpret qualitative signals such as injury context, practice participation, role, opportunity, coaching comments and depth-chart changes.
+
+`free-agent-movement-signals.json` is the primary deterministic discovery and research-prioritization layer for current fantasy free agents. External research should start from its material discoveries rather than from Sleeper Trending alone. Cross-signal confirmation increases research priority; divergence is a reason to investigate, not an automatic upgrade or downgrade. Replacement proximity is league-context prioritization, not a roster recommendation.
 
 External activity is a prioritization and research trigger. It is not an automatic roster recommendation.
 
@@ -140,6 +171,8 @@ Without weekly context the analysis returns `weekly_context_required` and must n
 ### 4. Notification
 
 Material changes and relevant errors may be delivered automatically. No-change runs remain silent.
+
+A deterministic Movement discovery is not automatically a notification. Scheduled monitoring must deduplicate/baseline discoveries and apply research/materiality context before creating a visible user event.
 
 A notification does not change repository state.
 
@@ -191,8 +224,7 @@ The active Operations Source Catalog includes the following signal families for 
 - FantasyPros Dynasty expert consensus;
 - FantasyCalc Dynasty market value;
 - Fantasy Football Calculator Redraft ADP, including the Kicker-only view;
-- FFToday Kicker projections;
-- CBS Sports Kicker projections.
+- FFToday and CBS Sports Season Projections for the currently configured positions.
 
 Rank-based cross-source comparisons use list-length-aware percentiles. Provider-native values remain intact in the source-specific provider view.
 
@@ -204,7 +236,7 @@ The external-signal materializer supports the normalized `top_n_activity_v1` com
 - count changes;
 - silent baseline and material-event eligibility state.
 
-A player absent from a top-N list is not assigned zero activity. The central player-signal dataset preserves the same rule: `not_listed` means outside the current provider top-N result, and rank/count remain null.
+A player absent from a top-N list is not assigned zero activity. The central player-signal dataset and Movement contract preserve the same rule: `not_listed` means outside the current provider top-N result, and rank/count remain null.
 
 ## Identity and ownership rule
 
@@ -275,6 +307,7 @@ fantasy-management/generated/
     ├── external-signal-relevance.json
     ├── player-signals.json
     ├── free-agent-signals.json
+    ├── free-agent-movement-signals.json
     ├── kicker-streaming-inputs.json
     └── data-quality.json
 ```
@@ -312,7 +345,7 @@ league/source refreshes
 → scheduled monitoring
 ```
 
-The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset and Kicker Streaming inputs in dependency order before publishing changed generated outputs. Downstream Free-Agent and Kicker Streaming analyses should read these materialized contracts rather than reconstructing the same ranking, projection, ownership and activity joins independently.
+The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset, the common QB/RB/WR/TE/K Movement Discovery contract and Kicker Streaming inputs in dependency order before publishing changed generated outputs. Downstream monitoring should read `free-agent-movement-signals.json` as the primary deterministic Free-Agent Discovery layer rather than reconstructing ranking, projection, ownership and activity joins or using Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
 
 ## Legacy observation runner
 
