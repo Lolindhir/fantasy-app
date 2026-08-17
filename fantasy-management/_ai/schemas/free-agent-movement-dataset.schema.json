@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/free-agent-movement-dataset.schema.json",
+  "title": "Fantasy Operations Free Agent Movement Dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "source",
+    "comparison_windows_days",
+    "materiality_thresholds",
+    "replacement_context",
+    "population",
+    "discoveries",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "free-agent-movement-signals"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source": {"type": "object", "additionalProperties": true},
+    "comparison_windows_days": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "materiality_thresholds": {"type": "object", "additionalProperties": true},
+    "replacement_context": {
+      "type": "object",
+      "required": ["method", "owned_boundary_quantile", "near_distance_percentile_points", "boundaries", "policy"],
+      "properties": {
+        "method": {"type": "string", "minLength": 1},
+        "owned_boundary_quantile": {"type": "number", "minimum": 0, "maximum": 1},
+        "near_distance_percentile_points": {"type": "number", "minimum": 0},
+        "boundaries": {"type": "object", "additionalProperties": true},
+        "policy": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "free_agent_count",
+        "positions",
+        "discovery_count",
+        "discovery_position_counts",
+        "priority_counts",
+        "material_family_counts",
+        "selection_rule"
+      ],
+      "properties": {
+        "free_agent_count": {"type": "integer", "minimum": 0},
+        "positions": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {"enum": ["QB", "RB", "WR", "TE", "K"]}
+        },
+        "discovery_count": {"type": "integer", "minimum": 0},
+        "discovery_position_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "priority_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "material_family_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "selection_rule": {"type": "string", "minLength": 1}
+      }
+    },
+    "discoveries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "nfl_team",
+          "ownership",
+          "replacement_relevance",
+          "movement",
+          "activity",
+          "materiality"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+          "nfl_team": {"type": ["string", "null"]},
+          "ownership": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {"status": {"const": "fantasy_free_agent"}},
+            "additionalProperties": true
+          },
+          "replacement_relevance": {
+            "type": "object",
+            "required": ["classification", "family_percentiles", "distance_to_owned_boundary", "near_families"],
+            "properties": {
+              "classification": {"enum": ["at_or_above_rostered_boundary", "near_rostered_boundary", "below_rostered_boundary", "unknown"]},
+              "family_percentiles": {"type": "object", "additionalProperties": {"type": ["number", "null"]}},
+              "distance_to_owned_boundary": {"type": "object", "additionalProperties": {"type": ["number", "null"]}},
+              "near_families": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+            },
+            "additionalProperties": false
+          },
+          "movement": {"type": "object", "additionalProperties": true},
+          "activity": {"type": "object", "additionalProperties": true},
+          "materiality": {
+            "type": "object",
+            "required": ["research_priority", "material_families", "thresholds_crossed", "coverage_changes", "reasons", "final_roster_recommendation"],
+            "properties": {
+              "research_priority": {"enum": ["high", "medium", "low"]},
+              "material_families": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+              "thresholds_crossed": {"type": "array", "items": {"type": "object"}},
+              "coverage_changes": {"type": "array", "items": {"type": "object"}},
+              "reasons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+              "final_roster_recommendation": {"type": "null"}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source_quality_status", "source_issue_count", "history_status", "previous_state_status", "history_issue_count", "issues"],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "source_quality_status": {"enum": ["ok", "warning"]},
+        "source_issue_count": {"type": "integer", "minimum": 0},
+        "history_status": {"enum": ["full", "partial"]},
+        "previous_state_status": {"enum": ["available", "not_available"]},
+        "history_issue_count": {"type": "integer", "minimum": 0},
+        "issues": {"type": "array", "items": {"type": "object"}}
+      }
+    }
+  }
+}
