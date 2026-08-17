@@ -68,7 +68,7 @@ jobs:
       - name: Checkout repository for trigger classification
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 2
 
       - name: Resolve materialization trigger
         id: trigger_gate
@@ -87,11 +87,20 @@ jobs:
           if [[ "$EVENT_NAME" == "push" ]]; then
             push_size="$(jq -r 'if (.size | type) == "number" then .size else (.commits | length) end' "$GITHUB_EVENT_PATH")"
             included_commit_count="$(jq -r '.commits | length' "$GITHUB_EVENT_PATH")"
+            changed_files=()
 
             if [[ "$push_size" == "$included_commit_count" ]]; then
               mapfile -t changed_files < <(
                 jq -r '.commits[] | (.added[]?, .modified[]?, .removed[]?)' "$GITHUB_EVENT_PATH" | sort -u
               )
+
+              if [[ "${#changed_files[@]}" -eq 0 && "$push_size" == "1" ]]; then
+                if git rev-parse HEAD^ >/dev/null 2>&1; then
+                  mapfile -t changed_files < <(git diff --name-only HEAD^ HEAD)
+                  echo "Push payload contained no file list; used shallow parent diff."
+                fi
+              fi
+
               for changed_file in "${changed_files[@]}"; do
                 args+=(--changed-file "$changed_file")
               done
