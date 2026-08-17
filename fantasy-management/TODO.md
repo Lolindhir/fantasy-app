@@ -43,6 +43,14 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Bestehende Fetcher weiterverwenden und nur orchestral zusammenführen; keine doppelte Abruflogik in ChatGPT-Prompts oder Analysejobs.
   - Output: nachvollziehbarer Quellenstand mit erfolgreichem oder kontrolliert fehlgeschlagenem Refresh je Datenquelle.
 
+- [ ] Automatisiertes Einlesen ausgewählter Fantasy-Artikel als spätere Source-Pipeline prüfen.
+  - Geeignete Publisher, Feeds oder wiederkehrende Artikelserien identifizieren, bei denen neue oder aktualisierte Beiträge zuverlässig erkannt und eingelesen werden können.
+  - Vorhandenes Living-Article-Modell wiederverwenden: Source Identity, immutable Snapshots, stabile Claim-IDs sowie `new`/`repeated`/`changed`/`retracted`-Deltas.
+  - Automatische Verarbeitung darf Quellenmaterial und strukturierte Claims vorbereiten, aber weder einen Artikel als unabhängige Mehrfachbestätigung doppelt zählen noch daraus autonom Roster-, Draft-, Trade-, Add-/Drop- oder andere Fantasy-Entscheidungen kanonisieren.
+  - Copyright-, Zugriff-, robots-/Terms-, Provenienz- und Raw-Capture-Grenzen pro Quelle vor einer Automatisierung prüfen; vollständigen Webseitentext nicht pauschal archivieren.
+  - Ziel: relevante externe Artikel künftig ohne manuellen Chat-Paste als aktuelle Research-/Monitoring-Evidenz verfügbar machen, mit denselben Materialitäts- und Human-Approval-Leitplanken wie bei nutzerbereitgestellten Artikeln.
+  - Referenz: `fantasy-management/_ai/ARTICLE_SOURCE_MODEL.md`.
+
 - [ ] Ranking- und Signal-Refreshes kurz vor dem geplanten Monitoring-Lauf orchestrieren.
   - Zielreihenfolge: League-/Source-Refresh → externe Rankings → Sleeper Trending und weitere Signale → Derived Player-/Ownership-Datasets → Monitoring.
   - Ranking- und Signal-Läufe sollen mit ausreichendem Sicherheitsabstand vor dem Monitoring enden, damit der Monitoring-Lauf auf den neuesten erfolgreichen Datenständen aufsetzt.
