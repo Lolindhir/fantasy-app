@@ -14,6 +14,16 @@ Existing source workflows refresh league, roster, transaction, player, market, r
 
 Source refreshers own acquisition and source-local normalization. They do not make roster recommendations.
 
+The productive morning refresh path uses a hybrid trigger policy around the 07:00 Europe/Berlin monitoring window:
+
+- external ranking/projection/activity source-only pushes between 05:00 inclusive and 06:45 exclusive Europe/Berlin are collected without running the expensive materialization job;
+- a DST-safe scheduled consolidation at 06:45 Europe/Berlin materializes the latest successful source states together;
+- an external source-only push outside that morning batching window materializes immediately, so manual or delayed source refreshes do not wait until the next day;
+- pushes that also touch `public/data/League.json`, `public/data/Players.json`, `public/data/Timestamps.json` or materialization code/config/schema are never treated as source-only batching events and materialize immediately;
+- a manual `workflow_dispatch` of the materializer always runs immediately.
+
+The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Materialize • Operations Inputs` separates its lightweight `gate` job from the expensive `materialize` job. Concurrency and cancellation apply only to the materialize job, so a morning source push that is intentionally skipped cannot cancel an already running real materialization.
+
 ### 2. Deterministic materialization
 
 Versioned scripts join refreshed inputs into provider-neutral datasets. Materialization may calculate identifiers, ownership, percentiles, deltas, tiers, quality flags, provenance and input fingerprints.
@@ -368,11 +378,13 @@ The intended daily order is:
 league/source refreshes
 → external ranking/projection refreshes
 → external signal refreshes
-→ deterministic materialization
+→ 06:45 Europe/Berlin deterministic consolidation
 → scheduled monitoring
 ```
 
-The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source pushes trigger `FM • Materialize • Operations Inputs`, which rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset, the common QB/RB/WR/TE/K Movement Discovery state, the deduplicated QB/RB/WR/TE/K Movement Event contract and Kicker Streaming inputs in dependency order before publishing changed generated outputs.
+The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source-only pushes under `fantasy-management/sources/external-rankings/**` and `fantasy-management/sources/external-signals/**` are batched from 05:00 until 06:45 Europe/Berlin: they execute the lightweight trigger gate but not the materialization job. The 06:45 scheduled consolidation then rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset, the common QB/RB/WR/TE/K Movement Discovery state, the deduplicated QB/RB/WR/TE/K Movement Event contract and Kicker Streaming inputs in dependency order before publishing changed generated outputs.
+
+Outside that morning batch window, an external source-only push triggers the same materialization immediately. League/Players/Timestamps and materializer code/config/schema changes remain immediate at all times. If a scheduled source refresh finishes late and publishes after 06:45, its source push therefore triggers an immediate catch-up materialization instead of waiting for the next morning.
 
 Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
 
