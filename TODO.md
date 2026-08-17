@@ -31,6 +31,15 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Betrieb: Regelmäßige Sleeper-Abrufe dürfen unabhängig bleiben; zusätzliche Tank01-Läufe, historische Backfills oder Force-Reparaturen müssen manuell, budgetiert und bei zu geringem Restbudget fail-closed erfolgen.
   - Sicherheit: API-Key-Werte niemals in Logs, Fehlermeldungen, Artefakten oder generierten Dateien ausgeben.
 
+- [ ] Generatorseitige Provider-Joins auf kanonische Identity-Invarianten auditieren und absichern.
+  - Kontext: Der Player-Join Tank01 → Sleeper hat gezeigt, dass mehrere Provider-Datensätze auf dieselbe kanonische ID auflösen können und ein dadurch ungültiger generierter Read Model erst in einem Downstream-Schritt auffallen kann.
+  - Ziel: Alle generatorseitigen Joins inventarisieren, bei denen externe oder provider-spezifische IDs auf kanonische IDs beziehungsweise andere eindeutige Schlüssel gemappt werden, und je Join die erwartete Cardinality sowie Missing-/Unique-Invarianten explizit definieren.
+  - Schutz: Invarianten am frühesten Publishing-Boundary prüfen; bei Verletzung fail-closed abbrechen und den letzten guten generierten Stand unverändert erhalten.
+  - Diagnose: Fehlerausgaben sollen den betroffenen kanonischen Schlüssel sowie relevante Provider-IDs, Namen/Labels und weitere Join-Provenienz aller Konfliktpartner enthalten, ohne Secrets oder Credentials auszugeben.
+  - Leitplanke: Keine stillen Dedupes und keine heuristische Gewinnerauswahl ohne dokumentierten fachlichen Vertrag; vorhandene Downstream-Guards als Defense in Depth beibehalten.
+  - Priorität: Zuerst Identity-Joins in Player-, Team-, Draft-, Transaction- und Historical-Generation prüfen und dokumentieren, welche Joins bereits abgesichert sind und wo Schutzlücken verbleiben.
+  - Validierung: Für abgesicherte Joins gezielte Regressionstests für Duplicate-, Missing-ID- und relevante Cardinality-Fälle ergänzen, soweit die jeweilige Generatorstruktur dies sinnvoll zulässt.
+
 - [ ] `CapDeadlineBufferDays` sauber über `ConfigUtils.psm1` bereitstellen.
   - Kontext: `CapDeadlineBufferDays` liegt als liga-spezifische Regel in `Metadata.json`, wird aber aktuell in `RequestLeague.ps1` direkt aus `Metadata.json` gelesen.
   - Grund: `ConfigUtils.psm1` enthält derzeit noch laufzeitabhängige Werte und konnte deshalb nicht gefahrlos vollständig ersetzt werden.
