@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from validate_automation import (  # noqa: E402
     entity_fingerprint,
     validate_automation,
     validate_observation_state_targets,
+    validate_pretty_json,
     validate_target_sets,
 )
 
@@ -22,6 +24,20 @@ class AutomationValidatorTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[4]
         report = validate_automation(root)
         self.assertEqual([], report.errors, report.to_json())
+
+    def test_state_json_must_be_pretty_printed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "state.json"
+            data = {"job_id": "example", "revision": 1}
+            path.write_text('{"job_id":"example","revision":1}\n', encoding="utf-8")
+            report = Report()
+
+            validate_pretty_json(path, data, report)
+
+            self.assertTrue(
+                any("2-space indentation" in issue.message for issue in report.errors),
+                report.to_json(),
+            )
 
     def test_entity_fingerprint_prefers_sleeper_id(self) -> None:
         entity = {
