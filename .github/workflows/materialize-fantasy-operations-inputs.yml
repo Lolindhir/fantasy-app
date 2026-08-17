@@ -68,7 +68,7 @@ jobs:
       - name: Checkout repository for trigger classification
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Resolve materialization trigger
         id: trigger_gate
@@ -76,8 +76,6 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
-          BEFORE_SHA: ${{ github.event.before }}
-          CURRENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
 
@@ -87,11 +85,18 @@ jobs:
           )
 
           if [[ "$EVENT_NAME" == "push" ]]; then
-            if [[ -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
-              mapfile -t changed_files < <(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")
+            push_size="$(jq -r 'if (.size | type) == "number" then .size else (.commits | length) end' "$GITHUB_EVENT_PATH")"
+            included_commit_count="$(jq -r '.commits | length' "$GITHUB_EVENT_PATH")"
+
+            if [[ "$push_size" == "$included_commit_count" ]]; then
+              mapfile -t changed_files < <(
+                jq -r '.commits[] | (.added[]?, .modified[]?, .removed[]?)' "$GITHUB_EVENT_PATH" | sort -u
+              )
               for changed_file in "${changed_files[@]}"; do
                 args+=(--changed-file "$changed_file")
               done
+            else
+              echo "Push payload is truncated (${included_commit_count}/${push_size} commits); failing open to materialization."
             fi
           fi
 
