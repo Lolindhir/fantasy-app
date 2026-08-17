@@ -9,44 +9,82 @@
 - **Publication date:** unknown
 - **Original URL:** unknown
 - **Input method:** `user_provided_chat`
-- **Captured for repository:** 2026-08-16
+- **First captured for repository:** 2026-08-16
 - **Capture timezone:** `Europe/London`
-- **Raw capture status:** `unavailable_exact_after_context_compaction`
-- **Formatted article status:** `reconstructed_source_digest_from_prior_analysis`
+- **Source mode:** `living_article`
+- **Latest snapshot:** `snapshots/2026-08-17T01-10+01-00-full/`
 
-## Provenienz-Hinweis
+## Capture-Historie
 
-Der Artikel wurde vom Nutzer im Chat vollständig beziehungsweise umfangreich als Quelltext zur Fantasy-Auswertung bereitgestellt. Beim späteren Persistierungsvorgang war der exakte ursprüngliche Chat-Paste im aktiven Ausführungskontext nicht mehr byte- bzw. wortgetreu abrufbar.
+### 1. Erst-/Legacy-Capture — 2026-08-16
 
-Deshalb gilt für dieses Paket bewusst:
+Die Root-Dateien `raw.txt`, `article.md` und `extraction.json` dokumentieren den ersten Persistierungsvorgang.
 
-- `raw.txt` enthält **keine erfundene Rekonstruktion des Originaltexts**, sondern den expliziten Raw-Capture-Status;
-- `article.md` ist eine lesefreundliche Rekonstruktion der in der damaligen Analyse sicher erhaltenen Artikel-Claims und wird sichtbar als solche gekennzeichnet;
-- `extraction.json` speichert die strukturierten Claims und deren damalige Mighty-Giants-Relevanz;
-- eine spätere erneute Bereitstellung des Originaltexts darf `raw.txt` und darauf basierend `article.md` vervollständigen, ohne die historische Extraktion zu verlieren.
+Beim damaligen Write war der exakte ursprüngliche Chat-Paste nach Kontextkompaktierung nicht mehr wortgetreu verfügbar. Deshalb wurde bewusst **kein rekonstruiertes Raw als Original ausgegeben**:
 
-Eine Web-Version wurde **nicht** als Ersatz für den vom Nutzer bereitgestellten Raw-Text ausgegeben.
+- Root-`raw.txt`: `unavailable_exact_after_context_compaction`;
+- Root-`article.md`: sichtbar gekennzeichneter rekonstruierter Source Digest;
+- Root-`extraction.json`: strukturierte historische Claims aus der damals sicher erhaltenen Analyse.
+
+Diese Dateien bleiben als historischer erster Snapshot bestehen und werden nicht nachträglich so umgeschrieben, als wäre der Originaltext damals vorhanden gewesen.
+
+### 2. Vollständiger fortgeschriebener Capture — 2026-08-17 01:10 Europe/London
+
+Der Nutzer stellte den Artikel erneut vollständig bereit. Die neue Fassung enthält den bereits bekannten Donnerstag-/Freitag-Block und zusätzlich den Samstag-Block.
+
+Gespeichert unter:
+
+`snapshots/2026-08-17T01-10+01-00-full/`
+
+- `raw.txt`: vollständiger, direkt vom Nutzer bereitgestellter Artikeltext;
+- `article.md`: lesefreundliche vollständige Fassung ohne Fantasy-Interpretation im Quelltext;
+- `extraction.json`: Claim-basierter Delta-Snapshot mit stabilen Claim-IDs und `new`/`repeated`-Status.
+
+## Living-Article-Identität
+
+Diese Fassung wird als **Fortschreibung desselben Artikels** behandelt, nicht als zweite unabhängige Quelle. Grundlage dafür sind identischer Titel, wiederholte ältere Abschnitte und die erkennbare Erweiterung um den Samstag-Block.
+
+Folge:
+
+- wiederholte Donnerstag-/Freitag-Claims erhöhen weder Source Count noch Confidence wie eine zweite unabhängige Bestätigung;
+- neue Samstag-Claims sind neue Evidenz **innerhalb derselben Source Identity**;
+- spätere materielle Änderungen werden als `changed` oder `retracted` in einem weiteren Snapshot erhalten, nicht durch Überschreiben älterer Captures.
 
 ## Materialität
 
-Dieser Artikel überschreitet die Persistenzschwelle klar, weil er mehrere konkrete und dauerhafte Folgen hatte:
+Das Paket überschreitet die Persistenzschwelle klar.
 
-1. **Keaton Mitchell** wurde als dauerhaftes `player-role-watch`-Target aufgenommen.
-2. **Braelon Allen** wurde als dauerhaftes `player-role-watch`-Target aufgenommen.
-3. **Caleb Douglas** wurde als bereits bestehendes High-Priority-Watch-Target durch zusätzliche Preseason-/First-Team-Evidenz bestätigt.
-4. **De'Zhaun Stribling** erhielt zusätzliche relevante Preseason-/Opportunity-Evidenz für einen bereits vom verwalteten Team gehaltenen Taxi-Spieler.
-5. Die kanonische Monitoring-Regel **Preseason-Usage-Signal-Klassifizierung** wurde eingeführt, unter anderem mit `first_team_snap_share`, `held_out_with_starters`, `starter_drive_targets`, `backup_hierarchy_change`, `injury_opened_opportunity` und `box_score_splash`.
+Aus dem ersten Capture entstanden bereits:
+
+1. dauerhaftes `player-role-watch` für **Keaton Mitchell**;
+2. dauerhaftes `player-role-watch` für **Braelon Allen**;
+3. zusätzliche Bestätigung für **Caleb Douglas**;
+4. zusätzliche Opportunity-Evidenz für **De'Zhaun Stribling**;
+5. die kanonische **Preseason-Usage-Signal-Klassifizierung**.
+
+Der vollständige Snapshot vom 17.08. ergänzt materiell:
+
+1. **Cam Skattebo**: bestätigte Rückkehr zu echter Preseason-Spielbelastung nach schwerer Bein-/Knöchelverletzung;
+2. **Jonathon Brooks**: bestätigte Rückkehr zu Game Action sowie kurzfristiger, ausdrücklich `injury_opened` Opportunity-Pfad durch Chuba Hubbards Hamstring-Verletzung;
+3. **Brashard Smith**: relevantes KC-RB2-Sequencing-Signal für einen späteren Recheck, aber noch kein dauerhaftes Watch-Target;
+4. wiederverwendbare **Living-Article-Regeln** für versionierte Snapshots und Claim-Deltas.
 
 ## Bekannte dauerhafte Ableitungen
 
 - `fantasy-management/automation/target-sets/player-role-watch.json`
   - `keaton-mitchell-2026`
   - `braelon-allen-2026`
+- `fantasy-management/automation/state/entity-observation.json`
+  - `managed-roster-player-12481` / `injury-status` — Cam Skattebo
+  - `jonathon-brooks-2026` / `injury-status`
+  - `jonathon-brooks-2026` / `role-opportunity`
 - `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`
   - Abschnitt `Preseason-Usage-Signal-Klassifizierung`
+- `fantasy-management/_ai/ARTICLE_SOURCE_MODEL.md`
+  - Abschnitt `Living Articles und fortgeschriebene Quellen`
 - bereits vorhandenes Watch-Target:
   - `caleb-douglas-2026`
 
 ## Quellenstatus
 
-Dieses Paket ist ein **historischer Source Snapshot**. Die Aussagen des Artikels sind nicht automatisch aktuelle NFL-/Fantasy-Wahrheit. Rollen, Verletzungen, Ownership, Marktwerte, ADP und Teamkontexte müssen bei späterer Verwendung erneut gegen aktuelle Repo-Daten und frische externe Quellen geprüft werden.
+Dieses Paket ist historische Source-Evidenz. Rollen, Verletzungen, Ownership, Marktwerte, ADP und NFL-Teamkontext müssen bei späterer Verwendung erneut gegen aktuelle Repo-Daten und frische externe Quellen geprüft werden.

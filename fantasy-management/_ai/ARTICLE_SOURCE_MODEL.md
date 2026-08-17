@@ -170,6 +170,56 @@ Wenn unmittelbar davor konkrete Source-/Watch-/Baseline-/Rule-Änderungen vorges
 8. Nach Freigabe Source Package und die konkret genehmigten Ableitungen persistieren.
 9. Bei fehlendem exaktem Raw niemals eine Rekonstruktion als Original ausgeben.
 
+## Living Articles und fortgeschriebene Quellen
+
+Ein Publisher kann denselben Artikel nachträglich erweitern oder aktualisieren, zum Beispiel eine Preseason-Übersicht, die zunächst Donnerstag/Freitag und später zusätzlich Samstag enthält. Eine solche Fortschreibung ist **nicht automatisch eine zweite unabhängige Quelle**.
+
+### Source-Identity
+
+Behandle einen neuen Input als weiteren Snapshot desselben Living Article, wenn die Quellenidentität belastbar gleich bleibt oder der Text klar eine fortgeschriebene Fassung desselben Artikels ist. Relevante Indizien sind insbesondere identischer Titel, URL, Publisher/Autor, fortgesetzte Gliederung sowie wörtlich wiederholte ältere Abschnitte.
+
+Wenn die Identität unsicher ist, dokumentiere die Unsicherheit statt zwei Texte still zusammenzuführen.
+
+### Immutable Snapshots
+
+Vorhandene historische Raw-Captures werden nicht überschrieben. Spätere Captures desselben Artikels gehören optional unter:
+
+```text
+snapshots/<capture-id>/
+  raw.txt
+  article.md
+  extraction.json
+```
+
+`SOURCE.md` dient dann als Paketindex und dokumentiert Capture-Historie sowie den neuesten verfügbaren Snapshot. Bereits vorhandene Root-Dateien eines Legacy-/Erst-Captures dürfen als historischer erster Snapshot bestehen bleiben.
+
+### Stable Claim IDs und Delta-Status
+
+Ab dem ersten versionierten Living-Article-Capture erhält jeder materiell extrahierte Claim eine stabile `claim_id`, die in späteren Snapshots wiederverwendet wird, solange dieselbe Aussage verfolgt wird.
+
+Ein Claim im neuen Snapshot wird gegenüber dem vorherigen Snapshot als einer dieser Statuswerte markiert:
+
+- `new`: erstmals in dieser Quelle beobachtet;
+- `repeated`: inhaltlich bereits im vorherigen Snapshot vorhanden und ohne materielle Änderung wiederholt;
+- `changed`: dieselbe Claim-Identität wurde materiell geändert, eingeschränkt oder erweitert;
+- `retracted`: die Quelle nimmt eine frühere Aussage ausdrücklich zurück oder widerspricht ihr so klar, dass die frühere Fassung nicht mehr als aktuelle Quellenposition gilt.
+
+Die frühere Fassung bleibt im alten Snapshot erhalten. `changed` oder `retracted` überschreibt die historische Evidenz nicht.
+
+### Unabhängigkeits- und Gewichtungsregel
+
+`repeated` ist **keine unabhängige Bestätigung**. Wiederholte Claims aus demselben Living Article dürfen weder Source Count noch Confidence so erhöhen, als kämen sie von einer zweiten Quelle. Sie können lediglich zeigen, dass der Publisher die Aussage in einer späteren Fassung beibehalten hat.
+
+`new` kann neue Evidenz aus demselben Artikel hinzufügen, bleibt aber dieselbe Source Identity. `changed` und `retracted` sind dagegen wichtige Quellenänderungen und müssen bei späterer Interpretation sichtbar berücksichtigt werden.
+
+Eine echte unabhängige Bestätigung erfordert eine unterscheidbare externe Quelle mit eigener Provenienz.
+
+### Fantasy-Ableitungen bei neuen Snapshots
+
+Bei jedem neuen Snapshot werden nur die **neuen oder materiell geänderten** Claims auf neue Watch-, Baseline-, Board-, Knowledge- oder Decision-Auswirkungen geprüft. `repeated` Claims lösen keine zweite identische Persistierung aus.
+
+Bereits kanonisierte Fantasy-Ableitungen werden nur geändert, wenn neue unabhängige Evidenz oder ein `new`/`changed`/`retracted` Claim die bisherige Schlussfolgerung materiell verändert.
+
 ## Preseason-Artikel
 
 Für Preseason- und Camp-Artikel gilt zusätzlich die kanonische Klassifizierung aus `MONITORING_AND_WEEKLY_DECISIONS.md`.
