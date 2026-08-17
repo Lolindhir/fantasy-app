@@ -136,6 +136,26 @@ Sie wird priorisiert bei:
 - starkem Ranking-/ADP-/Projection-/Activity-Signal;
 - bereits bekannter Competition/Uncertainty, deren Auflösung entscheidungsrelevant ist.
 
+### Positionsübergreifende Free-Agent-Movement-Discovery
+
+Free-Agent-Discovery soll nicht davon abhängen, dass ein Spieler zuvor manuell als Target ausgewählt wurde oder in einer Sleeper-Add-/Drop-Liste auftaucht.
+
+Der Discovery-Lauf verwendet die vollständige tatsächliche Fantasy-Free-Agent-Population aus `free-agent-signals.json` für QB, RB, WR, TE und K und leitet daraus deterministisch alle sinnvoll berechenbaren Veränderungssignale ab.
+
+Zielbild:
+
+- historische Snapshot-Stände werden verwendet, um ADP-, Ranking-, Marktwert-, Tier- und Projection-Deltas über sinnvolle Vergleichsfenster zu berechnen;
+- bestehende Normalisierungen und Materialitätsschwellen aus `redraft-adp-movement`, `market-movement` und `season-projection-movement` werden wiederverwendet, statt parallele zweite Regeln zu erfinden;
+- gleichgerichtete Bewegungen mehrerer unabhängiger Signalfamilien erhöhen die Research-Priorität;
+- Divergenzen wie Projection-Anstieg bei flachem ADP, Redraft-Anstieg bei flachem Dynasty-Markt oder widersprüchliche Marktquellen werden als eigener Research-Grund sichtbar;
+- die tatsächliche kleine Liga wird über positionsspezifische Replacement-Relevanz berücksichtigt, damit Bewegungen weit unterhalb des ligaeigenen Ersatzniveaus nicht dieselbe Priorität erhalten wie Bewegungen an der Roster- oder Startergrenze;
+- Sleeper Adds/Drops sind ein Activity- und Bestätigungssignal, aber weder Discovery-Voraussetzung noch dominanter alleiniger Priorisierungstreiber;
+- die Derived-Schicht erzeugt Research-Priorität und Materialitätsereignisse, aber keine finale Add-/Drop-Empfehlung.
+
+Kicker gehören ausdrücklich in dieselbe Discovery-Population und denselben Delta-/Materialitäts-/Priorisierungspfad wie QB, RB, WR und TE. Positionsspezifische Quellen, Skalierungen, Schwellen und Features bleiben zulässig; sie rechtfertigen aber keinen separaten Kicker-Discovery-Workflow.
+
+Ein Zielcontract wie `free-agent-movement-signals.json` soll pro auffälligem Spieler mindestens aktuelle Werte, Vergleichsstände, Deltas, überschrittene Schwellen, Evidenz/Freshness, Cross-Signal-Bestätigung oder -Divergenz, Replacement-Relevanz und Research-Priorität bereitstellen.
+
 ### Free-Agent-Eskalation in dauerhaftes Monitoring
 
 Fantasy Free Agents können zunächst nur durch aktuelle Derived Signals, Sleeper Activity, Markt-/ADP-/Projection-Bewegung oder qualitative Recherche auffallen, ohne bereits als dauerhaftes `player-role-watch`-Target konfiguriert zu sein.
@@ -160,7 +180,7 @@ Ein Vorschlag zur dauerhaften Aufnahme soll mindestens enthalten:
 - Spieleridentität und aktuelle Fantasy-Verfügbarkeit;
 - den konkreten Auslöser oder die wiederholte Signalkette;
 - warum kurzfristige Signalbeobachtung nicht mehr ausreicht;
-- welche Profile dauerhaft relevant sind, insbesondere `role-opportunity`, `injury-status`, `market-movement` und/oder `redraft-adp-movement`;
+- welche Profile dauerhaft relevant sind, insbesondere `role-opportunity`, `injury-status`, `market-movement`, `redraft-adp-movement` und/oder `season-projection-movement`;
 - den empfohlenen Monitoring-Horizont oder die Bedingung, unter der die Watch wieder beendet werden kann;
 - die vorgeschlagene stabile Target-ID.
 
@@ -199,11 +219,37 @@ Zusätzliche Leitplanken:
 - Bei `injury_opened_opportunity` darf aktuelles Volumen nicht automatisch auf die Zeit nach Rückkehr des fehlenden Konkurrenten fortgeschrieben werden.
 - Preseason-Usage kann Research-Priorität, Watch-Status und spätere Board-Priorität verändern, trifft aber im Daily Monitoring keine finale Add-/Drop- oder Draft-Entscheidung.
 
-## 3. Kicker im Daily Monitoring
+## 3. Positionsübergreifendes Free-Agent Daily Monitoring
 
-Kicker sind ab jetzt ein positionsspezifisches Daily-Monitoring-Modul im bestehenden `entity-observation`-System.
+Free-Agent Daily Monitoring ist ein gemeinsamer Discovery- und Materialitätspfad für QB, RB, WR, TE und K. Kicker werden hier nicht als separate Population oder als eigener Discovery-Workflow behandelt.
 
-Kanonische Konfiguration:
+### Population
+
+Der gemeinsame Free-Agent-Pfad beobachtet alle tatsächlichen Fantasy Free Agents aus `free-agent-signals.json`, soweit sie zu den aktiven Fantasy-Positionen QB, RB, WR, TE oder K gehören.
+
+Die gleiche Ownership- und Availability-Logik gilt für alle Positionen. Ein Spieler, der von einem Gegner aufgenommen oder wieder freigegeben wird, wechselt über dieselbe ligaweite Ownership-Schicht in oder aus der Free-Agent-Population.
+
+### Gemeinsame Signalfamilien
+
+Je nach Positions- und Quellenabdeckung werden insbesondere beobachtet:
+
+- Injury und Availability;
+- NFL-Team und relevante Transactions;
+- Rolle und Opportunity;
+- Usage;
+- Dynasty-Ranking und Marktwert;
+- Redraft-ADP;
+- Season Projections und liga-spezifisch neu berechnete vergleichbare Core Points;
+- Projection Consensus und Provider Spread;
+- Sleeper Activity;
+- Cross-Signal-Confirmation und -Divergence;
+- positionsspezifische Replacement-Relevanz.
+
+Positionsspezifische Signale dürfen denselben Spielerrecord ergänzen. Für Kicker können dazu insbesondere FFC-Kicker-ADP, nominaler K1-Status, Job Security, bestehender Kicker-Baseline-Score oder eine Kicker-spezifische Projection-Auswertung gehören. Diese Features bleiben Teil derselben Discovery- und Priorisierungsarchitektur.
+
+### Bestehende Kicker-Implementierung
+
+Die bereits implementierten Dateien
 
 ```text
 fantasy-management/automation/target-sets/kicker-daily-monitoring.json
@@ -211,46 +257,23 @@ fantasy-management/automation/profiles/kicker-signal-movement.json
 fantasy-management/automation/workflows/kicker-daily-monitoring.md
 ```
 
-### Population
+bleiben als vorhandene technische und fachliche Bausteine nutzbar. Sie definieren jedoch nicht mehr die Zielarchitektur für Free-Agent-Discovery.
 
-Daily Kicker Monitoring beobachtet:
+Beim Ausbau sollen Kicker-Signale in den gemeinsamen positionsübergreifenden Movement- und Monitoring-Pfad einfließen, ohne parallele Discovery-Baselines, doppelte Ownership-Logik oder separate Kicker-Benachrichtigungen für denselben materiellen Sachverhalt zu erzeugen.
 
-- den aktuell gehaltenen Kicker;
-- alle tatsächlichen Fantasy-Free-Agent-Kicker aus `kicker-streaming-inputs.json`.
+Die Kicker-Streaming-Engine bleibt ein nachgelagertes positionsspezifisches Analysemodul für Weekly Decisions; sie ist keine Discovery-Schicht.
 
-Gegnerisch gehaltene Kicker sind keine Streaming-Kandidaten und werden nicht mit dem Kicker-Streaming-Profil bewertet. Ownership-/Transaction-Änderungen über alle Fantasy-Teams gehören in das allgemeine ligaweite Daily Monitoring.
+### Was Daily Free-Agent Monitoring nicht macht
 
-### Signale
-
-Das Kicker-Profil beobachtet insbesondere:
-
-- nominalen K1-Status;
-- Injury-Signal;
-- NFL-Team;
-- FFC-Kicker-ADP;
-- FFToday-Projections;
-- CBS-Sports-Projections;
-- provider-neutralen Projection Consensus;
-- Projection Spread;
-- Sleeper Add Activity;
-- bestehenden Kicker-Baseline-Score;
-- Baseline-Rank;
-- Eintritt in die Kicker-Research-Shortlist;
-- bei konkretem Trigger frisch verifizierte Job Security.
-
-### Was Daily Kicker Monitoring nicht macht
-
-Es bewertet im normalen täglichen Lauf nicht:
+Es bewertet im normalen täglichen Lauf nicht automatisch:
 
 - konkrete Weekly Matchups;
-- konkretes Stadion-/Roof-Setting der Woche;
-- Wetterforecast;
-- Field-Goal-Opportunity der konkreten Woche;
-- konkrete QB-/Injury-Auswirkungen auf das aktuelle Spiel;
-- Start/Sit;
-- Add/Drop.
+- konkrete Stadion-/Roof-/Weather-Bedingungen einer einzelnen Spielwoche;
+- finale Start/Sit-Entscheidungen;
+- finale Add/Drop-Entscheidungen;
+- die globale Opportunity Cost eines Roster-Moves.
 
-Diese Faktoren sind Weekly Decision Context.
+Diese Faktoren sind Weekly Decision Context oder gehören in andere übergeordnete Entscheidungsprozesse.
 
 ## 4. Weekly Lineup + Waiver Workflow: Zielbild
 
