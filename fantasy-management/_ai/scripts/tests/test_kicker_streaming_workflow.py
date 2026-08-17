@@ -62,11 +62,13 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         self.assertGreater(concurrency_index, materialize_index)
 
         gate_block = workflow[gate_index:materialize_index]
-        self.assertIn("fetch-depth: 1", gate_block)
+        self.assertIn("fetch-depth: 2", gate_block)
         self.assertIn("$GITHUB_EVENT_PATH", gate_block)
         self.assertIn(".added[]?, .modified[]?, .removed[]?", gate_block)
         self.assertIn("Push payload is truncated", gate_block)
-        self.assertNotIn("git diff --name-only", gate_block)
+        self.assertIn("git rev-parse HEAD^", gate_block)
+        self.assertIn("git diff --name-only HEAD^ HEAD", gate_block)
+        self.assertIn("used shallow parent diff", gate_block)
 
         for immediate_path in (
             "public/data/League.json",
