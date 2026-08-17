@@ -15,6 +15,7 @@ on:
       - fantasy-management/automation/external-signal-materialization.json
       - fantasy-management/automation/player-signal-materialization.json
       - fantasy-management/automation/free-agent-materialization.json
+      - fantasy-management/automation/free-agent-movement-materialization.json
       - fantasy-management/automation/kicker-streaming-input-materialization.json
       - fantasy-management/_ai/operations-source-catalog.json
       - fantasy-management/_ai/operations-source-catalog-offense-projections.json
@@ -24,12 +25,14 @@ on:
       - fantasy-management/_ai/scripts/build_player_signal_dataset.py
       - fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
       - fantasy-management/_ai/scripts/build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
       - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
       - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py
       - fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py
       - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
@@ -38,6 +41,7 @@ on:
       - fantasy-management/_ai/schemas/external-signal-relevance.schema.json
       - fantasy-management/_ai/schemas/player-signal-dataset.schema.json
       - fantasy-management/_ai/schemas/free-agent-dataset.schema.json
+      - fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json
       - fantasy-management/_ai/schemas/kicker-streaming-inputs.schema.json
       - fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md
       - .github/workflows/materialize-fantasy-operations-inputs.yml
@@ -75,6 +79,7 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py \
+            fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py \
             fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py \
             -v
@@ -91,11 +96,22 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
+            previous_free_agent="$RUNNER_TEMP/free-agent-signals.previous.json"
+            rm -f "$previous_free_agent"
+            if test -s fantasy-management/generated/operations/free-agent-signals.json; then
+              cp fantasy-management/generated/operations/free-agent-signals.json "$previous_free_agent"
+            fi
+
             python fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
             python fantasy-management/_ai/scripts/materialize_external_signals.py
             python fantasy-management/_ai/scripts/build_player_signal_dataset.py --check
             python fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
             python fantasy-management/_ai/scripts/build_free_agent_dataset.py
+            if test -s "$previous_free_agent"; then
+              python fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py --previous-free-agent-signals "$previous_free_agent"
+            else
+              python fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
+            fi
             python fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
 
             test -s fantasy-management/generated/operations/player-signals.json || {
@@ -110,6 +126,12 @@ jobs:
             }
             python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/free-agent-signals.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/free-agent-dataset.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=data["population"]["player_count"]; assert count > 0 and len(data["players"]) == count, "invalid free-agent-signals population"; assert all(player["ownership"]["status"] == "fantasy_free_agent" for player in data["players"]), "rostered player in free-agent-signals"; print(f"Validated free-agent-signals.json with {count} fantasy free agents.")'
 
+            test -s fantasy-management/generated/operations/free-agent-movement-signals.json || {
+              echo "free-agent-movement-signals.json is missing or empty after materialization" >&2
+              exit 1
+            }
+            python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); assert set(data["population"]["positions"]) == {"QB","RB","WR","TE","K"}, "movement population must include all fantasy positions"; assert len(data["discoveries"]) == data["population"]["discovery_count"], "invalid movement discovery count"; assert all(item["ownership"]["status"] == "fantasy_free_agent" for item in data["discoveries"]), "rostered player in movement discoveries"; print("Validated free-agent-movement-signals.json with {} discoveries from {} free agents.".format(data["population"]["discovery_count"], data["population"]["free_agent_count"]))'
+
             test -s fantasy-management/generated/operations/kicker-streaming-inputs.json || {
               echo "kicker-streaming-inputs.json is missing or empty after materialization" >&2
               exit 1
@@ -121,6 +143,7 @@ jobs:
               fantasy-management/generated/operations/external-signal-relevance.json \
               fantasy-management/generated/operations/player-signals.json \
               fantasy-management/generated/operations/free-agent-signals.json \
+              fantasy-management/generated/operations/free-agent-movement-signals.json \
               fantasy-management/generated/operations/kicker-streaming-inputs.json \
               fantasy-management/generated/operations/data-quality.json
 
