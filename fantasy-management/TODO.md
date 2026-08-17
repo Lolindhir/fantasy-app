@@ -83,13 +83,22 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 
 ### Monitoring
 
+- [ ] **Priorität: Positionsübergreifende Free-Agent-Movement-Discovery materialisieren.**
+  - Eingabe ist die vollständige tatsächliche Free-Agent-Population aus `free-agent-signals.json` für QB, RB, WR, TE und K; Kicker werden in Discovery, Materialisierung, Event-Bündelung und Priorisierung nicht als separate Population behandelt.
+  - Aus vorhandenen Snapshot-Historien und aktuellen Operations-Daten möglichst alle deterministisch berechenbaren Veränderungssignale vorbereiten: ADP-Deltas über mehrere Fenster, Dynasty-Ranking-/Marktwert-/Tier-Bewegungen, Projection-Consensus-/Provider-/Core-Points-Deltas, Source-Confirmation und Source-Divergence sowie ligaangepasste Nähe zum positionsspezifischen Replacement Level.
+  - Bestehende Schwellen und Normalisierungen aus `redraft-adp-movement`, `market-movement` und `season-projection-movement` wiederverwenden beziehungsweise in einen gemeinsamen deklarativen Contract überführen; positionsspezifische Quellen, Normalisierung und Schwellen bleiben erlaubt.
+  - Cross-Signal-Logik vorbereiten: gleichgerichtete ADP-/Markt-/Projection-Bewegungen erhöhen Research-Priorität; Divergenzen wie Projection-Anstieg bei flachem ADP oder Redraft-Anstieg bei flachem Dynasty-Markt werden als eigener Research-Grund sichtbar.
+  - Sleeper Adds/Drops bleiben ein nützliches Activity- und Bestätigungssignal, dürfen aber weder Discovery-Voraussetzung noch dominanter alleiniger Priorisierungstreiber sein.
+  - Zieloutput: kompakter Derived Contract wie `free-agent-movement-signals.json`, der nur relevante Deltas, überschrittene Materialitätsschwellen, Evidenz, Freshness, Replacement-Relevanz und Research-Priorität bereitstellt; keine finale Add-/Drop-Empfehlung.
+  - Kicker-spezifische Signale wie Kicker-ADP, Job Security oder bestehender Baseline-Score dürfen als positionsspezifische Features einfließen; ein eigener Kicker-Discovery-Workflow ist nicht Zielarchitektur. Die bestehende Kicker-Streaming-Engine bleibt ausschließlich ein nachgelagertes positionsspezifisches Analysemodul für Weekly Decisions.
+
 - [ ] Daily Monitoring Workflow positionsübergreifend vollständig konsolidieren und operationalisieren.
   - Zweck: ausschließlich materielle Veränderungen erkennen, Research priorisieren und die betroffene spätere Entscheidungsklasse benennen; keine finalen Start/Sit-, Add/Drop-, Waiver- oder Trade-Entscheidungen im Monitoring selbst.
   - Populationen: vollständiger Managed Roster; relevante Fantasy Free Agents; gegnerische Fantasy-Roster; ligaweite Ownership-/Transactions; NFL-Team-/Backfield-/Positionsgruppen-Kontext, wenn eine gemeinsame Ursache mehrere Spieler betrifft.
   - Signale je nach Position: Injury/Availability, Rolle/Opportunity, Usage, Markt, ADP, Projections, NFL-Team/Transactions, Fantasy-Ownership, externe Activity sowie positionsspezifische Signale.
   - Materialität: keine Zahlenrauschen- oder No-op-Meldungen; neue Baselines bleiben still; qualitative Live-Recherche nur bei fehlenden Daten, konkreten Änderungstriggern oder entscheidungsrelevanter Uncertainty.
-  - Aktiver Kicker-Teil: `kicker-daily-monitoring` beobachtet gehaltenen Kicker plus tatsächliche Fantasy-Free-Agent-Kicker mit Kicker-Baseline, FFC ADP, FFToday, CBS, Sleeper Activity, Injury, nominalem K1 und triggerbasierter Job-Verifikation. Dieser Teil ist mit diesem Ausbau erledigt und soll als Muster für weitere positionsspezifische Module dienen.
-  - Noch offen: Free-Agent-Monitoring für QB/RB/WR/TE vollständig anbinden; Gegner-/Liga-Ownership-Monitoring; NFL-Team-/Positionsgruppen-Events; einheitliche Event-Bündelung und Priorisierung über mehrere Profile; gezielte Folgeanalyse nach Monitoring-Event.
+  - Zielarchitektur: Free-Agent-Discovery und Movement-Priorisierung laufen für QB/RB/WR/TE/K gemeinsam. Die bereits implementierte Kicker-Beobachtung liefert weiterhin nutzbare positionsspezifische Signale, soll aber nicht als dauerhafte separate Discovery-Pipeline fortgeführt werden.
+  - Noch offen: positionsübergreifende Free-Agent-Movement-Discovery anbinden; Gegner-/Liga-Ownership-Monitoring; NFL-Team-/Positionsgruppen-Events; einheitliche Event-Bündelung und Priorisierung über mehrere Profile; gezielte Folgeanalyse nach Monitoring-Event.
   - Referenz: `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`.
 
 - [ ] Monitoring für die Kader aller gegnerischen Fantasy-Teams aufbauen.
@@ -98,10 +107,10 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ziel: Keine allgemeine News-Flut, sondern nur für Liga-, Konkurrenz- und Trade-Entscheidungen relevante Veränderungen.
 
 - [ ] Monitoring für alle relevanten Fantasy Free Agents aufbauen.
-  - Kandidaten und Ownership aus dem vollständigen materialisierten Free-Agent-Dataset übernehmen.
-  - Beobachten: neue Chancen durch Verletzungen oder Transaktionen, Usage-Sprünge, Rollenwechsel, Markt-, Ranking- und ADP-Anstiege sowie auffällige Add-/Drop-Trends.
+  - Kandidaten und Ownership aus dem vollständigen materialisierten Free-Agent-Dataset für QB, RB, WR, TE und K übernehmen.
+  - Beobachten: neue Chancen durch Verletzungen oder Transaktionen, Usage-Sprünge, Rollenwechsel, Markt-, Ranking-, ADP- und Projection-Bewegungen sowie auffällige Add-/Drop-Trends.
   - Ziel: Neue oder deutlich aufgewertete Kandidaten automatisch zur Prüfung beziehungsweise zum Free-Agent-Board zuführen.
-  - Kicker sind bereits als eigener positionsspezifischer Teil über `kicker-daily-monitoring` abgedeckt; dieser Todo betrifft insbesondere die vollständige QB/RB/WR/TE-Population und gemeinsame Priorisierungsregeln.
+  - Leitplanke: Kicker werden in der Discovery nicht gesondert behandelt. Positionsspezifische Mathematik und Quellen bleiben möglich, laufen aber innerhalb derselben Population-, Delta-, Materialitäts- und Priorisierungsarchitektur.
 
 - [ ] Monitoring auf NFL-Team-, Backfield- und Positionsgruppenebene ergänzen.
   - Kontext: Eine Verletzung, Verpflichtung, Entlassung oder Depth-Chart-Verschiebung kann mehrere Spieler gleichzeitig verändern.
@@ -110,7 +119,7 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 - [ ] Ligaweite Transaktions- und Ownership-Veränderungen überwachen.
   - Beobachten: Adds, Drops, Trades, Taxi-/Reserve-Bewegungen und Veränderungen des Draftkapitals.
   - Ziel: Betroffene Materialisierungen aktualisieren und Auswirkungen auf Free-Agent-Verfügbarkeit, Positionsknappheit, Gegnerprofile und potenzielle Trade-Partner ableiten lassen.
-  - Kicker-Grenze: Wenn ein bisher verfügbarer Kicker von einem Gegner aufgenommen wird, soll diese allgemeine Ownership-Schicht die Availability-Änderung melden; das Kicker-Streaming-Profil erfindet dafür keine zweite Liga-Transaction-Logik.
+  - Positionsübergreifende Grenze: Availability-Änderungen werden für alle Positionen einschließlich K durch dieselbe Ownership-Schicht gemeldet; positionsspezifische Analyseprofile erfinden dafür keine parallele Liga-Transaction-Logik.
 
 ### Automatisierte Analysen und Entscheidungsprozesse
 
