@@ -91,10 +91,12 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
 
 ### Monitoring
 
-- [ ] Produktive Free-Agent-Movement-Discovery anhand realer Läufe kalibrieren.
-  - Der erste produktive Materialisierungslauf vom 17.08.2026 bewertete 1.201 tatsächliche Fantasy Free Agents und erzeugte 322 Research-Discoveries; diese Breite ist zunächst ein Kalibrierungssignal, kein Grund für pauschal strengere Schwellen.
-  - Verteilungen nach Position, Research-Priorität, Materialitätsfamilie, Replacement-Klasse, Vergleichsfenster und Cross-Signal-Muster beobachten und erst danach Schwellen beziehungsweise Bündelungsregeln gezielt anpassen.
-  - Insbesondere prüfen, ob lange Vergleichsfenster beim erstmaligen produktiven Rollout historische Bewegungen erneut als aktuelle Research-Kandidaten hochziehen und ob ein expliziter Discovery-State beziehungsweise Event-Deduplizierung nötig ist.
+- [ ] Produktive Free-Agent-Movement-Discovery anhand realer Läufe weiter kalibrieren.
+  - Der produktive Lauf vom 17.08.2026 bewertet 1.201 tatsächliche Fantasy Free Agents und hält 322 aktuelle Research-Discoveries vor: K 19, QB 54, RB 71, TE 59, WR 119; davon 141 mit hoher und 181 mit mittlerer Research-Priorität.
+  - Die aktuelle Materialitätsverteilung ist deutlich marktlastig: 299 Discoveries enthalten `dynasty_market`, jeweils nur 4 `redraft_adp` beziehungsweise `season_projection`. Sleeper Activity ist kein Materialitätsfamilien-Treiber und damit nicht mehr die dominante Discovery-Schicht.
+  - Die Event-Deduplizierung ist produktiv umgesetzt: Beim ersten unveränderten Vergleich von 322 vorherigen mit 322 aktuellen Discoveries erzeugte `free-agent-movement-events.json` exakt 0 Events. Lange 7/14/30-Tage-Fenster dürfen dadurch im State bestehen bleiben, ohne täglich erneut Research auszulösen.
+  - Nächste Kalibrierung: mehrere echte Source-Refreshes beobachten und die 299 marktgetriebenen Discoveries nach Quelle, Kriterium, Replacement-Klasse und neu entstehenden Events zerlegen. Schwellen erst dann gezielt verändern, wenn der Event-Feed trotz Deduplizierung dauerhaft zu breit oder offenkundig verrauscht bleibt.
+  - Zusätzlich prüfen, ob bei bereits materiellem `dynasty_market` ein weiterer sehr großer Rank-/Value-Sprung innerhalb derselben Richtung als Eskalationsband modelliert werden soll, ohne kleine tägliche Rank-Schwankungen wieder zu Events zu machen.
   - Ziel: Daily Monitoring erhält eine kleine, entscheidungsrelevante Research-Menge, ohne echte Under-the-Radar-Bewegungen in der kleinen Liga zu verlieren.
 
 - [ ] Daily Monitoring Workflow positionsübergreifend vollständig konsolidieren und operationalisieren.
@@ -102,9 +104,10 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Populationen: vollständiger Managed Roster; relevante Fantasy Free Agents; gegnerische Fantasy-Roster; ligaweite Ownership-/Transactions; NFL-Team-/Backfield-/Positionsgruppen-Kontext, wenn eine gemeinsame Ursache mehrere Spieler betrifft.
   - Signale je nach Position: Injury/Availability, Rolle/Opportunity, Usage, Markt, ADP, Projections, NFL-Team/Transactions, Fantasy-Ownership, externe Activity sowie positionsspezifische Signale.
   - Materialität: keine Zahlenrauschen- oder No-op-Meldungen; neue Baselines bleiben still; qualitative Live-Recherche nur bei fehlenden Daten, konkreten Änderungstriggern oder entscheidungsrelevanter Uncertainty.
-  - Zielarchitektur: Free-Agent-Discovery und Movement-Priorisierung laufen für QB/RB/WR/TE/K gemeinsam. Die bereits implementierte Kicker-Beobachtung liefert weiterhin nutzbare positionsspezifische Signale, soll aber nicht als dauerhafte separate Discovery-Pipeline fortgeführt werden.
-  - Erledigt: `free-agent-movement-signals.json` ist produktiv materialisiert und der bestehende geplante Monitoring-Prompt liest den Contract als primäre Free-Agent-Discovery-Schicht; der geplante Task bleibt in seinem zuletzt vorgefundenen deaktivierten Zustand.
-  - Noch offen: Event-Deduplizierung beziehungsweise Material-State für Movement-Discoveries; Gegner-/Liga-Ownership-Monitoring; NFL-Team-/Positionsgruppen-Events; einheitliche Event-Bündelung und Priorisierung über mehrere Profile; gezielte Folgeanalyse nach Monitoring-Event.
+  - Zielarchitektur: Free-Agent-Discovery, Movement-State und Event-Priorisierung laufen für QB/RB/WR/TE/K gemeinsam. Die bereits implementierte Kicker-Beobachtung liefert weiterhin nutzbare positionsspezifische Signale, ist aber keine dauerhafte separate Discovery- oder Event-Pipeline.
+  - Erledigt: `free-agent-movement-signals.json` ist die breite aktuelle Zustands-/Detailansicht; `free-agent-movement-events.json` dedupliziert sie gegen den vorherigen guten Movement-State und liefert nur `new`, `changed`, `structural_change` oder `resolved`; der geplante Monitoring-Prompt liest die Event-Schicht primär und den Movement-State nur für Details.
+  - Der geplante Task bleibt in seinem zuletzt vorgefundenen deaktivierten Zustand; die technische Prompt-Migration auf die neue Event-/State-Trennung ist erfolgt.
+  - Noch offen: Gegner-/Liga-Ownership-Monitoring; NFL-Team-/Positionsgruppen-Events; einheitliche Event-Bündelung mit Managed-Roster-Events; gezielte Folgeanalyse nach Monitoring-Event.
   - Referenz: `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md`.
 
 - [ ] Monitoring für die Kader aller gegnerischen Fantasy-Teams aufbauen.
@@ -113,10 +116,11 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Ziel: Keine allgemeine News-Flut, sondern nur für Liga-, Konkurrenz- und Trade-Entscheidungen relevante Veränderungen.
 
 - [ ] Monitoring für alle relevanten Fantasy Free Agents aufbauen.
-  - Kandidaten und Ownership aus dem vollständigen materialisierten Free-Agent-Dataset für QB, RB, WR, TE und K übernehmen; `free-agent-movement-signals.json` ist die primäre deterministische Discovery- und Priorisierungsschicht.
+  - Kandidaten und Ownership aus dem vollständigen materialisierten Free-Agent-Dataset für QB, RB, WR, TE und K übernehmen.
+  - `free-agent-movement-events.json` ist die primäre tägliche Trigger-/Priorisierungsschicht; `free-agent-movement-signals.json` bleibt die vollständige deterministische Zustands- und Detailansicht für die betroffenen Spieler.
   - Beobachten: neue Chancen durch Verletzungen oder Transaktionen, Usage-Sprünge, Rollenwechsel, Markt-, Ranking-, ADP- und Projection-Bewegungen sowie auffällige Add-/Drop-Trends.
-  - Ziel: Neue oder deutlich aufgewertete Kandidaten automatisch zur Prüfung beziehungsweise zum Free-Agent-Board zuführen.
-  - Leitplanke: Kicker werden in der Discovery nicht gesondert behandelt. Positionsspezifische Mathematik und Quellen bleiben möglich, laufen aber innerhalb derselben Population-, Delta-, Materialitäts- und Priorisierungsarchitektur.
+  - Ziel: Neue oder deutlich aufgewertete Kandidaten automatisch zur Prüfung beziehungsweise zum Free-Agent-Board zuführen, ohne fortbestehende historische Movement-Zustände täglich erneut zu melden.
+  - Leitplanke: Kicker werden in Discovery und Events nicht gesondert behandelt. Positionsspezifische Mathematik und Quellen bleiben möglich, laufen aber innerhalb derselben Population-, Delta-, Materialitäts- und Priorisierungsarchitektur.
 
 - [ ] Monitoring auf NFL-Team-, Backfield- und Positionsgruppenebene ergänzen.
   - Kontext: Eine Verletzung, Verpflichtung, Entlassung oder Depth-Chart-Verschiebung kann mehrere Spieler gleichzeitig verändern.
@@ -226,12 +230,19 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
 
 ## Erledigt / Archiv
 
+- [x] Positionsübergreifende Free-Agent-Movement-Events materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `free-agent-movement-events.json` vergleicht den aktuellen `free-agent-movement-signals.json`-State mit dem vorherigen erfolgreichen Movement-State und emittiert nur `new`, `changed`, `structural_change` oder `resolved`.
+  - Ergebnis: Eine erstmalige Baseline bleibt still; reiner Vergleichsfenster-Churn wird normalisiert; strukturelle Day-over-Day-Änderungen werden als Edge-Events behandelt und erzeugen am Folgetag kein künstliches Gegenereignis.
+  - Ergebnis: Kicker laufen durch denselben QB/RB/WR/TE/K-Event-Contract; es gibt keine separate Kicker-Discovery- oder Event-Pipeline.
+  - Ergebnis: `FM • Materialize • Operations Inputs` sichert den vorherigen Movement-State runner-temporär, baut und validiert die Event-Schicht direkt nach dem Movement-State und veröffentlicht sie atomar mit den übrigen Operations-Inputs.
+  - Produktiver Nachweis vom 17.08.2026: 322 vorherige und 322 aktuelle Discoveries, `baseline_mode=comparison`, exakt 0 Events bei unverändertem Material-State; Quality `ok`; 34 fokussierte Operations-Tests erfolgreich.
+
 - [x] Positionsübergreifende Free-Agent-Movement-Discovery materialisieren und produktiv veröffentlichen.
   - Ergebnis: `free-agent-movement-signals.json` scannt die vollständige tatsächliche Fantasy-Free-Agent-Population QB/RB/WR/TE/K; Kicker laufen durch dieselbe Discovery-, Materialitäts- und Priorisierungsarchitektur und verwenden lediglich positionsspezifische Quellen beziehungsweise Schwellen.
   - Ergebnis: historische 1/3/7/14/30-Tage-Vergleiche für ADP, Dynasty-Markt/Ranking/Tier und Season Projections, Cross-Signal-Confirmation/-Divergence, ligaangepasste positionsspezifische Replacement-Relevanz sowie Day-over-Day-Strukturänderungen werden deterministisch vorbereitet.
   - Ergebnis: vorhandene Schwellen aus `redraft-adp-movement`, `market-movement`, `season-projection-movement` und für Kicker `kicker-signal-movement` werden wiederverwendet; Sleeper Activity ist nur Bestätigungs-/Research-Kontext und keine Discovery-Voraussetzung.
   - Ergebnis: `FM • Materialize • Operations Inputs` baut und validiert den Contract nach `free-agent-signals.json`, sichert den vorherigen Free-Agent-State für strukturelle Deltas und veröffentlicht den Movement-Contract atomar mit den übrigen Operations-Inputs.
-  - Erster produktiver Lauf: 1.201 tatsächliche Fantasy Free Agents bewertet, 322 Research-Discoveries erzeugt; Schema-/Ownership-/Positionsprüfung und 29 fokussierte Materializer-Tests erfolgreich.
+  - Erster produktiver Lauf: 1.201 tatsächliche Fantasy Free Agents bewertet, 322 Research-Discoveries erzeugt; Schema-/Ownership-/Positionsprüfung erfolgreich.
 
 - [x] Kicker-spezifische Daily-Signale in das bestehende Monitoring integrieren.
   - Ergebnis: neues dynamisches Target Set `kicker-daily-monitoring` für den gehaltenen Kicker plus alle tatsächlichen Fantasy-Free-Agent-Kicker aus `kicker-streaming-inputs.json`.
