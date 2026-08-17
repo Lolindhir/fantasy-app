@@ -62,13 +62,31 @@ dataSources:
     generator: public/requests/RequestPlayers.ps1
     helpers:
       - public/requests/utils/player/PlayerUtils.psm1
+    localDocumentation: public/requests/RequestPlayers.ai-doc.yaml
     category: generated-output
     role: Full generated player read model
     description: >
       Complete generated player output used by Angular and by downstream
-      generation steps that need the full player universe.
+      generation steps that need the full player universe. Players[].ID is the
+      canonical Sleeper player_id resolved through the Tank01 sleeperBotID join;
+      Players[].TankID preserves the Tank01 playerID for provider provenance.
+    identityContract:
+      canonicalField: ID
+      canonicalSource: Sleeper player_id
+      providerField: TankID
+      providerSource: Tank01 playerID
+      requirements:
+        - every generated player record has a non-empty canonical ID
+        - canonical ID values are globally unique within Players.json
+      validation: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
+      failureBehavior: >
+        Fail closed before change comparison, timestamp, backup and write. The
+        existing last-known-good Players.json remains untouched. Diagnostics list
+        every duplicate ID together with TankID, Name, TeamID and Position for all
+        conflicting records.
     timestamped: true
-    backup: false
+    backup: true
+    backupPathPattern: public/data/backup/Players_<UTC timestamp>.json
 
   relevantPlayers:
     path: public/data/Players_Relevant.json
@@ -386,6 +404,8 @@ dataFlow:
 
 notesForAIAgents:
   - Generated JSON should generally be changed through generation logic, not manually.
+  - Players.json requires a non-empty, globally unique canonical Players.ID for every record; RequestPlayers must fail closed before persistence when the Tank01-to-Sleeper identity join creates a collision.
+  - Player identity collision diagnostics must preserve provider provenance by listing TankID plus Name, TeamID and Position for every conflicting record; do not silently deduplicate or choose a winner.
   - Draft generation depends on current transaction output.
   - Draft DisplayStatus is a generated UI label owned by the draft generation utilities; keep Status and SleeperStatus as technical/source status fields.
   - Drafts.json exposes SleeperStartTime from source start_time and DraftStartTimeUtc as the generated UTC representation when a start time exists.
