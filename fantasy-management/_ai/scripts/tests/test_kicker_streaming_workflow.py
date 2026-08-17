@@ -42,12 +42,24 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
 
         self.assertIn('cron: "45 4 * * *"', workflow)
         self.assertIn('cron: "45 5 * * *"', workflow)
+        self.assertIn("- fantasy-management/sources/external-rankings/**", workflow)
+        self.assertIn("- fantasy-management/sources/external-signals/**", workflow)
         self.assertIn(
-            "Scheduled consolidation selected for 06:45 Europe/Berlin.",
+            "fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py",
             workflow,
         )
+        self.assertIn("jobs:\n  gate:", workflow)
+        self.assertIn("needs: gate", workflow)
+        self.assertIn("if: needs.gate.outputs.run == 'true'", workflow)
+        self.assertIn("concurrency:\n      group: fantasy-operations-input-materialization", workflow)
         self.assertIn("cancel-in-progress: true", workflow)
         self.assertIn("timeout-minutes: 15", workflow)
+
+        gate_index = workflow.index("  gate:")
+        materialize_index = workflow.index("  materialize:")
+        concurrency_index = workflow.index("    concurrency:", materialize_index)
+        self.assertLess(gate_index, materialize_index)
+        self.assertGreater(concurrency_index, materialize_index)
 
         for immediate_path in (
             "public/data/League.json",
@@ -56,15 +68,8 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         ):
             self.assertIn(immediate_path, workflow)
 
-        self.assertNotIn(
-            "- fantasy-management/sources/external-rankings/**",
-            workflow,
-        )
-        self.assertNotIn(
-            "- fantasy-management/sources/external-signals/**",
-            workflow,
-        )
         self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn('git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA"', workflow)
 
 
 if __name__ == "__main__":
