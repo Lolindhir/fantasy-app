@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/free-agent-movement-events.schema.json",
+  "title": "Fantasy Operations Free Agent Movement Events",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "generated_at", "input_fingerprint", "source", "population", "events", "quality"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "free-agent-movement-events"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source": {"type": "object", "additionalProperties": true},
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positions", "current_discovery_count", "previous_discovery_count", "event_count", "event_type_counts", "event_priority_counts", "baseline_mode"],
+      "properties": {
+        "positions": {"type": "array", "uniqueItems": true, "items": {"enum": ["QB", "RB", "WR", "TE", "K"]}},
+        "current_discovery_count": {"type": "integer", "minimum": 0},
+        "previous_discovery_count": {"type": "integer", "minimum": 0},
+        "event_count": {"type": "integer", "minimum": 0},
+        "event_type_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "event_priority_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "baseline_mode": {"enum": ["initial_baseline", "comparison"]}
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["player_id", "name", "position", "event_type", "event_priority", "current_research_priority", "previous_research_priority", "current_state_hash", "previous_state_hash", "changed_dimensions", "current_material_families", "previous_material_families", "current_replacement_classification", "previous_replacement_classification", "threshold_summary", "cross_signal_summary", "structural_changes", "final_roster_recommendation"],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+          "event_type": {"enum": ["new", "changed", "structural_change", "resolved"]},
+          "event_priority": {"enum": ["high", "medium", "low"]},
+          "current_research_priority": {"type": ["string", "null"], "enum": ["high", "medium", "low", null]},
+          "previous_research_priority": {"type": ["string", "null"], "enum": ["high", "medium", "low", null]},
+          "current_state_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+          "previous_state_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+          "changed_dimensions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "current_material_families": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "previous_material_families": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "current_replacement_classification": {"type": ["string", "null"]},
+          "previous_replacement_classification": {"type": ["string", "null"]},
+          "threshold_summary": {"type": "array", "items": {"type": "object"}},
+          "cross_signal_summary": {"type": "array", "items": {"type": "object"}},
+          "structural_changes": {"type": "array", "items": {"type": "object"}},
+          "final_roster_recommendation": {"type": "null"}
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "movement_quality_status", "previous_state_status"],
+      "properties": {
+        "status": {"enum": ["ok", "warning"]},
+        "movement_quality_status": {"enum": ["ok", "warning"]},
+        "previous_state_status": {"enum": ["available", "not_available"]}
+      }
+    }
+  }
+}
