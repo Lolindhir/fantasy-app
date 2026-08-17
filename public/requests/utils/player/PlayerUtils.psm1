@@ -41,11 +41,88 @@ function Get-PlayersFromFile {
     }
 }
 
+function Test-UniquePlayerIds {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyCollection()]
+        [array]$Players
+    )
+
+    $playersById = @{}
+    $playersWithoutId = @()
+
+    foreach ($player in @($Players)) {
+        $playerId = [string]$player.ID
+
+        if ([string]::IsNullOrWhiteSpace($playerId)) {
+            $playersWithoutId += $player
+            continue
+        }
+
+        if (-not $playersById.ContainsKey($playerId)) {
+            $playersById[$playerId] = @()
+        }
+
+        $playersById[$playerId] = @($playersById[$playerId]) + @($player)
+    }
+
+    $duplicateGroups = @(
+        $playersById.GetEnumerator() |
+            Where-Object { @($_.Value).Count -gt 1 } |
+            Sort-Object -Property Name
+    )
+
+    if ($playersWithoutId.Count -eq 0 -and $duplicateGroups.Count -eq 0) {
+        return $true
+    }
+
+    $errorLines = @(
+        "Player data validation failed. Players.json will not be overwritten; the last known good file is preserved."
+    )
+
+    if ($playersWithoutId.Count -gt 0) {
+        $errorLines += "Missing canonical Players.ID on $($playersWithoutId.Count) record(s):"
+
+        foreach ($player in $playersWithoutId) {
+            $tankId = if ($null -ne $player.TankID -and -not [string]::IsNullOrWhiteSpace([string]$player.TankID)) { [string]$player.TankID } else { "<missing>" }
+            $name = if ($null -ne $player.Name -and -not [string]::IsNullOrWhiteSpace([string]$player.Name)) { [string]$player.Name } else { "<missing>" }
+            $teamId = if ($null -ne $player.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$player.TeamID)) { [string]$player.TeamID } else { "<missing>" }
+            $position = if ($null -ne $player.Position -and -not [string]::IsNullOrWhiteSpace([string]$player.Position)) { [string]$player.Position } else { "<missing>" }
+
+            $errorLines += "- ID=<missing>; TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+        }
+    }
+
+    if ($duplicateGroups.Count -gt 0) {
+        $errorLines += "Duplicate canonical Players.ID values detected: $($duplicateGroups.Count)"
+
+        foreach ($group in $duplicateGroups) {
+            $recordSummaries = @(
+                @($group.Value) | ForEach-Object {
+                    $tankId = if ($null -ne $_.TankID -and -not [string]::IsNullOrWhiteSpace([string]$_.TankID)) { [string]$_.TankID } else { "<missing>" }
+                    $name = if ($null -ne $_.Name -and -not [string]::IsNullOrWhiteSpace([string]$_.Name)) { [string]$_.Name } else { "<missing>" }
+                    $teamId = if ($null -ne $_.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$_.TeamID)) { [string]$_.TeamID } else { "<missing>" }
+                    $position = if ($null -ne $_.Position -and -not [string]::IsNullOrWhiteSpace([string]$_.Position)) { [string]$_.Position } else { "<missing>" }
+
+                    "TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+                }
+            )
+
+            $errorLines += "- ID=$($group.Name): $($recordSummaries -join ' | ')"
+        }
+    }
+
+    throw ($errorLines -join [Environment]::NewLine)
+}
+
 function Compare-Players {
     param(
         [object]$OldPlayers,
         [object]$NewPlayers
     )
+
+    Test-UniquePlayerIds -Players @($NewPlayers) | Out-Null
 
     if (-not $OldPlayers) {
         return $true

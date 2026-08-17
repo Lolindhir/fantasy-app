@@ -1,0 +1,70 @@
+id: request-players
+title: Request Players
+layer: generator-scripts
+
+responsibility: >
+  Builds the current generated player read model from Tank01 and Sleeper-backed
+  player identities, enrichments and historical inputs, then writes Players.json
+  only when the generated dataset passes its integrity checks and has changed.
+
+owns:
+  - generation of public/data/Players.json
+  - Tank01-to-Sleeper player identity join
+  - canonical player ID assignment
+  - player-data integrity validation before persistence
+  - timestamp and backup creation for successful changed outputs
+
+doesNotOwn:
+  - Angular player presentation
+  - Fantasy Management recommendations
+  - downstream player-signal materialization rules
+
+identityContract:
+  canonicalId:
+    field: Players[].ID
+    source: Sleeper player_id
+    join: Tank01 sleeperBotID -> Sleeper player_id
+    requirements:
+      - non-empty for every generated player record
+      - globally unique within Players.json
+  providerId:
+    field: Players[].TankID
+    source: Tank01 playerID
+    purpose: >
+      Preserves the Tank01 source identity so collisions in the canonical Sleeper
+      identity can be diagnosed without losing provider provenance.
+
+integrityValidation:
+  helper: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
+  invocation: >
+    Compare-Players validates every newly generated player collection before
+    change comparison; RequestPlayers.ps1 calls Compare-Players before timestamp,
+    backup and Players.json write operations.
+  failClosed: true
+  failureBehavior:
+    - abort the player generation run with a terminating error
+    - do not overwrite public/data/Players.json
+    - preserve the last known good Players.json
+    - do not create a new backup or timestamp for the rejected dataset
+  diagnostics:
+    - report the number of missing canonical IDs when present
+    - report every duplicate canonical Players.ID
+    - include TankID, Name, TeamID and Position for each conflicting source record
+
+persistence:
+  target: public/data/Players.json
+  backupEnabled: true
+  backupPathPattern: public/data/backup/Players_<UTC timestamp>.json
+  backupTiming: >
+    The previous Players.json is backed up only after the newly generated player
+    dataset has passed integrity validation and a semantic change was detected.
+
+relatedManualDocs:
+  - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/domain.yaml
+  - .ai-context/manual/data-sources.yaml
+
+aiWarnings:
+  - Never resolve duplicate canonical IDs by silently dropping one record.
+  - A duplicate Players.ID is an upstream identity collision and must remain visible as a data-quality failure.
+  - Downstream materializers may keep their own duplicate-ID guard as defense in depth, but the player generator is the earliest publishing boundary and must fail first.
