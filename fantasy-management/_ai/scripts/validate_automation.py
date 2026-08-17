@@ -104,6 +104,27 @@ def load_json(path: Path, report: Report) -> Any | None:
     return None
 
 
+def validate_pretty_json(path: Path, data: Any, report: Report) -> None:
+    """Require stable human-readable serialization for durable State files."""
+
+    try:
+        actual = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return
+    except UnicodeDecodeError as exc:
+        report.error(path, f"File is not valid UTF-8: {exc}")
+        return
+
+    expected = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+    if actual != expected:
+        report.error(
+            path,
+            "Automation State JSON must use UTF-8, 2-space indentation, and a "
+            "single trailing newline. Compact JSON is reserved for canonical "
+            "material-state hashing, not file serialization.",
+        )
+
+
 def format_json_path(path: Iterable[Any]) -> str:
     parts = list(path)
     return ".".join(str(part) for part in parts) if parts else "<root>"
@@ -505,6 +526,8 @@ def validate_automation(root: Path | None = None) -> Report:
         state = load_json(state_path, report)
         if not isinstance(state, dict):
             continue
+
+        validate_pretty_json(state_path, state, report)
 
         schema_name = (
             "automation-observation-state.schema.json"
