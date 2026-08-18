@@ -25,13 +25,15 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" != "schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Manual run: schedule gate passed."
+            echo "freshness_heartbeat=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run: schedule gate passed with freshness heartbeat."
             exit 0
           fi
 
           if [[ "$SCHEDULE_EXPRESSION" == "0 8,12,18 * * *" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Existing UTC player refresh selected."
+            echo "freshness_heartbeat=false" >> "$GITHUB_OUTPUT"
+            echo "Existing UTC player refresh selected without morning freshness heartbeat."
             exit 0
           fi
 
@@ -47,9 +49,11 @@ jobs:
 
           if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled run selected for 05:05 Europe/Berlin."
+            echo "freshness_heartbeat=true" >> "$GITHUB_OUTPUT"
+            echo "Scheduled run selected for 05:05 Europe/Berlin with freshness heartbeat."
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "freshness_heartbeat=false" >> "$GITHUB_OUTPUT"
             echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
           fi
 
@@ -67,9 +71,24 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - name: Setup Python for freshness heartbeat
+        if: steps.schedule_gate.outputs.freshness_heartbeat == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Run Request Script
         if: steps.schedule_gate.outputs.run == 'true'
         run: pwsh ./public/requests/RequestPlayers.ps1
+
+      - name: Record successful Players refresh
+        if: steps.schedule_gate.outputs.freshness_heartbeat == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id players
+          --workflow "APP • Data • Players"
+          --trigger "${{ github.event_name }}"
+          --content-path public/data/Players.json
 
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true'
@@ -77,5 +96,8 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
+          if [[ "${{ steps.schedule_gate.outputs.freshness_heartbeat }}" == "true" ]]; then
+            git add fantasy-management/sources/refresh-status/players.json
+          fi
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope players
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
