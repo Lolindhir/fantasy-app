@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-18T21:55:33.476841Z",
-  "berlin_date": "2026-08-18",
+  "generated_at": "2026-08-18T22:15:36.134601Z",
+  "berlin_date": "2026-08-19",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
     "refresh_window_start": "05:00",
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 8,
-    "fresh_count": 1,
-    "stale_count": 0,
+    "fresh_count": 0,
+    "stale_count": 1,
     "missing_count": 7,
     "failed_count": 0,
     "invalid_count": 0
@@ -29,6 +29,7 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
+      "cbs-sports",
       "sleeper-trending"
     ],
     "blocking_source_ids": [
@@ -42,6 +43,7 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
+      "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
@@ -171,10 +173,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "fresh",
-      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "status": "stale",
+      "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-08-18T17:00:55.268928Z",
-      "age_minutes": 294.64,
+      "age_minutes": 314.68,
       "content_changed": true,
       "trigger": "push"
     },
