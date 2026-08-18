@@ -12,10 +12,10 @@
     {
       "id": "league",
       "label": "APP • Data • League",
-      "kind": "timestamp",
-      "path": "public/data/Timestamps.json",
-      "timestamp_field": "League",
-      "max_age_minutes": 30,
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/league.json",
+      "required_after_local_time": "06:00",
+      "max_age_minutes": 120,
       "block_monitoring_if_unfresh": true,
       "required_for_no_event_conclusion": true,
       "affected_signal_families": [
@@ -26,9 +26,9 @@
     {
       "id": "players",
       "label": "APP • Data • Players",
-      "kind": "timestamp",
-      "path": "public/data/Timestamps.json",
-      "timestamp_field": "Players",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/players.json",
+      "required_after_local_time": "05:00",
       "max_age_minutes": 180,
       "block_monitoring_if_unfresh": true,
       "required_for_no_event_conclusion": true,

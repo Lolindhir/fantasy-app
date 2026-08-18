@@ -3,6 +3,8 @@ name: APP • Data • League
 on:
   schedule:
     - cron: '*/10 * * * *' # alle 10 Minuten
+    - cron: '35 4 * * *'   # 06:35 Europe/Berlin während CEST: Freshness-Heartbeat
+    - cron: '35 5 * * *'   # 06:35 Europe/Berlin während CET: Freshness-Heartbeat
   workflow_dispatch: # manueller Start
 
 permissions:
@@ -14,25 +16,88 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve League refresh mode
+        id: refresh_mode
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+        run: |
+          if [[ "$EVENT_NAME" != "schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "freshness_heartbeat=true" >> "$GITHUB_OUTPUT"
+            echo "Manual League refresh: run and heartbeat enabled."
+            exit 0
+          fi
+
+          if [[ "$SCHEDULE_EXPRESSION" == "*/10 * * * *" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "freshness_heartbeat=false" >> "$GITHUB_OUTPUT"
+            echo "Regular ten-minute League refresh selected."
+            exit 0
+          fi
+
+          berlin_offset="$(TZ=Europe/Berlin date +%z)"
+          if [[ "$berlin_offset" == "+0200" ]]; then
+            expected_schedule="35 4 * * *"
+          elif [[ "$berlin_offset" == "+0100" ]]; then
+            expected_schedule="35 5 * * *"
+          else
+            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
+            exit 1
+          fi
+
+          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "freshness_heartbeat=true" >> "$GITHUB_OUTPUT"
+            echo "Dedicated 06:35 Europe/Berlin League freshness refresh selected."
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "freshness_heartbeat=false" >> "$GITHUB_OUTPUT"
+            echo "Inactive DST companion League freshness cron skipped."
+          fi
+
       - name: Checkout repository
+        if: steps.refresh_mode.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Voller Git-History für Push
           token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
 
       - name: Setup Node.js
+        if: steps.refresh_mode.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
+      - name: Setup Python for freshness heartbeat
+        if: steps.refresh_mode.outputs.freshness_heartbeat == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Run Request Script
+        if: steps.refresh_mode.outputs.run == 'true'
         run: pwsh ./public/requests/RequestLeague.ps1
 
+      - name: Record successful League refresh
+        if: steps.refresh_mode.outputs.freshness_heartbeat == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id league
+          --workflow "APP • Data • League"
+          --trigger "${{ github.event_name }}"
+          --content-path public/data
+
       - name: Commit and push updates
+        if: steps.refresh_mode.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
+          if [[ "${{ steps.refresh_mode.outputs.freshness_heartbeat }}" == "true" ]]; then
+            git add fantasy-management/sources/refresh-status/league.json
+          fi
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope league
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
