@@ -12,8 +12,10 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
     def _read(self, path: str) -> str:
         return (self.root / path).read_text(encoding="utf-8")
 
-    def test_external_source_workflows_publish_success_heartbeats(self) -> None:
+    def test_source_workflows_publish_success_heartbeats(self) -> None:
         workflows = {
+            ".github/workflows/update-league.yml": ("league", "league.json"),
+            ".github/workflows/update-players.yml": ("players", "players.json"),
             ".github/workflows/update-fantasypros-rankings.yml": ("fantasypros", "fantasypros.json"),
             ".github/workflows/update-fantasycalc-rankings.yml": ("fantasycalc", "fantasycalc.json"),
             ".github/workflows/update-fantasy-football-calculator-adp.yml": (
@@ -35,6 +37,24 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
                     workflow.index("write_source_refresh_heartbeat.py"),
                     workflow.index("Commit and push updates"),
                 )
+
+    def test_league_uses_dedicated_dst_safe_morning_heartbeat_without_heartbeat_commits_every_ten_minutes(self) -> None:
+        workflow = self._read(".github/workflows/update-league.yml")
+
+        self.assertIn("cron: '*/10 * * * *'", workflow)
+        self.assertIn("cron: '35 4 * * *'", workflow)
+        self.assertIn("cron: '35 5 * * *'", workflow)
+        self.assertIn('freshness_heartbeat=false', workflow)
+        self.assertIn('freshness_heartbeat=true', workflow)
+        self.assertIn("Dedicated 06:35 Europe/Berlin League freshness refresh selected.", workflow)
+
+    def test_players_only_persists_morning_or_manual_freshness_heartbeat(self) -> None:
+        workflow = self._read(".github/workflows/update-players.yml")
+
+        self.assertIn('0 8,12,18 * * *', workflow)
+        self.assertIn("Existing UTC player refresh selected without morning freshness heartbeat.", workflow)
+        self.assertIn("Scheduled run selected for 05:05 Europe/Berlin with freshness heartbeat.", workflow)
+        self.assertIn("Manual run: schedule gate passed with freshness heartbeat.", workflow)
 
     def test_materializer_consumes_heartbeat_directory_and_publishes_gate(self) -> None:
         workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
