@@ -74,11 +74,22 @@ jobs:
         if: steps.schedule_gate.outputs.run == 'true'
         run: python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
 
+      - name: Record successful Sleeper refresh
+        if: steps.schedule_gate.outputs.run == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id sleeper-trending
+          --workflow "FM • Signal • Sleeper Trending"
+          --trigger "${{ github.event_name }}"
+          --content-path fantasy-management/sources/external-signals/roster-activity/sleeper
+
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add -A -- fantasy-management/sources/external-signals/roster-activity/sleeper/
+          git add -A -- \
+            fantasy-management/sources/external-signals/roster-activity/sleeper/ \
+            fantasy-management/sources/refresh-status/sleeper-trending.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope sleeper-trending
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
