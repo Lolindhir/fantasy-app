@@ -9,6 +9,7 @@ Dynamic facts must still be re-checked from current `public/data/League.json`, `
 ## Evidence handling
 
 - On 2026-08-14 Robert supplied WhatsApp text exports for Marcel, Flo, Jan, Tim and Dennis. The entries below distill Fantasy-relevant text messages through July 2026.
+- On 2026-08-18 Robert additionally supplied the complete current Antonio Williams negotiation with Jan from 2026-08-17 to 2026-08-18. It is likewise stored only as Fantasy-relevant distilled context, not as a raw private chat log.
 - A chat-confirmed deal is recorded as a negotiation outcome. Re-check `Transactions.json` / draft ownership when exact current or official asset provenance matters.
 - Player/value arguments below are historical beliefs used during the negotiation, not current player evaluations.
 - `<Medien ausgeschlossen>` content is not reconstructed and no missing screenshot content is inferred.
@@ -706,13 +707,66 @@ Evidence / source:
 
 - WhatsApp text export with Dennis, 2026-07-11 to 2026-07-12.
 
+## 2026-08-17 to 2026-08-18 — Jan / TeamID 4 — Antonio Williams for 2026 FA 3.04
+
+Context:
+
+- Robert wanted to convert a 2026 Free Agent Draft pick into a young dynasty player before the FA draft.
+- Antonio Williams was a deliberate conviction target rather than a random roster-depth buy. Robert had already liked Williams during the 2026 Rookie Draft and also openly acknowledged a personal Washington/Commanders bias because he rosters Jayden Daniels.
+- Robert approached Jan transparently, referenced Jan's deep WR room, asked whether Antonio Williams was genuinely movable and opened around FA 4.04 while explicitly inviting Jan to state his own price.
+
+Assets / offer path:
+
+1. Robert's opening direction:
+   - Antonio Williams to Mighty Giants.
+   - 2026 FA 4.04 to Jan as the initial price anchor.
+2. Jan confirmed that Antonio Williams was movable but set a clear threshold:
+   - because Jan had drafted Williams in the third round of the 2026 Rookie Draft, he wanted a third-round pick back;
+   - Jan also said his own list of interesting players in the upcoming FA draft was short, so selling Williams needed to be worthwhile.
+3. Robert accepted Jan's threshold the next morning without attempting to squeeze out an additional concession:
+   - Antonio Williams for Robert's 2026 FA 3.04.
+4. Jan accepted within two minutes.
+5. Robert said he would submit the trade in Sleeper.
+
+Outcome:
+
+- Chat-confirmed deal:
+  - Mighty Giants / Robert receive: Antonio Williams.
+  - Mammoth Marauders / Jan receive: 2026 FA 3.04.
+- Robert stated that he would submit the corresponding Sleeper trade immediately after the agreement.
+- Treat the deal as chat-confirmed until current `Transactions.json` / `League.json` verifies the completed platform transaction and resulting ownership.
+- The post-deal exchange remained friendly and humorous; Jan himself joked about not always replying quickly.
+
+Observed tendencies:
+
+- This is a second independent Jan example, after the Pickens negotiation, in which he stated a concrete value gap or threshold and closed immediately once Robert met it.
+- Jan used his own acquisition cost as one explicit reference point: a Rookie third invested in Antonio Williams supported his request for a third-round asset in return.
+- Jan also valued the FA pick through his actual expected player pool rather than the round label alone: his short FA target list made a later pick insufficient for him.
+- The acquisition-cost anchor should remain asset-specific evidence until repeated; it is not proof that Jan always requires the same round back.
+- Robert deliberately prioritized execution over extracting the final marginal discount. FA 3.04 was already within his pre-defined acceptable ceiling for a player on whom he had personal conviction.
+- Transparent disclosure of Robert's Commanders/Jayden Daniels bias did not create visible negotiation friction in this case.
+- A concise, friendly and low-pressure format again fit Jan well.
+
+Follow-up strategy:
+
+- With Jan, continue to establish availability and price early rather than over-explaining before he has classified the asset.
+- When Jan states a clean threshold that is already within Robert's pre-defined ceiling, a direct acceptance can be preferable to adding package complexity or bargaining purely for the last increment.
+- For FA-pick negotiations, ask or infer how Jan views the actual available player shelf; this conversation shows that his own shortlist can materially affect his willingness to trade an owned young player.
+- Do not generalize the Rookie-round acquisition-cost anchor beyond this case without additional evidence.
+- Continue to treat delayed replies as neutral unless Jan explicitly signals disinterest; the successful relationship supports light humor and low-pressure follow-up.
+
+Evidence / source:
+
+- Current WhatsApp negotiation excerpt supplied directly by Robert on 2026-08-18, covering 2026-08-17 to 2026-08-18.
+- Stored 2026 Buy-Young analysis for Antonio Williams and FA-pick opportunity cost as historical decision context.
+
 ## Cross-manager communication memory for Robert
 
-These are interaction-level observations from the supplied WhatsApp exports. They supplement, but do not replace, each manager's individual profile.
+These are interaction-level observations from the supplied WhatsApp exports and later directly supplied negotiations. They supplement, but do not replace, each manager's individual profile.
 
 - **Marcel:** Robert's maximum-detail style is a strength. Marcel actively rewards transparency, research, multiple variables and collaborative package-building.
 - **Flo:** The key blocker can be state uncertainty rather than value. First resolve whether Flo is ready to act; extra argument does not fix a deliberate wait-and-see posture.
-- **Jan:** Availability tier and price matter more than a long preamble. The Pickens deal closed as soon as one clean add-on met Jan's threshold.
+- **Jan:** Availability tier and price matter more than a long preamble. Both the Pickens and Antonio Williams deals closed as soon as one clean threshold was met; personal motivation can be disclosed without needing a long analytical pitch.
 - **Dennis:** Robert must compress. Dennis explicitly said the detailed initial offer overwhelmed him. Give a simple structure and let him research.
 - **Tim:** Detailed rationale is useful only when it fits Tim's long-term thesis. Veteran floor is weak when he is target-driven; protected assets can move through a roster-function package.
 
@@ -724,6 +778,7 @@ Robert's repeatable strengths:
 - ability to change asset types and package shape
 - willingness to accept a no and revisit later
 - conviction to protect his own critical assets even while trading aggressively
+- willingness to close at a fair pre-defined ceiling instead of optimizing every accepted trade for the final marginal concession
 
 Robert's repeatable risk:
 
