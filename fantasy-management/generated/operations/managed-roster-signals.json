@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-08-18T08:24:27Z",
-  "input_fingerprint": "92e17f23ba2c7ccd8cd8a5eafcaf271b7cd6f397bdbd58fec7fd9ad53296ca7b",
+  "generated_at": "2026-08-18T09:01:28Z",
+  "input_fingerprint": "d0a742e1bd4f36ac76647913a023331aff0766932c596182b2528fbdcb9b5131",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
     "abbreviation": "MiG",
-    "player_count": 37
+    "player_count": 38
   },
   "sources": [
     {
       "id": "league",
       "path": "public/data/League.json",
-      "content_sha256": "ef9709dbda6000b9261162335d2e2e285a81c46ccea293cd42380a1e55cb6673",
-      "source_timestamp": "2026-07-31T07:36:08Z"
+      "content_sha256": "c5a2e2fd900ff761639eab1409ee4a5752f52b20745a13a1a8408edf33cac1de",
+      "source_timestamp": "2026-08-18T09:01:28Z"
     },
     {
       "id": "players",
@@ -25,8 +25,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "c0560efdb7549e81de4562878778dec917c2d5fecf3cc5de0a01b3ca7bd089aa",
-      "source_timestamp": "2026-08-18T08:24:27Z"
+      "content_sha256": "c7bad8f27e6e113adda3b77c1444f290d44cb3af72292fdfe0f05913023f519e",
+      "source_timestamp": "2026-08-18T09:01:28Z"
     },
     {
       "id": "operations_source_catalog",
@@ -12735,6 +12735,388 @@
       }
     },
     {
+      "player_id": "13301",
+      "name": "Antonio Williams",
+      "position": "WR",
+      "nfl_team": "WSH",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 22.1,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "source_signals": {
+        "fantasypros-dynasty-superflex-ppr": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "source_kind": "expert_consensus",
+          "provider": "fantasypros",
+          "dataset_id": "dynasty-superflex-ppr",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "overall_rank": 136,
+            "percentile": 75.27,
+            "position_rank": "WR59",
+            "tier": "9"
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex"
+          }
+        },
+        "fantasycalc-dynasty-superflex-ppr-8-team": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "source_kind": "market_value",
+          "provider": "fantasycalc",
+          "dataset_id": "dynasty-superflex-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "sleeper_id",
+          "signals": {
+            "overall_rank": 185,
+            "percentile": 60.93,
+            "position_rank": 58,
+            "tier": "31",
+            "value": 1497,
+            "trend_30_day": -35,
+            "roster_percent": 0.9941,
+            "trade_frequency": 0.005
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex",
+            "team_count": 8
+          }
+        },
+        "ffc-redraft-ppr-8-team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 192,
+            "percentile": 9.48,
+            "adp": 167.4,
+            "times_drafted": 16,
+            "stdev": 10.6,
+            "sample_total_drafts": 6665,
+            "sample_start_date": "2026-08-10",
+            "sample_end_date": "2026-08-17"
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "ppr",
+            "quarterback_mode": "one_qb",
+            "team_count": 8,
+            "actual_league_team_count": 6
+          }
+        },
+        "ffc-redraft-2qb-10-team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-2qb-10-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "rank": 183,
+            "percentile": 5.7,
+            "adp": 160,
+            "times_drafted": 26,
+            "stdev": 19.2,
+            "sample_total_drafts": 4164,
+            "sample_start_date": "2026-07-18",
+            "sample_end_date": "2026-08-17"
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "source_default",
+            "quarterback_mode": "two_qb",
+            "team_count": 10,
+            "actual_league_team_count": 6
+          }
+        },
+        "ffc-redraft-ppr-8-team-kicker": {
+          "source_id": "ffc-redraft-ppr-8-team-kicker",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-ppr-8-team-kicker",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "high": null,
+            "low": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "ppr",
+            "quarterback_mode": "one_qb",
+            "team_count": 8,
+            "actual_league_team_count": 6,
+            "position_scope": "K"
+          }
+        },
+        "fftoday-redraft-kicker-preseason": {
+          "source_id": "fftoday-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "bye": null,
+            "fgm": null,
+            "fga": null,
+            "fg_pct": null,
+            "epm": null,
+            "epa": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default"
+          }
+        },
+        "cbs-sports-redraft-kicker-preseason": {
+          "source_id": "cbs-sports-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "games_played": null,
+            "fgm": null,
+            "fga": null,
+            "longest_field_goal": null,
+            "fg_1_19_made": null,
+            "fg_1_19_attempts": null,
+            "fg_20_29_made": null,
+            "fg_20_29_attempts": null,
+            "fg_30_39_made": null,
+            "fg_30_39_attempts": null,
+            "fg_40_49_made": null,
+            "fg_40_49_attempts": null,
+            "fg_50_plus_made": null,
+            "fg_50_plus_attempts": null,
+            "xpm": null,
+            "xpa": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default",
+            "source_format": "nonppr"
+          }
+        }
+      },
+      "market": {
+        "fantasypros": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 136,
+          "percentile": 75.27,
+          "position_rank": "WR59",
+          "tier": "9"
+        },
+        "fantasycalc": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 185,
+          "percentile": 60.93,
+          "position_rank": 58,
+          "tier": "31",
+          "value": 1497,
+          "trend_30_day": -35,
+          "roster_percent": 0.9941,
+          "trade_frequency": 0.005
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_source_id": "ffc-redraft-ppr-8-team",
+        "primary_applicability": "applicable",
+        "primary_listed": true,
+        "primary": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 192,
+          "percentile": 9.48,
+          "adp": 167.4,
+          "times_drafted": 16,
+          "stdev": 10.6,
+          "sample_total_drafts": 6665,
+          "sample_start_date": "2026-08-10",
+          "sample_end_date": "2026-08-17"
+        },
+        "formats": {
+          "ppr_8_team": {
+            "source_id": "ffc-redraft-ppr-8-team",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 192,
+            "percentile": 9.48,
+            "adp": 167.4,
+            "times_drafted": 16,
+            "stdev": 10.6,
+            "sample_total_drafts": 6665,
+            "sample_start_date": "2026-08-10",
+            "sample_end_date": "2026-08-17"
+          },
+          "two_qb_10_team": {
+            "source_id": "ffc-redraft-2qb-10-team",
+            "coverage_status": "listed",
+            "applicable": true,
+            "listed": true,
+            "join_method": "normalized_name_position",
+            "rank": 183,
+            "percentile": 5.7,
+            "adp": 160,
+            "times_drafted": 26,
+            "stdev": 19.2,
+            "sample_total_drafts": 4164,
+            "sample_start_date": "2026-07-18",
+            "sample_end_date": "2026-08-17"
+          },
+          "kicker_ppr_8_team": {
+            "source_id": "ffc-redraft-ppr-8-team-kicker",
+            "coverage_status": "not_applicable",
+            "applicable": false,
+            "listed": false,
+            "join_method": "not_applicable",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "high": null,
+            "low": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          }
+        },
+        "format_gap": -3.78,
+        "ppr_8_team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 192,
+          "percentile": 9.48,
+          "adp": 167.4,
+          "times_drafted": 16,
+          "stdev": 10.6,
+          "sample_total_drafts": 6665,
+          "sample_start_date": "2026-08-10",
+          "sample_end_date": "2026-08-17"
+        },
+        "two_qb_10_team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "rank": 183,
+          "percentile": 5.7,
+          "adp": 160,
+          "times_drafted": 26,
+          "stdev": 19.2,
+          "sample_total_drafts": 4164,
+          "sample_start_date": "2026-07-18",
+          "sample_end_date": "2026-08-17"
+        },
+        "kicker_ppr_8_team": {
+          "source_id": "ffc-redraft-ppr-8-team-kicker",
+          "coverage_status": "not_applicable",
+          "applicable": false,
+          "listed": false,
+          "join_method": "not_applicable",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "high": null,
+          "low": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        }
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
       "player_id": "13311",
       "name": "Chris Bell",
       "position": "WR",
@@ -14274,36 +14656,36 @@
     "issue_count": 0,
     "issues": [],
     "coverage": {
-      "managed_roster_ids": 37,
-      "resolved_players": 37,
+      "managed_roster_ids": 38,
+      "resolved_players": 38,
       "players_with_current_injury_signal": 9,
-      "primary_adp_applicable": 37,
-      "primary_adp_listed": 30,
+      "primary_adp_applicable": 38,
+      "primary_adp_listed": 31,
       "sources": {
         "fantasypros-dynasty-superflex-ppr": {
-          "applicable_players": 36,
-          "listed_players": 36,
+          "applicable_players": 37,
+          "listed_players": 37,
           "not_listed_players": 0,
           "not_applicable_players": 1,
           "ambiguous_players": 0
         },
         "fantasycalc-dynasty-superflex-ppr-8-team": {
-          "applicable_players": 36,
-          "listed_players": 36,
+          "applicable_players": 37,
+          "listed_players": 37,
           "not_listed_players": 0,
           "not_applicable_players": 1,
           "ambiguous_players": 0
         },
         "ffc-redraft-ppr-8-team": {
-          "applicable_players": 36,
-          "listed_players": 29,
+          "applicable_players": 37,
+          "listed_players": 30,
           "not_listed_players": 7,
           "not_applicable_players": 1,
           "ambiguous_players": 0
         },
         "ffc-redraft-2qb-10-team": {
-          "applicable_players": 36,
-          "listed_players": 27,
+          "applicable_players": 37,
+          "listed_players": 28,
           "not_listed_players": 9,
           "not_applicable_players": 1,
           "ambiguous_players": 0
@@ -14312,21 +14694,21 @@
           "applicable_players": 1,
           "listed_players": 1,
           "not_listed_players": 0,
-          "not_applicable_players": 36,
+          "not_applicable_players": 37,
           "ambiguous_players": 0
         },
         "fftoday-redraft-kicker-preseason": {
           "applicable_players": 1,
           "listed_players": 1,
           "not_listed_players": 0,
-          "not_applicable_players": 36,
+          "not_applicable_players": 37,
           "ambiguous_players": 0
         },
         "cbs-sports-redraft-kicker-preseason": {
           "applicable_players": 1,
           "listed_players": 1,
           "not_listed_players": 0,
-          "not_applicable_players": 36,
+          "not_applicable_players": 37,
           "ambiguous_players": 0
         }
       }
