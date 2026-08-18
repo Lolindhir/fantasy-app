@@ -4,7 +4,7 @@
   "title": "Fantasy Operations Free Agent Movement Events",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "dataset_id", "generated_at", "input_fingerprint", "source", "population", "events", "quality"],
+  "required": ["schema_version", "dataset_id", "generated_at", "input_fingerprint", "source", "population", "contract_migration", "events", "quality"],
   "properties": {
     "schema_version": {"const": 1},
     "dataset_id": {"const": "free-agent-movement-events"},
@@ -22,7 +22,35 @@
         "event_count": {"type": "integer", "minimum": 0},
         "event_type_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
         "event_priority_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
-        "baseline_mode": {"enum": ["initial_baseline", "comparison"]}
+        "baseline_mode": {"enum": ["initial_baseline", "comparison", "contract_migration", "contract_migration_with_evidence_change"]}
+      }
+    },
+    "contract_migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "current_materiality_contract_fingerprint",
+        "previous_materiality_contract_fingerprint",
+        "current_evidence_fingerprint",
+        "previous_evidence_fingerprint",
+        "contract_changed",
+        "evidence_changed",
+        "comparison_event_count_before_suppression",
+        "suppressed_event_count",
+        "suppressed_event_type_counts"
+      ],
+      "properties": {
+        "status": {"enum": ["not_applicable", "metadata_unavailable", "not_needed", "silent_rebaseline", "fail_open_evidence_changed"]},
+        "current_materiality_contract_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "previous_materiality_contract_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "current_evidence_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "previous_evidence_fingerprint": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "contract_changed": {"type": ["boolean", "null"]},
+        "evidence_changed": {"type": ["boolean", "null"]},
+        "comparison_event_count_before_suppression": {"type": "integer", "minimum": 0},
+        "suppressed_event_count": {"type": "integer", "minimum": 0},
+        "suppressed_event_type_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
       }
     },
     "events": {
@@ -56,11 +84,12 @@
     "quality": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "movement_quality_status", "previous_state_status"],
+      "required": ["status", "movement_quality_status", "previous_state_status", "migration_status"],
       "properties": {
         "status": {"enum": ["ok", "warning"]},
         "movement_quality_status": {"enum": ["ok", "warning"]},
-        "previous_state_status": {"enum": ["available", "not_available"]}
+        "previous_state_status": {"enum": ["available", "not_available"]},
+        "migration_status": {"enum": ["not_applicable", "metadata_unavailable", "not_needed", "silent_rebaseline", "fail_open_evidence_changed"]}
       }
     }
   }
