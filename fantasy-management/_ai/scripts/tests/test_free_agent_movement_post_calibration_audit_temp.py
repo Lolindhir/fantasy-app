@@ -10,7 +10,7 @@ import build_free_agent_movement_dataset as movement
 
 class PostCalibrationAuditTemp(unittest.TestCase):
     def test_print_post_calibration_metrics(self) -> None:
-        root = Path(__file__).resolve().parents[3]
+        root = Path(__file__).resolve().parents[4]
         config = root / "fantasy-management/automation/free-agent-movement-materialization.json"
         result = movement.build(root, config)
 
