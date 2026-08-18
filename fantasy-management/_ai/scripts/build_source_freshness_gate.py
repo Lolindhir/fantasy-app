@@ -176,7 +176,7 @@ def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[
         "sources": sources,
         "quality": {
             "status": overall_status,
-            "freshness_basis": "successful refresh heartbeats for external sources; canonical app timestamps for league and players",
+            "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
             "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false",
         },
     }
