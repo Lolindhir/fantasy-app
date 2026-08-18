@@ -23,10 +23,12 @@ Human-facing manager references follow `owner-registry.json`: use Robert, Marcel
 
 On 2026-08-14 Robert supplied WhatsApp text exports for Marcel, Flo, Jan, Tim and Dennis. The direct text messages through July 2026 were used to enrich the negotiation sections below and `trade-negotiation-history.md`.
 
+On 2026-08-18 Robert additionally supplied the complete Antonio Williams negotiation with Jan from 2026-08-17 to 2026-08-18. That current exchange was used to update Jan's process evidence and Robert's negotiation-style evidence below.
+
 - Treat paraphrased historical player/value statements as beliefs at the time of the conversation, not as current player truth.
 - `<Medien ausgeschlossen>` content was not reconstructed and must not be inferred.
 - Private non-Fantasy conversation is not part of the league context.
-- The raw WhatsApp exports are not stored in the repository; only the Fantasy-relevant distilled context is persisted.
+- The raw WhatsApp exports and later supplied private chats are not stored in the repository; only the Fantasy-relevant distilled context is persisted.
 
 ## TeamID 1 / Robert (Mighty Giants)
 
@@ -74,13 +76,16 @@ Negotiation tendencies:
   - This helped produce a later Fannin agreement with Tim, but the cadence should still be calibrated to the counterparty.
 - **Confirmed, high confidence:** Protects a small set of internally critical assets even while trading aggressively.
   - During 2026 talks he explicitly kept Loveland, MHJ, his premium Rookie firsts and FA 1.01 off the table in relevant negotiations.
-  - He is willing to pay above his neutral estimate for a target when the roster fit or personal conviction justifies it, as acknowledged in the Fannin reacquisition.
+  - He is willing to pay above his neutral estimate or accept the upper end of his pre-defined fair range for a target when roster fit or personal conviction justifies it. The Fannin reacquisition and the later FA 3.04 payment for Antonio Williams are direct examples.
 - **Confirmed, high confidence:** Communication detail must be adapted by manager.
   - Marcel actively enjoys the deep-dive style.
   - Dennis explicitly said the initial highly detailed 2026 offer overwhelmed him and delayed his response.
   - Flo's uncertainty was driven more by roster/rule state than by a lack of argument; more detail did not resolve the timing issue.
-  - With Jan, a concise price/counter sequence closed Pickens quickly once the threshold was met.
+  - With Jan, concise availability/price exchanges closed both Pickens and Antonio Williams quickly once Jan's threshold was met.
   - Tim engages with rationale but responds best when the package fits his long-term thesis rather than merely offering veteran floor.
+- **Provisional, medium-high confidence:** Robert values successful execution and trade-partner rapport enough that he does not need to optimize every acceptable deal for the final marginal concession.
+  - In the Antonio Williams negotiation, Robert explicitly preferred making the trade at FA 3.04 once Jan named that fair threshold rather than continuing to bargain despite having considered a lower opening price.
+  - This is consistent with the stronger Fannin reacquisition, where Robert knowingly paid for a conviction target rather than optimizing only against neutral market value.
 
 Practical guardrail for future Robert trade messages:
 
@@ -89,6 +94,7 @@ Practical guardrail for future Robert trade messages:
 - Use full analytical collaboration with Marcel.
 - With Flo, first resolve whether the player is genuinely available and whether he is ready to trade under the current roster/cap state.
 - With Tim, lead with how the asset supports his stated long-term roster plan and specific positional/target convictions.
+- Preserve an internal ceiling before outreach; once a counterparty's clean threshold is already inside that ceiling, Robert may intentionally prioritize execution over negotiating solely for a marginal discount.
 
 ## TeamID 2 / Marcel (Ruhr Valley Packers)
 
@@ -219,23 +225,33 @@ Negotiation tendencies:
 
 - **Provisional, medium-high confidence:** Jan distinguishes clearly between a core tier and a movable second tier rather than treating every player as generically available for enough pieces.
   - In May 2026 he was very hesitant on Burrow, while saying a star QB could in principle move.
-  - At WR he explicitly said he could move someone from the second row and named Pickens as available.
+  - At WR he explicitly said he could move someone from his second row and named Pickens as available.
   - Garrett Wilson was later described as extremely important to his team and valuable beyond the next season.
-- **Provisional, medium-high confidence:** Once the requested value threshold is met, Jan can close quickly without extended bargaining.
-  - Warren alone was not strong enough for Pickens.
-  - When Robert added Rookie 3.05, Jan immediately accepted.
+  - In August 2026 he explicitly confirmed Antonio Williams as movable when Robert asked directly.
+- **Confirmed, high confidence:** Once Jan states a requested value threshold and Robert meets it, Jan can close quickly without extended bargaining.
+  - Warren alone was not strong enough for Pickens; when Robert added Rookie 3.05, Jan immediately accepted.
+  - For Antonio Williams, Jan asked for a third-round asset rather than Robert's opening FA 4.04. Robert offered exact FA 3.04 the next morning and Jan accepted within two minutes.
 - **Provisional, medium confidence:** Conviction/core assets require a premium and may not be unlockable with a quantity package.
   - For Garrett Wilson he directly asked for Robert's first-round pick.
   - Robert's counter of a second plus Troy Franklin did not produce a deal in the supplied export.
-- **Candidate, low-medium confidence:** Slow responses are not reliable evidence of low interest.
-  - Jan cited being busy, not checking Sleeper, and handling several other trade inquiries before answering the Pickens discussion.
+- **Candidate, medium confidence:** Jan may use his own acquisition cost as one reference point when pricing a young player, but this is currently asset-specific evidence rather than a stable rule.
+  - For Antonio Williams he explicitly referenced having drafted him in the third round as the reason he wanted a third-round asset back.
+  - Do not infer that matching the original round will be required for unrelated players without more evidence.
+- **Candidate, medium confidence:** Jan's valuation of Free-Agent-Draft picks can depend materially on his actual expected player shelf rather than the displayed round alone.
+  - In the Antonio Williams negotiation he said his own list of interesting FA players was short, so a later pick did not make the sale worthwhile.
+  - Treat this as current FA-draft context, not a permanent generic pick preference.
+- **Provisional, medium confidence:** Slow responses are not reliable evidence of low interest.
+  - Jan previously cited being busy, not checking Sleeper and handling several other trade inquiries before answering the Pickens discussion.
+  - After the Antonio Williams deal he jokingly referenced not always replying promptly, while the actual agreement itself closed immediately once the price was settled.
 
 Recommended approach for Robert:
 
 - Start by classifying the target: core, second tier or genuinely surplus.
 - Ask for/estimate the price early instead of over-explaining before availability is known.
-- When Jan names a clear gap, answer with one clean counter; the Pickens deal suggests this is efficient.
+- When Jan names a clear gap or threshold, answer with one clean counter; two successful deals now support this as the efficient default.
+- If Jan's stated threshold is already inside Robert's pre-defined ceiling, do not assume additional bargaining is necessary merely to optimize the final increment.
 - Do not assume generic market value will move one of his researched conviction/core assets.
+- When FA picks are involved, ask or infer how Jan views the actual available-player shelf; his current shortlist can be a direct pricing input.
 - Allow response time and use a light ping rather than treating silence as rejection.
 
 ## TeamID 5 / Dennis (Team DennisLACards)
