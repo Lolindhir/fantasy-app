@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-18T17:03:04.606070Z",
+  "generated_at": "2026-08-18T17:09:16.204411Z",
   "berlin_date": "2026-08-18",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -12,8 +12,8 @@
   "population": {
     "source_count": 8,
     "fresh_count": 1,
-    "stale_count": 2,
-    "missing_count": 5,
+    "stale_count": 0,
+    "missing_count": 7,
     "failed_count": 0,
     "invalid_count": 0
   },
@@ -63,24 +63,25 @@
     {
       "id": "league",
       "label": "APP \u2022 Data \u2022 League",
-      "kind": "timestamp",
-      "path": "public/data/Timestamps.json",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/league.json",
       "block_monitoring_if_unfresh": true,
       "required_for_no_event_conclusion": true,
       "affected_signal_families": [
         "league_state",
         "ownership"
       ],
-      "status": "stale",
-      "reason": "timestamp_exceeds_max_age",
-      "checked_at": "2026-08-18T09:01:28Z",
-      "age_minutes": 481.61
+      "status": "missing",
+      "reason": "heartbeat_missing",
+      "checked_at": null,
+      "age_minutes": null,
+      "content_changed": null
     },
     {
       "id": "players",
       "label": "APP \u2022 Data \u2022 Players",
-      "kind": "timestamp",
-      "path": "public/data/Timestamps.json",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/players.json",
       "block_monitoring_if_unfresh": true,
       "required_for_no_event_conclusion": true,
       "affected_signal_families": [
@@ -88,10 +89,11 @@
         "injury_availability",
         "role_opportunity"
       ],
-      "status": "stale",
-      "reason": "timestamp_exceeds_max_age",
-      "checked_at": "2026-08-18T12:26:48Z",
-      "age_minutes": 276.28
+      "status": "missing",
+      "reason": "heartbeat_missing",
+      "checked_at": null,
+      "age_minutes": null,
+      "content_changed": null
     },
     {
       "id": "fantasypros",
@@ -172,7 +174,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-18T17:00:55.268928Z",
-      "age_minutes": 2.16,
+      "age_minutes": 8.35,
       "content_changed": true,
       "trigger": "push"
     },
@@ -195,7 +197,7 @@
   ],
   "quality": {
     "status": "blocked",
-    "freshness_basis": "successful refresh heartbeats for external sources; canonical app timestamps for league and players",
+    "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
 }
