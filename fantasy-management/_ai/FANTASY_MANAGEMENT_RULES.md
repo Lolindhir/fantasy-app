@@ -159,6 +159,32 @@ Always add a plausibility layer before turning player data into a recommendation
 - check whether external rankings, ADP or news make sense in this league's scoring, roster size and replacement-level context
 - state unresolved conflicts plainly
 
+### Rookie draft-capital and taxi guardrail
+
+For rookies and very early-career prospects, NFL draft capital is a first-class evaluation signal and must be checked explicitly before recommending a cut, drop, taxi move or stash decision.
+
+When a rookie is materially near the roster cut line:
+
+- record the NFL draft round and exact overall pick when available;
+- treat Day 1 and Day 2 NFL draft capital as meaningful evidence of team investment, expected opportunity and organizational conviction, while still checking current role, health, usage and competition;
+- compare NFL draft capital with the player's fantasy Rookie Draft acquisition cost, but do not keep a player merely because Mighty Giants previously spent a pick on him; fantasy acquisition cost is context, not a sunk-cost justification;
+- do not let a temporarily weak Dynasty ECR, ADP or market value automatically override meaningful NFL draft capital before the player has had a reasonable opportunity to establish or lose an NFL role;
+- explicitly distinguish a prospect whose market value is low because his NFL thesis has failed from one whose thesis is still unresolved because of injury, depth-chart timing, limited opportunity or normal rookie development;
+- compare the rookie against other Mighty Giants rookies/prospects and the actual free-agent replacement shelf before cutting him;
+- use age, athletic profile, production, receiving/three-down path, positional competition and current team context to determine how much patience the draft-capital prior deserves;
+- lower the protection from draft capital when stronger current evidence shows the team has moved on, the player has lost the relevant role, the underlying profile has materially failed or roster opportunity cost is clearly higher.
+
+Taxi slots are flexible rookie-development slots, not protection for the players currently occupying them.
+
+For Mighty Giants cut and roster-limit analysis:
+
+- evaluate every taxi-eligible rookie in the same prospect pool regardless of whether he is currently listed on `Roster` or `Taxi`;
+- do not exclude current Taxi players from cut consideration merely because they are already on Taxi;
+- rank all eligible rookies/prospects first, then allocate the available Taxi slots to the best stash candidates after deciding which total assets to keep;
+- when Taxi eligibility allows it, prefer using Taxi to preserve unresolved high-upside rookies who have low immediate starting utility but meaningful future role or market-value upside.
+
+NFL draft capital is a strong prior, not an absolute hold rule. The final decision must still be league-specific and based on expected future value, role path, replacement level and opportunity cost.
+
 ### Opportunity provenance guardrail
 
 Historical production must be interpreted together with how the opportunity was created, especially for rookies, breakouts, backups and players with only one meaningful season of usage.
@@ -444,6 +470,8 @@ Do not:
 - treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual 6-team replacement level and Mighty Giants marginal gain
 - value a Free-Agent Draft pick as if it were a same-numbered Rookie Draft pick or generic pick asset without deriving its actual league-specific free-agent shelf
 - project a breakout or young player's historical production forward without checking whether the opportunity was earned against normal competition or created by injuries, suspensions, roster turnover or temporary vacancies
+- cut a rookie near the roster boundary without explicitly checking NFL draft round/overall pick and whether the prospect thesis has actually failed or is merely unresolved
+- treat the players currently occupying Taxi slots as automatically protected from cut analysis; Taxi-eligible rookies must be ranked as one shared prospect pool before Taxi slots are assigned
 - invent ADP, rankings, market values or injury news
 - treat Stoned Lack takes as final recommendations
 - infer players from bad transcript names without verification
