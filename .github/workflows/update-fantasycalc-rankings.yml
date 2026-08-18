@@ -77,11 +77,22 @@ jobs:
           python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py
           --skip-unchanged
 
+      - name: Record successful FantasyCalc refresh
+        if: steps.schedule_gate.outputs.run == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id fantasycalc
+          --workflow "FM • Ranking • FantasyCalc Market"
+          --trigger "${{ github.event_name }}"
+          --content-path fantasy-management/sources/external-rankings/market-value/fantasycalc
+
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add fantasy-management/sources/external-rankings/market-value/fantasycalc/
+          git add \
+            fantasy-management/sources/external-rankings/market-value/fantasycalc/ \
+            fantasy-management/sources/refresh-status/fantasycalc.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope fantasycalc-rankings
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
