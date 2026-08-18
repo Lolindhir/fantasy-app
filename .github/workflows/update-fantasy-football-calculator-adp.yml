@@ -76,11 +76,22 @@ jobs:
           python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
           --skip-unchanged
 
+      - name: Record successful FFC refresh
+        if: steps.schedule_gate.outputs.run == 'true'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id fantasy-football-calculator
+          --workflow "FM • Ranking • FFC ADP"
+          --trigger "${{ github.event_name }}"
+          --content-path fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
+
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/
+          git add \
+            fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/ \
+            fantasy-management/sources/refresh-status/fantasy-football-calculator.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope ffc-adp-rankings
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
