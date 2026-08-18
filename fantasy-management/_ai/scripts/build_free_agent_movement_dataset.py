@@ -26,6 +26,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_player_signal_dataset_with_projection_extensions as projection_ext  # noqa: E402
+import free_agent_movement_market_calibration as market_calibration  # noqa: E402
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -76,6 +77,11 @@ def validate_config(config: dict[str, Any]) -> None:
         raise FreeAgentMovementMaterializationError("owned_boundary_quantile must be between 0 and 1")
     if not isinstance(near_distance, (int, float)) or float(near_distance) < 0:
         raise FreeAgentMovementMaterializationError("near_distance_percentile_points must be non-negative")
+    if config.get("market_value_materiality") is not None:
+        try:
+            market_calibration.validate_config(config.get("market_value_materiality"))
+        except market_calibration.MarketCalibrationError as exc:
+            raise FreeAgentMovementMaterializationError(str(exc)) from exc
 
 
 def validate_source_documents(free_agents: dict[str, Any], players: dict[str, Any]) -> None:
@@ -153,7 +159,12 @@ def _historical_loaded_source(
     )
 
 
-def _build_source_history(root: Path, definition: dict[str, Any], windows: list[int]) -> SourceHistory:
+def _build_source_history(
+    root: Path,
+    definition: dict[str, Any],
+    windows: list[int],
+    evaluation_date: date,
+) -> SourceHistory:
     current = ops.resolve_catalog_source(root, definition)
     pointer = load_json(current.pointer_source.path)
     current_date = _snapshot_date(pointer, current.ranking_source.path)
@@ -177,7 +188,7 @@ def _build_source_history(root: Path, definition: dict[str, Any], windows: list[
     baselines: dict[int, ops.LoadedCatalogSource | None] = {}
     baseline_dates: dict[int, str | None] = {}
     for window in windows:
-        cutoff = current_date - timedelta(days=window)
+        cutoff = evaluation_date - timedelta(days=window)
         candidates = [item for item in dated_dirs if item[0] <= cutoff]
         if not candidates:
             baselines[window] = None
@@ -561,6 +572,7 @@ def _market_movement(
     histories: list[SourceHistory],
     windows: list[int],
     thresholds: dict[str, Any],
+    market_value_materiality: dict[str, Any] | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[int, float | None]]:
     providers: dict[str, Any] = {}
     crossed: list[dict[str, Any]] = []
@@ -601,7 +613,21 @@ def _market_movement(
                     crossed.append({"family": "dynasty_market", "kind": "overall_rank_movement", "severity": "medium", "window_days": window, "delta": overall_delta, "threshold": thresholds["overall_rank_places"], "source_id": source_id})
                 if position_delta is not None and thresholds.get("position_rank_places") is not None and abs(position_delta) >= float(thresholds["position_rank_places"]):
                     crossed.append({"family": "dynasty_market", "kind": "position_rank_movement", "severity": "medium", "window_days": window, "delta": position_delta, "threshold": thresholds["position_rank_places"], "source_id": source_id})
-            if tier_changed:
+            if market_value_materiality is not None:
+                crossed.extend(
+                    market_calibration.materiality_crossings(
+                        config=market_value_materiality,
+                        source_id=source_id,
+                        window_days=window,
+                        percentile_delta=percentile_delta,
+                        value_delta=value_delta,
+                        value_percent_change=value_pct_delta,
+                        tier_changed=tier_changed,
+                        tier_from=baseline_signals.get("tier"),
+                        tier_to=current_signals.get("tier"),
+                    )
+                )
+            elif history.definition.get("source_kind") == "expert_consensus" and tier_changed:
                 crossed.append({"family": "dynasty_market", "kind": "tier_change", "severity": "high", "window_days": window, "source_id": source_id, "from": baseline_signals.get("tier"), "to": current_signals.get("tier")})
             provider_windows[str(window)] = {
                 "baseline_snapshot_date": history.baseline_dates.get(window),
@@ -869,6 +895,11 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
     players = load_json(player_path)
     league = load_json(league_path)
     validate_source_documents(free_agents, players)
+    evaluation_date = _extract_date(free_agents.get("generated_at"))
+    if evaluation_date is None:
+        raise FreeAgentMovementMaterializationError(
+            "free-agent-signals generated_at must provide the movement evaluation date"
+        )
     previous_free_agents: dict[str, Any] | None = None
     previous_by_id: dict[str, dict[str, Any]] = {}
     if previous_free_agent_path is not None and previous_free_agent_path.is_file():
@@ -883,6 +914,20 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
     windows = sorted(config["comparison_windows_days"])
     thresholds = _load_thresholds(root, config)
     catalog, pending_sources = _load_merged_catalog(root, config)
+    market_value_materiality = config.get("market_value_materiality")
+    if market_value_materiality is not None:
+        catalog_source_ids = {
+            str(definition.get("source_id"))
+            for definition in catalog["sources"]
+            if definition.get("active")
+        }
+        missing_calibration_sources = sorted(
+            market_calibration.configured_source_ids(market_value_materiality) - catalog_source_ids
+        )
+        if missing_calibration_sources:
+            raise FreeAgentMovementMaterializationError(
+                f"Configured market calibration sources are absent from the active catalog: {missing_calibration_sources}"
+            )
 
     histories: dict[str, SourceHistory] = {}
     history_issues: list[dict[str, Any]] = []
@@ -890,7 +935,12 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
         if not definition.get("active"):
             continue
         try:
-            histories[definition["source_id"]] = _build_source_history(root, definition, windows)
+            histories[definition["source_id"]] = _build_source_history(
+                root,
+                definition,
+                windows,
+                evaluation_date,
+            )
         except (ops.MaterializationError, FreeAgentMovementMaterializationError) as exc:
             raise FreeAgentMovementMaterializationError(
                 f"Could not build history for active source {definition['source_id']}: {exc}"
@@ -923,7 +973,11 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
             player, _primary_adp_source(histories, position), windows, thresholds["adp"]
         )
         market, market_crossed, market_coverage, market_deltas = _market_movement(
-            player, _market_histories(histories, position), windows, thresholds["market"]
+            player,
+            _market_histories(histories, position),
+            windows,
+            thresholds["market"],
+            market_value_materiality,
         )
         projections, projection_crossed, projection_coverage, projection_deltas = _projection_movement(
             player, _projection_histories(histories, position), windows, thresholds["projections"], scoring
@@ -1003,6 +1057,7 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
     }
     fingerprint_payload = {
         "config": config,
+        "evaluation_date": evaluation_date.isoformat(),
         "free_agent_input_fingerprint": free_agents.get("input_fingerprint"),
         "player_input_fingerprint": players.get("input_fingerprint"),
         "previous_free_agent_input_fingerprint": (previous_free_agents or {}).get("input_fingerprint"),
@@ -1023,6 +1078,9 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
     source_quality = free_agents.get("quality") or {}
     quality_status = "warning" if source_quality.get("status") == "warning" else "ok"
     history_status = "partial" if history_issues else "full"
+    materiality_thresholds = dict(thresholds)
+    if market_value_materiality is not None:
+        materiality_thresholds["market_value_materiality"] = market_value_materiality
     result = {
         "schema_version": SCHEMA_VERSION,
         "dataset_id": DATASET_ID,
@@ -1035,11 +1093,13 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
             "source_catalog": source_cfg["source_catalog"],
             "source_catalog_extensions": source_cfg.get("source_catalog_extensions") or [],
             "materiality_profiles": config["materiality_profiles"],
+            "comparison_anchor_date": evaluation_date.isoformat(),
+            "comparison_anchor_policy": "calendar windows are anchored to the evaluation date; each source uses the last available snapshot at or before the cutoff",
             "previous_free_agent_signals": {"status": "available" if previous_free_agents is not None else "not_available", "input_fingerprint": (previous_free_agents or {}).get("input_fingerprint")},
             "ranking_histories": source_records,
         },
         "comparison_windows_days": windows,
-        "materiality_thresholds": thresholds,
+        "materiality_thresholds": materiality_thresholds,
         "replacement_context": {
             "method": "position-specific lower-boundary proxy from current league-owned normalized family percentiles",
             "owned_boundary_quantile": replacement_cfg["owned_boundary_quantile"],
