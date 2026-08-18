@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    {
+      "id": "nflverse.players",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/players/raw-latest.csv",
+      "metadataPath": "providers/nflverse/players/metadata.json",
+      "requiredColumns": ["gsis_id", "display_name", "pfr_id", "position"],
+      "minimumRows": 5000,
+      "kind": "identity",
+      "refreshPolicy": "periodic",
+      "retentionPolicy": "latest-with-git-history",
+      "license": "CC BY 4.0",
+      "attribution": "nflverse"
+    },
+    {
+      "id": "nflverse.ff-player-ids",
+      "provider": "nflverse-ffverse",
+      "upstream": "dynastyprocess/data",
+      "sourceUrl": "https://raw.githubusercontent.com/dynastyprocess/data/master/files/db_playerids.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/ff-player-ids/raw-latest.csv",
+      "metadataPath": "providers/nflverse/ff-player-ids/metadata.json",
+      "requiredColumns": ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "draft_year", "draft_round", "draft_pick", "draft_ovr"],
+      "minimumRows": 5000,
+      "kind": "identity-mapping",
+      "refreshPolicy": "periodic",
+      "retentionPolicy": "latest-with-git-history",
+      "license": "CC BY 4.0",
+      "attribution": "DynastyProcess data via nflverse/ffverse"
+    },
+    {
+      "id": "nflverse.draft-picks",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/draft_picks/draft_picks.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/draft-picks/raw-latest.csv",
+      "metadataPath": "providers/nflverse/draft-picks/metadata.json",
+      "requiredColumns": ["season", "round", "pick", "team", "gsis_id", "pfr_player_id", "pfr_player_name", "position"],
+      "minimumRows": 5000,
+      "kind": "historical-event",
+      "refreshPolicy": "missing-or-current-year",
+      "retentionPolicy": "permanent-by-season",
+      "license": "CC BY 4.0",
+      "attribution": "nflverse; draft data via Pro Football Reference"
+    }
+  ]
+}
