@@ -10,6 +10,8 @@ The implementation is owned by:
 fantasy-management/automation/free-agent-movement-materialization.json
 fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
 fantasy-management/_ai/scripts/free_agent_movement_market_calibration.py
+fantasy-management/_ai/scripts/free_agent_movement_contract.py
+fantasy-management/_ai/scripts/build_free_agent_movement_events.py
 ```
 
 The generated state remains:
@@ -103,6 +105,42 @@ Signal families remain separate:
 FantasyPros and FantasyCalc are separate provider views inside the Dynasty-market family. Their provider-native values and tiers are preserved; they are not averaged into a single canonical player value.
 
 Cross-signal confirmation/divergence continues to operate on comparable family-level percentile movement. Provider-specific materiality does not turn FantasyCalc into an expert-consensus source or FantasyPros into a trade-value source.
+
+## Materiality-contract migrations
+
+Movement state persists two independent provenance fingerprints before event comparison:
+
+- `materiality_contract.fingerprint` describes the semantic rules used to classify Movement state;
+- `evidence.input_fingerprint` describes the current evidence/context evaluated under those rules.
+
+The materiality-contract fingerprint includes the explicit positive integer `materiality_contract.version`, comparison windows, resolved materiality thresholds, replacement rules, cross-signal rules and activity thresholds. Any semantic materiality-code change that is not already represented by those resolved values **must bump `materiality_contract.version`**. Logging, formatting and performance-only changes must not bump the version.
+
+The evidence fingerprint includes the current Free-Agent and Player input fingerprints, evaluation date/current and baseline ranking-history identities, league state, source-catalog content and Movement history/quality context. Previous-Free-Agent rollover is intentionally excluded because structural Day-over-Day changes are edge events; rolling that baseline forward must not make otherwise identical current evidence appear new.
+
+The event layer applies this policy only when **both the current and previous Movement states carry both fingerprints**:
+
+```text
+same contract
+  -> normal comparison
+
+changed contract + identical evidence
+  -> baseline_mode = contract_migration
+  -> silent rebaseline
+  -> events = []
+  -> candidate migration diff remains audit-visible as suppressed counts
+
+changed contract + changed evidence
+  -> baseline_mode = contract_migration_with_evidence_change
+  -> fail open
+  -> normal events retained
+  -> quality = warning
+```
+
+A legacy previous state without comparable fingerprints can never enable silent suppression. It remains a normal comparison until two comparable fingerprinted Movement states exist.
+
+This is a safety rule: a configuration or code change alone is never sufficient reason to suppress monitoring events. Silent rebaseline is permitted only when the Event layer can prove that the current evidence fingerprint is identical across the contract boundary.
+
+After a silent migration, the newly published Movement state becomes the normal previous baseline for the next materialization. An unchanged subsequent run therefore returns to ordinary `comparison` mode with zero events.
 
 ## Calibration evidence: 2026-08-18
 

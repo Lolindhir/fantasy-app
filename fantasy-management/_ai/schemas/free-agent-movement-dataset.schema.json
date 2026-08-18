@@ -22,6 +22,23 @@
     "dataset_id": {"const": "free-agent-movement-signals"},
     "generated_at": {"type": ["string", "null"]},
     "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "materiality_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "fingerprint"],
+      "properties": {
+        "version": {"type": "integer", "minimum": 1},
+        "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_fingerprint"],
+      "properties": {
+        "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
     "source": {"type": "object", "additionalProperties": true},
     "comparison_windows_days": {
       "type": "array",
