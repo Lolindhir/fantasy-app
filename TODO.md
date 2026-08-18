@@ -56,6 +56,63 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Ziel: Backups in einen sichtbaren Repo-Root-Ordner wie `data-backup/` verschieben, weiterhin versionieren und für manuelle Nutzung verfügbar halten.
   - Mit anpassen: `ConfigUtils.psm1`, `.github/workflows/clean-backups.yml`, betroffene Update-Workflows mit `git add public/data/** data-backup/**` und ggf. Deploy-Absicherung.
 
+### Data Generation / NFL Source Data
+
+- [ ] Persistente, providerunabhängige NFL-Quelldatenschicht aufbauen.
+  - Kontext: Externe NFL-Daten werden derzeit überwiegend direkt während einzelner Generatorläufe von Sleeper und Tank01 bezogen. nflverse stellt zusätzlich umfangreiche strukturierte Datensätze bereit, darunter Player-Identitäten, Draft Picks, Combine, Rosters, Schedules, Player Stats, Snap Counts, Depth Charts und Contracts.
+  - Ziel: Externe Beschaffung von der internen Nutzung entkoppeln. Provider-Rohdaten sollen reproduzierbar erhalten bleiben, während Generatoren und Fantasy-Management-Workflows gegen ein stabiles providerunabhängiges NFL-Datenmodell arbeiten.
+  - Zielstruktur: Einen Repo-Root-Bereich `source-data/` prüfen und einführen; `source-data/providers/<provider>/` für providernahe Rohdaten und Provenienz sowie `source-data/nfl/` für normalisierte providerunabhängige NFL-Daten verwenden.
+  - Abgrenzung: `public/data/**` bleibt generierte App-Ausgabe und darf nicht zum dauerhaften Rohdaten- oder Source-Store werden. `fantasy-management/sources/**` bleibt auf analysebezogene Fantasy-Management-Quellen beschränkt.
+  - Provenienz: Je Dataset Provider, Upstream-Quelle, Abrufzeitpunkt, Source-URL bzw. Release-Identität, Format, Content-Hash, Zeilenanzahl, Schema-Version, Lizenz und erforderliche Attribution maschinenlesbar speichern.
+  - Schutz: Neue Imports zunächst validieren und fail-closed behandeln; ein fehlerhafter oder unvollständiger Fetch darf einen vorhandenen letzten guten Datenbestand nicht zerstören.
+
+- [ ] NFL-Source-Dataset-Registry und Refresh-/Retention-Regeln definieren.
+  - Ziel: Für jedes unterstützte Dataset festlegen, ob es immutable, saisonal finalisierbar, snapshot-basiert oder fortlaufend dynamisch ist.
+  - Erste Priorität: Players, Fantasy Player IDs, Draft Picks, Combine, Rosters, Weekly Rosters, Schedules, Player Stats, Snap Counts, Depth Charts und Contracts.
+  - Immutable bzw. historisch stabile Daten wie abgeschlossene Drafts und Combine-Ergebnisse dauerhaft saison- bzw. jahrgangsbezogen erhalten und im Normalbetrieb nicht erneut überschreiben.
+  - Saisonale Daten wie Stats, Schedules und Weekly Rosters während der laufenden Saison aktualisieren und nach einem validierten Saisonabschluss finalisieren.
+  - Snapshot-Daten wie Depth Charts zeitpunktbezogen speichern, sodass historische Änderungen rekonstruierbar bleiben.
+  - Große Play-Level-Datensätze wie Play-by-Play, Participation und FTN Charting zunächst nur registrieren und erst bei einem konkreten Consumer dauerhaft importieren.
+  - Für jeden Datensatz festlegen, wann ein Force-Refresh bzw. eine historische Korrektur zulässig ist.
+
+- [ ] Provideradapter für nflverse mit Raw-Persistierung und Content-Hash-Vergleich entwickeln.
+  - Ziel: nflverse-Releases bzw. deren CSV-/Parquet-Dateien zentral abrufen, vor Veröffentlichung validieren und nur bei semantisch neuem Inhalt persistieren.
+  - Raw Store: Den erfolgreich bezogenen Providerstand unverändert oder verlustfrei reproduzierbar unter `source-data/providers/nflverse/` erhalten.
+  - Effizienz: Unveränderte Dateien anhand Content-Hash nicht erneut schreiben; keine täglichen datierten Kopien identischer großer Dateien erzeugen.
+  - Fallback: Wenn nflverse nicht erreichbar ist, vorhandene lokale Source-Daten verwenden, sofern der jeweilige Consumer keinen zwingend aktuellen Stand benötigt.
+  - Austauschbarkeit: nflverse-spezifische Feldnamen und Downloadpfade dürfen nicht in App-Generatoren oder Fantasy-Management-Consumer durchsickern.
+
+- [ ] Kanonische NFL-Player-Identity-Bridge aufbauen.
+  - Ziel: Eine providerneutrale NFL-Spieleridentität definieren und Zuordnungen zu Sleeper, Tank01, GSIS, ESPN, PFR, PFF, OTC, FantasyPros und weiteren verfügbaren IDs zentral materialisieren; GSIS als bevorzugten stabilen NFL-Schlüssel prüfen, aber nicht ungeprüft voraussetzen.
+  - Quelle: nflverse Players und Fantasy Player IDs zunächst kombinieren und vorhandene Sleeper-/Tank01-Zuordnungen aus der aktuellen Player-Pipeline dagegen auditieren.
+  - Leitplanke: `Players.json -> ID` vorerst weiterhin als bestehenden Sleeper-basierten App-Vertrag erhalten; keine unnötige Migration des Frontend-Contracts.
+  - Validierung: Eindeutigkeit, fehlende IDs und One-to-many-/Many-to-one-Konflikte explizit erkennen; keine stillen Dedupes oder heuristische Gewinnerauswahl.
+  - Nutzen: Neue Provider sollen zukünftig über die zentrale Identity Bridge angebunden werden, statt jeweils eigene Name-Matching-Logik einzuführen.
+
+- [ ] NFL Draft Capital und Combine als erste persistente kanonische Source-Datasets materialisieren.
+  - Draft: Draftjahr, Runde, Position innerhalb der Runde, Overall Pick, Draft-Team und Player-Identität in einem stabilen internen Format speichern; `undrafted`, `not_eligible` und `unknown` semantisch nicht miteinander vermischen.
+  - Combine: Jahrgangsbezogene Combine-Messungen mit Player-Identität und Draft-Verknüpfung speichern.
+  - Historie: Bereits abgeschlossene Jahrgänge dauerhaft behalten und standardmäßig nur fehlende neue Jahrgänge ergänzen; bewusste historische Korrekturen nur über einen expliziten Force-/Repair-Pfad zulassen.
+  - Integration: Erst nach Stabilisierung der Source-Datasets entscheiden, welche Felder in `Players.json` oder weitere generierte App-Readmodels übernommen werden.
+  - Validierung: Coverage gegen den aktuellen relevanten Playerbestand prüfen, insbesondere Rookies, ältere Spieler und UDFAs.
+
+- [ ] nflverse Player Stats, Schedules, Rosters und Snap Counts gegen die bestehende Tank01-/Sleeper-Datenbasis evaluieren.
+  - Ziel: Feld-Coverage, Historientiefe, Aktualität, Identitätsqualität und bekannte Lücken der Quellen systematisch vergleichen.
+  - Ergebnis: Pro fachlichem Feld festlegen, welche Quelle primär, sekundär oder nur Fallback ist; keine pauschale Ablösung von Tank01 ohne datenbezogenen Vergleich.
+  - Historie: Prüfen, ob nflverse bestehende Lücken in `public/data/past_seasons` verlässlich schließen kann.
+  - Synergie: Ergebnis mit den bestehenden TODOs zur historischen Player-/Games-/Schedule-Rekonstruktion und zum Tank01-Requestbudget abstimmen.
+
+- [ ] nflverse Depth Charts als mögliche zusätzliche Depth-Chart-Quelle evaluieren.
+  - Ziel: Abdeckung und Aktualität der timestamp-basierten aktuellen Depth Charts gegen Sleeper und weitere geprüfte Depth-Chart-Quellen vergleichen.
+  - Datenmodell: Historische Snapshots erhalten, statt nur den jeweils neuesten Stand zu überschreiben.
+  - Nutzung: Depth-Chart-Änderungen später als eigenständiges Monitoring-Signal ableiten können.
+  - Leitplanke: Depth-Chart-Rankings bleiben Rollen-/Roster-Signale und dürfen nicht ohne zusätzliche Usage-Daten als Fantasy-Opportunity interpretiert werden.
+
+- [ ] Lizenz- und Attribution-Regeln für persistierte externe NFL-Datasets dokumentieren und technisch abbilden.
+  - Ziel: Lizenz und erforderliche Attribution pro Dataset im Source-Manifest festhalten, statt pauschal eine einzige nflverse-Lizenz anzunehmen.
+  - Besonderheit: Datensätze mit eigenständiger Upstream-Lizenz bzw. Attribution, insbesondere FTN- und Participation-Daten, getrennt kennzeichnen.
+  - Schutz: Vor Aufnahme weiterer externer Provider prüfen, ob lokale Persistierung, Weiterverarbeitung und Veröffentlichung im Repository mit den jeweiligen Bedingungen vereinbar sind.
+
 ### Data Generation / Drafts
 
 - [ ] Draft-Live-Enrichment für `public/data/Drafts.json` bei nächstem laufenden Sleeper-Draft validieren.
