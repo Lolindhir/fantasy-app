@@ -5,15 +5,27 @@ The current movement dataset is a research-state view and may keep a player list
 multiple days while a 7/14/30-day signal remains material. This layer compares that
 state with the previous successful movement dataset and emits only new, materially
 changed, structural, or resolved discovery events. The first run is a silent baseline.
+
+When both movement states carry materiality-contract and evidence fingerprints, a pure
+materiality-contract change with identical evidence is treated as a silent contract
+migration. If contract and evidence change together, comparison fails open and normal
+events are retained.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import free_agent_movement_contract as movement_contract  # noqa: E402
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -50,10 +62,14 @@ def sha256_json(value: Any) -> str:
 def validate_config(config: dict[str, Any]) -> None:
     if config.get("schema_version") != CONFIG_SCHEMA_VERSION:
         raise MovementEventMaterializationError("Unexpected movement-event config schema version")
-    source = (config.get("source") or {}).get("movement_signals")
+    source_cfg = config.get("source") if isinstance(config.get("source"), dict) else {}
+    source = source_cfg.get("movement_signals")
+    materiality_config = source_cfg.get("movement_materiality_config")
     output = (config.get("output") or {}).get("movement_events")
     if not isinstance(source, str) or not source:
         raise MovementEventMaterializationError("movement-event config requires source.movement_signals")
+    if materiality_config is not None and (not isinstance(materiality_config, str) or not materiality_config):
+        raise MovementEventMaterializationError("source.movement_materiality_config must be a non-empty string when configured")
     if not isinstance(output, str) or not output:
         raise MovementEventMaterializationError("movement-event config requires output.movement_events")
 
@@ -67,6 +83,34 @@ def validate_movement(value: dict[str, Any]) -> None:
     discoveries = value.get("discoveries")
     if not isinstance(discoveries, list):
         raise MovementEventMaterializationError("movement input discoveries must be an array")
+
+
+def _annotate_current(root: Path, config: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+    source_cfg = config.get("source") if isinstance(config.get("source"), dict) else {}
+    relative = source_cfg.get("movement_materiality_config")
+    if not relative:
+        return current
+    movement_config = load_json(root / str(relative))
+    if not isinstance(movement_config, dict):
+        raise MovementEventMaterializationError("movement materiality config must be an object")
+    try:
+        return movement_contract.annotate_movement(root, current, movement_config)
+    except movement_contract.MovementContractError as exc:
+        raise MovementEventMaterializationError(str(exc)) from exc
+
+
+def _metadata_fingerprints(value: dict[str, Any] | None) -> tuple[str | None, str | None]:
+    if value is None:
+        return None, None
+    contract = value.get("materiality_contract") if isinstance(value.get("materiality_contract"), dict) else {}
+    evidence = value.get("evidence") if isinstance(value.get("evidence"), dict) else {}
+    contract_fingerprint = contract.get("fingerprint")
+    evidence_fingerprint = evidence.get("input_fingerprint")
+    if not isinstance(contract_fingerprint, str) or len(contract_fingerprint) != 64:
+        contract_fingerprint = None
+    if not isinstance(evidence_fingerprint, str) or len(evidence_fingerprint) != 64:
+        evidence_fingerprint = None
+    return contract_fingerprint, evidence_fingerprint
 
 
 def _direction(delta: Any, kind: str) -> str | None:
@@ -224,8 +268,32 @@ def _event(
     }
 
 
+def _comparison_events(
+    current_by_id: dict[str, dict[str, Any]],
+    previous_by_id: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for player_id, current_item in current_by_id.items():
+        previous_item = previous_by_id.get(player_id)
+        structural = _structural_changes(current_item)
+        if previous_item is None:
+            events.append(_event("new", current_item, None))
+            continue
+        current_state = material_state(current_item)
+        previous_state = material_state(previous_item)
+        if current_state != previous_state:
+            events.append(_event("changed", current_item, previous_item))
+        elif structural:
+            events.append(_event("structural_change", current_item, previous_item))
+
+    for player_id, previous_item in previous_by_id.items():
+        if player_id not in current_by_id:
+            events.append(_event("resolved", None, previous_item))
+    return events
+
+
 def validate_output(value: dict[str, Any]) -> None:
-    required = {"schema_version", "dataset_id", "generated_at", "input_fingerprint", "source", "population", "events", "quality"}
+    required = {"schema_version", "dataset_id", "generated_at", "input_fingerprint", "source", "population", "contract_migration", "events", "quality"}
     missing = sorted(required - set(value))
     if missing:
         raise MovementEventMaterializationError(f"Output missing required keys: {missing}")
@@ -248,6 +316,7 @@ def build(root: Path, config_path: Path, previous_path: Path | None = None) -> d
     if not isinstance(current, dict):
         raise MovementEventMaterializationError("movement input must be an object")
     validate_movement(current)
+    current = _annotate_current(root, config, current)
 
     previous: dict[str, Any] | None = None
     if previous_path is not None and previous_path.is_file():
@@ -267,25 +336,32 @@ def build(root: Path, config_path: Path, previous_path: Path | None = None) -> d
         if isinstance(item, dict) and item.get("player_id") is not None
     }
 
-    events: list[dict[str, Any]] = []
+    candidate_events = _comparison_events(current_by_id, previous_by_id) if previous is not None else []
     baseline_mode = "initial_baseline" if previous is None else "comparison"
-    if previous is not None:
-        for player_id, current_item in current_by_id.items():
-            previous_item = previous_by_id.get(player_id)
-            structural = _structural_changes(current_item)
-            if previous_item is None:
-                events.append(_event("new", current_item, None))
-                continue
-            current_state = material_state(current_item)
-            previous_state = material_state(previous_item)
-            if current_state != previous_state:
-                events.append(_event("changed", current_item, previous_item))
-            elif structural:
-                events.append(_event("structural_change", current_item, previous_item))
+    events = candidate_events
 
-        for player_id, previous_item in previous_by_id.items():
-            if player_id not in current_by_id:
-                events.append(_event("resolved", None, previous_item))
+    current_contract, current_evidence = _metadata_fingerprints(current)
+    previous_contract, previous_evidence = _metadata_fingerprints(previous)
+    contract_changed: bool | None = None
+    evidence_changed: bool | None = None
+    migration_status = "not_applicable" if previous is None else "metadata_unavailable"
+    suppressed_event_count = 0
+    suppressed_event_type_counts: dict[str, int] = {}
+
+    if previous is not None and all((current_contract, current_evidence, previous_contract, previous_evidence)):
+        contract_changed = current_contract != previous_contract
+        evidence_changed = current_evidence != previous_evidence
+        if not contract_changed:
+            migration_status = "not_needed"
+        elif not evidence_changed:
+            migration_status = "silent_rebaseline"
+            baseline_mode = "contract_migration"
+            suppressed_event_count = len(candidate_events)
+            suppressed_event_type_counts = dict(sorted(Counter(str(event["event_type"]) for event in candidate_events).items()))
+            events = []
+        else:
+            migration_status = "fail_open_evidence_changed"
+            baseline_mode = "contract_migration_with_evidence_change"
 
     events.sort(
         key=lambda event: (
@@ -299,11 +375,27 @@ def build(root: Path, config_path: Path, previous_path: Path | None = None) -> d
     priority_counts = Counter(str(event["event_priority"]) for event in events)
     movement_quality = current.get("quality") if isinstance(current.get("quality"), dict) else {}
     quality_status = "warning" if movement_quality.get("status") == "warning" else "ok"
+    if migration_status == "fail_open_evidence_changed":
+        quality_status = "warning"
+
+    migration = {
+        "status": migration_status,
+        "current_materiality_contract_fingerprint": current_contract,
+        "previous_materiality_contract_fingerprint": previous_contract,
+        "current_evidence_fingerprint": current_evidence,
+        "previous_evidence_fingerprint": previous_evidence,
+        "contract_changed": contract_changed,
+        "evidence_changed": evidence_changed,
+        "comparison_event_count_before_suppression": len(candidate_events),
+        "suppressed_event_count": suppressed_event_count,
+        "suppressed_event_type_counts": suppressed_event_type_counts,
+    }
 
     fingerprint_payload = {
         "config": config,
         "current_fingerprint": current.get("input_fingerprint"),
         "previous_fingerprint": (previous or {}).get("input_fingerprint"),
+        "contract_migration": migration,
         "events": events,
     }
     result = {
@@ -321,7 +413,7 @@ def build(root: Path, config_path: Path, previous_path: Path | None = None) -> d
                 "status": "available" if previous is not None else "not_available",
                 "input_fingerprint": (previous or {}).get("input_fingerprint"),
             },
-            "comparison_policy": "stable material state ignores window churn and treats structural changes as edge events",
+            "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open",
         },
         "population": {
             "positions": sorted(POSITIONS),
@@ -332,11 +424,13 @@ def build(root: Path, config_path: Path, previous_path: Path | None = None) -> d
             "event_priority_counts": dict(sorted(priority_counts.items())),
             "baseline_mode": baseline_mode,
         },
+        "contract_migration": migration,
         "events": events,
         "quality": {
             "status": quality_status,
             "movement_quality_status": movement_quality.get("status"),
             "previous_state_status": "available" if previous is not None else "not_available",
+            "migration_status": migration_status,
         },
     }
     validate_output(result)
@@ -356,20 +450,34 @@ def main() -> int:
     if previous_path is not None and not previous_path.is_absolute():
         previous_path = root / previous_path
     config = load_json(config_path)
+    validate_config(config)
+
+    current_path = root / config["source"]["movement_signals"]
+    current = load_json(current_path)
+    if not isinstance(current, dict):
+        raise MovementEventMaterializationError("movement input must be an object")
+    validate_movement(current)
+    annotated_current = _annotate_current(root, config, current)
+    if annotated_current != current:
+        write_json(current_path, annotated_current)
+
     result = build(root, config_path, previous_path)
     if args.check:
         print(
             f"Validated movement events: baseline={result['population']['baseline_mode']}; "
+            f"migration={result['contract_migration']['status']}; "
             f"current={result['population']['current_discovery_count']}; events={result['population']['event_count']}."
         )
         return 0
     output_path = root / config["output"]["movement_events"]
     write_json(output_path, result)
     print(
-        "Wrote {} with {} events from {} current discoveries; types={}; priorities={}.".format(
+        "Wrote {} with {} events from {} current discoveries; baseline={}; migration={}; types={}; priorities={}.".format(
             output_path.relative_to(root),
             result["population"]["event_count"],
             result["population"]["current_discovery_count"],
+            result["population"]["baseline_mode"],
+            result["contract_migration"]["status"],
             result["population"]["event_type_counts"],
             result["population"]["event_priority_counts"],
         )
