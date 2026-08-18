@@ -239,6 +239,28 @@ class MovementEventTests(unittest.TestCase):
             self.assertEqual(result["population"]["baseline_mode"], "comparison")
             self.assertEqual(result["population"]["event_count"], 1)
 
+    def test_contract_version_changes_only_contract_fingerprint(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        movement = json.loads((root / "fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8"))
+        config = json.loads((root / "fantasy-management/automation/free-agent-movement-materialization.json").read_text(encoding="utf-8"))
+        first = MODULE.movement_contract.annotate_movement(root, movement, config)
+        changed = json.loads(json.dumps(config))
+        changed["materiality_contract"]["version"] += 1
+        second = MODULE.movement_contract.annotate_movement(root, movement, changed)
+        self.assertNotEqual(first["materiality_contract"]["fingerprint"], second["materiality_contract"]["fingerprint"])
+        self.assertEqual(first["evidence"]["input_fingerprint"], second["evidence"]["input_fingerprint"])
+
+    def test_current_evidence_change_changes_only_evidence_fingerprint(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        movement = json.loads((root / "fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8"))
+        config = json.loads((root / "fantasy-management/automation/free-agent-movement-materialization.json").read_text(encoding="utf-8"))
+        first = MODULE.movement_contract.annotate_movement(root, movement, config)
+        changed = json.loads(json.dumps(movement))
+        changed["source"]["free_agent_signals"]["input_fingerprint"] = "f" * 64
+        second = MODULE.movement_contract.annotate_movement(root, changed, config)
+        self.assertEqual(first["materiality_contract"]["fingerprint"], second["materiality_contract"]["fingerprint"])
+        self.assertNotEqual(first["evidence"]["input_fingerprint"], second["evidence"]["input_fingerprint"])
+
     def test_current_repository_initial_baseline_validates(self) -> None:
         root = SCRIPT_PATH.parents[3]
         result = MODULE.build(root, root / "fantasy-management/automation/free-agent-movement-event-materialization.json")
