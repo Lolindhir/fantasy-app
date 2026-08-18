@@ -89,7 +89,7 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 5. Load league-format notes and relevant Knowledge.
 6. Evaluate role, production, age, format fit and salary.
 7. Verify top candidates.
-8. Store under `analyses/YYYY/free-agent-boards/` when requested.
+8. Store under `analyses/YYYY/free-agents/` when requested.
 
 ## Kicker Streaming analysis workflow
 
