@@ -101,11 +101,22 @@ jobs:
           python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py
           --skip-unchanged
 
+      - name: Record successful CBS Sports refresh
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id cbs-sports
+          --workflow "FM • Projection • CBS Sports"
+          --trigger "${{ github.event_name }}"
+          --content-path fantasy-management/sources/external-rankings/projections/cbs-sports
+
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add fantasy-management/sources/external-rankings/projections/cbs-sports/
+          git add \
+            fantasy-management/sources/external-rankings/projections/cbs-sports/ \
+            fantasy-management/sources/refresh-status/cbs-sports.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope cbs-projections
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
