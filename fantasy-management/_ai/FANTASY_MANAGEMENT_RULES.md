@@ -57,26 +57,30 @@ Use starters only when the task is about in-season lineup or start/sit context.
 
 ## 5. League format rule
 
-Always inspect `League.json -> RosterSize` and `League.json -> ScoringType` when player value depends on format.
+Always inspect current `League.json` when player value, roster capacity or transaction feasibility depends on league format. Do not treat a previously documented position count, bench count, taxi count, reserve count or total roster size as canonical current truth.
 
-Known current format may include:
+Derive the current format at analysis time:
 
-- 2 QB
-- 2 RB
-- 2 WR
-- 2 TE
-- 4 FLEX
-- 1 K
-- 16 BN
+- derive league size from `League.json -> TotalTeams`;
+- derive fixed starter counts and flex structure by counting the corresponding entries in `League.json -> RosterSize`;
+- derive regular active-roster capacity as the total number of entries in `League.json -> RosterSize`;
+- derive bench capacity by counting `BN` entries in `League.json -> RosterSize`;
+- derive taxi capacity from `League.json -> Settings.taxi_slots` and taxi eligibility from the current taxi settings;
+- derive reserve capacity from `League.json -> Settings.reserve_slots` and reserve usability from the current reserve-eligibility settings and player designations;
+- derive scoring from `League.json -> ScoringType` rather than from remembered league settings;
+- for a team's current regular active-player count, do not count players currently occupying Taxi or Reserve as regular active players when those IDs are also present in `Teams[].Roster`;
+- do not assume that nominal Taxi or Reserve capacity is usable for a specific player; eligibility and current designation must be checked before using those slots in roster arithmetic.
 
-Implications:
+When reporting roster-limit math, state the derived capacity and the current occupied counts that produced the result. If `RosterSize`, Taxi, Reserve or eligibility changes, recalculate instead of carrying forward an old number.
 
-- QBs are strongly boosted because two fixed QB spots exist.
-- TEs are strongly boosted because two fixed TE spots exist.
-- RB and WR depth matters because four flex spots exist.
-- In a 6-team league, replacement level is high, so quality matters more than mere playability.
-- Depth still matters because many weekly slots must be filled.
-- Kickers are usually replaceable unless the data shows a special reason.
+Implications must follow the dynamically derived format:
+
+- increase QB value when multiple fixed QB starter spots materially create scarcity;
+- increase TE value when multiple fixed TE starter spots materially create scarcity;
+- scale RB/WR depth value with the number and eligibility of flex spots;
+- adjust replacement level to the current number of teams and the actual rostered/free-agent player pool;
+- in a shallow league, quality matters more than mere playability, while the number of weekly starter and flex slots still determines how much depth is useful;
+- kickers are usually replaceable unless the current data shows a special reason.
 
 ### Replacement-level and marginal-gain guardrail
 
@@ -86,7 +90,7 @@ Before using a format-driven positional premium in a recommendation:
 
 - derive actual positional scarcity from current league size, fixed starter requirements, flex eligibility, roster depth and the current rostered/free-agent player pool;
 - treat the presence of multiple startable players at the same position in the fantasy free-agent pool as evidence that league-specific replacement level may be materially higher than generic market rankings imply;
-- in shallow leagues, especially this 6-team format, explicitly downweight generic Superflex QB scarcity when the real league pool shows abundant startable QB replacement;
+- in shallow leagues, explicitly downweight generic Superflex QB scarcity when the real league pool shows abundant startable QB replacement;
 - compare a candidate against the weakest relevant Mighty Giants starter, flex option or scarce-position backup threshold rather than against an abstract positional rank alone;
 - distinguish **starting-lineup marginal gain**, **depth/injury-insurance value**, **dynasty/market/trade-asset value** and **strategic/blocking value** instead of collapsing them into one player rank;
 - do not recommend the highest generic overall-ranked player as the best Mighty Giants move unless either the league-specific marginal gain or the asset/liquidity case justifies that choice.
@@ -95,7 +99,7 @@ This guardrail applies to QB, TE and every other position whose generic external
 
 Core question:
 
-Can this player regularly provide a meaningful weekly contribution in this 2QB / 2TE / 4Flex format, serve as valuable scarce-position backup, or be used as a trade asset for an upgrade?
+Can this player regularly provide a meaningful weekly contribution in the currently derived league format, serve as valuable scarce-position backup, or be used as a trade asset for an upgrade?
 
 ### Free-Agent Draft pick opportunity-cost guardrail
 
@@ -448,7 +452,7 @@ For a strong Mighty Giants team:
 
 ### QB
 
-Strongly boosted by two fixed QB spots.
+Apply the premium implied by the dynamically derived number of fixed QB starter spots and the actual league replacement level.
 
 ### RB
 
@@ -456,11 +460,11 @@ Important for fixed RB and flex spots. Short-term production matters for contend
 
 ### WR
 
-Often more stable long-term. Flex depth matters, but in a 6-team league upper starter/flex quality matters most.
+Often more stable long-term. Flex depth matters, but in a shallow league upper starter/flex quality matters most.
 
 ### TE
 
-Strongly boosted by two fixed TE spots. Mid-tier TEs may be more valuable than in standard formats if they produce usable weekly points.
+Apply the premium implied by the dynamically derived number of fixed TE starter spots. Mid-tier TEs may be more valuable when the league requires multiple weekly TE starters and the actual replacement pool is thin.
 
 ### K
 
@@ -484,7 +488,10 @@ Do not:
 - name external rankings without live checking when current values matter
 - use internal league data for player role assumptions without external plausibility checks when role matters
 - use external rankings or news without checking league ownership, scoring, roster size, salary/cap and Mighty Giants fit
-- treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual 6-team replacement level and Mighty Giants marginal gain
+- hardcode or carry forward league-size, starter, FLEX, bench, Taxi, Reserve or total roster-capacity counts when current `League.json` can derive them
+- calculate regular active roster occupancy by counting Taxi or Reserve occupants again when those players are also present in `Teams[].Roster`
+- assume a nominal Taxi or Reserve slot can hold a specific player without checking current eligibility
+- treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual replacement level and Mighty Giants marginal gain
 - value a Free-Agent Draft pick as if it were a same-numbered Rookie Draft pick or generic pick asset without deriving its actual league-specific free-agent shelf
 - freeze a Free-Agent Draft board at the pre-draft player pool; players cut before or during the draft become draft-eligible and can change the board for later selections
 - cut a superior keep/trade asset merely to seed the Free-Agent Draft with a decoy; strategic pre-draft cuts are valid only when the cut is already justified by roster value and opportunity cost
@@ -500,7 +507,7 @@ Do not:
 - present old chat values as current data
 - infer stale league data from timestamps, commit age or an unchanged generation date alone
 - ignore league format
-- ignore 6-team replacement level
+- ignore dynamically derived league size and replacement level
 - evaluate players by name only
 - overvalue prospects just because salary is low
 - undervalue veterans automatically when they help a contender window
@@ -514,7 +521,7 @@ Use this structure when helpful:
 1. short verdict
 2. role for Mighty Giants
 3. internal data
-4. format fit: 2QB / 2TE / 4Flex
+4. format fit from the current dynamically derived starter/flex structure
 5. salary/cap relevance
 6. external market/ranking/news context
 7. plausibility check: internal vs external agreement/conflict
@@ -527,7 +534,7 @@ Use this structure when helpful:
 Use this structure when helpful:
 
 1. data state and sources
-2. league format
+2. dynamically derived league format and roster capacities
 3. roster by position
 4. player role categories
 5. cap/salary situation
