@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "analysis_id": "2026-08-19-fa-draft-preboard",
+  "analysis_type": "free_agent_draft_preboard",
+  "status": "dated_baseline",
+  "as_of_date": "2026-08-19",
+  "managed_team": {
+    "team_id": 1,
+    "name": "Mighty Giants"
+  },
+  "source_state": {
+    "league": {
+      "path": "public/data/League.json",
+      "blob_sha": "00957a261eea27db831ca400e84b1fc3e1e098f5"
+    },
+    "drafts": {
+      "path": "public/data/Drafts.json",
+      "blob_sha": "91bb49c0913fd8acfeb7c318f49fefc42449a52c"
+    },
+    "managed_roster_signals": {
+      "path": "fantasy-management/generated/operations/managed-roster-signals.json",
+      "blob_sha": "3196fc3a57615290dc09a22d0ceebc7480bfad6b"
+    },
+    "external_snapshots": [
+      {
+        "source": "fantasypros",
+        "dataset": "dynasty-superflex-ppr",
+        "snapshot_date": "2026-08-18",
+        "dynamic": true
+      },
+      {
+        "source": "fantasycalc",
+        "dataset": "dynasty-superflex-ppr-8-team",
+        "snapshot_date": "2026-08-18",
+        "dynamic": true
+      }
+    ]
+  },
+  "roster_capacity": {
+    "derivation": "dynamic_from_league_json",
+    "regular_active_capacity": 30,
+    "taxi_capacity": 2,
+    "reserve_capacity": 2,
+    "roster_id_count": 33,
+    "taxi_ids": [
+      "13414",
+      "13417"
+    ],
+    "reserve_ids": [],
+    "regular_active_occupied": 31,
+    "regular_active_over_limit": 1,
+    "note": "Taxi and Reserve IDs are subsets of Roster and are not double-counted as regular active occupants. Reserve capacity is nominal and requires current player eligibility."
+  },
+  "executed_pre_draft_cuts": [
+    {
+      "player_id": "4018",
+      "name": "Joe Mixon"
+    },
+    {
+      "player_id": "11565",
+      "name": "J.J. McCarthy"
+    },
+    {
+      "player_id": "12547",
+      "name": "Kyle Williams"
+    },
+    {
+      "player_id": "12540",
+      "name": "Chimere Dike"
+    },
+    {
+      "player_id": "11627",
+      "name": "Troy Franklin"
+    }
+  ],
+  "fa_draft": {
+    "draft_key": "2026_Free_Agent",
+    "pool_mode": "dynamic_mixed_rookie_veteran",
+    "mighty_giants_picks": [
+      {
+        "display_pick": "1.01",
+        "overall_pick": 1,
+        "pick_key": "2026_Free_Agent_R1_OO5"
+      },
+      {
+        "display_pick": "2.04",
+        "overall_pick": 10,
+        "pick_key": "2026_Free_Agent_R2_OO1"
+      },
+      {
+        "display_pick": "4.04",
+        "overall_pick": 22,
+        "pick_key": "2026_Free_Agent_R4_OO1"
+      },
+      {
+        "display_pick": "5.04",
+        "overall_pick": 28,
+        "pick_key": "2026_Free_Agent_R5_OO1"
+      }
+    ],
+    "former_pick_not_owned": {
+      "display_pick": "3.04",
+      "pick_key": "2026_Free_Agent_R3_OO1",
+      "current_owner_roster_id": 4
+    }
+  },
+  "strategy_constraints": {
+    "additional_qb_acquisition": "exclude",
+    "locked_pick": {
+      "display_pick": "1.01",
+      "player_id": "12526",
+      "player_name": "Tetairoa McMillan",
+      "status": "user_decision"
+    },
+    "late_pick_policy": "do_not_force_pick_when_roster_sacrifice_is_equal_or_better",
+    "dynamic_pool_recalculation": true
+  },
+  "candidate_board": [
+    {
+      "priority": 1,
+      "player_id": "7588",
+      "name": "Javonte Williams",
+      "position": "RB",
+      "tier": "A",
+      "target_pick": "2.04",
+      "recommendation": "clear_accept_if_available",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 2,
+      "player_id": "7543",
+      "name": "Travis Etienne",
+      "position": "RB",
+      "tier": "A",
+      "target_pick": "2.04",
+      "recommendation": "clear_accept_if_available",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 3,
+      "player_id": "9487",
+      "name": "Parker Washington",
+      "position": "WR",
+      "tier": "B",
+      "target_pick": "2.04",
+      "recommendation": "strong_candidate",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 4,
+      "player_id": "11583",
+      "name": "Jonathon Brooks",
+      "position": "RB",
+      "tier": "B",
+      "target_pick": "2.04",
+      "recommendation": "strong_candidate",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 5,
+      "player_id": "5927",
+      "name": "Terry McLaurin",
+      "position": "WR",
+      "tier": "B",
+      "target_pick": "2.04",
+      "recommendation": "strong_candidate",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 6,
+      "player_id": "7594",
+      "name": "Chuba Hubbard",
+      "position": "RB",
+      "tier": "B",
+      "target_pick": "2.04",
+      "recommendation": "strong_candidate",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 7,
+      "player_id": "11646",
+      "name": "Jalen Coker",
+      "position": "WR",
+      "tier": "C",
+      "target_pick": "2.04_or_value_fall",
+      "recommendation": "conditional",
+      "recheck": ["availability", "role", "market"]
+    },
+    {
+      "priority": 8,
+      "player_id": "6806",
+      "name": "J.K. Dobbins",
+      "position": "RB",
+      "tier": "C",
+      "target_pick": "conditional",
+      "recommendation": "compare_to_live_cut_line",
+      "recheck": ["availability", "injury", "role"]
+    },
+    {
+      "priority": 9,
+      "player_id": "8132",
+      "name": "Tyler Allgeier",
+      "position": "RB",
+      "tier": "C",
+      "target_pick": "conditional",
+      "recommendation": "compare_to_live_cut_line",
+      "recheck": ["availability", "role", "market"]
+    },
+    {
+      "priority": 10,
+      "player_id": "8408",
+      "name": "Jordan Mason",
+      "position": "RB",
+      "tier": "C",
+      "target_pick": "conditional",
+      "recommendation": "compare_to_live_cut_line",
+      "recheck": ["availability", "role", "market"]
+    }
+  ],
+  "later_round_watchlist": [
+    {
+      "player_id": "11576",
+      "name": "Braelon Allen",
+      "position": "RB"
+    },
+    {
+      "player_id": "11581",
+      "name": "MarShawn Lloyd",
+      "position": "RB"
+    }
+  ],
+  "provisional_roster_sacrifice_ladder": [
+    {
+      "order": 1,
+      "player_id": "13405",
+      "name": "Kaytron Allen",
+      "status": "first_current_compliance_candidate"
+    },
+    {
+      "order": 2,
+      "player_id": "13414",
+      "name": "Kaelon Black",
+      "status": "conditional_next_sacrifice",
+      "guardrail": "meaningful_day_2_nfl_draft_capital_and_unresolved_thesis"
+    },
+    {
+      "order": 3,
+      "player_id": "13311",
+      "name": "Chris Bell",
+      "status": "comparison_tier"
+    },
+    {
+      "order": 3,
+      "player_id": "12469",
+      "name": "Dylan Sampson",
+      "status": "comparison_tier"
+    },
+    {
+      "order": 4,
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "status": "protect_against_forced_late_pick"
+    },
+    {
+      "order": 4,
+      "player_id": "13285",
+      "name": "Malachi Fields",
+      "status": "protect_against_forced_late_pick"
+    }
+  ],
+  "decision_rule": "For every Mighty Giants selection after 1.01, compare the best actually available player with the next player that must be removed from the final legal roster structure. Draft only when the incoming asset produces a materially positive Mighty Giants roster outcome.",
+  "mandatory_recheck_triggers": [
+    "opponent_or_mighty_giants_cut_changes_pool",
+    "prior_fa_draft_selection",
+    "material_injury_or_role_change",
+    "material_market_or_ranking_change",
+    "reserve_eligibility_change",
+    "taxi_setting_or_eligibility_change",
+    "mighty_giants_trade"
+  ],
+  "validity": {
+    "immutable_baseline": true,
+    "current_player_truth": false,
+    "instruction": "Create a new dated review or in-draft update rather than overwriting this baseline."
+  }
+}
