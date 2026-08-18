@@ -113,6 +113,23 @@ When a Free-Agent Draft pick is part of a trade, draft or roster recommendation:
 
 Generic external values for a label such as `2026 Pick 2.04` may be used only when they represent the same asset type and format. Do not use a generic Rookie Draft pick value as a proxy for a Free-Agent Draft pick with the same displayed round and slot.
 
+### Free-Agent Draft dynamic-pool guardrail
+
+For this league, the Free-Agent Draft is a single mixed player pool, not a rookie-only draft and not a veteran-only waiver event.
+
+Draft eligibility and draft-board analysis must follow these league mechanics:
+
+- every fantasy free agent who is eligible at that moment can be drafted, regardless of whether the player is a rookie or veteran;
+- a player cut before the Free-Agent Draft becomes part of the draftable player pool;
+- a player cut during the Free-Agent Draft becomes draft-eligible for subsequent selections in that same draft;
+- therefore the available-player pool is dynamic throughout the draft and must not be treated as a frozen pre-draft snapshot;
+- after each material selection or roster cut, re-evaluate the remaining board, replacement shelf and Mighty Giants opportunity cost when a later Mighty Giants pick is still pending;
+- draft simulations should include plausible cuts by other managers when there is evidence for likely roster pressure, but speculative cuts must be labeled as scenarios rather than current availability;
+- Mighty Giants may strategically make already-justified cuts before the draft when doing so can widen the pool and create alternative targets for other managers, but do not cut a player with superior expected keep/trade value merely to create a decoy;
+- when evaluating such a pre-draft cut, separate the player's residual trade value from the strategic value of adding him to the draft pool. A failed trade market is relevant evidence, but not by itself proof that the player has no keep value.
+
+For any Mighty Giants selection after `1.01`, the relevant question is not only who was free before the draft started. It is who is actually available at that exact selection after all prior picks and intervening cuts.
+
 ## 6. Salary rule
 
 Salary is a relevant roster-management and cap-management signal, especially in the off-season around the cap deadline. Salary is not a direct quality measure and is not a reliable standalone player-evaluation signal.
@@ -469,6 +486,8 @@ Do not:
 - use external rankings or news without checking league ownership, scoring, roster size, salary/cap and Mighty Giants fit
 - treat generic Superflex/2QB overall rankings as direct league-specific boards without adjusting for actual 6-team replacement level and Mighty Giants marginal gain
 - value a Free-Agent Draft pick as if it were a same-numbered Rookie Draft pick or generic pick asset without deriving its actual league-specific free-agent shelf
+- freeze a Free-Agent Draft board at the pre-draft player pool; players cut before or during the draft become draft-eligible and can change the board for later selections
+- cut a superior keep/trade asset merely to seed the Free-Agent Draft with a decoy; strategic pre-draft cuts are valid only when the cut is already justified by roster value and opportunity cost
 - project a breakout or young player's historical production forward without checking whether the opportunity was earned against normal competition or created by injuries, suspensions, roster turnover or temporary vacancies
 - cut a rookie near the roster boundary without explicitly checking NFL draft round/overall pick and whether the prospect thesis has actually failed or is merely unresolved
 - treat the players currently occupying Taxi slots as automatically protected from cut analysis; Taxi-eligible rookies must be ranked as one shared prospect pool before Taxi slots are assigned
