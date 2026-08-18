@@ -67,6 +67,11 @@ class MovementEventTests(unittest.TestCase):
             "quality": {"status": "ok"},
         }
 
+    def with_metadata(self, movement: dict, *, contract: str, evidence: str, version: int = 1) -> dict:
+        movement["materiality_contract"] = {"version": version, "fingerprint": contract * 64}
+        movement["evidence"] = {"input_fingerprint": evidence * 64}
+        return movement
+
     def config(self, root: Path) -> Path:
         return self.write_json(root, "config.json", {
             "schema_version": 1,
@@ -81,6 +86,7 @@ class MovementEventTests(unittest.TestCase):
             result = MODULE.build(root, self.config(root))
             self.assertEqual(result["population"]["baseline_mode"], "initial_baseline")
             self.assertEqual(result["population"]["event_count"], 0)
+            self.assertEqual(result["contract_migration"]["status"], "not_applicable")
 
     def test_unchanged_window_churn_is_deduplicated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -117,6 +123,122 @@ class MovementEventTests(unittest.TestCase):
             self.assertEqual(by_id["new-k"]["position"], "K")
             self.assertEqual(by_id["new-k"]["event_priority"], "high")
 
+    def test_same_contract_with_changed_evidence_keeps_normal_events(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "medium")], "a" * 64),
+                contract="1",
+                evidence="a",
+            )
+            current = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "high")], "b" * 64),
+                contract="1",
+                evidence="b",
+            )
+            self.write_json(root, "movement.json", current)
+            previous_path = self.write_json(root, "previous.json", previous)
+            result = MODULE.build(root, self.config(root), previous_path)
+            self.assertEqual(result["population"]["baseline_mode"], "comparison")
+            self.assertEqual(result["contract_migration"]["status"], "not_needed")
+            self.assertEqual(result["population"]["event_count"], 1)
+            self.assertEqual(result["events"][0]["event_type"], "changed")
+
+    def test_changed_contract_with_identical_evidence_is_silent_rebaseline(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "medium")], "a" * 64),
+                contract="1",
+                evidence="a",
+            )
+            current = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "high")], "b" * 64),
+                contract="2",
+                evidence="a",
+                version=2,
+            )
+            self.write_json(root, "movement.json", current)
+            previous_path = self.write_json(root, "previous.json", previous)
+            result = MODULE.build(root, self.config(root), previous_path)
+            self.assertEqual(result["population"]["baseline_mode"], "contract_migration")
+            self.assertEqual(result["contract_migration"]["status"], "silent_rebaseline")
+            self.assertTrue(result["contract_migration"]["contract_changed"])
+            self.assertFalse(result["contract_migration"]["evidence_changed"])
+            self.assertEqual(result["population"]["event_count"], 0)
+            self.assertEqual(result["contract_migration"]["comparison_event_count_before_suppression"], 1)
+            self.assertEqual(result["contract_migration"]["suppressed_event_count"], 1)
+            self.assertEqual(result["contract_migration"]["suppressed_event_type_counts"], {"changed": 1})
+
+    def test_changed_contract_and_evidence_fail_open(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "medium")], "a" * 64),
+                contract="1",
+                evidence="a",
+            )
+            current = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "high")], "b" * 64),
+                contract="2",
+                evidence="b",
+                version=2,
+            )
+            self.write_json(root, "movement.json", current)
+            previous_path = self.write_json(root, "previous.json", previous)
+            result = MODULE.build(root, self.config(root), previous_path)
+            self.assertEqual(result["population"]["baseline_mode"], "contract_migration_with_evidence_change")
+            self.assertEqual(result["contract_migration"]["status"], "fail_open_evidence_changed")
+            self.assertTrue(result["contract_migration"]["contract_changed"])
+            self.assertTrue(result["contract_migration"]["evidence_changed"])
+            self.assertEqual(result["population"]["event_count"], 1)
+            self.assertEqual(result["quality"]["status"], "warning")
+            self.assertEqual(result["contract_migration"]["suppressed_event_count"], 0)
+
+    def test_silent_contract_migration_rebases_following_unchanged_comparison(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "medium")], "a" * 64),
+                contract="1",
+                evidence="a",
+            )
+            migrated = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "high")], "b" * 64),
+                contract="2",
+                evidence="a",
+                version=2,
+            )
+            self.write_json(root, "movement.json", migrated)
+            old_path = self.write_json(root, "old.json", old)
+            first = MODULE.build(root, self.config(root), old_path)
+            self.assertEqual(first["population"]["baseline_mode"], "contract_migration")
+            self.assertEqual(first["population"]["event_count"], 0)
+
+            self.write_json(root, "movement.json", migrated)
+            migrated_previous = self.write_json(root, "migrated-previous.json", migrated)
+            second = MODULE.build(root, self.config(root), migrated_previous)
+            self.assertEqual(second["population"]["baseline_mode"], "comparison")
+            self.assertEqual(second["contract_migration"]["status"], "not_needed")
+            self.assertEqual(second["population"]["event_count"], 0)
+
+    def test_legacy_previous_state_never_enables_silent_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = self.movement([self.discovery("fa-wr", "WR", "medium")], "a" * 64)
+            current = self.with_metadata(
+                self.movement([self.discovery("fa-wr", "WR", "high")], "b" * 64),
+                contract="2",
+                evidence="a",
+                version=2,
+            )
+            self.write_json(root, "movement.json", current)
+            previous_path = self.write_json(root, "previous.json", previous)
+            result = MODULE.build(root, self.config(root), previous_path)
+            self.assertEqual(result["contract_migration"]["status"], "metadata_unavailable")
+            self.assertEqual(result["population"]["baseline_mode"], "comparison")
+            self.assertEqual(result["population"]["event_count"], 1)
+
     def test_current_repository_initial_baseline_validates(self) -> None:
         root = SCRIPT_PATH.parents[3]
         result = MODULE.build(root, root / "fantasy-management/automation/free-agent-movement-event-materialization.json")
@@ -125,6 +247,8 @@ class MovementEventTests(unittest.TestCase):
         self.assertEqual(result["population"]["baseline_mode"], "initial_baseline")
         self.assertEqual(result["population"]["event_count"], 0)
         self.assertEqual(set(result["population"]["positions"]), {"QB", "RB", "WR", "TE", "K"})
+        self.assertIsNotNone(result["contract_migration"]["current_materiality_contract_fingerprint"])
+        self.assertIsNotNone(result["contract_migration"]["current_evidence_fingerprint"])
 
     def test_production_workflow_persists_previous_movement_for_event_comparison(self) -> None:
         root = SCRIPT_PATH.parents[3]
