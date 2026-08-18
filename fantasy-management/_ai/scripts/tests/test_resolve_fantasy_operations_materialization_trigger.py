@@ -56,6 +56,17 @@ class MaterializationTriggerTests(unittest.TestCase):
         self.assertFalse(decision.run)
         self.assertEqual(decision.reason, "batched_external_source_change_before_0645")
 
+    def test_refresh_heartbeat_is_batched_with_external_source_during_morning_window(self) -> None:
+        decision = MODULE.decide(
+            event_name="push",
+            changed_files=[
+                "fantasy-management/sources/refresh-status/fantasycalc.json",
+            ],
+            now=datetime(2026, 8, 17, 5, 32, tzinfo=BERLIN),
+        )
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "batched_external_source_change_before_0645")
+
     def test_external_source_only_push_runs_immediately_after_batch_window(self) -> None:
         decision = MODULE.decide(
             event_name="push",

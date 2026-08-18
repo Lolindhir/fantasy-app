@@ -101,11 +101,22 @@ jobs:
           python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py
           --skip-unchanged
 
+      - name: Record successful FFToday refresh
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id fftoday
+          --workflow "FM • Projection • FFToday"
+          --trigger "${{ github.event_name }}"
+          --content-path fantasy-management/sources/external-rankings/projections/fftoday
+
       - name: Commit and push updates
         if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add fantasy-management/sources/external-rankings/projections/fftoday/
+          git add \
+            fantasy-management/sources/external-rankings/projections/fftoday/ \
+            fantasy-management/sources/refresh-status/fftoday.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope fftoday-projections
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main

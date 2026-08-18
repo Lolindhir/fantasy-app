@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "id": "fantasy-operations-source-freshness-gate",
+  "timezone": "Europe/Berlin",
+  "morning_cycle": {
+    "refresh_window_start": "05:00",
+    "consolidation_time": "06:45",
+    "monitoring_time": "07:00"
+  },
+  "output": "fantasy-management/generated/operations/source-freshness.json",
+  "sources": [
+    {
+      "id": "league",
+      "label": "APP • Data • League",
+      "kind": "timestamp",
+      "path": "public/data/Timestamps.json",
+      "timestamp_field": "League",
+      "max_age_minutes": 30,
+      "block_monitoring_if_unfresh": true,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "league_state",
+        "ownership"
+      ]
+    },
+    {
+      "id": "players",
+      "label": "APP • Data • Players",
+      "kind": "timestamp",
+      "path": "public/data/Timestamps.json",
+      "timestamp_field": "Players",
+      "max_age_minutes": 180,
+      "block_monitoring_if_unfresh": true,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "player_metadata",
+        "injury_availability",
+        "role_opportunity"
+      ]
+    },
+    {
+      "id": "fantasypros",
+      "label": "FM • Ranking • FantasyPros ECR",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/fantasypros.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "dynasty_ranking",
+        "redraft_ranking"
+      ]
+    },
+    {
+      "id": "fantasycalc",
+      "label": "FM • Ranking • FantasyCalc Market",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/fantasycalc.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "dynasty_market",
+        "redraft_market"
+      ]
+    },
+    {
+      "id": "fantasy-football-calculator",
+      "label": "FM • Ranking • FFC ADP",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/fantasy-football-calculator.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "redraft_adp"
+      ]
+    },
+    {
+      "id": "fftoday",
+      "label": "FM • Projection • FFToday",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/fftoday.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "season_projection"
+      ]
+    },
+    {
+      "id": "cbs-sports",
+      "label": "FM • Projection • CBS Sports",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/cbs-sports.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "season_projection"
+      ]
+    },
+    {
+      "id": "sleeper-trending",
+      "label": "FM • Signal • Sleeper Trending",
+      "kind": "heartbeat",
+      "path": "fantasy-management/sources/refresh-status/sleeper-trending.json",
+      "required_after_local_time": "05:00",
+      "max_age_minutes": 1440,
+      "block_monitoring_if_unfresh": false,
+      "required_for_no_event_conclusion": true,
+      "affected_signal_families": [
+        "external_activity"
+      ]
+    }
+  ]
+}

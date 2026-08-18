@@ -16,6 +16,7 @@ SCHEDULE_BY_UTC_OFFSET = {
 EXTERNAL_SOURCE_PREFIXES = (
     "fantasy-management/sources/external-rankings/",
     "fantasy-management/sources/external-signals/",
+    "fantasy-management/sources/refresh-status/",
 )
 
 
