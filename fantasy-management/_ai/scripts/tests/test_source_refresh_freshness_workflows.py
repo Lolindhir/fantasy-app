@@ -76,6 +76,30 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         )
         self.assertIn("no_event_conclusion_allowed", workflow)
 
+    def test_0645_catch_up_does_not_cancel_a_running_source_materialization(self) -> None:
+        workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
+
+        self.assertIn('cron: "45 4 * * *"', workflow)
+        self.assertIn('cron: "45 5 * * *"', workflow)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
+
+    def test_generated_operations_outputs_are_not_push_triggers(self) -> None:
+        workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
+
+        self.assertNotIn("fantasy-management/generated/operations/**", workflow)
+
+    def test_materializer_keeps_retry_rebuild_push_race_hardening(self) -> None:
+        workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
+
+        for required in (
+            "for attempt in 1 2 3; do",
+            "git fetch origin main",
+            "git reset --hard origin/main",
+            "Push race on attempt ${attempt}; rebuilding from current main.",
+            "Unable to publish materialized Fantasy Operations inputs after 3 attempts.",
+        ):
+            self.assertIn(required, workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

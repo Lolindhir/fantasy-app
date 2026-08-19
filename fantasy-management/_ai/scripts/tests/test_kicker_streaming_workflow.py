@@ -37,7 +37,7 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         self.assertIn('data["population"]["candidate_count"]', workflow)
         self.assertIn('data["population"]["free_agent_count"]', workflow)
 
-    def test_materializer_batches_external_refreshes_before_monitoring(self) -> None:
+    def test_materializer_keeps_0645_as_non_disruptive_catch_up(self) -> None:
         workflow = self.workflow_text()
 
         self.assertIn('cron: "45 4 * * *"', workflow)
@@ -52,7 +52,8 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         self.assertIn("needs: gate", workflow)
         self.assertIn("if: needs.gate.outputs.run == 'true'", workflow)
         self.assertIn("concurrency:\n      group: fantasy-operations-input-materialization", workflow)
-        self.assertIn("cancel-in-progress: true", workflow)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
+        self.assertNotIn("cancel-in-progress: true", workflow)
         self.assertIn("timeout-minutes: 15", workflow)
 
         gate_index = workflow.index("  gate:")
