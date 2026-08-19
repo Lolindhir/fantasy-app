@@ -25,6 +25,7 @@ Diese Ebene darf keine Fantasy-Empfehlung treffen.
 
 Beispiele:
 
+- `source-freshness.json`;
 - `player-signals.json`;
 - `free-agent-signals.json`;
 - `kicker-streaming-inputs.json`;
@@ -35,11 +36,20 @@ Beispiele:
 
 Aufgabe:
 
+- den zuletzt erfolgreich veröffentlichten kanonischen Operations-State lesen;
+- vor jeder Event-Interpretation `source-freshness.json` als Readiness-Gate auswerten;
 - Veränderungen gegenüber einem vorherigen guten Zustand erkennen;
 - nur materielle Änderungen melden;
 - Ursache und betroffene Entscheidungsklasse benennen;
 - Research-Priorität setzen;
 - bei Bedarf frische qualitative Verifikation auslösen.
+
+Für den Freshness-Guardrail gilt:
+
+- `decision = block`: normales Monitoring unterlassen und nur die blockierende Freshness-/Datenqualitätsursache sichtbar machen;
+- `decision = proceed_degraded`: nur weiterhin frisch unterstützte Signalbereiche interpretieren und `affected_signal_families` beachten;
+- `no_event_conclusion_allowed = false`: einen leeren Event-Contract niemals als belastbaren „keine Änderung“-Befund ausgeben;
+- Readiness niemals aus Uhrzeit, geplantem 06:45-Materializer oder dessen erwartetem Abschluss ableiten.
 
 Daily Monitoring beantwortet:
 
