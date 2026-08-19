@@ -18,17 +18,17 @@ BERLIN = ZoneInfo("Europe/Berlin")
 
 
 class MaterializationTriggerTests(unittest.TestCase):
-    def test_correct_dst_schedule_runs_and_companion_skips(self) -> None:
+    def test_correct_dst_catch_up_schedule_runs_and_companion_skips(self) -> None:
         summer = datetime(2026, 8, 17, 6, 45, tzinfo=BERLIN)
         winter = datetime(2026, 12, 17, 6, 45, tzinfo=BERLIN)
 
-        self.assertTrue(
-            MODULE.decide(
-                event_name="schedule",
-                schedule_expression="45 4 * * *",
-                now=summer,
-            ).run
+        summer_decision = MODULE.decide(
+            event_name="schedule",
+            schedule_expression="45 4 * * *",
+            now=summer,
         )
+        self.assertTrue(summer_decision.run)
+        self.assertEqual(summer_decision.reason, "scheduled_0645_berlin_catch_up")
         self.assertFalse(
             MODULE.decide(
                 event_name="schedule",
@@ -44,67 +44,82 @@ class MaterializationTriggerTests(unittest.TestCase):
             ).run
         )
 
-    def test_external_source_only_push_is_batched_during_morning_window(self) -> None:
+    def test_relevant_source_push_runs_immediately_at_0530(self) -> None:
         decision = MODULE.decide(
             event_name="push",
             changed_files=[
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/latest.json",
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/snapshots/2026-08-17.json",
             ],
-            now=datetime(2026, 8, 17, 5, 32, tzinfo=BERLIN),
+            now=datetime(2026, 8, 17, 5, 30, tzinfo=BERLIN),
         )
-        self.assertFalse(decision.run)
-        self.assertEqual(decision.reason, "batched_external_source_change_before_0645")
+        self.assertTrue(decision.run)
+        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
 
-    def test_refresh_heartbeat_is_batched_with_external_source_during_morning_window(self) -> None:
+    def test_relevant_heartbeat_push_runs_immediately_at_0630(self) -> None:
         decision = MODULE.decide(
             event_name="push",
-            changed_files=[
-                "fantasy-management/sources/refresh-status/fantasycalc.json",
-            ],
-            now=datetime(2026, 8, 17, 5, 32, tzinfo=BERLIN),
+            changed_files=["fantasy-management/sources/refresh-status/sleeper-trending.json"],
+            now=datetime(2026, 8, 17, 6, 30, tzinfo=BERLIN),
         )
-        self.assertFalse(decision.run)
-        self.assertEqual(decision.reason, "batched_external_source_change_before_0645")
+        self.assertTrue(decision.run)
+        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
 
-    def test_external_source_only_push_runs_immediately_after_batch_window(self) -> None:
+    def test_relevant_source_push_runs_immediately_outside_former_morning_window(self) -> None:
         decision = MODULE.decide(
             event_name="push",
             changed_files=[
                 "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json"
             ],
-            now=datetime(2026, 8, 17, 6, 46, tzinfo=BERLIN),
+            now=datetime(2026, 8, 17, 14, 15, tzinfo=BERLIN),
         )
         self.assertTrue(decision.run)
-        self.assertEqual(decision.reason, "external_source_change_outside_morning_batch_window")
+        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
 
-    def test_external_source_only_push_runs_immediately_before_batch_window(self) -> None:
+    def test_league_players_and_timestamps_inputs_run_immediately(self) -> None:
+        for path in (
+            "public/data/League.json",
+            "public/data/Players.json",
+            "public/data/Timestamps.json",
+        ):
+            with self.subTest(path=path):
+                decision = MODULE.decide(
+                    event_name="push",
+                    changed_files=[path],
+                    now=datetime(2026, 8, 17, 5, 40, tzinfo=BERLIN),
+                )
+                self.assertTrue(decision.run)
+                self.assertEqual(decision.reason, "relevant_league_or_player_input_change")
+
+    def test_generated_operations_only_push_does_not_retrigger_materializer(self) -> None:
         decision = MODULE.decide(
             event_name="push",
             changed_files=[
-                "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/latest.json"
+                "fantasy-management/generated/operations/source-freshness.json",
+                "fantasy-management/generated/operations/player-signals.json",
             ],
-            now=datetime(2026, 8, 17, 4, 59, tzinfo=BERLIN),
+            now=datetime(2026, 8, 17, 5, 40, tzinfo=BERLIN),
         )
-        self.assertTrue(decision.run)
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "generated_operations_only_change")
 
-    def test_league_or_mixed_change_always_runs_immediately(self) -> None:
-        league = MODULE.decide(
+    def test_irrelevant_push_does_not_materialize(self) -> None:
+        decision = MODULE.decide(
             event_name="push",
-            changed_files=["public/data/League.json"],
+            changed_files=["README.md"],
             now=datetime(2026, 8, 17, 5, 40, tzinfo=BERLIN),
         )
-        mixed = MODULE.decide(
-            event_name="push",
-            changed_files=[
-                "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/latest.json",
-                "public/data/Timestamps.json",
-            ],
-            now=datetime(2026, 8, 17, 5, 40, tzinfo=BERLIN),
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "irrelevant_push")
+
+    def test_pull_request_context_never_requests_production_materialization(self) -> None:
+        decision = MODULE.decide(
+            event_name="pull_request",
+            changed_files=["fantasy-management/sources/refresh-status/fantasycalc.json"],
+            now=datetime(2026, 8, 17, 5, 32, tzinfo=BERLIN),
         )
-        self.assertTrue(league.run)
-        self.assertTrue(mixed.run)
-        self.assertEqual(mixed.reason, "immediate_non_external_input_change")
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "pull_request_validation_only")
 
     def test_manual_materializer_dispatch_always_runs(self) -> None:
         decision = MODULE.decide(
