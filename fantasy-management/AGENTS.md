@@ -32,6 +32,8 @@ For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tend
 
 For any Fantasy Operations, Daily Monitoring, Free-Agent Monitoring, Weekly Lineup/Waiver separation or monitoring-triggered watchlist task, `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` is additionally mandatory and must be read before evaluating monitoring materiality, proposing durable watch targets or separating monitoring from final roster decisions.
 
+For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup/waiver, roster-capacity or roster-flexibility task, `fantasy-management/_ai/ROSTER_ARCHITECTURE.md` is additionally mandatory and must be read before classifying player roles/security or deciding whether a transaction consumes protected churn capacity.
+
 1. `fantasy-management/AGENTS.md`
 2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
@@ -134,6 +136,7 @@ fantasy-management/
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
+    ROSTER_ARCHITECTURE.md
     TRADE_NEGOTIATION_RULES.md
     PODCAST_SOURCE_MODEL.md
     PODCAST_EXTRACTION_RULES.md
