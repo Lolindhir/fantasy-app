@@ -23,6 +23,19 @@ For every analysis where format or roster capacity matters, derive the current s
 
 When `Teams[].Roster` also contains players listed in `Taxi` or `Reserve`, do not count those players again as regular active occupants. Report roster-limit conclusions from the current derived capacity and occupied counts rather than carrying forward an older number.
 
+## Taxi timing and lock mechanic
+
+League-specific Taxi mechanic confirmed by the user:
+
+- before the first league game, all current rookies are eligible to be moved between the regular roster/bench and Taxi;
+- therefore the current pre-season placement of a rookie on Taxi or bench is provisional and must not be treated as protection, commitment or a quality signal;
+- before the Taxi lock, roster and cut analysis must evaluate all current rookies together and may virtually allocate the available Taxi slots to the two most sensible development stashes;
+- the final Taxi decision must be made before the first league game;
+- once the first league game begins, the two Taxi slots are locked and are no longer freely swappable for the remainder of the season;
+- after the lock, analyses must treat the actual Taxi occupants as a real roster constraint and must not assume pre-season flexibility continues.
+
+Taxi is a separate rookie-development budget and does not replace general active churn/streaming capacity.
+
 ## Interpretation rules
 
 - QB value rises when the current format contains multiple fixed QB starter spots and the actual free-agent replacement pool is thin enough to create scarcity.
