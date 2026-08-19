@@ -8,10 +8,15 @@ from typing import Any
 from .common import IDENTITY_ID_KEYS, Dataset, clean, iter_csv, load_json, stable_internal_id
 
 ANCHOR_ID_KEYS = ("GSIS", "ESPN", "PFR", "PFF")
-ALIASABLE_ID_KEYS = {"ESPN"}
-ALIAS_PRIMARY_SOURCE_PREFERENCE = {
-    "ESPN": ("canonical-existing", "nflverse.ff-player-ids", "nflverse.players", "app.Players"),
-}
+LINK_ID_KEYS = {"GSIS", "Sleeper", "ESPN", "PFR", "PFF", "MFL", "Tank01"}
+WEAK_ID_KEYS = set(IDENTITY_ID_KEYS) - LINK_ID_KEYS
+ALIASABLE_LINK_ID_KEYS = {"ESPN"}
+PRIMARY_SOURCE_PREFERENCE = (
+    "canonical-existing",
+    "nflverse.ff-player-ids",
+    "nflverse.players",
+    "app.Players",
+)
 
 
 class UnionFind:
@@ -217,8 +222,8 @@ def _shared_strong_tokens(left: IdentityCandidate, right: IdentityCandidate, con
     return shared
 
 
-def _verified_provider_alias(key: str, members: list[IdentityCandidate]) -> bool:
-    if key not in ALIASABLE_ID_KEYS:
+def _verified_link_alias(key: str, members: list[IdentityCandidate]) -> bool:
+    if key not in ALIASABLE_LINK_ID_KEYS:
         return False
     relevant = [member for member in members if member.ids.get(key)]
     values = {member.ids[key] for member in relevant}
@@ -248,7 +253,7 @@ def _verified_provider_alias(key: str, members: list[IdentityCandidate]) -> bool
 
 
 def _select_primary_provider_id(key: str, values: set[str], members: list[IdentityCandidate]) -> str:
-    for source in ALIAS_PRIMARY_SOURCE_PREFERENCE.get(key, ("canonical-existing",)):
+    for source in PRIMARY_SOURCE_PREFERENCE:
         candidates = sorted({member.ids[key] for member in members if member.source == source and member.ids.get(key) in values})
         if candidates:
             return candidates[0]
@@ -267,6 +272,8 @@ def build_identities(
         idx = uf.add()
         indexes.append(idx)
         for key, value in candidate.ids.items():
+            if key not in LINK_ID_KEYS:
+                continue
             token = (key, value)
             if token in id_owner:
                 uf.union(idx, id_owner[token])
@@ -295,7 +302,7 @@ def build_identities(
             if len(values) == 1:
                 ids[key] = next(iter(values))
                 continue
-            if _verified_provider_alias(key, members):
+            if key in WEAK_ID_KEYS or _verified_link_alias(key, members):
                 primary = _select_primary_provider_id(key, values, members)
                 ids[key] = primary
                 aliases[key] = sorted(values - {primary})
@@ -308,7 +315,7 @@ def build_identities(
                 for member in members[:8]
             ]
             raise ValueError(
-                f"Identity component has conflicting IDs for the same provider: {conflicts}; "
+                f"Identity component has conflicting IDs for the same link provider: {conflicts}; "
                 f"members={member_summary}"
             )
         if len(existing_ids) > 1:
@@ -355,13 +362,14 @@ def _group(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any
 def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], str]:
     lookup = {}
     for row in canonical:
-        mappings = [(key, value) for key, value in (row.get("IDs") or {}).items()]
+        mappings = [(key, value) for key, value in (row.get("IDs") or {}).items() if key in LINK_ID_KEYS]
         for key, values in (row.get("IDAliases") or {}).items():
-            mappings.extend((key, value) for value in values or [])
+            if key in LINK_ID_KEYS:
+                mappings.extend((key, value) for value in values or [])
         for key, value in mappings:
             token = (key, value)
             previous = lookup.get(token)
             if previous and previous != row["NFLPlayerID"]:
-                raise ValueError(f"External ID {key}:{value} maps to multiple canonical players")
+                raise ValueError(f"Link ID {key}:{value} maps to multiple canonical players")
             lookup[token] = row["NFLPlayerID"]
     return lookup

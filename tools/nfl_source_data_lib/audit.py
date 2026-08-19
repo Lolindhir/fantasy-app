@@ -6,7 +6,7 @@ from typing import Any, Iterable
 
 from .common import IDENTITY_ID_KEYS, clean, utc_now
 from .draft import build_ff_draft_evidence, classify_draft_status
-from .identity import app_player_candidates, identity_lookup
+from .identity import LINK_ID_KEYS, WEAK_ID_KEYS, app_player_candidates, identity_lookup
 
 
 def build_audit(
@@ -47,16 +47,28 @@ def build_audit(
             unknown_draft.append({"SleeperID": sleeper, "NFLPlayerID": internal_id, "Name": name,
                                   "Position": position, "DraftYear": draft_year})
 
-    provider_duplicates = {}
     alias_counts = Counter()
+    provider_value_owners: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
     for row in canonical:
+        internal_id = row["NFLPlayerID"]
+        for key, value in (row.get("IDs") or {}).items():
+            provider_value_owners[key][value].add(internal_id)
         for key, aliases in (row.get("IDAliases") or {}).items():
             alias_counts[key] += len(aliases or [])
+            for value in aliases or []:
+                provider_value_owners[key][value].add(internal_id)
+
+    link_duplicates = {}
+    weak_collisions = {}
     for key in IDENTITY_ID_KEYS:
-        values = [row.get("IDs", {}).get(key) for row in canonical if row.get("IDs", {}).get(key)]
-        duplicates = sorted(value for value, count in Counter(values).items() if count > 1)
-        if duplicates:
-            provider_duplicates[key] = duplicates
+        duplicates = sorted(value for value, owners in provider_value_owners.get(key, {}).items() if len(owners) > 1)
+        if not duplicates:
+            continue
+        if key in LINK_ID_KEYS:
+            link_duplicates[key] = duplicates
+        elif key in WEAK_ID_KEYS:
+            weak_collisions[key] = duplicates
+
     source_conflicts = identity_source_conflicts or []
     source_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in source_conflicts)
     return {
@@ -64,8 +76,10 @@ def build_audit(
         "canonicalIdentityCount": len(canonical), "relevantPlayerCount": len(relevant_players),
         "identityCoverage": dict(identity_counts), "draftStatusCoverage": dict(draft_counts),
         "draftStatusByPosition": {position: dict(counts) for position, counts in sorted(by_position.items())},
-        "identityInvariantViolations": {"duplicateProviderIDs": provider_duplicates,
-                                        "duplicateProviderIDCount": sum(len(values) for values in provider_duplicates.values())},
+        "identityInvariantViolations": {"duplicateLinkProviderIDs": link_duplicates,
+                                        "duplicateLinkProviderIDCount": sum(len(values) for values in link_duplicates.values())},
+        "identityWeakProviderCollisionCount": sum(len(values) for values in weak_collisions.values()),
+        "identityWeakProviderCollisions": weak_collisions,
         "identityAliasCount": sum(alias_counts.values()),
         "identityAliasesByProvider": dict(sorted(alias_counts.items())),
         "identitySourceMappingConflictCount": len(source_conflicts),
@@ -77,7 +91,9 @@ def build_audit(
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
             "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
-            "verifiedProviderAlias": "Multiple IDs from an alias-capable provider are retained only when exact birth date and at least two other strong provider IDs corroborate the same player.",
+            "linkProviderID": "Only strong link-provider IDs participate in canonical identity merges and reverse lookup.",
+            "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
+            "verifiedProviderAlias": "Multiple IDs from an alias-capable link provider are retained only when exact birth date and at least two other strong provider IDs corroborate the same player.",
             "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID merges; the row remains isolated by MFL primary key and the suppressed mappings are recorded here.",
         },
     }

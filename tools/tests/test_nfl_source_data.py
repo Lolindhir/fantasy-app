@@ -102,11 +102,11 @@ class NflSourceDataTests(unittest.TestCase):
             write_csv(
                 root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [
-                    {"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "nfl_id": "2543774", "name": "Drafted Player", "birthdate": "2000-01-01", "position": "WR", "draft_year": "2025", "draft_round": "2", "draft_pick": "5", "draft_ovr": "37"},
-                    {"mfl_id": "2", "gsis_id": "00-2", "sleeper_id": "S2", "espn_id": "22", "pfr_id": "UndrPl00", "name": "Undrafted Player", "birthdate": "2001-01-01", "position": "RB", "draft_year": "2025", "draft_round": "", "draft_pick": "", "draft_ovr": ""},
+                    {"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "nfl_id": "2543774", "cbs_id": "shared-cbs", "name": "Drafted Player", "birthdate": "2000-01-01", "position": "WR", "draft_year": "2025", "draft_round": "2", "draft_pick": "5", "draft_ovr": "37"},
+                    {"mfl_id": "2", "gsis_id": "00-2", "sleeper_id": "S2", "espn_id": "22", "pfr_id": "UndrPl00", "cbs_id": "shared-cbs", "name": "Undrafted Player", "birthdate": "2001-01-01", "position": "RB", "draft_year": "2025", "draft_round": "", "draft_pick": "", "draft_ovr": ""},
                     {"mfl_id": "99", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "nfl_id": "2543774", "name": "Legacy Homonym", "birthdate": "1970-01-01", "position": "DL", "draft_year": "1990", "draft_round": "1", "draft_pick": "10", "draft_ovr": "10"},
                 ],
-                ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "nfl_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"]
+                ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "nfl_id", "cbs_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"]
             )
             write_csv(
                 root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
@@ -129,6 +129,8 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual(1, result["audit"]["identitySourceMappingConflictCount"])
             self.assertEqual(1, result["audit"]["identityAliasCount"])
             self.assertEqual({"ESPN": 1}, result["audit"]["identityAliasesByProvider"])
+            self.assertEqual(1, result["audit"]["identityWeakProviderCollisionCount"])
+            self.assertEqual({"CBS": ["shared-cbs"]}, result["audit"]["identityWeakProviderCollisions"])
             self.assertEqual({"drafted": 1, "undrafted": 1}, result["audit"]["draftStatusCoverage"])
             conflict = result["audit"]["identitySourceMappingConflicts"][0]
             self.assertEqual("99", conflict["MFLID"])
@@ -142,6 +144,8 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual("2543774", by_sleeper["S1"]["IDs"]["NFLCom"])
             self.assertEqual("11", by_sleeper["S1"]["IDs"]["ESPN"])
             self.assertEqual(["111"], by_sleeper["S1"]["IDAliases"]["ESPN"])
+            self.assertEqual("shared-cbs", by_sleeper["S1"]["IDs"]["CBS"])
+            self.assertEqual("shared-cbs", by_sleeper["S2"]["IDs"]["CBS"])
             quarantined = next(row for row in canonical["Players"] if row["IDs"].get("MFL") == "99")
             self.assertNotIn("Sleeper", quarantined["IDs"])
             self.assertNotIn("GSIS", quarantined["IDs"])
