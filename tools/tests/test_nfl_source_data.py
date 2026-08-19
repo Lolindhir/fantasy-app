@@ -93,15 +93,15 @@ class NflSourceDataTests(unittest.TestCase):
             (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
             write_csv(
                 root / "source-data/providers/nflverse/players/raw-latest.csv",
-                [{"gsis_id": "00-1", "display_name": "Drafted Player", "pfr_id": "DrafPl00", "position": "WR", "espn_id": "11"},
+                [{"gsis_id": "00-1", "display_name": "Drafted Player", "pfr_id": "DrafPl00", "position": "WR", "espn_id": "11", "nfl_id": "41405"},
                  {"gsis_id": "00-2", "display_name": "Undrafted Player", "pfr_id": "UndrPl00", "position": "RB", "espn_id": "22"}],
-                ["gsis_id", "display_name", "pfr_id", "position", "espn_id"]
+                ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "nfl_id"]
             )
             write_csv(
                 root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
-                [{"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "name": "Drafted Player", "draft_year": "2025", "draft_round": "2", "draft_pick": "5", "draft_ovr": "37"},
+                [{"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "nfl_id": "2543774", "name": "Drafted Player", "draft_year": "2025", "draft_round": "2", "draft_pick": "5", "draft_ovr": "37"},
                  {"mfl_id": "2", "gsis_id": "00-2", "sleeper_id": "S2", "espn_id": "22", "pfr_id": "UndrPl00", "name": "Undrafted Player", "draft_year": "2025", "draft_round": "", "draft_pick": "", "draft_ovr": ""}],
-                ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "draft_year", "draft_round", "draft_pick", "draft_ovr"]
+                ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "nfl_id", "name", "draft_year", "draft_round", "draft_pick", "draft_ovr"]
             )
             write_csv(
                 root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
@@ -124,6 +124,8 @@ class NflSourceDataTests(unittest.TestCase):
             canonical = json.loads((root / "source-data/nfl/identities/players.json").read_text())
             by_sleeper = {row["IDs"]["Sleeper"]: row for row in canonical["Players"]}
             self.assertEqual("T1", by_sleeper["S1"]["IDs"]["Tank01"])
+            self.assertEqual("41405", by_sleeper["S1"]["IDs"]["NFL"])
+            self.assertEqual("2543774", by_sleeper["S1"]["IDs"]["NFLCom"])
             draft = json.loads((root / "source-data/nfl/draft/2025.json").read_text())
             self.assertEqual(by_sleeper["S1"]["NFLPlayerID"], draft["Picks"][0]["NFLPlayerID"])
             self.assertEqual(1, draft["Picks"][0]["PositionInRound"])
