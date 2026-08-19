@@ -149,7 +149,7 @@ def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[
 
     counts = {status: sum(1 for source in sources if source["status"] == status) for status in sorted(VALID_SOURCE_STATUSES)}
     return {
-        "schema_version": 1,
+        "schema_version": config["schema_version"],
         "dataset_id": "source-freshness-gate",
         "generated_at": _iso_z(now),
         "berlin_date": now.astimezone(BERLIN).date().isoformat(),

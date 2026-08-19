@@ -83,6 +83,23 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         self.assertIn('cron: "45 5 * * *"', workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
 
+    def test_materializer_reports_trigger_start_and_publish_observability_without_using_it_for_readiness(self) -> None:
+        workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
+
+        for required in (
+            "Capture materialization observability start",
+            "MATERIALIZER_STARTED_AT",
+            "TRIGGER_COMMIT_AT",
+            "summarize_fantasy_operations_materialization_observability.py",
+            "--outcome published",
+            "--outcome no_changes",
+            "$GITHUB_STEP_SUMMARY",
+        ):
+            self.assertIn(required, workflow)
+
+        self.assertNotIn("MATERIALIZER_STARTED_AT", self._read("fantasy-management/_ai/scripts/build_source_freshness_gate.py"))
+        self.assertNotIn("TRIGGER_COMMIT_AT", self._read("fantasy-management/_ai/scripts/build_source_freshness_gate.py"))
+
     def test_generated_operations_outputs_are_not_push_triggers(self) -> None:
         workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
 

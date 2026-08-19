@@ -18,7 +18,7 @@
     "quality"
   ],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "dataset_id": {"const": "source-freshness-gate"},
     "generated_at": {"type": "string", "minLength": 1},
     "berlin_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
@@ -26,10 +26,10 @@
     "morning_cycle": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["refresh_window_start", "consolidation_time", "monitoring_time"],
+      "required": ["refresh_window_start", "catch_up_time", "monitoring_time"],
       "properties": {
         "refresh_window_start": {"type": "string"},
-        "consolidation_time": {"type": "string"},
+        "catch_up_time": {"type": "string"},
         "monitoring_time": {"type": "string"}
       }
     },
