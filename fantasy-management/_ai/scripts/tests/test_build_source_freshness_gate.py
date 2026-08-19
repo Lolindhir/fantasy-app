@@ -39,7 +39,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
             "timezone": "Europe/Berlin",
             "morning_cycle": {
                 "refresh_window_start": "05:00",
-                "consolidation_time": "06:45",
+                "catch_up_time": "06:45",
                 "monitoring_time": "07:00",
             },
             "sources": [
@@ -113,6 +113,8 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self.assertTrue(report["monitoring"]["allowed"])
         self.assertTrue(report["monitoring"]["no_event_conclusion_allowed"])
         self.assertEqual(2, report["population"]["fresh_count"])
+        self.assertEqual("06:45", report["morning_cycle"]["catch_up_time"])
+        self.assertNotIn("consolidation_time", report["morning_cycle"])
 
     def test_successful_unchanged_refresh_is_still_fresh(self) -> None:
         self._write_timestamps("2026-08-18T04:35:00Z")
