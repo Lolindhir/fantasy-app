@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/sync-nfl-source-data.yml"
   # Temporary bootstrap observability hook; remove after the first successful materialization.
+  # Bootstrap run marker: same-repository PR so its Actions run is observable through the connector.
   pull_request:
     branches:
       - main
