@@ -109,13 +109,25 @@ Normales Daily Monitoring ist zu unterlassen. Statt Spielerbewegungen aus mögli
 
 Jeder erfolgreiche relevante Source- oder Success-Heartbeat-Commit auf `main` darf unmittelbar eine vollständige Fantasy-Operations-Materialisierung anstoßen. Für diese Entscheidung gibt es keinen Unterschied mehr zwischen dem Morgenfenster und anderen Tageszeiten. Dadurch kann `source-freshness.json` während der Morgenstaffelung schrittweise mit jedem bestätigten Source-Stand aktualisiert werden.
 
-Der DST-sichere 06:45-Europe/Berlin-Lauf bleibt ausschließlich als zusätzlicher Catch-up bestehen. Er ist weder die einzige reguläre Morgen-Materialisierung noch ein Readiness-Beweis für das 07:00-Monitoring. Korrektheit darf nicht davon abhängen, dass GitHub Actions diesen Schedule pünktlich startet oder vor 07:00 beendet.
+Der DST-sichere 06:45-Europe/Berlin-Lauf bleibt ausschließlich als zusätzlicher Catch-up bestehen. Er ist weder die einzige reguläre Morgen-Materialisierung noch ein Readiness-Beweis für das 07:00-Monitoring. Korrektheit darf nicht davon abhängen, dass GitHub Actions diesen Schedule pünktlich startet oder vor 07:00 beendet. Entsprechend heißt der Konfigurationswert im Freshness-Vertrag `morning_cycle.catch_up_time`; die frühere Bezeichnung `consolidation_time` ist entfernt.
 
 Kommt ein erfolgreicher Source- oder Heartbeat-Commit verspätet, löst auch er unmittelbar eine neue Materialisierung aus. Ein zuvor degradierter Freshness-Stand kann dadurch automatisch auf dem aktuellen `main` neu aufgebaut werden.
 
 Der dedicated League-Heartbeat wird planmäßig um 06:35 erzeugt und materialisiert nach erfolgreichem Commit ebenfalls unmittelbar. Reguläre Zehn-Minuten-League-Refreshes erzeugen weiterhin keinen separaten Heartbeat-Commit; echte relevante League-Datenänderungen bleiben jedoch normale Materializer-Trigger.
 
-Für den 07:00-Consumer gilt ausschließlich der tatsächlich veröffentlichte kanonische Operations-State. Der Consumer liest `source-freshness.json` und beachtet `decision`, `no_event_conclusion_allowed`, `blocking_sources`, nicht frische Quellen und `affected_signal_families`; aus der Uhrzeit oder dem 06:45-Schedule darf keine Readiness abgeleitet werden.
+Für den 07:00-Consumer gilt ausschließlich der tatsächlich veröffentlichte kanonische Operations-State. Der Consumer liest `source-freshness.json` und beachtet `decision`, `no_event_conclusion_allowed`, `blocking_source_ids`, nicht frische Quellen und `affected_signal_families`; aus der Uhrzeit oder dem 06:45-Schedule darf keine Readiness abgeleitet werden.
+
+## Materialisierungs-Observability
+
+`FM • Materialize • Operations Inputs` schreibt bei jedem ausgeführten Materializer-Lauf eine kompakte Laufzeitübersicht in das GitHub-Actions-Run-Summary. Für Push-Trigger werden dabei getrennt ausgewiesen:
+
+- Trigger-/Source-Commit-Zeitpunkt → Start des Materializer-Jobs;
+- Start des Materializer-Jobs → erfolgreicher Publish des kanonischen Operations-State;
+- Trigger-/Source-Commit-Zeitpunkt → erfolgreicher Publish insgesamt.
+
+Zusätzlich werden Trigger-Grund, Trigger-Commit, veröffentlichter Materializer-Commit und die absoluten Zeitpunkte ausgewiesen. Bei Schedule- oder Manual-Runs ist eine Source-Commit-Latenz nicht definiert und bleibt ausdrücklich `n/a`.
+
+Diese Werte sind **nur Observability**. Sie werden nicht in `source-freshness.json` persistiert, verändern weder `decision` noch `no_event_conclusion_allowed` und dürfen niemals als Ersatz für Success-Heartbeats oder das Freshness Gate verwendet werden.
 
 ## Sicherheitsprinzipien
 
