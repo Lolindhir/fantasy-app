@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "failed",
+  "phase": "sync",
+  "exitCode": 1,
+  "recordedAtUtc": "2026-08-19T18:15:01Z",
+  "workflow": "Data • NFL Source Sync",
+  "runId": "32285943001",
+  "runAttempt": "1",
+  "datasetInput": null,
+  "forceInput": false,
+  "errorTail": [
+    "nflverse.players: updated (25046 rows)",
+    "nflverse.ff-player-ids: updated (12472 rows)",
+    "nflverse.draft-picks: updated (12927 rows)",
+    "Traceback (most recent call last):",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data.py\", line 55, in <module>",
+    "    raise SystemExit(main())",
+    "                     ^^^^^^",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data.py\", line 38, in main",
+    "    result = materialize(repo_root, datasets)",
+    "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/materialize.py\", line 16, in materialize",
+    "    canonical, ff_rows = build_identities(repo_root, datasets)",
+    "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/identity.py\", line 164, in build_identities",
+    "    raise ValueError(f\"Identity component has conflicting IDs for the same provider: {conflicts}\")",
+    "ValueError: Identity component has conflicting IDs for the same provider: {'NFL': ['2543774', '41405']}"
+  ]
+}
