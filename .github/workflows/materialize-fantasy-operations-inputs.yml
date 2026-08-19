@@ -37,6 +37,7 @@ on:
       - fantasy-management/_ai/scripts/build_source_freshness_gate.py
       - fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
       - fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py
+      - fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py
       - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
       - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
@@ -49,6 +50,7 @@ on:
       - fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py
       - fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py
       - fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py
+      - fantasy-management/_ai/scripts/tests/test_summarize_fantasy_operations_materialization_observability.py
       - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
       - fantasy-management/_ai/schemas/operations-source-catalog.schema.json
       - fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json
@@ -133,6 +135,26 @@ jobs:
       group: fantasy-operations-input-materialization
       cancel-in-progress: ${{ github.event_name == 'push' }}
     steps:
+      - name: Capture materialization observability start
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_REASON: ${{ needs.gate.outputs.reason }}
+        run: |
+          set -euo pipefail
+
+          materializer_started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "MATERIALIZER_STARTED_AT=$materializer_started_at" >> "$GITHUB_ENV"
+          echo "MATERIALIZATION_EVENT_NAME=$EVENT_NAME" >> "$GITHUB_ENV"
+          echo "MATERIALIZATION_TRIGGER_REASON=$TRIGGER_REASON" >> "$GITHUB_ENV"
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            trigger_commit_sha="$(jq -r '.after // empty' "$GITHUB_EVENT_PATH")"
+            trigger_commit_at="$(jq -r '.head_commit.timestamp // empty' "$GITHUB_EVENT_PATH")"
+            echo "TRIGGER_COMMIT_SHA=$trigger_commit_sha" >> "$GITHUB_ENV"
+            echo "TRIGGER_COMMIT_AT=$trigger_commit_at" >> "$GITHUB_ENV"
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -162,6 +184,7 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py \
             fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py \
             fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py \
+            fantasy-management/_ai/scripts/tests/test_summarize_fantasy_operations_materialization_observability.py \
             -v
 
       - name: Commit generated inputs when changed
@@ -253,12 +276,32 @@ jobs:
 
             if git diff --cached --quiet; then
               echo "No Fantasy Operations input changes."
+              python fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py \
+                --event-name "$MATERIALIZATION_EVENT_NAME" \
+                --trigger-reason "$MATERIALIZATION_TRIGGER_REASON" \
+                --trigger-commit-sha "${TRIGGER_COMMIT_SHA:-}" \
+                --trigger-commit-at "${TRIGGER_COMMIT_AT:-}" \
+                --materializer-started-at "$MATERIALIZER_STARTED_AT" \
+                --outcome no_changes \
+                --summary-path "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
 
             git commit -m "data(fantasy-operations): materialize inputs"
 
             if git push origin HEAD:main; then
+              published_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+              published_commit_sha="$(git rev-parse HEAD)"
+              python fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py \
+                --event-name "$MATERIALIZATION_EVENT_NAME" \
+                --trigger-reason "$MATERIALIZATION_TRIGGER_REASON" \
+                --trigger-commit-sha "${TRIGGER_COMMIT_SHA:-}" \
+                --trigger-commit-at "${TRIGGER_COMMIT_AT:-}" \
+                --materializer-started-at "$MATERIALIZER_STARTED_AT" \
+                --published-at "$published_at" \
+                --published-commit-sha "$published_commit_sha" \
+                --outcome published \
+                --summary-path "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
 
