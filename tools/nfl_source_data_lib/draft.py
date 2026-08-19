@@ -45,11 +45,14 @@ def build_draft_files(dataset: Dataset, canonical: list[dict[str, Any]]) -> tupl
 def build_ff_draft_evidence(ff_rows: list[dict[str, str]], canonical: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     lookup, evidence = identity_lookup(canonical), {}
     for row in ff_rows:
-        internal_id = None
-        for key, value in (("GSIS", clean(row.get("gsis_id"))), ("Sleeper", clean(row.get("sleeper_id"))), ("PFR", clean(row.get("pfr_id")))):
-            if value and (key, value) in lookup:
-                internal_id = lookup[(key, value)]
-                break
+        if "__NFLPlayerID" in row:
+            internal_id = clean(row.get("__NFLPlayerID"))
+        else:
+            internal_id = None
+            for key, value in (("GSIS", clean(row.get("gsis_id"))), ("Sleeper", clean(row.get("sleeper_id"))), ("PFR", clean(row.get("pfr_id")))):
+                if value and (key, value) in lookup:
+                    internal_id = lookup[(key, value)]
+                    break
         if not internal_id:
             continue
         candidate = {"DraftYear": as_int(row.get("draft_year")), "Round": as_int(row.get("draft_round")),
