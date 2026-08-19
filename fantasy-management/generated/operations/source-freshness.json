@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-19T05:03:33.791462Z",
+  "generated_at": "2026-08-19T05:09:17.301920Z",
   "berlin_date": "2026-08-19",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,31 +11,25 @@
   },
   "population": {
     "source_count": 8,
-    "fresh_count": 6,
+    "fresh_count": 7,
     "stale_count": 0,
-    "missing_count": 2,
+    "missing_count": 1,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "blocked",
+  "overall_status": "degraded",
   "monitoring": {
-    "decision": "block",
-    "allowed": false,
+    "decision": "proceed_degraded",
+    "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "league",
       "fftoday"
     ],
-    "blocking_source_ids": [
-      "league"
-    ],
+    "blocking_source_ids": [],
     "no_event_blocking_source_ids": [
-      "league",
       "fftoday"
     ],
     "affected_signal_families": [
-      "league_state",
-      "ownership",
       "season_projection"
     ]
   },
@@ -51,11 +45,12 @@
         "league_state",
         "ownership"
       ],
-      "status": "missing",
-      "reason": "heartbeat_missing",
-      "checked_at": null,
-      "age_minutes": null,
-      "content_changed": null
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-19T05:07:09.525512Z",
+      "age_minutes": 2.13,
+      "content_changed": true,
+      "trigger": "schedule"
     },
     {
       "id": "players",
@@ -72,7 +67,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T03:55:36.612680Z",
-      "age_minutes": 67.95,
+      "age_minutes": 73.68,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -90,7 +85,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T03:59:59.567724Z",
-      "age_minutes": 63.57,
+      "age_minutes": 69.3,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -108,7 +103,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T04:07:28.413446Z",
-      "age_minutes": 56.09,
+      "age_minutes": 61.81,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -125,7 +120,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T04:23:22.882978Z",
-      "age_minutes": 40.18,
+      "age_minutes": 45.91,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -158,7 +153,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T04:49:09.006736Z",
-      "age_minutes": 14.41,
+      "age_minutes": 20.14,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -175,13 +170,13 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T04:57:26.358054Z",
-      "age_minutes": 6.12,
+      "age_minutes": 11.85,
       "content_changed": true,
       "trigger": "schedule"
     }
   ],
   "quality": {
-    "status": "blocked",
+    "status": "degraded",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
