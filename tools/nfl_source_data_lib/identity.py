@@ -301,7 +301,7 @@ def _verified_link_alias(key: str, members: list[IdentityCandidate]) -> bool:
             for other_value, other_group in grouped.items():
                 if other_value == value:
                     continue
-                if any(len(_shared_strong_tokens(member, other, key)) >= 2 for other in other_group):
+                if any(len(_shared_strong_tokens(member, other, key)) >= 1 for other in other_group):
                     corroborated = True
                     break
             if corroborated:

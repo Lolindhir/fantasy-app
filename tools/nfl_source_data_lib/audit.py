@@ -93,7 +93,7 @@ def build_audit(
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
             "linkProviderID": "Only strong link-provider IDs participate in canonical identity merges and reverse lookup.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
-            "verifiedProviderAlias": "Multiple IDs from an alias-capable link provider are retained only when exact birth date and at least two other strong provider IDs corroborate the same player.",
-            "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID merges; the row remains isolated by MFL primary key and the suppressed mappings are recorded here.",
+            "verifiedProviderAlias": "Multiple ESPN IDs are retained only when exact birth date and at least one other strong provider ID corroborate the same player.",
+            "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID merges; the row retains only its MFL source key and the suppressed mappings are recorded here.",
         },
     }
