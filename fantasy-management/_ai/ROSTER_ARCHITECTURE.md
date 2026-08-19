@@ -56,11 +56,13 @@ Die Guardrail ist ein **Soft Cap für dauerhaft gebundene aktive Plätze**. Ein 
 
 Folgende Kapazität erfüllt die Zwei-Slot-Guardrail **nicht**:
 
-- Taxi-Slots, weil sie Entwicklungsplätze sind und nicht als frei verfügbare Weekly-Streaming-Kapazität behandelt werden dürfen;
+- Taxi-Slots, weil sie ein separates Rookie-Entwicklungsbudget sind und nicht als frei verfügbare Weekly-Streaming-Kapazität behandelt werden dürfen;
 - Reserve-/IR-Slots, weil ihre Nutzbarkeit von aktueller Eligibility abhängt und nicht dauerhaft planbar ist;
 - der verpflichtende Kicker-Platz, auch wenn der gehaltene Kicker selbst `specialist | churn` sein kann.
 
-Der Kicker darf also ohne große Bindung ausgetauscht werden. Sein notwendiger Lineup-Platz ersetzt aber keinen der zwei allgemeinen, positionsoffenen Churn-Slots.
+Vor dem Taxi-Lock ist die **aktuelle Zuordnung** eines Rookies zu Taxi oder aktiver Bank austauschbar und deshalb kein Bewertungsargument. Trotzdem ersetzt die Taxi-Kapazität keinen allgemeinen Churn-Slot: Nach der jeweils optimalen virtuellen Taxi-Zuweisung müssen weiterhin zwei **aktive, positionsoffene** Plätze realistisch repurposable bleiben.
+
+Der Kicker darf ohne große Bindung ausgetauscht werden. Sein notwendiger Lineup-Platz ersetzt aber keinen der zwei allgemeinen, positionsoffenen Churn-Slots.
 
 Wenn zur Bye-Überbrückung temporär ein zweiter Kicker gehalten wird, verbraucht dieser zusätzliche Kicker einen allgemeinen Churn-Slot.
 
@@ -83,12 +85,13 @@ Der dritte Slot wird nicht pauschal dauerhaft erzwungen. Seine Opportunity Cost 
 Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang:
 
 1. aktuelle aktive Kapazität dynamisch aus `League.json` ableiten;
-2. Taxi/Reserve separat nach aktueller Eligibility behandeln;
-3. Rolle und Security des eingehenden Spielers bestimmen;
-4. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen;
-5. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
-6. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
-7. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
+2. Taxi/Reserve separat nach aktueller Eligibility und aktueller Saisonphase behandeln;
+3. solange der Taxi-Lock noch nicht erfolgt ist, alle Taxi-eligible Rookies gemeinsam ranken und die Taxi-Slots für die Rosterrechnung virtuell optimal zuweisen, statt die aktuelle Sleeper-Platzierung als fest anzunehmen;
+4. Rolle und Security des eingehenden Spielers bestimmen;
+5. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen;
+6. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
+7. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
+8. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
 
 Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste verfügbare Spieler den nächsten Mighty-Giants-Roster-Cut und den Verlust eines Churn-Slots nicht rechtfertigt.
 
@@ -104,14 +107,40 @@ Dann muss die Analyse ausdrücklich festhalten:
 
 Eine temporäre Ausnahme darf nicht stillschweigend zum neuen Normalzustand werden.
 
-## 9. Taxi-Verhältnis
+## 9. Taxi-Verhältnis und Lock
 
-Taxi bleibt ein separates Entwicklungsbudget.
+Taxi bleibt ein separates Rookie-Entwicklungsbudget mit zwei unterschiedlichen Phasen.
 
-- Taxi schützt keine aktuellen Occupants vor Cut-Analyse.
-- Alle Taxi-eligible Prospects werden gemeinsam gerankt.
-- Taxi-Slots werden anschließend an die besten Entwicklungs-Stashes vergeben.
-- Taxi ersetzt keine allgemeine aktive Churn-Kapazität.
+### Vor dem ersten Ligaspiel / vor dem Taxi-Lock
+
+Bis zum ersten Ligaspiel können die Mighty Giants die Taxi-Belegung noch verändern. Für diese Pre-Lock-Phase gilt:
+
+- alle aktuell Taxi-eligible Rookies können zwischen aktivem Roster/Bank und Taxi neu zugeordnet werden;
+- die aktuelle Sleeper-Platzierung eines Rookies auf Taxi oder Bank besitzt **keinen Schutz- oder Bewertungswert**;
+- alle Taxi-eligible Rookies werden als ein gemeinsamer Prospect-Pool gerankt;
+- Cut-/Keep-/FA-Draft-Analysen entscheiden zuerst, welche Rookie-Assets insgesamt gehalten werden sollen;
+- danach werden die verfügbaren Taxi-Slots **virtuell** den zwei sinnvollsten Entwicklungs-Stashes zugewiesen;
+- Roster- und Churn-Rechnungen sollen in dieser Phase mit dieser optimalen virtuellen Taxi-Zuweisung arbeiten, nicht mit einer zufälligen aktuellen Taxi-Belegung;
+- die zwei virtuellen Taxi-Spieler sind Entwicklungs-Stashes und zählen weiterhin nicht als die zwei allgemeinen aktiven Churn-Slots.
+
+### Taxi-Entscheidung vor dem Lock
+
+Unmittelbar vor dem ersten Ligaspiel muss eine explizite Taxi-Entscheidung getroffen werden:
+
+1. alle dann Taxi-eligible Rookies mit aktuellen Rollen-, Injury-, Markt-, Draftkapital- und Opportunity-Daten neu ranken;
+2. die zwei besten Spieler auswählen, deren kurzfristige Lineup-Utility am ehesten verzichtbar ist und deren Entwicklungs-/Upside-Wert durch Taxi am sinnvollsten konserviert wird;
+3. prüfen, welche Rookies wegen erwarteter früher Weekly Utility besser aktiv bleiben sollten;
+4. erst danach die finale Taxi-Belegung festlegen.
+
+### Nach dem Taxi-Lock
+
+Nach Beginn des ersten Ligaspiels sind die zwei Taxi-Slots für die weitere Saison **nicht mehr frei austauschbar**. Ab diesem Zeitpunkt:
+
+- wird die tatsächliche Taxi-Zuordnung zu einer realen Roster-Restriktion;
+- darf eine Analyse nicht mehr stillschweigend einen anderen Rookie in einen Taxi-Slot umsortieren;
+- müssen spätere Änderungen nach den dann geltenden Liga-/Sleeper-Mechaniken bewertet werden statt nach der Pre-Lock-Flexibilität.
+
+Taxi ersetzt in keiner Phase allgemeine aktive Churn-Kapazität.
 
 ## 10. Anwendung auf Analysen
 
@@ -120,6 +149,9 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - `roster_role` je relevanter Mighty-Giants-Spieler;
 - `roster_security` je relevanter Mighty-Giants-Spieler;
 - aktuelle harte aktive Kapazität;
+- aktuelle Taxi-Phase: `pre_lock` oder `locked`;
+- bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool und die aktuell optimale **virtuelle** Taxi-Zuweisung;
+- bei `locked`: die tatsächliche bindende Taxi-Zuweisung;
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
 - ob die Zwei-Slot-Guardrail eingehalten wird;
