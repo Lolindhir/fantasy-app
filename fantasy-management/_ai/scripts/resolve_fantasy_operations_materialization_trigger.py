@@ -3,21 +3,38 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
-MORNING_BATCH_START_MINUTE = 5 * 60
-MORNING_BATCH_END_MINUTE = 6 * 60 + 45
 SCHEDULE_BY_UTC_OFFSET = {
     120: "45 4 * * *",
     60: "45 5 * * *",
 }
-EXTERNAL_SOURCE_PREFIXES = (
+SOURCE_INPUT_PREFIXES = (
     "fantasy-management/sources/external-rankings/",
     "fantasy-management/sources/external-signals/",
     "fantasy-management/sources/refresh-status/",
 )
+GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
+CORE_INPUT_PATHS = {
+    "public/data/League.json",
+    "public/data/Players.json",
+    "public/data/Timestamps.json",
+}
+MATERIALIZATION_DEFINITION_PREFIXES = (
+    "fantasy-management/automation/",
+    "fantasy-management/_ai/scripts/",
+    "fantasy-management/_ai/schemas/",
+)
+MATERIALIZATION_DEFINITION_PATHS = {
+    "fantasy-management/_ai/operations-source-catalog.json",
+    "fantasy-management/_ai/operations-source-catalog-offense-projections.json",
+    "fantasy-management/_ai/operations-external-signal-catalog.json",
+    "fantasy-management/_ai/schema-list.json",
+    "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md",
+    "fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md",
+    ".github/workflows/materialize-fantasy-operations-inputs.yml",
+}
 
 
 @dataclass(frozen=True)
@@ -34,13 +51,24 @@ def _berlin_now(now: datetime | None = None) -> datetime:
     return now.astimezone(BERLIN)
 
 
-def _minute_of_day(now: datetime) -> int:
-    return now.hour * 60 + now.minute
+def _normalize(path: str) -> str:
+    return path.replace("\\", "/")
 
 
-def _is_external_source_path(path: str) -> bool:
-    normalized = path.replace("\\", "/")
-    return any(normalized.startswith(prefix) for prefix in EXTERNAL_SOURCE_PREFIXES)
+def _is_source_input(path: str) -> bool:
+    normalized = _normalize(path)
+    return any(normalized.startswith(prefix) for prefix in SOURCE_INPUT_PREFIXES)
+
+
+def _is_generated_operations(path: str) -> bool:
+    return _normalize(path).startswith(GENERATED_OPERATIONS_PREFIX)
+
+
+def _is_materialization_definition(path: str) -> bool:
+    normalized = _normalize(path)
+    return normalized in MATERIALIZATION_DEFINITION_PATHS or any(
+        normalized.startswith(prefix) for prefix in MATERIALIZATION_DEFINITION_PREFIXES
+    )
 
 
 def decide(
@@ -50,12 +78,14 @@ def decide(
     changed_files: list[str] | None = None,
     now: datetime | None = None,
 ) -> TriggerDecision:
-    current = _berlin_now(now)
+    if event_name == "pull_request":
+        return TriggerDecision(False, "pull_request_validation_only")
 
     if event_name == "workflow_dispatch":
         return TriggerDecision(True, "manual_materialization")
 
     if event_name == "schedule":
+        current = _berlin_now(now)
         offset = current.utcoffset()
         if offset is None:
             return TriggerDecision(False, "berlin_utc_offset_unavailable")
@@ -65,24 +95,28 @@ def decide(
             return TriggerDecision(False, f"unsupported_berlin_utc_offset_{offset_minutes}")
         if schedule_expression != expected:
             return TriggerDecision(False, "inactive_dst_companion_schedule")
-        return TriggerDecision(True, "scheduled_0645_berlin_consolidation")
+        return TriggerDecision(True, "scheduled_0645_berlin_catch_up")
 
     if event_name != "push":
         return TriggerDecision(True, f"conservative_unknown_event_{event_name or 'empty'}")
 
-    files = [path for path in (changed_files or []) if path]
+    files = [_normalize(path) for path in (changed_files or []) if path]
     if not files:
         return TriggerDecision(True, "push_without_changed_file_context")
 
-    only_external_sources = all(_is_external_source_path(path) for path in files)
-    if not only_external_sources:
-        return TriggerDecision(True, "immediate_non_external_input_change")
+    if all(_is_generated_operations(path) for path in files):
+        return TriggerDecision(False, "generated_operations_only_change")
 
-    minute = _minute_of_day(current)
-    if MORNING_BATCH_START_MINUTE <= minute < MORNING_BATCH_END_MINUTE:
-        return TriggerDecision(False, "batched_external_source_change_before_0645")
+    if any(_is_source_input(path) for path in files):
+        return TriggerDecision(True, "relevant_source_or_heartbeat_change")
 
-    return TriggerDecision(True, "external_source_change_outside_morning_batch_window")
+    if any(path in CORE_INPUT_PATHS for path in files):
+        return TriggerDecision(True, "relevant_league_or_player_input_change")
+
+    if any(_is_materialization_definition(path) for path in files):
+        return TriggerDecision(True, "materialization_definition_change")
+
+    return TriggerDecision(False, "irrelevant_push")
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--changed-file", action="append", default=[])
     parser.add_argument(
         "--berlin-now",
-        help="Optional ISO timestamp used for deterministic tests/debugging. Converted to Europe/Berlin.",
+        help="Optional ISO timestamp used for deterministic schedule tests/debugging. Converted to Europe/Berlin.",
     )
     return parser.parse_args()
 
