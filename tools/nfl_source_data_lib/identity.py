@@ -59,7 +59,7 @@ def ids_from_players(row: dict[str, str]) -> dict[str, str]:
 def ids_from_ff(row: dict[str, str]) -> dict[str, str]:
     mapping = {
         "GSIS": "gsis_id", "Sleeper": "sleeper_id", "ESPN": "espn_id", "PFR": "pfr_id",
-        "PFF": "pff_id", "NFL": "nfl_id", "FantasyPros": "fantasypros_id", "MFL": "mfl_id",
+        "PFF": "pff_id", "NFLCom": "nfl_id", "FantasyPros": "fantasypros_id", "MFL": "mfl_id",
         "Sportradar": "sportradar_id", "Yahoo": "yahoo_id", "Fleaflicker": "fleaflicker_id",
         "CBS": "cbs_id", "CFBRef": "cfbref_id", "Rotowire": "rotowire_id", "KTC": "ktc_id",
         "FantasyData": "fantasy_data_id",
