@@ -8,6 +8,10 @@ from typing import Any
 from .common import IDENTITY_ID_KEYS, Dataset, clean, iter_csv, load_json, stable_internal_id
 
 ANCHOR_ID_KEYS = ("GSIS", "ESPN", "PFR", "PFF")
+ALIASABLE_ID_KEYS = {"ESPN"}
+ALIAS_PRIMARY_SOURCE_PREFERENCE = {
+    "ESPN": ("canonical-existing", "nflverse.ff-player-ids", "nflverse.players", "app.Players"),
+}
 
 
 class UnionFind:
@@ -177,14 +181,78 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     result = []
     for row in payload.get("Players", []):
         ids = {key: clean(value) for key, value in (row.get("IDs") or {}).items() if clean(value)}
-        if ids:
-            result.append(IdentityCandidate(
-                ids=ids, name=clean(row.get("Name")), first_name=clean(row.get("FirstName")),
-                last_name=clean(row.get("LastName")), birth_date=clean(row.get("BirthDate")),
-                position=clean(row.get("Position")), latest_team=clean(row.get("LatestTeam")),
-                source="canonical-existing", priority=0, existing_internal_id=clean(row.get("NFLPlayerID")),
-            ))
+        if not ids:
+            continue
+        base = IdentityCandidate(
+            ids=ids, name=clean(row.get("Name")), first_name=clean(row.get("FirstName")),
+            last_name=clean(row.get("LastName")), birth_date=clean(row.get("BirthDate")),
+            position=clean(row.get("Position")), latest_team=clean(row.get("LatestTeam")),
+            source="canonical-existing", priority=0, existing_internal_id=clean(row.get("NFLPlayerID")),
+        )
+        result.append(base)
+        for key, values in (row.get("IDAliases") or {}).items():
+            for alias in values or []:
+                alias_value = clean(alias)
+                if not alias_value:
+                    continue
+                alias_ids = dict(ids)
+                alias_ids[key] = alias_value
+                result.append(IdentityCandidate(
+                    ids=alias_ids, name=base.name, first_name=base.first_name, last_name=base.last_name,
+                    birth_date=base.birth_date, position=base.position, latest_team=base.latest_team,
+                    source="canonical-existing", priority=0, existing_internal_id=base.existing_internal_id,
+                ))
     return result
+
+
+def _shared_strong_tokens(left: IdentityCandidate, right: IdentityCandidate, conflict_key: str) -> set[tuple[str, str]]:
+    shared = set()
+    for key in ANCHOR_ID_KEYS:
+        if key == conflict_key:
+            continue
+        left_value = left.ids.get(key)
+        right_value = right.ids.get(key)
+        if left_value and left_value == right_value:
+            shared.add((key, left_value))
+    return shared
+
+
+def _verified_provider_alias(key: str, members: list[IdentityCandidate]) -> bool:
+    if key not in ALIASABLE_ID_KEYS:
+        return False
+    relevant = [member for member in members if member.ids.get(key)]
+    values = {member.ids[key] for member in relevant}
+    if len(values) < 2:
+        return False
+    birth_dates = {member.birth_date for member in relevant}
+    if None in birth_dates or len(birth_dates) != 1:
+        return False
+
+    grouped: dict[str, list[IdentityCandidate]] = defaultdict(list)
+    for member in relevant:
+        grouped[member.ids[key]].append(member)
+    for value, group in grouped.items():
+        corroborated = False
+        for member in group:
+            for other_value, other_group in grouped.items():
+                if other_value == value:
+                    continue
+                if any(len(_shared_strong_tokens(member, other, key)) >= 2 for other in other_group):
+                    corroborated = True
+                    break
+            if corroborated:
+                break
+        if not corroborated:
+            return False
+    return True
+
+
+def _select_primary_provider_id(key: str, values: set[str], members: list[IdentityCandidate]) -> str:
+    for source in ALIAS_PRIMARY_SOURCE_PREFERENCE.get(key, ("canonical-existing",)):
+        candidates = sorted({member.ids[key] for member in members if member.source == source and member.ids.get(key) in values})
+        if candidates:
+            return candidates[0]
+    return sorted(values)[0]
 
 
 def build_identities(
@@ -219,7 +287,21 @@ def build_identities(
                 existing_ids.add(member.existing_internal_id)
             for key, value in member.ids.items():
                 external_values[key].add(value)
-        conflicts = {key: sorted(values) for key, values in external_values.items() if len(values) > 1}
+
+        conflicts = {}
+        ids = {}
+        aliases = {}
+        for key, values in external_values.items():
+            if len(values) == 1:
+                ids[key] = next(iter(values))
+                continue
+            if _verified_provider_alias(key, members):
+                primary = _select_primary_provider_id(key, values, members)
+                ids[key] = primary
+                aliases[key] = sorted(values - {primary})
+                continue
+            conflicts[key] = sorted(values)
+
         if conflicts:
             member_summary = [
                 {"Source": member.source, "Name": member.name, "BirthDate": member.birth_date, "IDs": member.ids}
@@ -231,7 +313,6 @@ def build_identities(
             )
         if len(existing_ids) > 1:
             raise ValueError(f"Identity component merges multiple existing NFLPlayerIDs: {sorted(existing_ids)}")
-        ids = {key: next(iter(values)) for key, values in external_values.items()}
         if existing_ids:
             internal_id = next(iter(existing_ids))
         else:
@@ -246,6 +327,7 @@ def build_identities(
             "NFLPlayerID": internal_id, "Name": first("name"), "FirstName": first("first_name"),
             "LastName": first("last_name"), "BirthDate": first("birth_date"), "Position": first("position"),
             "LatestTeam": first("latest_team"), "IDs": {key: ids[key] for key in IDENTITY_ID_KEYS if key in ids},
+            "IDAliases": {key: aliases[key] for key in IDENTITY_ID_KEYS if aliases.get(key)},
             "Sources": sorted(sources),
         })
     duplicate_internal = [key for key, rows in _group(canonical, "NFLPlayerID").items() if len(rows) > 1]
@@ -273,7 +355,10 @@ def _group(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any
 def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], str]:
     lookup = {}
     for row in canonical:
-        for key, value in (row.get("IDs") or {}).items():
+        mappings = [(key, value) for key, value in (row.get("IDs") or {}).items()]
+        for key, values in (row.get("IDAliases") or {}).items():
+            mappings.extend((key, value) for value in values or [])
+        for key, value in mappings:
             token = (key, value)
             previous = lookup.get(token)
             if previous and previous != row["NFLPlayerID"]:
