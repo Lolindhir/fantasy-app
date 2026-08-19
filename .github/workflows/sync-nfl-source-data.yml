@@ -1,0 +1,112 @@
+name: Data • NFL Source Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset:
+        description: "Optional registry dataset ID; leave blank to sync all datasets"
+        required: false
+        type: string
+        default: ""
+      force:
+        description: "Force replacement even when the downloaded content hash is unchanged"
+        required: false
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      dataset:
+        description: "Optional registry dataset ID; leave blank to sync all datasets"
+        required: false
+        type: string
+        default: ""
+      force:
+        description: "Force replacement even when the downloaded content hash is unchanged"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nfl-source-data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Test NFL source-data tooling
+        run: python -m unittest discover -s tools/tests -p "test_nfl_source_data.py" -v
+
+      - name: Sync NFL source data
+        shell: bash
+        env:
+          DATASET: ${{ inputs.dataset }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=(sync)
+          if [[ -n "$DATASET" ]]; then
+            args+=(--dataset "$DATASET")
+          fi
+          if [[ "$FORCE" == "true" ]]; then
+            args+=(--force)
+          fi
+          python tools/nfl_source_data.py "${args[@]}"
+
+      - name: Validate materialized NFL source data
+        run: python tools/nfl_source_data.py audit
+
+      - name: Guard generated change scope
+        shell: bash
+        run: |
+          mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+          if (( ${#changed[@]} == 0 )); then
+            echo "No NFL source-data changes detected."
+            exit 0
+          fi
+
+          unexpected=()
+          for path in "${changed[@]}"; do
+            if [[ "$path" != source-data/* ]]; then
+              unexpected+=("$path")
+            fi
+          done
+
+          if (( ${#unexpected[@]} > 0 )); then
+            printf 'Unexpected changes outside source-data/:\n' >&2
+            printf ' - %s\n' "${unexpected[@]}" >&2
+            exit 1
+          fi
+
+          printf 'Validated source-data changes:\n'
+          printf ' - %s\n' "${changed[@]}"
+
+      - name: Commit and push source-data updates
+        shell: bash
+        run: |
+          git add -A -- source-data
+          if git diff --cached --quiet; then
+            echo "No source-data changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+          git commit -m "data(nfl-source): refresh persistent NFL sources • $timestamp"
+          git push origin HEAD:main
