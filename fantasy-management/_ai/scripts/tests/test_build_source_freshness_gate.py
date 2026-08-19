@@ -36,6 +36,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
         (self.root / "public/data").mkdir(parents=True)
         (self.root / "fantasy-management/sources/refresh-status").mkdir(parents=True)
         self.config = {
+            "schema_version": 2,
             "timezone": "Europe/Berlin",
             "morning_cycle": {
                 "refresh_window_start": "05:00",
@@ -108,6 +109,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
 
         report = freshness.evaluate_gate(root=self.root, config=self.config, now=self.NOW)
 
+        self.assertEqual(2, report["schema_version"])
         self.assertEqual("ok", report["overall_status"])
         self.assertEqual("proceed", report["monitoring"]["decision"])
         self.assertTrue(report["monitoring"]["allowed"])
