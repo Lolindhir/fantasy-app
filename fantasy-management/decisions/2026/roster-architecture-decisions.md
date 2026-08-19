@@ -1,6 +1,6 @@
 # Roster Architecture Decisions 2026
 
-Dieses Dokument protokolliert bewusst gewählte operative Roster-Standards der Mighty Giants. Dynamische Spieler-Einstufungen gehören in datierte Analysen.
+Dieses Dokument protokolliert bewusst gewählte operative Roster-Standards der Mighty Giants. Dynamische Spieler-Einstufungen und konkrete Coverage-Zielzahlen gehören in datierte Analysen.
 
 ## 2026-08-19 – Zwei-Achsen-Roster und Churn-Budget
 
@@ -19,3 +19,19 @@ Dieses Dokument protokolliert bewusst gewählte operative Roster-Standards der M
 - FA-Draft-Folge: Späte FA-Draft-Picks sollen nicht allein deshalb genutzt werden, weil sie vorhanden sind. Der eingehende Spieler muss den erforderlichen Cut plus den Verlust operativer Flexibilität rechtfertigen.
 - Canonical guardrail: `fantasy-management/_ai/ROSTER_ARCHITECTURE.md`
 - Current baseline: `fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md`
+
+## 2026-08-19 – Positional Coverage vor Churn
+
+- Type: roster architecture
+- Decision: Die Mighty-Giants-Rosterplanung berücksichtigt vor Taxi- und Churn-Optimierung ausdrücklich die positionsspezifische Starter- und Backup-Coverage.
+- Starter Minimum: Feste Starteranforderungen werden immer dynamisch aus dem aktuellen `League.json -> RosterSize` abgeleitet; keine Positionszahl wird dauerhaft hartcodiert.
+- Coverage Floor: Für relevante feste Positionen wird eine aktuelle Mindestabdeckung bestimmt, unter die das Roster ohne bewusst geplanten Stream-/Notfallpfad nicht sinken soll.
+- Preferred Coverage: Zusätzlich wird eine aktuelle gewünschte Abdeckung bestimmt, wenn der zusätzliche Backup gegenüber seiner Roster-Opportunity-Cost sinnvoll ist.
+- FLEX Rule: FLEX-eligible Skill-Positionen werden zusätzlich als gemeinsamer `startable_skill_pool` bewertet. Relevant sind benötigte Skill-Lineup-Slots, tatsächlich startbare Spieler und die verbleibende Marge.
+- Coverage Reserve: Ein strukturell notwendiger Backup ist nicht automatisch unantastbar, aber sein Coverage-Wert muss beim Cut-/Trade-Vergleich zusätzlich zum isolierten Player Value berücksichtigt werden.
+- Churn Rule: Ein Spieler kann nur dann als allgemeiner Churn-Slot zählen, wenn seine Repurposierung die Position nicht unter den aktuellen Coverage Floor drückt.
+- Kicker: Genau ein Kicker bleibt der Default-Spezialplatz; ein temporärer zweiter Kicker verbraucht allgemeinen Churn.
+- Taxi Interaction: In der Pre-Lock-Phase wird die virtuelle Taxi-Zuweisung erst nach Starter-/Coverage-Prüfung vorgenommen; ein Rookie mit notwendiger früher Lineup- oder Coverage-Utility soll nicht nur wegen Taxi-Upside weggeparkt werden.
+- Evaluation Order: feste Starteranforderungen → Positions-Coverage → gemeinsamer FLEX-/Skill-Pool → Taxi → allgemeine Churn-Slots.
+- Canonical guardrail: `fantasy-management/_ai/ROSTER_ARCHITECTURE.md`
+- Current coverage baseline: `fantasy-management/analyses/2026/roster/2026-08-19-positional-coverage-baseline.md`
