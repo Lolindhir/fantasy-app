@@ -94,7 +94,7 @@ class NflSourceDataTests(unittest.TestCase):
             write_csv(
                 root / "source-data/providers/nflverse/players/raw-latest.csv",
                 [
-                    {"gsis_id": "00-1", "display_name": "Drafted Player", "pfr_id": "DrafPl00", "position": "WR", "espn_id": "11", "nfl_id": "41405", "birth_date": "2000-01-01"},
+                    {"gsis_id": "00-1", "display_name": "Drafted Player", "pfr_id": "DrafPl00", "position": "WR", "espn_id": "111", "nfl_id": "41405", "birth_date": "2000-01-01"},
                     {"gsis_id": "00-2", "display_name": "Undrafted Player", "pfr_id": "UndrPl00", "position": "RB", "espn_id": "22", "birth_date": "2001-01-01"},
                 ],
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "nfl_id", "birth_date"]
@@ -127,6 +127,8 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual(3, result["identityCount"])
             self.assertEqual(1, result["identitySourceMappingConflictCount"])
             self.assertEqual(1, result["audit"]["identitySourceMappingConflictCount"])
+            self.assertEqual(1, result["audit"]["identityAliasCount"])
+            self.assertEqual({"ESPN": 1}, result["audit"]["identityAliasesByProvider"])
             self.assertEqual({"drafted": 1, "undrafted": 1}, result["audit"]["draftStatusCoverage"])
             conflict = result["audit"]["identitySourceMappingConflicts"][0]
             self.assertEqual("99", conflict["MFLID"])
@@ -138,6 +140,8 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual("T1", by_sleeper["S1"]["IDs"]["Tank01"])
             self.assertEqual("41405", by_sleeper["S1"]["IDs"]["NFL"])
             self.assertEqual("2543774", by_sleeper["S1"]["IDs"]["NFLCom"])
+            self.assertEqual("11", by_sleeper["S1"]["IDs"]["ESPN"])
+            self.assertEqual(["111"], by_sleeper["S1"]["IDAliases"]["ESPN"])
             quarantined = next(row for row in canonical["Players"] if row["IDs"].get("MFL") == "99")
             self.assertNotIn("Sleeper", quarantined["IDs"])
             self.assertNotIn("GSIS", quarantined["IDs"])
