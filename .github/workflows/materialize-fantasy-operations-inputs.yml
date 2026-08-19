@@ -3,8 +3,8 @@ name: FM • Materialize • Operations Inputs
 on:
   workflow_dispatch:
   schedule:
-    - cron: "45 4 * * *"  # 06:45 Europe/Berlin während CEST
-    - cron: "45 5 * * *"  # 06:45 Europe/Berlin während CET
+    - cron: "45 4 * * *"  # 06:45 Europe/Berlin während CEST: Catch-up
+    - cron: "45 5 * * *"  # 06:45 Europe/Berlin während CET: Catch-up
   push:
     branches:
       - main
@@ -131,7 +131,7 @@ jobs:
     timeout-minutes: 15
     concurrency:
       group: fantasy-operations-input-materialization
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
