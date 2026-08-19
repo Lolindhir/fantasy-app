@@ -30,6 +30,9 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      PAT_PUSH:
+        required: true
 
 permissions:
   contents: write
@@ -84,6 +87,49 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          write_failure_diagnostic() {
+            local phase="$1"
+            local exit_code="$2"
+            local log_file="$3"
+
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd -- source-data
+            mkdir -p source-data/_sync
+
+            PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
+              python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          log_path = Path(os.environ["LOG_FILE"])
+          lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+          payload = {
+              "schemaVersion": 1,
+              "status": "failed",
+              "phase": os.environ["PHASE"],
+              "exitCode": int(os.environ["EXIT_CODE"]),
+              "recordedAtUtc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+              "workflow": "Data • NFL Source Sync",
+              "runId": os.environ.get("GITHUB_RUN_ID"),
+              "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "datasetInput": os.environ.get("DATASET") or None,
+              "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
+              "errorTail": lines[-80:],
+          }
+          Path("source-data/_sync/last-failure.json").write_text(
+              json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+            git add -- source-data/_sync/last-failure.json
+            git commit -m "data(nfl-source): record failed source sync"
+            git push "https://x-access-token:${PAT_PUSH}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          }
+
           max_attempts=3
           for attempt in $(seq 1 "$max_attempts"); do
             echo "Publish attempt $attempt/$max_attempts"
@@ -91,8 +137,28 @@ jobs:
             git reset --hard origin/main
             git clean -fd -- source-data
 
-            python tools/nfl_source_data.py "${sync_args[@]}"
-            python tools/nfl_source_data.py audit
+            log_file="$(mktemp)"
+            set +e
+            python tools/nfl_source_data.py "${sync_args[@]}" 2>&1 | tee "$log_file"
+            sync_status=${PIPESTATUS[0]}
+            set -e
+            if (( sync_status != 0 )); then
+              echo "NFL source sync failed; publishing a sanitized failure diagnostic." >&2
+              write_failure_diagnostic "sync" "$sync_status" "$log_file"
+              exit "$sync_status"
+            fi
+
+            set +e
+            python tools/nfl_source_data.py audit 2>&1 | tee -a "$log_file"
+            audit_status=${PIPESTATUS[0]}
+            set -e
+            if (( audit_status != 0 )); then
+              echo "NFL source audit failed; publishing a sanitized failure diagnostic." >&2
+              write_failure_diagnostic "audit" "$audit_status" "$log_file"
+              exit "$audit_status"
+            fi
+
+            rm -f source-data/_sync/last-failure.json
 
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             if (( ${#changed[@]} == 0 )); then
