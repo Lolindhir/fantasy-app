@@ -8,7 +8,7 @@ on:
     paths:
       - ".github/workflows/sync-nfl-source-data.yml"
   # Temporary bootstrap observability hook; remove after the first successful materialization.
-  # Bootstrap run marker: rerun after MFL demotion from identity link keys.
+  # Bootstrap run marker: rerun after relaxed verified ESPN alias proof.
   pull_request:
     branches:
       - main
@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Python
