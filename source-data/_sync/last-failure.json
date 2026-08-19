@@ -3,9 +3,9 @@
   "status": "failed",
   "phase": "sync",
   "exitCode": 1,
-  "recordedAtUtc": "2026-08-19T18:48:55Z",
+  "recordedAtUtc": "2026-08-19T18:56:02Z",
   "workflow": "Data • NFL Source Sync",
-  "runId": "32289299064",
+  "runId": "32289963585",
   "runAttempt": "1",
   "datasetInput": null,
   "forceInput": false,
@@ -23,8 +23,8 @@
     "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/materialize.py\", line 16, in materialize",
     "    canonical, ff_rows, identity_source_conflicts = build_identities(repo_root, datasets)",
     "                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/identity.py\", line 317, in build_identities",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/identity.py\", line 390, in build_identities",
     "    raise ValueError(",
-    "ValueError: Identity component has conflicting IDs for the same link provider: {'MFL': ['1126', '1686']}; members=[{'Source': 'nflverse.players', 'Name': 'Mark Chmura', 'BirthDate': '1969-02-22', 'IDs': {'GSIS': '00-0002958', 'ESPN': '451', 'PFR': 'ChmuMa00', 'ESB': 'CHM652601'}}, {'Source': 'nflverse.ff-player-ids', 'Name': 'Mark Chmura', 'BirthDate': None, 'IDs': {'PFR': 'ChmuMa00', 'MFL': '1126', 'CFBRef': 'mark-chmura-1', 'Rotowire': '251'}}, {'Source': 'nflverse.ff-player-ids', 'Name': 'Mark Chmura', 'BirthDate': None, 'IDs': {'PFR': 'ChmuMa00', 'MFL': '1686', 'CFBRef': 'mark-chmura-1'}}]"
+    "ValueError: Identity component has conflicting IDs for the same link provider: {'ESPN': ['14209', '3926695']}; members=[{'Source': 'nflverse.players', 'Name': 'Clyde Gates', 'BirthDate': '1986-06-13', 'IDs': {'GSIS': '00-0028049', 'ESPN': '3926695', 'PFR': 'GateCl00', 'PFF': '6263', 'OTC': '6851', 'NFL': '37186', 'ESB': 'GAT196555'}}, {'Source': 'nflverse.ff-player-ids', 'Name': 'Clyde Gates', 'BirthDate': '1986-06-13', 'IDs': {'Sleeper': '804', 'ESPN': '14209', 'PFR': 'GateCl00', 'NFLCom': '2495284', 'FantasyPros': '9953', 'MFL': '10359', 'Sportradar': '26dd8e50-8f7a-43d6-8a98-addaaeb8194b', 'Yahoo': '24898', 'CBS': '1695497', 'Rotowire': '7383', 'FantasyData': '12754'}}]"
   ]
 }
