@@ -1,17 +1,19 @@
 # Mighty Giants Roster Architecture
 
-Purpose: kanonische Guardrail für die funktionale Roster-Struktur der Mighty Giants. Dieses Dokument ergänzt die allgemeinen Regeln in `FANTASY_MANAGEMENT_RULES.md` um eine verbindliche Zwei-Achsen-Klassifikation und ein bewusst geschütztes Flexibilitätsbudget.
+Purpose: kanonische Guardrail für die funktionale Roster-Struktur der Mighty Giants. Dieses Dokument ergänzt die allgemeinen Regeln in `FANTASY_MANAGEMENT_RULES.md` um eine verbindliche Zwei-Achsen-Klassifikation, positionsspezifische Coverage und ein bewusst geschütztes Flexibilitätsbudget.
 
 ## 1. Grundprinzip
 
-Roster Management darf nicht nur vom harten Liga-Limit und der aktuellen Cut-Line ausgehen. Ein regelkonformes Roster kann trotzdem operativ zu voll sein, wenn nahezu jeder Platz mit einem Spieler belegt ist, der als dauerhafter Hold behandelt wird.
+Roster Management darf nicht nur vom harten Liga-Limit und der aktuellen Cut-Line ausgehen. Ein regelkonformes Roster kann trotzdem operativ zu voll sein, wenn nahezu jeder Platz mit einem Spieler belegt ist, der als dauerhafter Hold behandelt wird. Umgekehrt darf Churn-Flexibilität nicht dadurch erzeugt werden, dass eine feste Starterposition strukturell unterbesetzt wird.
 
-Deshalb werden zwei Fragen getrennt:
+Deshalb werden vier Ebenen getrennt:
 
 1. **Welche Funktion hat der Spieler im Team?**
 2. **Wie sicher ist sein Rosterplatz?**
+3. **Welche positionsspezifische Starter-/Backup-Coverage muss das Roster tragen?**
+4. **Wie viel allgemeine operative Churn-Kapazität bleibt danach übrig?**
 
-Ein Prospect ist nicht automatisch geschützt. Ein Starter ist nicht automatisch unantastbar. Ein Streamer ist keine dauerhafte Spielerrolle, sondern die Nutzung bewusst freigehaltener Roster-Kapazität.
+Ein Prospect ist nicht automatisch geschützt. Ein Starter ist nicht automatisch unantastbar. Ein Streamer ist keine dauerhafte Spielerrolle, sondern die Nutzung bewusst freigehaltener Roster-Kapazität. Ein nominell schwächerer Spieler kann wegen knapper Positions-Coverage wertvoller für die Roster-Struktur sein als ein isoliert höher gerankter Spieler auf einer bereits überversorgten Position.
 
 ## 2. Achse A: Roster Role
 
@@ -25,7 +27,7 @@ Verwende für jeden Mighty-Giants-Spieler genau eine primäre funktionale Rolle:
 
 `streamer` ist **keine** Roster Role.
 
-Trade Chip, Cap Risk, Injury Insurance oder ähnliche Begriffe können zusätzliche Kontext-Tags sein, ersetzen aber nicht die primäre Rolle.
+Trade Chip, Cap Risk, Injury Insurance, Coverage Reserve oder ähnliche Begriffe können zusätzliche Kontext-Tags sein, ersetzen aber nicht die primäre Rolle.
 
 ## 3. Achse B: Roster Security
 
@@ -39,7 +41,84 @@ Verwende separat genau eine aktuelle Sicherheitsstufe:
 
 Roster Security ist dynamisch. Sie muss bei materiellen Änderungen neu abgeleitet werden und darf nicht aus einer alten Analyse fortgeschrieben werden.
 
-## 4. Allgemeine Churn-Slot-Guardrail
+## 4. Positionsspezifische Coverage-Guardrail
+
+### 4.1 Starter-Minimum immer dynamisch ableiten
+
+Vor jeder Roster-, Cut-, Waiver-, FA-Draft- oder Lineup-Entscheidung werden die festen Starteranforderungen aus dem aktuellen `League.json -> RosterSize` neu abgeleitet.
+
+Für jede Position gilt:
+
+- `fixed_starter_requirement` = Anzahl der festen Starter-Slots dieser Position in `RosterSize`;
+- FLEX-Slots werden separat mit ihrer tatsächlichen Eligibility behandelt;
+- Kicker und andere Spezialpositionen werden separat betrachtet;
+- keine früher dokumentierte Starterzahl wird als dauerhaft kanonisch fortgeschrieben.
+
+Das harte Minimum ist nur die Unterkante. Ein Roster mit exakt so vielen Spielern wie feste Starterplätze ist strukturell fragil, sobald Injury oder Bye auftreten.
+
+### 4.2 Coverage Floor und Preferred Coverage
+
+Für Positionen mit festen Starterplätzen wird zusätzlich zur Starterzahl eine aktuelle Coverage-Zone bestimmt:
+
+- `coverage_floor` – niedrigste vertretbare aktive Positionsabdeckung, unter die Mighty Giants ohne bewusst geplanten Stream-/Notfallpfad nicht gehen sollen;
+- `preferred_coverage` – aktuell gewünschte Positionsabdeckung, wenn der zusätzliche Spieler gegenüber seiner Roster-Opportunity-Cost sinnvoll ist.
+
+Diese Werte sind **keine statischen Liga-Konstanten**. Sie werden aus folgenden Faktoren abgeleitet:
+
+- Anzahl fester Starterplätze;
+- FLEX-Einfluss und Positions-Elastizität;
+- aktueller Free-Agent-Replacement-Level der Position;
+- Qualität der vorhandenen Backups;
+- Injury- und Bye-Risiko mehrerer gleichzeitiger Ausfälle;
+- wie teuer ein kurzfristiger Streamer realistisch verfügbar wäre;
+- Dynasty-/Trade-Wert der Coverage-Spieler;
+- Gesamt-Roster-Druck und verfügbare Churn-Kapazität.
+
+Ein Coverage-Spieler ist nicht automatisch `strong_hold`. Seine Positionsfunktion ist ein zusätzlicher Opportunity-Cost-Faktor, der zusammen mit Qualität, Marktwert und Replacement Level bewertet wird.
+
+### 4.3 QB-/TE-artige knappe Pflichtpositionen
+
+Bei Positionen mit mehreren festen Starterplätzen und begrenzter interner Substituierbarkeit ist Backup-Coverage besonders wichtig.
+
+Wenn das Entfernen eines Spielers dazu führen würde, dass bereits eine normale Kombination aus Injury + Bye oder zwei parallelen Ausfällen mehrere externe Streamer erzwingt, muss dieser zusätzliche strukturelle Preis ausdrücklich in die Cut-/Trade-Entscheidung eingehen.
+
+Ein Spieler darf nicht allein deshalb zum Churn-Spieler werden, weil er isoliert schwächer bewertet ist, wenn sein Abgang die Position unter den aktuellen `coverage_floor` drücken würde.
+
+### 4.4 Gemeinsamer FLEX-/Skill-Pool
+
+RB, WR, TE und andere aktuell FLEX-eligible Positionen dürfen nicht nur getrennt nach Positionszahl bewertet werden.
+
+Zusätzlich wird ein gemeinsamer `startable_skill_pool` betrachtet:
+
+- `required_skill_lineup_slots` = feste Starter-Slots der FLEX-eligible Skill-Positionen plus aktuelle FLEX-Slots;
+- `startable_skill_pool` = Mighty-Giants-Spieler dieser Positionen, die nach aktueller Bewertung als `core_starter` oder `starter_rotation` tatsächlich realistisch startbar sind;
+- `skill_pool_margin` = `startable_skill_pool` minus `required_skill_lineup_slots`.
+
+Backups und Prospects werden separat ausgewiesen und dürfen die Startable-Marge nicht künstlich aufblasen.
+
+Wenn der Skill-Pool komfortabel über dem Bedarf liegt, darf das untere RB-/WR-/TE-Ende stärker nach Upside, Marktwert und Churnability optimiert werden. Wenn die Marge klein wird, steigt der Wert belastbarer Backups.
+
+### 4.5 Kicker als Spezialfall
+
+Der Default bleibt genau ein gehaltener Kicker.
+
+- Der notwendige Kicker-Platz ist ein eigener Spezialplatz und zählt nicht als allgemeiner Churn-Slot.
+- Der gehaltene Kicker kann `specialist | churn` sein.
+- Ein zweiter Kicker wird nur temporär über einen allgemeinen Churn-Slot gehalten, wenn der Weekly-Kontext dies rechtfertigt.
+
+### 4.6 Coverage vor Churn
+
+Die strukturelle Reihenfolge lautet künftig:
+
+1. feste Starteranforderungen aus `RosterSize` ableiten;
+2. positionsspezifischen `coverage_floor` und `preferred_coverage` bestimmen;
+3. gemeinsamen FLEX-/Skill-Pool und seine Startable-Marge prüfen;
+4. Taxi nach aktueller Pre-Lock-/Locked-Mechanik optimieren;
+5. erst danach allgemeine Churn-Slots und Churn-Boundary bestimmen.
+
+Ein Platz kann nur dann als allgemeiner Churn-Slot gezählt werden, wenn seine Repurposierung die relevante Positions-Coverage nicht unter den aktuellen Floor drückt.
+
+## 5. Allgemeine Churn-Slot-Guardrail
 
 Die Mighty Giants halten standardmäßig **zwei allgemeine aktive Churn-Slots** als operatives Flexibilitätsbudget frei.
 
@@ -48,25 +127,27 @@ Diese zwei Slots:
 - müssen nicht leer sein;
 - dürfen mit Upside-Spielern oder kurzfristigen Holds besetzt sein;
 - müssen aber so besetzt sein, dass bei einem klaren Add-/Streaming-Bedarf zwei aktive Plätze ohne Opfer eines `locked`-, `strong_hold`- oder normalen `hold`-Kerns repurposed werden können;
+- dürfen nicht nur theoretisch frei sein, wenn ihr Verlust eine Position unter den aktuellen Coverage Floor drückt;
 - werden nach jeder relevanten Roster-Änderung neu zugewiesen.
 
 Die Guardrail ist ein **Soft Cap für dauerhaft gebundene aktive Plätze**. Ein Roster, das das harte Liga-Limit einhält, aber keine zwei realistisch repurposable aktive Plätze mehr besitzt, gilt als operativ roster-clogged.
 
-## 5. Was nicht als allgemeiner Churn-Slot zählt
+## 6. Was nicht als allgemeiner Churn-Slot zählt
 
 Folgende Kapazität erfüllt die Zwei-Slot-Guardrail **nicht**:
 
 - Taxi-Slots, weil sie ein separates Rookie-Entwicklungsbudget sind und nicht als frei verfügbare Weekly-Streaming-Kapazität behandelt werden dürfen;
 - Reserve-/IR-Slots, weil ihre Nutzbarkeit von aktueller Eligibility abhängt und nicht dauerhaft planbar ist;
-- der verpflichtende Kicker-Platz, auch wenn der gehaltene Kicker selbst `specialist | churn` sein kann.
+- der verpflichtende Kicker-Platz, auch wenn der gehaltene Kicker selbst `specialist | churn` sein kann;
+- ein scheinbar austauschbarer Spieler, dessen Entfernung die Position unter den aktuellen `coverage_floor` drücken würde.
 
 Vor dem Taxi-Lock ist die **aktuelle Zuordnung** eines Rookies zu Taxi oder aktiver Bank austauschbar und deshalb kein Bewertungsargument. Trotzdem ersetzt die Taxi-Kapazität keinen allgemeinen Churn-Slot: Nach der jeweils optimalen virtuellen Taxi-Zuweisung müssen weiterhin zwei **aktive, positionsoffene** Plätze realistisch repurposable bleiben.
 
-Der Kicker darf ohne große Bindung ausgetauscht werden. Sein notwendiger Lineup-Platz ersetzt aber keinen der zwei allgemeinen, positionsoffenen Churn-Slots.
+Der Kicker darf also ohne große Bindung ausgetauscht werden. Sein notwendiger Lineup-Platz ersetzt aber keinen der zwei allgemeinen, positionsoffenen Churn-Slots.
 
 Wenn zur Bye-Überbrückung temporär ein zweiter Kicker gehalten wird, verbraucht dieser zusätzliche Kicker einen allgemeinen Churn-Slot.
 
-## 6. Temporärer Drei-Slot-Modus
+## 7. Temporärer Drei-Slot-Modus
 
 Der Standard bleibt zwei allgemeine Churn-Slots.
 
@@ -78,36 +159,39 @@ Ein temporärer Zielwert von **drei** ist sinnvoll, wenn aktuelle In-Season-Bedi
 - außergewöhnlich aktiver Waiver-/Breakout-Zeitraum;
 - Playoff-/Late-Season-Situationen, in denen kurzfristige Weekly Utility deutlich mehr wert ist als ein marginaler Prospect-Stash.
 
-Der dritte Slot wird nicht pauschal dauerhaft erzwungen. Seine Opportunity Cost gegen den schwächsten Prospect/Hold muss positiv sein.
+Der dritte Slot wird nicht pauschal dauerhaft erzwungen. Seine Opportunity Cost gegen den schwächsten Prospect/Hold muss positiv sein und darf die Coverage Floors nicht verletzen.
 
-## 7. Transaktions-Guardrail
+## 8. Transaktions-Guardrail
 
 Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang:
 
-1. aktuelle aktive Kapazität dynamisch aus `League.json` ableiten;
-2. Taxi/Reserve separat nach aktueller Eligibility und aktueller Saisonphase behandeln;
-3. solange der Taxi-Lock noch nicht erfolgt ist, alle Taxi-eligible Rookies gemeinsam ranken und die Taxi-Slots für die Rosterrechnung virtuell optimal zuweisen, statt die aktuelle Sleeper-Platzierung als fest anzunehmen;
-4. Rolle und Security des eingehenden Spielers bestimmen;
-5. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen;
-6. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
-7. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
-8. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
+1. aktuelle Starterstruktur und aktive Kapazität dynamisch aus `League.json` ableiten;
+2. aktuellen `coverage_floor` / `preferred_coverage` je relevante Position bestimmen;
+3. gemeinsamen `startable_skill_pool` und seine Marge gegen die benötigten Skill-Lineup-Slots prüfen;
+4. Taxi/Reserve separat nach aktueller Eligibility und aktueller Saisonphase behandeln;
+5. solange der Taxi-Lock noch nicht erfolgt ist, alle Taxi-eligible Rookies gemeinsam ranken und die Taxi-Slots für die Rosterrechnung virtuell optimal zuweisen, statt die aktuelle Sleeper-Platzierung als fest anzunehmen;
+6. Rolle und Security des eingehenden Spielers bestimmen;
+7. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen, der keine Coverage-Grenze verletzt;
+8. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
+9. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
+10. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
 
-Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste verfügbare Spieler den nächsten Mighty-Giants-Roster-Cut und den Verlust eines Churn-Slots nicht rechtfertigt.
+Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste verfügbare Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
 
-## 8. Notfall- und Timing-Ausnahme
+## 9. Notfall- und Timing-Ausnahme
 
-Eine kurzfristige Unterschreitung des Zwei-Slot-Ziels ist erlaubt, wenn Draft-/Waiver-/Transaction-Timing oder ein echter Notfall dies sinnvoll macht.
+Eine kurzfristige Unterschreitung des Zwei-Slot-Ziels oder einer Preferred-Coverage-Zone ist erlaubt, wenn Draft-/Waiver-/Transaction-Timing oder ein echter Notfall dies sinnvoll macht.
 
 Dann muss die Analyse ausdrücklich festhalten:
 
-- warum die Flexibilität vorübergehend unterschritten wird;
-- welcher Spieler oder Slot der nächste Churn-Boundary-Kandidat ist;
-- wann bzw. durch welchen Trigger die Zwei-Slot-Struktur wiederhergestellt werden soll.
+- warum Coverage oder Flexibilität vorübergehend unterschritten wird;
+- welcher Spieler oder Slot der nächste Churn-/Coverage-Boundary-Kandidat ist;
+- welcher Stream-/Waiver-Pfad die Position im Bedarfsfall absichert;
+- wann bzw. durch welchen Trigger die Zielstruktur wiederhergestellt werden soll.
 
 Eine temporäre Ausnahme darf nicht stillschweigend zum neuen Normalzustand werden.
 
-## 9. Taxi-Verhältnis und Lock
+## 10. Taxi-Verhältnis und Lock
 
 Taxi bleibt ein separates Rookie-Entwicklungsbudget mit zwei unterschiedlichen Phasen.
 
@@ -120,7 +204,8 @@ Bis zum ersten Ligaspiel können die Mighty Giants die Taxi-Belegung noch verän
 - alle Taxi-eligible Rookies werden als ein gemeinsamer Prospect-Pool gerankt;
 - Cut-/Keep-/FA-Draft-Analysen entscheiden zuerst, welche Rookie-Assets insgesamt gehalten werden sollen;
 - danach werden die verfügbaren Taxi-Slots **virtuell** den zwei sinnvollsten Entwicklungs-Stashes zugewiesen;
-- Roster- und Churn-Rechnungen sollen in dieser Phase mit dieser optimalen virtuellen Taxi-Zuweisung arbeiten, nicht mit einer zufälligen aktuellen Taxi-Belegung;
+- die virtuelle Taxi-Auswahl muss berücksichtigen, ob ein Rookie für die aktive Positions-Coverage oder frühe Weekly Utility gebraucht wird;
+- Roster-, Coverage- und Churn-Rechnungen sollen in dieser Phase mit dieser optimalen virtuellen Taxi-Zuweisung arbeiten, nicht mit einer zufälligen aktuellen Taxi-Belegung;
 - die zwei virtuellen Taxi-Spieler sind Entwicklungs-Stashes und zählen weiterhin nicht als die zwei allgemeinen aktiven Churn-Slots.
 
 ### Taxi-Entscheidung vor dem Lock
@@ -128,8 +213,8 @@ Bis zum ersten Ligaspiel können die Mighty Giants die Taxi-Belegung noch verän
 Unmittelbar vor dem ersten Ligaspiel muss eine explizite Taxi-Entscheidung getroffen werden:
 
 1. alle dann Taxi-eligible Rookies mit aktuellen Rollen-, Injury-, Markt-, Draftkapital- und Opportunity-Daten neu ranken;
-2. die zwei besten Spieler auswählen, deren kurzfristige Lineup-Utility am ehesten verzichtbar ist und deren Entwicklungs-/Upside-Wert durch Taxi am sinnvollsten konserviert wird;
-3. prüfen, welche Rookies wegen erwarteter früher Weekly Utility besser aktiv bleiben sollten;
+2. die zwei besten Spieler auswählen, deren kurzfristige Lineup-/Coverage-Utility am ehesten verzichtbar ist und deren Entwicklungs-/Upside-Wert durch Taxi am sinnvollsten konserviert wird;
+3. prüfen, welche Rookies wegen erwarteter früher Weekly Utility oder Positions-Coverage besser aktiv bleiben sollten;
 4. erst danach die finale Taxi-Belegung festlegen.
 
 ### Nach dem Taxi-Lock
@@ -142,19 +227,22 @@ Nach Beginn des ersten Ligaspiels sind die zwei Taxi-Slots für die weitere Sais
 
 Taxi ersetzt in keiner Phase allgemeine aktive Churn-Kapazität.
 
-## 10. Anwendung auf Analysen
+## 11. Anwendung auf Analysen
 
 Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen künftig mindestens ausweisen:
 
 - `roster_role` je relevanter Mighty-Giants-Spieler;
 - `roster_security` je relevanter Mighty-Giants-Spieler;
 - aktuelle harte aktive Kapazität;
+- dynamisch abgeleitete feste Starteranforderungen je Position;
+- aktuellen `coverage_floor` und `preferred_coverage` je relevante feste Position;
+- aktuellen `startable_skill_pool`, `required_skill_lineup_slots` und `skill_pool_margin`;
 - aktuelle Taxi-Phase: `pre_lock` oder `locked`;
 - bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool und die aktuell optimale **virtuelle** Taxi-Zuweisung;
 - bei `locked`: die tatsächliche bindende Taxi-Zuweisung;
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
-- ob die Zwei-Slot-Guardrail eingehalten wird;
-- welcher Spieler bei einem geplanten Zugang zum neuen Boundary-Spieler würde.
+- ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
+- welcher Spieler bei einem geplanten Zugang zum neuen Coverage- oder Churn-Boundary-Spieler würde.
 
-Aktuelle Spielerzuordnungen gehören in datierte Analysen unter `fantasy-management/analyses/` und nicht als permanente Wahrheit in dieses Dokument.
+Aktuelle Spielerzuordnungen und konkrete Coverage-Zielzahlen gehören in datierte Analysen unter `fantasy-management/analyses/` und nicht als permanente Wahrheit in dieses Dokument.
