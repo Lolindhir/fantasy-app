@@ -7,6 +7,8 @@ from typing import Any
 
 from .common import IDENTITY_ID_KEYS, Dataset, clean, iter_csv, load_json, stable_internal_id
 
+ANCHOR_ID_KEYS = ("GSIS", "ESPN", "PFR", "PFF")
+
 
 class UnionFind:
     def __init__(self) -> None:
@@ -89,11 +91,26 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
     return candidates, relevant
 
 
-def raw_identity_candidates(repo_root: Path, datasets: dict[str, Dataset]) -> tuple[list[IdentityCandidate], list[dict[str, str]]]:
+def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:
+    anchors: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for row in player_rows:
+        birth_date = clean(row.get("birth_date"))
+        if not birth_date:
+            continue
+        for key, value in ids_from_players(row).items():
+            if key in ANCHOR_ID_KEYS:
+                anchors[(key, value)].add(birth_date)
+    return anchors
+
+
+def raw_identity_candidates(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+) -> tuple[list[IdentityCandidate], list[dict[str, str]], list[dict[str, str]], list[dict[str, Any]]]:
     del repo_root
     candidates: list[IdentityCandidate] = []
-    ff_rows: list[dict[str, str]] = []
-    for row in iter_csv(datasets["nflverse.players"].raw_path):
+    player_rows = list(iter_csv(datasets["nflverse.players"].raw_path))
+    for row in player_rows:
         ids = ids_from_players(row)
         if ids:
             candidates.append(IdentityCandidate(
@@ -103,16 +120,56 @@ def raw_identity_candidates(repo_root: Path, datasets: dict[str, Dataset]) -> tu
                 position=clean(row.get("position")), latest_team=clean(row.get("latest_team")),
                 source="nflverse.players", priority=10,
             ))
+
+    anchors = _player_birthdate_anchors(player_rows)
+    ff_rows: list[dict[str, str]] = []
+    ff_identity_ids: list[dict[str, str]] = []
+    source_conflicts: list[dict[str, Any]] = []
     for row in iter_csv(datasets["nflverse.ff-player-ids"].raw_path):
         ff_rows.append(row)
-        ids = ids_from_ff(row)
+        raw_ids = ids_from_ff(row)
+        ids = dict(raw_ids)
+        birth_date = clean(row.get("birthdate"))
+        conflicting_anchors = []
+        matching_anchors = []
+        if birth_date:
+            for key in ANCHOR_ID_KEYS:
+                value = raw_ids.get(key)
+                if not value:
+                    continue
+                expected_birth_dates = sorted(anchors.get((key, value), set()))
+                if not expected_birth_dates:
+                    continue
+                detail = {"Provider": key, "ID": value, "NFLVerseBirthDates": expected_birth_dates}
+                if birth_date in expected_birth_dates:
+                    matching_anchors.append(detail)
+                else:
+                    conflicting_anchors.append(detail)
+
+        if conflicting_anchors:
+            suppressed = {key: value for key, value in raw_ids.items() if key != "MFL"}
+            ids = {"MFL": raw_ids["MFL"]} if raw_ids.get("MFL") else {}
+            source_conflicts.append({
+                "Source": "nflverse.ff-player-ids",
+                "Reason": "birthdate_conflict_with_nflverse_players",
+                "MFLID": raw_ids.get("MFL"),
+                "Name": clean(row.get("name")),
+                "BirthDate": birth_date,
+                "Position": clean(row.get("position")),
+                "DraftYear": clean(row.get("draft_year")),
+                "ConflictingAnchors": conflicting_anchors,
+                "MatchingAnchors": matching_anchors,
+                "SuppressedIDs": suppressed,
+            })
+
+        ff_identity_ids.append(ids)
         if ids:
             candidates.append(IdentityCandidate(
                 ids=ids, name=clean(row.get("name")), first_name=None, last_name=None,
-                birth_date=clean(row.get("birthdate")), position=clean(row.get("position")),
+                birth_date=birth_date, position=clean(row.get("position")),
                 latest_team=clean(row.get("team")), source="nflverse.ff-player-ids", priority=20,
             ))
-    return candidates, ff_rows
+    return candidates, ff_rows, ff_identity_ids, source_conflicts
 
 
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
@@ -130,8 +187,11 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     return result
 
 
-def build_identities(repo_root: Path, datasets: dict[str, Dataset]) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
-    raw_candidates, ff_rows = raw_identity_candidates(repo_root, datasets)
+def build_identities(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+) -> tuple[list[dict[str, Any]], list[dict[str, str]], list[dict[str, Any]]]:
+    raw_candidates, ff_rows, ff_identity_ids, source_conflicts = raw_identity_candidates(repo_root, datasets)
     app_candidates, _ = app_player_candidates(repo_root)
     candidates = existing_identity_candidates(repo_root) + raw_candidates + app_candidates
     uf, id_owner, indexes = UnionFind(), {}, []
@@ -161,7 +221,14 @@ def build_identities(repo_root: Path, datasets: dict[str, Dataset]) -> tuple[lis
                 external_values[key].add(value)
         conflicts = {key: sorted(values) for key, values in external_values.items() if len(values) > 1}
         if conflicts:
-            raise ValueError(f"Identity component has conflicting IDs for the same provider: {conflicts}")
+            member_summary = [
+                {"Source": member.source, "Name": member.name, "BirthDate": member.birth_date, "IDs": member.ids}
+                for member in members[:8]
+            ]
+            raise ValueError(
+                f"Identity component has conflicting IDs for the same provider: {conflicts}; "
+                f"members={member_summary}"
+            )
         if len(existing_ids) > 1:
             raise ValueError(f"Identity component merges multiple existing NFLPlayerIDs: {sorted(existing_ids)}")
         ids = {key: next(iter(values)) for key, values in external_values.items()}
@@ -171,8 +238,10 @@ def build_identities(repo_root: Path, datasets: dict[str, Dataset]) -> tuple[lis
             seed = next((f"{key}:{ids[key]}" for key in ("GSIS", "Sleeper", "PFR", "ESPN", "MFL", "Tank01") if ids.get(key)), None)
             internal_id = stable_internal_id(seed or "|".join(f"{key}:{ids[key]}" for key in sorted(ids)))
         ranked = sorted(members, key=lambda item: item.priority)
+
         def first(field: str) -> str | None:
             return next((getattr(item, field) for item in ranked if getattr(item, field)), None)
+
         canonical.append({
             "NFLPlayerID": internal_id, "Name": first("name"), "FirstName": first("first_name"),
             "LastName": first("last_name"), "BirthDate": first("birth_date"), "Position": first("position"),
@@ -183,7 +252,15 @@ def build_identities(repo_root: Path, datasets: dict[str, Dataset]) -> tuple[lis
     if duplicate_internal:
         raise ValueError(f"Duplicate NFLPlayerID values generated: {duplicate_internal[:10]}")
     canonical.sort(key=lambda item: ((item.get("Name") or "").lower(), item["NFLPlayerID"]))
-    return canonical, ff_rows
+
+    lookup = identity_lookup(canonical)
+    resolved_ff_rows: list[dict[str, str]] = []
+    for row, ids in zip(ff_rows, ff_identity_ids):
+        internal_id = next((lookup[(key, value)] for key, value in ids.items() if (key, value) in lookup), None)
+        resolved = dict(row)
+        resolved["__NFLPlayerID"] = internal_id or ""
+        resolved_ff_rows.append(resolved)
+    return canonical, resolved_ff_rows, source_conflicts
 
 
 def _group(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any]]]:
