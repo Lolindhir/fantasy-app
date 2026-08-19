@@ -9,7 +9,14 @@ from .draft import build_ff_draft_evidence, classify_draft_status
 from .identity import app_player_candidates, identity_lookup
 
 
-def build_audit(repo_root: Path, canonical: list[dict[str, Any]], ff_rows: list[dict[str, str]], drafted_internal_ids: set[str], draft_seasons: Iterable[int]) -> dict[str, Any]:
+def build_audit(
+    repo_root: Path,
+    canonical: list[dict[str, Any]],
+    ff_rows: list[dict[str, str]],
+    drafted_internal_ids: set[str],
+    draft_seasons: Iterable[int],
+    identity_source_conflicts: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     _, relevant_players = app_player_candidates(repo_root)
     lookup = identity_lookup(canonical)
     canonical_by_internal = {row["NFLPlayerID"]: row for row in canonical}
@@ -46,6 +53,8 @@ def build_audit(repo_root: Path, canonical: list[dict[str, Any]], ff_rows: list[
         duplicates = sorted(value for value, count in Counter(values).items() if count > 1)
         if duplicates:
             provider_duplicates[key] = duplicates
+    source_conflicts = identity_source_conflicts or []
+    source_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in source_conflicts)
     return {
         "schemaVersion": 1, "generatedAtUtc": utc_now(), "scope": "public/data/Players_Relevant.json",
         "canonicalIdentityCount": len(canonical), "relevantPlayerCount": len(relevant_players),
@@ -53,11 +62,15 @@ def build_audit(repo_root: Path, canonical: list[dict[str, Any]], ff_rows: list[
         "draftStatusByPosition": {position: dict(counts) for position, counts in sorted(by_position.items())},
         "identityInvariantViolations": {"duplicateProviderIDs": provider_duplicates,
                                         "duplicateProviderIDCount": sum(len(values) for values in provider_duplicates.values())},
+        "identitySourceMappingConflictCount": len(source_conflicts),
+        "identitySourceMappingConflictsByReason": dict(source_conflicts_by_reason),
+        "identitySourceMappingConflicts": source_conflicts,
         "unmatchedRelevantPlayers": unmatched, "unknownDraftStatusRelevantPlayers": unknown_draft,
         "rules": {
             "drafted": "Player resolves to a canonical pick in nflverse.draft-picks.",
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
             "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
+            "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID merges; the row remains isolated by MFL primary key and the suppressed mappings are recorded here.",
         },
     }
