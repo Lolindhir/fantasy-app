@@ -13,7 +13,7 @@ from typing import Any, Iterable, Iterator
 
 SCHEMA_VERSION = 1
 IDENTITY_ID_KEYS = (
-    "GSIS", "Sleeper", "Tank01", "ESPN", "PFR", "PFF", "OTC", "NFL", "ESB",
+    "GSIS", "Sleeper", "Tank01", "ESPN", "PFR", "PFF", "OTC", "NFL", "NFLCom", "ESB",
     "FantasyPros", "MFL", "Sportradar", "Yahoo", "Fleaflicker", "CBS", "CFBRef",
     "Rotowire", "KTC", "FantasyData",
 )
