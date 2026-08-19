@@ -7,6 +7,12 @@ on:
       - main
     paths:
       - ".github/workflows/sync-nfl-source-data.yml"
+  # Temporary bootstrap observability hook; remove after the first successful materialization.
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-nfl-source-data.yml"
   workflow_dispatch:
     inputs:
       dataset:
