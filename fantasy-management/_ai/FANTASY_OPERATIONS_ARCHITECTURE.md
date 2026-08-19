@@ -14,15 +14,18 @@ Existing source workflows refresh league, roster, transaction, player, market, r
 
 Source refreshers own acquisition and source-local normalization. They do not make roster recommendations.
 
-The productive morning refresh path uses a hybrid trigger policy around the 07:00 Europe/Berlin monitoring window:
+The productive morning refresh path uses independent source-triggered materialization around the 07:00 Europe/Berlin monitoring window:
 
-- external ranking/projection/activity source-only pushes between 05:00 inclusive and 06:45 exclusive Europe/Berlin are collected without running the expensive materialization job;
-- a DST-safe scheduled consolidation at 06:45 Europe/Berlin materializes the latest successful source states together;
-- an external source-only push outside that morning batching window materializes immediately, so manual or delayed source refreshes do not wait until the next day;
-- pushes that also touch `public/data/League.json`, `public/data/Players.json`, `public/data/Timestamps.json` or materialization code/config/schema are never treated as source-only batching events and materialize immediately;
-- a manual `workflow_dispatch` of the materializer always runs immediately.
+- every successful relevant external ranking, projection, activity or Success-Heartbeat push on `main` may materialize immediately, including pushes between 05:00 and 06:45 Europe/Berlin;
+- relevant `League.json`, `Players.json` and `Timestamps.json` input changes remain immediate materialization triggers;
+- materialization code, configuration, schema and workflow changes remain immediate triggers;
+- the DST-safe scheduled 06:45 Europe/Berlin materializer remains only as an additional catch-up and is never the sole normal morning consolidation path;
+- a manual `workflow_dispatch` of the materializer always runs immediately;
+- generated Operations-only commits do not recursively trigger the materializer, and PR-only validation must not publish production heartbeats or production materialization.
 
-The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Materialize • Operations Inputs` separates its lightweight `gate` job from the expensive `materialize` job. Concurrency and cancellation apply only to the materialize job, so a morning source push that is intentionally skipped cannot cancel an already running real materialization.
+The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Materialize • Operations Inputs` separates its lightweight `gate` job from the expensive `materialize` job. Push-triggered materializations may supersede older push-triggered materializations, while the scheduled 06:45 catch-up is not allowed to cancel an already running source-triggered materialization.
+
+Correctness does not depend on GitHub Actions starting the scheduled 06:45 catch-up on time or completing it before the 07:00 consumer. The latest successfully published canonical Operations state is authoritative, and its `source-freshness.json` contract determines whether monitoring may proceed, proceed in degraded mode or block.
 
 ### 2. Deterministic materialization
 
@@ -39,6 +42,7 @@ Materialization must not:
 Current published materialized contracts:
 
 ```text
+fantasy-management/generated/operations/source-freshness.json
 fantasy-management/generated/operations/managed-roster-signals.json
 fantasy-management/generated/operations/external-signal-relevance.json
 fantasy-management/generated/operations/player-signals.json
@@ -48,6 +52,8 @@ fantasy-management/generated/operations/free-agent-movement-events.json
 fantasy-management/generated/operations/kicker-streaming-inputs.json
 fantasy-management/generated/operations/data-quality.json
 ```
+
+`source-freshness.json` is the canonical monitoring-readiness gate for the configured source cycle. It distinguishes successful current refresh confirmation from source content changes and exposes `proceed`, `proceed_degraded` or `block`, including whether a no-event conclusion is permitted and which source/signal families are affected.
 
 `managed-roster-signals.json` contains prepared data for the complete Mighty Giants roster.
 
@@ -69,7 +75,7 @@ fantasy-management/_ai/scripts/build_player_signal_dataset.py
 → fantasy-management/generated/operations/player-signals.json
 ```
 
-The workflow builds `external-signal-relevance.json` before `player-signals.json`, so the central contract consumes the freshly materialized activity and ownership context from the same run. All generated outputs are staged and published together through the existing retry/rebuild write path.
+The workflow builds `source-freshness.json` first and `external-signal-relevance.json` before `player-signals.json`, so the central contracts consume the latest successfully materialized readiness, activity and ownership context from the same run. All generated outputs are staged and published together through the existing retry/rebuild write path.
 
 The central player-signal dataset is league-wide rather than managed-roster-only. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
 
@@ -164,7 +170,8 @@ Kicker Streaming is downstream position-specific analysis. Its existence does no
 The productive materialization dependency order is:
 
 ```text
-external-signal-relevance.json
+source-freshness.json
+→ external-signal-relevance.json
 → player-signals.json
 → free-agent-signals.json
 → free-agent-movement-signals.json
@@ -178,7 +185,9 @@ Each step consumes the freshly rebuilt upstream output from the same retry/rebui
 
 An external analyst may read the current materialized datasets, perform fresh research and interpret qualitative signals such as injury context, practice participation, role, opportunity, coaching comments and depth-chart changes.
 
-`free-agent-movement-events.json` is the primary deterministic daily Free-Agent research-trigger layer. If its `event_count` is zero, scheduled monitoring must not launch qualitative Free-Agent research merely because players remain present in the broader Movement state.
+Before interpreting deterministic events, scheduled monitoring must read `source-freshness.json`. A `block` decision stops normal monitoring; `proceed_degraded` restricts conclusions to fresh supported signal families; and `no_event_conclusion_allowed = false` forbids treating a zero-event contract as proof that nothing relevant changed. Monitoring must never infer readiness merely because the local clock is after 06:45.
+
+`free-agent-movement-events.json` is the primary deterministic daily Free-Agent research-trigger layer. If its `event_count` is zero, scheduled monitoring must not launch qualitative Free-Agent research merely because players remain present in the broader Movement state, but a zero-event conclusion is only reliable when the Freshness Gate permits it.
 
 `free-agent-movement-signals.json` is the current deterministic Discovery-state and detail layer. External research uses it to understand the current ADP/market/projection/structural context of an event, including cross-signal confirmation/divergence and replacement proximity. It is not a second alert list.
 
@@ -206,7 +215,7 @@ Without weekly context the analysis returns `weekly_context_required` and must n
 
 Material changes and relevant errors may be delivered automatically. No-change runs remain silent.
 
-A deterministic Movement discovery is not automatically a notification. `free-agent-movement-events.json` is the canonical deterministic Free-Agent event boundary for scheduled monitoring. Its first baseline is silent, and a comparison run with `event_count = 0` produces no Free-Agent research or user notification by itself.
+A deterministic Movement discovery is not automatically a notification. `free-agent-movement-events.json` is the canonical deterministic Free-Agent event boundary for scheduled monitoring. Its first baseline is silent, and a comparison run with `event_count = 0` produces no Free-Agent research or user notification by itself when the Freshness Gate permits a no-event conclusion.
 
 `new`, `changed` and `structural_change` events may trigger targeted qualitative research according to event priority and decision relevance. `resolved` events are normally closure/context signals and require further research only when the resolution itself changes a roster, trade or watchlist implication.
 
@@ -339,6 +348,7 @@ Current published generated layout:
 ```text
 fantasy-management/generated/
 └── operations/
+    ├── source-freshness.json
     ├── managed-roster-signals.json
     ├── external-signal-relevance.json
     ├── player-signals.json
@@ -378,15 +388,18 @@ The intended daily order is:
 league/source refreshes
 → external ranking/projection refreshes
 → external signal refreshes
-→ 06:45 Europe/Berlin deterministic consolidation
+→ immediate deterministic materialization after each successful relevant source/heartbeat publication
+→ optional 06:45 Europe/Berlin catch-up
 → scheduled monitoring
 ```
 
-The morning workflows are scheduled in Europe/Berlin order before the 07:00 monitoring window. Source-only pushes under `fantasy-management/sources/external-rankings/**` and `fantasy-management/sources/external-signals/**` are batched from 05:00 until 06:45 Europe/Berlin: they execute the lightweight trigger gate but not the materialization job. The 06:45 scheduled consolidation then rebuilds managed-roster signals, external-signal relevance, the central player-signal dataset, the complete free-agent dataset, the common QB/RB/WR/TE/K Movement Discovery state, the deduplicated QB/RB/WR/TE/K Movement Event contract and Kicker Streaming inputs in dependency order before publishing changed generated outputs.
+The morning workflows remain scheduled in Europe/Berlin order before the 07:00 monitoring window. Their successful relevant source or Success-Heartbeat commits are independently materializable; there is no 05:00-06:45 batching exception. Multiple morning materializer runs are an accepted cost of publishing the latest derived state as early as possible.
 
-Outside that morning batch window, an external source-only push triggers the same materialization immediately. League/Players/Timestamps and materializer code/config/schema changes remain immediate at all times. If a scheduled source refresh finishes late and publishes after 06:45, its source push therefore triggers an immediate catch-up materialization instead of waiting for the next morning.
+The scheduled 06:45 run is only a best-effort reconciliation/catch-up. Its timing is not a readiness guarantee, and the 07:00 consumer must not assume that a scheduled materializer has started or finished. It must read the latest successfully published canonical Operations state and evaluate `source-freshness.json` before interpreting deterministic events. The Freshness Gate owns `proceed`, `proceed_degraded`, `block`, `no_event_conclusion_allowed`, blocking/unfresh sources and affected signal families.
 
-Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
+A successful source refresh that leaves content unchanged is still fresh when its Success-Heartbeat is current. `public/data/Timestamps.json` remains provenance and must not be used as a substitute fetch-success proof.
+
+Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer after the Freshness Gate. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
 
 ## Legacy observation runner
 
