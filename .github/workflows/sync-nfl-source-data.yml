@@ -58,60 +58,75 @@ jobs:
       - name: Test NFL source-data tooling
         run: python -m unittest discover -s tools/tests -p "test_nfl_source_data.py" -v
 
-      - name: Sync NFL source data
+      - name: Sync, validate and publish NFL source data
         shell: bash
         env:
           DATASET: ${{ inputs.dataset }}
           FORCE: ${{ inputs.force }}
         run: |
-          args=(sync)
+          set -euo pipefail
+
+          sync_args=(sync)
           if [[ -n "$DATASET" ]]; then
-            args+=(--dataset "$DATASET")
+            sync_args+=(--dataset "$DATASET")
           fi
           if [[ "$FORCE" == "true" ]]; then
-            args+=(--force)
-          fi
-          python tools/nfl_source_data.py "${args[@]}"
-
-      - name: Validate materialized NFL source data
-        run: python tools/nfl_source_data.py audit
-
-      - name: Guard generated change scope
-        shell: bash
-        run: |
-          mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
-          if (( ${#changed[@]} == 0 )); then
-            echo "No NFL source-data changes detected."
-            exit 0
-          fi
-
-          unexpected=()
-          for path in "${changed[@]}"; do
-            if [[ "$path" != source-data/* ]]; then
-              unexpected+=("$path")
-            fi
-          done
-
-          if (( ${#unexpected[@]} > 0 )); then
-            printf 'Unexpected changes outside source-data/:\n' >&2
-            printf ' - %s\n' "${unexpected[@]}" >&2
-            exit 1
-          fi
-
-          printf 'Validated source-data changes:\n'
-          printf ' - %s\n' "${changed[@]}"
-
-      - name: Commit and push source-data updates
-        shell: bash
-        run: |
-          git add -A -- source-data
-          if git diff --cached --quiet; then
-            echo "No source-data changes to commit."
-            exit 0
+            sync_args+=(--force)
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
-          git commit -m "data(nfl-source): refresh persistent NFL sources • $timestamp"
-          git push origin HEAD:main
+
+          max_attempts=3
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "Publish attempt $attempt/$max_attempts"
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd -- source-data
+
+            python tools/nfl_source_data.py "${sync_args[@]}"
+            python tools/nfl_source_data.py audit
+
+            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            if (( ${#changed[@]} == 0 )); then
+              echo "No NFL source-data changes detected."
+              exit 0
+            fi
+
+            unexpected=()
+            for path in "${changed[@]}"; do
+              if [[ "$path" != source-data/* ]]; then
+                unexpected+=("$path")
+              fi
+            done
+
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Unexpected changes outside source-data/:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              exit 1
+            fi
+
+            printf 'Validated source-data changes:\n'
+            printf ' - %s\n' "${changed[@]}"
+
+            git add -A -- source-data
+            if git diff --cached --quiet; then
+              echo "No source-data changes to commit."
+              exit 0
+            fi
+
+            timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+            git commit -m "data(nfl-source): refresh persistent NFL sources • $timestamp"
+
+            if git push origin HEAD:main; then
+              echo "NFL source-data publish succeeded."
+              exit 0
+            fi
+
+            if (( attempt == max_attempts )); then
+              echo "main advanced during all $max_attempts publish attempts; failing closed." >&2
+              exit 1
+            fi
+
+            echo "main advanced during publish; rebuilding against the latest main before retrying."
+          done
