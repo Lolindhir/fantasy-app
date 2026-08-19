@@ -105,13 +105,17 @@ Der korrekte Befund ist dann: kein Event aus dem aktuell materialisierten Stand,
 
 Normales Daily Monitoring ist zu unterlassen. Statt Spielerbewegungen aus möglicherweise veralteten Ownership-/Player-Grundlagen zu interpretieren, soll ausschließlich die blockierende Datenqualitäts-/Freshness-Ursache sichtbar gemacht werden.
 
-## 06:45-Konsolidierung und verspätete Quellen
+## Unabhängige Morgen-Materialisierung und 06:45-Catch-up
 
-Source- und Heartbeat-Commits im Morgenfenster werden durch den leichten Materializer-Trigger-Gate gebündelt. Um 06:45 erzeugt der Materializer `source-freshness.json` zusammen mit den übrigen Operations-Contracts.
+Jeder erfolgreiche relevante Source- oder Success-Heartbeat-Commit auf `main` darf unmittelbar eine vollständige Fantasy-Operations-Materialisierung anstoßen. Für diese Entscheidung gibt es keinen Unterschied mehr zwischen dem Morgenfenster und anderen Tageszeiten. Dadurch kann `source-freshness.json` während der Morgenstaffelung schrittweise mit jedem bestätigten Source-Stand aktualisiert werden.
 
-Kommt ein erfolgreicher externer Source-Heartbeat erst nach 06:45, zählt sein Source-only-Push außerhalb des Batch-Fensters als sofortiger Materialisierungs-Trigger. Dadurch wird ein zuvor degradierter Freshness-Stand automatisch durch einen Catch-up-Build aktualisiert.
+Der DST-sichere 06:45-Europe/Berlin-Lauf bleibt ausschließlich als zusätzlicher Catch-up bestehen. Er ist weder die einzige reguläre Morgen-Materialisierung noch ein Readiness-Beweis für das 07:00-Monitoring. Korrektheit darf nicht davon abhängen, dass GitHub Actions diesen Schedule pünktlich startet oder vor 07:00 beendet.
 
-Der dedicated League-Heartbeat liegt planmäßig bereits vor der 06:45-Konsolidierung. Reguläre Zehn-Minuten-League-Refreshes erzeugen keinen separaten Heartbeat-Commit und damit keinen zusätzlichen reinen Freshness-Rebuild.
+Kommt ein erfolgreicher Source- oder Heartbeat-Commit verspätet, löst auch er unmittelbar eine neue Materialisierung aus. Ein zuvor degradierter Freshness-Stand kann dadurch automatisch auf dem aktuellen `main` neu aufgebaut werden.
+
+Der dedicated League-Heartbeat wird planmäßig um 06:35 erzeugt und materialisiert nach erfolgreichem Commit ebenfalls unmittelbar. Reguläre Zehn-Minuten-League-Refreshes erzeugen weiterhin keinen separaten Heartbeat-Commit; echte relevante League-Datenänderungen bleiben jedoch normale Materializer-Trigger.
+
+Für den 07:00-Consumer gilt ausschließlich der tatsächlich veröffentlichte kanonische Operations-State. Der Consumer liest `source-freshness.json` und beachtet `decision`, `no_event_conclusion_allowed`, `blocking_sources`, nicht frische Quellen und `affected_signal_families`; aus der Uhrzeit oder dem 06:45-Schedule darf keine Readiness abgeleitet werden.
 
 ## Sicherheitsprinzipien
 
