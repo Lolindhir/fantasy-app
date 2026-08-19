@@ -10,7 +10,8 @@ from .common import IDENTITY_ID_KEYS, Dataset, clean, iter_csv, load_json, stabl
 ANCHOR_ID_KEYS = ("GSIS", "ESPN", "PFR", "PFF")
 LINK_ID_KEYS = {"GSIS", "Sleeper", "ESPN", "PFR", "PFF", "Tank01"}
 WEAK_ID_KEYS = set(IDENTITY_ID_KEYS) - LINK_ID_KEYS
-ALIASABLE_LINK_ID_KEYS = {"ESPN"}
+ALIAS_MIN_CORROBORATORS = {"ESPN": 1, "PFR": 2}
+ALIASABLE_LINK_ID_KEYS = set(ALIAS_MIN_CORROBORATORS)
 PRIMARY_SOURCE_PREFERENCE = (
     "canonical-existing",
     "nflverse.ff-player-ids",
@@ -282,7 +283,8 @@ def _shared_strong_tokens(
 
 
 def _verified_link_alias(key: str, members: list[IdentityCandidate]) -> bool:
-    if key not in ALIASABLE_LINK_ID_KEYS:
+    required_corroborators = ALIAS_MIN_CORROBORATORS.get(key)
+    if required_corroborators is None:
         return False
     relevant = [member for member in members if member.ids.get(key)]
     values = {member.ids[key] for member in relevant}
@@ -301,7 +303,10 @@ def _verified_link_alias(key: str, members: list[IdentityCandidate]) -> bool:
             for other_value, other_group in grouped.items():
                 if other_value == value:
                     continue
-                if any(len(_shared_strong_tokens(member, other, key)) >= 1 for other in other_group):
+                if any(
+                    len(_shared_strong_tokens(member, other, key)) >= required_corroborators
+                    for other in other_group
+                ):
                     corroborated = True
                     break
             if corroborated:
