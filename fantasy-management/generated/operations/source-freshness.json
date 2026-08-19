@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-19T03:57:32.382071Z",
+  "generated_at": "2026-08-19T04:29:59.013735Z",
   "berlin_date": "2026-08-19",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,9 +11,9 @@
   },
   "population": {
     "source_count": 8,
-    "fresh_count": 1,
+    "fresh_count": 4,
     "stale_count": 1,
-    "missing_count": 6,
+    "missing_count": 3,
     "failed_count": 0,
     "invalid_count": 0
   },
@@ -24,9 +24,6 @@
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
       "league",
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
       "fftoday",
       "cbs-sports",
       "sleeper-trending"
@@ -36,22 +33,14 @@
     ],
     "no_event_blocking_source_ids": [
       "league",
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
       "fftoday",
       "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
-      "dynasty_market",
-      "dynasty_ranking",
       "external_activity",
       "league_state",
       "ownership",
-      "redraft_adp",
-      "redraft_market",
-      "redraft_ranking",
       "season_projection"
     ]
   },
@@ -88,7 +77,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-19T03:55:36.612680Z",
-      "age_minutes": 1.93,
+      "age_minutes": 34.37,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -103,11 +92,12 @@
         "dynasty_ranking",
         "redraft_ranking"
       ],
-      "status": "missing",
-      "reason": "heartbeat_missing",
-      "checked_at": null,
-      "age_minutes": null,
-      "content_changed": null
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-19T03:59:59.567724Z",
+      "age_minutes": 29.99,
+      "content_changed": true,
+      "trigger": "schedule"
     },
     {
       "id": "fantasycalc",
@@ -120,11 +110,12 @@
         "dynasty_market",
         "redraft_market"
       ],
-      "status": "missing",
-      "reason": "heartbeat_missing",
-      "checked_at": null,
-      "age_minutes": null,
-      "content_changed": null
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-19T04:07:28.413446Z",
+      "age_minutes": 22.51,
+      "content_changed": true,
+      "trigger": "schedule"
     },
     {
       "id": "fantasy-football-calculator",
@@ -136,11 +127,12 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "missing",
-      "reason": "heartbeat_missing",
-      "checked_at": null,
-      "age_minutes": null,
-      "content_changed": null
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-19T04:23:22.882978Z",
+      "age_minutes": 6.6,
+      "content_changed": true,
+      "trigger": "schedule"
     },
     {
       "id": "fftoday",
@@ -171,7 +163,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-08-18T17:00:55.268928Z",
-      "age_minutes": 656.62,
+      "age_minutes": 689.06,
       "content_changed": true,
       "trigger": "push"
     },
