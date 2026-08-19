@@ -3,9 +3,9 @@
   "status": "failed",
   "phase": "sync",
   "exitCode": 1,
-  "recordedAtUtc": "2026-08-19T18:24:54Z",
+  "recordedAtUtc": "2026-08-19T18:35:54Z",
   "workflow": "Data • NFL Source Sync",
-  "runId": "32286998198",
+  "runId": "32288030438",
   "runAttempt": "1",
   "datasetInput": null,
   "forceInput": false,
@@ -21,10 +21,10 @@
     "    result = materialize(repo_root, datasets)",
     "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
     "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/materialize.py\", line 16, in materialize",
-    "    canonical, ff_rows = build_identities(repo_root, datasets)",
-    "                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/identity.py\", line 164, in build_identities",
-    "    raise ValueError(f\"Identity component has conflicting IDs for the same provider: {conflicts}\")",
-    "ValueError: Identity component has conflicting IDs for the same provider: {'MFL': ['11983', '1883']}"
+    "    canonical, ff_rows, identity_source_conflicts = build_identities(repo_root, datasets)",
+    "                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/identity.py\", line 228, in build_identities",
+    "    raise ValueError(",
+    "ValueError: Identity component has conflicting IDs for the same provider: {'ESPN': ['13213', '3166800']}; members=[{'Source': 'nflverse.players', 'Name': 'LeGarrette Blount', 'BirthDate': '1986-12-05', 'IDs': {'GSIS': '00-0027325', 'ESPN': '3166800', 'PFR': 'BlouLe00', 'PFF': '5863', 'OTC': '353', 'NFL': '35838', 'ESB': 'BLO626278'}}, {'Source': 'nflverse.ff-player-ids', 'Name': 'LeGarrette Blount', 'BirthDate': '1986-12-05', 'IDs': {'GSIS': '00-0027325', 'Sleeper': '730', 'ESPN': '13213', 'PFF': '5863', 'NFLCom': '497149', 'FantasyPros': '9717', 'MFL': '9898', 'Sportradar': 'f5d20030-d934-45e3-8282-e34c6c83ad84', 'Yahoo': '24318', 'CBS': '1620455', 'Rotowire': '6482', 'FantasyData': '12296'}}]"
   ]
 }
