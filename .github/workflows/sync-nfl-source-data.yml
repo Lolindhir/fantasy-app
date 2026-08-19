@@ -1,6 +1,11 @@
 name: Data • NFL Source Sync
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-nfl-source-data.yml"
   workflow_dispatch:
     inputs:
       dataset:
