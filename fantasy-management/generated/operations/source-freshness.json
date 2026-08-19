@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-19T03:09:50.315288Z",
+  "generated_at": "2026-08-19T03:57:32.382071Z",
   "berlin_date": "2026-08-19",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,9 +11,9 @@
   },
   "population": {
     "source_count": 8,
-    "fresh_count": 0,
+    "fresh_count": 1,
     "stale_count": 1,
-    "missing_count": 7,
+    "missing_count": 6,
     "failed_count": 0,
     "invalid_count": 0
   },
@@ -24,7 +24,6 @@
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
       "league",
-      "players",
       "fantasypros",
       "fantasycalc",
       "fantasy-football-calculator",
@@ -33,12 +32,10 @@
       "sleeper-trending"
     ],
     "blocking_source_ids": [
-      "league",
-      "players"
+      "league"
     ],
     "no_event_blocking_source_ids": [
       "league",
-      "players",
       "fantasypros",
       "fantasycalc",
       "fantasy-football-calculator",
@@ -50,14 +47,11 @@
       "dynasty_market",
       "dynasty_ranking",
       "external_activity",
-      "injury_availability",
       "league_state",
       "ownership",
-      "player_metadata",
       "redraft_adp",
       "redraft_market",
       "redraft_ranking",
-      "role_opportunity",
       "season_projection"
     ]
   },
@@ -91,11 +85,12 @@
         "injury_availability",
         "role_opportunity"
       ],
-      "status": "missing",
-      "reason": "heartbeat_missing",
-      "checked_at": null,
-      "age_minutes": null,
-      "content_changed": null
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-19T03:55:36.612680Z",
+      "age_minutes": 1.93,
+      "content_changed": true,
+      "trigger": "schedule"
     },
     {
       "id": "fantasypros",
@@ -176,7 +171,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-08-18T17:00:55.268928Z",
-      "age_minutes": 608.92,
+      "age_minutes": 656.62,
       "content_changed": true,
       "trigger": "push"
     },
