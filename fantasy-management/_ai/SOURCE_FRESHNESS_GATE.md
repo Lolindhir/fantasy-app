@@ -4,10 +4,10 @@
 
 Das Source Freshness Gate trennt zwei Fragen, die nicht vermischt werden dürfen:
 
-1. **Wurde eine Quelle im aktuellen Morgenzyklus erfolgreich geprüft?**
+1. **Wurde eine überwachte Quelle im aktuellen Morgenzyklus erfolgreich geprüft?**
 2. **Hat sich ihr Inhalt gegenüber dem letzten gespeicherten Stand verändert?**
 
-Ein erfolgreicher Abruf mit unverändertem Inhalt ist `fresh`. `--skip-unchanged` oder ein unveränderter App-Datensatz dürfen deshalb niemals als Fehler- oder Stale-Signal interpretiert werden.
+Ein erfolgreicher Abruf mit unverändertem Inhalt ist `fresh`. `--skip-unchanged` darf deshalb niemals als Fehler- oder Stale-Signal interpretiert werden.
 
 ## Verträge
 
@@ -31,7 +31,7 @@ Builder und Schema:
 
 ## Refresh-Bestätigung
 
-League, Players, FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports und Sleeper Trending liefern für den 07:00-Monitoring-Zyklus eine explizite erfolgreiche Refresh-Bestätigung. Der Heartbeat enthält mindestens:
+League, FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports und Sleeper Trending liefern für den 07:00-Monitoring-Zyklus eine explizite erfolgreiche Refresh-Bestätigung. Der Heartbeat enthält mindestens:
 
 - Source-ID;
 - Workflow-ID/Name;
@@ -46,30 +46,31 @@ Der Heartbeat wird erst nach erfolgreichem Fetch geschrieben. Scheitert ein Fetc
 
 `content_changed = false` bedeutet ausdrücklich nicht `stale`. Es bedeutet: Die Quelle wurde erfolgreich neu geprüft, aber der normalisierte Inhalt war unverändert.
 
-## App-Quellen
+## App-Quellen und Cross-Context-Grenze
 
-`public/data/Timestamps.json` bleibt Source-Provenienz für die jeweiligen App-Datensätze, ist aber **nicht** die Bestätigung dafür, dass ein aktueller Fetch erfolgreich gelaufen ist. Ein Feld kann bei unverändertem Inhalt älter bleiben. Deshalb verwenden auch League und Players eigene Erfolgs-Heartbeats.
+`public/data/Players.json` ist ein kanonischer App-Datensatz und wird von Fantasy Management ausschließlich read-only konsumiert. Players ist bewusst **keine** Quelle im Fantasy-Operations-Freshness-Gate. Der Workflow `APP • Data • Players` schreibt keinen Fantasy-Management-Heartbeat und seine erfolgreiche Generierung oder Veröffentlichung darf nicht von Fantasy-Management-Skripten, -Dateien oder -Status abhängen.
 
-- `Players`: Der aktive 05:05-Europe/Berlin-Refresh schreibt nach erfolgreichem `RequestPlayers.ps1` den Morgen-Heartbeat. Die bestehenden zusätzlichen 08:00/12:00/18:00-UTC-Läufe bleiben erhalten, schreiben aber keinen zusätzlichen Morgen-Heartbeat. Ein manueller Players-Refresh schreibt einen Heartbeat.
-- `League`: Der bestehende Zehn-Minuten-Refresh bleibt unverändert bestehen. Zusätzlich läuft DST-sicher ein eigener 06:35-Europe/Berlin-Refresh, der nach erfolgreichem `RequestLeague.ps1` den Morgen-Heartbeat schreibt. Dadurch entsteht **nicht alle zehn Minuten** ein reiner Heartbeat-Commit. Ein manueller League-Refresh schreibt ebenfalls einen Heartbeat.
+`public/data/Timestamps.json -> Players` bleibt App-Provenienz dafür, wann sich der generierte Players-Datensatz zuletzt inhaltlich verändert hat. Dieser Zeitstempel ist kein Fantasy-Operations-Freshness-Gate und darf das Monitoring nicht blockieren. Fantasy Operations verwendet den jeweils aktuell auf `main` veröffentlichten App-Datensatz als Input.
 
-League und Players sind Blocking Inputs, weil veraltete Ownership-/League- oder Player-/Injury-Grundlagen normale Monitoring-Aussagen verfälschen können.
+Falls künftig eine zusätzliche Player-Freshness- oder Fetch-Erfolgsprüfung für Fantasy Management gewünscht wird, muss sie unabhängig von der App-Produktionspipeline umgesetzt werden. Sie darf `RequestPlayers.ps1`, `.github/workflows/update-players.yml`, dessen Scheduling oder dessen Veröffentlichung nur nach ausdrücklicher Freigabe einer konkreten Cross-Context-Änderung verändern.
+
+`League` bleibt im aktuellen Vertrag vorerst als explizit überwachter App-Input mit eigenem Morgen-Heartbeat bestehen. Diese Players-Entkopplung ändert den bestehenden League-Pfad nicht.
 
 ## Morgenzyklus
 
-Für die Quellen gilt im 07:00-Monitoring-Zyklus:
+Für die im Gate konfigurierten Heartbeat-Quellen gilt im 07:00-Monitoring-Zyklus:
 
 - der erfolgreiche Heartbeat muss zum aktuellen Europe/Berlin-Kalendertag gehören;
 - er muss nach dem für die Quelle konfigurierten lokalen Mindestzeitpunkt liegen;
 - der Heartbeat darf nicht älter als das konfigurierte Maximalalter sein.
 
-Für die externen Ranking-/Projection-/Activity-Quellen und Players beginnt das relevante Fenster ab 05:00 Europe/Berlin. Der dedicated League-Heartbeat wird ab 06:00 akzeptiert und planmäßig um 06:35 erzeugt.
+Für die externen Ranking-/Projection-/Activity-Quellen beginnt das relevante Fenster ab 05:00 Europe/Berlin. Der dedicated League-Heartbeat wird ab 06:00 akzeptiert und planmäßig um 06:35 erzeugt.
 
 Damit zählt beispielsweise ein erfolgreicher unveränderter 05:32-FantasyCalc-Refresh als frisch, ein Heartbeat vom Vorabend oder vom Vortag aber nicht.
 
 ## Gate-Status
 
-Jede Quelle erhält genau einen Status:
+Jede konfigurierte Quelle erhält genau einen Status:
 
 - `fresh`: aktuelle erfolgreiche Refresh-Bestätigung liegt vor;
 - `stale`: ein vorhandener bestätigter Stand erfüllt das aktuelle Zeitfenster/Maximalalter nicht;
@@ -103,11 +104,13 @@ Der korrekte Befund ist dann: kein Event aus dem aktuell materialisierten Stand,
 
 ### `decision = block`
 
-Normales Daily Monitoring ist zu unterlassen. Statt Spielerbewegungen aus möglicherweise veralteten Ownership-/Player-Grundlagen zu interpretieren, soll ausschließlich die blockierende Datenqualitäts-/Freshness-Ursache sichtbar gemacht werden.
+Normales Daily Monitoring ist zu unterlassen. Statt Ereignisse aus einer nicht bestätigten blockierenden Grundlage zu interpretieren, soll ausschließlich die blockierende Datenqualitäts-/Freshness-Ursache sichtbar gemacht werden.
+
+Players gehört nicht mehr zu diesen blockierenden Freshness-Grundlagen; `Players.json` bleibt ein read-only konsumierter App-Input.
 
 ## Unabhängige Morgen-Materialisierung und 06:45-Catch-up
 
-Jeder erfolgreiche relevante Source- oder Success-Heartbeat-Commit auf `main` darf unmittelbar eine vollständige Fantasy-Operations-Materialisierung anstoßen. Für diese Entscheidung gibt es keinen Unterschied mehr zwischen dem Morgenfenster und anderen Tageszeiten. Dadurch kann `source-freshness.json` während der Morgenstaffelung schrittweise mit jedem bestätigten Source-Stand aktualisiert werden.
+Jeder erfolgreiche relevante Source- oder Success-Heartbeat-Commit auf `main` darf unmittelbar eine vollständige Fantasy-Operations-Materialisierung anstoßen. Zusätzlich bleiben relevante Änderungen an kanonischen App-Daten wie `Players.json` normale read-only Input-Trigger für die Materialisierung, ohne dass Fantasy Management deren Erzeugungsworkflow verändert. Für diese Entscheidung gibt es keinen Unterschied mehr zwischen dem Morgenfenster und anderen Tageszeiten.
 
 Der DST-sichere 06:45-Europe/Berlin-Lauf bleibt ausschließlich als zusätzlicher Catch-up bestehen. Er ist weder die einzige reguläre Morgen-Materialisierung noch ein Readiness-Beweis für das 07:00-Monitoring. Korrektheit darf nicht davon abhängen, dass GitHub Actions diesen Schedule pünktlich startet oder vor 07:00 beendet. Entsprechend heißt der Konfigurationswert im Freshness-Vertrag `morning_cycle.catch_up_time`; die frühere Bezeichnung `consolidation_time` ist entfernt.
 
@@ -137,4 +140,5 @@ Diese Werte sind **nur Observability**. Sie werden nicht in `source-freshness.js
 - Das Gate erfindet keinen konkreten Fehlergrund aus einem fehlenden Heartbeat.
 - Ein unveränderter, aber erfolgreich geprüfter Source-Stand bleibt vollständig nutzbar.
 - Ein Content-Timestamp ist nicht automatisch ein Fetch-Erfolgsnachweis.
+- Fantasy Management darf für eigene Freshness-Zwecke keine App-Produktionspipeline zur Laufzeitabhängigkeit machen.
 - `event_count = 0` ist nur dann ein belastbarer No-Event-Befund, wenn `no_event_conclusion_allowed = true`.
