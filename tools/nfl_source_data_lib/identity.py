@@ -155,7 +155,25 @@ def _build_components(candidates):
 _impl._can_merge_on_anchor = _can_merge_on_anchor
 _impl._build_components = _build_components
 
+_original_build_identities = _impl.build_identities
+
+
+def _build_identities_without_persistence_provenance(repo_root, datasets):
+    canonical, ff_rows, source_conflicts, provider_claims, mapping_conflicts = _original_build_identities(
+        repo_root, datasets
+    )
+    for row in canonical:
+        row["Sources"] = [source for source in row.get("Sources", []) if source != "canonical-existing"]
+    return canonical, ff_rows, source_conflicts, provider_claims, mapping_conflicts
+
+
+_impl.build_identities = _build_identities_without_persistence_provenance
+
 from .identity_v2 import *  # noqa: E402,F401,F403
+
+# Re-export the wrapper explicitly because the star import above exposes the
+# original function object that existed when identity_v2 was loaded.
+build_identities = _build_identities_without_persistence_provenance
 
 
 def provider_mapping_lookup(payload, provider, external_id, season):
