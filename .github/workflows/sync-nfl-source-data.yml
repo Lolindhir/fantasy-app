@@ -214,6 +214,42 @@ jobs:
               exit "$materialize_status"
             fi
 
+            # Prove no-op behavior against the exact real-source state before
+            # publishing canonical output. The second materialization must report
+            # no semantic writes at all.
+            noop_log="$(mktemp)"
+            set +e
+            python tools/nfl_source_data.py materialize 2>&1 | tee "$noop_log"
+            noop_status=${PIPESTATUS[0]}
+            if (( noop_status == 0 )); then
+              python - "$noop_log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          expected = {
+              "identityChanged": False,
+              "providerMappingsChanged": False,
+              "draftFilesChanged": 0,
+              "auditChanged": False,
+          }
+          actual = {key: result.get(key) for key in expected}
+          if actual != expected:
+              raise SystemExit(
+                  "Semantic no-op verification failed: "
+                  + json.dumps({"expected": expected, "actual": actual}, sort_keys=True)
+              )
+          PY
+              noop_status=$?
+            fi
+            set -e
+            if (( noop_status != 0 )); then
+              echo "NFL canonical materialization is not a semantic no-op on the second real-source pass." >&2
+              write_failure_diagnostic "semantic-noop" "$noop_status" "$noop_log"
+              exit "$noop_status"
+            fi
+
             python tools/nfl_source_data.py audit | tee -a "$materialize_log"
             rm -f source-data/_sync/last-failure.json
             assert_source_data_only
