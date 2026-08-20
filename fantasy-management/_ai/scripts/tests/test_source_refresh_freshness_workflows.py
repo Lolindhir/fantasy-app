@@ -84,8 +84,6 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         workflow = self._read(".github/workflows/update-players.yml")
 
         for required in (
-            'cron: "5 3 * * *"',
-            'cron: "5 4 * * *"',
             'cron: "0 8,12,18 * * *"',
             "pwsh ./public/requests/RequestPlayers.ps1",
             "git add public/data/**",
@@ -93,6 +91,13 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
             self.assertIn(required, workflow)
 
         for forbidden in (
+            'cron: "5 3 * * *"',
+            'cron: "5 4 * * *"',
+            "05:05 Europe/Berlin",
+            "Resolve Berlin schedule window",
+            "schedule_gate",
+            "TZ=Europe/Berlin",
+            "github.event.schedule",
             "freshness_heartbeat",
             "write_source_refresh_heartbeat.py",
             "fantasy-management/",
