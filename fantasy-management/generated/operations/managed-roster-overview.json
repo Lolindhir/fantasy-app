@@ -1,0 +1,2248 @@
+{
+  "schema_version": 1,
+  "dataset_id": "managed-roster-overview",
+  "generated_at": "2026-08-20T10:41:20Z",
+  "input_fingerprint": "bd6af7dd3d4540942c2dac386c12c1fb34a9f1d36250cf6b28905805413871ae",
+  "sources": [
+    {
+      "id": "league",
+      "path": "public/data/League.json",
+      "content_sha256": "fb734a946ce1e765ac02ce1dfa45260b8dbf61b63e8a06bab3bd6e50ef947392"
+    },
+    {
+      "id": "managed_roster_signals",
+      "path": "fantasy-management/generated/operations/managed-roster-signals.json",
+      "content_sha256": "44d33c10d8ebe04cb9ccd25fc2c2f5d7ec54bfc55dcce3b1615049bec186942f"
+    },
+    {
+      "id": "roster_evaluation_state",
+      "path": "fantasy-management/automation/roster-evaluation-state.json",
+      "content_sha256": "22e86e6443789711f6dd9cac546e73424d429b2e20ebeda3142bd3315bdcb6f1"
+    }
+  ],
+  "evaluation": {
+    "mode": "hybrid_manual_v1",
+    "seed_as_of": "2026-08-19",
+    "classification_age_days": 1,
+    "automatic_fields": [
+      "roster_membership",
+      "roster_area",
+      "starter_requirements",
+      "active_capacity",
+      "taxi_phase",
+      "position_counts",
+      "coverage_status",
+      "skill_pool_margin",
+      "churn_eligibility_given_current_classification"
+    ],
+    "evaluative_fields": [
+      "roster_role",
+      "roster_security",
+      "coverage_targets",
+      "boundary_priority"
+    ],
+    "user_override_count": 0,
+    "unclassified_count": 0,
+    "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
+  },
+  "team": {
+    "team_id": 1,
+    "name": "Mighty Giants",
+    "abbreviation": "MiG",
+    "held_player_count": 33
+  },
+  "structure": {
+    "capacity": {
+      "regular_active_capacity": 30,
+      "current_active_count": 31,
+      "taxi_slots": 2,
+      "current_taxi_count": 2,
+      "reserve_slots": 2,
+      "current_reserve_count": 0,
+      "hard_active_delta": -1
+    },
+    "lineup": {
+      "fixed_starters": {
+        "K": 1,
+        "QB": 2,
+        "RB": 2,
+        "TE": 2,
+        "WR": 2
+      },
+      "flex_slots": 4,
+      "bench_slots": 17
+    },
+    "taxi": {
+      "phase": "pre_lock",
+      "binding": false,
+      "current_technical_occupants": [
+        {
+          "player_id": "13414",
+          "name": "Kaelon Black"
+        },
+        {
+          "player_id": "13417",
+          "name": "De'Zhaun Stribling"
+        }
+      ],
+      "virtual_assignment_status": "not_automated_yet",
+      "interpretation": "Current preseason Taxi placement is technical only; final Taxi allocation must be optimized across eligible rookies before lock."
+    },
+    "coverage": {
+      "K": {
+        "fixed_starter_requirement": 1,
+        "held_count": 1,
+        "current_active_count": 1,
+        "effective_prelock_or_locked_count": 1,
+        "startable_count": 0,
+        "backup_count": 0,
+        "coverage_floor": 1,
+        "preferred_coverage": 1,
+        "status": "preferred_met"
+      },
+      "QB": {
+        "fixed_starter_requirement": 2,
+        "held_count": 4,
+        "current_active_count": 4,
+        "effective_prelock_or_locked_count": 4,
+        "startable_count": 2,
+        "backup_count": 2,
+        "coverage_floor": 3,
+        "preferred_coverage": 4,
+        "status": "preferred_met"
+      },
+      "RB": {
+        "fixed_starter_requirement": 2,
+        "held_count": 10,
+        "current_active_count": 9,
+        "effective_prelock_or_locked_count": 10,
+        "startable_count": 5,
+        "backup_count": 1,
+        "coverage_floor": null,
+        "preferred_coverage": null,
+        "status": "pool_managed"
+      },
+      "TE": {
+        "fixed_starter_requirement": 2,
+        "held_count": 4,
+        "current_active_count": 4,
+        "effective_prelock_or_locked_count": 4,
+        "startable_count": 3,
+        "backup_count": 1,
+        "coverage_floor": 3,
+        "preferred_coverage": 4,
+        "status": "preferred_met"
+      },
+      "WR": {
+        "fixed_starter_requirement": 2,
+        "held_count": 14,
+        "current_active_count": 13,
+        "effective_prelock_or_locked_count": 14,
+        "startable_count": 7,
+        "backup_count": 2,
+        "coverage_floor": null,
+        "preferred_coverage": null,
+        "status": "pool_managed"
+      }
+    },
+    "skill_pool": {
+      "flex_eligible_positions": [
+        "RB",
+        "WR",
+        "TE"
+      ],
+      "required_skill_lineup_slots": 10,
+      "startable_skill_pool": 15,
+      "skill_pool_margin": 5,
+      "startable_players": [
+        {
+          "player_id": "2133",
+          "name": "Davante Adams",
+          "position": "WR"
+        },
+        {
+          "player_id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB"
+        },
+        {
+          "player_id": "7526",
+          "name": "Jaylen Waddle",
+          "position": "WR"
+        },
+        {
+          "player_id": "8130",
+          "name": "Trey McBride",
+          "position": "TE"
+        },
+        {
+          "player_id": "8137",
+          "name": "George Pickens",
+          "position": "WR"
+        },
+        {
+          "player_id": "8151",
+          "name": "Kenneth Walker",
+          "position": "RB"
+        },
+        {
+          "player_id": "8155",
+          "name": "Breece Hall",
+          "position": "RB"
+        },
+        {
+          "player_id": "9224",
+          "name": "Chase Brown",
+          "position": "RB"
+        },
+        {
+          "player_id": "9493",
+          "name": "Puka Nacua",
+          "position": "WR"
+        },
+        {
+          "player_id": "11628",
+          "name": "Marvin Harrison",
+          "position": "WR"
+        },
+        {
+          "player_id": "11632",
+          "name": "Malik Nabers",
+          "position": "WR"
+        },
+        {
+          "player_id": "11635",
+          "name": "Ladd McConkey",
+          "position": "WR"
+        },
+        {
+          "player_id": "12517",
+          "name": "Colston Loveland",
+          "position": "TE"
+        },
+        {
+          "player_id": "12518",
+          "name": "Tyler Warren",
+          "position": "TE"
+        },
+        {
+          "player_id": "13287",
+          "name": "Jeremiyah Love",
+          "position": "RB"
+        }
+      ]
+    },
+    "churn": {
+      "target_general_slots": 2,
+      "assignment_status": "provisional_pre_lock",
+      "current_active_candidate_count": 3,
+      "candidate_pool_count": 4,
+      "guardrail_status": "provisional_requires_virtual_taxi_assignment",
+      "candidate_pool": [
+        {
+          "player_id": "13405",
+          "name": "Kaytron Allen",
+          "position": "RB",
+          "security": "churn",
+          "current_area": "active",
+          "boundary_priority": 10
+        },
+        {
+          "player_id": "12469",
+          "name": "Dylan Sampson",
+          "position": "RB",
+          "security": "conditional",
+          "current_area": "active",
+          "boundary_priority": 20
+        },
+        {
+          "player_id": "13311",
+          "name": "Chris Bell",
+          "position": "WR",
+          "security": "conditional",
+          "current_area": "active",
+          "boundary_priority": 30
+        },
+        {
+          "player_id": "13414",
+          "name": "Kaelon Black",
+          "position": "RB",
+          "security": "conditional",
+          "current_area": "taxi",
+          "boundary_priority": 40
+        }
+      ]
+    }
+  },
+  "players": [
+    {
+      "player_id": "11539",
+      "name": "Jake Bates",
+      "position": "K",
+      "nfl_team": "DET",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "specialist",
+      "roster_security": "churn",
+      "structural_function": "specialist",
+      "classification": {
+        "roster_role": "specialist",
+        "roster_security": "churn",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 27.5,
+        "years_experience": 4,
+        "salary": 4420256,
+        "salary_projected": 6906806,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": null,
+        "fantasypros_position_rank": null,
+        "fantasycalc_overall_rank": null,
+        "fantasycalc_value": null
+      },
+      "coverage_role": "specialist",
+      "coverage_protected": true,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12508",
+      "name": "Jaxson Dart",
+      "position": "QB",
+      "nfl_team": "NYG",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "strong_hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.3,
+        "years_experience": 2,
+        "salary": 14053835,
+        "salary_projected": 21959117,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 21,
+        "fantasypros_position_rank": "QB11",
+        "fantasycalc_overall_rank": 34,
+        "fantasycalc_value": 4674
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11566",
+      "name": "Jayden Daniels",
+      "position": "QB",
+      "nfl_team": "WSH",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.7,
+        "years_experience": 3,
+        "salary": 24766957,
+        "salary_projected": 30732800,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 4,
+        "fantasypros_position_rank": "QB4",
+        "fantasycalc_overall_rank": 17,
+        "fantasycalc_value": 6319
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "4046",
+      "name": "Patrick Mahomes",
+      "position": "QB",
+      "nfl_team": "KC",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 30.9,
+        "years_experience": 10,
+        "salary": 44848342,
+        "salary_projected": 46899613,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 13: Mahomes (knee) won't play in Kansas City's preseason opener against the Rams on Saturday, Matt McMullen of the Chiefs' official site reports.",
+        "reported_date": null,
+        "return_date": "20260822",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 13,
+        "fantasypros_position_rank": "QB8",
+        "fantasycalc_overall_rank": 27,
+        "fantasycalc_value": 5119
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12545",
+      "name": "Tyler Shough",
+      "position": "QB",
+      "nfl_team": "NO",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "strong_hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 26.9,
+        "years_experience": 2,
+        "salary": 7520735,
+        "salary_projected": 11751148,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 68,
+        "fantasypros_position_rank": "QB21",
+        "fantasycalc_overall_rank": 84,
+        "fantasycalc_value": 2993
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "8155",
+      "name": "Breece Hall",
+      "position": "RB",
+      "nfl_team": "NYJ",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.2,
+        "years_experience": 5,
+        "salary": 26827813,
+        "salary_projected": 23018112,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": null,
+        "reported_date": null,
+        "return_date": "20260828",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 45,
+        "fantasypros_position_rank": "RB10",
+        "fantasycalc_overall_rank": 60,
+        "fantasycalc_value": 3547
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12481",
+      "name": "Cam Skattebo",
+      "position": "RB",
+      "nfl_team": "NYG",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "strong_hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.5,
+        "years_experience": 2,
+        "salary": 8086901,
+        "salary_projected": 12635783,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 84,
+        "fantasypros_position_rank": "RB21",
+        "fantasycalc_overall_rank": 74,
+        "fantasycalc_value": 3171
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "9224",
+      "name": "Chase Brown",
+      "position": "RB",
+      "nfl_team": "CIN",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 26.4,
+        "years_experience": 4,
+        "salary": 22344612,
+        "salary_projected": 32468368,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240501",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 51,
+        "fantasypros_position_rank": "RB11",
+        "fantasycalc_overall_rank": 42,
+        "fantasycalc_value": 4406
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12469",
+      "name": "Dylan Sampson",
+      "position": "RB",
+      "nfl_team": "CLE",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "conditional",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "conditional",
+        "boundary_priority": 20,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 21.9,
+        "years_experience": 2,
+        "salary": 1132512,
+        "salary_projected": 1769551,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 175,
+        "fantasypros_position_rank": "RB48",
+        "fantasycalc_overall_rank": 226,
+        "fantasycalc_value": 1235
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": true,
+      "potential_churn_after_taxi_reassignment": true
+    },
+    {
+      "player_id": "13287",
+      "name": "Jeremiyah Love",
+      "position": "RB",
+      "nfl_team": "ARI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 21.2,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 18: Coach Mike LaFleur confirmed Tuesday that Love does not need surgery to address his ankle injury, Tyler Drake of ArizonaSports.com reports.",
+        "reported_date": null,
+        "return_date": "20260822",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 24,
+        "fantasypros_position_rank": "RB4",
+        "fantasycalc_overall_rank": 13,
+        "fantasycalc_value": 6815
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13414",
+      "name": "Kaelon Black",
+      "position": "RB",
+      "nfl_team": "SF",
+      "roster_area": "taxi",
+      "roster_sections": [
+        "roster",
+        "taxi"
+      ],
+      "is_current_active": false,
+      "is_current_taxi": true,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "conditional",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "conditional",
+        "boundary_priority": 40,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.8,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 247,
+        "fantasypros_position_rank": "RB74",
+        "fantasycalc_overall_rank": 271,
+        "fantasycalc_value": 950
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": true
+    },
+    {
+      "player_id": "13405",
+      "name": "Kaytron Allen",
+      "position": "RB",
+      "nfl_team": "WSH",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "churn",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "churn",
+        "boundary_priority": 10,
+        "confidence": "low",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [
+          "Current churn classification must be rechecked before a final cut because positive source-level sleeper context exists."
+        ],
+        "evidence": [
+          {
+            "type": "source_take",
+            "source": "Adrian Franke",
+            "claim": "described Kaytron Allen as a possible fantasy sleeper in Washington",
+            "url": "https://www.kicker.de/draft-grades-bucs-glaenzen-rams-und-jaguars-hoechst-fragwuerdig-1213835/artikel"
+          }
+        ],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.6,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 187,
+        "fantasypros_position_rank": "RB52",
+        "fantasycalc_overall_rank": 280,
+        "fantasycalc_value": 867
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": true,
+      "potential_churn_after_taxi_reassignment": true
+    },
+    {
+      "player_id": "8151",
+      "name": "Kenneth Walker",
+      "position": "RB",
+      "nfl_team": "KC",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.8,
+        "years_experience": 5,
+        "salary": 19578153,
+        "salary_projected": 17716128,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240501",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 40,
+        "fantasypros_position_rank": "RB9",
+        "fantasycalc_overall_rank": 36,
+        "fantasycalc_value": 4572
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12534",
+      "name": "Kyle Monangai",
+      "position": "RB",
+      "nfl_team": "CHI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "strong_hold",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.2,
+        "years_experience": 2,
+        "salary": 4302222,
+        "salary_projected": 6722222,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 18: Monangai (knee) is considered week-to-week, Adam Jahns of AllCHGO.com reports.",
+        "reported_date": null,
+        "return_date": "20260913",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 126,
+        "fantasypros_position_rank": "RB29",
+        "fantasycalc_overall_rank": 143,
+        "fantasycalc_value": 1800
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "4866",
+      "name": "Saquon Barkley",
+      "position": "RB",
+      "nfl_team": "PHI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 29.5,
+        "years_experience": 9,
+        "salary": 35976403,
+        "salary_projected": 36736735,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 65,
+        "fantasypros_position_rank": "RB14",
+        "fantasycalc_overall_rank": 52,
+        "fantasycalc_value": 3814
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12517",
+      "name": "Colston Loveland",
+      "position": "TE",
+      "nfl_team": "CHI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 22.4,
+        "years_experience": 2,
+        "salary": 4540089,
+        "salary_projected": 7093889,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 49,
+        "fantasypros_position_rank": "TE3",
+        "fantasycalc_overall_rank": 29,
+        "fantasycalc_value": 5033
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12506",
+      "name": "Harold Fannin",
+      "position": "TE",
+      "nfl_team": "CLE",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "strong_hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 22.1,
+        "years_experience": 2,
+        "salary": 7618006,
+        "salary_projected": 11903134,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 69,
+        "fantasypros_position_rank": "TE6",
+        "fantasycalc_overall_rank": 77,
+        "fantasycalc_value": 3127
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "8130",
+      "name": "Trey McBride",
+      "position": "TE",
+      "nfl_team": "ARI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 26.7,
+        "years_experience": 5,
+        "salary": 27306050,
+        "salary_projected": 38529568,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 37,
+        "fantasypros_position_rank": "TE2",
+        "fantasycalc_overall_rank": 21,
+        "fantasycalc_value": 5981
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12518",
+      "name": "Tyler Warren",
+      "position": "TE",
+      "nfl_team": "IND",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.2,
+        "years_experience": 2,
+        "salary": 7106450,
+        "salary_projected": 11103828,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 19: Warren (groin) suffered a strained abductor in Wednesday's practice but is expected to return to practice next week, NFL reporter Jordan Schultz reports.",
+        "reported_date": null,
+        "return_date": "20260822",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 57,
+        "fantasypros_position_rank": "TE4",
+        "fantasycalc_overall_rank": 38,
+        "fantasycalc_value": 4487
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "8142",
+      "name": "Alec Pierce",
+      "position": "WR",
+      "nfl_team": "IND",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 26.3,
+        "years_experience": 5,
+        "salary": 9259339,
+        "salary_projected": 12650450,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Aug 19: Coach Shane Steichen told Kevin Bowen of 107.5 The Fan Indianapolis on Wednesday that Pierce (ankle) is \"in a great spot right now. ... Hopefully, we will have him back soon.\"",
+        "reported_date": null,
+        "return_date": "20260829",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 86,
+        "fantasypros_position_rank": "WR33",
+        "fantasycalc_overall_rank": 131,
+        "fantasycalc_value": 1914
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13301",
+      "name": "Antonio Williams",
+      "position": "WR",
+      "nfl_team": "WSH",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "strong_hold",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 22.1,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 138,
+        "fantasypros_position_rank": "WR59",
+        "fantasycalc_overall_rank": 188,
+        "fantasycalc_value": 1455
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13311",
+      "name": "Chris Bell",
+      "position": "WR",
+      "nfl_team": "MIA",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "conditional",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "conditional",
+        "boundary_priority": 30,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 22.2,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": null,
+        "reported_date": null,
+        "return_date": "20260822",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 145,
+        "fantasypros_position_rank": "WR62",
+        "fantasycalc_overall_rank": 246,
+        "fantasycalc_value": 1121
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": true,
+      "potential_churn_after_taxi_reassignment": true
+    },
+    {
+      "player_id": "2133",
+      "name": "Davante Adams",
+      "position": "WR",
+      "nfl_team": "LAR",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 33.7,
+        "years_experience": 13,
+        "salary": 29267625,
+        "salary_projected": 28400672,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 109,
+        "fantasypros_position_rank": "WR44",
+        "fantasycalc_overall_rank": 114,
+        "fantasycalc_value": 2202
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13417",
+      "name": "De'Zhaun Stribling",
+      "position": "WR",
+      "nfl_team": "SF",
+      "roster_area": "taxi",
+      "roster_sections": [
+        "roster",
+        "taxi"
+      ],
+      "is_current_active": false,
+      "is_current_taxi": true,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "strong_hold",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.7,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 143,
+        "fantasypros_position_rank": "WR60",
+        "fantasycalc_overall_rank": 120,
+        "fantasycalc_value": 2038
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "8137",
+      "name": "George Pickens",
+      "position": "WR",
+      "nfl_team": "DAL",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.5,
+        "years_experience": 5,
+        "salary": 25063200,
+        "salary_projected": 31607875,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 35,
+        "fantasypros_position_rank": "WR11",
+        "fantasycalc_overall_rank": 33,
+        "fantasycalc_value": 4686
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "5947",
+      "name": "Jakobi Meyers",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "backup",
+      "roster_security": "hold",
+      "structural_function": "coverage_reserve",
+      "classification": {
+        "roster_role": "backup",
+        "roster_security": "hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 29.8,
+        "years_experience": 8,
+        "salary": 18301250,
+        "salary_projected": 16426001,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 121,
+        "fantasypros_position_rank": "WR51",
+        "fantasycalc_overall_rank": 207,
+        "fantasycalc_value": 1332
+      },
+      "coverage_role": "positional_coverage",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "7526",
+      "name": "Jaylen Waddle",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 27.7,
+        "years_experience": 6,
+        "salary": 16863528,
+        "salary_projected": 15750078,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 55,
+        "fantasypros_position_rank": "WR24",
+        "fantasycalc_overall_rank": 80,
+        "fantasycalc_value": 3068
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11635",
+      "name": "Ladd McConkey",
+      "position": "WR",
+      "nfl_team": "LAC",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.8,
+        "years_experience": 3,
+        "salary": 12989450,
+        "salary_projected": 19127112,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 43,
+        "fantasypros_position_rank": "WR17",
+        "fantasycalc_overall_rank": 49,
+        "fantasycalc_value": 3945
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13285",
+      "name": "Malachi Fields",
+      "position": "WR",
+      "nfl_team": "NYG",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 196,
+        "fantasypros_position_rank": "WR80",
+        "fantasycalc_overall_rank": 198,
+        "fantasycalc_value": 1394
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11632",
+      "name": "Malik Nabers",
+      "position": "WR",
+      "nfl_team": "NYG",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.1,
+        "years_experience": 3,
+        "salary": 13993064,
+        "salary_projected": 17018750,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Aug 19: Giants head coach John Harbaugh said after Tuesday's practice that Nabers (knee) will need to take contact before getting cleared to play Week 1 against the Cowboys, Ryan Dunleavy of the New York Post reports. \"He won't go through the rest of the summer in a red [no-contact] jersey,\" Harbaugh said. \"He's going to have to get bumped around and hit and fronted up. You just have to feel that and know how to deal with it to protect yourself.\"",
+        "reported_date": null,
+        "return_date": "20260828",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 20,
+        "fantasypros_position_rank": "WR7",
+        "fantasycalc_overall_rank": 16,
+        "fantasycalc_value": 6469
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11628",
+      "name": "Marvin Harrison",
+      "position": "WR",
+      "nfl_team": "ARI",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24,
+        "years_experience": 3,
+        "salary": 8198415,
+        "salary_projected": 12416806,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 70,
+        "fantasypros_position_rank": "WR28",
+        "fantasycalc_overall_rank": 79,
+        "fantasycalc_value": 3071
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
+      "classification": {
+        "roster_role": "prospect",
+        "roster_security": "hold",
+        "boundary_priority": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.7,
+        "years_experience": 2,
+        "salary": 1142568,
+        "salary_projected": 1785263,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 171,
+        "fantasypros_position_rank": "WR71",
+        "fantasycalc_overall_rank": 192,
+        "fantasycalc_value": 1417
+      },
+      "coverage_role": "development",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "9493",
+      "name": "Puka Nacua",
+      "position": "WR",
+      "nfl_team": "LAR",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": "core_starter",
+      "roster_security": "locked",
+      "structural_function": "starter_core",
+      "classification": {
+        "roster_role": "core_starter",
+        "roster_security": "locked",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
+        "source_as_of": "2026-08-19",
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "seeded_manual"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.2,
+        "years_experience": 4,
+        "salary": 43898450,
+        "salary_projected": 51758333,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": null,
+        "reported_date": null,
+        "return_date": "20260822",
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 9,
+        "fantasypros_position_rank": "WR3",
+        "fantasycalc_overall_rank": 6,
+        "fantasycalc_value": 8112
+      },
+      "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    }
+  ],
+  "quality": {
+    "status": "ok",
+    "issue_count": 0,
+    "issues": [],
+    "limitations": [
+      "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
+      "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",
+      "Coverage targets are versioned strategic inputs, not immutable league constants.",
+      "User overrides remain authoritative over automated classifications when the future classifier is introduced."
+    ]
+  }
+}
