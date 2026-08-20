@@ -1,4 +1,5 @@
 name: FM • Materialize • Operations Inputs
+run-name: "FM • Materializer • ${{ github.event.head_commit.message || github.event_name }}"
 
 on:
   workflow_dispatch:
@@ -306,7 +307,7 @@ jobs:
               exit 0
             fi
 
-            git commit -m "FM • Materializer • Operations Inputs"
+            git commit -m "data(fantasy-operations): materialize inputs"
 
             if git push origin HEAD:main; then
               published_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
