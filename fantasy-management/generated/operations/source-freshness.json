@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-20T05:03:34.262322Z",
+  "generated_at": "2026-08-20T05:09:02.929810Z",
   "berlin_date": "2026-08-20",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 8,
-    "fresh_count": 5,
-    "stale_count": 2,
+    "fresh_count": 6,
+    "stale_count": 1,
     "missing_count": 1,
     "failed_count": 0,
     "invalid_count": 0
@@ -23,23 +23,18 @@
     "allowed": false,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "league",
       "players",
       "fftoday"
     ],
     "blocking_source_ids": [
-      "league",
       "players"
     ],
     "no_event_blocking_source_ids": [
-      "league",
       "players",
       "fftoday"
     ],
     "affected_signal_families": [
       "injury_availability",
-      "league_state",
-      "ownership",
       "player_metadata",
       "role_opportunity",
       "season_projection"
@@ -57,10 +52,10 @@
         "league_state",
         "ownership"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-19T05:07:09.525512Z",
-      "age_minutes": 1436.41,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-20T05:07:32.051666Z",
+      "age_minutes": 1.51,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -79,7 +74,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-19T03:55:36.612680Z",
-      "age_minutes": 1507.96,
+      "age_minutes": 1513.44,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -97,7 +92,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T03:59:45.442739Z",
-      "age_minutes": 63.81,
+      "age_minutes": 69.29,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -115,7 +110,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:06:57.188624Z",
-      "age_minutes": 56.62,
+      "age_minutes": 62.1,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -132,7 +127,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:21:39.587350Z",
-      "age_minutes": 41.91,
+      "age_minutes": 47.39,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -165,7 +160,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:49:47.738400Z",
-      "age_minutes": 13.78,
+      "age_minutes": 19.25,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -182,7 +177,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:58:37.933116Z",
-      "age_minutes": 4.94,
+      "age_minutes": 10.42,
       "content_changed": true,
       "trigger": "schedule"
     }
