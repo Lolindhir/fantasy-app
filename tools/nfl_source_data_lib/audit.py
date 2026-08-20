@@ -17,6 +17,8 @@ def build_audit(
     draft_seasons: Iterable[int],
     identity_source_conflicts: list[dict[str, Any]] | None = None,
     provider_mapping_conflicts: list[dict[str, Any]] | None = None,
+    historical_mapping_stats: dict[str, int] | None = None,
+    historical_resolution_conflicts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     _, relevant_players = app_player_candidates(repo_root)
     lookup = identity_lookup(canonical)
@@ -96,6 +98,9 @@ def build_audit(
     source_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in source_conflicts)
     mapping_conflicts = provider_mapping_conflicts or []
     mapping_conflicts_by_provider = Counter(item.get("Provider") or "unknown" for item in mapping_conflicts)
+    history_stats = dict(historical_mapping_stats or {})
+    history_conflicts = historical_resolution_conflicts or []
+    history_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in history_conflicts)
     return {
         "schemaVersion": 1,
         "scope": "public/data/Players_Relevant.json",
@@ -121,6 +126,10 @@ def build_audit(
         "providerMappingConflictCount": len(mapping_conflicts),
         "providerMappingConflictsByProvider": dict(sorted(mapping_conflicts_by_provider.items())),
         "providerMappingConflicts": mapping_conflicts,
+        "historicalAppMappingCoverage": history_stats,
+        "historicalResolutionConflictCount": len(history_conflicts),
+        "historicalResolutionConflictsByReason": dict(sorted(history_conflicts_by_reason.items())),
+        "historicalResolutionConflicts": history_conflicts,
         "unmatchedRelevantPlayers": unmatched,
         "unknownDraftStatusRelevantPlayers": unknown_draft,
         "rules": {
@@ -130,8 +139,9 @@ def build_audit(
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
-            "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history; non-overlapping later reuse may point to a different NFLPlayerID.",
+            "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history; archived app player snapshots extend Sleeper/Tank observations into their actual league seasons when the person resolves unambiguously.",
             "quarantinedProviderMapping": "A provider ID that currently claims multiple distinguishable people is suppressed from canonical reverse lookup and recorded as ambiguous instead of merging those people.",
+            "historicalSnapshotConflict": "If Sleeper and Tank01 from one archived player snapshot resolve to different canonical people, neither historical mapping is accepted for that row.",
             "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID resolution; the suppressed mappings are recorded here.",
         },
     }
