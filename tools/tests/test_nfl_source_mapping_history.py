@@ -98,6 +98,55 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                 conflicts[0]["ResolvedByProvider"],
             )
 
+    def test_archived_snapshot_does_not_backfill_from_sleeper_alone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = root / "public/data/past_seasons"
+            archive.mkdir(parents=True)
+            archive.joinpath("Players_2025.json").write_text(
+                json.dumps([
+                    {"ID": "1000", "Name": "Old Player", "Position": "WR"}
+                ]),
+                encoding="utf-8",
+            )
+            canonical = [
+                {"NFLPlayerID": "NFLP-current", "IDs": {"Sleeper": "1000"}, "IDAliases": {}}
+            ]
+
+            claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
+            self.assertEqual([], claims)
+            self.assertEqual([], conflicts)
+            self.assertEqual(1, stats["unresolvedPlayerCount"])
+            self.assertEqual(1, stats["insufficientCorroborationCount"])
+
+    def test_archived_snapshot_uses_espn_as_second_corroborator_and_can_seed_tank(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = root / "public/data/past_seasons"
+            archive.mkdir(parents=True)
+            archive.joinpath("Players_2022.json").write_text(
+                json.dumps([
+                    {"ID": "S1", "TankID": "legacy-tank", "ESPNID": "E1", "Name": "Player A", "Position": "WR"}
+                ]),
+                encoding="utf-8",
+            )
+            canonical = [
+                {
+                    "NFLPlayerID": "NFLP-a",
+                    "IDs": {"Sleeper": "S1", "ESPN": "E1"},
+                    "IDAliases": {},
+                }
+            ]
+
+            claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
+            self.assertEqual([], conflicts)
+            self.assertEqual(1, stats["resolvedPlayerCount"])
+            self.assertEqual(
+                {"Sleeper", "Tank01", "ESPN"},
+                {item["Provider"] for item in claims},
+            )
+            self.assertTrue(all(item["NFLPlayerID"] == "NFLP-a" for item in claims))
+
     def test_non_overlapping_historical_reuse_is_kept_as_two_mappings(self):
         payload = {
             "SchemaVersion": 1,
