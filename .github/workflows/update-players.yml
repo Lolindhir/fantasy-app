@@ -2,8 +2,6 @@ name: APP • Data • Players
 
 on:
   schedule:
-    - cron: "5 3 * * *"       # 05:05 Europe/Berlin während CEST
-    - cron: "5 4 * * *"       # 05:05 Europe/Berlin während CET
     - cron: "0 8,12,18 * * *" # bestehende tägliche UTC-Läufe
   workflow_dispatch: # manueller Start
 
@@ -16,63 +14,22 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve Berlin schedule window
-        id: schedule_gate
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
-        run: |
-          if [[ "$EVENT_NAME" != "schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Manual run: schedule gate passed."
-            exit 0
-          fi
-
-          if [[ "$SCHEDULE_EXPRESSION" == "0 8,12,18 * * *" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Existing UTC player refresh selected."
-            exit 0
-          fi
-
-          berlin_offset="$(TZ=Europe/Berlin date +%z)"
-          if [[ "$berlin_offset" == "+0200" ]]; then
-            expected_schedule="5 3 * * *"
-          elif [[ "$berlin_offset" == "+0100" ]]; then
-            expected_schedule="5 4 * * *"
-          else
-            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
-            exit 1
-          fi
-
-          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled run selected for 05:05 Europe/Berlin."
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
-          fi
-
       - name: Checkout repository
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Voller Git-History für Push
           token: ${{ secrets.PAT_PUSH }} # Personal Access Token mit Schreibrechten
 
       - name: Setup Node.js
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
       - name: Run Request Script
-        if: steps.schedule_gate.outputs.run == 'true'
         run: pwsh ./public/requests/RequestPlayers.ps1
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
