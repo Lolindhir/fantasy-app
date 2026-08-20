@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from . import identity_v2 as _impl
+from .identity_sources import raw_identity_candidates as _raw_identity_candidates
 
 ALIAS_MIN_CORROBORATORS = {"ESPN": 1, "PFR": 2}
 
@@ -154,6 +155,7 @@ def _build_components(candidates):
 
 _impl._can_merge_on_anchor = _can_merge_on_anchor
 _impl._build_components = _build_components
+_impl.raw_identity_candidates = _raw_identity_candidates
 
 _original_build_identities = _impl.build_identities
 
@@ -171,8 +173,6 @@ _impl.build_identities = _build_identities_without_persistence_provenance
 
 from .identity_v2 import *  # noqa: E402,F401,F403
 
-# Re-export the wrapper explicitly because the star import above exposes the
-# original function object that existed when identity_v2 was loaded.
 build_identities = _build_identities_without_persistence_provenance
 
 
