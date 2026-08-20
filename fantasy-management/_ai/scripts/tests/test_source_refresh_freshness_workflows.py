@@ -14,7 +14,6 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
 
     def test_source_workflows_publish_success_heartbeats(self) -> None:
         workflows = {
-            ".github/workflows/update-league.yml": ("league", "league.json"),
             ".github/workflows/update-fantasypros-rankings.yml": ("fantasypros", "fantasypros.json"),
             ".github/workflows/update-fantasycalc-rankings.yml": ("fantasycalc", "fantasycalc.json"),
             ".github/workflows/update-fantasy-football-calculator-adp.yml": (
@@ -37,15 +36,26 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
                     workflow.index("Commit and push updates"),
                 )
 
-    def test_league_uses_dedicated_dst_safe_morning_heartbeat_without_heartbeat_commits_every_ten_minutes(self) -> None:
+    def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
+        # This is a cross-context invariant: FM may consume League app data, not own its producer.
         workflow = self._read(".github/workflows/update-league.yml")
 
-        self.assertIn("cron: '*/10 * * * *'", workflow)
-        self.assertIn("cron: '35 4 * * *'", workflow)
-        self.assertIn("cron: '35 5 * * *'", workflow)
-        self.assertIn('freshness_heartbeat=false', workflow)
-        self.assertIn('freshness_heartbeat=true', workflow)
-        self.assertIn("Dedicated 06:35 Europe/Berlin League freshness refresh selected.", workflow)
+        for required in (
+            "cron: '*/10 * * * *'",
+            "pwsh ./public/requests/RequestLeague.ps1",
+            "git add public/data/**",
+        ):
+            self.assertIn(required, workflow)
+
+        for forbidden in (
+            "freshness_heartbeat",
+            "write_source_refresh_heartbeat.py",
+            "fantasy-management/",
+            "actions/setup-python",
+            "cron: '35 4 * * *'",
+            "cron: '35 5 * * *'",
+        ):
+            self.assertNotIn(forbidden, workflow)
 
     def test_players_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume Players.json, not own its producer.
