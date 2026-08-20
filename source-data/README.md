@@ -101,7 +101,7 @@ The mapping file uses season-level observation intervals in the first implementa
 
 A provider ID may therefore map to different `NFLPlayerID` values in non-overlapping seasons. An overlapping claim for multiple people is recorded in `Conflicts` and resolves fail-closed.
 
-The current provider snapshot establishes current observations. In addition, existing app archives `public/data/past_seasons/Players_<season>.json` are used as historical Sleeper/Tank01 evidence. An archived row is accepted only when its available provider IDs resolve to one canonical person. If Sleeper and Tank01 from the same archived row resolve to different people, neither historical mapping is guessed; the row is recorded under `HistoricalResolutionConflicts` and surfaced in the audit.
+The current provider snapshot establishes current observations. Existing app archives `public/data/past_seasons/Players_<season>.json` can additionally provide historical Sleeper/Tank01/ESPN observations. Because these archived player records do not contain an exact birth date, a historical row is backfilled only when at least two independently resolvable provider IDs agree on the same `NFLPlayerID`. A single historical Sleeper ID is deliberately insufficient, so later provider-ID reuse cannot silently rewrite old history. If resolved provider IDs disagree, no mapping from that archived row is guessed; the disagreement is stored under `HistoricalResolutionConflicts` and surfaced in the audit.
 
 `provider_mapping_lookup(...)` supports season-aware lookup against the historical mapping payload. It returns a person only when exactly one non-conflicting mapping covers the requested season.
 
@@ -134,7 +134,7 @@ It reports, among other things:
 - quarantined source mapping conflicts;
 - ambiguous historical/current provider mappings;
 - coverage from archived app-player snapshots;
-- archived Sleeper/Tank01 disagreement rows;
+- archived provider disagreement rows and insufficiently corroborated history;
 - relevant players that remain unmatched or have unknown draft status.
 
 An ambiguous provider mapping is an auditable data-quality result, not a reason to merge canonical people or choose a silent winner.
