@@ -15,7 +15,6 @@ class SourceFreshnessGateConfigTests(unittest.TestCase):
 
         self.assertEqual(
             {
-                "league",
                 "fantasypros",
                 "fantasycalc",
                 "fantasy-football-calculator",
@@ -25,11 +24,11 @@ class SourceFreshnessGateConfigTests(unittest.TestCase):
             },
             set(sources),
         )
-        # Players is an app-owned read-only input, not a Fantasy Operations freshness source.
+        # League and Players are app-owned read-only inputs, not Fantasy Operations freshness sources.
+        self.assertNotIn("league", sources)
         self.assertNotIn("players", sources)
         self.assertTrue(all(source["kind"] == "heartbeat" for source in sources.values()))
-        self.assertEqual("06:00", sources["league"]["required_after_local_time"])
-        self.assertTrue(sources["league"]["block_monitoring_if_unfresh"])
+        self.assertTrue(all(not source["block_monitoring_if_unfresh"] for source in sources.values()))
         self.assertTrue(all(source["required_for_no_event_conclusion"] for source in sources.values()))
 
 
