@@ -11,6 +11,38 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 ### Data Generation / Infrastruktur
 
+- [ ] Repo-weite Publication-Strategie für schreibende Workflows vereinheitlichen.
+  - Kontext: Die Inventarisierung vom 20.08.2026 umfasst 20 GitHub-Actions-Workflows. Die sechs Fantasy-Management-Source-Writer nutzen bereits `tools/publish_generated_commit.py` mit `rebase-and-retry`; der Fantasy-Operations-Materializer und der erfolgreiche NFL-Source-Sync verwenden bereits `rebuild-and-retry`. Mehrere App- und Maintenance-Writer pushen dagegen weiterhin einmalig direkt nach `main`.
+  - Ziel: Jeden Branch-Writer explizit einer Publication-Klasse zuordnen: self-contained Snapshot = `rebase-and-retry`; repo-/input-abhängiges Derived Output = `rebuild-and-retry`; echter Inhaltskonflikt = fail-closed; niemals Force-Push zur automatischen Konfliktauflösung.
+  - Architektur: Gemeinsame Git-Publish-Mechanik unter `tools/` halten und darüber bei Bedarf einen dependency-aware Writer-Runner ergänzen, statt Retry-Schleifen in einzelnen Workflow-YAMLs zu duplizieren.
+  - Leitplanke: Fantasy-Management bleibt der bereits abgesicherte Referenzfall. App-Writer nur nach eigener Prüfung ihrer Input-/Output-Abhängigkeiten migrieren; keine pauschale Übernahme des Rebase-Modells.
+
+- [ ] App-Data-Writer dependency-aware gegen `main`-Push-Races absichern.
+  - Betroffen: `.github/workflows/update-league.yml`, `update-players.yml`, `update-games.yml`, `update-drafts.yml`, `update-standings.yml`, `update-transactions.yml` und `update-teams.yml`.
+  - Priorität 1: `update-league.yml` wegen des 10-Minuten-Takts und der breiten Abhängigkeiten zuerst behandeln.
+  - Priorität 2: Players und Games gemeinsam mit dem Tank01-Requestbudget betrachten. Ein verlorener Git-Push darf nicht automatisch unnötige externe Refetches erzeugen; bei irrelevanten `main`-Änderungen soll ein vorhandener validierter Stand möglichst weiterverwendet werden, bei relevanten Input-Änderungen dagegen neu gerechnet werden.
+  - Priorität 3: Drafts und Transactions gemeinsam härten, weil beide Generatorpfade gegenseitige Draft-Pick-Anreicherungen und den Past-Seasons-Index berühren.
+  - Priorität 4: Standings und Teams anschließend auf denselben Publication-Vertrag bringen.
+  - Technische Besonderheit: Gemeinsame Outputs wie `public/data/Timestamps.json` und `public/data/backup/**` erzeugen zusätzliche Same-Path-Races; deshalb ist ein reiner Git-Rebase für App-Writer nicht generell ausreichend.
+  - Validierung: Race-Tests müssen sowohl irrelevante parallele `main`-Commits als auch relevante Input-Änderungen und echte Same-Path-Konflikte abdecken.
+
+- [ ] Maintenance- und Diagnose-Writer race-safe machen.
+  - Betroffen: `.github/workflows/update-past-seasons-index.yml` und `.github/workflows/clean-backups.yml`; beide veröffentlichen aktuell über einen einmaligen direkten Push nach `main`.
+  - Past-Seasons-Index: Bei fortgeschrittenem `main` neu gegen den aktuellen historischen Ressourcenbestand berechnen, weil der Index aus Repository-Inhalten abgeleitet wird.
+  - Backup Cleanup: Die Retention-Entscheidung immer gegen den aktuellen Backup-Bestand neu treffen; keinen bereits auf einem alten Checkout berechneten Lösch-Commit lediglich rebasen.
+  - NFL Source Sync: Der erfolgreiche Sync-Pfad besitzt bereits `rebuild-and-retry`; zusätzlich den direkten Push des `source-data/_sync/last-failure.json`-Diagnosepfads race-safe machen.
+
+- [ ] Repo-weiten Regressionstest für Branch-Writer und Publish-Verträge ergänzen.
+  - Ziel: Verhindern, dass neue oder geänderte schreibende Workflows wieder einen nackten einmaligen `git push ... HEAD:main` einführen.
+  - Prüfung: Alle Workflows mit `contents: write` beziehungsweise erkennbarer Commit-/Push-Logik inventarisieren und sicherstellen, dass sie einen dokumentierten `rebase-and-retry`-, `rebuild-and-retry`- oder bewusst begründeten alternativen Publication-Pfad verwenden.
+  - Ausnahme: Reine CI-, Build- und Pages-Deploy-Workflows ohne Repository-Branch-Write benötigen keinen Generated-Data-Publisher.
+  - Schutz: Der Test darf keine konkrete Fachlogik erzwingen, sondern nur verhindern, dass der Race-Schutz still wieder entfernt wird.
+
+- [ ] Schreibrechte der App-Datenworkflows auf das notwendige Minimum reduzieren.
+  - Kontext: Mehrere App-Data-Workflows besitzen zusätzlich zu `contents: write` auch `pages: write` und `id-token: write`, obwohl das eigentliche Pages-Deployment separat in `deploy.yml` erfolgt.
+  - Ziel: Nach der Publication-Härtung je Workflow prüfen, ob ausschließlich `contents: write` erforderlich ist, und überflüssige Pages-/OIDC-Rechte entfernen.
+  - Leitplanke: Permission-Bereinigung getrennt von fachlichen Generatoränderungen validieren und keine benötigten Deploy-Rechte aus `deploy.yml` entfernen.
+
 - [ ] GitHub Actions auf aktuelle Node-24-kompatible Action-Versionen aktualisieren.
   - Kontext: GitHub Actions warnt aktuell unter anderem bei `actions/checkout@v4` und `actions/setup-python@v5`, dass deren Node-20-Runtime-Ziel deprecated ist und vom Runner bereits auf Node 24 erzwungen wird.
   - Ziel: Repository-weit verwendete Actions inventarisieren und auf Major-/Release-Versionen aktualisieren, die Node 24 offiziell unterstützen, bevor die erzwungene Kompatibilität zu einem harten Fehler wird.
