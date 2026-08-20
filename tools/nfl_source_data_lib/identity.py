@@ -37,6 +37,38 @@ def _can_merge_on_anchor(left, right, shared_key):
     return shared_key in shared
 
 
+def _seed_for_component(members):
+    id_tokens = sorted(
+        {
+            f"{key}:{value}"
+            for member in members
+            if member.source != "canonical-existing"
+            for key, value in member.ids.items()
+            if value
+        }
+    )
+    if not id_tokens:
+        id_tokens = sorted(
+            {
+                f"{key}:{value}"
+                for member in members
+                for key, value in member.ids.items()
+                if value
+            }
+        )
+    birth_dates = sorted({member.birth_date for member in members if member.birth_date})
+    names = sorted({member.name.strip().lower() for member in members if member.name and member.name.strip()})
+    positions = sorted({member.position for member in members if member.position})
+    seed_parts = ["component", *id_tokens]
+    if birth_dates:
+        seed_parts.append("birth=" + ",".join(birth_dates))
+    if positions:
+        seed_parts.append("position=" + ",".join(positions))
+    if names:
+        seed_parts.append("names=" + ",".join(names))
+    return "|".join(seed_parts)
+
+
 def _build_components(candidates):
     uf = _impl.UnionFind()
     for _ in candidates:
@@ -154,6 +186,7 @@ def _build_components(candidates):
 
 
 _impl._can_merge_on_anchor = _can_merge_on_anchor
+_impl._seed_for_component = _seed_for_component
 _impl._build_components = _build_components
 _impl.raw_identity_candidates = _raw_identity_candidates
 
