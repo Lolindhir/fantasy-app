@@ -238,3 +238,64 @@ Diese Prozesse sollen vorrangig vorbereitete Derived Datasets lesen. Gemeinsame 
   - Leitplanke: Numerische Salary-Cut-offs bleiben datierte Analysewerte und werden nicht als zeitlose Regeln übernommen.
 
 ## Erledigt / Archiv
+
+- [x] Morning-Source-Refresh und Operations-Materialisierung unabhängig triggerbar orchestrieren.
+  - Ergebnis: Erfolgreiche relevante Ranking-/Projection-/Activity- und Success-Heartbeat-Pushes materialisieren unabhängig von der Uhrzeit unmittelbar; die frühere Batching-Sonderregel von 05:00 bis 06:45 Europe/Berlin ist entfernt.
+  - Ergebnis: League-, Players-, Timestamps- sowie Materializer-Code-/Config-/Schema-Änderungen bleiben sofortige Trigger.
+  - Ergebnis: Der DST-sichere 06:45-Lauf bleibt als zusätzlicher Catch-up, ist aber keine Readiness-Voraussetzung und darf einen laufenden Source-getriggerten Materializer nicht abbrechen.
+  - Ergebnis: Generated-Operations-only-Pushes und irrelevante Pushes werden im Resolver explizit abgewiesen; der Workflow selbst hört weiterhin nicht auf `fantasy-management/generated/operations/**`, wodurch kein rekursiver Materializer-Loop entsteht.
+  - Ergebnis: PR-Kontext fordert keine Produktionsmaterialisierung; Source-Workflows mit PR-Validierung schreiben dort weiterhin keine Produktionsheartbeats.
+  - Ergebnis: `source-freshness.json` bleibt die zentrale Sicherheitsinstanz für den 07:00-Consumer; aus Uhrzeit oder erwartetem 06:45-Abschluss wird keine Readiness abgeleitet.
+  - Ergebnis: Die Triggerentscheidung liegt testbar in `resolve_fantasy_operations_materialization_trigger.py`; Morning-/Outside-Morning-Source-Push, Heartbeat, League/Players/Timestamps, Generated-only, irrelevant, PR, DST-Catch-up und manueller Dispatch sind durch Regressionstests abgedeckt.
+  - Ergebnis: Der bestehende dreifache Fetch/Reset/Rebuild-Push-Race-Pfad des Materializers bleibt unverändert und ist nun zusätzlich durch einen Workflow-Regressionstest geschützt.
+
+- [x] Positionsübergreifende Free-Agent-Movement-Events materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `free-agent-movement-events.json` vergleicht den aktuellen `free-agent-movement-signals.json`-State mit dem vorherigen erfolgreichen Movement-State und emittiert nur `new`, `changed`, `structural_change` oder `resolved`.
+  - Ergebnis: Eine erstmalige Baseline bleibt still; reiner Vergleichsfenster-Churn wird normalisiert; strukturelle Day-over-Day-Änderungen werden als Edge-Events behandelt und erzeugen am Folgetag kein künstliches Gegenereignis.
+  - Ergebnis: Kicker laufen durch denselben QB/RB/WR/TE/K-Event-Contract; es gibt keine separate Kicker-Discovery- oder Event-Pipeline.
+  - Ergebnis: `FM • Materialize • Operations Inputs` sichert den vorherigen Movement-State runner-temporär, baut und validiert die Event-Schicht direkt nach dem Movement-State und veröffentlicht sie atomar mit den übrigen Operations-Inputs.
+  - Produktiver Nachweis vom 17.08.2026: 322 vorherige und 322 aktuelle Discoveries, `baseline_mode=comparison`, exakt 0 Events bei unverändertem Material-State; Quality `ok`; 34 fokussierte Operations-Tests erfolgreich.
+
+- [x] Positionsübergreifende Free-Agent-Movement-Discovery materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `free-agent-movement-signals.json` scannt die vollständige tatsächliche Fantasy-Free-Agent-Population QB/RB/WR/TE/K; Kicker laufen durch dieselbe Discovery-, Materialitäts- und Priorisierungsarchitektur und verwenden lediglich positionsspezifische Quellen beziehungsweise Schwellen.
+  - Ergebnis: historische 1/3/7/14/30-Tage-Vergleiche für ADP, Dynasty-Markt/Ranking/Tier und Season Projections, Cross-Signal-Confirmation/-Divergence, ligaangepasste positionsspezifische Replacement-Relevanz sowie Day-over-Day-Strukturänderungen werden deterministisch vorbereitet.
+  - Ergebnis: vorhandene Schwellen aus `redraft-adp-movement`, `market-movement`, `season-projection-movement` und für Kicker `kicker-signal-movement` werden wiederverwendet; Sleeper Activity ist nur Bestätigungs-/Research-Kontext und keine Discovery-Voraussetzung.
+  - Ergebnis: `FM • Materialize • Operations Inputs` baut und validiert den Contract nach `free-agent-signals.json`, sichert den vorherigen Free-Agent-State für strukturelle Deltas und veröffentlicht den Movement-Contract atomar mit den übrigen Operations-Inputs.
+  - Erster produktiver Lauf: 1.201 tatsächliche Fantasy Free Agents bewertet, 322 Research-Discoveries erzeugt; Schema-/Ownership-/Positionsprüfung erfolgreich.
+
+- [x] Kicker-spezifische Daily-Signale in das bestehende Monitoring integrieren.
+  - Ergebnis: neues dynamisches Target Set `kicker-daily-monitoring` für den gehaltenen Kicker plus alle tatsächlichen Fantasy-Free-Agent-Kicker aus `kicker-streaming-inputs.json`.
+  - Ergebnis: neues Profil `kicker-signal-movement` überwacht Kicker-Baseline, FFC-Kicker-ADP, FFToday/CBS-Projections, Projection Consensus, Sleeper Activity, Injury, nominal K1, NFL-Team und triggerbasierte aktuelle Job Security.
+  - Ergebnis: die bestehende Baseline-Engine wird wiederverwendet; es existiert keine zweite Kicker-Scoring-Formel im Monitoring.
+  - Ergebnis: Kicker Daily Monitoring ist in `entity-observation` verdrahtet und bleibt read-only; keine Weekly-Matchup-/Weather-Bewertung, keine automatische Start/Sit- oder Add/Drop-Entscheidung.
+  - Leitplanke: finale Kicker-Hold-/Stream-Entscheidung gehört als Untermodul in `Weekly Lineup + Waiver`.
+
+- [x] Kicker-Streaming-Analysebaustein fachlich und technisch vorbereiten.
+  - Ergebnis: `kicker-streaming-inputs.json`, Baseline-/Decision-Engine, Weekly Research Plan, Venue-/Weather-/Job-/Injury-Freshness-Gates und held-Bye-Sonderfall sind implementiert.
+  - Ergebnis: Provider-FPTS bleiben getrennt; CBS-/FFToday-Scoringunsicherheit wird transparent modelliert; Job Security ist Eligibility-Gate; Sleeper Activity bleibt Research-Tiebreaker.
+  - Ergebnis: Es wird bewusst kein eigenständiger produktiver Kicker-Wochenworkflow mehr als Ziel verfolgt. Die Engine ist ein positionsspezifisches Untermodul des geplanten `Weekly Lineup + Waiver` Gesamtworkflows.
+
+- [x] Zentrales materialisiertes Player-Signal-Dataset aufbauen und produktiv veröffentlichen.
+  - Ergebnis: Ligaweite QB/RB/WR/TE/K-Population mit stabiler Spieler-ID, NFL-Team, League Ownership, Injury-/Depth-Chart-Signalen, Dynasty-Ranking, Marktwert, Redraft-ADP, FFToday-/CBS-Projections, Sleeper-Add-/Drop-Aktivität und Quellenständen.
+  - Ergebnis: Listenlängenbereinigte Perzentile, Projection-Provider-Abweichung und Freshness werden deterministisch berechnet; Provider-Fantasy-Punkte bleiben getrennt und Top-N-Abwesenheit wird nicht als Nullaktivität behandelt.
+  - Ergebnis: `FM • Materialize • Operations Inputs` baut `player-signals.json` nach der aktuellen External-Signal-Materialisierung und veröffentlicht alle geänderten Operations-Inputs über denselben Retry-/Rebuild-Pfad.
+  - Leitplanke: Der Datensatz erzeugt keine Hold-, Shop-, Cut-, Add-, Start- oder Sit-Empfehlungen; historische Deltas/Tiers und bestätigte Alias-/Join-Verbesserungen bleiben bei Bedarf spätere Erweiterungen.
+
+- [x] Vollständiges Fantasy-Free-Agent-Dataset materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `free-agent-signals.json` wird deterministisch aus dem zentralen Player-Signal-Dataset erzeugt und enthält ausschließlich `ownership.status == fantasy_free_agent`.
+  - Ergebnis: Rankings, Marktwert, ADP, Projections, Activity, Injury, Rolle und Freshness bleiben pro Spieler vollständig erhalten; `Players.json -> IsFreeAgent` wird nicht als Fantasy-Verfügbarkeit verwendet.
+  - Ergebnis: `FM • Materialize • Operations Inputs` baut und validiert den Free-Agent-Contract direkt nach `player-signals.json` und veröffentlicht ihn über denselben Retry-/Rebuild-Pfad.
+
+- [x] Kicker-Streaming-Kandidatencontract materialisieren und produktiv veröffentlichen.
+  - Ergebnis: `kicker-streaming-inputs.json` kombiniert den aktuell gehaltenen Mighty-Giants-Kicker mit allen tatsächlichen Fantasy-Free-Agent-Kickern.
+  - Ergebnis: CBS-/FFToday-Projections, FFC-Kicker-ADP, Sleeper Activity, Injury und nominale Rolle stehen für die Analyseschicht in einem Contract bereit; Provider-FPTS bleiben getrennt.
+  - Ergebnis: CBS 50+ und FFToday ohne Distanz-Buckets werden als transparente Liga-Scoring-Ranges statt als erfundene exakte Punkte behandelt.
+  - Ergebnis: Der Contract wird nach `free-agent-signals.json` gebaut, validiert und produktiv veröffentlicht.
+
+- [x] Vollständiges Roster-Monitoring für das verwaltete Team einrichten.
+  - Ergebnis: Der dynamische Selector löst bei jedem Lauf die deduplizierte Union aus `Roster`, `Reserve` und `Taxi` des `managed_team` auf.
+  - Ergebnis: Für jeden Spieler werden Verletzung und Verfügbarkeit, Rolle und Opportunity, Dynasty-Marktbewegung sowie Redraft-ADP als getrennte Profile beobachtet.
+  - Ergebnis: Neue Spieler erhalten stille Baselines; unveränderte Läufe erzeugen keinen Event, keinen Commit und keine Benachrichtigung; materielle Änderungen können eine sichtbare ChatGPT-/Push-Benachrichtigung auslösen.
+  - Leitplanke: Die technische Konfiguration wurde ohne Änderungen an GitHub Actions oder `public/data` umgesetzt.
+
+Erledigte Einträge hier nur ablegen, wenn die Historie für spätere Management-Entscheidungen oder den Ausbau der Fantasy Operations nützlich ist.
