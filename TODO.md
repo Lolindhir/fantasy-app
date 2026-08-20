@@ -83,11 +83,43 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Austauschbarkeit: nflverse-spezifische Feldnamen und Downloadpfade dürfen nicht in App-Generatoren oder Fantasy-Management-Consumer durchsickern.
 
 - [ ] Kanonische NFL-Player-Identity-Bridge aufbauen.
-  - Ziel: Eine providerneutrale NFL-Spieleridentität definieren und Zuordnungen zu Sleeper, Tank01, GSIS, ESPN, PFR, PFF, OTC, FantasyPros und weiteren verfügbaren IDs zentral materialisieren; GSIS als bevorzugten stabilen NFL-Schlüssel prüfen, aber nicht ungeprüft voraussetzen.
-  - Quelle: nflverse Players und Fantasy Player IDs zunächst kombinieren und vorhandene Sleeper-/Tank01-Zuordnungen aus der aktuellen Player-Pipeline dagegen auditieren.
-  - Leitplanke: `Players.json -> ID` vorerst weiterhin als bestehenden Sleeper-basierten App-Vertrag erhalten; keine unnötige Migration des Frontend-Contracts.
-  - Validierung: Eindeutigkeit, fehlende IDs und One-to-many-/Many-to-one-Konflikte explizit erkennen; keine stillen Dedupes oder heuristische Gewinnerauswahl.
-  - Nutzen: Neue Provider sollen zukünftig über die zentrale Identity Bridge angebunden werden, statt jeweils eigene Name-Matching-Logik einzuführen.
+  - Architektur: `NFLPlayerID` ist die dauerhafte providerunabhängige Personenidentität; externe IDs sind Mappings auf diese Person.
+  - Sleeper-Rolle: Sleeper bleibt das führende Quellsystem für den aktuellen App- und Liga-Zustand. `public/data/Players.json -> ID` bleibt deshalb der bestehende Sleeper-`player_id` und wird in diesem Vorhaben nicht auf `NFLPlayerID` migriert.
+  - Historisierung: Sleeper-, Tank01-, GSIS-, ESPN-, PFR-, PFF-, OTC-, FantasyPros- und weitere Provider-IDs als zeitabhängige Mappings materialisieren; zunächst mindestens saisonbezogen, aber kompatibel mit späteren `FirstObserved`/`LastObserved`- bzw. `ValidFrom`/`ValidTo`-Intervallen.
+  - Konfliktregel: Eine kollidierende Provider-ID darf niemals zwei ansonsten unterscheidbare Personen zusammenführen. Das betroffene Mapping als `ambiguous`/`conflicting` quarantänen, ohne einen stillen Gewinner zu wählen oder die übrige Personenevidenz zu verwerfen.
+  - Historische Fakten: Bereits aufgelöste Drafts, Trades, Roster-Snapshots und weitere kanonische historische Fakten mit der damaligen `NFLPlayerID` verankern und die ursprüngliche Provider-ID/Provenienz zusätzlich erhalten; heutige Provider-Mappings dürfen alte Fakten nicht nachträglich umdeuten.
+  - Merge-Evidenz: Namen nur beschreibend verwenden; keine Name-Matches als autoritative Personenzusammenführung.
+  - Validierung: Eindeutigkeit, fehlende IDs, One-to-many-/Many-to-one-Konflikte und zeitlich überlappende Mapping-Konflikte explizit erkennen; keine stillen Dedupes oder provider-spezifischen Sonderfälle als primäre Lösungsstrategie.
+  - Dokumentation: Dauerhafter Vertrag liegt in `.ai-context/manual/player-identity.yaml` und `source-data/README.md`.
+
+- [ ] Identity-Resolver auf personenorientierte Auflösung plus Provider-Mapping-Quarantäne umbauen und regressionssicher machen.
+  - Aktueller Blocker: Die realen nflverse/DynastyProcess-Daten enthalten zwei unterschiedliche Greg Jones, deren FF-ID-Zeilen beide `Sleeper = 133` behaupten. Die aktuelle Union-Logik verbindet sie dadurch und stößt anschließend auf widersprüchliche GSIS-/ESPN-/PFR-/PFF-IDs.
+  - Ziel: Zuerst belastbare Personenidentität bzw. getrennte Personenkomponenten herstellen und Provider-Mappings anschließend an diese Personen anhängen; ein einzelnes Sleeper-/Tank01-/sonstiges Mapping darf keine widersprüchlichen Personenkomponenten transitiv verschmelzen.
+  - Schutz: Widersprüchliche Provider-Zuordnungen mappingbezogen quarantänen statt pauschal den gesamten ansonsten brauchbaren Source-Datensatz zu verwerfen.
+  - Tests: Regression für den Greg-Jones-/Sleeper-133-Fall, synthetische Wiederverwendung derselben Sleeper-ID in nicht überlappenden Zeiträumen, bestehende Same-Person-Aliase, schwache ID-Kollisionen und widersprüchliche Geburtsdaten abdecken.
+  - Leitplanke: Keine Hardcodierung von `Sleeper 133` oder anderen einzelnen Real-Data-Ausnahmen.
+
+- [ ] Historische Provider-ID-Mappings materialisieren und zeitbezogene Identity-Auflösung einführen.
+  - Zielmodell: Provider, ExternalID, `NFLPlayerID` und Gültigkeits-/Beobachtungszeitraum getrennt vom dauerhaften Personenobjekt persistieren; mindestens Saisonauflösung im ersten Durchstich.
+  - Wiederverwendung: Dieselbe Provider-ID darf in zwei nicht überlappenden Zeiträumen unterschiedlichen `NFLPlayerID`s zugeordnet sein, ohne historische Fakten zu beschädigen.
+  - Lookup: Resolver-Schnittstellen für historische Consumer um zeitlichen Kontext erweitern, sobald eine externe ID nicht global eindeutig ist.
+  - Verankerung: Kanonische historische Source-Datasets sollen nach erfolgreicher Auflösung die `NFLPlayerID` speichern und nicht bei jedem späteren Lauf allein gegen den heutigen Sleeper-Stand neu auflösen.
+  - App-Abgrenzung: Dafür keine zusätzlichen Identity- oder technischen Metadatenfelder in `Players.json`, `League.json`, `Drafts.json` oder andere bestehende App-Readmodels einführen.
+
+- [ ] Source-Data-Materialisierung auf echte No-Op-Semantik umstellen und technische Metadaten vom fachlichen Payload trennen.
+  - Problem: Laufzeitwerte wie `GeneratedAtUtc` in kanonischen Identity-/Audit-Payloads machen semantisch identische Materialisierungen bei jedem Lauf künstlich unterschiedlich.
+  - Ziel: Unveränderte validierte Quellen und unveränderte kanonische Fakten dürfen keinen neuen semantischen Source-Data-Stand erzeugen.
+  - Metadaten: Abrufzeit, Generierungszeit, Content-Hash, Freshness und Provenienz in dedizierten Metadata-, Timestamp-, Manifest-, Audit- oder Sidecar-Strukturen halten.
+  - App-Vertrag: Keine `GeneratedAt`-, `GeneratedAtUtc`-, `UpdatedAt`- oder vergleichbaren technischen Pipeline-Felder in fachliche Records von `Players.json`, `League.json`, `Drafts.json`, `Transactions.json` usw. aufnehmen; bestehende separate Timestamp-/Manifest-Mechanismen bevorzugen.
+  - Tooling: Prüfen, ob `sync` plus anschließendes `audit` derzeit unnötig doppelt materialisiert, und die Befehlsgrenzen so ordnen, dass ein erfolgreicher Lauf nur die erforderliche Materialisierung ausführt.
+  - Validierung: Regressionstest, dass identische Raw-Inputs bei erneutem Materialisieren keinen fachlichen Datei-Diff erzeugen.
+
+- [ ] NFL-Source-Data-Bootstrap nach Identity-Härtung erneut gegen reale Providerdaten materialisieren und vollständig auditieren.
+  - Voraussetzung: Resolver-Konfliktmodell, historische Provider-Mappings und No-Op-Verhalten zuerst stabilisieren; nicht weitere Einzelkonflikte nur provider- oder spielerspezifisch flicken.
+  - Raw-vs-Canonical: Erfolgreich validierte Raw-Downloads sollen als reproduzierbare Source-Evidence erhalten bleiben, auch wenn eine nachgelagerte kanonische Materialisierung fehlschlägt; der letzte gute kanonische Stand bleibt dabei unverändert.
+  - Audit: Identity-Coverage, Mapping-Konflikte, Draft-Coverage und Draft-Status gegen aktuelle relevante Spieler sowie historische Spieler prüfen, insbesondere Rookies, ältere Spieler und UDFAs.
+  - Akzeptanz: Bootstrap erst als erfolgreich betrachten, wenn die vollständigen realen Quellen materialisieren, der Audit die verbleibenden Konflikte nachvollziehbar ausweist und ein zweiter identischer Lauf keinen semantischen Diff erzeugt.
+  - Workflow-Folgearbeit: Den temporären Bootstrap-/PR-Trigger erst nach erfolgreicher Materialisierung entfernen bzw. auf den endgültigen Betriebszustand bringen; jede konkrete Änderung unter `.github/workflows/**` benötigt weiterhin eine separate explizite Freigabe.
 
 - [ ] NFL Draft Capital und Combine als erste persistente kanonische Source-Datasets materialisieren.
   - Draft: Draftjahr, Runde, Position innerhalb der Runde, Overall Pick, Draft-Team und Player-Identität in einem stabilen internen Format speichern; `undrafted`, `not_eligible` und `unknown` semantisch nicht miteinander vermischen.
@@ -142,6 +174,7 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Kontext: Die Moves-Historie kann historische Transactions laden, löst Spieler aktuell aber weiterhin gegen das jeweils aktuelle `Players.json` auf.
   - Problem: Ausgeschiedene oder später aus dem aktuellen Playerbestand entfernte Spieler können dadurch in historischen Moves nur als `Player <ID>` erscheinen.
   - Ziel: Im vollständigen Saisonabschluss einen stabilen, saisonbezogenen Player-Snapshot mit mindestens Player-ID, Name, Position, NFL-Team und Bildreferenz erzeugen und über `PastSeasonsIndex.json` auffindbar machen.
+  - Identity-Abgrenzung: Der App-Snapshot kann den damaligen Sleeper-Identifier für die Darstellung bewahren; die dauerhafte historische Personenauflösung gehört zusätzlich in die kanonische `NFLPlayerID`-/Provider-Mapping-Schicht und darf nicht vom heutigen Sleeper-Mapping abhängen.
   - Leitplanke: Der Snapshot muss generatorseitig entstehen; Angular darf ihn nur laden und zur historischen Anzeige verwenden.
   - Abhängigkeit: Der Moves-Snapshot soll aus dem validierten Saisonarchiv entstehen und nicht durch einen späteren Lauf gegen bereits veränderte aktuelle Spielerquellen rekonstruiert werden.
 
