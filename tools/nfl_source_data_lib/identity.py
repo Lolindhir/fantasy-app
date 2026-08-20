@@ -29,7 +29,7 @@ def _build_components(candidates):
 
     # Provider-only current rows prefer current anchored evidence. Historical
     # canonical mappings are a fallback only when no current stable component
-    # claims that provider ID. This preserves stable app-only identities while
+    # claims that provider ID. This preserves stable existing identities while
     # allowing a later provider-ID reuse to attach to the new current person.
     for _ in range(3):
         components = _impl._component_members(uf, candidates)
@@ -79,6 +79,43 @@ def _build_components(candidates):
             changed = True
         if not changed:
             break
+
+    # Remaining current app rows are allowed to establish provisional person
+    # components because Sleeper is the current app identity contract. A single
+    # otherwise-unanchored provider row may then attach to exactly one such app
+    # component. Multiple rows claiming the same app mapping remain separate so
+    # the later mapping-conflict audit quarantines the ambiguity instead of
+    # silently collapsing them.
+    components = _impl._component_members(uf, candidates)
+    app_token_roots = defaultdict(set)
+    for idx, candidate in enumerate(candidates):
+        if candidate.source != "app.Players":
+            continue
+        root = uf.find(idx)
+        for key in _impl.ATTACH_ID_KEYS:
+            if value := candidate.ids.get(key):
+                app_token_roots[(key, value)].add(root)
+
+    proposals = defaultdict(list)
+    for idx, candidate in enumerate(candidates):
+        if candidate.source in {"app.Players", "canonical-existing"}:
+            continue
+        if _impl._component_is_stable(components.get(uf.find(idx), []), candidates):
+            continue
+        targets = set()
+        for key in _impl.ATTACH_ID_KEYS:
+            if value := candidate.ids.get(key):
+                targets.update(app_token_roots.get((key, value), set()))
+        if len(targets) == 1:
+            proposals[next(iter(targets))].append(idx)
+
+    for target, proposed_indexes in proposals.items():
+        if len(proposed_indexes) != 1:
+            continue
+        idx = proposed_indexes[0]
+        target_indexes = components.get(target, [])
+        if _impl._component_compatible(candidates[idx], target_indexes, candidates):
+            uf.union(idx, target)
     return uf
 
 
