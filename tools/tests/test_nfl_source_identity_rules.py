@@ -8,14 +8,15 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib.identity import (
     IdentityCandidate,
     _can_merge_on_anchor,
+    _seed_for_component,
     provider_mapping_lookup,
 )
 
 
-def candidate(ids, birth_date="2000-01-01"):
+def candidate(ids, birth_date="2000-01-01", name="Test Player"):
     return IdentityCandidate(
         ids=ids,
-        name="Test Player",
+        name=name,
         first_name=None,
         last_name=None,
         birth_date=birth_date,
@@ -45,6 +46,11 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
         left = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1980-01-01")
         right = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1990-01-01")
         self.assertFalse(_can_merge_on_anchor(left, right, "GSIS"))
+
+    def test_component_seed_disambiguates_shared_provider_id(self):
+        old_player = candidate({"GSIS": "00-shared", "PFR": "Old00"}, "1980-01-01", "Old Player")
+        new_player = candidate({"GSIS": "00-shared", "PFR": "New00"}, "1990-01-01", "New Player")
+        self.assertNotEqual(_seed_for_component([old_player]), _seed_for_component([new_player]))
 
     def test_provider_mapping_lookup_is_season_aware(self):
         payload = {
