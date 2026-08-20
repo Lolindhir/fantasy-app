@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-20T10:05:37.273721Z",
+  "generated_at": "2026-08-20T10:29:28.545554Z",
   "berlin_date": "2026-08-20",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -10,54 +10,30 @@
     "monitoring_time": "07:00"
   },
   "population": {
-    "source_count": 7,
+    "source_count": 6,
     "fresh_count": 5,
-    "stale_count": 1,
+    "stale_count": 0,
     "missing_count": 1,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "blocked",
+  "overall_status": "degraded",
   "monitoring": {
-    "decision": "block",
-    "allowed": false,
+    "decision": "proceed_degraded",
+    "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "league",
       "fftoday"
     ],
-    "blocking_source_ids": [
-      "league"
-    ],
+    "blocking_source_ids": [],
     "no_event_blocking_source_ids": [
-      "league",
       "fftoday"
     ],
     "affected_signal_families": [
-      "league_state",
-      "ownership",
       "season_projection"
     ]
   },
   "sources": [
-    {
-      "id": "league",
-      "label": "APP \u2022 Data \u2022 League",
-      "kind": "heartbeat",
-      "path": "fantasy-management/sources/refresh-status/league.json",
-      "block_monitoring_if_unfresh": true,
-      "required_for_no_event_conclusion": true,
-      "affected_signal_families": [
-        "league_state",
-        "ownership"
-      ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T05:07:32.051666Z",
-      "age_minutes": 298.09,
-      "content_changed": true,
-      "trigger": "schedule"
-    },
     {
       "id": "fantasypros",
       "label": "FM \u2022 Ranking \u2022 FantasyPros ECR",
@@ -72,7 +48,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T03:59:45.442739Z",
-      "age_minutes": 365.86,
+      "age_minutes": 389.72,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -90,7 +66,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:06:57.188624Z",
-      "age_minutes": 358.67,
+      "age_minutes": 382.52,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -107,7 +83,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:21:39.587350Z",
-      "age_minutes": 343.96,
+      "age_minutes": 367.82,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -140,7 +116,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:49:47.738400Z",
-      "age_minutes": 315.83,
+      "age_minutes": 339.68,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -157,13 +133,13 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-20T04:58:37.933116Z",
-      "age_minutes": 306.99,
+      "age_minutes": 330.84,
       "content_changed": true,
       "trigger": "schedule"
     }
   ],
   "quality": {
-    "status": "blocked",
+    "status": "degraded",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
