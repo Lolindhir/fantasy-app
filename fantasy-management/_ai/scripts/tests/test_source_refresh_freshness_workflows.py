@@ -15,7 +15,6 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
     def test_source_workflows_publish_success_heartbeats(self) -> None:
         workflows = {
             ".github/workflows/update-league.yml": ("league", "league.json"),
-            ".github/workflows/update-players.yml": ("players", "players.json"),
             ".github/workflows/update-fantasypros-rankings.yml": ("fantasypros", "fantasypros.json"),
             ".github/workflows/update-fantasycalc-rankings.yml": ("fantasycalc", "fantasycalc.json"),
             ".github/workflows/update-fantasy-football-calculator-adp.yml": (
@@ -48,13 +47,25 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         self.assertIn('freshness_heartbeat=true', workflow)
         self.assertIn("Dedicated 06:35 Europe/Berlin League freshness refresh selected.", workflow)
 
-    def test_players_only_persists_morning_or_manual_freshness_heartbeat(self) -> None:
+    def test_players_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         workflow = self._read(".github/workflows/update-players.yml")
 
-        self.assertIn('0 8,12,18 * * *', workflow)
-        self.assertIn("Existing UTC player refresh selected without morning freshness heartbeat.", workflow)
-        self.assertIn("Scheduled run selected for 05:05 Europe/Berlin with freshness heartbeat.", workflow)
-        self.assertIn("Manual run: schedule gate passed with freshness heartbeat.", workflow)
+        for required in (
+            'cron: "5 3 * * *"',
+            'cron: "5 4 * * *"',
+            'cron: "0 8,12,18 * * *"',
+            "pwsh ./public/requests/RequestPlayers.ps1",
+            "git add public/data/**",
+        ):
+            self.assertIn(required, workflow)
+
+        for forbidden in (
+            "freshness_heartbeat",
+            "write_source_refresh_heartbeat.py",
+            "fantasy-management/",
+            "actions/setup-python",
+        ):
+            self.assertNotIn(forbidden, workflow)
 
     def test_materializer_consumes_heartbeat_directory_and_publishes_gate(self) -> None:
         workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
