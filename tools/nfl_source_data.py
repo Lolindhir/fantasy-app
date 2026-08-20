@@ -9,6 +9,9 @@ from pathlib import Path
 from nfl_source_data_lib.common import load_json, load_registry, sync_dataset
 from nfl_source_data_lib.materialize import materialize
 
+# Keep this entry point side-effect free until main() is invoked; CI imports the
+# supporting modules independently during source-data validation.
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
