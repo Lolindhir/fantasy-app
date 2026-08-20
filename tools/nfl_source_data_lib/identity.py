@@ -2,6 +2,39 @@ from collections import defaultdict
 
 from . import identity_v2 as _impl
 
+ALIAS_MIN_CORROBORATORS = {"ESPN": 1, "PFR": 2}
+
+
+def _can_merge_on_anchor(left, right, shared_key):
+    if left.birth_date and right.birth_date and left.birth_date != right.birth_date:
+        return False
+
+    shared = {
+        key
+        for key in _impl.ANCHOR_ID_KEYS
+        if left.ids.get(key) and left.ids.get(key) == right.ids.get(key)
+    }
+    conflicting = {
+        key
+        for key in _impl.ANCHOR_ID_KEYS
+        if left.ids.get(key)
+        and right.ids.get(key)
+        and left.ids.get(key) != right.ids.get(key)
+    }
+    if not conflicting:
+        return True
+    if not left.birth_date or left.birth_date != right.birth_date:
+        return False
+
+    for conflict_key in conflicting:
+        required = ALIAS_MIN_CORROBORATORS.get(conflict_key)
+        if required is None:
+            return False
+        corroborators = len(shared - {conflict_key})
+        if corroborators < required:
+            return False
+    return shared_key in shared
+
 
 def _build_components(candidates):
     uf = _impl.UnionFind()
@@ -119,6 +152,32 @@ def _build_components(candidates):
     return uf
 
 
+_impl._can_merge_on_anchor = _can_merge_on_anchor
 _impl._build_components = _build_components
 
 from .identity_v2 import *  # noqa: E402,F401,F403
+
+
+def provider_mapping_lookup(payload, provider, external_id, season):
+    provider = str(provider)
+    external_id = str(external_id)
+    season = int(season)
+
+    for conflict in payload.get("Conflicts", []) or []:
+        if conflict.get("Provider") != provider or str(conflict.get("ExternalID")) != external_id:
+            continue
+        first = int(conflict.get("FirstObservedSeason") or season)
+        last = int(conflict.get("LastObservedSeason") or first)
+        if first <= season <= last:
+            return None
+
+    matches = []
+    for mapping in payload.get("Mappings", []) or []:
+        if mapping.get("Provider") != provider or str(mapping.get("ExternalID")) != external_id:
+            continue
+        first = int(mapping.get("FirstObservedSeason") or season)
+        last = int(mapping.get("LastObservedSeason") or first)
+        if first <= season <= last:
+            matches.append(str(mapping.get("NFLPlayerID")))
+    unique = sorted(set(matches))
+    return unique[0] if len(unique) == 1 else None
