@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasy-football-calculator",
+  "source_name": "Fantasy Football Calculator",
+  "ranking_kind": "adp",
+  "ranking_id": "redraft-ppr-8-team-kicker",
+  "ranking_name": "Fantasy Football Calculator Redraft PPR 8-Team Kicker ADP",
+  "ranking_type": "observed_mock_draft_average_draft_position",
+  "official_source_url": "https://fantasyfootballcalculator.com/",
+  "api_url": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=8&year=2026&position=all",
+  "fetched_at": "2026-08-20T04:21:37.548347+00:00",
+  "season_label": 2026,
+  "format": {
+    "dynasty": false,
+    "scoring": "ppr",
+    "position": "K",
+    "source_position": "PK",
+    "source_team_count": 8,
+    "actual_league_team_count": 6,
+    "team_count_usage": "nearest_supported_proxy",
+    "actual_fixed_kicker_starters": 1
+  },
+  "sample": {
+    "type": "PPR",
+    "teams": 8,
+    "rounds": 15,
+    "total_drafts": 6885,
+    "start_date": "2026-08-12",
+    "end_date": "2026-08-19",
+    "age_days": 1,
+    "quality": "high_sample"
+  },
+  "snapshot": {
+    "snapshot_date": "2026-08-20",
+    "ranking_file": "ranking.csv",
+    "metadata_file": "metadata.json",
+    "raw_latest_file": "../../raw-latest.json",
+    "row_count": 24,
+    "position_counts": {
+      "K": 24
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "source_rank",
+      "position",
+      "team",
+      "source_player_id",
+      "adp",
+      "adp_formatted",
+      "times_drafted",
+      "high",
+      "low",
+      "stdev",
+      "bye",
+      "source_format",
+      "source_team_count",
+      "actual_league_team_count",
+      "sample_total_drafts",
+      "sample_start_date",
+      "sample_end_date"
+    ],
+    "ranking_sha256": "dc9d384429a095d8ce620ba190ae8c655b565cd5a15423cc27040b0d0af5b7a1",
+    "source_raw_sha256_at_snapshot": "7a98aee1d2d6d137c81a086c686bf581fde8bbf09a69520882320867364df2d1",
+    "diagnostics": {
+      "source_player_count": 266,
+      "normalized_player_count": 24,
+      "normalized_position": "K",
+      "source_position": "PK",
+      "normalized_rank_unique": true,
+      "reuses_ppr_all_position_payload": true
+    }
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.json",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_unchanged": true
+  },
+  "extraction_provenance": {
+    "method": "derived_from_same_official_ppr_all_position_api_payload",
+    "additional_network_request": false,
+    "source_ranking_id": "redraft-ppr-8-team",
+    "response_headers": {
+      "etag": "",
+      "last_modified": "Thu, 20 Aug 2026 04:21:37 GMT",
+      "content_type": "text/html; charset=utf-8"
+    }
+  },
+  "analysis_usage": {
+    "role": "Observed kicker mock-draft cost and uncertainty context",
+    "primary_use": "kicker_draft_cost",
+    "not_expert_consensus": true,
+    "not_trade_market_value": true,
+    "not_projection": true,
+    "comparison_contract": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json",
+    "rank_comparison": "Compare K-only ranks through list-length-aware percentiles.",
+    "league_adjustment": "Apply six-team replacement level and one fixed kicker starter during analysis."
+  },
+  "attribution": {
+    "requested": true,
+    "display_name": "Fantasy Football Calculator",
+    "website": "https://fantasyfootballcalculator.com/"
+  }
+}
