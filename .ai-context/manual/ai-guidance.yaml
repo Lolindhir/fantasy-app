@@ -28,6 +28,13 @@ guidance:
     - Prefer deriving persistent domain facts, cross-feature data and source-of-truth behavior in the PowerShell generation pipeline and exposing them through generated JSON instead of re-deriving them in Angular.
     - Keep Angular focused on display, interaction, frontend filtering and explicitly documented presentation-only prototypes; do not move generator-owned logic into the frontend merely because the immediate consumer is an Angular component.
 
+  crossContextBoundaries:
+    - Treat the application data-generation context and `fantasy-management/` as separate ownership domains by default.
+    - Fantasy Management may read canonical app data such as `public/data/*.json` and may react to published app-data changes as read-only inputs.
+    - Do not modify app generator scripts, app refresh workflows, their schedules, their publication path or generated app outputs for a Fantasy-Management-only requirement unless the user explicitly approves that concrete cross-context change.
+    - Never make successful app data generation or publication depend on Fantasy Management scripts, files, heartbeats, status contracts or other Fantasy Management runtime state without that explicit approval.
+    - When Fantasy Management needs additional freshness, observability or monitoring evidence for app data, implement it in an independent Fantasy-Management-owned path that consumes published app state rather than injecting a dependency into the app producer.
+
   documentation:
     - When changing architecture, update .ai-context/manual/decisions.yaml.
     - When changing generated data contracts, regenerate generated context documentation.
