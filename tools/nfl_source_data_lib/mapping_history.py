@@ -8,6 +8,7 @@ from .common import clean, load_json
 from .identity import identity_lookup
 
 _SEASON_FILE = re.compile(r"Players_(\d{4})\.json$")
+_MIN_HISTORICAL_CORROBORATORS = 2
 
 
 def _snapshot_rows(payload: Any) -> list[dict[str, Any]]:
@@ -33,6 +34,7 @@ def build_historical_app_mapping_claims(
         "snapshotPlayerCount": 0,
         "resolvedPlayerCount": 0,
         "unresolvedPlayerCount": 0,
+        "insufficientCorroborationCount": 0,
         "conflictingPlayerCount": 0,
     }
 
@@ -47,17 +49,17 @@ def build_historical_app_mapping_claims(
         stats["snapshotPlayerCount"] += len(rows)
 
         for row in rows:
-            sleeper = clean(row.get("ID"))
-            tank = clean(row.get("TankID"))
+            snapshot_ids = {
+                "Sleeper": clean(row.get("ID")),
+                "Tank01": clean(row.get("TankID")),
+                "ESPN": clean(row.get("ESPNID")),
+            }
+            snapshot_ids = {key: value for key, value in snapshot_ids.items() if value}
             token_results: dict[str, str] = {}
-            if sleeper:
-                internal_id = lookup.get(("Sleeper", sleeper))
+            for provider, external_id in snapshot_ids.items():
+                internal_id = lookup.get((provider, external_id))
                 if internal_id:
-                    token_results["Sleeper"] = internal_id
-            if tank:
-                internal_id = lookup.get(("Tank01", tank))
-                if internal_id:
-                    token_results["Tank01"] = internal_id
+                    token_results[provider] = internal_id
 
             resolved_ids = sorted(set(token_results.values()))
             if len(resolved_ids) > 1:
@@ -68,33 +70,31 @@ def build_historical_app_mapping_claims(
                         "Season": season,
                         "Name": clean(row.get("Name")) or clean(row.get("FullName")),
                         "Position": clean(row.get("Position")),
-                        "SleeperID": sleeper,
-                        "Tank01ID": tank,
+                        "SleeperID": snapshot_ids.get("Sleeper"),
+                        "Tank01ID": snapshot_ids.get("Tank01"),
+                        "ESPNID": snapshot_ids.get("ESPN"),
                         "ResolvedByProvider": dict(sorted(token_results.items())),
                     }
                 )
                 continue
-            if not resolved_ids:
+
+            # Historical app snapshots do not contain an exact birth date. A
+            # single provider ID is therefore not enough to backfill identity:
+            # that ID may have been corrected or reused later. Require at least
+            # two independently resolved provider IDs to agree before using the
+            # archived row as season-specific evidence.
+            if len(token_results) < _MIN_HISTORICAL_CORROBORATORS or not resolved_ids:
                 stats["unresolvedPlayerCount"] += 1
+                stats["insufficientCorroborationCount"] += 1
                 continue
 
             stats["resolvedPlayerCount"] += 1
             internal_id = resolved_ids[0]
-            if sleeper:
+            for provider, external_id in sorted(snapshot_ids.items()):
                 claims.append(
                     {
-                        "Provider": "Sleeper",
-                        "ExternalID": sleeper,
-                        "NFLPlayerID": internal_id,
-                        "ObservedSeason": season,
-                        "Sources": [f"app.PastPlayers.{season}"],
-                    }
-                )
-            if tank:
-                claims.append(
-                    {
-                        "Provider": "Tank01",
-                        "ExternalID": tank,
+                        "Provider": provider,
+                        "ExternalID": external_id,
                         "NFLPlayerID": internal_id,
                         "ObservedSeason": season,
                         "Sources": [f"app.PastPlayers.{season}"],
@@ -203,6 +203,7 @@ def extend_provider_mapping_payload(
             item.get("Season"),
             item.get("SleeperID"),
             item.get("Tank01ID"),
+            item.get("ESPNID"),
         )
         for item in history_resolution_conflicts
     }
@@ -212,6 +213,7 @@ def extend_provider_mapping_payload(
             conflict.get("Season"),
             conflict.get("SleeperID"),
             conflict.get("Tank01ID"),
+            conflict.get("ESPNID"),
         )
         if key not in known:
             history_resolution_conflicts.append(conflict)
@@ -238,6 +240,7 @@ def extend_provider_mapping_payload(
             int(item.get("Season") or 0),
             str(item.get("SleeperID") or ""),
             str(item.get("Tank01ID") or ""),
+            str(item.get("ESPNID") or ""),
         )
     )
     return {
