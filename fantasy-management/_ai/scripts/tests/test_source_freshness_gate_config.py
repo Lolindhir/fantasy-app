@@ -25,6 +25,7 @@ class SourceFreshnessGateConfigTests(unittest.TestCase):
             },
             set(sources),
         )
+        # Players is an app-owned read-only input, not a Fantasy Operations freshness source.
         self.assertNotIn("players", sources)
         self.assertTrue(all(source["kind"] == "heartbeat" for source in sources.values()))
         self.assertEqual("06:00", sources["league"]["required_after_local_time"])
