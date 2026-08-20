@@ -48,6 +48,7 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
             self.assertIn(required, workflow)
 
         for forbidden in (
+            "refresh_mode",
             "freshness_heartbeat",
             "write_source_refresh_heartbeat.py",
             "fantasy-management/",
