@@ -60,13 +60,25 @@ A failed download, missing required column or implausibly small source file must
 
 ## Identity contract
 
-`source-data/nfl/identities/players.json` uses `NFLPlayerID` as an internal, provider-independent identity. GSIS, Sleeper, Tank01, ESPN, PFR and other provider IDs are mappings, not the canonical key.
+The durable identity architecture is documented in `.ai-context/manual/player-identity.yaml`.
 
-The first materialization derives a deterministic `NFLPlayerID` from the strongest available external identity. Later materializations reuse the persisted `NFLPlayerID` whenever any known external ID overlaps, so adding a newly discovered GSIS/ESPN/PFR/etc. mapping does not rename an existing internal player.
+`NFLPlayerID` is the internal, provider-independent identity of one real NFL player. It is the stable person key for canonical NFL source data and historical facts. Sleeper, Tank01, GSIS, ESPN, PFR, PFF and other provider IDs are mappings to that person, not the permanent cross-provider key themselves.
 
-Identity joins are ID-based. Names are descriptive metadata and are not authoritative merge keys. Conflicting one-to-many/provider mappings fail closed instead of choosing a silent winner.
+Sleeper still has a special application role: it is the leading source for the current app and league state, and `public/data/Players.json -> ID` remains the Sleeper player ID. This preserves the current app contract without making Sleeper IDs globally timeless person identifiers.
 
-The current app contract is unchanged: `public/data/Players.json -> ID` remains the Sleeper player ID until a separate migration is explicitly designed.
+Provider mappings are historical. The first implementation may express validity at season granularity, but the model must remain compatible with more precise observed/valid time ranges later. A provider ID can therefore be associated with different `NFLPlayerID` values in non-overlapping historical periods if the upstream provider reuses or corrects that ID.
+
+Identity resolution must not merge two otherwise distinguishable people merely because one provider mapping collides. If the same provider ID claims multiple distinct people for an overlapping period, quarantine that mapping as ambiguous/conflicting. Do not choose a silent winner, do not collapse the people, and do not use display names as authoritative merge keys.
+
+Historical canonical facts must persist the resolved `NFLPlayerID` together with the original provider ID/provenance needed to audit the resolution. Once an old trade, draft pick, roster snapshot or other historical fact is anchored to a person, it must not be reinterpreted only from today's provider mapping.
+
+The current app contract is unchanged: `public/data/Players.json -> ID` remains the Sleeper player ID. Adding `NFLPlayerID` to generated app read models would be a separate contract change and is not part of the source-data bootstrap.
+
+## Metadata and no-op contract
+
+Technical fetch, generation and freshness metadata belongs in dedicated provider metadata, timestamp, manifest, audit or sidecar structures. Do not add fields such as `GeneratedAt`, `GeneratedAtUtc` or `UpdatedAt` to `Players.json`, `League.json`, `Drafts.json`, `Transactions.json` or their domain records merely to record that a pipeline ran.
+
+Canonical source datasets must also preserve semantic no-op behavior. If the validated source content and derived canonical facts are unchanged, materialization must not rewrite the dataset solely because a runtime timestamp changed. Operational timestamps therefore must not participate in semantic payload equality for identity or historical canonical datasets.
 
 ## Draft contract
 
