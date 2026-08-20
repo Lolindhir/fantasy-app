@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/managed-roster-overview.schema.json",
+  "title": "Managed Roster Overview",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "generated_at",
+    "input_fingerprint",
+    "evaluation",
+    "team",
+    "structure",
+    "players",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "managed-roster-overview"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "minLength": 1},
+    "sources": {"type": "array", "items": {"type": "object"}},
+    "evaluation": {
+      "type": "object",
+      "required": ["mode", "automatic_fields", "evaluative_fields", "user_override_count", "unclassified_count", "target_state"],
+      "properties": {
+        "mode": {"type": "string"},
+        "seed_as_of": {"type": ["string", "null"]},
+        "classification_age_days": {"type": ["integer", "null"]},
+        "automatic_fields": {"type": "array", "items": {"type": "string"}},
+        "evaluative_fields": {"type": "array", "items": {"type": "string"}},
+        "user_override_count": {"type": "integer", "minimum": 0},
+        "unclassified_count": {"type": "integer", "minimum": 0},
+        "target_state": {"type": "string"}
+      }
+    },
+    "team": {
+      "type": "object",
+      "required": ["team_id", "held_player_count"],
+      "properties": {
+        "team_id": {},
+        "name": {"type": ["string", "null"]},
+        "abbreviation": {"type": ["string", "null"]},
+        "held_player_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "structure": {
+      "type": "object",
+      "required": ["capacity", "lineup", "taxi", "coverage", "skill_pool", "churn"],
+      "properties": {
+        "capacity": {
+          "type": "object",
+          "required": ["regular_active_capacity", "current_active_count", "taxi_slots", "current_taxi_count", "hard_active_delta"]
+        },
+        "lineup": {
+          "type": "object",
+          "required": ["fixed_starters", "flex_slots", "bench_slots"]
+        },
+        "taxi": {
+          "type": "object",
+          "required": ["phase", "binding", "current_technical_occupants", "virtual_assignment_status"],
+          "properties": {
+            "phase": {"enum": ["pre_lock", "locked", "unknown"]},
+            "binding": {"type": "boolean"},
+            "current_technical_occupants": {"type": "array"},
+            "virtual_assignment_status": {"type": "string"}
+          }
+        },
+        "coverage": {"type": "object"},
+        "skill_pool": {
+          "type": "object",
+          "required": ["flex_eligible_positions", "required_skill_lineup_slots", "startable_skill_pool", "skill_pool_margin"]
+        },
+        "churn": {
+          "type": "object",
+          "required": ["target_general_slots", "assignment_status", "guardrail_status", "candidate_pool"]
+        }
+      }
+    },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "player_id",
+          "name",
+          "position",
+          "roster_area",
+          "roster_role",
+          "roster_security",
+          "structural_function",
+          "classification",
+          "coverage_role",
+          "coverage_protected",
+          "churn_eligible",
+          "potential_churn_after_taxi_reassignment"
+        ],
+        "properties": {
+          "player_id": {"type": "string", "minLength": 1},
+          "name": {"type": ["string", "null"]},
+          "position": {"type": "string"},
+          "roster_area": {"enum": ["active", "taxi", "reserve", "unknown"]},
+          "roster_role": {"type": ["string", "null"]},
+          "roster_security": {"type": ["string", "null"]},
+          "structural_function": {"type": "string"},
+          "classification": {"type": "object"},
+          "coverage_role": {"type": "string"},
+          "coverage_protected": {"type": "boolean"},
+          "churn_eligible": {"type": "boolean"},
+          "potential_churn_after_taxi_reassignment": {"type": "boolean"}
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["status", "issue_count", "issues", "limitations"],
+      "properties": {
+        "status": {"enum": ["ok", "warning", "error"]},
+        "issue_count": {"type": "integer", "minimum": 0},
+        "issues": {"type": "array"},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

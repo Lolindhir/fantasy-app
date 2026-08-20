@@ -9,6 +9,9 @@ points calculated only from stats that both active projection providers actually
 Configured extension sources whose first snapshot has not been materialized yet are kept
 as an explicit warning instead of making the entire Operations materialization unusable.
 As soon as their latest pointer exists, they become normal active inputs automatically.
+
+The same run may also materialize the managed-roster overview read model. That overview
+keeps deterministic roster structure separate from hybrid evaluative role/security state.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
+import build_managed_roster_overview as roster_overview  # noqa: E402
 import build_player_signal_dataset as base  # noqa: E402
 
 
@@ -265,6 +269,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     return result
 
 
+def materialize_managed_roster_overview(root: Path, config: dict[str, Any]) -> list[str]:
+    overview_config_value = config.get("managed_roster_overview_config")
+    if not overview_config_value:
+        return []
+    overview_config_path = root / str(overview_config_value)
+    overview = roster_overview.build(root, overview_config_path)
+    return roster_overview.write_outputs(root, overview_config_path, overview)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[3])
@@ -284,10 +297,27 @@ def main() -> int:
             f"Validated {len(result['players'])} players; quality={result['quality']['status']}; "
             f"issues={result['quality']['issue_count']}."
         )
+        if config.get("managed_roster_overview_config"):
+            overview_config_path = root / str(config["managed_roster_overview_config"])
+            overview = roster_overview.build(root, overview_config_path)
+            print(
+                "Validated managed roster overview: players={}; quality={}; unclassified={}.".format(
+                    len(overview["players"]),
+                    overview["quality"]["status"],
+                    overview["evaluation"]["unclassified_count"],
+                )
+            )
         return 0
     output_path = root / config["output"]["player_signals"]
     base.write_json(output_path, result)
     print(f"Wrote {output_path.relative_to(root)} with {len(result['players'])} players.")
+    changed = materialize_managed_roster_overview(root, config)
+    if changed:
+        print("Updated managed roster overview:")
+        for path in changed:
+            print(f"- {path}")
+    elif config.get("managed_roster_overview_config"):
+        print("No managed roster overview changes.")
     return 0
 
 

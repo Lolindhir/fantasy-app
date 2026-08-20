@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "materialization_id": "managed-roster-overview",
+  "managed_team": {
+    "team_id": 1
+  },
+  "sources": {
+    "league": "public/data/League.json",
+    "managed_roster_signals": "fantasy-management/generated/operations/managed-roster-signals.json",
+    "evaluation_state": "fantasy-management/automation/roster-evaluation-state.json"
+  },
+  "policies": {
+    "flex_eligible_positions": ["RB", "WR", "TE"],
+    "general_churn_target": 2
+  },
+  "outputs": {
+    "json": "fantasy-management/generated/operations/managed-roster-overview.json",
+    "markdown": "fantasy-management/generated/operations/managed-roster-overview.md"
+  }
+}

@@ -72,9 +72,65 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Leitplanke: Cross-Workflow-Concurrency darf unabhängige Quellen nicht unnötig blockieren und muss No-op-Läufe sowie den jeweils letzten guten Source-State erhalten.
 
 - [ ] Kompaktes Managed-Roster-Dataset materialisieren.
+  - Basis v1: `managed-roster-overview.json` und `.md` verbinden aktuelle Rosterstruktur mit einem explizit getrennten hybriden Bewertungszustand; die finale produktive Veröffentlichung erfolgt über den bestehenden Operations-Materializer nach Integration auf `main`.
   - Dynamisch die deduplizierte Union aus `Roster`, `Reserve` und `Taxi` des `managed_team` auflösen.
   - Pro Spieler das zentrale Player-Signal-Dataset mit Salary, Projected Salary, aktuellem Rosterbereich und ligaformatbezogenen Strukturinformationen verbinden.
   - Output soll fehlende oder unvollständige Signale ausdrücklich markieren und keine Empfehlung vorwegnehmen.
+  - Kanonischer Zielvertrag: `fantasy-management/_ai/MANAGED_ROSTER_OVERVIEW.md`.
+
+- [ ] Managed-Roster-Overview zur vollautomatischen, erklärbaren Roster-Klassifikation ausbauen.
+  - Endziel: `roster_role`, `roster_security`, Coverage-Funktion und Churn-Boundary aus aktuellen Daten und versionierten Kriterien automatisch ableiten; Nutzerentscheidungen bleiben als explizite Overrides jederzeit möglich.
+  - Role-Kriterien für `core_starter`, `starter_rotation`, `backup`, `prospect` und `specialist` definieren und getrennt von Security-Kriterien halten.
+  - Security-Kriterien für `locked`, `strong_hold`, `hold`, `conditional` und `churn` definieren; Roster-Security darf nicht bloß ein zweiter Marktwert-Rank sein.
+  - Mögliche Inputs: feste Starteranforderungen, aktuelle Coverage, tatsächliches ligaeigenes Replacement Level, Markt/ECR/ADP, Usage/Opportunity, NFL-Draftkapital, Alter/Karrierephase, Injury/Availability, Depth Chart/Rolle, Projections, Trade-Liquidität sowie relevante Source-/Knowledge-Takes.
+  - Salary nur als Cap-/Roster-Faktor verwenden und nicht als Talent- oder Qualitätsersatz.
+  - Jede automatische Einstufung muss ausgelöste Regeln, verwendete Signale, Teilbeiträge, Konflikte, Confidence und gegebenenfalls Review-Grund offenlegen.
+  - Fehlende oder widersprüchliche entscheidende Signale müssen zu niedriger Confidence bzw. `needs_review` führen; keine stillen Default-Klassifikationen.
+  - Neue Kriterien zunächst gegen datierte manuelle Roster-Baselines backtesten und erst nach Kalibrierung sowie ausdrücklicher Freigabe kanonisch aktivieren.
+
+- [ ] Dynamische Positions-Coverage-Ziele automatisch ableiten.
+  - `coverage_floor` und `preferred_coverage` aus festen Starterzahlen, FLEX-Eligibility, tatsächlichem Free-Agent-Replacement-Level, Qualität der vorhandenen Backups, Injury-/Bye-Risiko, Roster-Druck und Churn-Kapazität ableiten.
+  - Aktuelle Seed-Werte wie QB `3/4`, TE `3/4` und K `1/1` sind datierte strategische Startwerte und keine dauerhaften Konstanten.
+  - Positions-Coverage und gemeinsamer `startable_skill_pool` müssen vor Churn-Optimierung berechnet werden.
+  - Veränderungen der automatisch abgeleiteten Coverage-Ziele zunächst im Shadow Mode gegen manuelle Bewertungen vergleichen.
+
+- [ ] Pre-Lock-Taxi-Optimierung in den Managed-Roster-Overview integrieren.
+  - Vor dem ersten Ligaspiel alle Taxi-eligible Rookies unabhängig von ihrer aktuellen Sleeper-Platzierung gemeinsam bewerten.
+  - Zwei virtuelle Taxi-Slots anhand Entwicklungs-/Upside-Wert, früher Weekly-/Coverage-Utility, NFL-Draftkapital, Rolle, Injury, Marktwert und Opportunity Cost aktiver Plätze optimieren.
+  - Die allgemeine aktive Churn-Boundary erst **nach** dieser virtuellen Taxi-Zuweisung bestimmen.
+  - Nach dem Taxi-Lock die tatsächlichen Taxi-Occupants als bindende Restriktion behandeln und keine virtuelle Umsortierung mehr zulassen.
+  - Finale Taxi-Entscheidung und User Override bleiben trotz automatischer Empfehlung ausdrücklich möglich.
+
+- [ ] Churn-Boundary und Roster-Flexibilitätsstatus vollständig automatisch ableiten.
+  - Erst nach Starteranforderungen, Positions-Coverage, Skill-Pool und Taxi-Zuweisung berechnen, welche aktiven Plätze wirklich repurposable sind.
+  - Kandidaten nach Opportunity Cost und nicht nur nach isoliertem Player Rank ordnen; Coverage-, Upside-, Markt-, Trade- und Replacement-Kosten sichtbar machen.
+  - Standardmäßig zwei allgemeine aktive Churn-Slots prüfen; temporären Drei-Slot-Modus nur bei regelkonformem Bye-/Injury-/Waiver-/Playoff-Kontext aktivieren.
+  - Für simulierte Adds/Draft Picks ausweisen, welcher Spieler danach zum neuen Churn-Boundary-Spieler würde.
+  - Kicker-Spezialplatz, Taxi und Reserve weiterhin nicht fälschlich als allgemeine Churn-Kapazität zählen.
+
+- [ ] Reclassification-Trigger und Freshness für den Managed-Roster-Overview definieren.
+  - Neubewertung bei Roster-Transaction, Taxi-/Reserve-Bewegung, Injury/Availability, relevanter Rollen-/Depth-Chart-/Usage-Änderung, Markt-/Ranking-/ADP-/Projection-Signal, NFL-Team-Transaction, Taxi-Lock oder materiellem Replacement-Level-Wechsel auslösen.
+  - Klassifikationen nicht allein anhand ihres Alters als falsch behandeln; konkrete Input-Fingerprints und materielle Change-Signale für `stale`/`needs_review` verwenden.
+  - Monitoring-Events sollen gezielt nur betroffene Spieler bzw. Strukturkomponenten zur Neubewertung markieren können.
+  - Neue Overview-Config-/State-/Script-/Schema-Pfade bei Bedarf in die Push-Trigger des bestehenden Materializer-Workflows aufnehmen; Änderung an `.github/workflows/**` erst nach separater ausdrücklicher Freigabe.
+
+- [ ] Source- und Knowledge-Kontext als nachvollziehbare Evidenz in die Roster-Klassifikation integrieren.
+  - Relevante wiederverwendbare Source-Takes wie Sleeper-/Prospect-Einschätzungen als Evidenz mit Quelle, Datum, Claim und Provenienz an den Spieler binden.
+  - Wiederholte Claims derselben Quelle nicht als unabhängige Mehrfachbestätigung zählen; Freshness und Source-Typ berücksichtigen.
+  - Qualitative Source-Evidenz darf Confidence, Prospect-These oder Review-Priorität beeinflussen, aber keine automatische Transaktion auslösen.
+  - Beispiel: Adrian-Frankes positiver Kaytron-Allen-Sleeper-Kontext soll im Overview sichtbar bleiben und vor einem finalen Cut einen Recheck erzwingen, ohne Allen allein dadurch automatisch zu schützen.
+
+- [ ] Automatische Roster-Klassifikation im Shadow Mode gegen manuelle/User-Entscheidungen kalibrieren.
+  - Für mehrere Roster-Stände automatische und manuelle Role-/Security-/Coverage-/Churn-Ergebnisse nebeneinander speichern und Abweichungen auswerten.
+  - False-Protection-, False-Cut- und unnötige Reclassification-Fälle untersuchen; vermeiden, dass kleine Marktbewegungen zu instabilen Kategorie-Sprüngen führen.
+  - Confidence und Entscheidungsschwellen anhand echter Folgeereignisse, Roster-Entscheidungen und späterer Outcomes nachjustieren.
+  - Erst nach ausreichend stabiler Kalibrierung den automatischen Klassifikator vom Shadow Mode zum Default machen; User Overrides bleiben auch danach autoritativ sichtbar.
+
+- [ ] Optional eine Roster-Overview-Seite in der Fantasy-App auf dem stabilisierten Contract aufbauen.
+  - Die Angular-UI soll denselben `managed-roster-overview.json`-Contract lesen und keine parallele Role-/Security-/Coverage-Logik im Frontend implementieren.
+  - Sinnvolle Ansichten: Position, Role, Security, strukturelle Funktion, Coverage, Taxi, Churn-Boundary, Confidence und Review-Bedarf.
+  - Frontend zunächst read-only; ein späteres UI zum Setzen von User Overrides benötigt einen eigenen bewusst freigegebenen Write-Contract.
+  - Erst umsetzen, wenn der Generated Contract und die Automatisierung fachlich stabil sind.
 
 - [ ] Liga- und Gegner-Roster-Dataset materialisieren.
   - Für jedes Fantasy-Team Rosterstruktur, Positionsverteilung, Alter, Salary/Cap, Draftkapital, Marktwertsignale, Verletzungen und aktuelle Rosterbereiche vorbereiten.

@@ -18,6 +18,8 @@ on:
       - fantasy-management/automation/input-materialization.json
       - fantasy-management/automation/external-signal-materialization.json
       - fantasy-management/automation/player-signal-materialization.json
+      - fantasy-management/automation/managed-roster-overview.json
+      - fantasy-management/automation/roster-evaluation-state.json
       - fantasy-management/automation/free-agent-materialization.json
       - fantasy-management/automation/free-agent-movement-materialization.json
       - fantasy-management/automation/free-agent-movement-event-materialization.json
@@ -30,6 +32,7 @@ on:
       - fantasy-management/_ai/scripts/materialize_external_signals.py
       - fantasy-management/_ai/scripts/build_player_signal_dataset.py
       - fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
+      - fantasy-management/_ai/scripts/build_managed_roster_overview.py
       - fantasy-management/_ai/scripts/build_free_agent_dataset.py
       - fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/build_free_agent_movement_events.py
@@ -42,6 +45,7 @@ on:
       - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py
+      - fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py
@@ -56,6 +60,7 @@ on:
       - fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json
       - fantasy-management/_ai/schemas/external-signal-relevance.schema.json
       - fantasy-management/_ai/schemas/player-signal-dataset.schema.json
+      - fantasy-management/_ai/schemas/managed-roster-overview.schema.json
       - fantasy-management/_ai/schemas/free-agent-dataset.schema.json
       - fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json
       - fantasy-management/_ai/schemas/free-agent-movement-events.schema.json
@@ -64,6 +69,7 @@ on:
       - fantasy-management/_ai/schema-list.json
       - fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md
       - fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md
+      - fantasy-management/_ai/MANAGED_ROSTER_OVERVIEW.md
       - .github/workflows/materialize-fantasy-operations-inputs.yml
 
 permissions:
@@ -176,6 +182,7 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py \
             fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py \
+            fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py \
@@ -239,6 +246,16 @@ jobs:
             }
             python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/player-signals.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/player-signal-dataset.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=data["population"]["player_count"]; assert count > 0 and len(data["players"]) == count, "invalid player-signals population"; print(f"Validated player-signals.json with {count} players.")'
 
+            test -s fantasy-management/generated/operations/managed-roster-overview.json || {
+              echo "managed-roster-overview.json is missing or empty after materialization" >&2
+              exit 1
+            }
+            test -s fantasy-management/generated/operations/managed-roster-overview.md || {
+              echo "managed-roster-overview.md is missing or empty after materialization" >&2
+              exit 1
+            }
+            python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/managed-roster-overview.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/managed-roster-overview.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=len(data["players"]); assert count > 0 and count == data["team"]["held_player_count"], "invalid managed roster overview population"; assert data["dataset_id"] == "managed-roster-overview", "invalid managed roster overview dataset id"; print("Validated managed-roster-overview.json with {} players; quality={}; unclassified={}.".format(count, data["quality"]["status"], data["evaluation"]["unclassified_count"]))'
+
             test -s fantasy-management/generated/operations/free-agent-signals.json || {
               echo "free-agent-signals.json is missing or empty after materialization" >&2
               exit 1
@@ -268,6 +285,8 @@ jobs:
               fantasy-management/generated/operations/managed-roster-signals.json \
               fantasy-management/generated/operations/external-signal-relevance.json \
               fantasy-management/generated/operations/player-signals.json \
+              fantasy-management/generated/operations/managed-roster-overview.json \
+              fantasy-management/generated/operations/managed-roster-overview.md \
               fantasy-management/generated/operations/free-agent-signals.json \
               fantasy-management/generated/operations/free-agent-movement-signals.json \
               fantasy-management/generated/operations/free-agent-movement-events.json \
