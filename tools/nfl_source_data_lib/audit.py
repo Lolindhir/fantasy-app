@@ -139,9 +139,9 @@ def build_audit(
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
-            "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history; archived app player snapshots extend Sleeper/Tank observations into their actual league seasons when the person resolves unambiguously.",
+            "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history. Archived app snapshots may backfill Sleeper, Tank01 and ESPN only when at least two independently resolved provider IDs agree on one canonical person.",
             "quarantinedProviderMapping": "A provider ID that currently claims multiple distinguishable people is suppressed from canonical reverse lookup and recorded as ambiguous instead of merging those people.",
-            "historicalSnapshotConflict": "If Sleeper and Tank01 from one archived player snapshot resolve to different canonical people, neither historical mapping is accepted for that row.",
-            "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID resolution; the suppressed mappings are recorded here.",
+            "historicalSnapshotConflict": "If resolved provider IDs from one archived player snapshot disagree, no historical mapping from that row is accepted. A single resolved historical provider ID is also insufficient because later ID reuse cannot be excluded.",
+            "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID resolution; when another exact-birthdate anchor corroborates the row, only the contradictory anchor mapping is suppressed, otherwise the row remains fully quarantined.",
         },
     }
