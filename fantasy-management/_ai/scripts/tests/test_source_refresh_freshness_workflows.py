@@ -48,6 +48,7 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         self.assertIn("Dedicated 06:35 Europe/Berlin League freshness refresh selected.", workflow)
 
     def test_players_app_workflow_has_no_fantasy_management_dependency(self) -> None:
+        # This is a cross-context invariant: FM may consume Players.json, not own its producer.
         workflow = self._read(".github/workflows/update-players.yml")
 
         for required in (
