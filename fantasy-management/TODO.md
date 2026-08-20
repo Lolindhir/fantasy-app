@@ -58,11 +58,11 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Quellen bleiben fehlerisoliert; ein Ausfall darf keine teilweise Quelle veröffentlichen und soll den letzten guten Stand erhalten.
   - Das implementierte Freshness-Gate entscheidet vor Monitoring, ob ein fehlender oder veralteter überwachter Fantasy-Operations-Eingang den Lauf einschränkt oder nur kennzeichnet.
   - Aktive FM-Morgenstaffelung für den 07:00-Europe/Berlin-Monitoring-Lauf: FantasyPros 05:20 → FantasyCalc 05:32 → FFC ADP 05:44 → FFToday 05:56 → CBS Sports 06:08 → Sleeper Trending 06:20 → optionaler Operations-Catch-up 06:45.
-  - App-Refreshes bleiben davon unabhängig: Players läuft weiterhin nach seinem App-Schedule einschließlich 05:05, League weiterhin alle zehn Minuten; beide sind read-only Inputs und keine FM-Freshness-Heartbeat-Quellen.
+  - App-Refreshes bleiben davon unabhängig: Players läuft ausschließlich nach seinem App-eigenen Schedule (`08:00`, `12:00`, `18:00` UTC sowie manuell), League weiterhin alle zehn Minuten; beide sind read-only Inputs und keine FM-Freshness-Heartbeat-Quellen.
   - Jeder erfolgreiche relevante Source-/Success-Heartbeat-Commit darf unabhängig von der Uhrzeit unmittelbar den Operations-Materializer anstoßen; die frühere 05:00-06:45-Batching-Ausnahme ist entfernt.
   - Gate und eigentlicher Materialize-Job bleiben getrennt. Push-getriggerte Materialisierungen dürfen ältere Push-Materialisierungen superseden; der 06:45-Schedule-Catch-up darf einen bereits laufenden Source-Push-Materializer nicht abbrechen.
   - Der 07:00-Consumer bewertet ausschließlich den tatsächlich veröffentlichten kanonischen Operations-State und `source-freshness.json`; aus „nach 06:45“ wird keine Readiness abgeleitet.
-  - Die Management-Zeitfenster werden DST-sicher auf Europe/Berlin ausgerichtet; bestehende zusätzliche App-Refreshes bleiben davon unabhängig bestehen.
+  - Die Management-Zeitfenster werden DST-sicher auf Europe/Berlin ausgerichtet; App-Refresh-Zeitpläne bleiben davon unabhängig und folgen ausschließlich ihren App-/Source-Anforderungen.
   - Noch offen: reale Laufzeiten und Queue-Verhalten über mehrere Morgenzyklen beobachten und nur bei Bedarf weitere Scheduling-Abstände kalibrieren.
 
 - [ ] Konkurrierende Generated-Data-Pushes auf `main` robust behandeln.
@@ -87,7 +87,6 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Jede automatische Einstufung muss ausgelöste Regeln, verwendete Signale, Teilbeiträge, Konflikte, Confidence und gegebenenfalls Review-Grund offenlegen.
   - Fehlende oder widersprüchliche entscheidende Signale müssen zu niedriger Confidence bzw. `needs_review` führen; keine stillen Default-Klassifikationen.
   - Neue Kriterien zunächst gegen datierte manuelle Roster-Baselines backtesten und erst nach Kalibrierung sowie ausdrücklicher Freigabe kanonisch aktivieren.
-
 - [ ] Dynamische Positions-Coverage-Ziele automatisch ableiten.
   - `coverage_floor` und `preferred_coverage` aus festen Starterzahlen, FLEX-Eligibility, tatsächlichem Free-Agent-Replacement-Level, Qualität der vorhandenen Backups, Injury-/Bye-Risiko, Roster-Druck und Churn-Kapazität ableiten.
   - Aktuelle Seed-Werte wie QB `3/4`, TE `3/4` und K `1/1` sind datierte strategische Startwerte und keine dauerhaften Konstanten.
