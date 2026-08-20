@@ -8,6 +8,7 @@ from .audit import build_audit
 from .common import Dataset, SCHEMA_VERSION, as_int, load_json, write_json_if_changed
 from .draft import build_draft_files
 from .identity import build_identities, build_provider_mapping_payload
+from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
 
 
 def _observation_season(repo_root: Path) -> int:
@@ -40,6 +41,14 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset]) -> dict[str, Any]
         mapping_conflicts,
         observation_season,
     )
+    historical_claims, historical_resolution_conflicts, historical_mapping_stats = (
+        build_historical_app_mapping_claims(repo_root, canonical)
+    )
+    provider_mapping_payload = extend_provider_mapping_payload(
+        provider_mapping_payload,
+        historical_claims,
+        historical_resolution_conflicts,
+    )
     audit = build_audit(
         repo_root,
         canonical,
@@ -48,6 +57,8 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset]) -> dict[str, Any]
         grouped.keys(),
         identity_source_conflicts=identity_source_conflicts,
         provider_mapping_conflicts=provider_mapping_payload.get("Conflicts", []),
+        historical_mapping_stats=historical_mapping_stats,
+        historical_resolution_conflicts=provider_mapping_payload.get("HistoricalResolutionConflicts", []),
     )
 
     identity_payload = {
@@ -92,6 +103,10 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset]) -> dict[str, Any]
         "identityChanged": identity_changed,
         "providerMappingCount": len(provider_mapping_payload.get("Mappings", [])),
         "providerMappingConflictCount": len(provider_mapping_payload.get("Conflicts", [])),
+        "historicalMappingObservationCount": len(historical_claims),
+        "historicalResolutionConflictCount": len(
+            provider_mapping_payload.get("HistoricalResolutionConflicts", [])
+        ),
         "providerMappingsChanged": provider_mappings_changed,
         "draftSeasonCount": len(grouped),
         "draftFilesChanged": draft_changed,
