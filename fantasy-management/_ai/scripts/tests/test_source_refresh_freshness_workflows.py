@@ -36,6 +36,27 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
                     workflow.index("Commit and push updates"),
                 )
 
+    def test_source_workflows_use_shared_race_safe_publisher(self) -> None:
+        workflows = (
+            ".github/workflows/update-fantasypros-rankings.yml",
+            ".github/workflows/update-fantasycalc-rankings.yml",
+            ".github/workflows/update-fantasy-football-calculator-adp.yml",
+            ".github/workflows/update-fftoday-projections.yml",
+            ".github/workflows/update-cbs-sports-projections.yml",
+            ".github/workflows/update-sleeper-trending.yml",
+        )
+
+        self.assertTrue((self.root / "tools/publish_generated_commit.py").is_file())
+        for workflow_path in workflows:
+            with self.subTest(workflow=workflow_path):
+                workflow = self._read(workflow_path)
+                self.assertIn(
+                    "python tools/publish_generated_commit.py --remote origin --branch main",
+                    workflow,
+                )
+                self.assertNotIn("git push https://x-access-token:", workflow)
+                self.assertNotIn("git push origin HEAD:main", workflow)
+
     def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume League app data, not own its producer.
         workflow = self._read(".github/workflows/update-league.yml")

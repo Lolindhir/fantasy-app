@@ -92,4 +92,4 @@ jobs:
             fantasy-management/sources/external-signals/roster-activity/sleeper/ \
             fantasy-management/sources/refresh-status/sleeper-trending.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope sleeper-trending
-          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+          python tools/publish_generated_commit.py --remote origin --branch main

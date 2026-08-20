@@ -95,4 +95,4 @@ jobs:
             fantasy-management/sources/external-rankings/expert-consensus/fantasypros \
             fantasy-management/sources/refresh-status/fantasypros.json
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope fantasypros-rankings
-          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+          python tools/publish_generated_commit.py --remote origin --branch main
