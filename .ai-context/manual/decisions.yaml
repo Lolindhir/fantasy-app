@@ -452,3 +452,34 @@ decisions:
         - Every new deploy invalidates all non-historical JSON URLs, even when an individual file did not change.
         - A historical file corrected in place may remain stale for users who already cached its stable URL.
         - Requests that bypass Angular HttpClient do not receive this cache policy automatically.
+
+  - id: ADR-023
+    title: Fantasy Management consumes app pipelines read-only by default
+    status: accepted
+    context: >
+      Fantasy Management needs current app data as analysis input, but coupling
+      Fantasy-Management-only freshness or monitoring mechanics into app producer
+      workflows can make successful app publication depend on unrelated analysis
+      tooling.
+    decision: >
+      Treat application data generation and fantasy-management as separate
+      ownership domains. Fantasy Management may consume published canonical app
+      data and react to its changes, but must not modify app generators, refresh
+      workflows, schedules, publication paths or generated app outputs for an
+      FM-only requirement unless the user explicitly approves that concrete
+      cross-context change. Successful app generation and publication must never
+      depend on Fantasy Management scripts, files, heartbeats or runtime state
+      without that explicit approval.
+    rationale: >
+      The app is a productive source system in its own right. Read-only
+      consumption preserves that source-of-truth boundary while still allowing
+      Fantasy Operations to materialize derived signals from current app data.
+    consequences:
+      positive:
+        - App refreshes remain operationally independent from Fantasy Management.
+        - FM can still react immediately to published app-data changes.
+        - Future freshness or observability needs must be implemented on the
+          consumer side unless a cross-context change is explicitly approved.
+      negative:
+        - Some existing cross-context integrations may require separate review
+          and migration to comply with the stricter boundary.
