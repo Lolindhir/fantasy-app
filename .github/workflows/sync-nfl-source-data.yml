@@ -2,11 +2,21 @@ name: Data • NFL Source Sync
 
 on:
   # Main runs when the source workflow/tooling changes. The integration branch is
-  # a temporary bootstrap trigger and is removed after the real-source validation.
+  # a temporary bootstrap trigger and is removed after real-source validation.
   push:
     branches:
       - main
       - agent/nfl-source-identity-integration
+    paths:
+      - ".github/workflows/sync-nfl-source-data.yml"
+      - "tools/nfl_source_data.py"
+      - "tools/nfl_source_data_lib/**"
+      - "tools/tests/test_nfl_source*.py"
+  # Temporary same-repository bootstrap path. Generated data commits are gated
+  # below so they cannot recursively start another source refresh.
+  pull_request:
+    branches:
+      - main
     paths:
       - ".github/workflows/sync-nfl-source-data.yml"
       - "tools/nfl_source_data.py"
@@ -44,17 +54,19 @@ permissions:
   contents: write
 
 concurrency:
-  group: nfl-source-data-sync-${{ github.event_name == 'push' && github.ref_name || 'main' }}
+  group: nfl-source-data-sync-${{ github.event_name == 'pull_request' && github.head_ref || (github.event_name == 'push' && github.ref_name || 'main') }}
   cancel-in-progress: false
 
 jobs:
   sync:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'agent/nfl-source-identity-integration' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Preserve the production contract: dispatch/reusable calls publish main.
-      # Only the temporary bootstrap push is allowed to publish its feature branch.
-      TARGET_BRANCH: ${{ github.event_name == 'push' && github.ref_name || 'main' }}
+      # Production dispatch/reusable calls still publish main. Only the explicitly
+      # named bootstrap branch/PR publishes its feature branch.
+      TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref || (github.event_name == 'push' && github.ref_name || 'main') }}
+      TRIGGER_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout target branch
@@ -64,15 +76,35 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
+      - name: Gate recursive bootstrap commits
+        id: bootstrap_gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          subject="$(git show -s --format=%s "$TRIGGER_HEAD_SHA" 2>/dev/null || true)"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            case "$subject" in
+              "data(nfl-source):"*)
+                echo "Generated NFL source-data commit detected; no recursive refresh required."
+                echo "run_sync=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          fi
+          echo "run_sync=true" >> "$GITHUB_OUTPUT"
+
       - name: Setup Python
+        if: steps.bootstrap_gate.outputs.run_sync == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Test NFL source-data tooling
+        if: steps.bootstrap_gate.outputs.run_sync == 'true'
         run: python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
 
       - name: Sync, validate and publish NFL source data
+        if: steps.bootstrap_gate.outputs.run_sync == 'true'
         shell: bash
         env:
           DATASET: ${{ inputs.dataset }}
