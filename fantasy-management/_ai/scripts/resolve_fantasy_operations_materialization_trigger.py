@@ -3,13 +3,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
-BERLIN = ZoneInfo("Europe/Berlin")
-SCHEDULE_BY_UTC_OFFSET = {
-    120: "45 4 * * *",
-    60: "45 5 * * *",
-}
 SOURCE_INPUT_PREFIXES = (
     "fantasy-management/sources/external-rankings/",
     "fantasy-management/sources/external-signals/",
@@ -41,14 +35,6 @@ MATERIALIZATION_DEFINITION_PATHS = {
 class TriggerDecision:
     run: bool
     reason: str
-
-
-def _berlin_now(now: datetime | None = None) -> datetime:
-    if now is None:
-        return datetime.now(BERLIN)
-    if now.tzinfo is None:
-        return now.replace(tzinfo=BERLIN)
-    return now.astimezone(BERLIN)
 
 
 def _normalize(path: str) -> str:
@@ -85,16 +71,6 @@ def decide(
         return TriggerDecision(True, "manual_materialization")
 
     if event_name == "schedule":
-        current = _berlin_now(now)
-        offset = current.utcoffset()
-        if offset is None:
-            return TriggerDecision(False, "berlin_utc_offset_unavailable")
-        offset_minutes = int(offset.total_seconds() // 60)
-        expected = SCHEDULE_BY_UTC_OFFSET.get(offset_minutes)
-        if expected is None:
-            return TriggerDecision(False, f"unsupported_berlin_utc_offset_{offset_minutes}")
-        if schedule_expression != expected:
-            return TriggerDecision(False, "inactive_dst_companion_schedule")
         return TriggerDecision(True, "scheduled_0645_berlin_catch_up")
 
     if event_name != "push":
@@ -128,7 +104,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--changed-file", action="append", default=[])
     parser.add_argument(
         "--berlin-now",
-        help="Optional ISO timestamp used for deterministic schedule tests/debugging. Converted to Europe/Berlin.",
+        help="Optional ISO timestamp retained for deterministic tests/debugging.",
     )
     return parser.parse_args()
 
