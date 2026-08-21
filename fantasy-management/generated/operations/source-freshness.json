@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-21T21:57:29.932144Z",
-  "berlin_date": "2026-08-21",
+  "generated_at": "2026-08-21T22:15:32.668292Z",
+  "berlin_date": "2026-08-22",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
     "refresh_window_start": "05:00",
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 1,
-    "stale_count": 5,
+    "fresh_count": 0,
+    "stale_count": 6,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -27,6 +27,7 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
+      "cbs-sports",
       "sleeper-trending"
     ],
     "blocking_source_ids": [],
@@ -35,6 +36,7 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
+      "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
@@ -62,7 +64,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T03:59:45.442739Z",
-      "age_minutes": 2517.74,
+      "age_minutes": 2535.79,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -80,7 +82,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:06:57.188624Z",
-      "age_minutes": 2510.55,
+      "age_minutes": 2528.59,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -97,7 +99,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:21:39.587350Z",
-      "age_minutes": 2495.84,
+      "age_minutes": 2513.88,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -114,7 +116,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T11:29:22.101373Z",
-      "age_minutes": 2068.13,
+      "age_minutes": 2086.18,
       "content_changed": true,
       "trigger": "workflow_dispatch"
     },
@@ -128,10 +130,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "fresh",
-      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "status": "stale",
+      "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-08-21T17:47:50.962754Z",
-      "age_minutes": 249.65,
+      "age_minutes": 267.7,
       "content_changed": true,
       "trigger": "workflow_dispatch"
     },
@@ -148,7 +150,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:58:37.933116Z",
-      "age_minutes": 2458.87,
+      "age_minutes": 2476.91,
       "content_changed": true,
       "trigger": "schedule"
     }
