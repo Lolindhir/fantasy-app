@@ -169,13 +169,17 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         workflow = self._read(".github/workflows/update-players.yml")
 
         for required in (
-            'cron: "0 8,12,18 * * *"',
+            'cron: "15 1 * * *"',
+            'cron: "0 8 * * *"',
+            'cron: "30 13 * * *"',
+            'timezone: "America/New_York"',
             "pwsh ./public/requests/RequestPlayers.ps1",
             "git add public/data/**",
         ):
             self.assertIn(required, workflow)
 
         for forbidden in (
+            'cron: "0 8,12,18 * * *"',
             'cron: "5 3 * * *"',
             'cron: "5 4 * * *"',
             "05:05 Europe/Berlin",
@@ -210,11 +214,13 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         )
         self.assertIn("no_event_conclusion_allowed", workflow)
 
-    def test_0645_catch_up_does_not_cancel_a_running_source_materialization(self) -> None:
+    def test_0645_catch_up_uses_native_berlin_schedule_and_does_not_cancel_running_source_materialization(self) -> None:
         workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
 
-        self.assertIn('cron: "45 4 * * *"', workflow)
-        self.assertIn('cron: "45 5 * * *"', workflow)
+        self.assertIn('cron: "45 6 * * *"', workflow)
+        self.assertIn('timezone: "Europe/Berlin"', workflow)
+        self.assertNotIn('cron: "45 4 * * *"', workflow)
+        self.assertNotIn('cron: "45 5 * * *"', workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
 
     def test_materializer_reports_trigger_start_and_publish_observability_without_using_it_for_readiness(self) -> None:

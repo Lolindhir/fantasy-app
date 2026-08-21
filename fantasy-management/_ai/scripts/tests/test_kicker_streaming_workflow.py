@@ -40,8 +40,10 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
     def test_materializer_keeps_0645_as_non_disruptive_catch_up(self) -> None:
         workflow = self.workflow_text()
 
-        self.assertIn('cron: "45 4 * * *"', workflow)
-        self.assertIn('cron: "45 5 * * *"', workflow)
+        self.assertIn('cron: "45 6 * * *"', workflow)
+        self.assertIn('timezone: "Europe/Berlin"', workflow)
+        self.assertNotIn('cron: "45 4 * * *"', workflow)
+        self.assertNotIn('cron: "45 5 * * *"', workflow)
         self.assertIn("- fantasy-management/sources/external-rankings/**", workflow)
         self.assertIn("- fantasy-management/sources/external-signals/**", workflow)
         self.assertIn(

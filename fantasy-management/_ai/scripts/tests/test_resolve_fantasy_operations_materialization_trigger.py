@@ -18,31 +18,19 @@ BERLIN = ZoneInfo("Europe/Berlin")
 
 
 class MaterializationTriggerTests(unittest.TestCase):
-    def test_correct_dst_catch_up_schedule_runs_and_companion_skips(self) -> None:
+    def test_native_berlin_catch_up_schedule_runs_in_summer_and_winter(self) -> None:
         summer = datetime(2026, 8, 17, 6, 45, tzinfo=BERLIN)
         winter = datetime(2026, 12, 17, 6, 45, tzinfo=BERLIN)
 
-        summer_decision = MODULE.decide(
-            event_name="schedule",
-            schedule_expression="45 4 * * *",
-            now=summer,
-        )
-        self.assertTrue(summer_decision.run)
-        self.assertEqual(summer_decision.reason, "scheduled_0645_berlin_catch_up")
-        self.assertFalse(
-            MODULE.decide(
-                event_name="schedule",
-                schedule_expression="45 5 * * *",
-                now=summer,
-            ).run
-        )
-        self.assertTrue(
-            MODULE.decide(
-                event_name="schedule",
-                schedule_expression="45 5 * * *",
-                now=winter,
-            ).run
-        )
+        for now in (summer, winter):
+            with self.subTest(now=now):
+                decision = MODULE.decide(
+                    event_name="schedule",
+                    schedule_expression="45 6 * * *",
+                    now=now,
+                )
+                self.assertTrue(decision.run)
+                self.assertEqual(decision.reason, "scheduled_0645_berlin_catch_up")
 
     def test_relevant_source_push_runs_immediately_at_0530(self) -> None:
         decision = MODULE.decide(

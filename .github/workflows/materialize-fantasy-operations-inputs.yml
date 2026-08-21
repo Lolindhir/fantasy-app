@@ -4,8 +4,8 @@ run-name: "FM • Materializer • ${{ github.event.head_commit.message || githu
 on:
   workflow_dispatch:
   schedule:
-    - cron: "45 4 * * *"  # 06:45 Europe/Berlin während CEST: Catch-up
-    - cron: "45 5 * * *"  # 06:45 Europe/Berlin während CET: Catch-up
+    - cron: "45 6 * * *"  # Catch-up vor dem 07:00-Europe/Berlin-Lauf
+      timezone: "Europe/Berlin"
   push:
     branches:
       - main

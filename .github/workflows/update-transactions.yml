@@ -2,7 +2,8 @@ name: APP • Data • Transactions
 
 on:
   schedule:
-    - cron: "0 5 * * 3"   # jeden Mittwoch um 05:00 UTC
+    - cron: "5 4 * * 3"   # Between-Week-Refresh im NFL-Zeitkontext
+      timezone: "America/New_York"
   workflow_dispatch: # manueller Start
 
 permissions:
