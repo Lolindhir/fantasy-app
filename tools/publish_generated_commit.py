@@ -58,8 +58,10 @@ def run_git(args: Sequence[str], *, check: bool = True) -> GitResult:
 def require_clean_worktree() -> None:
     status = run_git(["status", "--porcelain=v1"]).stdout
     if status.strip():
+        dirty_entries = "\n".join(f"  {line}" for line in status.rstrip().splitlines())
         raise RuntimeError(
-            "Refusing to publish with a dirty worktree; commit only the intended generated-data changes first."
+            "Refusing to publish with a dirty worktree; commit only the intended generated-data changes first.\n"
+            f"Dirty worktree entries:\n{dirty_entries}"
         )
 
 
@@ -142,7 +144,7 @@ def publish(
             if push.stdout:
                 print(push.stdout, end="")
             if push.stderr:
-                print(push.stderr, end="")
+                print(push.stderr, end="", file=sys.stderr)
             print(f"Generated-data publish succeeded on attempt {attempt}.")
             return
 
