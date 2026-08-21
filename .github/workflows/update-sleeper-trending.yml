@@ -1,16 +1,31 @@
 name: FM • Signal • Sleeper Trending
+run-name: "FM • Signal • Sleeper Trending • ${{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}"
 
 on:
   schedule:
     - cron: "20 4 * * *"  # 06:20 Europe/Berlin während CEST
     - cron: "20 5 * * *"  # 06:20 Europe/Berlin während CET
+  push:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_sleeper_trending.py
+      - .github/workflows/update-sleeper-trending.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_sleeper_trending.py
+      - .github/workflows/update-sleeper-trending.yml
   workflow_dispatch: # manueller Start
 
 permissions:
   contents: write
 
 concurrency:
-  group: update-sleeper-trending
+  group: update-sleeper-trending-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -28,7 +43,7 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" != "schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Manual run: schedule gate passed."
+            echo "Non-scheduled run: schedule gate passed."
             exit 0
           fi
 
@@ -75,7 +90,7 @@ jobs:
         run: python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
 
       - name: Record successful Sleeper refresh
-        if: steps.schedule_gate.outputs.run == 'true'
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: >-
           python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
           --source-id sleeper-trending
@@ -84,7 +99,7 @@ jobs:
           --content-path fantasy-management/sources/external-signals/roster-activity/sleeper
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true'
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"

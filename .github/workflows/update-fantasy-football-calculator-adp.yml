@@ -1,16 +1,39 @@
 name: FM • Ranking • FFC ADP
+run-name: "FM • Ranking • FFC ADP • ${{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}"
 
 on:
   schedule:
     - cron: "44 3 * * *"  # 05:44 Europe/Berlin während CEST
     - cron: "44 4 * * *"  # 05:44 Europe/Berlin während CET
+  push:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_storage.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+      - .github/workflows/update-fantasy-football-calculator-adp.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_storage.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+      - .github/workflows/update-fantasy-football-calculator-adp.yml
   workflow_dispatch: # manueller Start
 
 permissions:
   contents: write
 
 concurrency:
-  group: update-fantasy-football-calculator-adp
+  group: update-fantasy-football-calculator-adp-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -28,7 +51,7 @@ jobs:
         run: |
           if [[ "$EVENT_NAME" != "schedule" ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Manual run: schedule gate passed."
+            echo "Non-scheduled run: schedule gate passed."
             exit 0
           fi
 
@@ -63,11 +86,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test Fantasy Football Calculator ADP fetcher
+      - name: Test Fantasy Football Calculator ADP fetchers
         if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python -m unittest
           fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
+          fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
           -v
 
       - name: Update Fantasy Football Calculator ADP rankings
@@ -77,7 +101,7 @@ jobs:
           --skip-unchanged
 
       - name: Record successful FFC refresh
-        if: steps.schedule_gate.outputs.run == 'true'
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: >-
           python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
           --source-id fantasy-football-calculator
@@ -86,7 +110,7 @@ jobs:
           --content-path fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true'
+        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"

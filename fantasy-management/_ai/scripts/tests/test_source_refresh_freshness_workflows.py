@@ -57,6 +57,91 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
                 self.assertNotIn("git push https://x-access-token:", workflow)
                 self.assertNotIn("git push origin HEAD:main", workflow)
 
+    def test_source_workflows_share_code_change_refresh_policy(self) -> None:
+        workflows = {
+            ".github/workflows/update-fantasypros-rankings.yml": (
+                "FM • Ranking • FantasyPros ECR",
+                (
+                    "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py",
+                    "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex_impl.py",
+                    "fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py",
+                    "fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex_impl.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fantasypros_dynasty_superflex.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fantasypros_redraft_ppr_superflex.py",
+                    ".github/workflows/update-fantasypros-rankings.yml",
+                ),
+            ),
+            ".github/workflows/update-fantasycalc-rankings.yml": (
+                "FM • Ranking • FantasyCalc Market",
+                (
+                    "fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py",
+                    "fantasy-management/_ai/scripts/fetch_fantasycalc_rankings_impl.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fantasycalc_rankings.py",
+                    ".github/workflows/update-fantasycalc-rankings.yml",
+                ),
+            ),
+            ".github/workflows/update-fantasy-football-calculator-adp.yml": (
+                "FM • Ranking • FFC ADP",
+                (
+                    "fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py",
+                    "fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py",
+                    "fantasy-management/_ai/scripts/fantasy_football_calculator_adp_storage.py",
+                    "fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py",
+                    "fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py",
+                    ".github/workflows/update-fantasy-football-calculator-adp.yml",
+                ),
+            ),
+            ".github/workflows/update-fftoday-projections.yml": (
+                "FM • Projection • FFToday",
+                (
+                    "fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py",
+                    "fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fftoday_kicker_projections.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_fftoday_offense_projections.py",
+                    ".github/workflows/update-fftoday-projections.yml",
+                ),
+            ),
+            ".github/workflows/update-cbs-sports-projections.yml": (
+                "FM • Projection • CBS Sports",
+                (
+                    "fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py",
+                    "fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_kicker_projections.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_offense_projections.py",
+                    ".github/workflows/update-cbs-sports-projections.yml",
+                ),
+            ),
+            ".github/workflows/update-sleeper-trending.yml": (
+                "FM • Signal • Sleeper Trending",
+                (
+                    "fantasy-management/_ai/scripts/fetch_sleeper_trending.py",
+                    "fantasy-management/_ai/scripts/tests/test_fetch_sleeper_trending.py",
+                    ".github/workflows/update-sleeper-trending.yml",
+                ),
+            ),
+        }
+
+        for workflow_path, (workflow_name, trigger_paths) in workflows.items():
+            with self.subTest(workflow=workflow_path):
+                workflow = self._read(workflow_path)
+                trigger_section = workflow.split("on:\n", 1)[1].split("  workflow_dispatch", 1)[0]
+                self.assertIn("  push:\n", trigger_section)
+                self.assertIn("  pull_request:\n", trigger_section)
+                for trigger_path in trigger_paths:
+                    self.assertEqual(
+                        trigger_section.count(f"      - {trigger_path}\n"),
+                        2,
+                        f"{trigger_path} must trigger both push and pull_request",
+                    )
+                self.assertNotIn("fantasy-management/sources/", trigger_section)
+                self.assertIn(
+                    f'run-name: "{workflow_name} • ${{{{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}}}"',
+                    workflow,
+                )
+                self.assertGreaterEqual(workflow.count("github.event_name != 'pull_request'"), 2)
+                self.assertIn("github.event.pull_request.number || github.ref", workflow)
+
     def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume League app data, not own its producer.
         workflow = self._read(".github/workflows/update-league.yml")
