@@ -136,15 +136,17 @@ class PublishGeneratedCommitTests(unittest.TestCase):
         writer = self.clone("writer")
         self.commit_file(writer, "source.txt", "committed\n", "source")
         (writer / "source.txt").write_text("dirty\n", encoding="utf-8")
-        with self.assertRaisesRegex(RuntimeError, "dirty worktree"):
+        with self.assertRaisesRegex(RuntimeError, "dirty worktree") as context:
             self.publish(writer)
+        self.assertIn("source.txt", str(context.exception))
 
     def test_untracked_file_is_rejected(self) -> None:
         writer = self.clone("writer")
         self.commit_file(writer, "source.txt", "committed\n", "source")
         (writer / "untracked.txt").write_text("dirty\n", encoding="utf-8")
-        with self.assertRaisesRegex(RuntimeError, "dirty worktree"):
+        with self.assertRaisesRegex(RuntimeError, "dirty worktree") as context:
             self.publish(writer)
+        self.assertIn("untracked.txt", str(context.exception))
 
     def test_multiple_local_commits_are_rejected(self) -> None:
         writer = self.clone("writer")
