@@ -144,7 +144,7 @@ def publish(
             if push.stdout:
                 print(push.stdout, end="")
             if push.stderr:
-                print(push.stderr, end="", file=sys.stderr)
+                print(push.stderr, end="")
             print(f"Generated-data publish succeeded on attempt {attempt}.")
             return
 
