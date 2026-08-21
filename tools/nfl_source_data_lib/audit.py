@@ -6,7 +6,8 @@ from typing import Any, Iterable
 
 from .common import IDENTITY_ID_KEYS, clean
 from .draft import build_ff_draft_evidence, classify_draft_status
-from .identity import LINK_ID_KEYS, WEAK_ID_KEYS, app_player_candidates, identity_lookup
+from .identity import LINK_ID_KEYS, app_player_candidates, identity_lookup
+from .identity_model import WEAK_ID_KEYS
 
 
 def build_audit(
