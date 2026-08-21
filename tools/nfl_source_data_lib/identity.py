@@ -1,23 +1,21 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .common import IDENTITY_ID_KEYS, Dataset, clean, iter_csv, load_json, stable_internal_id
-
-ANCHOR_ID_KEYS = ("GSIS", "ESPN", "PFR", "PFF")
-LINK_ID_KEYS = {"GSIS", "Sleeper", "ESPN", "PFR", "PFF", "Tank01"}
-WEAK_ID_KEYS = set(IDENTITY_ID_KEYS) - LINK_ID_KEYS
-ALIAS_MIN_CORROBORATORS = {"ESPN": 1, "PFR": 2}
-ALIASABLE_LINK_ID_KEYS = set(ALIAS_MIN_CORROBORATORS)
-PRIMARY_SOURCE_PREFERENCE = (
-    "canonical-existing",
-    "nflverse.ff-player-ids",
-    "nflverse.players",
-    "app.Players",
+from .common import IDENTITY_ID_KEYS, Dataset, clean, load_json, stable_internal_id
+from .identity_model import (
+    ALIAS_MIN_CORROBORATORS,
+    ANCHOR_ID_KEYS,
+    ATTACH_ID_KEYS,
+    LINK_ID_KEYS,
+    PRIMARY_SOURCE_PREFERENCE,
+    IdentityCandidate,
+    ids_from_ff,
+    ids_from_players,
 )
+from .identity_sources import raw_identity_candidates
 
 
 class UnionFind:
@@ -48,55 +46,6 @@ class UnionFind:
             self.rank[left_root] += 1
 
 
-@dataclass
-class IdentityCandidate:
-    ids: dict[str, str]
-    name: str | None
-    first_name: str | None
-    last_name: str | None
-    birth_date: str | None
-    position: str | None
-    latest_team: str | None
-    source: str
-    priority: int
-    existing_internal_id: str | None = None
-
-
-def ids_from_players(row: dict[str, str]) -> dict[str, str]:
-    mapping = {
-        "GSIS": "gsis_id",
-        "ESPN": "espn_id",
-        "PFR": "pfr_id",
-        "PFF": "pff_id",
-        "OTC": "otc_id",
-        "NFL": "nfl_id",
-        "ESB": "esb_id",
-    }
-    return {key: value for key, field in mapping.items() if (value := clean(row.get(field)))}
-
-
-def ids_from_ff(row: dict[str, str]) -> dict[str, str]:
-    mapping = {
-        "GSIS": "gsis_id",
-        "Sleeper": "sleeper_id",
-        "ESPN": "espn_id",
-        "PFR": "pfr_id",
-        "PFF": "pff_id",
-        "NFLCom": "nfl_id",
-        "FantasyPros": "fantasypros_id",
-        "MFL": "mfl_id",
-        "Sportradar": "sportradar_id",
-        "Yahoo": "yahoo_id",
-        "Fleaflicker": "fleaflicker_id",
-        "CBS": "cbs_id",
-        "CFBRef": "cfbref_id",
-        "Rotowire": "rotowire_id",
-        "KTC": "ktc_id",
-        "FantasyData": "fantasy_data_id",
-    }
-    return {key: value for key, field in mapping.items() if (value := clean(row.get(field)))}
-
-
 def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
     players = load_json(repo_root / "public/data/Players.json", []) or []
     relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
@@ -125,110 +74,11 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
     return candidates, relevant
 
 
-def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:
-    anchors: dict[tuple[str, str], set[str]] = defaultdict(set)
-    for row in player_rows:
-        birth_date = clean(row.get("birth_date"))
-        if not birth_date:
-            continue
-        for key, value in ids_from_players(row).items():
-            if key in ANCHOR_ID_KEYS:
-                anchors[(key, value)].add(birth_date)
-    return anchors
-
-
-def raw_identity_candidates(
-    repo_root: Path,
-    datasets: dict[str, Dataset],
-) -> tuple[list[IdentityCandidate], list[dict[str, str]], list[dict[str, str]], list[dict[str, Any]]]:
-    del repo_root
-    candidates: list[IdentityCandidate] = []
-    player_rows = list(iter_csv(datasets["nflverse.players"].raw_path))
-    for row in player_rows:
-        ids = ids_from_players(row)
-        if ids:
-            candidates.append(
-                IdentityCandidate(
-                    ids=ids,
-                    name=clean(row.get("display_name")),
-                    first_name=clean(row.get("first_name")) or clean(row.get("common_first_name")),
-                    last_name=clean(row.get("last_name")),
-                    birth_date=clean(row.get("birth_date")),
-                    position=clean(row.get("position")),
-                    latest_team=clean(row.get("latest_team")),
-                    source="nflverse.players",
-                    priority=10,
-                )
-            )
-
-    anchors = _player_birthdate_anchors(player_rows)
-    ff_rows: list[dict[str, str]] = []
-    ff_identity_ids: list[dict[str, str]] = []
-    source_conflicts: list[dict[str, Any]] = []
-    for row in iter_csv(datasets["nflverse.ff-player-ids"].raw_path):
-        ff_rows.append(row)
-        raw_ids = ids_from_ff(row)
-        ids = dict(raw_ids)
-        birth_date = clean(row.get("birthdate"))
-        conflicting_anchors: list[dict[str, Any]] = []
-        matching_anchors: list[dict[str, Any]] = []
-        if birth_date:
-            for key in ANCHOR_ID_KEYS:
-                value = raw_ids.get(key)
-                if not value:
-                    continue
-                expected_birth_dates = sorted(anchors.get((key, value), set()))
-                if not expected_birth_dates:
-                    continue
-                detail = {"Provider": key, "ID": value, "NFLVerseBirthDates": expected_birth_dates}
-                if birth_date in expected_birth_dates:
-                    matching_anchors.append(detail)
-                else:
-                    conflicting_anchors.append(detail)
-
-        if conflicting_anchors:
-            suppressed = {key: value for key, value in raw_ids.items() if key != "MFL"}
-            ids = {"MFL": raw_ids["MFL"]} if raw_ids.get("MFL") else {}
-            source_conflicts.append(
-                {
-                    "Source": "nflverse.ff-player-ids",
-                    "Reason": "birthdate_conflict_with_nflverse_players",
-                    "MFLID": raw_ids.get("MFL"),
-                    "Name": clean(row.get("name")),
-                    "BirthDate": birth_date,
-                    "Position": clean(row.get("position")),
-                    "DraftYear": clean(row.get("draft_year")),
-                    "ConflictingAnchors": conflicting_anchors,
-                    "MatchingAnchors": matching_anchors,
-                    "SuppressedIDs": suppressed,
-                }
-            )
-
-        ff_identity_ids.append(ids)
-        if ids:
-            candidates.append(
-                IdentityCandidate(
-                    ids=ids,
-                    name=clean(row.get("name")),
-                    first_name=None,
-                    last_name=None,
-                    birth_date=birth_date,
-                    position=clean(row.get("position")),
-                    latest_team=clean(row.get("team")),
-                    source="nflverse.ff-player-ids",
-                    priority=20,
-                )
-            )
-    return candidates, ff_rows, ff_identity_ids, source_conflicts
-
-
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     payload = load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
     result: list[IdentityCandidate] = []
     for row in payload.get("Players", []):
         ids = {key: clean(value) for key, value in (row.get("IDs") or {}).items() if clean(value)}
-        if not ids:
-            continue
         base = IdentityCandidate(
             ids=ids,
             name=clean(row.get("Name")),
@@ -266,153 +116,306 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     return result
 
 
-def _shared_strong_tokens(
-    left: IdentityCandidate,
-    right: IdentityCandidate,
-    conflict_key: str,
-) -> set[tuple[str, str]]:
-    shared: set[tuple[str, str]] = set()
-    for key in ANCHOR_ID_KEYS:
-        if key == conflict_key:
-            continue
-        left_value = left.ids.get(key)
-        right_value = right.ids.get(key)
-        if left_value and left_value == right_value:
-            shared.add((key, left_value))
-    return shared
-
-
-def _verified_link_alias(key: str, members: list[IdentityCandidate]) -> bool:
-    required_corroborators = ALIAS_MIN_CORROBORATORS.get(key)
-    if required_corroborators is None:
-        return False
-    relevant = [member for member in members if member.ids.get(key)]
-    values = {member.ids[key] for member in relevant}
-    if len(values) < 2:
-        return False
-    birth_dates = {member.birth_date for member in relevant}
-    if None in birth_dates or len(birth_dates) != 1:
+def _can_merge_on_anchor(left: IdentityCandidate, right: IdentityCandidate, shared_key: str) -> bool:
+    if left.birth_date and right.birth_date and left.birth_date != right.birth_date:
         return False
 
-    grouped: dict[str, list[IdentityCandidate]] = defaultdict(list)
-    for member in relevant:
-        grouped[member.ids[key]].append(member)
-    for value, group in grouped.items():
-        corroborated = False
-        for member in group:
-            for other_value, other_group in grouped.items():
-                if other_value == value:
-                    continue
-                if any(
-                    len(_shared_strong_tokens(member, other, key)) >= required_corroborators
-                    for other in other_group
-                ):
-                    corroborated = True
-                    break
-            if corroborated:
-                break
-        if not corroborated:
+    shared = {
+        key
+        for key in ANCHOR_ID_KEYS
+        if left.ids.get(key) and left.ids.get(key) == right.ids.get(key)
+    }
+    conflicting = {
+        key
+        for key in ANCHOR_ID_KEYS
+        if left.ids.get(key)
+        and right.ids.get(key)
+        and left.ids.get(key) != right.ids.get(key)
+    }
+    if not conflicting:
+        return True
+    if not left.birth_date or left.birth_date != right.birth_date:
+        return False
+
+    for conflict_key in conflicting:
+        required = ALIAS_MIN_CORROBORATORS.get(conflict_key)
+        if required is None:
+            return False
+        corroborators = len(shared - {conflict_key})
+        if corroborators < required:
+            return False
+    return shared_key in shared
+
+
+def _component_members(uf: UnionFind, candidates: list[IdentityCandidate]) -> dict[int, list[int]]:
+    result: dict[int, list[int]] = defaultdict(list)
+    for idx in range(len(candidates)):
+        result[uf.find(idx)].append(idx)
+    return result
+
+
+def _component_is_stable(indexes: list[int], candidates: list[IdentityCandidate]) -> bool:
+    return any(
+        candidates[idx].existing_internal_id
+        or any(candidates[idx].ids.get(key) for key in ANCHOR_ID_KEYS)
+        for idx in indexes
+    )
+
+
+def _component_compatible(candidate: IdentityCandidate, indexes: list[int], candidates: list[IdentityCandidate]) -> bool:
+    for idx in indexes:
+        other = candidates[idx]
+        if candidate.birth_date and other.birth_date and candidate.birth_date != other.birth_date:
             return False
     return True
 
 
+def _build_components(candidates: list[IdentityCandidate]) -> UnionFind:
+    uf = UnionFind()
+    for _ in candidates:
+        uf.add()
+
+    existing_owner: dict[str, int] = {}
+    anchor_owners: dict[tuple[str, str], list[int]] = defaultdict(list)
+    for idx, candidate in enumerate(candidates):
+        if candidate.existing_internal_id:
+            previous = existing_owner.get(candidate.existing_internal_id)
+            if previous is not None:
+                uf.union(idx, previous)
+            else:
+                existing_owner[candidate.existing_internal_id] = idx
+        for key in ANCHOR_ID_KEYS:
+            value = candidate.ids.get(key)
+            if not value:
+                continue
+            token = (key, value)
+            for previous in anchor_owners[token]:
+                if _can_merge_on_anchor(candidate, candidates[previous], key):
+                    uf.union(idx, previous)
+            anchor_owners[token].append(idx)
+
+    # Provider-only current rows prefer current anchored evidence. Historical
+    # canonical mappings are a fallback only when no current stable component
+    # claims that provider ID. This preserves stable existing identities while
+    # allowing a later provider-ID reuse to attach to the new current person.
+    for _ in range(3):
+        components = _component_members(uf, candidates)
+        stable_roots = {
+            root
+            for root, indexes in components.items()
+            if _component_is_stable(indexes, candidates)
+        }
+        current_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
+        historical_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
+        for idx, candidate in enumerate(candidates):
+            root = uf.find(idx)
+            if root not in stable_roots:
+                continue
+            target_map = (
+                historical_token_roots
+                if candidate.source == "canonical-existing"
+                else current_token_roots
+            )
+            for key in ATTACH_ID_KEYS:
+                if value := candidate.ids.get(key):
+                    target_map[(key, value)].add(root)
+
+        changed = False
+        for idx, candidate in enumerate(candidates):
+            root = uf.find(idx)
+            if root in stable_roots:
+                continue
+            current_targets: set[int] = set()
+            historical_targets: set[int] = set()
+            for key in ATTACH_ID_KEYS:
+                if value := candidate.ids.get(key):
+                    current_targets.update(current_token_roots.get((key, value), set()))
+                    historical_targets.update(historical_token_roots.get((key, value), set()))
+
+            if len(current_targets) == 1:
+                target = next(iter(current_targets))
+            elif len(current_targets) == 0 and len(historical_targets) == 1:
+                target = next(iter(historical_targets))
+            else:
+                continue
+
+            target_indexes = components.get(target, [])
+            if not _component_compatible(candidate, target_indexes, candidates):
+                continue
+            uf.union(idx, target)
+            changed = True
+        if not changed:
+            break
+
+    # Remaining app rows may establish provisional current people because
+    # Sleeper is the current application identity contract. A provider-only row
+    # may attach only when it points to exactly one such app component and no
+    # competing provider row proposes the same target.
+    components = _component_members(uf, candidates)
+    app_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
+    for idx, candidate in enumerate(candidates):
+        if candidate.source != "app.Players":
+            continue
+        root = uf.find(idx)
+        for key in ATTACH_ID_KEYS:
+            if value := candidate.ids.get(key):
+                app_token_roots[(key, value)].add(root)
+
+    proposals: dict[int, list[int]] = defaultdict(list)
+    for idx, candidate in enumerate(candidates):
+        if candidate.source in {"app.Players", "canonical-existing"}:
+            continue
+        if _component_is_stable(components.get(uf.find(idx), []), candidates):
+            continue
+        targets: set[int] = set()
+        for key in ATTACH_ID_KEYS:
+            if value := candidate.ids.get(key):
+                targets.update(app_token_roots.get((key, value), set()))
+        if len(targets) == 1:
+            proposals[next(iter(targets))].append(idx)
+
+    for target, proposed_indexes in proposals.items():
+        if len(proposed_indexes) != 1:
+            continue
+        idx = proposed_indexes[0]
+        target_indexes = components.get(target, [])
+        if _component_compatible(candidates[idx], target_indexes, candidates):
+            uf.union(idx, target)
+    return uf
+
+
 def _select_primary_provider_id(key: str, values: set[str], members: list[IdentityCandidate]) -> str:
     for source in PRIMARY_SOURCE_PREFERENCE:
-        candidates = sorted(
+        selected = sorted(
+            member.ids[key]
+            for member in members
+            if member.source == source and member.ids.get(key) in values
+        )
+        if selected:
+            return selected[0]
+    return sorted(values)[0]
+
+
+def _seed_for_component(members: list[IdentityCandidate]) -> str:
+    id_tokens = sorted(
+        {
+            f"{key}:{value}"
+            for member in members
+            if member.source != "canonical-existing"
+            for key, value in member.ids.items()
+            if value
+        }
+    )
+    if not id_tokens:
+        id_tokens = sorted(
             {
-                member.ids[key]
+                f"{key}:{value}"
                 for member in members
-                if member.source == source and member.ids.get(key) in values
+                for key, value in member.ids.items()
+                if value
             }
         )
-        if candidates:
-            return candidates[0]
-    return sorted(values)[0]
+    birth_dates = sorted({member.birth_date for member in members if member.birth_date})
+    names = sorted({member.name.strip().lower() for member in members if member.name and member.name.strip()})
+    positions = sorted({member.position for member in members if member.position})
+    seed_parts = ["component", *id_tokens]
+    if birth_dates:
+        seed_parts.append("birth=" + ",".join(birth_dates))
+    if positions:
+        seed_parts.append("position=" + ",".join(positions))
+    if names:
+        seed_parts.append("names=" + ",".join(names))
+    return "|".join(seed_parts)
 
 
 def build_identities(
     repo_root: Path,
     datasets: dict[str, Dataset],
-) -> tuple[list[dict[str, Any]], list[dict[str, str]], list[dict[str, Any]]]:
-    raw_candidates, ff_rows, ff_identity_ids, source_conflicts = raw_identity_candidates(repo_root, datasets)
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, str]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
+    raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
     app_candidates, _ = app_player_candidates(repo_root)
     candidates = existing_identity_candidates(repo_root) + raw_candidates + app_candidates
-    uf = UnionFind()
-    id_owner: dict[tuple[str, str], int] = {}
-    indexes: list[int] = []
-    for candidate in candidates:
-        idx = uf.add()
-        indexes.append(idx)
-        for key, value in candidate.ids.items():
-            if key not in LINK_ID_KEYS:
-                continue
-            token = (key, value)
-            if token in id_owner:
-                uf.union(idx, id_owner[token])
-            else:
-                id_owner[token] = idx
+    candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
+    uf = _build_components(candidates)
+    components = _component_members(uf, candidates)
 
-    components: dict[int, list[IdentityCandidate]] = defaultdict(list)
-    for idx, candidate in zip(indexes, candidates):
-        components[uf.find(idx)].append(candidate)
-
-    canonical: list[dict[str, Any]] = []
-    for members in components.values():
-        external_values: dict[str, set[str]] = defaultdict(set)
-        existing_ids: set[str] = set()
-        sources: set[str] = set()
-        for member in members:
-            sources.add(member.source)
-            if member.existing_internal_id:
-                existing_ids.add(member.existing_internal_id)
-            for key, value in member.ids.items():
-                external_values[key].add(value)
-
-        conflicts: dict[str, list[str]] = {}
-        ids: dict[str, str] = {}
-        aliases: dict[str, list[str]] = {}
-        for key, values in external_values.items():
-            if len(values) == 1:
-                ids[key] = next(iter(values))
-                continue
-            if key in WEAK_ID_KEYS or _verified_link_alias(key, members):
-                primary = _select_primary_provider_id(key, values, members)
-                ids[key] = primary
-                aliases[key] = sorted(values - {primary})
-                continue
-            conflicts[key] = sorted(values)
-
-        if conflicts:
-            member_summary = [
-                {
-                    "Source": member.source,
-                    "Name": member.name,
-                    "BirthDate": member.birth_date,
-                    "IDs": member.ids,
-                }
-                for member in members[:8]
-            ]
-            raise ValueError(
-                f"Identity component has conflicting IDs for the same link provider: {conflicts}; "
-                f"members={member_summary}"
-            )
+    root_internal: dict[int, str] = {}
+    for root, indexes in components.items():
+        members = [candidates[idx] for idx in indexes]
+        existing_ids = {member.existing_internal_id for member in members if member.existing_internal_id}
         if len(existing_ids) > 1:
             raise ValueError(f"Identity component merges multiple existing NFLPlayerIDs: {sorted(existing_ids)}")
+        root_internal[root] = next(iter(existing_ids)) if existing_ids else stable_internal_id(_seed_for_component(members))
 
-        if existing_ids:
-            internal_id = next(iter(existing_ids))
-        else:
-            seed = next(
-                (
-                    f"{key}:{ids[key]}"
-                    for key in ("GSIS", "Sleeper", "PFR", "ESPN", "Tank01")
-                    if ids.get(key)
-                ),
-                None,
+    current_claim_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
+    current_claim_sources: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    for idx, candidate in enumerate(candidates):
+        if candidate.source == "canonical-existing":
+            continue
+        internal_id = root_internal[uf.find(idx)]
+        for key, value in candidate.ids.items():
+            token = (key, value)
+            current_claim_owners[token].add(internal_id)
+            current_claim_sources[(key, value, internal_id)].add(candidate.source)
+
+    lookup_conflicts: list[dict[str, Any]] = []
+    mapping_conflicts: list[dict[str, Any]] = []
+    ambiguous_lookup_tokens: set[tuple[str, str]] = set()
+    for (key, value), owners in sorted(current_claim_owners.items()):
+        if len(owners) <= 1:
+            continue
+        detail = {
+            "Provider": key,
+            "ExternalID": value,
+            "NFLPlayerIDs": sorted(owners),
+            "SourcesByNFLPlayerID": {
+                internal_id: sorted(current_claim_sources[(key, value, internal_id)])
+                for internal_id in sorted(owners)
+            },
+        }
+        mapping_conflicts.append(detail)
+        if key in LINK_ID_KEYS:
+            ambiguous_lookup_tokens.add((key, value))
+            lookup_conflicts.append(
+                {
+                    "Source": "identity-resolution",
+                    "Reason": "provider_id_maps_to_multiple_people",
+                    **detail,
+                }
             )
-            internal_id = stable_internal_id(
-                seed or "|".join(f"{key}:{ids[key]}" for key in sorted(ids))
-            )
+    source_conflicts.extend(lookup_conflicts)
+
+    canonical: list[dict[str, Any]] = []
+    for root, indexes in components.items():
+        members = [candidates[idx] for idx in indexes]
+        internal_id = root_internal[root]
+        sources = {member.source for member in members if member.source != "canonical-existing"}
+        values_by_key: dict[str, set[str]] = defaultdict(set)
+        for member in members:
+            for key, value in member.ids.items():
+                if member.source == "canonical-existing" and key in ATTACH_ID_KEYS:
+                    if internal_id not in current_claim_owners.get((key, value), set()):
+                        continue
+                if key in LINK_ID_KEYS and (key, value) in ambiguous_lookup_tokens:
+                    continue
+                values_by_key[key].add(value)
+
+        ids: dict[str, str] = {}
+        aliases: dict[str, list[str]] = {}
+        for key, values in values_by_key.items():
+            if not values:
+                continue
+            primary = _select_primary_provider_id(key, values, members)
+            ids[key] = primary
+            remaining = sorted(values - {primary})
+            if remaining:
+                aliases[key] = remaining
 
         ranked = sorted(members, key=lambda item: item.priority)
 
@@ -434,24 +437,37 @@ def build_identities(
             }
         )
 
-    duplicate_internal = [
-        key for key, rows in _group(canonical, "NFLPlayerID").items() if len(rows) > 1
-    ]
+    duplicate_internal = [key for key, rows in _group(canonical, "NFLPlayerID").items() if len(rows) > 1]
     if duplicate_internal:
         raise ValueError(f"Duplicate NFLPlayerID values generated: {duplicate_internal[:10]}")
     canonical.sort(key=lambda item: ((item.get("Name") or "").lower(), item["NFLPlayerID"]))
 
-    lookup = identity_lookup(canonical)
-    resolved_ff_rows: list[dict[str, str]] = []
-    for row, ids in zip(ff_rows, ff_identity_ids):
-        internal_id = next(
-            (lookup[(key, value)] for key, value in ids.items() if (key, value) in lookup),
-            None,
+    provider_claims: list[dict[str, Any]] = []
+    for (key, value), owners in sorted(current_claim_owners.items()):
+        if len(owners) != 1:
+            continue
+        internal_id = next(iter(owners))
+        provider_claims.append(
+            {
+                "Provider": key,
+                "ExternalID": value,
+                "NFLPlayerID": internal_id,
+                "Sources": sorted(current_claim_sources[(key, value, internal_id)]),
+            }
         )
+
+    resolved_ff_rows: list[dict[str, str]] = []
+    for row, candidate in zip(ff_rows, ff_candidates):
         resolved = dict(row)
+        internal_id = None
+        if candidate is not None:
+            idx = candidate_index[id(candidate)]
+            internal_id = root_internal[uf.find(idx)]
         resolved["__NFLPlayerID"] = internal_id or ""
         resolved_ff_rows.append(resolved)
-    return canonical, resolved_ff_rows, source_conflicts
+
+    identity_lookup(canonical)
+    return canonical, resolved_ff_rows, source_conflicts, provider_claims, mapping_conflicts
 
 
 def _group(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any]]]:
@@ -479,3 +495,167 @@ def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], st
                 raise ValueError(f"Link ID {key}:{value} maps to multiple canonical players")
             lookup[token] = row["NFLPlayerID"]
     return lookup
+
+
+def build_provider_mapping_payload(
+    repo_root: Path,
+    provider_claims: list[dict[str, Any]],
+    mapping_conflicts: list[dict[str, Any]],
+    observation_season: int,
+) -> dict[str, Any]:
+    path = repo_root / "source-data/nfl/identities/provider-mappings.json"
+    existing = load_json(path, {}) or {}
+    mappings = [dict(item) for item in existing.get("Mappings", [])]
+    conflicts = [dict(item) for item in existing.get("Conflicts", [])]
+
+    def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
+        return (
+            str(item.get("Provider") or ""),
+            str(item.get("ExternalID") or ""),
+            str(item.get("NFLPlayerID") or ""),
+        )
+
+    for claim in provider_claims:
+        provider = claim["Provider"]
+        external_id = claim["ExternalID"]
+        internal_id = claim["NFLPlayerID"]
+        exact = next(
+            (item for item in mappings if mapping_key(item) == (provider, external_id, internal_id)),
+            None,
+        )
+        if exact is not None:
+            first = int(exact.get("FirstObservedSeason") or observation_season)
+            last = int(exact.get("LastObservedSeason") or observation_season)
+            exact["FirstObservedSeason"] = min(first, observation_season)
+            exact["LastObservedSeason"] = max(last, observation_season)
+            exact["Sources"] = sorted(set(exact.get("Sources") or []) | set(claim.get("Sources") or []))
+            continue
+
+        previous_for_token = [
+            item
+            for item in mappings
+            if item.get("Provider") == provider and item.get("ExternalID") == external_id
+        ]
+        overlapping = [
+            item
+            for item in previous_for_token
+            if int(item.get("LastObservedSeason") or observation_season) >= observation_season
+        ]
+        if overlapping:
+            owners = sorted({internal_id, *(str(item.get("NFLPlayerID")) for item in overlapping)})
+            mapping_conflicts.append(
+                {
+                    "Provider": provider,
+                    "ExternalID": external_id,
+                    "NFLPlayerIDs": owners,
+                    "SourcesByNFLPlayerID": {internal_id: sorted(claim.get("Sources") or [])},
+                }
+            )
+            continue
+
+        mappings.append(
+            {
+                "Provider": provider,
+                "ExternalID": external_id,
+                "NFLPlayerID": internal_id,
+                "FirstObservedSeason": observation_season,
+                "LastObservedSeason": observation_season,
+                "Sources": sorted(claim.get("Sources") or []),
+            }
+        )
+
+    for conflict in mapping_conflicts:
+        provider = str(conflict.get("Provider") or "")
+        external_id = str(conflict.get("ExternalID") or "")
+        owners = sorted(str(value) for value in conflict.get("NFLPlayerIDs") or [])
+        same = next(
+            (
+                item
+                for item in conflicts
+                if item.get("Provider") == provider
+                and item.get("ExternalID") == external_id
+                and sorted(str(value) for value in item.get("NFLPlayerIDs") or []) == owners
+            ),
+            None,
+        )
+        if same is None:
+            same = {
+                "Provider": provider,
+                "ExternalID": external_id,
+                "NFLPlayerIDs": owners,
+                "FirstObservedSeason": observation_season,
+                "LastObservedSeason": observation_season,
+                "Status": "ambiguous",
+            }
+            conflicts.append(same)
+        else:
+            same["FirstObservedSeason"] = min(
+                int(same.get("FirstObservedSeason") or observation_season), observation_season
+            )
+            same["LastObservedSeason"] = max(
+                int(same.get("LastObservedSeason") or observation_season), observation_season
+            )
+        sources_by_player = conflict.get("SourcesByNFLPlayerID") or {}
+        if sources_by_player:
+            merged = {
+                key: set(values or [])
+                for key, values in (same.get("SourcesByNFLPlayerID") or {}).items()
+            }
+            for internal_id, values in sources_by_player.items():
+                merged.setdefault(internal_id, set()).update(values or [])
+            same["SourcesByNFLPlayerID"] = {
+                key: sorted(values) for key, values in sorted(merged.items())
+            }
+
+    mappings.sort(
+        key=lambda item: (
+            item["Provider"],
+            item["ExternalID"],
+            item["FirstObservedSeason"],
+            item["NFLPlayerID"],
+        )
+    )
+    conflicts.sort(
+        key=lambda item: (
+            item["Provider"],
+            item["ExternalID"],
+            item["FirstObservedSeason"],
+            tuple(item["NFLPlayerIDs"]),
+        )
+    )
+    return {
+        "SchemaVersion": 1,
+        "TemporalResolution": "season",
+        "Mappings": mappings,
+        "Conflicts": conflicts,
+    }
+
+
+def provider_mapping_lookup(
+    payload: dict[str, Any],
+    provider: str,
+    external_id: str,
+    season: int,
+) -> str | None:
+    provider = str(provider)
+    external_id = str(external_id)
+    season = int(season)
+
+    for conflict in payload.get("Conflicts", []) or []:
+        if conflict.get("Provider") != provider or str(conflict.get("ExternalID")) != external_id:
+            continue
+        first = int(conflict.get("FirstObservedSeason") or season)
+        last = int(conflict.get("LastObservedSeason") or first)
+        if first <= season <= last:
+            return None
+
+    matches: list[str] = []
+    for mapping in payload.get("Mappings", []) or []:
+        if mapping.get("Provider") != provider or str(mapping.get("ExternalID")) != external_id:
+            continue
+        first = int(mapping.get("FirstObservedSeason") or season)
+        last = int(mapping.get("LastObservedSeason") or first)
+        if first <= season <= last:
+            matches.append(str(mapping.get("NFLPlayerID")))
+    unique = sorted(set(matches))
+    return unique[0] if len(unique) == 1 else None
