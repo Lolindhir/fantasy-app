@@ -3,8 +3,8 @@ run-name: "FM • Ranking • FantasyCalc Market • ${{ github.event.head_commi
 
 on:
   schedule:
-    - cron: "32 3 * * *"  # 05:32 Europe/Berlin während CEST
-    - cron: "32 4 * * *"  # 05:32 Europe/Berlin während CET
+    - cron: "32 5 * * *"  # Pre-Operations-Refresh vor dem 07:00-Europe/Berlin-Lauf
+      timezone: "Europe/Berlin"
   push:
     branches:
       - main
@@ -36,52 +36,18 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Resolve Berlin schedule window
-        id: schedule_gate
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
-        run: |
-          if [[ "$EVENT_NAME" != "schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Non-scheduled run: schedule gate passed."
-            exit 0
-          fi
-
-          berlin_offset="$(TZ=Europe/Berlin date +%z)"
-          if [[ "$berlin_offset" == "+0200" ]]; then
-            expected_schedule="32 3 * * *"
-          elif [[ "$berlin_offset" == "+0100" ]]; then
-            expected_schedule="32 4 * * *"
-          else
-            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
-            exit 1
-          fi
-
-          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled run selected for 05:32 Europe/Berlin."
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
-          fi
-
       - name: Checkout repository
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Python
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Test FantasyCalc fetcher
-        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python -m unittest discover
           -s fantasy-management/_ai/scripts/tests
@@ -89,13 +55,12 @@ jobs:
           -v
 
       - name: Update FantasyCalc rankings
-        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py
           --skip-unchanged
 
       - name: Record successful FantasyCalc refresh
-        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: >-
           python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
           --source-id fantasycalc
@@ -104,7 +69,7 @@ jobs:
           --content-path fantasy-management/sources/external-rankings/market-value/fantasycalc
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"

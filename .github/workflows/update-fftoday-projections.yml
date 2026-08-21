@@ -3,8 +3,8 @@ run-name: "FM • Projection • FFToday • ${{ github.event.head_commit.messag
 
 on:
   schedule:
-    - cron: "56 3 * * *"  # 05:56 Europe/Berlin während CEST
-    - cron: "56 4 * * *"  # 05:56 Europe/Berlin während CET
+    - cron: "56 5 * * *"  # Pre-Operations-Refresh vor dem 07:00-Europe/Berlin-Lauf
+      timezone: "Europe/Berlin"
   push:
     branches:
       - main
@@ -38,52 +38,18 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Resolve Berlin schedule window
-        id: schedule_gate
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
-        run: |
-          if [[ "$EVENT_NAME" != "schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Non-scheduled run: schedule gate passed."
-            exit 0
-          fi
-
-          berlin_offset="$(TZ=Europe/Berlin date +%z)"
-          if [[ "$berlin_offset" == "+0200" ]]; then
-            expected_schedule="56 3 * * *"
-          elif [[ "$berlin_offset" == "+0100" ]]; then
-            expected_schedule="56 4 * * *"
-          else
-            echo "Unsupported Europe/Berlin UTC offset: $berlin_offset" >&2
-            exit 1
-          fi
-
-          if [[ "$SCHEDULE_EXPRESSION" == "$expected_schedule" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Scheduled run selected for 05:56 Europe/Berlin."
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Companion DST cron skipped for current Berlin offset $berlin_offset."
-          fi
-
       - name: Checkout repository
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Python
-        if: steps.schedule_gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Test FFToday projection fetchers
-        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python -m unittest
           fantasy-management/_ai/scripts/tests/test_fetch_fftoday_kicker_projections.py
@@ -91,19 +57,17 @@ jobs:
           -v
 
       - name: Fetch and validate FFToday kicker projections
-        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py
           --skip-unchanged
 
       - name: Fetch and validate FFToday offensive projections
-        if: steps.schedule_gate.outputs.run == 'true'
         run: >-
           python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py
           --skip-unchanged
 
       - name: Record successful FFToday refresh
-        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: >-
           python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
           --source-id fftoday
@@ -112,7 +76,7 @@ jobs:
           --content-path fantasy-management/sources/external-rankings/projections/fftoday
 
       - name: Commit and push updates
-        if: steps.schedule_gate.outputs.run == 'true' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
