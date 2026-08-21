@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-21T17:15:25.601845Z",
+  "generated_at": "2026-08-21T17:49:50.777307Z",
   "berlin_date": "2026-08-21",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 0,
-    "stale_count": 6,
+    "fresh_count": 1,
+    "stale_count": 5,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -27,7 +27,6 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
-      "cbs-sports",
       "sleeper-trending"
     ],
     "blocking_source_ids": [],
@@ -36,7 +35,6 @@
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
-      "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
@@ -64,7 +62,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T03:59:45.442739Z",
-      "age_minutes": 2235.67,
+      "age_minutes": 2270.09,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -82,7 +80,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:06:57.188624Z",
-      "age_minutes": 2228.47,
+      "age_minutes": 2262.89,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -99,7 +97,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:21:39.587350Z",
-      "age_minutes": 2213.77,
+      "age_minutes": 2248.19,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -116,7 +114,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T11:29:22.101373Z",
-      "age_minutes": 1786.06,
+      "age_minutes": 1820.48,
       "content_changed": true,
       "trigger": "workflow_dispatch"
     },
@@ -130,12 +128,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T04:49:47.738400Z",
-      "age_minutes": 2185.63,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-21T17:47:50.962754Z",
+      "age_minutes": 2.0,
       "content_changed": true,
-      "trigger": "schedule"
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "sleeper-trending",
@@ -150,7 +148,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-20T04:58:37.933116Z",
-      "age_minutes": 2176.79,
+      "age_minutes": 2211.21,
       "content_changed": true,
       "trigger": "schedule"
     }
