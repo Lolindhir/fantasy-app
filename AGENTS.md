@@ -110,4 +110,5 @@ Exception:
 - Put durable application architecture and domain decisions into `.ai-context/manual`.
 - Put durable Fantasy Management rules, source maps, workflows and analysis-storage conventions into `fantasy-management/_ai`.
 - Prefer small, focused commits.
+- When retiring, renaming or migrating a canonical artifact, audit both exact code/path references and semantic instructions in active canonical agent, source and workflow documentation; update or remove stale procedural guidance in the same change while preserving intentionally historical provenance.
 - Do not change the data generation pipeline, Angular data model or generated JSON contracts without checking the AI context first.

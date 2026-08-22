@@ -86,14 +86,16 @@ Operational rules:
 
 A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`. A fantasy free agent is only a player whose ID does not appear in any of those lists.
 
-For free-agent boards:
+For free-agent boards, prefer the current `fantasy-management/generated/operations/free-agent-signals.json` contract. It represents the complete current fantasy-free-agent population for Fantasy Operations and must remain downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
+
+When the population must be reconstructed from base contracts instead of using `free-agent-signals.json` directly:
 
 1. load current `League.json`
 2. collect every owned player ID from roster, reserve and taxi
-3. load relevant player chunks through the chunk index
-4. remove owned IDs
-5. evaluate the remaining candidates
-6. verify top candidates through their concrete player records
+3. load the current operational player population from `fantasy-management/generated/operations/player-signals.json`
+4. exclude every owned player ID
+5. evaluate the remaining candidates with the current derived signals
+6. read targeted records from `public/data/Players.json` only when exact raw app fields are needed
 
 ## Draft source rules
 
@@ -467,14 +469,6 @@ These files are useful context but are not canonical current league state.
 Podcast source packages belong under `fantasy-management/sources/podcasts/`. Stoned Lack, Down Set Talk and Football Bromance are qualitative secondary sources whose fantasy specificity and reliability depend on the subject.
 
 Always distinguish internal league data, source perspective, current external market/news context and the final Mighty Giants recommendation. Raw transcripts may contain transcription errors, especially player names; use the identity registry and verify uncertain names when they matter.
-
-## Relevant Players source area
-
-User-provided or generated Relevant Players files belong under:
-
-`fantasy-management/sources/relevant-players/`
-
-They can supplement generated app/player chunks but do not override current generated league state unless explicitly documented.
 
 ## Analysis artifacts are not permanent truth
 
