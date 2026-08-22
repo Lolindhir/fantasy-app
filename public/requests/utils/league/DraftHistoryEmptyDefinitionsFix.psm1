@@ -2,31 +2,18 @@
 # Draft History: Empty Definitions Fix
 # ===========================================================================
 #
-# This module provides safe wrappers for completed draft history generation.
-# It handles seasons that have Sleeper drafts, but no completed drafts yet.
+# Safe wrappers for historical draft generation. The identity semantics are
+# intentionally delegated to the canonical DraftHistory/DraftUtils helpers so
+# current and historical drafts cannot drift into different key schemes.
 
 function Set-DraftHistoryTypeOccurrencesSafe {
     param(
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [array]$definitions
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$definitions,
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs
     )
 
-    if ($definitions.Count -eq 0) {
-        return @()
-    }
-
-    foreach ($group in ($definitions | Group-Object -Property Season, DraftType)) {
-        $groupItems = @($group.Group | Sort-Object DraftNo, DraftKey)
-        $typeCount = $groupItems.Count
-
-        for ($i = 0; $i -lt $groupItems.Count; $i++) {
-            $groupItems[$i] | Add-Member -NotePropertyName TypeOccurrence -NotePropertyValue ($i + 1) -Force
-            $groupItems[$i] | Add-Member -NotePropertyName TypeCount -NotePropertyValue $typeCount -Force
-        }
-    }
-
-    return $definitions
+    if ($definitions.Count -eq 0) { return @() }
+    return Set-DraftHistoryTypeOccurrences -definitions $definitions -draftTypeConfigs $draftTypeConfigs
 }
 
 function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
@@ -57,7 +44,10 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
 
         $completedIndex++
         $fallbackDraftTypeConfig = if (($completedIndex - 1) -lt $fallbackTypes.Count) { $fallbackTypes[$completedIndex - 1] } else { $null }
-        $draftType = Resolve-DraftHistoryTypeFromSleeperDraft -sleeperDraft $draft -draftTypeConfigs $draftTypeConfigs -fallbackDraftTypeConfig $fallbackDraftTypeConfig
+        $draftType = Resolve-DraftHistoryTypeFromSleeperDraft `
+            -sleeperDraft $draft `
+            -draftTypeConfigs $draftTypeConfigs `
+            -fallbackDraftTypeConfig $fallbackDraftTypeConfig
         if ([string]::IsNullOrWhiteSpace($draftType)) { $draftType = "Veteran" }
 
         $draftSeason = [string](Get-DraftObjectProperty -object $draft -propertyName "season" -defaultValue $season)
@@ -66,15 +56,20 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
         $rounds = Get-DraftHistoryConfiguredRoundsFromSleeperDraft -sleeperDraft $draft
         if ($null -eq $rounds -or $rounds -le 0) { $rounds = 0 }
 
-        $draftTypeConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault -draftType $draftType -draftTypeConfigs $draftTypeConfigs -defaultDraftNo $completedIndex -defaultRounds ([int]$rounds)
-        $draftKey = New-DraftHistoryDraftKey -season $draftSeason -draftNo $completedIndex -draftType $draftType
+        $draftTypeConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault `
+            -draftType $draftType `
+            -draftTypeConfigs $draftTypeConfigs `
+            -defaultDraftNo $completedIndex `
+            -defaultRounds ([int]$rounds)
 
         $definitions += [PSCustomObject][ordered]@{
             LeagueID        = $leagueID
             Season          = $draftSeason
             DraftType       = $draftType
+            DraftInstance   = 1
+            DraftCode       = $draftType
             DraftNo         = $completedIndex
-            DraftKey        = $draftKey
+            DraftKey        = New-DraftKey -season $draftSeason -draftType $draftType
             DraftTypeConfig = $draftTypeConfig
             SleeperDraft    = $draft
             TypeOccurrence  = 1
@@ -82,11 +77,11 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
         }
     }
 
-    if ($definitions.Count -eq 0) {
-        return @()
-    }
+    if ($definitions.Count -eq 0) { return @() }
 
-    $definitions = Set-DraftHistoryTypeOccurrencesSafe -definitions $definitions
+    $definitions = Set-DraftHistoryTypeOccurrencesSafe `
+        -definitions $definitions `
+        -draftTypeConfigs $draftTypeConfigs
 
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
 }
@@ -138,56 +133,40 @@ function Add-DraftHistoryTradeHistorySafe {
         [Parameter(Mandatory = $true)][array]$transactions
     )
 
-    $confirmedDraftsByKey = @{}
-    foreach ($draft in $drafts) {
-        $draftID = [string]$draft.SleeperDraftID
-        if ([string]::IsNullOrWhiteSpace($draftID)) { continue }
-
-        try { $tradedPicks = ConvertTo-DraftSafeArray -value (Get-SleeperDraftTradedPicks -draftID $draftID) }
-        catch { Write-Warning "Could not load draft traded picks for '$($draft.DraftKey)'. $_"; continue }
-
-        foreach ($tradedPick in $tradedPicks) {
-            $season = [string](Get-DraftObjectProperty -object $tradedPick -propertyName "season" -defaultValue $draft.Season)
-            $round = Get-DraftObjectProperty -object $tradedPick -propertyName "round" -defaultValue $null
-            $originalOwnerRosterID = Get-DraftObjectProperty -object $tradedPick -propertyName "roster_id" -defaultValue $null
-            if ([string]::IsNullOrWhiteSpace($season) -or $null -eq $round -or $null -eq $originalOwnerRosterID) { continue }
-
-            $key = "$season|$([int]$round)|$([int]$originalOwnerRosterID)"
-            if (-not $confirmedDraftsByKey.ContainsKey($key)) { $confirmedDraftsByKey[$key] = @() }
-            if (-not (@($confirmedDraftsByKey[$key]) -contains $draft.DraftKey)) {
-                $confirmedDraftsByKey[$key] = @($confirmedDraftsByKey[$key]) + [string]$draft.DraftKey
-            }
-        }
-    }
-
     foreach ($draft in $drafts) {
         $pickByKey = @{}
         foreach ($pick in (ConvertTo-DraftSafeArray -value $draft.Picks)) {
-            $key = "$($pick.Season)|$([int]$pick.Round)|$([int]$pick.OriginalOwnerRosterID)"
-            if ($confirmedDraftsByKey.ContainsKey($key) -and @($confirmedDraftsByKey[$key]).Count -eq 1 -and @($confirmedDraftsByKey[$key])[0] -eq [string]$draft.DraftKey) {
-                $pickByKey[$key] = $pick
-            }
+            $pickByKey[[string]$pick.PickKey] = $pick
         }
 
         foreach ($transaction in $transactions) {
             if ([string]$transaction.Status -ne "complete") { continue }
 
             foreach ($draftPick in (ConvertTo-DraftSafeArray -value $transaction.DraftPicks)) {
-                $season = Get-DraftObjectProperty -object $draftPick -propertyName "Season" -defaultValue $null
+                if ([string]$draftPick.DraftKey -ne [string]$draft.DraftKey) { continue }
+
                 $round = Get-DraftObjectProperty -object $draftPick -propertyName "Round" -defaultValue $null
                 $originalOwnerRosterID = Get-DraftObjectProperty -object $draftPick -propertyName "OriginalOwnerRosterID" -defaultValue $null
-                if ($null -eq $season -or $null -eq $round -or $null -eq $originalOwnerRosterID) { continue }
+                if ($null -eq $round -or $null -eq $originalOwnerRosterID) { continue }
 
-                $key = "$season|$([int]$round)|$([int]$originalOwnerRosterID)"
-                if (-not $pickByKey.ContainsKey($key)) { continue }
+                $pickKey = New-DraftPickKey `
+                    -draftKey ([string]$draft.DraftKey) `
+                    -round ([int]$round) `
+                    -originalOwnerRosterID ([int]$originalOwnerRosterID)
+                if (-not $pickByKey.ContainsKey($pickKey)) { continue }
 
-                $targetPick = $pickByKey[$key]
+                $targetPick = $pickByKey[$pickKey]
                 $history = @(ConvertTo-DraftSafeArray -value $targetPick.TradeHistory)
                 $alreadyExists = $false
 
                 foreach ($entry in $history) {
-                    if ([string]$entry.TransactionID -eq [string]$transaction.TransactionID -and [int]$entry.PreviousOwnerRosterID -eq [int]$draftPick.PreviousOwnerRosterID -and [int]$entry.NewOwnerRosterID -eq [int]$draftPick.NewOwnerRosterID) {
+                    if (
+                        [string]$entry.TransactionID -eq [string]$transaction.TransactionID -and
+                        [int]$entry.PreviousOwnerRosterID -eq [int]$draftPick.PreviousOwnerRosterID -and
+                        [int]$entry.NewOwnerRosterID -eq [int]$draftPick.NewOwnerRosterID
+                    ) {
                         $alreadyExists = $true
+                        break
                     }
                 }
 
@@ -207,7 +186,9 @@ function Add-DraftHistoryTradeHistorySafe {
                 if ($targetPick.TradeHistory.Count -gt 0) {
                     $targetPick.WasTraded = $true
                     $targetPick.IsCurrentlyTraded = ([int]$targetPick.CurrentOwnerRosterID -ne [int]$targetPick.OriginalOwnerRosterID)
-                    if ([string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) { $targetPick.TradeSource = "SleeperTransaction" }
+                    if ([string]::IsNullOrWhiteSpace([string]$targetPick.TradeSource)) {
+                        $targetPick.TradeSource = [string]$transaction.Source
+                    }
                 }
             }
         }
