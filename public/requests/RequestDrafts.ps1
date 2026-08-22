@@ -3,12 +3,7 @@
 # ===========================================================================
 
 try {
-    Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftDisplayStatusUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DraftTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -32,28 +27,16 @@ function Invoke-PastSeasonsIndexRefresh {
 # Logik
 # ===========================================================================
 
-# Draft-Generatoren müssen bereits die korrekten DraftKeys aus Transactions.json erhalten.
-Update-AllTransactionDraftPickTypesFromSleeper
-
-$drafts = Update-DraftsOrderAware
-if ($drafts) {
-    $drafts = Set-DraftDisplayStatuses -drafts $drafts
-    Save-Drafts -drafts $drafts
-}
-
-$historicalDrafts = Update-DraftsHistoricalSeasonsSafeOrderAware
-
-# Fertige Draftdaten liefern konkrete Pickpositionen und ausgewählte Spieler zurück an die Transaktionen.
-Update-AllTransactionDraftPickDetailsFromLocalDrafts
+$pipelineResult = Invoke-DraftTransactionRebuild
 Invoke-PastSeasonsIndexRefresh
 
-if ($drafts) {
+if ($pipelineResult.Drafts) {
     Write-Host "Current drafts updated." -ForegroundColor Green
 } else {
     Write-Host "No current drafts generated." -ForegroundColor Yellow
 }
 
-if ($historicalDrafts) {
+if ($pipelineResult.HistoricalDrafts) {
     Write-Host "Historical drafts updated." -ForegroundColor Green
 } else {
     Write-Host "No historical drafts generated." -ForegroundColor Yellow

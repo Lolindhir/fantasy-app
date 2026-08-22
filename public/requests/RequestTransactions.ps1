@@ -4,7 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DraftTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -28,17 +28,17 @@ function Invoke-PastSeasonsIndexRefresh {
 # Logik
 # ===========================================================================
 
-#--- Transaktionen für alle Saisons aktualisieren ---
-$updatedTransactions = Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
+# Full rebuild: Current + History werden aus kanonischen Inputs neu aufgebaut.
+Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
 
-# Sleeper-Picks dem richtigen Draft zuordnen und mit generierten Pick-Ergebnissen anreichern.
-Update-AllTransactionDraftPickTypesFromSleeper
-Update-AllTransactionDraftPickDetailsFromLocalDrafts
+# Abhängige Draft-Outputs werden im selben Working Tree aus den frisch erzeugten
+# Transactions aufgebaut; erst danach werden konkrete Pickdetails zurückgeschrieben.
+$pipelineResult = Invoke-DraftTransactionRebuild -ForceHistory
 
 Invoke-PastSeasonsIndexRefresh
 
-if ($updatedTransactions) {
-    Write-Host "Transactions updated." -ForegroundColor Green
+if ($pipelineResult.Drafts -or $pipelineResult.HistoricalDrafts) {
+    Write-Host "Transactions and dependent drafts rebuilt." -ForegroundColor Green
 } else {
-    Write-Host "No transactions updated." -ForegroundColor Yellow
+    Write-Host "Transactions rebuilt; no draft output generated." -ForegroundColor Yellow
 }

@@ -52,17 +52,20 @@ $pipeline = Get-Content "$PSScriptRoot\utils\league\LeagueTransactionPipelineUti
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-TransactionsCurrentSeason") -Expected 0 -Message "League in-memory helper unexpectedly persists Transactions.json."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-TransactionDraftPickTransactions") -Expected 0 -Message "League in-memory helper unexpectedly persists enriched Transactions.json."
 
-# Standalone/history requests intentionally retain their file-based contract.
+# Standalone/history requests retain their file-based contract, but orchestration
+# is centralized so Transactions and Drafts cannot drift in ordering.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory") -Message "Standalone transaction history rebuild contract changed."
-Assert-True -Condition $requestTransactions.Contains("Update-AllTransactionDraftPickTypesFromSleeper") -Message "Standalone transaction draft-identity enrichment is missing."
-Assert-True -Condition $requestTransactions.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts") -Message "Standalone transaction pick-detail enrichment is missing."
+Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "Standalone transaction request does not invoke the coupled draft/transaction rebuild."
 
 $requestDrafts = Get-Content "$PSScriptRoot\RequestDrafts.ps1" -Raw
-Assert-True -Condition $requestDrafts.Contains("Update-AllTransactionDraftPickTypesFromSleeper") -Message "Standalone draft request no longer prepares persisted transaction identities."
-Assert-True -Condition $requestDrafts.Contains("Update-DraftsOrderAware") -Message "Standalone current draft generation contract changed."
-Assert-True -Condition $requestDrafts.Contains("Update-DraftsHistoricalSeasonsSafeOrderAware") -Message "Historical draft generation contract changed."
-Assert-True -Condition $requestDrafts.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts") -Message "Standalone draft request no longer enriches persisted transaction details."
+Assert-True -Condition $requestDrafts.Contains("Invoke-DraftTransactionRebuild") -Message "Standalone draft request does not use the shared rebuild orchestration."
+
+$standalonePipeline = Get-Content "$PSScriptRoot\utils\league\DraftTransactionPipelineUtils.psm1" -Raw
+Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftPickTypesFromSleeper") -Message "Shared standalone pipeline no longer prepares persisted transaction identities."
+Assert-True -Condition $standalonePipeline.Contains("Update-DraftsOrderAware") -Message "Shared standalone pipeline no longer generates current drafts."
+Assert-True -Condition $standalonePipeline.Contains("Update-DraftsHistoricalSeasonsSafeOrderAware") -Message "Shared standalone pipeline no longer generates historical drafts."
+Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts") -Message "Shared standalone pipeline no longer enriches persisted transaction details."
 
 # Pure in-memory detail enrichment must yield the same canonical transaction
 # shape that Compare-Transactions considers stable on the next no-op run.
