@@ -65,8 +65,8 @@ Assert-Equal -Actual (New-DraftCode -draftType "Free_Agent" -draftInstance 1) -E
 # Weekly ownership: Transactions is the scheduled coupled rebuild. Drafts remains
 # independently dispatchable for manual repair/refresh but is no longer a second
 # scheduled writer that can run on stale historical transactions first.
-$transactionsWorkflow = Get-Content "$PSScriptRoot\..\.github\workflows\update-transactions.yml" -Raw
-$draftsWorkflow = Get-Content "$PSScriptRoot\..\.github\workflows\update-drafts.yml" -Raw
+$transactionsWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
+$draftsWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-drafts.yml" -Raw
 Assert-True -Condition $transactionsWorkflow.Contains("schedule:") -Message "Transactions workflow lost its weekly schedule."
 Assert-True -Condition $transactionsWorkflow.Contains("RequestTransactions.ps1") -Message "Transactions workflow no longer runs RequestTransactions.ps1."
 Assert-True -Condition $draftsWorkflow.Contains("workflow_dispatch:") -Message "Drafts workflow is no longer manually dispatchable."
