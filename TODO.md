@@ -90,6 +90,13 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Validierung: Release Notes und Breaking Changes je Action prüfen; CI-, Deploy- und schreibende Datenworkflows nach der Umstellung separat validieren.
   - Leitplanke: Runtime-/Action-Upgrades nicht mit fachlichen Workflow-Änderungen vermischen und keine bestehenden Secrets, Trigger, Zeitpläne oder Write-Semantiken still verändern.
 
+- [ ] GitHub-Actions-Run-Naming und eindeutige Trigger-Referenzen später erneut auditieren.
+  - Kontext: Dynamische `run-name`-Ausdrücke verwenden aktuell teilweise `github.event.head_commit.message`. Bei Commits mit mehrzeiligem Body kann dadurch der komplette Committext im Run-Namen landen; kompakte automatisch erzeugte `data(...)`-Commits ergeben dagegen bereits gut lesbare Namen.
+  - Ziel: Repo-weit prüfen, wie event-getriggerte Runs einen kompakten, menschenlesbaren und zugleich eindeutigen Bezug zum konkreten Auslöser behalten, ohne lange Commit-Bodies in den Titel zu übernehmen.
+  - Uniqueness: `github.run_number` beziehungsweise `github.run_id` sowie Commit-/PR-Referenzen als mögliche eindeutige Komponente bewerten. Bei Pushes möglichst den Commit-Subject statt der vollständigen Message verwenden, sobald GitHub Actions dafür eine direkt nutzbare native Möglichkeit bereitstellt.
+  - Beobachtung: Bei späteren Workflow-Audits die verfügbaren GitHub-Actions-Eventfelder und Expression-Funktionen erneut prüfen; insbesondere auf native Short-SHA-, Subject-, Substring- oder vergleichbare Möglichkeiten achten.
+  - Leitplanke: Keine zusätzliche Dispatcher-, Reusable-Workflow- oder sonstige Orchestrierungsarchitektur allein für schönere Run-Namen einführen. Run-Naming bleibt Observability und darf den Datenfluss nicht verkomplizieren.
+
 - [ ] Laufzeit-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration sowie laufzeitabhängige Werte.
   - Ziel: Laufzeitabhängige Werte nicht direkt im Repository pflegen; `Get-Config` soll sie bevorzugt aus der Laufzeitumgebung lesen und nur noch technische Defaults enthalten.
