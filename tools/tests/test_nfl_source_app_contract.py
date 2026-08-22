@@ -11,7 +11,7 @@ from nfl_source_data_lib.identity import app_player_candidates
 
 
 class NflSourceAppContractTests(unittest.TestCase):
-    def test_app_candidates_and_audit_population_use_players_without_relevant_helper(self):
+    def test_app_candidates_work_without_relevant_helper(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             data = root / "public/data"
@@ -26,10 +26,10 @@ class NflSourceAppContractTests(unittest.TestCase):
             ]
             (data / "Players.json").write_text(json.dumps(players), encoding="utf-8")
 
-            candidates, audit_population = app_player_candidates(root)
+            candidates, legacy_relevant_population = app_player_candidates(root)
 
             self.assertFalse((data / "Players_Relevant.json").exists())
-            self.assertEqual(players, audit_population)
+            self.assertEqual([], legacy_relevant_population)
             self.assertEqual(1, len(candidates))
             self.assertEqual("1000", candidates[0].ids["Sleeper"])
             self.assertEqual("T1000", candidates[0].ids["Tank01"])
