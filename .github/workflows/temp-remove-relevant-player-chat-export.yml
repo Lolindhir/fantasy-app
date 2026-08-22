@@ -1,0 +1,83 @@
+name: TEMP • Remove Relevant Player Chat Export
+
+on:
+  push:
+    branches:
+      - cleanup/remove-relevant-player-chat-export
+    paths:
+      - .github/scripts/remove-relevant-player-chat-export.py
+      - .github/workflows/temp-remove-relevant-player-chat-export.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: cleanup/remove-relevant-player-chat-export
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Apply deterministic cleanup
+        run: python .github/scripts/remove-relevant-player-chat-export.py
+
+      - name: Validate PowerShell syntax
+        shell: pwsh
+        run: |
+          $files = @(
+            'public/requests/RequestLeague.ps1',
+            'public/requests/utils/ConfigUtils.psm1',
+            'public/requests/utils/player/PlayerUtils.psm1',
+            '.github/scripts/Invoke-GeneratedDataCommit.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$file: $($_.Message)" }
+              exit 1
+            }
+          }
+
+      - name: Validate YAML
+        run: |
+          python - <<'PY'
+          import yaml
+          from pathlib import Path
+          for path in [Path('.ai-context/manual/ai-guidance.yaml'), Path('.ai-context/manual/decisions.yaml')]:
+              yaml.safe_load(path.read_text(encoding='utf-8'))
+              print(f'valid yaml: {path}')
+          PY
+
+      - name: Validate canonical FM player inputs
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in [
+              Path('fantasy-management/automation/input-materialization.json'),
+              Path('fantasy-management/automation/player-signal-materialization.json'),
+          ]:
+              data = json.loads(path.read_text(encoding='utf-8'))
+              assert data['sources']['players'] == 'public/data/Players.json', path
+              print(f'canonical Players.json input retained: {path}')
+          PY
+
+      - name: Commit cleanup result
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No cleanup changes detected."
+            exit 1
+          fi
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -A
+          git reset .github/scripts/remove-relevant-player-chat-export.py .github/workflows/temp-remove-relevant-player-chat-export.yml
+          git commit -m "refactor(fantasy-management): remove obsolete relevant-player chat export"
+          git push origin HEAD:cleanup/remove-relevant-player-chat-export
