@@ -13,10 +13,13 @@
 - **Capture timezone:** `Europe/London`
 - **Raw capture status:** `complete_user_provided_text`
 - **Source mode:** `living_article`
+- **Registry source ID:** `thescore`
 
 ## Quellenidentität
 
 Titel und Autor wurden vom Nutzer ergänzt und gegen die öffentlich auffindbare theScore-Originalseite verifiziert. Der im Chat bereitgestellte Volltext wird als Raw-Fidelity-Artefakt gespeichert. Falls theScore denselben Artikel später um weitere Preseason-Spiele ergänzt oder materiell ändert, ist die neue Fassung als zusätzlicher immutable Snapshot dieses Living Articles zu behandeln und nicht als unabhängige zweite Quelle.
+
+Für die wiederkehrende Publisher-Kalibrierung gilt `fantasy-management/_ai/source-registry.json -> thescore` beziehungsweise `fantasy-management/sources/articles/thescore/SOURCE_NOTES.md`. Direkt beobachtbare Usage-/Snap-/Sequencing-Claims werden höher gewichtet als daraus abgeleitete Hierarchie- oder Draft-Empfehlungen.
 
 ## Materialität
 
