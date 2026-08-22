@@ -60,10 +60,6 @@ Set-Content -Path "public/build-info.json" -Value $BuildInfoJson -Encoding utf8
 Set-Content -Path "src/app/core/build-info.generated.ts" -Value $BuildInfoTs -Encoding utf8
 Write-Host "Build info geschrieben: $BuildDate ($ShortCommit)"
 
-# Temporary PR-only regression hook. Reverted after validation.
-& ./public/requests/DraftIdentityRegressionTest.ps1
-& ./public/requests/LeagueTransactionPipelineRegressionTest.ps1
-
 # Angular Projekt bauen
 Write-Host "Baue Angular Projekt..."
 npx ng build --configuration production --base-href $BaseHref *> $BuildLog
