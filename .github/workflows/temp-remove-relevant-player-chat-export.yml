@@ -7,6 +7,12 @@ on:
     paths:
       - .github/scripts/remove-relevant-player-chat-export.py
       - .github/workflows/temp-remove-relevant-player-chat-export.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/scripts/remove-relevant-player-chat-export.py
+      - .github/workflows/temp-remove-relevant-player-chat-export.yml
   workflow_dispatch:
 
 permissions:
@@ -70,6 +76,7 @@ jobs:
           PY
 
       - name: Commit cleanup result
+        if: github.event_name != 'pull_request'
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No cleanup changes detected."
