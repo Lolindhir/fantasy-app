@@ -68,6 +68,7 @@ readingOrder:
   - .ai-context/manual/ai-guidance.yaml
   - .ai-context/manual/architecture.yaml
   - .ai-context/manual/domain.yaml
+  - .ai-context/manual/draft-identity.yaml
   - .ai-context/manual/data-sources.yaml
   - .ai-context/manual/decisions.yaml
   - .ai-context/manual/routing.yaml
@@ -78,21 +79,22 @@ readingOrder:
 
 shortContext:
   fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
-  public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear
+  public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
+  .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
-  public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
-  public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; reichert completed Pick-Ergebnisse und CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
+  public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ/Instanz die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
+  public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; nutzt dieselbe Season+DraftType+DraftInstance-Identität wie Current Drafts und reichert completed Pick-Ergebnisse sowie CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und .ai-workflow/deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/interceptors/json-data-cache-busting.interceptor.ts: Fügt lokalen GET-Requests für JSON unter data/ den aktuellen Build-Commit als Queryparameter hinzu; data/past_seasons/** bleibt für langfristiges historisches Caching ausgenommen
   src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt League-Daten, Transactions.json für Moves und historische Draft-Ressourcen
   src/app/core/services/data.service.ts: Öffentliche App-Datenfassade; reicht gemappte League-, Player-, Draft- und Transaction-Daten an Feature-Consumer durch
-  src/app/core/models/transaction.models.ts: Explizite Raw- und Frontend-Modelle für abgeschlossene Transaktionen, Teilnehmer, Spieler-Assets und Draft-Pick-Bewegungen
+  src/app/core/models/transaction.models.ts: Explizite Raw- und Frontend-Modelle für abgeschlossene Transaktionen, Teilnehmer, Spieler-Assets und Draft-Pick-Bewegungen; unresolved Sleeper-Picks dürfen bis zur eindeutigen Instanzauflösung null DraftType/DraftKey tragen
   src/app/core/mappers/transaction.mapper.ts: Reiner Mapper für Transactions.json; löst Teams und Spieler auf und ordnet Assets je Teilnehmer als acquired/sent zu
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive

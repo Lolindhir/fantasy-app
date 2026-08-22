@@ -139,40 +139,15 @@ function Save-TransactionDraftPickTransactions {
 # ===========================================================================
 
 function Get-TransactionDraftPickSleeperDraftContexts {
-    param(
-        [Parameter(Mandatory = $true)][string]$leagueID
-    )
+    param([Parameter(Mandatory = $true)][string]$leagueID)
 
     $draftTypeConfigs = Get-DraftHistoryTypeConfigs
-    $fallbackTypes = @($draftTypeConfigs | Sort-Object DraftNo)
+    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID
     $contexts = @()
 
-    try {
-        $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID)
-    }
-    catch {
-        Write-Warning "Could not load Sleeper drafts for transaction pick resolution in league '$leagueID'. $_"
-        return @()
-    }
-
-    $sleeperDrafts = @($sleeperDrafts | Sort-Object @{ Expression = "created"; Ascending = $true }, @{ Expression = "draft_id"; Ascending = $true })
-
-    for ($i = 0; $i -lt $sleeperDrafts.Count; $i++) {
-        $draft = Get-SleeperDraftDetailOrDefault -sleeperDraft $sleeperDrafts[$i]
-        $fallbackDraftTypeConfig = if ($i -lt $fallbackTypes.Count) { $fallbackTypes[$i] } else { $null }
-        $draftType = Resolve-DraftHistoryTypeFromSleeperDraft `
-            -sleeperDraft $draft `
-            -draftTypeConfigs $draftTypeConfigs `
-            -fallbackDraftTypeConfig $fallbackDraftTypeConfig
-
-        if ([string]::IsNullOrWhiteSpace($draftType)) {
-            Write-Warning "Could not classify Sleeper draft '$($draft.draft_id)' for transaction pick resolution."
-            continue
-        }
-
-        $season = [string](Get-DraftObjectProperty -object $draft -propertyName "season" -defaultValue "")
-        if ([string]::IsNullOrWhiteSpace($season)) { continue }
-
+    foreach ($draftKey in @($sleeperDraftMap.Keys | Sort-Object)) {
+        $draft = $sleeperDraftMap[$draftKey]
+        $identity = Get-DraftIdentityFromKey -draftKey $draftKey -draftTypeConfigs $draftTypeConfigs
         $draftID = [string](Get-DraftObjectProperty -object $draft -propertyName "draft_id" -defaultValue "")
         $tradedPicks = @()
 
@@ -186,9 +161,11 @@ function Get-TransactionDraftPickSleeperDraftContexts {
         }
 
         $contexts += [PSCustomObject][ordered]@{
-            Season          = $season
-            DraftType       = [string]$draftType
-            DraftKey        = New-DraftKey -season $season -draftType ([string]$draftType)
+            Season          = [string]$identity.Season
+            DraftType       = [string]$identity.DraftType
+            DraftInstance   = [int]$identity.DraftInstance
+            DraftCode       = [string]$identity.DraftCode
+            DraftKey        = [string]$identity.DraftKey
             SleeperDraftID  = $draftID
             TradedPicks     = @($tradedPicks)
         }
@@ -225,16 +202,53 @@ function Test-TransactionDraftPickMovementMatch {
     )
 }
 
-function Get-TransactionDraftPickContextMatch {
+function Test-TransactionDraftPicksSameMovement {
+    param(
+        [Parameter(Mandatory = $true)][object]$left,
+        [Parameter(Mandatory = $true)][object]$right
+    )
+
+    return (
+        [string]$left.Season -eq [string]$right.Season -and
+        [int]$left.Round -eq [int]$right.Round -and
+        [int]$left.OriginalOwnerRosterID -eq [int]$right.OriginalOwnerRosterID -and
+        [int]$left.PreviousOwnerRosterID -eq [int]$right.PreviousOwnerRosterID -and
+        [int]$left.NewOwnerRosterID -eq [int]$right.NewOwnerRosterID
+    )
+}
+
+function Get-TransactionDraftPickClaimedDraftKeys {
+    param(
+        [Parameter(Mandatory = $true)][object]$transaction,
+        [Parameter(Mandatory = $true)][object]$sleeperTransactionPick
+    )
+
+    $claimedDraftKeys = @()
+    foreach ($otherPick in (ConvertTo-SafeArray -value $transaction.DraftPicks)) {
+        if ($otherPick -eq $sleeperTransactionPick) { continue }
+        if ([string]$otherPick.DraftSource -eq "Sleeper") { continue }
+        if (-not (Test-TransactionDraftPicksSameMovement -left $sleeperTransactionPick -right $otherPick)) { continue }
+
+        $draftKey = [string](Get-DraftObjectProperty -object $otherPick -propertyName "DraftKey" -defaultValue "")
+        if (-not [string]::IsNullOrWhiteSpace($draftKey)) { $claimedDraftKeys += $draftKey }
+    }
+
+    return @($claimedDraftKeys | Sort-Object -Unique)
+}
+
+function Get-TransactionDraftPickContextCandidates {
     param(
         [Parameter(Mandatory = $true)][object]$transactionPick,
-        [Parameter(Mandatory = $true)][array]$contexts
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$contexts,
+        [AllowEmptyCollection()][array]$excludedDraftKeys = @()
     )
 
     $exactContexts = @()
     $identityContexts = @()
 
     foreach ($context in $contexts) {
+        if ([string]$context.DraftKey -in $excludedDraftKeys) { continue }
+
         $hasExactMatch = $false
         $hasIdentityMatch = $false
 
@@ -253,26 +267,27 @@ function Get-TransactionDraftPickContextMatch {
         elseif ($hasIdentityMatch) { $identityContexts += $context }
     }
 
-    $exactContexts = @($exactContexts | Sort-Object SleeperDraftID -Unique)
-    if ($exactContexts.Count -eq 1) { return $exactContexts[0] }
-
-    $identityContexts = @($identityContexts | Sort-Object SleeperDraftID -Unique)
-    if ($identityContexts.Count -eq 1) { return $identityContexts[0] }
-
-    $candidateContexts = if ($exactContexts.Count -gt 0) { $exactContexts } else { $identityContexts }
-    $draftTypes = @($candidateContexts | ForEach-Object { [string]$_.DraftType } | Sort-Object -Unique)
-
-    if ($draftTypes.Count -eq 1) {
-        $draftType = $draftTypes[0]
-        return [PSCustomObject][ordered]@{
-            Season          = [string]$transactionPick.Season
-            DraftType       = $draftType
-            DraftKey        = New-DraftKey -season ([string]$transactionPick.Season) -draftType $draftType
-            SleeperDraftID  = $null
-            TradedPicks     = @()
-        }
+    return [PSCustomObject][ordered]@{
+        Exact    = @($exactContexts | Sort-Object DraftKey -Unique)
+        Identity = @($identityContexts | Sort-Object DraftKey -Unique)
     }
+}
 
+function Get-TransactionDraftPickContextMatch {
+    param(
+        [Parameter(Mandatory = $true)][object]$transactionPick,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$contexts,
+        [AllowEmptyCollection()][array]$excludedDraftKeys = @()
+    )
+
+    $candidates = Get-TransactionDraftPickContextCandidates `
+        -transactionPick $transactionPick `
+        -contexts $contexts `
+        -excludedDraftKeys $excludedDraftKeys
+
+    if ($candidates.Exact.Count -eq 1) { return $candidates.Exact[0] }
+    if ($candidates.Exact.Count -gt 1) { return $null }
+    if ($candidates.Identity.Count -eq 1) { return $candidates.Identity[0] }
     return $null
 }
 
@@ -288,13 +303,29 @@ function Resolve-TransactionDraftPickTypesFromContexts {
         foreach ($transactionPick in (ConvertTo-SafeArray -value $transaction.DraftPicks)) {
             if ([string]$transactionPick.DraftSource -ne "Sleeper") { continue }
 
-            $context = Get-TransactionDraftPickContextMatch -transactionPick $transactionPick -contexts $contexts
+            $claimedDraftKeys = Get-TransactionDraftPickClaimedDraftKeys `
+                -transaction $transaction `
+                -sleeperTransactionPick $transactionPick
+            $candidates = Get-TransactionDraftPickContextCandidates `
+                -transactionPick $transactionPick `
+                -contexts $contexts `
+                -excludedDraftKeys $claimedDraftKeys
+            $context = Get-TransactionDraftPickContextMatch `
+                -transactionPick $transactionPick `
+                -contexts $contexts `
+                -excludedDraftKeys $claimedDraftKeys
+
             if ($null -eq $context) {
-                Write-Warning "Could not uniquely resolve draft type for transaction '$($transaction.TransactionID)', season '$($transactionPick.Season)', round '$($transactionPick.Round)', original owner '$($transactionPick.OriginalOwnerRosterID)'."
+                $candidateList = if ($candidates.Exact.Count -gt 0) { $candidates.Exact } else { $candidates.Identity }
+                $candidateKeys = @($candidateList | ForEach-Object { [string]$_.DraftKey }) -join ", "
+                $claimedText = if ($claimedDraftKeys.Count -gt 0) { $claimedDraftKeys -join ", " } else { "none" }
+                Write-Warning "Could not uniquely resolve draft instance for transaction '$($transaction.TransactionID)', season '$($transactionPick.Season)', round '$($transactionPick.Round)', original owner '$($transactionPick.OriginalOwnerRosterID)'. Candidates: [$candidateKeys]. Claimed sibling draft keys: [$claimedText]."
                 continue
             }
 
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftType" -value ([string]$context.DraftType) -changed ([ref]$changed)
+            Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftInstance" -value ([int]$context.DraftInstance) -changed ([ref]$changed)
+            Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftCode" -value ([string]$context.DraftCode) -changed ([ref]$changed)
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftKey" -value ([string]$context.DraftKey) -changed ([ref]$changed)
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "SleeperDraftID" -value $context.SleeperDraftID -changed ([ref]$changed)
         }
@@ -331,9 +362,7 @@ function Update-CurrentTransactionDraftPickTypesFromSleeper {
 }
 
 function Update-AllTransactionDraftPickTypesFromSleeper {
-    param(
-        [string]$leagueID = (Get-Config).LeagueID
-    )
+    param([string]$leagueID = (Get-Config).LeagueID)
 
     $leagues = ConvertTo-SafeArray -value (Get-LeaguesRecursive -leagueID $leagueID)
     $leagueBySeason = @{}
@@ -439,6 +468,12 @@ function Select-TransactionDraftPickResultCandidate {
         if ($byDraftKey.Count -eq 1) { return $byDraftKey[0] }
     }
 
+    $draftCode = [string](Get-DraftObjectProperty -object $transactionPick -propertyName "DraftCode" -defaultValue "")
+    if (-not [string]::IsNullOrWhiteSpace($draftCode)) {
+        $byDraftCode = @($candidates | Where-Object { [string]$_.Draft.DraftCode -eq $draftCode })
+        if ($byDraftCode.Count -eq 1) { return $byDraftCode[0] }
+    }
+
     $draftType = [string](Get-DraftObjectProperty -object $transactionPick -propertyName "DraftType" -defaultValue "")
     if (-not [string]::IsNullOrWhiteSpace($draftType)) {
         $byDraftType = @($candidates | Where-Object { [string]$_.Draft.DraftType -eq $draftType })
@@ -489,6 +524,8 @@ function Add-TransactionDraftPickDetailsFromDrafts {
             $draftPick = $match.Pick
 
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftType" -value ([string]$draft.DraftType) -changed ([ref]$changed)
+            Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftInstance" -value ([int]$draft.DraftInstance) -changed ([ref]$changed)
+            Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftCode" -value ([string]$draft.DraftCode) -changed ([ref]$changed)
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "DraftKey" -value ([string]$draft.DraftKey) -changed ([ref]$changed)
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "SleeperDraftID" -value $draft.SleeperDraftID -changed ([ref]$changed)
             Set-TransactionDraftPickPropertyValue -target $transactionPick -propertyName "PickKey" -value ([string]$draftPick.PickKey) -changed ([ref]$changed)
@@ -509,9 +546,7 @@ function Add-TransactionDraftPickDetailsFromDrafts {
 }
 
 function Update-CurrentTransactionDraftPickDetails {
-    param(
-        [AllowNull()]$drafts = $null
-    )
+    param([AllowNull()]$drafts = $null)
 
     $config = Get-Config
     $transactions = Get-TransactionDraftPickJsonFileContent -filePath $config.TransactionsFile -description "Current transactions"
