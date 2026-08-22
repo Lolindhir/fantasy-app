@@ -7,8 +7,9 @@ from typing import Any
 from .audit import build_audit
 from .common import Dataset, SCHEMA_VERSION, as_int, load_json, write_json_if_changed
 from .draft import build_draft_files
-from .identity import build_identities, build_provider_mapping_payload
+from .identity import build_identities
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
+from .provider_mappings import build_provider_mapping_payload
 
 
 def _observation_season(repo_root: Path) -> int:
