@@ -30,19 +30,92 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
-      - name: Apply deterministic cleanup
+      - name: Migrate remaining active consumers
         run: |
           python - <<'PY'
           from pathlib import Path
-          path = Path('.github/scripts/remove-relevant-player-chat-export.py')
-          text = path.read_text(encoding='utf-8')
+          import json, re
+
+          def patch(path, fn):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              new = fn(text)
+              if new == text:
+                  raise SystemExit(f'expected migration change missing: {path}')
+              p.write_text(new, encoding='utf-8')
+
+          # App data-source documentation: retire the obsolete generated contracts.
+          def data_sources(text):
+              text = text.replace('      - PlayersRelevantFile\n', '').replace('      - PlayersRelevantChatDir\n', '')
+              text, n1 = re.subn(r'\n  relevantPlayers:\n.*?(?=\n  league:\n)', '\n', text, count=1, flags=re.S)
+              text, n2 = re.subn(r'\n  - from: public/data/Players\.json\n    to: public/data/Players_Relevant\.json\n.*?(?=\n  - from: public/requests/RequestDrafts\.ps1)', '\n', text, count=1, flags=re.S)
+              text = text.replace('  - Player chat export files under public/data/chat/players-relevant are generated helper output for AI/chat workflows; update PlayerChatExportUtils.psm1 or relevant-player generation instead of editing them manually.\n', '')
+              if n1 != 1 or n2 != 1:
+                  raise SystemExit(f'data-sources block mismatch: {n1}, {n2}')
+              return text
+          patch('.ai-context/manual/data-sources.yaml', data_sources)
+
+          # Completed TODO describes a now-retired architecture; remove the obsolete historical task entry.
+          def todo(text):
+              new, n = re.subn(r'\n- \[x\] `Players_Relevant\.json`- und Chat-Export-Pfade nach `ConfigUtils\.psm1` verlagern\.\n.*?(?=\n- \[x\] Legacy-Kompatibilitäts-Re-Exports entfernen\.)', '\n', text, count=1, flags=re.S)
+              if n != 1: raise SystemExit('TODO retired-entry mismatch')
+              return new
+          patch('TODO.md', todo)
+
+          patch('fantasy-management/_ai/templates/draft-analysis/draft-analysis-template.md', lambda t: t.replace('`public/data/chat/players-relevant/index.json` |  | Player-Zuordnung und Produktionshistorie', '`public/data/Players.json` |  | Gezielte aktuelle Player-Records und Produktionshistorie'))
+
+          # Observation job already depends on player-signals; remove the redundant chunk-index dependency.
+          p = Path('fantasy-management/automation/jobs/entity-observation.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          before = len(data['dependencies'])
+          data['dependencies'] = [d for d in data['dependencies'] if d.get('path') != 'public/data/chat/players-relevant/index.json']
+          if len(data['dependencies']) != before - 1: raise SystemExit('entity-observation dependency mismatch')
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          # Managed-roster selector resolves against the FM-owned central player-signal contract.
+          patch('fantasy-management/automation/target-sets/managed-roster-health.json', lambda t: t.replace('"player_index_path": "public/data/chat/players-relevant/index.json"', '"player_source_path": "fantasy-management/generated/operations/player-signals.json"'))
+          def selector(text):
+              text = text.replace('`player_index_path`: current chunk index used to resolve player records;', '`player_source_path`: current FM-owned player-signal contract used to resolve player records;')
+              text = text.replace('5. Load `player_index_path` and only the chunks required to resolve those player IDs.\n6. Fail closed when a selected ID cannot be resolved to exactly one current player record.', '5. Load `player_source_path` once and resolve selected Sleeper IDs through `players[].player_id`.\n6. Fail closed when a selected ID cannot be resolved to exactly one current player-signal record.')
+              return text
+          patch('fantasy-management/automation/workflows/managed-roster-selector.md', selector)
+
+          # NFL source identity/audit tooling now audits the canonical app player population directly.
+          def identity(text):
+              text = text.replace('    relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []\n', '')
+              text = text.replace('    return candidates, relevant\n', '    return candidates, players\n')
+              return text
+          patch('tools/nfl_source_data_lib/identity.py', identity)
+          def audit(text):
+              text = text.replace('_, relevant_players = app_player_candidates(repo_root)', '_, app_players = app_player_candidates(repo_root)')
+              text = text.replace('for player in relevant_players:', 'for player in app_players:')
+              text = text.replace('"scope": "public/data/Players_Relevant.json"', '"scope": "public/data/Players.json"')
+              text = text.replace('"relevantPlayerCount": len(relevant_players)', '"appPlayerCount": len(app_players)')
+              text = text.replace('"unmatchedRelevantPlayers": unmatched', '"unmatchedAppPlayers": unmatched')
+              text = text.replace('"unknownDraftStatusRelevantPlayers": unknown_draft', '"unknownDraftStatusAppPlayers": unknown_draft')
+              return text
+          patch('tools/nfl_source_data_lib/audit.py', audit)
+          patch('tools/tests/test_nfl_source_data.py', lambda t: t.replace('            (root / "public/data/Players_Relevant.json").write_text(json.dumps(players), encoding="utf-8")\n', ''))
+
+          old_entry = Path('public/requests/RunPlayerChatChunks.ps1')
+          if old_entry.exists(): old_entry.unlink()
+
+          # The migration runner contains its own search terms. Historical analyses retain accurate source provenance;
+          # the FM source guide and ADR intentionally name the retired contract while forbidding its recreation.
+          runner = Path('.github/scripts/remove-relevant-player-chat-export.py')
+          text = runner.read_text(encoding='utf-8')
           old = '''    if not line.startswith("public/requests/utils/player/PlayerUtils.psm1:")\n    and not line.startswith("public/requests/RequestLeague.ps1:")\n'''
           new = old + '''    and not line.startswith(".github/scripts/remove-relevant-player-chat-export.py:")\n'''
-          if text.count(old) != 1:
-              raise SystemExit('could not patch temporary self-reference guard')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          if text.count(old) != 1: raise SystemExit('could not patch temporary self-reference guard')
+          text = text.replace(old, new, 1)
+          old2 = '''    if line.startswith(".github/scripts/remove-relevant-player-chat-export.py:"):\n        continue\n    stale.append(line)\n'''
+          new2 = '''    if line.startswith(".github/scripts/remove-relevant-player-chat-export.py:"):\n        continue\n    if line.startswith("fantasy-management/analyses/"):\n        continue\n    if line.startswith("fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md:"):\n        continue\n    stale.append(line)\n'''
+          if text.count(old2) != 1: raise SystemExit('could not patch historical-provenance allow list')
+          runner.write_text(text.replace(old2, new2, 1), encoding='utf-8')
           PY
-          python .github/scripts/remove-relevant-player-chat-export.py
+
+      - name: Apply deterministic cleanup
+        run: python .github/scripts/remove-relevant-player-chat-export.py
 
       - name: Validate PowerShell syntax
         shell: pwsh
@@ -63,39 +136,36 @@ jobs:
             }
           }
 
-      - name: Validate YAML
+      - name: Validate structured files and canonical FM inputs
         run: |
           python - <<'PY'
-          import yaml
+          import json, yaml
           from pathlib import Path
-          for path in [Path('.ai-context/manual/ai-guidance.yaml'), Path('.ai-context/manual/decisions.yaml')]:
+          for path in [Path('.ai-context/manual/ai-guidance.yaml'), Path('.ai-context/manual/decisions.yaml'), Path('.ai-context/manual/data-sources.yaml')]:
               yaml.safe_load(path.read_text(encoding='utf-8'))
               print(f'valid yaml: {path}')
-          PY
-
-      - name: Validate canonical FM player inputs
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
           for path in [
               Path('fantasy-management/automation/input-materialization.json'),
               Path('fantasy-management/automation/player-signal-materialization.json'),
+              Path('fantasy-management/automation/jobs/entity-observation.json'),
+              Path('fantasy-management/automation/target-sets/managed-roster-health.json'),
           ]:
               data = json.loads(path.read_text(encoding='utf-8'))
-              assert data['sources']['players'] == 'public/data/Players.json', path
-              print(f'canonical Players.json input retained: {path}')
+              if 'sources' in data and 'players' in data['sources']:
+                  assert data['sources']['players'] == 'public/data/Players.json', path
+              print(f'valid json: {path}')
           PY
+          python -m unittest tools.tests.test_nfl_source_data
 
       - name: Commit cleanup result
         run: |
-          if git diff --quiet && git diff --cached --quiet; then
-            echo "No cleanup changes detected."
-            exit 1
-          fi
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add -A
           git reset .github/scripts/remove-relevant-player-chat-export.py .github/workflows/temp-remove-relevant-player-chat-export.yml
+          if git diff --cached --quiet; then
+            echo "No cleanup changes detected."
+            exit 1
+          fi
           git commit -m "refactor(fantasy-management): remove obsolete relevant-player chat export"
           git push origin HEAD:cleanup/remove-relevant-player-chat-export
