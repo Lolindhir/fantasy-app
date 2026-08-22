@@ -27,6 +27,14 @@ function Write-DeploySummary {
 
 Write-Host "Start Deployment..."
 
+if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+    Write-Host "Running draft identity regression tests..."
+    & "$PSScriptRoot/public/requests/DraftIdentityRegressionTest.ps1"
+    if (-not $?) {
+        throw "DraftIdentityRegressionTest.ps1 failed."
+    }
+}
+
 $BuildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 $Commit = if ($env:GITHUB_SHA) { $env:GITHUB_SHA } else { "deploy" }
 $ShortCommit = if ($Commit.Length -ge 7) { $Commit.Substring(0, 7) } else { $Commit }
