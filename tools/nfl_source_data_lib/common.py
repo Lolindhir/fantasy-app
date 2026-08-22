@@ -155,10 +155,10 @@ def _validate_lifecycle(value: dict[str, Any], dataset_id: str) -> dict[str, str
                 "finalization=never and repairPolicy=normal"
             )
     elif lifecycle_class == "immutable-history":
-        if partition_key != "season" or finalization != "freeze-existing-partitions" or repair != "explicit-force":
+        if partition_key != "season" or finalization != "freeze-prior-seasons" or repair != "explicit-force":
             raise ValueError(
                 f"Immutable-history dataset {dataset_id} must use partitionKey=season, "
-                "finalization=freeze-existing-partitions and repairPolicy=explicit-force"
+                "finalization=freeze-prior-seasons and repairPolicy=explicit-force"
             )
     elif lifecycle_class == "seasonal-finalizable":
         if partition_key not in {"season", "season-week"} or finalization != "freeze-prior-seasons" or repair != "explicit-force":

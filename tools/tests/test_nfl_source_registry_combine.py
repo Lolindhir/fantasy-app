@@ -52,7 +52,7 @@ def combine_dataset(raw_path: Path) -> Dataset:
         "test",
         "immutable-history",
         "season",
-        "freeze-existing-partitions",
+        "freeze-prior-seasons",
         "explicit-force",
     )
 
@@ -98,7 +98,7 @@ class RegistryCombineTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_registry(root)
 
-    def test_finalized_partition_is_preserved_without_explicit_force(self):
+    def test_prior_season_finalized_partition_is_preserved_without_explicit_force(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "2025.json"
             existing = {"Finalized": True, "Records": [{"value": "old"}]}
