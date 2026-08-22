@@ -1,0 +1,159 @@
+schemaVersion: 1
+
+domain: nfl-source-data
+
+purpose: >
+  Definiert den dauerhaften Vertrag fuer persistierte externe NFL-Quelldaten,
+  ihre Lifecycle-Klassen und die providerunabhaengige kanonische Materialisierung.
+  Dieser Vertrag ergaenzt den Player-Identity-Vertrag; er ersetzt weder
+  public/data als App-Read-Model-Schicht noch fantasy-management/sources.
+
+boundaries:
+  providerRaw:
+    path: source-data/providers/<provider>/
+    owns:
+      - validierte providernahe Rohdaten
+      - Abrufprovenienz und Content-Hash
+      - Provider-/Upstream-Feldnamen
+  canonicalNfl:
+    path: source-data/nfl/
+    owns:
+      - providerunabhaengige NFL-Fakten
+      - dauerhafte NFLPlayerID-Verknuepfungen
+      - saison- oder snapshotbezogene historische Fakten
+  appReadModels:
+    path: public/data/
+    owns:
+      - generierte App-Vertraege
+    rule: >
+      Source-Datasets duerfen nicht allein durch ihre Aufnahme in source-data
+      automatisch neue Felder oder Identitaeten in public/data einfuehren.
+
+registry:
+  path: source-data/registry.json
+  schemaVersion: 2
+  principle: >
+    Refresh-, Retention-, Partitionierungs-, Finalisierungs- und Repair-Regeln
+    sind maschinenlesbarer Bestandteil des Dataset-Vertrags und werden beim Laden
+    der Registry fail-closed validiert. Freie Policy-Strings ohne validierte
+    Lifecycle-Semantik sind kein ausreichender Vertrag.
+
+  lifecycleClasses:
+    dynamic:
+      useFor: fortlaufend aktualisierte, nicht saisonweise eingefrorene Quellen
+      refreshPolicy: periodic
+      retentionPolicy: latest-with-git-history
+      partitionKey: none
+      finalization: never
+      repairPolicy: normal
+
+    immutable-history:
+      useFor: historisch stabile, saisonweise kanonisierte Fakten wie Draft und Combine
+      refreshPolicy: discover-new-partitions
+      retentionPolicy: permanent-by-season
+      partitionKey: season
+      finalization: freeze-prior-seasons
+      repairPolicy: explicit-force
+      rule: >
+        Die aktuelle League-Season bleibt aktualisierbar, damit ein noch wachsender
+        oder upstream-korrigierter aktueller Jahrgang nicht durch einen fruehen Lauf
+        versehentlich eingefroren wird. Bereits vorhandene fruehere Saisons werden
+        im normalen Materialize-Pfad unveraendert beibehalten. Eine bewusste
+        historische Korrektur benoetigt --force.
+
+    seasonal-finalizable:
+      useFor: laufende saisonale oder woechentliche Fakten wie Rosters, Schedules, Stats und Snap Counts
+      refreshPolicy: current-season
+      retentionPolicy: permanent-by-season
+      partitionKey:
+        - season
+        - season-week
+      finalization: freeze-prior-seasons
+      repairPolicy: explicit-force
+
+    snapshot:
+      useFor: zeitpunktbezogene Zustaende wie Depth Charts und Contracts
+      refreshPolicy: snapshot
+      retentionPolicy: permanent-snapshots
+      partitionKey: snapshot-time
+      finalization: append-only-snapshots
+      repairPolicy: explicit-force
+
+activeDatasets:
+  - id: nflverse.players
+    lifecycle: dynamic
+  - id: nflverse.ff-player-ids
+    lifecycle: dynamic
+  - id: nflverse.draft-picks
+    lifecycle: immutable-history
+  - id: nflverse.combine
+    lifecycle: immutable-history
+
+plannedDatasets:
+  - id: nflverse.rosters
+    lifecycle: seasonal-finalizable
+  - id: nflverse.weekly-rosters
+    lifecycle: seasonal-finalizable
+  - id: nflverse.schedules
+    lifecycle: seasonal-finalizable
+  - id: nflverse.player-stats
+    lifecycle: seasonal-finalizable
+  - id: nflverse.snap-counts
+    lifecycle: seasonal-finalizable
+  - id: nflverse.depth-charts
+    lifecycle: snapshot
+  - id: nflverse.contracts
+    lifecycle: snapshot
+
+combine:
+  providerDataset: nflverse.combine
+  upstream: nflverse/nflverse-data
+  provenance: NFL Combine data courtesy of Pro Football Reference
+  canonicalPath: source-data/nfl/combine/<season>.json
+  identity:
+    masterKey: NFLPlayerID
+    authoritativeJoin: PFR provider mapping
+    nameMatchingAuthoritative: false
+    cfbRefRole: provenance-only
+    rule: >
+      Ein Combine-Record darf nur ueber eine eindeutige PFR-Provider-Zuordnung an
+      NFLPlayerID gebunden werden. Namen, Position oder Schule duerfen keine
+      fehlende Identitaetszuordnung heuristisch ersetzen.
+  measurements:
+    - HeightInches
+    - WeightPounds
+    - FortyYardDashSeconds
+    - BenchPressReps
+    - VerticalJumpInches
+    - BroadJumpInches
+    - ThreeConeSeconds
+    - ShuttleSeconds
+  draftLink:
+    authoritativeSource: source-data/nfl/draft/<season>.json
+    sourceEvidenceField: SourceDraftEvidence
+    rule: >
+      Draftjahr, Runde und Overall Pick aus dem Combine-Upstream bleiben als
+      Provenienz erhalten. Die normalisierte Draft-Verknuepfung stammt aus dem
+      kanonischen Draft-Dataset. Widersprueche werden auditiert und nicht durch
+      eine stille Gewinnerauswahl aufgeloest.
+
+publication:
+  rawFirst: true
+  failClosed: true
+  semanticNoOpRequired: true
+  normalRepairBehavior: >
+    Normale Materialisierung darf vorhandene eingefrorene historische Partitionen
+    nicht ersetzen. Der explizite CLI-Repair-Pfad ist
+    `python tools/nfl_source_data.py materialize --force` oder ein vollstaendiger
+    `sync --force`, wenn bewusst Raw- und Canonical-Reparatur gemeinsam gewuenscht sind.
+  workflowNote: >
+    Der bestehende produktive Raw-first-Workflow wird durch diesen Architektur-Slice
+    nicht umgebaut. Seine normalen Materialize-Schritte bleiben nicht-forciert.
+
+validation:
+  - Registry-Schema und Lifecycle-Kombinationen werden beim Laden fail-closed validiert.
+  - Historische Partitionen erhalten Regressionstests fuer Normal- und Force-Repair.
+  - Combine-Identitaet wird gegen fehlende PFR-Zuordnung und Namensgleichheit getestet.
+  - Doppelte PFR- oder NFLPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
+  - Combine-vs.-Draft-Widersprueche werden im Audit sichtbar.
+  - Reale Source-Materialisierung muss den bestehenden zweiten semantischen No-op-Pass bestehen.
