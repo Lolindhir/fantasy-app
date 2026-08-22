@@ -155,26 +155,30 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Große Play-Level-Datensätze wie Play-by-Play, Participation und FTN Charting zunächst nur registrieren und erst bei einem konkreten Consumer dauerhaft importieren.
   - Für jeden Datensatz festlegen, wann ein Force-Refresh bzw. eine historische Korrektur zulässig ist.
 
-- [ ] Provideradapter für nflverse mit Raw-Persistierung und Content-Hash-Vergleich entwickeln.
-  - Ziel: nflverse-Releases bzw. deren CSV-/Parquet-Dateien zentral abrufen, vor Veröffentlichung validieren und nur bei semantisch neuem Inhalt persistieren.
-  - Raw Store: Den erfolgreich bezogenen Providerstand unverändert oder verlustfrei reproduzierbar unter `source-data/providers/nflverse/` erhalten.
-  - Effizienz: Unveränderte Dateien anhand Content-Hash nicht erneut schreiben; keine täglichen datierten Kopien identischer großer Dateien erzeugen.
-  - Fallback: Wenn nflverse nicht erreichbar ist, vorhandene lokale Source-Daten verwenden, sofern der jeweilige Consumer keinen zwingend aktuellen Stand benötigt.
-  - Austauschbarkeit: nflverse-spezifische Feldnamen und Downloadpfade dürfen nicht in App-Generatoren oder Fantasy-Management-Consumer durchsickern.
+- [x] Provideradapter für nflverse mit Raw-Persistierung und Content-Hash-Vergleich entwickeln.
+  - Erledigt: Die registrierten nflverse-Datasets werden zentral geladen, vor Veröffentlichung auf Schema und Mindestumfang validiert und unter `source-data/providers/nflverse/` provider-nah persistiert.
+  - Content-Hash: Unveränderte Downloads erzeugen keinen neuen Raw-Inhalt; der letzte validierte lokale Stand bleibt als reproduzierbare Fallback-Basis erhalten.
+  - Publication: Der produktive Workflow veröffentlicht Raw-Daten zuerst und materialisiert Canonical erst aus dem bereits persistierten Raw-Stand; Fehler zerstören den letzten guten Providerstand nicht.
+  - Abgrenzung: nflverse-Feldnamen bleiben in Adapter-/Normalisierungslogik und sickern nicht als neuer App-Vertrag in `public/data/**` durch.
 
-- [ ] Kanonische NFL-Player-Identity-Bridge aufbauen.
-  - Ziel: Eine providerneutrale NFL-Spieleridentität definieren und Zuordnungen zu Sleeper, Tank01, GSIS, ESPN, PFR, PFF, OTC, FantasyPros und weiteren verfügbaren IDs zentral materialisieren; GSIS als bevorzugten stabilen NFL-Schlüssel prüfen, aber nicht ungeprüft voraussetzen.
-  - Quelle: nflverse Players und Fantasy Player IDs zunächst kombinieren und vorhandene Sleeper-/Tank01-Zuordnungen aus der aktuellen Player-Pipeline dagegen auditieren.
-  - Leitplanke: `Players.json -> ID` vorerst weiterhin als bestehenden Sleeper-basierten App-Vertrag erhalten; keine unnötige Migration des Frontend-Contracts.
-  - Validierung: Eindeutigkeit, fehlende IDs und One-to-many-/Many-to-one-Konflikte explizit erkennen; keine stillen Dedupes oder heuristische Gewinnerauswahl.
-  - Nutzen: Neue Provider sollen zukünftig über die zentrale Identity Bridge angebunden werden, statt jeweils eigene Name-Matching-Logik einzuführen.
+- [x] Kanonische NFL-Player-Identity-Bridge aufbauen.
+  - Erledigt: `NFLPlayerID` ist die dauerhafte providerunabhängige Personenidentität unter `source-data/nfl/identities/`; GSIS, Sleeper, Tank01, ESPN, PFR, PFF und weitere Provider-IDs sind Zuordnungen und nicht der Master-Key.
+  - App-Vertrag: `public/data/Players.json[].ID` bleibt unverändert die Sleeper-ID für den aktuellen App-/Liga-Kontext.
+  - Historie: Provider-Mappings werden saisonbezogen erhalten; spätere ID-Wiederverwendung kann auf eine andere `NFLPlayerID` zeigen, ohne historische Personen umzudeuten.
+  - Konflikte: Widersprüchliche oder mehrdeutige Mappings werden explizit quarantänisiert; keine stillen Dedupes, Name-Matches oder heuristischen Gewinner.
+  - Validierung: Real-nflverse-Bootstrap, 27 Source-Tests, zweiter semantischer No-op-Pass und Audit mit `duplicateLinkProviderIDCount = 0` sind erfolgreich; Sleeper `133` bleibt als expliziter Zwei-Personen-Konflikt quarantänisiert.
 
-- [ ] NFL Draft Capital und Combine als erste persistente kanonische Source-Datasets materialisieren.
-  - Draft: Draftjahr, Runde, Position innerhalb der Runde, Overall Pick, Draft-Team und Player-Identität in einem stabilen internen Format speichern; `undrafted`, `not_eligible` und `unknown` semantisch nicht miteinander vermischen.
-  - Combine: Jahrgangsbezogene Combine-Messungen mit Player-Identität und Draft-Verknüpfung speichern.
-  - Historie: Bereits abgeschlossene Jahrgänge dauerhaft behalten und standardmäßig nur fehlende neue Jahrgänge ergänzen; bewusste historische Korrekturen nur über einen expliziten Force-/Repair-Pfad zulassen.
-  - Integration: Erst nach Stabilisierung der Source-Datasets entscheiden, welche Felder in `Players.json` oder weitere generierte App-Readmodels übernommen werden.
-  - Validierung: Coverage gegen den aktuellen relevanten Playerbestand prüfen, insbesondere Rookies, ältere Spieler und UDFAs.
+- [x] Kanonische NFL-Draft-Historie und Draftstatus als persistentes Source-Dataset materialisieren.
+  - Erledigt: nflverse Draft Picks werden über die zentrale `NFLPlayerID` normalisiert und saisonweise unter `source-data/nfl/draft/` persistiert; der aktuelle Bootstrap umfasst 47 Draft-Saisons von 1980 bis 2026.
+  - Semantik: Draftjahr, Runde, Position innerhalb der Runde, Overall Pick, Draft-Team und Player-Identität bleiben explizit; `drafted`, `undrafted`, `not_yet_drafted` und `unknown` werden nicht vermischt.
+  - Historie: Abgeschlossene Draftjahrgänge sind kanonische historische Source-Daten und werden nicht als aktuelle App-Draft-Assets interpretiert.
+  - Validierung: Draft-Materialisierung ist Bestandteil des Real-Data-Audits und des verpflichtenden zweiten No-op-Passes.
+
+- [ ] NFL Combine als nächstes persistentes kanonisches Source-Dataset materialisieren.
+  - Ziel: Jahrgangsbezogene Combine-Messungen mit `NFLPlayerID` und Draft-Verknüpfung in `source-data/nfl/` materialisieren.
+  - Historie: Abgeschlossene Jahrgänge dauerhaft erhalten und standardmäßig nur fehlende neue Jahrgänge ergänzen; bewusste historische Korrekturen nur über einen expliziten Force-/Repair-Pfad zulassen.
+  - Integration: Erst nach Stabilisierung des Combine-Source-Datasets entscheiden, welche Felder in `Players.json` oder weitere generierte App-Readmodels übernommen werden.
+  - Validierung: Coverage gegen den aktuellen Playerbestand prüfen, insbesondere Rookies, ältere Spieler und Spieler ohne eindeutige Combine-Zuordnung.
 
 - [ ] nflverse Player Stats, Schedules, Rosters und Snap Counts gegen die bestehende Tank01-/Sleeper-Datenbasis evaluieren.
   - Ziel: Feld-Coverage, Historientiefe, Aktualität, Identitätsqualität und bekannte Lücken der Quellen systematisch vergleichen.

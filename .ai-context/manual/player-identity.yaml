@@ -1,0 +1,116 @@
+schemaVersion: 1
+
+purpose: >
+  Defines the durable player-identity architecture shared by the NFL source-data
+  layer, generated app data and historical consumers. It separates a permanent
+  person identity from provider-specific identifiers and from the current
+  Sleeper-based application contract.
+
+identityModel:
+  canonicalPerson:
+    key: NFLPlayerID
+    owner: source-data/nfl
+    semantics: >
+      NFLPlayerID identifies one real NFL player independently of any external
+      provider. Once assigned to a person it must remain stable across provider
+      corrections, provider migrations, historical backfills and future source
+      additions.
+    requirements:
+      - Never use a display name as an authoritative merge key.
+      - Do not rename an existing NFLPlayerID merely because a new provider ID becomes available.
+      - Preserve historical facts that already reference an NFLPlayerID.
+
+  currentAppIdentity:
+    path: public/data/Players.json
+    field: ID
+    provider: Sleeper
+    semantics: >
+      Sleeper is the leading provider for the current app and league state.
+      Players.json[].ID therefore remains the Sleeper player_id used by the
+      current Angular and generated-data contracts. This is an app-facing source
+      contract, not the permanent cross-provider identity of a person.
+    requirements:
+      - Do not migrate Players.json[].ID away from Sleeper as part of the source-data identity work.
+      - Current Sleeper roster, draft and transaction facts remain authoritative for what happened in the fantasy league where the app currently relies on Sleeper.
+      - A Sleeper ID must not be assumed to identify the same person for all historical time without temporal evidence.
+
+  providerMappings:
+    semantics: >
+      Sleeper, Tank01, GSIS, ESPN, PFR, PFF, OTC, FantasyPros and other external
+      identifiers are mappings to NFLPlayerID. Provider mappings are historical
+      records and may have a bounded validity period.
+    temporalModel:
+      minimumResolution: season
+      futureCompatibleWith:
+        - FirstObserved
+        - LastObserved
+        - ValidFrom
+        - ValidTo
+      rule: >
+        The first implementation may resolve mapping validity by season, but the
+        persisted contract must not prevent later migration to more precise
+        observation or validity intervals.
+    conflictRules:
+      - A provider ID collision must never merge two otherwise distinguishable people.
+      - If one provider ID claims multiple distinct NFLPlayerIDs for an overlapping period, quarantine the provider mapping as ambiguous or conflicting.
+      - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
+      - Do not choose a winner silently and do not add provider-specific hard-coded identity exceptions as the primary conflict strategy.
+
+historicalResolution:
+  rule: >
+    Historical facts must be anchored to the NFLPlayerID that was resolved for the
+    event or season when the canonical historical dataset is materialized. Keep
+    the original provider ID and provenance as supporting evidence, but do not
+    re-interpret an old trade, draft pick, roster snapshot or other historical
+    event only through today's provider mapping.
+  example: >
+    If Sleeper ID 1000 maps to NFLPlayerID A in an earlier season and the same
+    external value is later reused for NFLPlayerID B, the earlier historical fact
+    remains linked to A and the later fact can resolve to B without corrupting
+    either record.
+
+mergeEvidence:
+  names: descriptive-only
+  principle: >
+    Identity resolution may use corroborated provider IDs, birth dates and other
+    strong evidence, but no single provider mapping is allowed to transitively
+    collapse two conflicting person identities. In particular, Sleeper remains
+    important for app resolution while still being treated as an external mapping
+    in the permanent identity graph.
+
+metadataSeparation:
+  appReadModels:
+    paths:
+      - public/data/Players.json
+      - public/data/League.json
+      - public/data/Drafts.json
+      - public/data/Transactions.json
+    rule: >
+      Do not add technical generation or freshness fields such as GeneratedAt,
+      GeneratedAtUtc or UpdatedAt to domain records merely to track pipeline
+      execution. App read models remain focused on domain/display data.
+  technicalMetadata:
+    rule: >
+      Fetch time, generation time, content hashes, freshness, provenance and
+      similar operational metadata belong in dedicated timestamp, manifest,
+      metadata, audit or sidecar structures.
+  semanticNoOp:
+    rule: >
+      A materialization over semantically unchanged source data must not rewrite a
+      canonical identity or historical dataset only because the pipeline ran at a
+      different time. Runtime timestamps must therefore not participate in the
+      semantic payload comparison of those datasets.
+
+boundaries:
+  - source-data/nfl owns provider-independent NFL identities and historical provider mappings.
+  - public/data remains generated app output and is not the source of truth for cross-provider identity history.
+  - fantasy-management may consume the canonical identity bridge but does not own the app player identity contract.
+  - Integration of NFLPlayerID into any generated app JSON is a separate contract change and requires explicit design and validation.
+
+implementationOrder:
+  - Add regression coverage for conflicting and historically reused provider IDs, including the observed duplicate-Sleeper-ID class.
+  - Refactor identity resolution so person identity is established before ambiguous provider mappings can join components.
+  - Persist historical provider mappings with at least season-level validity and explicit conflict quarantine.
+  - Anchor canonical historical NFL datasets to NFLPlayerID plus source provenance.
+  - Remove runtime timestamp churn from semantic source-data payloads and ensure identical materialization is a real no-op.
+  - Re-run the real-source bootstrap and inspect identity and draft coverage before expanding downstream integration.

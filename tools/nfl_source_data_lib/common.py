@@ -57,7 +57,8 @@ def stable_internal_id(seed: str) -> str:
 def load_json(path: Path, default: Any = None) -> Any:
     if not path.exists():
         return default
-    with path.open("r", encoding="utf-8") as handle:
+    # utf-8-sig accepts normal UTF-8 and transparently strips a legacy BOM.
+    with path.open("r", encoding="utf-8-sig") as handle:
         return json.load(handle)
 
 
