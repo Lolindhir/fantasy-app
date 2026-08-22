@@ -94,9 +94,31 @@ draftIdentity:
       - deterministic configured DraftInstance/DraftNo order as bootstrap fallback
       - unresolved rather than silently overwrite an already bound concrete identity
 
+  historicalRebuild:
+    principle: >
+      Historical Drafts and Transactions are disposable generated outputs. A full
+      historical rebuild regenerates them from canonical inputs and must not use a
+      stale previous generated Drafts_<season>.json as an enrichment source.
+    order:
+      - Rebuild current and historical transaction base data from Sleeper plus manual input.
+      - Resolve canonical DraftType, DraftInstance, DraftCode, DraftKey and SleeperDraftID on transaction picks.
+      - Rebuild current/open drafts and completed historical drafts from those freshly generated transactions in the same working tree.
+      - Enrich transaction picks with position, selected-player and pick-result details only after the fresh draft outputs exist.
+      - Refresh PastSeasonsIndex.json after the coupled rebuild.
+    legacyGeneratedKeys: >
+      Legacy generated keys such as 2024_D1_Free_Agent or 2025_D1_Rookie are not
+      migration inputs and receive no compatibility mapping. A full rebuild simply
+      overwrites those disposable generated files with canonical keys such as
+      2024_Free_Agent and 2025_Rookie.
+    workflowOwnership: >
+      The scheduled RequestTransactions workflow owns the coupled weekly historical
+      rebuild. RequestDrafts remains manually dispatchable for an independent draft
+      refresh but is not a second scheduled history writer.
+
   migration:
     currentState: completed
     notes:
       - Existing 2026 Rookie and Free Agent definitions are DraftInstance 1, so their DraftKeys remain 2026_Rookie and 2026_Free_Agent.
       - Existing manual transaction picks are migrated to explicit 2026_Free_Agent / 2027_Free_Agent DraftKeys.
       - The former source-based defaults Sleeper=>Rookie and Manual=>Free_Agent are removed from the generator contract.
+      - Historical generated outputs are regenerated through the coupled full-rebuild contract rather than migrated in place.
