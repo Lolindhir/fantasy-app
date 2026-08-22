@@ -7,6 +7,7 @@ from typing import Any
 from .common import Dataset, clean, iter_csv, load_json
 from .identity_model import (
     ANCHOR_ID_KEYS,
+    ATTACH_ID_KEYS,
     IdentityCandidate,
     ids_from_ff,
     ids_from_players,
@@ -25,76 +26,110 @@ def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[s
     return anchors
 
 
-def _existing_mfl_replay_index(repo_root: Path) -> dict[str, list[dict[str, Any]]]:
-    """Index canonical MFL evidence only for deterministic replay.
-
-    MFL remains a weak provider ID and never becomes a general merge edge. The
-    index is used solely to reconnect an unchanged, fully quarantined MFL-only row
-    to the canonical identity created for that same row on a previous
-    materialization. Exact birth-date evidence is required before replay.
-    """
-
-    payload = load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
-    by_mfl: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in payload.get("Players", []) or []:
-        values: set[str] = set()
-        if value := clean((row.get("IDs") or {}).get("MFL")):
-            values.add(value)
-        for alias in (row.get("IDAliases") or {}).get("MFL", []) or []:
-            if value := clean(alias):
-                values.add(value)
-        for value in values:
-            by_mfl[value].append(row)
-    return by_mfl
+def _is_weak_only(ids: dict[str, str]) -> bool:
+    if not ids:
+        return False
+    strong_or_attach = set(ANCHOR_ID_KEYS) | set(ATTACH_ID_KEYS)
+    return not any(key in strong_or_attach for key in ids)
 
 
-def _replay_existing_mfl_identity(
-    by_mfl: dict[str, list[dict[str, Any]]],
-    mfl_id: str | None,
+def _replay_signature(
+    ids: dict[str, str],
     birth_date: str | None,
     position: str | None,
-) -> str | None:
-    if not mfl_id or not birth_date:
+    name: str | None,
+) -> tuple[tuple[tuple[str, str], ...], str, str, str] | None:
+    """Return exact canonical-visible evidence for weak-only replay.
+
+    This signature is never used to merge two current candidates. It only lets an
+    unchanged weak-only current candidate reconnect to one canonical identity that
+    this pipeline already materialized previously. Provider names remain
+    non-authoritative: name participates only as an exact replay discriminator.
+    """
+
+    if not _is_weak_only(ids):
         return None
-    matches: list[str] = []
-    for row in by_mfl.get(mfl_id, []):
-        if clean(row.get("BirthDate")) != birth_date:
-            continue
-        existing_position = clean(row.get("Position"))
-        if position and existing_position and existing_position != position:
-            continue
-        if internal_id := clean(row.get("NFLPlayerID")):
-            matches.append(internal_id)
-    unique = sorted(set(matches))
-    return unique[0] if len(unique) == 1 else None
+    return (
+        tuple(sorted((key, value) for key, value in ids.items())),
+        clean(birth_date) or "",
+        clean(position) or "",
+        (clean(name) or "").casefold(),
+    )
+
+
+def _existing_weak_replay_index(
+    repo_root: Path,
+) -> dict[tuple[tuple[tuple[str, str], ...], str, str, str], set[str]]:
+    payload = load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    index: dict[tuple[tuple[tuple[str, str], ...], str, str, str], set[str]] = defaultdict(set)
+    for row in payload.get("Players", []) or []:
+        ids = {
+            key: value
+            for key, raw_value in (row.get("IDs") or {}).items()
+            if (value := clean(raw_value))
+        }
+        signature = _replay_signature(
+            ids,
+            clean(row.get("BirthDate")),
+            clean(row.get("Position")),
+            clean(row.get("Name")),
+        )
+        internal_id = clean(row.get("NFLPlayerID"))
+        if signature is not None and internal_id:
+            index[signature].add(internal_id)
+    return index
+
+
+def _replay_existing_weak_identity(
+    replay_index: dict[tuple[tuple[tuple[str, str], ...], str, str, str], set[str]],
+    ids: dict[str, str],
+    birth_date: str | None,
+    position: str | None,
+    name: str | None,
+) -> str | None:
+    signature = _replay_signature(ids, birth_date, position, name)
+    if signature is None:
+        return None
+    owners = sorted(replay_index.get(signature, set()))
+    return owners[0] if len(owners) == 1 else None
 
 
 def raw_identity_candidates(
     repo_root: Path,
     datasets: dict[str, Dataset],
 ) -> tuple[list[IdentityCandidate], list[dict[str, str]], list[IdentityCandidate | None], list[dict[str, Any]]]:
+    existing_replay_index = _existing_weak_replay_index(repo_root)
     candidates: list[IdentityCandidate] = []
     player_rows = list(iter_csv(datasets["nflverse.players"].raw_path))
     for row in player_rows:
         ids = ids_from_players(row)
         if not ids:
             continue
+        name = clean(row.get("display_name"))
+        birth_date = clean(row.get("birth_date"))
+        position = clean(row.get("position"))
         candidates.append(
             IdentityCandidate(
                 ids=ids,
-                name=clean(row.get("display_name")),
+                name=name,
                 first_name=clean(row.get("first_name")) or clean(row.get("common_first_name")),
                 last_name=clean(row.get("last_name")),
-                birth_date=clean(row.get("birth_date")),
-                position=clean(row.get("position")),
+                birth_date=birth_date,
+                position=position,
                 latest_team=clean(row.get("latest_team")),
                 source="nflverse.players",
                 priority=10,
+                existing_internal_id=_replay_existing_weak_identity(
+                    existing_replay_index,
+                    ids,
+                    birth_date,
+                    position,
+                    name,
+                ),
             )
         )
 
     anchors = _player_birthdate_anchors(player_rows)
-    existing_by_mfl = _existing_mfl_replay_index(repo_root)
     ff_rows: list[dict[str, str]] = []
     ff_candidates: list[IdentityCandidate | None] = []
     source_conflicts: list[dict[str, Any]] = []
@@ -103,6 +138,7 @@ def raw_identity_candidates(
         ff_rows.append(row)
         raw_ids = ids_from_ff(row)
         ids = dict(raw_ids)
+        name = clean(row.get("name"))
         birth_date = clean(row.get("birthdate"))
         position = clean(row.get("position"))
         conflicting_anchors: list[dict[str, Any]] = []
@@ -155,7 +191,7 @@ def raw_identity_candidates(
                     "Reason": "birthdate_conflict_with_nflverse_players",
                     "QuarantineScope": quarantine_scope,
                     "MFLID": raw_ids.get("MFL"),
-                    "Name": clean(row.get("name")),
+                    "Name": name,
                     "BirthDate": birth_date,
                     "Position": position,
                     "DraftYear": clean(row.get("draft_year")),
@@ -167,17 +203,9 @@ def raw_identity_candidates(
 
         candidate = None
         if ids:
-            existing_internal_id = None
-            if set(ids) == {"MFL"}:
-                existing_internal_id = _replay_existing_mfl_identity(
-                    existing_by_mfl,
-                    ids.get("MFL"),
-                    birth_date,
-                    position,
-                )
             candidate = IdentityCandidate(
                 ids=ids,
-                name=clean(row.get("name")),
+                name=name,
                 first_name=None,
                 last_name=None,
                 birth_date=birth_date,
@@ -185,7 +213,13 @@ def raw_identity_candidates(
                 latest_team=clean(row.get("team")),
                 source="nflverse.ff-player-ids",
                 priority=20,
-                existing_internal_id=existing_internal_id,
+                existing_internal_id=_replay_existing_weak_identity(
+                    existing_replay_index,
+                    ids,
+                    birth_date,
+                    position,
+                    name,
+                ),
             )
             candidates.append(candidate)
         ff_candidates.append(candidate)
