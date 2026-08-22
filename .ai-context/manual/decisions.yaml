@@ -515,3 +515,42 @@ decisions:
         - There is no second relevance definition competing with player-signals population rules.
       negative:
         - Agents needing a raw field outside an FM-derived contract must perform a targeted Players.json read.
+
+- id: ADR-025
+  title: NFL player identity is provider-independent and provider mappings are historical
+  status: accepted
+  context: >
+    The app intentionally relies on Sleeper for its current player and league
+    state, but historical data must remain correct if a provider corrects,
+    collides or eventually reuses an identifier. Real nflverse input has shown
+    that one provider mapping can contradict otherwise distinct player
+    identities, so treating every shared provider ID as an unconditional merge
+    edge is not safe.
+  decision: >
+    Use NFLPlayerID as the durable provider-independent identity of one real NFL
+    player in canonical source data. Keep public/data/Players.json[].ID as the
+    Sleeper player_id because Sleeper remains the leading provider for the
+    current app and fantasy-league state; this Sleeper field is an app contract,
+    not the permanent cross-provider person key. Treat Sleeper, Tank01, GSIS,
+    ESPN, PFR, PFF and all other external IDs as historical mappings to
+    NFLPlayerID. Persist mapping validity with at least season-level resolution.
+    A conflicting provider mapping must be quarantined rather than merging two
+    otherwise distinguishable people. Historical canonical facts retain the
+    NFLPlayerID resolved for the event or season plus source provenance. Names
+    remain descriptive rather than authoritative merge keys. Runtime timestamps
+    must not make otherwise identical canonical source-data semantically different.
+  rationale: >
+    This preserves Sleeper as the practical source of truth for the current app
+    while decoupling long-lived player history from assumptions about the
+    lifetime uniqueness of any external provider identifier. The resolver can
+    fail closed on dirty mappings without corrupting canonical people.
+  consequences:
+    positive:
+      - Current Angular and generated Players.json contracts remain unchanged.
+      - Historical facts can survive provider ID reuse or corrections.
+      - Provider conflicts are isolated to mappings instead of collapsing people.
+      - New providers can attach without becoming a new global master ID.
+      - Semantic no-op materialization is independent from freshness metadata.
+    negative:
+      - The identity bridge requires historical mappings and conflict quarantine.
+      - Resolution APIs need temporal context when an external ID is not globally unique.
