@@ -5,6 +5,8 @@ export interface RawDraft {
   DisplayAbrDraftKey: string;
   Season: string;
   DraftType: string;
+  DraftInstance: number;
+  DraftCode: string;
   DisplayDraftType: string;
   DraftNo: number;
   DraftSource: string;
@@ -43,6 +45,8 @@ export interface DraftPick {
   DraftKey: string;
   Season: string;
   DraftType: string;
+  DraftInstance: number;
+  DraftCode: string;
   Round: number;
   PositionInRound: number | null;
   OverallPick: number | null;
