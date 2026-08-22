@@ -14,51 +14,8 @@ catch {
 }
 
 # ===========================================================================
-# Draft Pick Build Utils
+# Generic helpers
 # ===========================================================================
-
-function Get-DraftPickOutput {
-    param(
-        [Parameter(Mandatory = $true)][object]$pick,
-        [Parameter(Mandatory = $true)][string]$draftType,
-        [Parameter(Mandatory = $true)][ValidateSet("Sleeper", "Manual")][string]$draftSource,
-        [string]$transactionID = $null
-    )
-
-    $season = [string]$pick.season
-    $round = [int]$pick.round
-
-    return [PSCustomObject][ordered]@{
-        DraftType             = $draftType
-        DraftSource           = $draftSource
-        DraftKey              = "$($season)_$($draftType)"
-        Season                = $season
-        Round                 = $round
-        OriginalOwnerRosterID = [int]$pick.roster_id
-        PreviousOwnerRosterID = [int]$pick.previous_owner_id
-        NewOwnerRosterID      = [int]$pick.owner_id
-    }
-}
-
-function Get-DraftPickOutputFromSleeper {
-    param([Parameter(Mandatory = $true)][object]$sleeperPick)
-
-    return Get-DraftPickOutput -pick $sleeperPick -draftType "Rookie" -draftSource "Sleeper"
-}
-
-function Get-DraftPickOutputFromManual {
-    param([Parameter(Mandatory = $true)][object]$manualPick)
-
-    $normalizedPick = [PSCustomObject]@{
-        season            = $manualPick.Season
-        round             = $manualPick.Round
-        roster_id         = Get-OwnerIDByName -ownerName $manualPick.Original
-        previous_owner_id = Get-OwnerIDByName -ownerName $manualPick.From
-        owner_id          = Get-OwnerIDByName -ownerName $manualPick.To
-    }
-
-    return Get-DraftPickOutput -pick $normalizedPick -draftType "Free_Agent" -draftSource "Manual"
-}
 
 function ConvertTo-DraftSafeArray {
     param([AllowNull()]$value)
@@ -67,10 +24,6 @@ function ConvertTo-DraftSafeArray {
     if ($value -is [array]) { return $value }
     return @($value)
 }
-
-# ===========================================================================
-# Draft Generation: Generic Helpers
-# ===========================================================================
 
 function Test-DraftPropertyExists {
     param(
@@ -111,13 +64,186 @@ function ConvertTo-DraftHashtable {
     return $hash
 }
 
+# ===========================================================================
+# Draft identity
+# ===========================================================================
+
+function Get-DraftInstanceFromConfig {
+    param([Parameter(Mandatory = $true)][object]$draftTypeConfig)
+
+    $draftInstance = Get-DraftObjectProperty -object $draftTypeConfig -propertyName "DraftInstance" -defaultValue 1
+    $draftInstance = [int]$draftInstance
+    if ($draftInstance -lt 1) { throw "DraftInstance must be at least 1 for draft type '$($draftTypeConfig.DraftType)'." }
+    return $draftInstance
+}
+
+function New-DraftCode {
+    param(
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [int]$draftInstance = 1
+    )
+
+    if ($draftInstance -lt 1) { throw "DraftInstance must be at least 1 for draft type '$draftType'." }
+    if ($draftInstance -eq 1) { return $draftType }
+    return "$($draftType)_$draftInstance"
+}
+
 function New-DraftKey {
     param(
         [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][string]$draftType
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [int]$draftInstance = 1
     )
 
-    return "$($season)_$($draftType)"
+    $draftCode = New-DraftCode -draftType $draftType -draftInstance $draftInstance
+    return "$($season)_$draftCode"
+}
+
+function Get-DraftIdentityFromKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$draftKey,
+        [AllowNull()][array]$draftTypeConfigs = $null
+    )
+
+    if ([string]::IsNullOrWhiteSpace($draftKey)) { throw "DraftKey must not be empty." }
+    $separatorIndex = $draftKey.IndexOf('_')
+    if ($separatorIndex -le 0) { throw "DraftKey '$draftKey' does not contain a season prefix." }
+
+    $season = $draftKey.Substring(0, $separatorIndex)
+    if ($null -eq $draftTypeConfigs) {
+        $config = Get-Config
+        $draftTypeConfigs = ConvertTo-DraftSafeArray -value $config.DraftsConfig.Types
+    }
+
+    $matches = @()
+    foreach ($draftTypeConfig in $draftTypeConfigs) {
+        $draftType = [string]$draftTypeConfig.DraftType
+        $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+        $expectedKey = New-DraftKey -season $season -draftType $draftType -draftInstance $draftInstance
+        if ([string]$expectedKey -eq [string]$draftKey) {
+            $matches += [PSCustomObject][ordered]@{
+                Season        = $season
+                DraftType     = $draftType
+                DraftInstance = $draftInstance
+                DraftCode     = New-DraftCode -draftType $draftType -draftInstance $draftInstance
+                DraftKey      = $expectedKey
+            }
+        }
+    }
+
+    if ($matches.Count -ne 1) {
+        throw "DraftKey '$draftKey' could not be resolved to exactly one configured draft instance."
+    }
+
+    return $matches[0]
+}
+
+function Get-ConfiguredSleeperDraftID {
+    param(
+        [Parameter(Mandatory = $true)][object]$draftTypeConfig,
+        [Parameter(Mandatory = $true)][string]$season
+    )
+
+    $bindings = Get-DraftObjectProperty -object $draftTypeConfig -propertyName "SleeperDraftIDs" -defaultValue $null
+    if ($null -eq $bindings) { return $null }
+
+    $binding = Get-DraftObjectProperty -object $bindings -propertyName $season -defaultValue $null
+    if ($null -eq $binding -or [string]::IsNullOrWhiteSpace([string]$binding)) { return $null }
+    return [string]$binding
+}
+
+function Assert-DraftTypeConfigs {
+    param([Parameter(Mandatory = $true)][array]$draftTypeConfigs)
+
+    $identityKeys = @{}
+    $draftNos = @{}
+    $sleeperBindings = @{}
+
+    foreach ($draftTypeConfig in $draftTypeConfigs) {
+        $draftType = [string]$draftTypeConfig.DraftType
+        if ([string]::IsNullOrWhiteSpace($draftType)) { throw "DraftType must not be empty." }
+
+        $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+        $identityKey = "$draftType|$draftInstance"
+        if ($identityKeys.ContainsKey($identityKey)) {
+            throw "Duplicate draft identity configured: DraftType '$draftType', DraftInstance '$draftInstance'."
+        }
+        $identityKeys[$identityKey] = $true
+
+        $draftNo = [int]$draftTypeConfig.DraftNo
+        if ($draftNo -lt 1) { throw "DraftNo must be at least 1 for draft '$identityKey'." }
+        if ($draftNos.ContainsKey([string]$draftNo)) { throw "Duplicate DraftNo '$draftNo' in Metadata.json." }
+        $draftNos[[string]$draftNo] = $true
+
+        $bindings = Get-DraftObjectProperty -object $draftTypeConfig -propertyName "SleeperDraftIDs" -defaultValue $null
+        if ($null -ne $bindings) {
+            foreach ($property in $bindings.PSObject.Properties) {
+                $draftID = [string]$property.Value
+                if ([string]::IsNullOrWhiteSpace($draftID)) { continue }
+                if ($sleeperBindings.ContainsKey($draftID)) {
+                    throw "Sleeper draft '$draftID' is bound to multiple configured draft instances."
+                }
+                $sleeperBindings[$draftID] = $identityKey
+            }
+        }
+    }
+}
+
+# ===========================================================================
+# Draft Pick Build Utils
+# ===========================================================================
+
+function Get-DraftPickOutput {
+    param(
+        [Parameter(Mandatory = $true)][object]$pick,
+        [Parameter(Mandatory = $true)][ValidateSet("Sleeper", "Manual")][string]$draftSource,
+        [AllowNull()]$draftIdentity = $null,
+        [string]$transactionID = $null
+    )
+
+    $season = [string]$pick.season
+    $round = [int]$pick.round
+
+    return [PSCustomObject][ordered]@{
+        DraftType             = if ($null -ne $draftIdentity) { [string]$draftIdentity.DraftType } else { $null }
+        DraftInstance         = if ($null -ne $draftIdentity) { [int]$draftIdentity.DraftInstance } else { $null }
+        DraftCode             = if ($null -ne $draftIdentity) { [string]$draftIdentity.DraftCode } else { $null }
+        DraftSource           = $draftSource
+        DraftKey              = if ($null -ne $draftIdentity) { [string]$draftIdentity.DraftKey } else { $null }
+        Season                = $season
+        Round                 = $round
+        OriginalOwnerRosterID = [int]$pick.roster_id
+        PreviousOwnerRosterID = [int]$pick.previous_owner_id
+        NewOwnerRosterID      = [int]$pick.owner_id
+    }
+}
+
+function Get-DraftPickOutputFromSleeper {
+    param([Parameter(Mandatory = $true)][object]$sleeperPick)
+
+    # A Sleeper league transaction identifies the movement, but not reliably the
+    # concrete draft instance. Resolution happens against the mapped draft contexts.
+    return Get-DraftPickOutput -pick $sleeperPick -draftSource "Sleeper"
+}
+
+function Get-DraftPickOutputFromManual {
+    param([Parameter(Mandatory = $true)][object]$manualPick)
+
+    $draftKey = [string](Get-DraftObjectProperty -object $manualPick -propertyName "DraftKey" -defaultValue "")
+    if ([string]::IsNullOrWhiteSpace($draftKey)) {
+        throw "Manual transaction picks must define an explicit DraftKey."
+    }
+
+    $draftIdentity = Get-DraftIdentityFromKey -draftKey $draftKey
+    $normalizedPick = [PSCustomObject]@{
+        season            = [string]$draftIdentity.Season
+        round             = $manualPick.Round
+        roster_id         = Get-OwnerIDByName -ownerName $manualPick.Original
+        previous_owner_id = Get-OwnerIDByName -ownerName $manualPick.From
+        owner_id          = Get-OwnerIDByName -ownerName $manualPick.To
+    }
+
+    return Get-DraftPickOutput -pick $normalizedPick -draftSource "Manual" -draftIdentity $draftIdentity
 }
 
 function New-DraftPickKey {
@@ -144,22 +270,30 @@ function Get-DraftTypeAbbreviation {
     return (($parts | ForEach-Object { $_.Substring(0, 1).ToUpperInvariant() }) -join "")
 }
 
+function Get-DraftInstanceDisplaySuffix {
+    param([int]$draftInstance = 1)
+    if ($draftInstance -le 1) { return "" }
+    return " #$draftInstance"
+}
+
 function Get-DisplayDraftKey {
     param(
         [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][string]$draftType
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [int]$draftInstance = 1
     )
 
-    return "$season $(Get-DraftTypeDisplayName -draftType $draftType)"
+    return "$season $(Get-DraftTypeDisplayName -draftType $draftType)$(Get-DraftInstanceDisplaySuffix -draftInstance $draftInstance)"
 }
 
 function Get-DisplayAbrDraftKey {
     param(
         [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][string]$draftType
+        [Parameter(Mandatory = $true)][string]$draftType,
+        [int]$draftInstance = 1
     )
 
-    return "$season $(Get-DraftTypeAbbreviation -draftType $draftType)"
+    return "$season $(Get-DraftTypeAbbreviation -draftType $draftType)$(Get-DraftInstanceDisplaySuffix -draftInstance $draftInstance)"
 }
 
 function Format-DraftDisplayPick {
@@ -320,6 +454,7 @@ function Get-SleeperDraftMap {
         [string]$leagueID = (Get-Config).LeagueID
     )
 
+    Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
     $map = @{}
 
     try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID) }
@@ -330,37 +465,73 @@ function Get-SleeperDraftMap {
 
     if ($sleeperDrafts.Count -eq 0) { return $map }
 
-    $fallbackTypes = @($draftTypeConfigs | Sort-Object DraftNo)
     $draftsBySeason = $sleeperDrafts | Group-Object -Property season
 
     foreach ($seasonGroup in $draftsBySeason) {
+        $season = [string]$seasonGroup.Name
+        if ([string]::IsNullOrWhiteSpace($season)) { $season = [string](Get-Config).LeagueYear }
+
         $seasonDrafts = @($seasonGroup.Group | Sort-Object @{ Expression = "created"; Ascending = $true }, @{ Expression = "draft_id"; Ascending = $true })
+        $unboundConfigs = @($draftTypeConfigs | Sort-Object DraftNo)
+        $unboundDrafts = @($seasonDrafts)
 
-        for ($i = 0; $i -lt $seasonDrafts.Count; $i++) {
-            $draft = $seasonDrafts[$i]
-            $season = [string]$draft.season
-            if ([string]::IsNullOrWhiteSpace($season)) { $season = [string](Get-Config).LeagueYear }
+        # Explicit bindings are authoritative and keep already-known Sleeper IDs stable.
+        foreach ($draftTypeConfig in @($draftTypeConfigs | Sort-Object DraftNo)) {
+            $configuredDraftID = Get-ConfiguredSleeperDraftID -draftTypeConfig $draftTypeConfig -season $season
+            if ([string]::IsNullOrWhiteSpace($configuredDraftID)) { continue }
 
-            $draftType = Resolve-DraftTypeFromSleeperDraft -sleeperDraft $draft -draftTypeConfigs $draftTypeConfigs
-            if ([string]::IsNullOrWhiteSpace($draftType) -and $i -lt $fallbackTypes.Count) { $draftType = [string]$fallbackTypes[$i].DraftType }
-
-            if ([string]::IsNullOrWhiteSpace($draftType)) {
-                Write-Warning "Could not resolve draft type for Sleeper draft '$($draft.draft_id)'. Skipping mapping."
+            $matches = @($unboundDrafts | Where-Object { [string]$_.draft_id -eq $configuredDraftID })
+            if ($matches.Count -ne 1) {
+                Write-Warning "Configured Sleeper draft '$configuredDraftID' for season '$season' was not found exactly once."
                 continue
             }
 
-            $draftKey = New-DraftKey -season $season -draftType $draftType
-            if (-not $map.ContainsKey($draftKey)) {
-                $draftToStore = $draft
-                $draftID = Get-DraftObjectProperty -object $draft -propertyName "draft_id" -defaultValue $null
+            $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+            $draftKey = New-DraftKey -season $season -draftType ([string]$draftTypeConfig.DraftType) -draftInstance $draftInstance
+            $draftToStore = $matches[0]
+            try { $draftToStore = Get-SleeperDraft -draftID $configuredDraftID }
+            catch { Write-Warning "Could not load Sleeper draft detail for '$configuredDraftID'. Falling back to draft list object. $_" }
 
-                if (-not [string]::IsNullOrWhiteSpace($draftID)) {
-                    try { $draftToStore = Get-SleeperDraft -draftID $draftID }
-                    catch { Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_" }
-                }
+            $map[$draftKey] = $draftToStore
+            $unboundDrafts = @($unboundDrafts | Where-Object { [string]$_.draft_id -ne $configuredDraftID })
+            $unboundConfigs = @($unboundConfigs | Where-Object { $_ -ne $draftTypeConfig })
+        }
 
-                $map[$draftKey] = $draftToStore
+        # Remaining drafts are bound deterministically by classified type and instance order.
+        foreach ($draft in @($unboundDrafts)) {
+            $draftID = [string](Get-DraftObjectProperty -object $draft -propertyName "draft_id" -defaultValue "")
+            $draftType = Resolve-DraftTypeFromSleeperDraft -sleeperDraft $draft -draftTypeConfigs $unboundConfigs
+            $candidateConfigs = @()
+
+            if (-not [string]::IsNullOrWhiteSpace($draftType)) {
+                $candidateConfigs = @(
+                    $unboundConfigs |
+                        Where-Object { [string]$_.DraftType -eq $draftType } |
+                        Sort-Object @{ Expression = { Get-DraftInstanceFromConfig -draftTypeConfig $_ }; Ascending = $true }, DraftNo
+                )
             }
+
+            if ($candidateConfigs.Count -eq 0) {
+                $candidateConfigs = @($unboundConfigs | Sort-Object DraftNo)
+            }
+
+            if ($candidateConfigs.Count -eq 0) {
+                Write-Warning "No configured draft instance remains for Sleeper draft '$draftID' in season '$season'."
+                continue
+            }
+
+            $draftTypeConfig = $candidateConfigs[0]
+            $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+            $draftKey = New-DraftKey -season $season -draftType ([string]$draftTypeConfig.DraftType) -draftInstance $draftInstance
+            $draftToStore = $draft
+
+            if (-not [string]::IsNullOrWhiteSpace($draftID)) {
+                try { $draftToStore = Get-SleeperDraft -draftID $draftID }
+                catch { Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_" }
+            }
+
+            $map[$draftKey] = $draftToStore
+            $unboundConfigs = @($unboundConfigs | Where-Object { $_ -ne $draftTypeConfig })
         }
     }
 
@@ -502,6 +673,7 @@ function Get-UpcomingDraftDefinitions {
         [Parameter(Mandatory = $true)][int]$upcomingDraftCountPerType
     )
 
+    Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
     $definitions = @()
 
     foreach ($draftTypeConfig in ($draftTypeConfigs | Sort-Object DraftNo)) {
@@ -514,7 +686,9 @@ function Get-UpcomingDraftDefinitions {
             if ($guard -gt 30) { throw "Upcoming draft generation guard reached for draft type '$($draftTypeConfig.DraftType)'." }
 
             $draftType = [string]$draftTypeConfig.DraftType
-            $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType
+            $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+            $draftCode = New-DraftCode -draftType $draftType -draftInstance $draftInstance
+            $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType -draftInstance $draftInstance
             $sleeperDraft = $null
             if ($sleeperDraftMap.ContainsKey($draftKey)) { $sleeperDraft = $sleeperDraftMap[$draftKey] }
 
@@ -522,6 +696,8 @@ function Get-UpcomingDraftDefinitions {
                 $typeDefinitions += [PSCustomObject][ordered]@{
                     Season          = [string]$season
                     DraftType       = $draftType
+                    DraftInstance   = $draftInstance
+                    DraftCode       = $draftCode
                     DraftNo         = [int]$draftTypeConfig.DraftNo
                     DraftKey        = $draftKey
                     DraftTypeConfig = $draftTypeConfig

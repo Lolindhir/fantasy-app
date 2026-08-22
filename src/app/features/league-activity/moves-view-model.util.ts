@@ -270,7 +270,11 @@ function formatDateLabel(dateKey: string): string {
   }).format(date);
 }
 
-function formatDraftType(draftType: string): string {
+function formatDraftType(draftType: string | null | undefined): string {
+  if (!draftType) {
+    return 'Draft';
+  }
+
   const normalized = draftType.toLowerCase();
 
   if (normalized === 'free_agent') {
