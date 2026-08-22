@@ -55,6 +55,38 @@ jobs:
               return text
           patch('.ai-context/manual/data-sources.yaml', data_sources)
 
+          # App architecture: canonical producers no longer own AI/chat convenience projections.
+          def architecture(text):
+              replacements = {
+                  '      Fetches, transforms and enriches source data into generated JSON files\n      consumed by the Angular app and AI/chat helper workflows.\n':
+                  '      Fetches, transforms and enriches source data into generated JSON files\n      consumed by the Angular app and downstream read-only consumers.\n',
+                  '      - chunked helper exports derived from generated data\n': '',
+                  '      Represents current app-readable read models consumed by Angular and\n      generated helper outputs derived from those read models.\n':
+                  '      Represents current app-readable read models consumed by Angular.\n',
+                  '      - relevant player subset output\n': '',
+                  '      - generated AI/chat helper chunk output\n': '',
+              }
+              for old, new in replacements.items():
+                  if old not in text:
+                      raise SystemExit(f'architecture block mismatch: {old!r}')
+                  text = text.replace(old, new, 1)
+              marker = '      - persisted generated JSON\n'
+              addition = '      - AI/chat-client-specific convenience datasets\n'
+              if addition not in text:
+                  if marker not in text:
+                      raise SystemExit('architecture doesNotOwn marker missing')
+                  text = text.replace(marker, marker + addition, 1)
+              return text
+          patch('.ai-context/manual/architecture.yaml', architecture)
+
+          # Fantasy Management entry documentation no longer advertises a Relevant Players file family.
+          def fm_agents(text):
+              text = text.replace('- Relevant Players files\n', '- player analysis and derived Operations player datasets\n')
+              text = text.replace('Do not place Fantasy Management outputs, stored analyses, podcast/source extractions, Relevant Players files, source summaries, player boards or decisions in the central app AI context.\n', 'Do not place Fantasy Management outputs, stored analyses, podcast/source extractions, source summaries, player boards or decisions in the central app AI context.\n')
+              text = text.replace('`podcast-work/`, `knowledge/`, `analyses/`, `decisions/`, `sources/relevant-players/`, `sources/external-rankings/` and `sources/manual-notes/` are created on demand when actual files exist.\n', '`podcast-work/`, `knowledge/`, `analyses/`, `decisions/`, `sources/external-rankings/` and `sources/manual-notes/` are created on demand when actual files exist.\n')
+              return text
+          patch('fantasy-management/AGENTS.md', fm_agents)
+
           # Completed TODO describes a now-retired architecture; remove the obsolete historical task entry.
           def todo(text):
               new, n = re.subn(r'\n- \[x\] `Players_Relevant\.json`- und Chat-Export-Pfade nach `ConfigUtils\.psm1` verlagern\.\n.*?(?=\n- \[x\] Legacy-Kompatibilitäts-Re-Exports entfernen\.)', '\n', text, count=1, flags=re.S)
@@ -100,16 +132,16 @@ jobs:
           old_entry = Path('public/requests/RunPlayerChatChunks.ps1')
           if old_entry.exists(): old_entry.unlink()
 
-          # The migration runner contains its own search terms. Historical analyses retain accurate source provenance;
+          # The migration runner/workflow contain their own search terms. Historical analyses retain accurate source provenance;
           # the FM source guide and ADR intentionally name the retired contract while forbidding its recreation.
           runner = Path('.github/scripts/remove-relevant-player-chat-export.py')
           text = runner.read_text(encoding='utf-8')
           old = '''    if not line.startswith("public/requests/utils/player/PlayerUtils.psm1:")\n    and not line.startswith("public/requests/RequestLeague.ps1:")\n'''
-          new = old + '''    and not line.startswith(".github/scripts/remove-relevant-player-chat-export.py:")\n'''
+          new = old + '''    and not line.startswith(".github/scripts/remove-relevant-player-chat-export.py:")\n    and not line.startswith(".github/workflows/temp-remove-relevant-player-chat-export.yml:")\n'''
           if text.count(old) != 1: raise SystemExit('could not patch temporary self-reference guard')
           text = text.replace(old, new, 1)
           old2 = '''    if line.startswith(".github/scripts/remove-relevant-player-chat-export.py:"):\n        continue\n    stale.append(line)\n'''
-          new2 = '''    if line.startswith(".github/scripts/remove-relevant-player-chat-export.py:"):\n        continue\n    if line.startswith("fantasy-management/analyses/"):\n        continue\n    if line.startswith("fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md:"):\n        continue\n    stale.append(line)\n'''
+          new2 = '''    if line.startswith(".github/scripts/remove-relevant-player-chat-export.py:"):\n        continue\n    if line.startswith(".github/workflows/temp-remove-relevant-player-chat-export.yml:"):\n        continue\n    if line.startswith("fantasy-management/analyses/"):\n        continue\n    if line.startswith("fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md:"):\n        continue\n    stale.append(line)\n'''
           if text.count(old2) != 1: raise SystemExit('could not patch historical-provenance allow list')
           runner.write_text(text.replace(old2, new2, 1), encoding='utf-8')
           PY
@@ -141,7 +173,12 @@ jobs:
           python - <<'PY'
           import json, yaml
           from pathlib import Path
-          for path in [Path('.ai-context/manual/ai-guidance.yaml'), Path('.ai-context/manual/decisions.yaml'), Path('.ai-context/manual/data-sources.yaml')]:
+          for path in [
+              Path('.ai-context/manual/ai-guidance.yaml'),
+              Path('.ai-context/manual/architecture.yaml'),
+              Path('.ai-context/manual/decisions.yaml'),
+              Path('.ai-context/manual/data-sources.yaml'),
+          ]:
               yaml.safe_load(path.read_text(encoding='utf-8'))
               print(f'valid yaml: {path}')
           for path in [
@@ -154,8 +191,13 @@ jobs:
               if 'sources' in data and 'players' in data['sources']:
                   assert data['sources']['players'] == 'public/data/Players.json', path
               print(f'valid json: {path}')
+          target_set = json.loads(Path('fantasy-management/automation/target-sets/managed-roster-health.json').read_text(encoding='utf-8'))
+          selector = target_set['selectors'][0]
+          assert selector['parameters']['player_source_path'] == 'fantasy-management/generated/operations/player-signals.json'
+          assert 'player_index_path' not in selector['parameters']
           PY
           python -m unittest tools.tests.test_nfl_source_data
+          python fantasy-management/_ai/scripts/build_player_signal_dataset.py --check
 
       - name: Commit cleanup result
         run: |
