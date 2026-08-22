@@ -5,8 +5,12 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from nfl_source_data_lib.identity import IdentityCandidate, _can_merge_on_anchor, _seed_for_component
-from nfl_source_data_lib.provider_mappings import provider_mapping_lookup
+from nfl_source_data_lib.identity import (
+    IdentityCandidate,
+    _can_merge_on_anchor,
+    _seed_for_component,
+    provider_mapping_lookup,
+)
 
 
 def candidate(ids, birth_date="2000-01-01", name="Test Player"):
