@@ -17,6 +17,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Run PowerShell data regression tests
+        shell: pwsh
+        run: |
+          ./public/requests/DraftIdentityRegressionTest.ps1
+          ./public/requests/LeagueTransactionPipelineRegressionTest.ps1
+          ./public/requests/HistoricalTransactionRebuildRegressionTest.ps1
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
