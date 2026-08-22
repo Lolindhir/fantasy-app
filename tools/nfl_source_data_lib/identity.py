@@ -47,8 +47,15 @@ class UnionFind:
 
 
 def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
+    """Return current app identity candidates and the canonical audit population.
+
+    `public/data/Players.json` is the current app player read model. The former
+    `Players_Relevant.json` AI helper was intentionally retired and must not be a
+    source-data dependency. The same current Players population therefore drives
+    both app attachment candidates and coverage auditing.
+    """
+
     players = load_json(repo_root / "public/data/Players.json", []) or []
-    relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
     candidates: list[IdentityCandidate] = []
     for row in players:
         ids: dict[str, str] = {}
@@ -71,7 +78,7 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
                 priority=30,
             )
         )
-    return candidates, relevant
+    return candidates, players
 
 
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
@@ -180,81 +187,28 @@ def _build_components(candidates: list[IdentityCandidate]) -> UnionFind:
     for idx, candidate in enumerate(candidates):
         if candidate.existing_internal_id:
             previous = existing_owner.get(candidate.existing_internal_id)
-            if previous is not None:
-                uf.union(idx, previous)
-            else:
+            if previous is None:
                 existing_owner[candidate.existing_internal_id] = idx
-        for key in ANCHOR_ID_KEYS:
-            value = candidate.ids.get(key)
-            if not value:
-                continue
-            token = (key, value)
-            for previous in anchor_owners[token]:
-                if _can_merge_on_anchor(candidate, candidates[previous], key):
-                    uf.union(idx, previous)
-            anchor_owners[token].append(idx)
-
-    # Provider-only current rows prefer current anchored evidence. Historical
-    # canonical mappings are a fallback only when no current stable component
-    # claims that provider ID. This preserves stable existing identities while
-    # allowing a later provider-ID reuse to attach to the new current person.
-    for _ in range(3):
-        components = _component_members(uf, candidates)
-        stable_roots = {
-            root
-            for root, indexes in components.items()
-            if _component_is_stable(indexes, candidates)
-        }
-        current_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
-        historical_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
-        for idx, candidate in enumerate(candidates):
-            root = uf.find(idx)
-            if root not in stable_roots:
-                continue
-            target_map = (
-                historical_token_roots
-                if candidate.source == "canonical-existing"
-                else current_token_roots
-            )
-            for key in ATTACH_ID_KEYS:
-                if value := candidate.ids.get(key):
-                    target_map[(key, value)].add(root)
-
-        changed = False
-        for idx, candidate in enumerate(candidates):
-            root = uf.find(idx)
-            if root in stable_roots:
-                continue
-            current_targets: set[int] = set()
-            historical_targets: set[int] = set()
-            for key in ATTACH_ID_KEYS:
-                if value := candidate.ids.get(key):
-                    current_targets.update(current_token_roots.get((key, value), set()))
-                    historical_targets.update(historical_token_roots.get((key, value), set()))
-
-            if len(current_targets) == 1:
-                target = next(iter(current_targets))
-            elif len(current_targets) == 0 and len(historical_targets) == 1:
-                target = next(iter(historical_targets))
             else:
-                continue
+                uf.union(previous, idx)
+        for key in ANCHOR_ID_KEYS:
+            if value := candidate.ids.get(key):
+                anchor_owners[(key, value)].append(idx)
 
-            target_indexes = components.get(target, [])
-            if not _component_compatible(candidate, target_indexes, candidates):
-                continue
-            uf.union(idx, target)
-            changed = True
-        if not changed:
-            break
+    for (key, _), owners in anchor_owners.items():
+        for left_offset, left in enumerate(owners):
+            for right in owners[left_offset + 1 :]:
+                if _can_merge_on_anchor(candidates[left], candidates[right], key):
+                    uf.union(left, right)
 
-    # Remaining app rows may establish provisional current people because
-    # Sleeper is the current application identity contract. A provider-only row
-    # may attach only when it points to exactly one such app component and no
-    # competing provider row proposes the same target.
+    # Provider attachment IDs such as Sleeper and Tank01 may connect a current
+    # provider-only row to one stable component, but never merge stable components
+    # with each other. If the same attachment token points at multiple possible
+    # current people it remains ambiguous and is quarantined later.
     components = _component_members(uf, candidates)
     app_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
     for idx, candidate in enumerate(candidates):
-        if candidate.source != "app.Players":
+        if candidate.source not in {"app.Players", "canonical-existing"}:
             continue
         root = uf.find(idx)
         for key in ATTACH_ID_KEYS:
@@ -495,167 +449,3 @@ def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], st
                 raise ValueError(f"Link ID {key}:{value} maps to multiple canonical players")
             lookup[token] = row["NFLPlayerID"]
     return lookup
-
-
-def build_provider_mapping_payload(
-    repo_root: Path,
-    provider_claims: list[dict[str, Any]],
-    mapping_conflicts: list[dict[str, Any]],
-    observation_season: int,
-) -> dict[str, Any]:
-    path = repo_root / "source-data/nfl/identities/provider-mappings.json"
-    existing = load_json(path, {}) or {}
-    mappings = [dict(item) for item in existing.get("Mappings", [])]
-    conflicts = [dict(item) for item in existing.get("Conflicts", [])]
-
-    def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
-        return (
-            str(item.get("Provider") or ""),
-            str(item.get("ExternalID") or ""),
-            str(item.get("NFLPlayerID") or ""),
-        )
-
-    for claim in provider_claims:
-        provider = claim["Provider"]
-        external_id = claim["ExternalID"]
-        internal_id = claim["NFLPlayerID"]
-        exact = next(
-            (item for item in mappings if mapping_key(item) == (provider, external_id, internal_id)),
-            None,
-        )
-        if exact is not None:
-            first = int(exact.get("FirstObservedSeason") or observation_season)
-            last = int(exact.get("LastObservedSeason") or observation_season)
-            exact["FirstObservedSeason"] = min(first, observation_season)
-            exact["LastObservedSeason"] = max(last, observation_season)
-            exact["Sources"] = sorted(set(exact.get("Sources") or []) | set(claim.get("Sources") or []))
-            continue
-
-        previous_for_token = [
-            item
-            for item in mappings
-            if item.get("Provider") == provider and item.get("ExternalID") == external_id
-        ]
-        overlapping = [
-            item
-            for item in previous_for_token
-            if int(item.get("LastObservedSeason") or observation_season) >= observation_season
-        ]
-        if overlapping:
-            owners = sorted({internal_id, *(str(item.get("NFLPlayerID")) for item in overlapping)})
-            mapping_conflicts.append(
-                {
-                    "Provider": provider,
-                    "ExternalID": external_id,
-                    "NFLPlayerIDs": owners,
-                    "SourcesByNFLPlayerID": {internal_id: sorted(claim.get("Sources") or [])},
-                }
-            )
-            continue
-
-        mappings.append(
-            {
-                "Provider": provider,
-                "ExternalID": external_id,
-                "NFLPlayerID": internal_id,
-                "FirstObservedSeason": observation_season,
-                "LastObservedSeason": observation_season,
-                "Sources": sorted(claim.get("Sources") or []),
-            }
-        )
-
-    for conflict in mapping_conflicts:
-        provider = str(conflict.get("Provider") or "")
-        external_id = str(conflict.get("ExternalID") or "")
-        owners = sorted(str(value) for value in conflict.get("NFLPlayerIDs") or [])
-        same = next(
-            (
-                item
-                for item in conflicts
-                if item.get("Provider") == provider
-                and item.get("ExternalID") == external_id
-                and sorted(str(value) for value in item.get("NFLPlayerIDs") or []) == owners
-            ),
-            None,
-        )
-        if same is None:
-            same = {
-                "Provider": provider,
-                "ExternalID": external_id,
-                "NFLPlayerIDs": owners,
-                "FirstObservedSeason": observation_season,
-                "LastObservedSeason": observation_season,
-                "Status": "ambiguous",
-            }
-            conflicts.append(same)
-        else:
-            same["FirstObservedSeason"] = min(
-                int(same.get("FirstObservedSeason") or observation_season), observation_season
-            )
-            same["LastObservedSeason"] = max(
-                int(same.get("LastObservedSeason") or observation_season), observation_season
-            )
-        sources_by_player = conflict.get("SourcesByNFLPlayerID") or {}
-        if sources_by_player:
-            merged = {
-                key: set(values or [])
-                for key, values in (same.get("SourcesByNFLPlayerID") or {}).items()
-            }
-            for internal_id, values in sources_by_player.items():
-                merged.setdefault(internal_id, set()).update(values or [])
-            same["SourcesByNFLPlayerID"] = {
-                key: sorted(values) for key, values in sorted(merged.items())
-            }
-
-    mappings.sort(
-        key=lambda item: (
-            item["Provider"],
-            item["ExternalID"],
-            item["FirstObservedSeason"],
-            item["NFLPlayerID"],
-        )
-    )
-    conflicts.sort(
-        key=lambda item: (
-            item["Provider"],
-            item["ExternalID"],
-            item["FirstObservedSeason"],
-            tuple(item["NFLPlayerIDs"]),
-        )
-    )
-    return {
-        "SchemaVersion": 1,
-        "TemporalResolution": "season",
-        "Mappings": mappings,
-        "Conflicts": conflicts,
-    }
-
-
-def provider_mapping_lookup(
-    payload: dict[str, Any],
-    provider: str,
-    external_id: str,
-    season: int,
-) -> str | None:
-    provider = str(provider)
-    external_id = str(external_id)
-    season = int(season)
-
-    for conflict in payload.get("Conflicts", []) or []:
-        if conflict.get("Provider") != provider or str(conflict.get("ExternalID")) != external_id:
-            continue
-        first = int(conflict.get("FirstObservedSeason") or season)
-        last = int(conflict.get("LastObservedSeason") or first)
-        if first <= season <= last:
-            return None
-
-    matches: list[str] = []
-    for mapping in payload.get("Mappings", []) or []:
-        if mapping.get("Provider") != provider or str(mapping.get("ExternalID")) != external_id:
-            continue
-        first = int(mapping.get("FirstObservedSeason") or season)
-        last = int(mapping.get("LastObservedSeason") or first)
-        if first <= season <= last:
-            matches.append(str(mapping.get("NFLPlayerID")))
-    unique = sorted(set(matches))
-    return unique[0] if len(unique) == 1 else None
