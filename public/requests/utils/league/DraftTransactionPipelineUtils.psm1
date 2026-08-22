@@ -10,6 +10,7 @@ try {
     Import-Module "$PSScriptRoot\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\HistoricalTransactionDraftPickIdentityUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -28,6 +29,11 @@ function Invoke-DraftTransactionRebuild {
 
     Write-Host "Resolve transaction draft identities..." -ForegroundColor Yellow
     Update-AllTransactionDraftPickTypesFromSleeper -leagueID $leagueID
+
+    # Historical transaction picks must use the exact same completed-draft
+    # definitions that the following historical draft generation step uses.
+    # This corrects classification drift before Draft ownership/TradeHistory is built.
+    Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts -leagueID $leagueID
 
     Write-Host "Rebuild current and open drafts from refreshed transactions..." -ForegroundColor Yellow
     $drafts = Update-DraftsOrderAware -leagueID $leagueID
