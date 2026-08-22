@@ -31,7 +31,18 @@ jobs:
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Apply deterministic cleanup
-        run: python .github/scripts/remove-relevant-player-chat-export.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/remove-relevant-player-chat-export.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    if not line.startswith("public/requests/utils/player/PlayerUtils.psm1:")\n    and not line.startswith("public/requests/RequestLeague.ps1:")\n'''
+          new = old + '''    and not line.startswith(".github/scripts/remove-relevant-player-chat-export.py:")\n'''
+          if text.count(old) != 1:
+              raise SystemExit('could not patch temporary self-reference guard')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          python .github/scripts/remove-relevant-player-chat-export.py
 
       - name: Validate PowerShell syntax
         shell: pwsh
