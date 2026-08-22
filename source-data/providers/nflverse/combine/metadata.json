@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 2,
+  "dataset": "nflverse.combine",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-data",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/combine/combine.csv",
+  "sourceFormat": "csv",
+  "retrievedAtUtc": "2026-08-22T21:46:49Z",
+  "contentHashSha256": "5648886b1bb9de8a0c42b05ee7b1d9cbe58897676caaa2f6a4a3d3c9228235bb",
+  "rowCount": 8968,
+  "columns": [
+    "season",
+    "draft_year",
+    "draft_team",
+    "draft_round",
+    "draft_ovr",
+    "pfr_id",
+    "cfb_id",
+    "player_name",
+    "pos",
+    "school",
+    "ht",
+    "wt",
+    "forty",
+    "bench",
+    "vertical",
+    "broad_jump",
+    "cone",
+    "shuttle"
+  ],
+  "kind": "athletic-measurement-history",
+  "refreshPolicy": "discover-new-partitions",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "immutable-history",
+    "partitionKey": "season",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse; NFL Combine data courtesy of Pro Football Reference"
+}
