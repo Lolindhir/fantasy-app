@@ -77,7 +77,6 @@ jobs:
           PY
 
       - name: Commit cleanup result
-        if: github.event_name != 'pull_request'
         run: |
           if git diff --quiet && git diff --cached --quiet; then
             echo "No cleanup changes detected."
