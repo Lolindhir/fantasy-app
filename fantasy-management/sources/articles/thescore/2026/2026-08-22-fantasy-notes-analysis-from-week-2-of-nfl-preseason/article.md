@@ -1,0 +1,80 @@
+# Fantasy notes, analysis from Week 2 of NFL preseason
+
+- Publisher: theScore
+- Author: Eric Patterson
+- Capture: 2026-08-22, Europe/London
+- Source text: vollständig vom Nutzer im Chat bereitgestellt
+
+> Lesefassung des Raw-Captures. Die Fantasy-Interpretation steht ausschließlich in `extraction.json` und anderen Fantasy-Management-Ableitungen, nicht in diesem Quelltext.
+
+Key takeaways and fantasy football analysis from Week 2 of the NFL preseason.
+
+## Friday games
+
+### Jets-Steelers
+
+#### Geno-AD connection
+
+Geno Smith went a perfect 7-for-7 with a touchdown in his preseason debut. He found Adonai Mitchell on two of those completions for 21 yards. Despite the small sample size, it was a promising performance for the Jets' offensive outlook. Prior to last season, Smith enjoyed a three-year stretch with the Seahawks in which he averaged 4,075 passing yards and 23.7 TDs per season. If - and that's a big if - Smith can return to that level of play, you should feel confident drafting Garrett Wilson in the fourth round.
+
+#### Steelers provide zero clarity
+
+Jaylen Warren started the game, but Rico Dowdle split time with his running mate. Both handled five carries, with Warren going for 18 yards and Dowdle for 17. Warren is projected to receive work in the passing game, but it was Dowdle who caught the lone reception between the two. This will likely be a frustrating backfield to roster if the pair continues to split time in an offense with limited upside.
+
+### Panthers-Jaguars
+
+#### Brooks' backfield to lose
+
+With Chuba Hubbard sidelined, Jonathan Brooks got the start for Carolina and looked solid. He logged five carries for 18 yards and converted a goal-line touch into a score. However, Brooks whiffed on a routine block in pass protection that will infuriate his coaching staff. He still has work to do to earn the starting gig, especially since Hubbard is trusted and considered a team captain, but Brooks provides much more upside than his veteran teammate.
+
+### Packers-Broncos
+
+#### Broncos' new toy
+
+Jaylen Waddle made his Broncos debut Friday and proceeded to haul in a 35-yard reception on his first target from Bo Nix. Denver hasn't possessed a receiving weapon of Waddle's caliber in a long time, making him an enticing option at his current draft position of WR21. Waddle already showed that he can be a team's top wideout when Tyreek Hill missed time in Miami, and he now has a clear path to lead the Broncos in every receiving stat, which would undoubtedly make him a draft-day steal.
+
+#### Packers' RB2
+
+MarShawn Lloyd got the start for Green Bay, indicating he's earned an RB2 role with the team that could expand if Josh Jacobs misses time. Lloyd wasn't overly impressive on the ground, taking six carries for 17 yards. However, he hauled in an 11-yard reception for a touchdown, displaying the versatility that would make him an every-week fantasy starter if he ends up as the Packers' regular-season starter.
+
+Jacobs is still potentially facing discipline by the league for an offseason domestic assault arrest.
+
+## Thursday games
+
+### Raiders-Texans
+
+#### Magic Mike
+
+The Raiders may have found themselves a steal in running back Mike Washington Jr. The fourth-round rookie again showed why he's one of the most athletic backs ever tested at the NFL combine, this time breaking off a 33-yard run after initially getting stuffed near the line of scrimmage.
+
+Washington had 56 rushing yards at halftime Thursday after registering 63 yards in Las Vegas' preseason opener. Ashton Jeanty remains the clear starter, but it will be hard for new head coach Klint Kubiak to keep Washington on the sideline if he continues to break off huge gains.
+
+#### Texans' murky WR room
+
+Jayden Higgins tore his ACL on Tuesday and will miss the 2026 season, creating a competition for the Texans' WR2 role. But it's difficult to read who's leading the way. Jaylin Noel and Tank Dell remain sidelined with injuries; Noel is dealing with a hamstring issue, while Dell is still working his way back from a horrific leg injury suffered in 2024. Xavier Hutchinson filled Higgins' role versus the Raiders, but he's produced very little during his three-year career. Higgins' injury may simply offer a lot more targets for Nico Collins.
+
+#### Tucker cemented as Raiders' WR1
+
+Tre Tucker didn't play against the Texans, signaling that the Raiders view him as their top wide receiver. Jalen Nailor, Jack Bech, and rookie Malik Benson all played to varying degrees Thursday. WR1 isn't the most lucrative role in Las Vegas, considering Brock Bowers is the team's go-to guy, but Tucker has shown flashes previously and could outperform his WR71 average draft position in fantasy.
+
+#### Mendoza's mistake
+
+Fernando Mendoza made his first NFL mistake, throwing a pick-6 on his third pass attempt of the evening. In all, he was 8-for-15 for 86 yards, a slight step back from his debut against the Cardinals.
+
+### 49ers-Chargers
+
+#### CMC's backup
+
+Kaelon Black appears to be Christian McCaffrey's backup. The third-round rookie started for the 49ers, handling eight carries for 33 yards. He will rarely see the field with McCaffrey slated for another massive workload in 2026, but if anything happens to the 49ers' starting back, Black will assume a big role in San Francisco.
+
+#### Stribling shines again
+
+De'Zhaun Stribling didn't start but saw plenty of action in his first two drives of the game. The Ole Miss product caught four of five targets for 46 yards in limited work, adding to the 63 receiving yards he recorded in Week 1. Notably, three of those receptions were delivered by Brock Purdy, who seems to have quickly built a connection with the rookie receiver.
+
+Mike Evans is the clear No. 1 in San Francisco, and Deebo Samuel will have his niche role in the offense, but Stribling appears to be heavily involved in an offensive unit that shouldn't have an issue scoring points.
+
+#### Chargers struggle on the ground
+
+There's a lot of hype around what Mike McDaniel can do for the Chargers' rushing attack, but it wasn't on display Thursday night. The trio of Omarion Hampton, Keaton Mitchell, and Kimani Vidal finished the first half with a combined eight carries for five yards. However, there's no reason to overreact. The Chargers didn't start their entire offensive line, and Justin Herbert only took three snaps.
+
+Subscribe to push notifications in our NFL Fantasy News section.
