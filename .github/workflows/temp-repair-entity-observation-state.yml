@@ -1,0 +1,119 @@
+name: TEMP • Repair Entity Observation State
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/temp-repair-entity-observation-state.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cleanup branch
+        uses: actions/checkout@v4
+        with:
+          ref: cleanup/remove-relevant-player-chat-export
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install validation dependency
+        run: python -m pip install jsonschema
+
+      - name: Build pending synchronization checkpoint
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          state_path = Path('fantasy-management/automation/state/entity-observation.json')
+          state = json.loads(state_path.read_text(encoding='utf-8'))
+          target = state['job_state']['targets'].get('xavier-legette-2026')
+          if not target:
+              raise SystemExit('xavier-legette-2026 is missing from observation state')
+          if 'injury-status' not in target.get('observations', {}):
+              raise SystemExit('Xavier Legette injury baseline is unexpectedly missing')
+          if 'role-opportunity' in target.get('observations', {}):
+              raise SystemExit('Xavier Legette role-opportunity state already exists; aborting temporary repair')
+
+          now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+          parent_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          state_blob_sha = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD:fantasy-management/automation/state/entity-observation.json'],
+              text=True,
+          ).strip()
+          checkpoint = {
+              'schema_version': 1,
+              'job_id': 'entity-observation',
+              'checkpoint_id': 'state-contract-repair:xavier-legette-role-opportunity',
+              'mode': 'bootstrap',
+              'evaluated_at': now,
+              'expected_revision': state['revision'],
+              'expected_parent_sha': parent_sha,
+              'expected_state_blob_sha': state_blob_sha,
+              'status_after': 'pending',
+              'pending_after': True,
+              'job_error_after': None,
+              'pair_results': [
+                  {
+                      'target_id': 'xavier-legette-2026',
+                      'entity_fingerprint': 'player:sleeper_id:11626',
+                      'target_set_ids': ['player-role-watch'],
+                      'expected_profile_ids': ['injury-status', 'role-opportunity'],
+                      'profile_id': 'role-opportunity',
+                      'outcome': 'pending',
+                      'source_fingerprints': [],
+                      'last_error': 'Initial role-opportunity baseline is required after synchronizing the active profile binding.',
+                      'preserve_previous_good_state': True,
+                  }
+              ],
+              'recent_event': {
+                  'at': now,
+                  'type': 'pending',
+                  'severity': 'info',
+                  'summary': 'State-Contract synchronisiert: Xavier Legettes bestätigte Injury-Baseline bleibt unverändert; role-opportunity wurde ohne erfundene Evidenz als ausstehende Erstbaseline angelegt.'
+              },
+              'keep_recent_events': 20,
+          }
+          Path('/tmp/entity-observation-checkpoint.json').write_text(
+              json.dumps(checkpoint, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Apply canonical state writer
+        run: |
+          python fantasy-management/_ai/scripts/apply_observation_state_batch.py \
+            --state fantasy-management/automation/state/entity-observation.json \
+            --checkpoint /tmp/entity-observation-checkpoint.json \
+            --state-schema fantasy-management/_ai/schemas/automation-observation-state.schema.json \
+            --checkpoint-schema fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json \
+            --output /tmp/entity-observation.json \
+            --summary-json
+          mv /tmp/entity-observation.json fantasy-management/automation/state/entity-observation.json
+
+      - name: Validate repaired automation state
+        run: |
+          python fantasy-management/_ai/scripts/validate_automation.py
+          python -m unittest discover -s fantasy-management/_ai/scripts/tests -p 'test_*.py' -v
+
+      - name: Commit repaired state only
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add fantasy-management/automation/state/entity-observation.json
+          git diff --cached --check
+          git commit -m "fix(fantasy-management): synchronize observation state contract"
+          git push origin HEAD:cleanup/remove-relevant-player-chat-export
