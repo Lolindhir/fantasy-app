@@ -1,0 +1,102 @@
+schemaVersion: 1
+
+draftIdentity:
+  principle: >
+    DraftType is a category, not a unique draft identity. A concrete draft is
+    identified by Season plus DraftType plus DraftInstance. DraftInstance is
+    one-based within a DraftType and season-independent configuration slot.
+
+  fields:
+    DraftType:
+      meaning: Fachliche Kategorie des Drafts, z. B. Rookie oder Free_Agent.
+      example: Free_Agent
+    DraftInstance:
+      meaning: Konkrete Instanz innerhalb desselben DraftType.
+      rules:
+        - Starts at 1.
+        - Two configured drafts may share DraftType only when DraftInstance differs.
+      example: 2
+    DraftCode:
+      meaning: Stable code derived from DraftType and DraftInstance.
+      rules:
+        - Instance 1 keeps the unsuffixed DraftType for stable existing keys.
+        - Instance N greater than 1 uses <DraftType>_<N>.
+      examples:
+        - Free_Agent
+        - Free_Agent_2
+    DraftKey:
+      meaning: Canonical season-scoped draft identity.
+      format: <Season>_<DraftCode>
+      examples:
+        - 2026_Rookie
+        - 2026_Free_Agent
+        - 2035_Free_Agent_2
+    PickKey:
+      meaning: Canonical draft-pick identity.
+      format: <DraftKey>_R<Round>_OO<OriginalOwnerRosterID>
+    DraftNo:
+      meaning: Global configured display/order position of a draft definition.
+      rule: DraftNo is not a substitute for DraftInstance and is not part of DraftKey.
+    SleeperDraftID:
+      meaning: External Sleeper identity for a concrete draft.
+      rule: >
+        A known SleeperDraftID may be bound per season in Metadata.json. Explicit
+        bindings are authoritative; unbound drafts may be bootstrapped by Sleeper
+        metadata/type classification plus configured instance order.
+
+  metadataContract:
+    source: public/data/Metadata.json
+    draftDefinition:
+      required:
+        - DraftType
+        - DraftInstance
+        - DraftNo
+        - Rounds
+      optional:
+        SleeperDraftIDs: >
+          Map from season to concrete Sleeper draft ID. Existing known bindings
+          should be persisted here so later classification changes cannot remap a
+          concrete draft silently.
+    invariants:
+      - DraftType plus DraftInstance must be unique across configured draft definitions.
+      - DraftNo must be unique across configured draft definitions.
+      - One SleeperDraftID must not be bound to multiple configured draft instances.
+
+  transactionContract:
+    sourceOfTruth:
+      generated: public/data/Transactions.json
+      manualInput: public/data/Transactions_Manual.json
+    manualPickRule: >
+      Every manual transaction pick must declare its canonical DraftKey explicitly.
+      Manual is provenance only and must never imply Free_Agent or any other DraftType.
+    sleeperPickRule: >
+      A raw Sleeper league-transaction pick starts without a guessed DraftType,
+      DraftInstance, DraftCode or DraftKey because the league transaction does not
+      reliably identify the concrete draft instance.
+    resolution:
+      - Build concrete contexts from the canonical Sleeper draft mapping.
+      - Match traded_picks by season, round, original owner and, when available, previous/new owner movement.
+      - A non-Sleeper sibling pick in the same transaction with the same movement claims its explicit DraftKey and excludes that concrete context for the unresolved Sleeper sibling.
+      - Resolve only when exactly one concrete draft context remains.
+      - Never collapse multiple same-type instances into a type-only answer.
+      - If multiple contexts remain, preserve unresolved identity and emit a diagnostic warning instead of guessing.
+    provenanceRule: >
+      One TransactionID may legitimately contain assets from multiple DraftKeys and
+      SleeperDraftIDs. Transaction provenance and draft-asset identity are separate dimensions.
+
+  sleeperMapping:
+    roleOfTradedPicks: >
+      Sleeper traded_picks is evidence for movement/ownership inside one concrete
+      Sleeper draft. It is not by itself a globally unique transaction-provenance key.
+    precedence:
+      - explicit Metadata SleeperDraftIDs binding
+      - Sleeper metadata/type classification among still-unbound configured instances
+      - deterministic configured DraftInstance/DraftNo order as bootstrap fallback
+      - unresolved rather than silently overwrite an already bound concrete identity
+
+  migration:
+    currentState: completed
+    notes:
+      - Existing 2026 Rookie and Free Agent definitions are DraftInstance 1, so their DraftKeys remain 2026_Rookie and 2026_Free_Agent.
+      - Existing manual transaction picks are migrated to explicit 2026_Free_Agent / 2027_Free_Agent DraftKeys.
+      - The former source-based defaults Sleeper=>Rookie and Manual=>Free_Agent are removed from the generator contract.
