@@ -34,13 +34,8 @@ function ConvertTo-DraftCompareValue {
     if ($null -eq $Value) { return $null }
 
     if ($PropertyName -eq "DraftStartTimeUtc") {
-        if ($Value -is [DateTimeOffset]) {
-            return $Value.UtcDateTime.ToString("o")
-        }
-
-        if ($Value -is [DateTime]) {
-            return $Value.ToUniversalTime().ToString("o")
-        }
+        if ($Value -is [DateTimeOffset]) { return $Value.UtcDateTime.ToString("o") }
+        if ($Value -is [DateTime]) { return $Value.ToUniversalTime().ToString("o") }
 
         $dateText = [string]$Value
         if ([string]::IsNullOrWhiteSpace($dateText)) { return $null }
@@ -48,13 +43,11 @@ function ConvertTo-DraftCompareValue {
         try {
             return ([DateTimeOffset]::Parse($dateText, [System.Globalization.CultureInfo]::InvariantCulture)).UtcDateTime.ToString("o")
         }
-        catch {
-            return $dateText.Trim()
-        }
+        catch { return $dateText.Trim() }
     }
 
     $numericProperties = @(
-        "DraftNo", "SleeperStartTime", "Rounds", "Teams", "Round", "PositionInRound", "OverallPick",
+        "DraftNo", "DraftInstance", "SleeperStartTime", "Rounds", "Teams", "Round", "PositionInRound", "OverallPick",
         "OriginalOwnerRosterID", "CurrentOwnerRosterID", "CreatedAt", "SleeperPickNo", "PreviousOwnerRosterID", "NewOwnerRosterID"
     )
 
@@ -195,7 +188,7 @@ function Compare-DraftPicksFieldBased {
     }
 
     $propertiesToCheck = @(
-        "PickKey", "LeagueID", "DraftKey", "Season", "DraftType", "Round", "PositionInRound", "OverallPick", "DisplayPick",
+        "PickKey", "LeagueID", "DraftKey", "Season", "DraftType", "DraftInstance", "DraftCode", "Round", "PositionInRound", "OverallPick", "DisplayPick",
         "OriginalOwnerRosterID", "CurrentOwnerRosterID", "WasTraded", "IsCurrentlyTraded", "TradeSource",
         "PlayerID", "PlayerName", "Status", "SleeperPickNo", "SleeperPickedBy"
     )
@@ -256,7 +249,7 @@ function Compare-DraftsFieldBased {
     }
 
     $draftPropertiesToCheck = @(
-        "LeagueID", "DraftKey", "DisplayDraftKey", "DisplayAbrDraftKey", "Season", "DraftType", "DisplayDraftType",
+        "LeagueID", "DraftKey", "DisplayDraftKey", "DisplayAbrDraftKey", "Season", "DraftType", "DraftInstance", "DraftCode", "DisplayDraftType",
         "DraftNo", "DraftSource", "SleeperDraftID", "SleeperStatus", "SleeperStartTime", "DraftStartTimeUtc",
         "Status", "DisplayStatus", "PickSource", "OrderSource", "OrderMode"
     )

@@ -25,8 +25,8 @@ function Get-DraftHistoryTypeConfigs {
     if ($null -eq $draftsConfig) { throw "Metadata Drafts configuration missing." }
 
     $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
-
     if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
+    Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
 
     return $draftTypeConfigs
 }
@@ -120,16 +120,6 @@ function Get-SleeperDraftDetailOrDefault {
         Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_"
         return $sleeperDraft
     }
-}
-
-function New-DraftHistoryDraftKey {
-    param(
-        [Parameter(Mandatory = $true)][string]$season,
-        [Parameter(Mandatory = $true)][int]$draftNo,
-        [Parameter(Mandatory = $true)][string]$draftType
-    )
-
-    return "$($season)_D$($draftNo)_$($draftType)"
 }
 
 function Get-DraftHistoryDisplaySuffix {
@@ -269,17 +259,25 @@ function Get-DraftHistoryConfiguredDraftTypeOrDefault {
         [Parameter(Mandatory = $true)][string]$draftType,
         [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
         [Parameter(Mandatory = $true)][int]$defaultDraftNo,
-        [Parameter(Mandatory = $true)][int]$defaultRounds
+        [Parameter(Mandatory = $true)][int]$defaultRounds,
+        [int]$draftInstance = 1
     )
 
-    $configuredType = $draftTypeConfigs | Where-Object { [string]$_.DraftType -eq $draftType } | Select-Object -First 1
-    $rounds = if ($null -ne $configuredType -and [int]$configuredType.Rounds -gt 0) { [int]$configuredType.Rounds } else { $defaultRounds }
+    $configuredType = $draftTypeConfigs |
+        Where-Object {
+            [string]$_.DraftType -eq $draftType -and
+            (Get-DraftInstanceFromConfig -draftTypeConfig $_) -eq $draftInstance
+        } |
+        Select-Object -First 1
+
+    if ($null -ne $configuredType) { return $configuredType }
 
     return [PSCustomObject][ordered]@{
-        DraftType   = $draftType
-        DraftNo     = $defaultDraftNo
-        Rounds      = $rounds
-        OrderSource = "Sleeper"
+        DraftType     = $draftType
+        DraftInstance = $draftInstance
+        DraftNo       = $defaultDraftNo
+        Rounds        = $defaultRounds
+        OrderSource   = "Sleeper"
     }
 }
 
@@ -313,14 +311,34 @@ function Resolve-DraftHistoryTypeFromSleeperDraft {
 }
 
 function Set-DraftHistoryTypeOccurrences {
-    param([Parameter(Mandatory = $true)][array]$definitions)
+    param(
+        [Parameter(Mandatory = $true)][array]$definitions,
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs
+    )
 
     foreach ($group in ($definitions | Group-Object -Property Season, DraftType)) {
-        $groupItems = @($group.Group | Sort-Object DraftNo, DraftKey)
+        $groupItems = @($group.Group | Sort-Object DraftNo)
         $typeCount = $groupItems.Count
 
         for ($i = 0; $i -lt $groupItems.Count; $i++) {
-            $groupItems[$i] | Add-Member -NotePropertyName TypeOccurrence -NotePropertyValue ($i + 1) -Force
+            $draftInstance = $i + 1
+            $draftType = [string]$groupItems[$i].DraftType
+            $season = [string]$groupItems[$i].Season
+            $draftCode = New-DraftCode -draftType $draftType -draftInstance $draftInstance
+            $draftKey = New-DraftKey -season $season -draftType $draftType -draftInstance $draftInstance
+            $fallbackRounds = [int](Get-DraftObjectProperty -object $groupItems[$i].DraftTypeConfig -propertyName "Rounds" -defaultValue 0)
+            $resolvedConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault `
+                -draftType $draftType `
+                -draftTypeConfigs $draftTypeConfigs `
+                -defaultDraftNo ([int]$groupItems[$i].DraftNo) `
+                -defaultRounds $fallbackRounds `
+                -draftInstance $draftInstance
+
+            $groupItems[$i] | Add-Member -NotePropertyName DraftInstance -NotePropertyValue $draftInstance -Force
+            $groupItems[$i] | Add-Member -NotePropertyName DraftCode -NotePropertyValue $draftCode -Force
+            $groupItems[$i] | Add-Member -NotePropertyName DraftKey -NotePropertyValue $draftKey -Force
+            $groupItems[$i] | Add-Member -NotePropertyName DraftTypeConfig -NotePropertyValue $resolvedConfig -Force
+            $groupItems[$i] | Add-Member -NotePropertyName TypeOccurrence -NotePropertyValue $draftInstance -Force
             $groupItems[$i] | Add-Member -NotePropertyName TypeCount -NotePropertyValue $typeCount -Force
         }
     }
@@ -365,15 +383,20 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
         $rounds = Get-DraftHistoryConfiguredRoundsFromSleeperDraft -sleeperDraft $draft
         if ($null -eq $rounds -or $rounds -le 0) { $rounds = 0 }
 
-        $draftTypeConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault -draftType $draftType -draftTypeConfigs $draftTypeConfigs -defaultDraftNo $completedIndex -defaultRounds ([int]$rounds)
-        $draftKey = New-DraftHistoryDraftKey -season $draftSeason -draftNo $completedIndex -draftType $draftType
+        $draftTypeConfig = Get-DraftHistoryConfiguredDraftTypeOrDefault `
+            -draftType $draftType `
+            -draftTypeConfigs $draftTypeConfigs `
+            -defaultDraftNo $completedIndex `
+            -defaultRounds ([int]$rounds)
 
         $definitions += [PSCustomObject][ordered]@{
             LeagueID        = $leagueID
             Season          = $draftSeason
             DraftType       = $draftType
+            DraftInstance   = 1
+            DraftCode       = $draftType
             DraftNo         = $completedIndex
-            DraftKey        = $draftKey
+            DraftKey        = New-DraftKey -season $draftSeason -draftType $draftType
             DraftTypeConfig = $draftTypeConfig
             SleeperDraft    = $draft
             TypeOccurrence  = 1
@@ -381,7 +404,7 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
         }
     }
 
-    $definitions = Set-DraftHistoryTypeOccurrences -definitions $definitions
+    $definitions = Set-DraftHistoryTypeOccurrences -definitions $definitions -draftTypeConfigs $draftTypeConfigs
 
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
 }

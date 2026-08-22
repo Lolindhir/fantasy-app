@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-21T21:04:42.567238Z",
-  "berlin_date": "2026-08-21",
+  "generated_at": "2026-08-22T20:43:54.292512Z",
+  "berlin_date": "2026-08-22",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
     "refresh_window_start": "05:00",
@@ -11,41 +11,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 1,
-    "stale_count": 5,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
-    "no_event_conclusion_allowed": false,
-    "unfresh_source_ids": [
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
-      "fftoday",
-      "sleeper-trending"
-    ],
+    "no_event_conclusion_allowed": true,
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
-      "fftoday",
-      "sleeper-trending"
-    ],
-    "affected_signal_families": [
-      "dynasty_market",
-      "dynasty_ranking",
-      "external_activity",
-      "redraft_adp",
-      "redraft_market",
-      "redraft_ranking",
-      "season_projection"
-    ]
+    "no_event_blocking_source_ids": [],
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -59,10 +39,10 @@
         "dynasty_ranking",
         "redraft_ranking"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T03:59:45.442739Z",
-      "age_minutes": 2464.95,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-22T04:00:35.896394Z",
+      "age_minutes": 1003.31,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -77,10 +57,10 @@
         "dynasty_market",
         "redraft_market"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T04:06:57.188624Z",
-      "age_minutes": 2457.76,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-22T04:05:21.678135Z",
+      "age_minutes": 998.54,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -94,10 +74,10 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T04:21:39.587350Z",
-      "age_minutes": 2443.05,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-22T04:17:42.569786Z",
+      "age_minutes": 986.2,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -111,12 +91,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T11:29:22.101373Z",
-      "age_minutes": 2015.34,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-22T04:19:06.091380Z",
+      "age_minutes": 984.8,
       "content_changed": true,
-      "trigger": "workflow_dispatch"
+      "trigger": "schedule"
     },
     {
       "id": "cbs-sports",
@@ -130,10 +110,10 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-08-21T17:47:50.962754Z",
-      "age_minutes": 196.86,
+      "checked_at": "2026-08-22T04:47:02.511982Z",
+      "age_minutes": 956.86,
       "content_changed": true,
-      "trigger": "workflow_dispatch"
+      "trigger": "schedule"
     },
     {
       "id": "sleeper-trending",
@@ -145,16 +125,16 @@
       "affected_signal_families": [
         "external_activity"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-20T04:58:37.933116Z",
-      "age_minutes": 2406.08,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-22T04:55:19.989299Z",
+      "age_minutes": 948.57,
       "content_changed": true,
       "trigger": "schedule"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }

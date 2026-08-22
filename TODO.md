@@ -26,6 +26,47 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Technische Besonderheit: Gemeinsame Outputs wie `public/data/Timestamps.json` und `public/data/backup/**` erzeugen zusätzliche Same-Path-Races; deshalb ist ein reiner Git-Rebase für App-Writer nicht generell ausreichend.
   - Validierung: Race-Tests müssen sowohl irrelevante parallele `main`-Commits als auch relevante Input-Änderungen und echte Same-Path-Konflikte abdecken.
 
+- [ ] App-Generator-Abhängigkeiten und Orchestrierung nach Etablierung der Source-Data-Schicht neu ordnen.
+  - Zeitpunkt / Abhängigkeit: Noch nicht umsetzen. Zuerst die aktuell entstehende persistente `source-data`-/NFL-Sync-Schicht etablieren und klären, welche Sleeper-, Tank01- und nflverse-Daten dort künftig provider-nah beziehungsweise normalisiert vorliegen. Danach die App-Generatorarchitektur gegen diesen tatsächlichen Source-Vertrag neu bewerten.
+  - Ausgangslage: Die heutigen Generatoren besitzen mehrere historisch gewachsene gegenseitige Abhängigkeiten. Insbesondere liest `RequestPlayers.ps1` `Games.json` und `League.json`; `RequestLeague.ps1` aktualisiert selbst Transactions und Drafts und liest Players, Standings und Schedule; Drafts verwendet wiederum League, Standings und Transactions. Ein Teil dieser scheinbaren Runtime-Zyklen entstand, weil bestimmte Informationen beim initialen Saison-/Ligawechsel zunächst nur über den League-/Sleeper-Pfad verfügbar waren.
+  - Grundsatz: Zwischen **Bootstrap-Abhängigkeiten** und **Normalbetriebs-Abhängigkeiten** unterscheiden. Eine Abhängigkeit, die ausschließlich zur erstmaligen Initialisierung einer neuen Liga/Saison erforderlich ist, soll nicht allein deshalb als permanenter zyklischer Runtime-Datenfluss bestehen bleiben.
+  - Manueller Bootstrap: Der Saison-/Ligawechsel beginnt bewusst manuell:
+    1. neue Liga in Sleeper anlegen;
+    2. neue `LeagueID`, `LeagueYear` und weitere erforderliche liga-/saisonspezifische Angaben manuell in `Metadata.json` pflegen;
+    3. danach einen expliziten manuellen Bootstrap starten;
+    4. benötigte Sleeper-/Provider-Grunddaten beschaffen und validieren;
+    5. erst nach erfolgreicher Initialisierung in den normalen inkrementellen Betrieb wechseln.
+  - Bootstrap darf nicht automatisch allein durch eine `Metadata.json`-Änderung ausgelöst werden. Der Start soll bewusst manuell erfolgen, weil das Anlegen einer neuen Sleeper-Liga und das Setzen ihrer Metadaten ebenfalls ein manueller administrativer Vorgang ist.
+  - Bootstrap-Fail-Closed: Ein neuer Saisonstand soll nicht teilweise veröffentlicht werden, wenn kritische Grunddaten fehlen oder widersprüchlich sind. Neue League-ID/Season, Team-/Roster-Zuordnung, grundlegende Sleeper-Settings und andere für die Initialisierung notwendige Invarianten vor der produktiven Veröffentlichung prüfen.
+  - Wichtig: Ein erfolgreich abgeschlossener Bootstrap bedeutet ausdrücklich **nicht**, dass sämtliche saisonalen NFL-Daten bereits verfügbar sein müssen. Beispielsweise können `Schedule.json` und `Games.json` beim Liga-/Saison-Neustart im Winter legitim leer sein, weil der neue NFL-Spielplan noch nicht veröffentlicht wurde.
+  - Source-Availability modellieren: Im späteren Datenvertrag mindestens unterscheiden zwischen:
+    - Quelle/Dataset für den aktuellen Saisonzeitpunkt noch **nicht verfügbar / noch nicht erwartet**;
+    - Quelle ist grundsätzlich aktiv, Abruf aber **fehlgeschlagen**;
+    - Quelle ist aktiv und liefert **unerwartet leere oder unvollständige Daten**;
+    - Quelle ist erfolgreich verfügbar.
+  - Mehrere saisonale Cutoff-/Readiness-Punkte berücksichtigen: League/Sleeper-Liga angelegt, Draft-Kontext verfügbar, NFL Schedule veröffentlicht, Preseason/Regular Season begonnen, erste Spiele final usw. Nicht alle Generatorinvarianten müssen bereits direkt nach dem initialen Bootstrap gelten.
+  - Aktuell bestätigte Normalbetriebs-Abhängigkeiten als Ausgangspunkt für das spätere Audit:
+    - `Games/Schedule → Players`, weil `Players.json` spielbezogene Stats, Fantasy Points, Snaps usw. aus `Games.json` materialisiert;
+    - `Players → League`, weil League aktuell Players unter anderem für Salary-/Relevant-Player-Kontext liest;
+    - `Schedule → League`;
+    - `Standings + Transactions → Drafts`;
+    - `Drafts → League`;
+    - Transactions fachlich als zweistufigen Fluss betrachten: `Transactions Base → Drafts → Transactions Pick-Enrichment`;
+    - prüfen, ob heutige `League → Players`- und `League → Drafts`-Kanten nach Einführung gemeinsamer Source-/Season-Contexts vollständig entfallen können.
+  - Zielbild Normalbetrieb: Nach Auflösung bootstrapbedingter Rückwärtskanten einen gerichteten Daten-DAG herstellen. Provider-/Source-Daten sollen möglichst vorgelagert verfügbar sein; App-Read-Models sollen nicht gegenseitig als Ersatz für fehlende Source-Daten dienen.
+  - Perspektivischer Source-Layer: Prüfen, ob Sleeper-/Tank01-Grunddaten und gemeinsam benötigter Season-/League-Context künftig aus `source-data/providers/**` beziehungsweise einer providerunabhängigen normalisierten Schicht kommen. Keine solche Struktur vorwegnehmen, bevor der laufende NFL-Sync-Strang seinen stabilen Vertrag definiert hat.
+  - Orchestrierungspräferenz: Fachlich zusammengehörige abhängige Generatoren nach Möglichkeit **innerhalb eines gemeinsamen GitHub-Actions-Runs und eines gemeinsamen Checkouts** ausführen, statt einzelne Datenabhängigkeiten über Workflow-zu-Workflow-Dispatches abzubilden.
+  - Begründung: Ein gemeinsamer Run stellt sicher, dass Downstream-Generatoren exakt die frisch erzeugten Upstream-Dateien desselben Working Trees sehen, reduziert Zwischen-Commits und Push-Races und macht einen fachlichen Refresh als einen zusammenhängenden Run beobachtbar.
+  - Workflow-zu-Workflow-Trigger nicht als Standard verwenden. Ein historischer Versuch aus 2025, Players aus dem Teams-Workflow per Workflow-Dispatch auszulösen, kombinierte fehlerhafte Exitcode-/Output-Weitergabe mit einem separaten Workflow/Checkout und war entsprechend unzuverlässig. Reusable Workflows können später technische Wiederverwendung ermöglichen, sollen aber nicht automatisch die Daten-DAG-Kanten darstellen.
+  - Vorläufig denkbare Normalbetriebs-Pipelines nach Auflösung der Zyklen:
+    - Post-Game: `Games/Schedule → Players → League`;
+    - Player-Metadata-Refresh: `Players → League`;
+    - Between-Week: `Standings → Transactions Base → Drafts → Transactions Enrichment → League`; `Teams` fachlich unabhängig, kann aber bei einem gemeinsamen Weekly-Refresh im selben Run aktualisiert werden.
+  - Noch nicht festlegen: genaue Workflow-Grenzen, Anzahl der orchestrierenden Workflows, konkrete Trigger-/Concurrency-Mechanik und zukünftige Verantwortlichkeit von Sleeper/Tank01 zwischen App-Generatoren und `source-data`. Diese Entscheidungen erst nach Abschluss des aktuellen NFL-Sync-/Source-Data-Ausbaus treffen.
+  - Publication separat berücksichtigen: Die Orchestrierung muss mit dem bereits offenen Vorhaben zur dependency-aware Publication und zu `main`-Push-Races zusammengedacht werden. Ein gemeinsamer Generation-Run reduziert konkurrierende Writer, ersetzt aber nicht den geplanten `rebuild-and-retry`-/Publication-Vertrag.
+  - Doku nach Klärung: Sobald die Source-Data-Architektur stabil und das Zielbild beschlossen ist, den finalen Dependency-DAG, Bootstrap-/Normalbetriebsvertrag und Source-Availability-Semantik aus dem TODO in `.ai-context/manual/data-sources.yaml` und eine dauerhafte ADR unter `.ai-context/manual/decisions.yaml` überführen.
+  - Leitregel für die spätere Architektur: **„Bootstrap dependency ≠ runtime dependency.“** Eine nur zur Initialisierung notwendige Providerbeschaffung darf keine dauerhafte zyklische Generatorabhängigkeit erzwingen.
+
 - [ ] Maintenance- und Diagnose-Writer race-safe machen.
   - Betroffen: `.github/workflows/update-past-seasons-index.yml` und `.github/workflows/clean-backups.yml`; beide veröffentlichen aktuell über einen einmaligen direkten Push nach `main`.
   - Past-Seasons-Index: Bei fortgeschrittenem `main` neu gegen den aktuellen historischen Ressourcenbestand berechnen, weil der Index aus Repository-Inhalten abgeleitet wird.
@@ -48,6 +89,13 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Ziel: Repository-weit verwendete Actions inventarisieren und auf Major-/Release-Versionen aktualisieren, die Node 24 offiziell unterstützen, bevor die erzwungene Kompatibilität zu einem harten Fehler wird.
   - Validierung: Release Notes und Breaking Changes je Action prüfen; CI-, Deploy- und schreibende Datenworkflows nach der Umstellung separat validieren.
   - Leitplanke: Runtime-/Action-Upgrades nicht mit fachlichen Workflow-Änderungen vermischen und keine bestehenden Secrets, Trigger, Zeitpläne oder Write-Semantiken still verändern.
+
+- [ ] GitHub-Actions-Run-Naming und eindeutige Trigger-Referenzen später erneut auditieren.
+  - Kontext: Dynamische `run-name`-Ausdrücke verwenden aktuell teilweise `github.event.head_commit.message`. Bei Commits mit mehrzeiligem Body kann dadurch der komplette Committext im Run-Namen landen; kompakte automatisch erzeugte `data(...)`-Commits ergeben dagegen bereits gut lesbare Namen.
+  - Ziel: Repo-weit prüfen, wie event-getriggerte Runs einen kompakten, menschenlesbaren und zugleich eindeutigen Bezug zum konkreten Auslöser behalten, ohne lange Commit-Bodies in den Titel zu übernehmen.
+  - Uniqueness: `github.run_number` beziehungsweise `github.run_id` sowie Commit-/PR-Referenzen als mögliche eindeutige Komponente bewerten. Bei Pushes möglichst den Commit-Subject statt der vollständigen Message verwenden, sobald GitHub Actions dafür eine direkt nutzbare native Möglichkeit bereitstellt.
+  - Beobachtung: Bei späteren Workflow-Audits die verfügbaren GitHub-Actions-Eventfelder und Expression-Funktionen erneut prüfen; insbesondere auf native Short-SHA-, Subject-, Substring- oder vergleichbare Möglichkeiten achten.
+  - Leitplanke: Keine zusätzliche Dispatcher-, Reusable-Workflow- oder sonstige Orchestrierungsarchitektur allein für schönere Run-Namen einführen. Run-Naming bleibt Observability und darf den Datenfluss nicht verkomplizieren.
 
 - [ ] Laufzeit-Konfiguration aus `ConfigUtils.psm1` in Umgebungsvariablen bzw. Workflow-Konfiguration auslagern.
   - Kontext: `ConfigUtils.psm1` enthält aktuell technische Pfade und Request-Konfiguration sowie laufzeitabhängige Werte.
@@ -373,9 +421,6 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Ergebnis: Drafts liegen als eigene Route `/drafts` unter `src/app/features/drafts`; Moves nutzt weiterhin `LeagueActivityComponent` als technische Komponente unter `/moves`; `/league-activity` leitet auf `/moves` weiter.
   - Validierung: Tests nach Merge erfolgreich.
 
-- [x] `Players_Relevant.json`- und Chat-Export-Pfade nach `ConfigUtils.psm1` verlagern.
-  - Kontext: `RequestLeague.ps1` baute den relevanten Spielerpfad und den Chat-Chunk-Zielordner ursprünglich lokal über `$config.DataDir`.
-  - Ergebnis: `Get-Config` stellt `PlayersRelevantFile` und `PlayersRelevantChatDir` bereit; `RequestLeague.ps1` nutzt diese Config-Werte für `Players_Relevant.json` und den Chat-Export unter `public/data/chat/players-relevant`.
 
 - [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.

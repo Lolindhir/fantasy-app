@@ -3,6 +3,7 @@
   "canonical": true,
   "purpose": "Central source identity and weighting registry for Fantasy Management source extraction.",
   "rules_path": "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md",
+  "article_rules_path": "fantasy-management/_ai/ARTICLE_SOURCE_MODEL.md",
   "sources": [
     {
       "source_id": "stoned-lack",
@@ -104,6 +105,39 @@
       "source_notes_path": "fantasy-management/sources/podcasts/football-bromance/SOURCE_NOTES.md",
       "folder_path": "fantasy-management/sources/podcasts/football-bromance/",
       "calibration_note": "Strong German mainstream NFL and real-football context source. Useful for team context, coaching, narratives, NFL Germany/media context, draft/free-agency discussion and player background. Downgrade pure fantasy conclusions unless the episode makes an explicit fantasy-relevant claim."
+    },
+    {
+      "source_id": "thescore",
+      "display_name": "theScore",
+      "aliases": [
+        "theScore",
+        "theScore.com"
+      ],
+      "known_people": [
+        "Eric Patterson",
+        "Caio Miari"
+      ],
+      "source_kind": "article_publisher",
+      "primary_focus": [
+        "fantasy",
+        "nfl_news",
+        "preseason_usage"
+      ],
+      "secondary_focus": [
+        "player_context",
+        "roles",
+        "injuries",
+        "adp"
+      ],
+      "default_source_weight": 0.70,
+      "fantasy_specificity": "high",
+      "news_reliability": "medium_high",
+      "analysis_depth": "medium",
+      "entertainment_factor": "low_medium",
+      "language": "en",
+      "source_notes_path": "fantasy-management/sources/articles/thescore/SOURCE_NOTES.md",
+      "folder_path": "fantasy-management/sources/articles/thescore/",
+      "calibration_note": "Repeatedly useful fantasy-news and preseason-analysis publisher. Give strong evidentiary value to directly described snaps, targets, carries, lineup sequencing, injury status and held-out-with-starters observations when provenance is clear. Treat derived hierarchy labels such as clear WR1/RB2 or draft-day conclusions as analysis that still requires current independent verification before becoming canonical role truth. Multiple snapshots or repeated claims from the same living article remain one source identity and must not be double-counted as independent confirmation."
     }
   ]
 }

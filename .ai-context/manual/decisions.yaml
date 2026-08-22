@@ -203,7 +203,8 @@ decisions:
 
   - id: ADR-015
     title: Relevant player chat export is generated helper output
-    status: accepted
+    status: superseded
+    supersededBy: ADR-024
     context: >
       The full generated player file is too large for practical AI/chat analysis,
       but the app should not lose player fields or introduce a manually maintained
@@ -485,49 +486,32 @@ decisions:
           and migration to comply with the stricter boundary.
 
   - id: ADR-024
-    title: NFL player identity is provider-independent and provider mappings are historical
+    title: Retire app-generated AI player subsets and chat chunks
     status: accepted
     context: >
-      The app intentionally relies on Sleeper for its current player and league
-      state, but historical data must remain correct if a provider corrects,
-      collides or eventually reuses an identifier. Real nflverse/DynastyProcess
-      input has already demonstrated that one provider mapping can contradict
-      otherwise distinct player identities, so treating every shared provider ID
-      as an unconditional merge edge is not safe.
+      Players_Relevant.json and its ten-player chat chunks were introduced to work
+      around an earlier AI-client ingestion limit. Fantasy Operations now has
+      consumer-owned derived contracts for broad player analysis, while targeted
+      repository reads can retrieve exact raw player records without requiring a
+      duplicated app-generated player dataset.
     decision: >
-      Use NFLPlayerID as the durable provider-independent identity of one real NFL
-      player in canonical source data. Keep public/data/Players.json[].ID as the
-      Sleeper player_id because Sleeper remains the leading provider for the
-      current app and fantasy-league state; this Sleeper field is an app contract,
-      not the permanent cross-provider person key. Treat Sleeper, Tank01, GSIS,
-      ESPN, PFR, PFF and all other external IDs as historical mappings to
-      NFLPlayerID. Persist mapping validity with at least season-level resolution
-      while keeping the contract compatible with more precise validity or
-      observation intervals later. A conflicting provider mapping must be
-      quarantined rather than merging two otherwise distinguishable people.
-      Historical canonical facts must retain the NFLPlayerID resolved for the
-      event or season plus source provenance so a future provider remapping does
-      not reinterpret old history. Names remain descriptive rather than
-      authoritative merge keys. Technical generation and freshness timestamps
-      belong in separate timestamp, manifest, metadata, audit or sidecar
-      structures rather than new fields in Players.json, League.json, Drafts.json
-      or other domain app read models. Runtime timestamps must not make an
-      otherwise identical canonical source-data materialization semantically
-      different.
+      Keep public/data/Players.json as the canonical current raw player read model.
+      Remove public/data/Players_Relevant.json, public/data/chat/players-relevant/**
+      and their app-generation helpers. Fantasy Management should use its own
+      derived Operations contracts for broad analysis and targeted read-only access
+      to Players.json when raw player fields are required. Canonical app producers
+      must not generate reduced, chunked or duplicated datasets solely for an AI,
+      chat or agent client's ingestion limits.
     rationale: >
-      This preserves Sleeper as the practical source of truth for the current app
-      while decoupling long-lived player history from assumptions about the
-      lifetime uniqueness of any external provider identifier. It also lets the
-      resolver fail closed on dirty mappings without corrupting canonical people
-      or rewriting already resolved historical facts.
+      Tool-specific convenience outputs are consumer concerns. Removing them keeps
+      the application producer independent from Fantasy Management and avoids
+      frequent League refresh churn across dozens of files that have no app
+      consumer.
     consequences:
       positive:
-        - Current Angular and generated Players.json contracts remain unchanged.
-        - Historical trades, drafts and future archived facts can survive provider ID reuse or corrections.
-        - Provider conflicts are isolated to mappings instead of collapsing canonical people.
-        - New providers can attach to one stable person layer without becoming a new global master ID.
-        - Semantic no-op materialization can be enforced independently from operational freshness metadata.
+        - RequestLeague no longer filters and republishes an AI-only player subset.
+        - The 10-minute League refresh no longer rewrites chat chunk artifacts.
+        - Fantasy Management relies on canonical app inputs and FM-owned derived contracts.
+        - There is no second relevance definition competing with player-signals population rules.
       negative:
-        - The identity bridge needs an explicit historical mapping model and conflict quarantine.
-        - Resolution APIs need temporal context when an external ID is not globally unique.
-        - Existing union-based identity code requires refactoring before the source-data bootstrap can complete reliably.
+        - Agents needing a raw field outside an FM-derived contract must perform a targeted Players.json read.

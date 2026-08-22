@@ -2,17 +2,25 @@
 
 - **Package ID:** `user-provided-2026-08-16-preseason-week-1-key-takeaways`
 - **Source kind:** `article`
-- **Origin:** `user-provided`
-- **Title:** `Key takeaways and fantasy football analysis from Week 1 of NFL preseason`
-- **Publisher:** unknown
-- **Author:** unknown
+- **Origin:** `theScore`
+- **Title:** `Fantasy notes, analysis from Week 1 of NFL preseason`
+- **Publisher:** `theScore`
+- **Authors:** `Eric Patterson`, `Caio Miari`
+- **Author-credit note:** the currently indexed full living-article version credits Eric Patterson and Caio Miari; an alternate/current endpoint has also appeared with Eric Patterson alone, so author credit is treated as version-sensitive metadata rather than a claim-independence signal.
 - **Publication date:** unknown
-- **Original URL:** unknown
+- **Original URL:** `https://www.thescore.com/nfl/news/3572139/fantasy-notes-analysis-from-week-1-of-nfl-preseason`
 - **Input method:** `user_provided_chat`
 - **First captured for repository:** 2026-08-16
 - **Capture timezone:** `Europe/London`
 - **Source mode:** `living_article`
 - **Latest snapshot:** `snapshots/2026-08-17T01-10+01-00-full/`
+- **Registry source ID:** `thescore`
+
+## Provenienz-Korrektur — 2026-08-22
+
+Die Quelle konnte nachträglich belastbar als theScore-Artikel mit der oben genannten URL und dem Seitentitel `Fantasy notes, analysis from Week 1 of NFL preseason` identifiziert werden. Die vollständige fortgeschriebene Artikelversion wird aktuell Eric Patterson und Caio Miari zugeschrieben. Eine andere aktuell indexierte Endpoint-Fassung zeigt nur Eric Patterson; deshalb wird die Abweichung transparent dokumentiert und nicht als zweite unabhängige Quelle interpretiert.
+
+Der bestehende Package-Pfad unter `articles/user-provided/...` bleibt als historischer Legacy-Pfad erhalten. Er dokumentiert korrekt, dass der Inhalt ursprünglich per Chat bereitgestellt und die Publisher-Identität beim ersten Persistierungsvorgang noch nicht sicher bekannt war. Raw-Captures und historische `extraction.json`-Metadaten werden nicht nachträglich umgeschrieben, nur um heute bekannte Provenienz so erscheinen zu lassen, als sei sie bereits beim Capture verifiziert gewesen. `SOURCE.md` ist für die nachträglich bestätigte Source Identity maßgeblich.
 
 ## Capture-Historie
 
@@ -42,13 +50,14 @@ Gespeichert unter:
 
 ## Living-Article-Identität
 
-Diese Fassung wird als **Fortschreibung desselben Artikels** behandelt, nicht als zweite unabhängige Quelle. Grundlage dafür sind identischer Titel, wiederholte ältere Abschnitte und die erkennbare Erweiterung um den Samstag-Block.
+Diese Fassung wird als **Fortschreibung desselben Artikels** behandelt, nicht als zweite unabhängige Quelle. Grundlage dafür sind identischer Titel, dieselbe theScore-Artikel-ID/URL, wiederholte ältere Abschnitte und die erkennbare Erweiterung um den Samstag-Block.
 
 Folge:
 
 - wiederholte Donnerstag-/Freitag-Claims erhöhen weder Source Count noch Confidence wie eine zweite unabhängige Bestätigung;
 - neue Samstag-Claims sind neue Evidenz **innerhalb derselben Source Identity**;
-- spätere materielle Änderungen werden als `changed` oder `retracted` in einem weiteren Snapshot erhalten, nicht durch Überschreiben älterer Captures.
+- spätere materielle Änderungen werden als `changed` oder `retracted` in einem weiteren Snapshot erhalten, nicht durch Überschreiben älterer Captures;
+- wechselnde oder ergänzte Autoren-Credits innerhalb derselben Living-Article-Identität erzeugen keine zusätzliche unabhängige Quelle.
 
 ## Materialität
 
@@ -82,6 +91,8 @@ Der vollständige Snapshot vom 17.08. ergänzt materiell:
   - Abschnitt `Preseason-Usage-Signal-Klassifizierung`
 - `fantasy-management/_ai/ARTICLE_SOURCE_MODEL.md`
   - Abschnitt `Living Articles und fortgeschriebene Quellen`
+- `fantasy-management/_ai/source-registry.json`
+  - `thescore`
 - bereits vorhandenes Watch-Target:
   - `caleb-douglas-2026`
 

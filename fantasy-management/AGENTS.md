@@ -13,7 +13,7 @@ Fantasy Management includes:
 - Robert / Mighty Giants analysis
 - roster, trade, draft and free-agent analysis
 - player evaluations
-- Relevant Players files
+- player analysis and derived Operations player datasets
 - podcast and external-source processing
 - source take extraction
 - player identity resolution and alias handling
@@ -75,7 +75,7 @@ Dynamic evaluations must be re-derived from current repository data and, when re
 
 The Fantasy Management workspace is separate from the application context.
 
-Do not place Fantasy Management outputs, stored analyses, podcast/source extractions, Relevant Players files, source summaries, player boards or decisions in the central app AI context.
+Do not place Fantasy Management outputs, stored analyses, podcast/source extractions, source summaries, player boards or decisions in the central app AI context.
 
 Store them only under:
 
@@ -217,7 +217,7 @@ fantasy-management/
   decisions/
 ```
 
-`podcast-work/`, `knowledge/`, `analyses/`, `decisions/`, `sources/relevant-players/`, `sources/external-rankings/` and `sources/manual-notes/` are created on demand when actual files exist.
+`podcast-work/`, `knowledge/`, `analyses/`, `decisions/`, `sources/external-rankings/` and `sources/manual-notes/` are created on demand when actual files exist.
 
 ## Source of truth rules
 

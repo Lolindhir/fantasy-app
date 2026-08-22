@@ -50,6 +50,8 @@ function New-ProjectedDraftPicksOrderAware {
         [Parameter(Mandatory = $true)][string]$draftKey,
         [Parameter(Mandatory = $true)][string]$season,
         [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][int]$draftInstance,
+        [Parameter(Mandatory = $true)][string]$draftCode,
         [Parameter(Mandatory = $true)][int]$rounds,
         [Parameter(Mandatory = $true)][array]$teamIDs,
         [Parameter(Mandatory = $true)][ValidateSet("Exact", "RoundOnly")][string]$orderMode,
@@ -82,6 +84,8 @@ function New-ProjectedDraftPicksOrderAware {
                 DraftKey              = $draftKey
                 Season                = $season
                 DraftType             = $draftType
+                DraftInstance         = $draftInstance
+                DraftCode             = $draftCode
                 Round                 = $round
                 PositionInRound       = $positionInRound
                 OverallPick           = $overallPick
@@ -117,6 +121,8 @@ function New-DraftOutputOrderAware {
     $leagueYear = [int]$config.LeagueYear
     $season = [string]$definition.Season
     $draftType = [string]$definition.DraftType
+    $draftInstance = [int]$definition.DraftInstance
+    $draftCode = [string]$definition.DraftCode
     $draftKey = [string]$definition.DraftKey
     $draftTypeConfig = $definition.DraftTypeConfig
     $sleeperDraft = $definition.SleeperDraft
@@ -151,7 +157,17 @@ function New-DraftOutputOrderAware {
     if ($teamIDs.Count -eq 0) { throw "No teams found for draft '$draftKey'." }
 
     $rounds = [int]$draftTypeConfig.Rounds
-    $picks = New-ProjectedDraftPicksOrderAware -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs -orderMode $orderMode -draftTypeSetting $draftTypeSetting
+    $picks = New-ProjectedDraftPicksOrderAware `
+        -leagueID $leagueID `
+        -draftKey $draftKey `
+        -season $season `
+        -draftType $draftType `
+        -draftInstance $draftInstance `
+        -draftCode $draftCode `
+        -rounds $rounds `
+        -teamIDs $teamIDs `
+        -orderMode $orderMode `
+        -draftTypeSetting $draftTypeSetting
     $picks = Get-AppliedDraftPickTrades -picks $picks -transactions $transactions -draftKey $draftKey
 
     if ($null -ne $sleeperDraft -and $orderMode -eq "Exact") {
@@ -178,10 +194,12 @@ function New-DraftOutputOrderAware {
     return [PSCustomObject][ordered]@{
         LeagueID           = $leagueID
         DraftKey           = $draftKey
-        DisplayDraftKey    = Get-DisplayDraftKey -season $season -draftType $draftType
-        DisplayAbrDraftKey = Get-DisplayAbrDraftKey -season $season -draftType $draftType
+        DisplayDraftKey    = Get-DisplayDraftKey -season $season -draftType $draftType -draftInstance $draftInstance
+        DisplayAbrDraftKey = Get-DisplayAbrDraftKey -season $season -draftType $draftType -draftInstance $draftInstance
         Season             = $season
         DraftType          = $draftType
+        DraftInstance      = $draftInstance
+        DraftCode          = $draftCode
         DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
         DraftNo            = [int]$definition.DraftNo
         DraftSource        = $draftSource
@@ -211,6 +229,7 @@ function Get-CurrentAndOpenDraftDefinitionsOrderAware {
         [Parameter(Mandatory = $true)][int]$openDraftCountPerType
     )
 
+    Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
     $definitions = @()
 
     foreach ($draftTypeConfig in ($draftTypeConfigs | Sort-Object DraftNo)) {
@@ -223,7 +242,9 @@ function Get-CurrentAndOpenDraftDefinitionsOrderAware {
             if ($guard -gt 30) { throw "Draft generation guard reached for draft type '$($draftTypeConfig.DraftType)'." }
 
             $draftType = [string]$draftTypeConfig.DraftType
-            $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType
+            $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
+            $draftCode = New-DraftCode -draftType $draftType -draftInstance $draftInstance
+            $draftKey = New-DraftKey -season ([string]$season) -draftType $draftType -draftInstance $draftInstance
             $sleeperDraft = $null
             if ($sleeperDraftMap.ContainsKey($draftKey)) { $sleeperDraft = $sleeperDraftMap[$draftKey] }
 
@@ -234,6 +255,8 @@ function Get-CurrentAndOpenDraftDefinitionsOrderAware {
                 $definitions += [PSCustomObject][ordered]@{
                     Season          = [string]$season
                     DraftType       = $draftType
+                    DraftInstance   = $draftInstance
+                    DraftCode       = $draftCode
                     DraftNo         = [int]$draftTypeConfig.DraftNo
                     DraftKey        = $draftKey
                     DraftTypeConfig = $draftTypeConfig
@@ -266,6 +289,7 @@ function Update-DraftsOrderAware {
 
     $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
     if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
+    Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
 
     $league = Get-DraftLeagueLocal
     $standings = Get-DraftStandingsLocal
@@ -293,12 +317,24 @@ function New-DraftHistoryPicksOrderAware {
         [Parameter(Mandatory = $true)][string]$draftKey,
         [Parameter(Mandatory = $true)][string]$season,
         [Parameter(Mandatory = $true)][string]$draftType,
+        [Parameter(Mandatory = $true)][int]$draftInstance,
+        [Parameter(Mandatory = $true)][string]$draftCode,
         [Parameter(Mandatory = $true)][int]$rounds,
         [Parameter(Mandatory = $true)][array]$teamIDs,
         [AllowNull()][string]$draftTypeSetting = "linear"
     )
 
-    return New-ProjectedDraftPicksOrderAware -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs -orderMode "Exact" -draftTypeSetting $draftTypeSetting
+    return New-ProjectedDraftPicksOrderAware `
+        -leagueID $leagueID `
+        -draftKey $draftKey `
+        -season $season `
+        -draftType $draftType `
+        -draftInstance $draftInstance `
+        -draftCode $draftCode `
+        -rounds $rounds `
+        -teamIDs $teamIDs `
+        -orderMode "Exact" `
+        -draftTypeSetting $draftTypeSetting
 }
 
 function New-DraftHistoryOutputOrderAware {
@@ -310,6 +346,8 @@ function New-DraftHistoryOutputOrderAware {
     $leagueID = [string]$definition.LeagueID
     $season = [string]$definition.Season
     $draftType = [string]$definition.DraftType
+    $draftInstance = [int]$definition.DraftInstance
+    $draftCode = [string]$definition.DraftCode
     $draftNo = [int]$definition.DraftNo
     $draftKey = [string]$definition.DraftKey
     $typeOccurrence = [int]$definition.TypeOccurrence
@@ -325,7 +363,16 @@ function New-DraftHistoryOutputOrderAware {
     $rounds = Get-DraftHistoryRounds -sleeperDraft $sleeperDraft -sleeperPicks $sleeperPicks -teamCount $teamIDs.Count -fallbackRounds ([int]$draftTypeConfig.Rounds)
     if ($rounds -le 0) { throw "No valid round count found for completed draft '$draftKey'." }
 
-    $picks = New-DraftHistoryPicksOrderAware -leagueID $leagueID -draftKey $draftKey -season $season -draftType $draftType -rounds $rounds -teamIDs $teamIDs -draftTypeSetting $draftTypeSetting
+    $picks = New-DraftHistoryPicksOrderAware `
+        -leagueID $leagueID `
+        -draftKey $draftKey `
+        -season $season `
+        -draftType $draftType `
+        -draftInstance $draftInstance `
+        -draftCode $draftCode `
+        -rounds $rounds `
+        -teamIDs $teamIDs `
+        -draftTypeSetting $draftTypeSetting
     $picks = Get-AppliedDraftPickTrades -picks $picks -transactions $transactions -draftKey $draftKey
     $picks = Get-AppliedDraftPickResults -picks $picks -sleeperDraft $sleeperDraft -sleeperPicks $sleeperPicks
     $draftStatus = Get-DraftStatus -sleeperDraft $sleeperDraft
@@ -337,6 +384,8 @@ function New-DraftHistoryOutputOrderAware {
         DisplayAbrDraftKey = Get-DraftHistoryDisplayAbrDraftKey -season $season -draftType $draftType -typeOccurrence $typeOccurrence -typeCount $typeCount
         Season             = $season
         DraftType          = $draftType
+        DraftInstance      = $draftInstance
+        DraftCode          = $draftCode
         DisplayDraftType   = Get-DraftTypeDisplayName -draftType $draftType
         DraftNo            = $draftNo
         DraftSource        = "Sleeper"

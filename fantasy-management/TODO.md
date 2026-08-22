@@ -27,6 +27,12 @@ Menschenlesbare Todo-Liste für den isolierten Fantasy-Management- und Fantasy-O
   - Leitplanke: Monitoring und Analysen sollen vorhandene vorbereitete Datensätze wiederverwenden, statt dieselben Rohquellen bei jedem Lauf erneut vollständig abzurufen.
   - Live-Recherche bleibt für fehlende Daten, qualitative Rollenprüfung, Verletzungsdetails und andere nicht zuverlässig materialisierbare Signale möglich.
 
+- [ ] Source Registry quellentyp-neutral weiterentwickeln.
+  - `source-registry.json` langfristig von der ursprünglich podcastzentrierten Struktur zu einem gemeinsamen Contract für `podcast`, `article_publisher` und mögliche weitere Source-Kinds entwickeln.
+  - Kind-spezifische Regelreferenzen, Kalibrierungsfelder und optionale Metadaten sauber modellieren, statt weitere Einzel-Sonderfelder hinzuzufügen.
+  - Bestehende Podcast- und theScore-Einträge kompatibel migrieren; keine fachliche Gewichtung allein durch den Schema-Umbau verändern.
+  - Niedrige Priorität: Umsetzung erst vorziehen, sobald weitere wiederkehrende Artikel-/News-Publisher registriert werden oder die aktuelle Struktur praktisch hinderlich wird.
+
 ### Datenaufbereitung und GitHub-Workflows
 
 - [ ] Bestehende Fetcher, Skripte, GitHub Actions und erzeugte Datensätze vollständig inventarisieren.

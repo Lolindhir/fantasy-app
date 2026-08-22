@@ -19,8 +19,6 @@ Important files:
 - `public/data/Transactions.json`
 - `public/data/Timestamps.json`
 - `public/data/Metadata.json`
-- `public/data/chat/players-relevant/index.json`
-- `public/data/chat/players-relevant/players_*.json`
 
 ## League source rules
 
@@ -52,14 +50,15 @@ Always re-check `Metadata.json` when exact owner mapping matters.
 
 ## Player source rules
 
-Do not use the full `public/data/Players.json` as the operational source for broad player lists in chat or agent workflows when chunked player exports are available.
+`public/data/Players.json` is the canonical current raw player read model from the application context. Fantasy Management consumes it read-only and must not require the app producer to create AI- or agent-specific reduced copies or chunk exports.
 
-For broad player lists, waiver/free-agent boards and candidate generation, use:
+For broad operational analysis, prefer the smallest current Fantasy-Management-owned derived contract that matches the task instead of scanning the raw player file:
 
-1. `public/data/chat/players-relevant/index.json`
-2. the matching `public/data/chat/players-relevant/players_*.json` chunks
+1. `fantasy-management/generated/operations/player-signals.json` for the league-wide QB/RB/WR/TE/K operational population and joined market, projection, activity, ownership, injury and nominal-role signals.
+2. `fantasy-management/generated/operations/free-agent-signals.json` for the complete current fantasy-free-agent population.
+3. `fantasy-management/generated/operations/managed-roster-signals.json` for Mighty Giants roster-focused work.
 
-For a single player, load the relevant chunk or exact current player record before drawing conclusions.
+When a raw app field or an exact player record is needed, read the targeted current record from `public/data/Players.json`. Do not recreate `Players_Relevant.json` or a chunked chat export merely to make the player data easier for a specific AI client to ingest.
 
 Important player fields may include ID, name fields, NFL team, position, age, salary, projected salary, status, injury fields, games played/potential, snaps, attempts, fantasy points, point history, game history, ranking, grading, FantasyPros and ESPN fields, plus `ESPNID`, `SleeperDepthChartPosition` and `SleeperDepthChartOrder` when present.
 
@@ -87,14 +86,16 @@ Operational rules:
 
 A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`. A fantasy free agent is only a player whose ID does not appear in any of those lists.
 
-For free-agent boards:
+For free-agent boards, prefer the current `fantasy-management/generated/operations/free-agent-signals.json` contract. It represents the complete current fantasy-free-agent population for Fantasy Operations and must remain downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
+
+When the population must be reconstructed from base contracts instead of using `free-agent-signals.json` directly:
 
 1. load current `League.json`
 2. collect every owned player ID from roster, reserve and taxi
-3. load relevant player chunks through the chunk index
-4. remove owned IDs
-5. evaluate the remaining candidates
-6. verify top candidates through their concrete player records
+3. load the current operational player population from `fantasy-management/generated/operations/player-signals.json`
+4. exclude every owned player ID
+5. evaluate the remaining candidates with the current derived signals
+6. read targeted records from `public/data/Players.json` only when exact raw app fields are needed
 
 ## Draft source rules
 
@@ -468,14 +469,6 @@ These files are useful context but are not canonical current league state.
 Podcast source packages belong under `fantasy-management/sources/podcasts/`. Stoned Lack, Down Set Talk and Football Bromance are qualitative secondary sources whose fantasy specificity and reliability depend on the subject.
 
 Always distinguish internal league data, source perspective, current external market/news context and the final Mighty Giants recommendation. Raw transcripts may contain transcription errors, especially player names; use the identity registry and verify uncertain names when they matter.
-
-## Relevant Players source area
-
-User-provided or generated Relevant Players files belong under:
-
-`fantasy-management/sources/relevant-players/`
-
-They can supplement generated app/player chunks but do not override current generated league state unless explicitly documented.
 
 ## Analysis artifacts are not permanent truth
 
