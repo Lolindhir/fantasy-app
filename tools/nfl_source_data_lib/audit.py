@@ -4,9 +4,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .common import IDENTITY_ID_KEYS, clean
+from .common import IDENTITY_ID_KEYS, clean, load_json
 from .draft import build_ff_draft_evidence, classify_draft_status
-from .identity import LINK_ID_KEYS, app_player_candidates, identity_lookup
+from .identity import LINK_ID_KEYS, identity_lookup
 from .identity_model import WEAK_ID_KEYS
 
 
@@ -21,7 +21,7 @@ def build_audit(
     historical_mapping_stats: dict[str, int] | None = None,
     historical_resolution_conflicts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    _, app_players = app_player_candidates(repo_root)
+    app_players = load_json(repo_root / "public/data/Players.json", []) or []
     lookup = identity_lookup(canonical)
     canonical_by_internal = {row["NFLPlayerID"]: row for row in canonical}
     ff_evidence = build_ff_draft_evidence(ff_rows, canonical)
@@ -141,7 +141,7 @@ def build_audit(
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
             "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history. Archived app snapshots may backfill Sleeper, Tank01 and ESPN only when at least two independently resolved provider IDs agree on one canonical person.",
-            "quarantinedProviderMapping": "A provider ID that currently claims multiple distinguishishable people is suppressed from canonical reverse lookup and recorded as ambiguous instead of merging those people.",
+            "quarantinedProviderMapping": "A provider ID that currently claims multiple distinguishable people is suppressed from canonical reverse lookup and recorded as ambiguous instead of merging those people.",
             "historicalSnapshotConflict": "If resolved provider IDs from one archived player snapshot disagree, no historical mapping from that row is accepted. A single resolved historical provider ID is also insufficient because later ID reuse cannot be excluded.",
             "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID resolution; when another exact-birthdate anchor corroborates the row, only the contradictory anchor mapping is suppressed, otherwise the row remains fully quarantined.",
         },
