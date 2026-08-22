@@ -17,7 +17,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\player\PlayerChatExportUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -61,8 +60,6 @@ catch {
 
 # Dateinamen
 $ScheduleFile = $config.ScheduleFile
-$PlayersRelevantFile = $config.PlayersRelevantFile
-$PlayersRelevantChatDir = $config.PlayersRelevantChatDir
 
 
 # ===========================================================================
@@ -260,7 +257,7 @@ try {
     Write-Host "Enriching team data with draft pick keys..." -ForegroundColor Yellow
     $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
     
-    # --- Alle Spieler holen (für Salary Cap Berechnung und relevante Spielerdatei) ---
+    # --- Alle Spieler holen (für Salary Cap Berechnung) ---
     $playersData = Get-PlayersFromFile    
 
     # --- Top-N Spieler bestimmen ---
@@ -461,20 +458,6 @@ try {
         Settings                = $league.settings
         LeagueIDPrevious        = $league.previous_league_id
     }
-
-    # --- Relevante Spielerdatei schreiben ---
-    $relevantPlayers = Get-RelevantPlayers -Players $playersData -Teams $teamData
-    $comparePlayers = {
-        param($oldPlayers, $newPlayers)
-        Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
-    }
-    Save-JsonFile -TargetFile $PlayersRelevantFile -Data $relevantPlayers -CompareScript $comparePlayers
-
-    Export-PlayersForChatChunks `
-    -Players $relevantPlayers `
-    -TargetDirectory $PlayersRelevantChatDir `
-    -ChunkSize 10 `
-    -Source "Players_Relevant.json"
 
     # --- JSON schreiben ---
     $compare = & Get-Compare

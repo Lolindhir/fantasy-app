@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "job_id": "entity-observation",
-  "status": "idle",
-  "revision": 13,
-  "last_evaluated_at": "2026-08-22T07:44:17+01:00",
-  "last_successful_run": "2026-08-04T07:01:12+02:00",
-  "last_processed_key": "interactive-approved-baseline:daily-operations:2026-08-22",
+  "status": "pending",
+  "revision": 14,
+  "last_evaluated_at": "2026-08-22T18:05:15.565068Z",
+  "last_successful_run": "2026-08-22T18:05:15.565068Z",
+  "last_processed_key": "state-contract-repair:xavier-legette-role-opportunity",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -19,7 +19,7 @@
     "ffc:redraft-ppr-8-team:latest-pointer": "f126677067fb28926a4f4566279326635d0c7f24",
     "ffc:redraft-2qb-10-team:latest-pointer": "c929270ef1587c4e1956e206b1c925408992917f"
   },
-  "pending": false,
+  "pending": true,
   "last_error": null,
   "last_material_change": null,
   "recent_events": [
@@ -112,6 +112,12 @@
       "type": "evaluated",
       "severity": "info",
       "summary": "Nach interaktiver Freigabe wurden die Daily-Operations-Injury-Baselines für Kyle Monangai, Tyler Warren und Jakobi Meyers persistiert; Xavier Legette wurde als dauerhaftes Player-Role-Watch-Target mit kurzfristiger Injury-Baseline aufgenommen."
+    },
+    {
+      "at": "2026-08-22T18:05:15.565068Z",
+      "type": "pending",
+      "severity": "info",
+      "summary": "State-Contract synchronisiert: Xavier Legettes bestätigte Injury-Baseline bleibt unverändert; role-opportunity wurde ohne erfundene Evidenz als ausstehende Erstbaseline angelegt."
     }
   ],
   "job_state": {
@@ -178,7 +184,9 @@
     "targets": {
       "tank-bigsby-2026": {
         "entity_fingerprint": "player:sleeper_id:9225",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "player-role-watch"
+        ],
         "last_checked_at": "2026-07-25T06:36:52+02:00",
         "status": "active",
         "observations": {
@@ -187,16 +195,46 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6718d9ab739067dccbabf6f7f922688dcaeaee5e2781f3a0cab06d616acc771",
             "material_state": {
-              "role_summary": {"starter":"Saquon Barkley","listed_depth_chart_order":["Saquon Barkley","Will Shipley","Tank Bigsby"],"depth_chart_type":"official_unofficial"},
+              "role_summary": {
+                "starter": "Saquon Barkley",
+                "listed_depth_chart_order": [
+                  "Saquon Barkley",
+                  "Will Shipley",
+                  "Tank Bigsby"
+                ],
+                "depth_chart_type": "official_unofficial"
+              },
               "role_class": "listed_rb3_open_backup_competition",
-              "competition_summary": {"ahead":["Saquon Barkley","Will Shipley"],"additional_competitors":["Dameon Pierce","Elijah Mitchell"],"competition_status":"open_before_training_camp"},
-              "usage_summary": {"training_camp_started":false,"numeric_first_team_usage_available":false,"game_usage_2026_available":false},
+              "competition_summary": {
+                "ahead": [
+                  "Saquon Barkley",
+                  "Will Shipley"
+                ],
+                "additional_competitors": [
+                  "Dameon Pierce",
+                  "Elijah Mitchell"
+                ],
+                "competition_status": "open_before_training_camp"
+              },
+              "usage_summary": {
+                "training_camp_started": false,
+                "numeric_first_team_usage_available": false,
+                "game_usage_2026_available": false
+              },
               "first_team_usage_class": "unknown",
-              "high_value_usage": {"goal_line":"unknown","passing_down":"unknown","third_down":"unknown","two_minute":"unknown"},
+              "high_value_usage": {
+                "goal_line": "unknown",
+                "passing_down": "unknown",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
               "confidence": "medium"
             },
             "confidence": "medium",
-            "source_fingerprints": ["official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24","official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"],
+            "source_fingerprints": [
+              "official_team:philadelphiaeagles.com:depth-chart:observed-2026-07-24",
+              "official_team:philadelphiaeagles.com:running-back-preview:published-2026-07-07"
+            ],
             "last_material_change_at": null,
             "last_error": null
           },
@@ -205,16 +243,29 @@
             "last_checked_at": "2026-07-25T06:36:52+02:00",
             "state_hash": "b6ec11409d66d906d086dcfb67371b9f06c4d23dc76eb9ce52dcec3da623d5e0",
             "material_state": {
-              "market_summary": {"classification":"deep_stash_handcuff","roster_rate":0.9218,"source_context":{"rank_provider":"fantasypros:dynasty-superflex-ppr","value_provider":"fantasycalc:dynasty-superflex-ppr-8-team"}},
+              "market_summary": {
+                "classification": "deep_stash_handcuff",
+                "roster_rate": 0.9218,
+                "source_context": {
+                  "rank_provider": "fantasypros:dynasty-superflex-ppr",
+                  "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"
+                }
+              },
               "dynasty_overall_rank": 194,
               "position_rank": 55,
               "market_value": 1241,
               "market_tier": "11",
-              "source_disagreement": {"status":"no_material_conflict","comparison_basis":"qualitative_band_alignment"},
+              "source_disagreement": {
+                "status": "no_material_conflict",
+                "comparison_basis": "qualitative_band_alignment"
+              },
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": ["fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850","fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741"],
+            "source_fingerprints": [
+              "fantasycalc:dynasty-superflex-ppr-8-team:2026-07-24:473388319b0cd6d1a989d0465db965e2d50ca850",
+              "fantasypros:dynasty-superflex-ppr:2026-07-24:8c01ff85495b1bf3c30a1849a823108d8f8b7741"
+            ],
             "last_material_change_at": null,
             "last_error": null
           }
@@ -222,123 +273,751 @@
       },
       "managed-roster-player-4018": {
         "entity_fingerprint": "player:sleeper_id:4018",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-14T18:52:00+02:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"1b5e88f9141d62a6e46129125949554144d3cc0af4ce510126c79c176e9bcf57","material_state":{"injury_summary":"Komplette Saison 2025 wegen einer Fußverletzung verpasst; im März 2026 mit Non-Football-Injury-Designation von Houston entlassen. Mixon hat ehemaligen Bengals-Mitspielern mitgeteilt, dass seine NFL-Karriere voraussichtlich beendet ist; offizielle Retirement-Papiere sind weiterhin nicht eingereicht.","availability_class":"unknown","designation":"career_likely_over_unofficial_retirement_report","reserve_status":"unknown","practice_status":"not_applicable","return_timeline":{"status":"career_likely_over_without_official_retirement","next_checkpoint":"Offizielle Retirement-Einreichung oder neue belastbare NFL-Verpflichtungs-/Workout-Meldung"},"confidence":"high"},"confidence":"high","source_fingerprints":["news:aaron-wilson:joe-mixon-career-over:reported-2026-07-23","official_league:nfl.com:joe-mixon-free-agent-status:observed-2026-08-14","official_team:houstontexans.com:transaction:2026-03-06"],"last_material_change_at":null,"last_error":null}}
-      },
-      "managed-roster-player-7526": {
-        "entity_fingerprint": "player:sleeper_id:7526",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-18T09:40:00+01:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-18T09:40:00+01:00","state_hash":"276c8159f1939b7ad4a9323c5596d0548433bf3a1f712d7179c18627d2ce0472","material_state":{"injury_summary":"Nach der Muskelzerrung im Bein und mehreren verpassten Trainingstagen kehrte Jaylen Waddle am 17. August ins Broncos-Training zurück. Der genaue Belastungsumfang wurde zunächst nur als Teilnahme in begrenztem beziehungsweise noch nicht vollständig bestätigtem Umfang beschrieben; volle uneingeschränkte Beteiligung ist noch nicht bestätigt.","availability_class":"limited","designation":"leg_muscle_strain_returned_to_practice","reserve_status":"active","practice_status":"limited","return_timeline":{"status":"returned_to_practice_limited_or_unconfirmed_workload","next_checkpoint":"Volle Trainingsfreigabe ohne Einschränkung"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["practice_report:denver:jaylen-waddle-returned-to-practice:observed-2026-08-17"],"last_material_change_at":null,"last_error":null}}
-      },
-      "managed-roster-player-13311": {
-        "entity_fingerprint": "player:sleeper_id:13311",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-18T09:40:00+01:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-18T09:40:00+01:00","state_hash":"aa61d5d82d42d1ffddd89dd64c2ef79ea4a3b291e042b5f294d9cda9521c7e80","material_state":{"injury_summary":"Nach fortgeschrittener ACL-Reha wurde Chris Bell am 17. August vom Active/NFI aktiviert und kehrte ins reguläre Mannschaftstraining zurück. Beim ersten Training trug er weiterhin ein rotes Non-Contact-Jersey; die vollständige Contact-/Game-Freigabe ist noch nicht bestätigt.","availability_class":"limited","designation":"acl_rehab_activated_from_nfi_non_contact","reserve_status":"active","practice_status":"limited","return_timeline":{"status":"activated_from_nfi_limited_non_contact_practice","next_checkpoint":"Vollständige Contact-Freigabe beziehungsweise uneingeschränkte Team-Trainingsbeteiligung"},"confidence":"high"},"confidence":"high","source_fingerprints":["official_team:miamidolphins.com:chris-bell-activated-from-nfi:observed-2026-08-17","practice_report:miami:chris-bell-non-contact:observed-2026-08-17"],"last_material_change_at":null,"last_error":null}}
-      },
-      "managed-roster-player-11632": {
-        "entity_fingerprint": "player:sleeper_id:11632",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-18T09:40:00+01:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-18T09:40:00+01:00","state_hash":"62a429e53435deb7521ee627ffd11d1d008d2bcb27a1d3d4197afa3e7a8e3804","material_state":{"injury_summary":"Malik Nabers nahm am 17. August erstmals seit ACL-/Meniskusverletzung wieder an Full-Speed-Live-Teamdrills in 11-on-11 und 7-on-7 teil und fing mehrere Bälle. Er trug weiterhin ein Non-Contact-Jersey und arbeitete unter engem Rep-Limit; eine vollständige Contact- oder Week-1-Freigabe ist noch nicht bestätigt.","availability_class":"limited","designation":"acl_meniscus_rehab_returned_to_full_speed_team_periods_non_contact","reserve_status":"active","practice_status":"limited","return_timeline":{"status":"returned_to_full_speed_team_periods_non_contact","next_checkpoint":"Vollständige Contact-Freigabe, Aufhebung des Rep-Limits oder bestätigte Week-1-Verfügbarkeit"},"confidence":"high"},"confidence":"high","source_fingerprints":["official_team:giants.com:malik-nabers-full-speed-team-drills:observed-2026-08-17","practice_report:giants:malik-nabers-non-contact-rep-limit:observed-2026-08-17"],"last_material_change_at":null,"last_error":null}}
-      },
-      "managed-roster-player-13417": {
-        "entity_fingerprint": "player:sleeper_id:13417",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-14T18:52:00+02:00",
         "status": "active",
         "observations": {
-          "injury-status": {"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"faca2053e5d29947f92aaa176717b8d1337ff3bf184c2a6743b71baef8bbb5a7","material_state":{"injury_summary":"Vorherige Hamstring-Problematik ist so weit abgeklungen, dass Stribling im Preseason-Opener am 13. August regulär Spielzeit absolvierte und acht Targets erhielt.","availability_class":"available","designation":"hamstring_recovered_to_game_action","reserve_status":"active","practice_status":"unknown","return_timeline":{"status":"returned_to_game_action","next_checkpoint":"Neue Trainings- oder Spielbeschränkung"},"confidence":"high"},"confidence":"high","source_fingerprints":["game_usage:49ers-vs-titans:stribling:2026-08-13","news:sfchronicle:stribling-preseason-opener:published-2026-08-14"],"last_material_change_at":null,"last_error":null},
-          "role-opportunity": {"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"489fd6a5b57aacf1e884b6840069dae2ae0efd0d15071abc84e042bc4ea8d994","material_state":{"role_summary":"Stribling hat den zuvor geöffneten Opportunity-Pfad mit einem starken Preseason-Opener bestätigt und war gegen Tennessee ein zentraler Teil der Receiver-Rotation.","role_class":"early_rotation_role_with_strong_preseason_usage","competition_summary":{"context":"Durch Verletzungen im 49ers-Receiver-Room bleibt frühe Opportunity vorhanden.","status":"meaningful_rotation_opportunity"},"usage_summary":{"preseason_game":"2026-08-13 vs TEN","targets":8,"receptions":7,"receiving_yards":63},"first_team_usage_class":"rotational","high_value_usage":{"third_down":"positive_game_usage","red_zone":"unknown","two_minute":"unknown"},"confidence":"high"},"confidence":"high","source_fingerprints":["game_usage:49ers-vs-titans:stribling:2026-08-13","news:sfchronicle:stribling-preseason-opener:published-2026-08-14"],"last_material_change_at":null,"last_error":null}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "1b5e88f9141d62a6e46129125949554144d3cc0af4ce510126c79c176e9bcf57",
+            "material_state": {
+              "injury_summary": "Komplette Saison 2025 wegen einer Fußverletzung verpasst; im März 2026 mit Non-Football-Injury-Designation von Houston entlassen. Mixon hat ehemaligen Bengals-Mitspielern mitgeteilt, dass seine NFL-Karriere voraussichtlich beendet ist; offizielle Retirement-Papiere sind weiterhin nicht eingereicht.",
+              "availability_class": "unknown",
+              "designation": "career_likely_over_unofficial_retirement_report",
+              "reserve_status": "unknown",
+              "practice_status": "not_applicable",
+              "return_timeline": {
+                "status": "career_likely_over_without_official_retirement",
+                "next_checkpoint": "Offizielle Retirement-Einreichung oder neue belastbare NFL-Verpflichtungs-/Workout-Meldung"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "news:aaron-wilson:joe-mixon-career-over:reported-2026-07-23",
+              "official_league:nfl.com:joe-mixon-free-agent-status:observed-2026-08-14",
+              "official_team:houstontexans.com:transaction:2026-03-06"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "managed-roster-player-7526": {
+        "entity_fingerprint": "player:sleeper_id:7526",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-18T09:40:00+01:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-18T09:40:00+01:00",
+            "state_hash": "276c8159f1939b7ad4a9323c5596d0548433bf3a1f712d7179c18627d2ce0472",
+            "material_state": {
+              "injury_summary": "Nach der Muskelzerrung im Bein und mehreren verpassten Trainingstagen kehrte Jaylen Waddle am 17. August ins Broncos-Training zurück. Der genaue Belastungsumfang wurde zunächst nur als Teilnahme in begrenztem beziehungsweise noch nicht vollständig bestätigtem Umfang beschrieben; volle uneingeschränkte Beteiligung ist noch nicht bestätigt.",
+              "availability_class": "limited",
+              "designation": "leg_muscle_strain_returned_to_practice",
+              "reserve_status": "active",
+              "practice_status": "limited",
+              "return_timeline": {
+                "status": "returned_to_practice_limited_or_unconfirmed_workload",
+                "next_checkpoint": "Volle Trainingsfreigabe ohne Einschränkung"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "practice_report:denver:jaylen-waddle-returned-to-practice:observed-2026-08-17"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "managed-roster-player-13311": {
+        "entity_fingerprint": "player:sleeper_id:13311",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-18T09:40:00+01:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-18T09:40:00+01:00",
+            "state_hash": "aa61d5d82d42d1ffddd89dd64c2ef79ea4a3b291e042b5f294d9cda9521c7e80",
+            "material_state": {
+              "injury_summary": "Nach fortgeschrittener ACL-Reha wurde Chris Bell am 17. August vom Active/NFI aktiviert und kehrte ins reguläre Mannschaftstraining zurück. Beim ersten Training trug er weiterhin ein rotes Non-Contact-Jersey; die vollständige Contact-/Game-Freigabe ist noch nicht bestätigt.",
+              "availability_class": "limited",
+              "designation": "acl_rehab_activated_from_nfi_non_contact",
+              "reserve_status": "active",
+              "practice_status": "limited",
+              "return_timeline": {
+                "status": "activated_from_nfi_limited_non_contact_practice",
+                "next_checkpoint": "Vollständige Contact-Freigabe beziehungsweise uneingeschränkte Team-Trainingsbeteiligung"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:miamidolphins.com:chris-bell-activated-from-nfi:observed-2026-08-17",
+              "practice_report:miami:chris-bell-non-contact:observed-2026-08-17"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "managed-roster-player-11632": {
+        "entity_fingerprint": "player:sleeper_id:11632",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-18T09:40:00+01:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-18T09:40:00+01:00",
+            "state_hash": "62a429e53435deb7521ee627ffd11d1d008d2bcb27a1d3d4197afa3e7a8e3804",
+            "material_state": {
+              "injury_summary": "Malik Nabers nahm am 17. August erstmals seit ACL-/Meniskusverletzung wieder an Full-Speed-Live-Teamdrills in 11-on-11 und 7-on-7 teil und fing mehrere Bälle. Er trug weiterhin ein Non-Contact-Jersey und arbeitete unter engem Rep-Limit; eine vollständige Contact- oder Week-1-Freigabe ist noch nicht bestätigt.",
+              "availability_class": "limited",
+              "designation": "acl_meniscus_rehab_returned_to_full_speed_team_periods_non_contact",
+              "reserve_status": "active",
+              "practice_status": "limited",
+              "return_timeline": {
+                "status": "returned_to_full_speed_team_periods_non_contact",
+                "next_checkpoint": "Vollständige Contact-Freigabe, Aufhebung des Rep-Limits oder bestätigte Week-1-Verfügbarkeit"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:giants.com:malik-nabers-full-speed-team-drills:observed-2026-08-17",
+              "practice_report:giants:malik-nabers-non-contact-rep-limit:observed-2026-08-17"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "managed-roster-player-13417": {
+        "entity_fingerprint": "player:sleeper_id:13417",
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
+        "last_checked_at": "2026-08-14T18:52:00+02:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "faca2053e5d29947f92aaa176717b8d1337ff3bf184c2a6743b71baef8bbb5a7",
+            "material_state": {
+              "injury_summary": "Vorherige Hamstring-Problematik ist so weit abgeklungen, dass Stribling im Preseason-Opener am 13. August regulär Spielzeit absolvierte und acht Targets erhielt.",
+              "availability_class": "available",
+              "designation": "hamstring_recovered_to_game_action",
+              "reserve_status": "active",
+              "practice_status": "unknown",
+              "return_timeline": {
+                "status": "returned_to_game_action",
+                "next_checkpoint": "Neue Trainings- oder Spielbeschränkung"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "game_usage:49ers-vs-titans:stribling:2026-08-13",
+              "news:sfchronicle:stribling-preseason-opener:published-2026-08-14"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "489fd6a5b57aacf1e884b6840069dae2ae0efd0d15071abc84e042bc4ea8d994",
+            "material_state": {
+              "role_summary": "Stribling hat den zuvor geöffneten Opportunity-Pfad mit einem starken Preseason-Opener bestätigt und war gegen Tennessee ein zentraler Teil der Receiver-Rotation.",
+              "role_class": "early_rotation_role_with_strong_preseason_usage",
+              "competition_summary": {
+                "context": "Durch Verletzungen im 49ers-Receiver-Room bleibt frühe Opportunity vorhanden.",
+                "status": "meaningful_rotation_opportunity"
+              },
+              "usage_summary": {
+                "preseason_game": "2026-08-13 vs TEN",
+                "targets": 8,
+                "receptions": 7,
+                "receiving_yards": 63
+              },
+              "first_team_usage_class": "rotational",
+              "high_value_usage": {
+                "third_down": "positive_game_usage",
+                "red_zone": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "game_usage:49ers-vs-titans:stribling:2026-08-13",
+              "news:sfchronicle:stribling-preseason-opener:published-2026-08-14"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       },
       "managed-roster-player-8142": {
         "entity_fingerprint": "player:sleeper_id:8142",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-14T18:52:00+02:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"dbe3513be6ddbfe88ac7f8fcbdc4ca3e4afe9da1f4385084b2785a41def0a216","material_state":{"injury_summary":"Knöchel-/Fuß-Reha nach Offseason-Operation; weiterhin auf Active/PUP. Pierce arbeitet inzwischen in Conditioning- und Individual-Drills, und GM Chris Ballard bezeichnete ihn als auf Kurs für Week 1, ohne dass die PUP-Aktivierung bereits erfolgt ist.","availability_class":"unavailable_short_term","designation":"ankle_rehab_after_surgery","reserve_status":"physically_unable_to_perform","practice_status":"did_not_participate","return_timeline":{"status":"week_1_return_expected_but_not_yet_activated","next_checkpoint":"PUP-Aktivierung oder erste vollständige Team-Trainingsbeteiligung"},"confidence":"high"},"confidence":"high","source_fingerprints":["news:reuters:alec-pierce-week1-target:published-2026-08-11","official_team:colts.com:alec-pierce-active-pup:2026-07-27"],"last_material_change_at":null,"last_error":null}}
-      },
-      "jk-dobbins-2026": {
-        "entity_fingerprint": "player:sleeper_id:6806",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-14T18:52:00+02:00",
         "status": "active",
         "observations": {
-          "injury-status": {"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"f5be376a89bdadfc09e57a7d9a374687187d372109f08396622ebde1e155914d","material_state":{"injury_summary":"Historische Fußverletzung 2025 mit Operation und Injured Reserve. Nach einem kurzen Soft-Tissue-Problem im Broncos-Camp war Dobbins am 11. August wieder in Full Pads und wurde erneut als gesund und voll belastbar im Training beschrieben.","availability_class":"available","designation":"none_current_after_minor_soft_tissue_issue","reserve_status":"active","practice_status":"full","return_timeline":{"status":"returned_to_full_pads_after_minor_soft_tissue_issue","next_checkpoint":"Neue Trainingsbeschränkung, Verletzungsdesignation oder Ausfallmeldung"},"confidence":"high"},"confidence":"high","source_fingerprints":["official_team:denverbroncos.com:j-k-dobbins-training-camp:observed-2026-08-08","practice_report:denver:dobbins-full-pads:observed-2026-08-11"],"last_material_change_at":null,"last_error":null},
-          "role-opportunity": {"status":"baseline","last_checked_at":"2026-08-10T13:36:00+02:00","state_hash":"d160eecdfa701a64ce91b9f6ab6838a51f4811f9f24ea2aa27cc4de9a50efb69","material_state":{"role_summary":{"team":"Denver Broncos","current_role":"Incumbent/führender Veteran im RB-Room zum Campzeitpunkt","depth_chart_type":"training_camp_role"},"role_class":"incumbent_lead_back_with_committee_pressure","competition_summary":{"primary_competitors":["Jonah Coleman","RJ Harvey"],"competition_status":"active_training_camp_competition"},"usage_summary":{"training_camp_started":true,"numeric_first_team_usage_available":false,"game_usage_2026_available":false,"recent_evidence":"Am 2026-08-08 mit positiven Läufen in Teamdrills berichtet."},"first_team_usage_class":"unknown","high_value_usage":{"goal_line":"unknown","passing_down":"unknown","third_down":"unknown","two_minute":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["official_team:denverbroncos.com:j-k-dobbins-training-camp:observed-2026-08-08","official_team:denverbroncos.com:running-back-room-preview:observed-2026-08-10"],"last_material_change_at":null,"last_error":null},
-          "market-movement": {"status":"baseline","last_checked_at":"2026-08-10T13:36:00+02:00","state_hash":"27e9594e0f27334f7860f3b63c3130ded71faa3a50c252e4f137774d2f8cc85d","material_state":{"market_summary":{"classification":"veteran_win_now_depth_with_injury_discount","roster_rate":0.994,"source_context":{"rank_provider":"fantasypros:dynasty-superflex-ppr","value_provider":"fantasycalc:dynasty-superflex-ppr-8-team"}},"dynasty_overall_rank":151,"position_rank":40,"market_value":1638,"market_tier":"10","source_disagreement":{"status":"no_material_conflict","comparison_basis":"qualitative_band_alignment"},"confidence":"high"},"confidence":"high","source_fingerprints":["fantasycalc:dynasty-superflex-ppr-8-team:2026-08-10:f1827d9a4c0adb33ce1cc5ce58c3e81baa0a57c6","fantasypros:dynasty-superflex-ppr:2026-08-10:17b2c6696d458771a0d3bae920b7c4fe40afa1dc"],"last_material_change_at":null,"last_error":null},
-          "redraft-adp-movement": {"status":"baseline","last_checked_at":"2026-08-10T13:36:00+02:00","state_hash":"1853cf3a61a47c405af8ee0dca053ed959e6595a3814e32d7676b984c9867671","material_state":{"adp_summary":{"classification":"late_round_redraft_depth","primary_sample_quality":"high_sample","secondary_sample_quality":"high_sample"},"primary_format":"ppr_8_team","primary_listed":true,"primary_percentile":55.24,"primary_adp":91.4,"primary_times_drafted":576,"primary_stdev":10,"secondary_percentile":49.46,"format_gap":-5.78,"sample_summary":{"primary":{"total_drafts":5417,"start_date":"2026-08-02","end_date":"2026-08-09"},"secondary":{"total_drafts":2912,"start_date":"2026-07-10","end_date":"2026-08-09"}},"confidence":"high"},"confidence":"high","source_fingerprints":["ffc:redraft-2qb-10-team:2026-08-10:6508aec878f567d3f268de6ca1f11e61c96108f4","ffc:redraft-ppr-8-team:2026-08-10:875f6d38bfaba4b5618b11f0b72702c98525104e"],"last_material_change_at":null,"last_error":null}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "dbe3513be6ddbfe88ac7f8fcbdc4ca3e4afe9da1f4385084b2785a41def0a216",
+            "material_state": {
+              "injury_summary": "Knöchel-/Fuß-Reha nach Offseason-Operation; weiterhin auf Active/PUP. Pierce arbeitet inzwischen in Conditioning- und Individual-Drills, und GM Chris Ballard bezeichnete ihn als auf Kurs für Week 1, ohne dass die PUP-Aktivierung bereits erfolgt ist.",
+              "availability_class": "unavailable_short_term",
+              "designation": "ankle_rehab_after_surgery",
+              "reserve_status": "physically_unable_to_perform",
+              "practice_status": "did_not_participate",
+              "return_timeline": {
+                "status": "week_1_return_expected_but_not_yet_activated",
+                "next_checkpoint": "PUP-Aktivierung oder erste vollständige Team-Trainingsbeteiligung"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "news:reuters:alec-pierce-week1-target:published-2026-08-11",
+              "official_team:colts.com:alec-pierce-active-pup:2026-07-27"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "jk-dobbins-2026": {
+        "entity_fingerprint": "player:sleeper_id:6806",
+        "target_set_ids": [
+          "player-role-watch"
+        ],
+        "last_checked_at": "2026-08-14T18:52:00+02:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "f5be376a89bdadfc09e57a7d9a374687187d372109f08396622ebde1e155914d",
+            "material_state": {
+              "injury_summary": "Historische Fußverletzung 2025 mit Operation und Injured Reserve. Nach einem kurzen Soft-Tissue-Problem im Broncos-Camp war Dobbins am 11. August wieder in Full Pads und wurde erneut als gesund und voll belastbar im Training beschrieben.",
+              "availability_class": "available",
+              "designation": "none_current_after_minor_soft_tissue_issue",
+              "reserve_status": "active",
+              "practice_status": "full",
+              "return_timeline": {
+                "status": "returned_to_full_pads_after_minor_soft_tissue_issue",
+                "next_checkpoint": "Neue Trainingsbeschränkung, Verletzungsdesignation oder Ausfallmeldung"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:denverbroncos.com:j-k-dobbins-training-camp:observed-2026-08-08",
+              "practice_report:denver:dobbins-full-pads:observed-2026-08-11"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-10T13:36:00+02:00",
+            "state_hash": "d160eecdfa701a64ce91b9f6ab6838a51f4811f9f24ea2aa27cc4de9a50efb69",
+            "material_state": {
+              "role_summary": {
+                "team": "Denver Broncos",
+                "current_role": "Incumbent/führender Veteran im RB-Room zum Campzeitpunkt",
+                "depth_chart_type": "training_camp_role"
+              },
+              "role_class": "incumbent_lead_back_with_committee_pressure",
+              "competition_summary": {
+                "primary_competitors": [
+                  "Jonah Coleman",
+                  "RJ Harvey"
+                ],
+                "competition_status": "active_training_camp_competition"
+              },
+              "usage_summary": {
+                "training_camp_started": true,
+                "numeric_first_team_usage_available": false,
+                "game_usage_2026_available": false,
+                "recent_evidence": "Am 2026-08-08 mit positiven Läufen in Teamdrills berichtet."
+              },
+              "first_team_usage_class": "unknown",
+              "high_value_usage": {
+                "goal_line": "unknown",
+                "passing_down": "unknown",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "official_team:denverbroncos.com:j-k-dobbins-training-camp:observed-2026-08-08",
+              "official_team:denverbroncos.com:running-back-room-preview:observed-2026-08-10"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "market-movement": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-10T13:36:00+02:00",
+            "state_hash": "27e9594e0f27334f7860f3b63c3130ded71faa3a50c252e4f137774d2f8cc85d",
+            "material_state": {
+              "market_summary": {
+                "classification": "veteran_win_now_depth_with_injury_discount",
+                "roster_rate": 0.994,
+                "source_context": {
+                  "rank_provider": "fantasypros:dynasty-superflex-ppr",
+                  "value_provider": "fantasycalc:dynasty-superflex-ppr-8-team"
+                }
+              },
+              "dynasty_overall_rank": 151,
+              "position_rank": 40,
+              "market_value": 1638,
+              "market_tier": "10",
+              "source_disagreement": {
+                "status": "no_material_conflict",
+                "comparison_basis": "qualitative_band_alignment"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "fantasycalc:dynasty-superflex-ppr-8-team:2026-08-10:f1827d9a4c0adb33ce1cc5ce58c3e81baa0a57c6",
+              "fantasypros:dynasty-superflex-ppr:2026-08-10:17b2c6696d458771a0d3bae920b7c4fe40afa1dc"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "redraft-adp-movement": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-10T13:36:00+02:00",
+            "state_hash": "1853cf3a61a47c405af8ee0dca053ed959e6595a3814e32d7676b984c9867671",
+            "material_state": {
+              "adp_summary": {
+                "classification": "late_round_redraft_depth",
+                "primary_sample_quality": "high_sample",
+                "secondary_sample_quality": "high_sample"
+              },
+              "primary_format": "ppr_8_team",
+              "primary_listed": true,
+              "primary_percentile": 55.24,
+              "primary_adp": 91.4,
+              "primary_times_drafted": 576,
+              "primary_stdev": 10,
+              "secondary_percentile": 49.46,
+              "format_gap": -5.78,
+              "sample_summary": {
+                "primary": {
+                  "total_drafts": 5417,
+                  "start_date": "2026-08-02",
+                  "end_date": "2026-08-09"
+                },
+                "secondary": {
+                  "total_drafts": 2912,
+                  "start_date": "2026-07-10",
+                  "end_date": "2026-08-09"
+                }
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "ffc:redraft-2qb-10-team:2026-08-10:6508aec878f567d3f268de6ca1f11e61c96108f4",
+              "ffc:redraft-ppr-8-team:2026-08-10:875f6d38bfaba4b5618b11f0b72702c98525104e"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       },
       "managed-roster-player-12492": {
         "entity_fingerprint": "player:sleeper_id:12492",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-14T18:52:00+02:00",
         "status": "active",
-        "observations": {"role-opportunity":{"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"e0909a70f3c961395eaa5b7252770fecb1dc8ca09e0671d1dfa619ef54973950","material_state":{"role_summary":"Bryant ist im zweiten Broncos-Campjahr deutlich aufgestiegen, wird wiederholt früh von Bo Nix gelesen und kämpft realistisch um die WR3-Rolle hinter Jaylen Waddle und Courtland Sutton.","role_class":"emerging_wr3_candidate_with_first_team_trust","competition_summary":{"primary_competitors":["Marvin Mims","Troy Franklin"],"competition_status":"Bryant derzeit mit positivem Camp-Momentum im WR3-Kampf"},"usage_summary":{"training_camp_started":true,"recent_evidence":"Mehrere First-Read-/Team-Period-Catches und Touchdowns mit Bo Nix; wiederholtes positives Camp-Feedback."},"first_team_usage_class":"rotational","high_value_usage":{"red_zone":"multiple_camp_touchdowns","third_down":"unknown","two_minute":"unknown"},"confidence":"high"},"confidence":"high","source_fingerprints":["camp_report:denver:pat-bryant-first-read-usage:observed-2026-08-08","camp_report:denver:pat-bryant-touchdown-praise:observed-2026-08-11"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "e0909a70f3c961395eaa5b7252770fecb1dc8ca09e0671d1dfa619ef54973950",
+            "material_state": {
+              "role_summary": "Bryant ist im zweiten Broncos-Campjahr deutlich aufgestiegen, wird wiederholt früh von Bo Nix gelesen und kämpft realistisch um die WR3-Rolle hinter Jaylen Waddle und Courtland Sutton.",
+              "role_class": "emerging_wr3_candidate_with_first_team_trust",
+              "competition_summary": {
+                "primary_competitors": [
+                  "Marvin Mims",
+                  "Troy Franklin"
+                ],
+                "competition_status": "Bryant derzeit mit positivem Camp-Momentum im WR3-Kampf"
+              },
+              "usage_summary": {
+                "training_camp_started": true,
+                "recent_evidence": "Mehrere First-Read-/Team-Period-Catches und Touchdowns mit Bo Nix; wiederholtes positives Camp-Feedback."
+              },
+              "first_team_usage_class": "rotational",
+              "high_value_usage": {
+                "red_zone": "multiple_camp_touchdowns",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "camp_report:denver:pat-bryant-first-read-usage:observed-2026-08-08",
+              "camp_report:denver:pat-bryant-touchdown-praise:observed-2026-08-11"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "managed-roster-player-9493": {
         "entity_fingerprint": "player:sleeper_id:9493",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-18T09:40:00+01:00",
         "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-18T09:40:00+01:00","state_hash":"214358c9b550fe9d8d0022d34319fe795168f7fc6d9b6e79c6ee33fc7bb34915","material_state":{"injury_summary":"Puka Nacuas zunächst als kleinere Leistenproblematik eingeordnete Verletzung wird inzwischen genauer als Psoas-/Hüftmuskelproblematik beschrieben. Das erwartete Trainings-Comeback wurde gegenüber der bisherigen Einschätzung nach hinten verschoben und nun voraussichtlich für die folgende Woche erwartet.","availability_class":"limited","designation":"psoas_hip_muscle_injury","reserve_status":"active","practice_status":"did_not_participate","return_timeline":{"status":"psoas_injury_return_pushed_to_following_week","next_checkpoint":"Tatsächliche Rückkehr ins Teamtraining und anschließende volle Belastbarkeit"},"confidence":"high"},"confidence":"high","source_fingerprints":["official_team:rams.com:sean-mcvay-puka-nacua-psoas-return-update:observed-2026-08-17"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-18T09:40:00+01:00",
+            "state_hash": "214358c9b550fe9d8d0022d34319fe795168f7fc6d9b6e79c6ee33fc7bb34915",
+            "material_state": {
+              "injury_summary": "Puka Nacuas zunächst als kleinere Leistenproblematik eingeordnete Verletzung wird inzwischen genauer als Psoas-/Hüftmuskelproblematik beschrieben. Das erwartete Trainings-Comeback wurde gegenüber der bisherigen Einschätzung nach hinten verschoben und nun voraussichtlich für die folgende Woche erwartet.",
+              "availability_class": "limited",
+              "designation": "psoas_hip_muscle_injury",
+              "reserve_status": "active",
+              "practice_status": "did_not_participate",
+              "return_timeline": {
+                "status": "psoas_injury_return_pushed_to_following_week",
+                "next_checkpoint": "Tatsächliche Rückkehr ins Teamtraining und anschließende volle Belastbarkeit"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:rams.com:sean-mcvay-puka-nacua-psoas-return-update:observed-2026-08-17"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "malik-benson-2026": {
         "entity_fingerprint": "player:sleeper_id:13329",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "player-role-watch"
+        ],
         "last_checked_at": "2026-08-14T18:52:00+02:00",
         "status": "active",
-        "observations": {"role-opportunity":{"status":"baseline","last_checked_at":"2026-08-14T18:52:00+02:00","state_hash":"91a0b83abf6ea86932ad90c471fb7ea3c1a46e8cd6b2d16696fc6bf3f13df531","material_state":{"role_summary":"Rookie Malik Benson erhält First-Team-Reps und kämpft im Raiders-Camp um die WR3-Rolle. Die erste Preseason-Depth-Chart sieht Jack Bech aktuell knapp vor ihm, der Wettbewerb bleibt offen.","role_class":"rookie_competing_for_wr3_with_first_team_reps","competition_summary":{"primary_competitors":["Jack Bech","Jalen Nailor"],"competition_status":"open_wr3_competition_bech_currently_ahead"},"usage_summary":{"training_camp_started":true,"first_team_reps":true,"preseason_role":"significant_opportunity_expected"},"first_team_usage_class":"rotational","high_value_usage":{"red_zone":"some_positive_camp_usage","third_down":"unknown","two_minute":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["official_team:raiders.com:malik-benson-first-team-reps:observed-2026-07-30","team_depth_chart:raiders:preseason-initial:observed-2026-08-12"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-14T18:52:00+02:00",
+            "state_hash": "91a0b83abf6ea86932ad90c471fb7ea3c1a46e8cd6b2d16696fc6bf3f13df531",
+            "material_state": {
+              "role_summary": "Rookie Malik Benson erhält First-Team-Reps und kämpft im Raiders-Camp um die WR3-Rolle. Die erste Preseason-Depth-Chart sieht Jack Bech aktuell knapp vor ihm, der Wettbewerb bleibt offen.",
+              "role_class": "rookie_competing_for_wr3_with_first_team_reps",
+              "competition_summary": {
+                "primary_competitors": [
+                  "Jack Bech",
+                  "Jalen Nailor"
+                ],
+                "competition_status": "open_wr3_competition_bech_currently_ahead"
+              },
+              "usage_summary": {
+                "training_camp_started": true,
+                "first_team_reps": true,
+                "preseason_role": "significant_opportunity_expected"
+              },
+              "first_team_usage_class": "rotational",
+              "high_value_usage": {
+                "red_zone": "some_positive_camp_usage",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "official_team:raiders.com:malik-benson-first-team-reps:observed-2026-07-30",
+              "team_depth_chart:raiders:preseason-initial:observed-2026-08-12"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "caleb-douglas-2026": {
         "entity_fingerprint": "player:sleeper_id:13296",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "player-role-watch"
+        ],
         "last_checked_at": "2026-08-16T19:48:00+02:00",
         "status": "active",
-        "observations": {"role-opportunity":{"status":"baseline","last_checked_at":"2026-08-16T19:48:00+02:00","state_hash":"4c968bad4ef17818a9cfce0b379b788b4329bd3896e86faaec274845ed5609e5","material_state":{"role_summary":"Rookie Caleb Douglas hat seine positive Camp-Entwicklung im Preseason-Spiel mit bestätigter Nutzung in Miamis erster Offense untermauert; auf dem ersten 93-Yard-TD-Drive war er Teil der First Unit und machte einen schwierigen Catch trotz enger Coverage/Interference.","role_class":"rookie_with_confirmed_first_unit_preseason_usage_competing_for_meaningful_role","competition_summary":{"room_context":"Offener, stark veränderter Dolphins-WR-Room","competition_status":"meaningful_role_competition_with_confirmed_first_unit_game_evidence"},"usage_summary":{"training_camp_started":true,"preseason_game_usage_2026":true,"first_unit_drive_confirmed":true,"recent_evidence":"Teil der ersten Offense auf Miamis erstem 93-Yard-TD-Drive; auffälliger einhändiger Catch trotz enger Coverage/Interference."},"first_team_usage_class":"rotational","high_value_usage":{"status":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["game_usage:miami-preseason:first-unit-drive:caleb-douglas:observed-2026-08-16","joint_practice_report:miami-washington:caleb-douglas-stock-up:observed-2026-08-12","team_gm_report:miami:caleb-douglas-camp-praise:observed-2026-08-10"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-16T19:48:00+02:00",
+            "state_hash": "4c968bad4ef17818a9cfce0b379b788b4329bd3896e86faaec274845ed5609e5",
+            "material_state": {
+              "role_summary": "Rookie Caleb Douglas hat seine positive Camp-Entwicklung im Preseason-Spiel mit bestätigter Nutzung in Miamis erster Offense untermauert; auf dem ersten 93-Yard-TD-Drive war er Teil der First Unit und machte einen schwierigen Catch trotz enger Coverage/Interference.",
+              "role_class": "rookie_with_confirmed_first_unit_preseason_usage_competing_for_meaningful_role",
+              "competition_summary": {
+                "room_context": "Offener, stark veränderter Dolphins-WR-Room",
+                "competition_status": "meaningful_role_competition_with_confirmed_first_unit_game_evidence"
+              },
+              "usage_summary": {
+                "training_camp_started": true,
+                "preseason_game_usage_2026": true,
+                "first_unit_drive_confirmed": true,
+                "recent_evidence": "Teil der ersten Offense auf Miamis erstem 93-Yard-TD-Drive; auffälliger einhändiger Catch trotz enger Coverage/Interference."
+              },
+              "first_team_usage_class": "rotational",
+              "high_value_usage": {
+                "status": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "game_usage:miami-preseason:first-unit-drive:caleb-douglas:observed-2026-08-16",
+              "joint_practice_report:miami-washington:caleb-douglas-stock-up:observed-2026-08-12",
+              "team_gm_report:miami:caleb-douglas-camp-praise:observed-2026-08-10"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "managed-roster-player-13285": {
         "entity_fingerprint": "player:sleeper_id:13285",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-16T19:48:00+02:00",
         "status": "active",
-        "observations": {"role-opportunity":{"status":"baseline","last_checked_at":"2026-08-16T19:48:00+02:00","state_hash":"7e926df8ce6aaaf78c1a95beb8a7ccf6ef5d7d13536b156c365e67da4ad8b087","material_state":{"role_summary":"Rookie Malachi Fields hat im Giants-Preseason-Spiel gegen Minnesota mit 3 Receptions für 34 Yards und einem Touchdown von Jaxson Dart einen positiven Game-Checkpoint geliefert und bleibt im offenen Wettbewerb um Receiver-Rotationsreps hinter Malik Nabers.","role_class":"rookie_competing_for_receiver_rotation_with_positive_preseason_usage","competition_summary":{"room_context":"Receiver-Hierarchie hinter Malik Nabers bleibt offen","competition_status":"active_rotation_competition_with_positive_preseason_checkpoint"},"usage_summary":{"preseason_game":"vs MIN","receptions":3,"receiving_yards":34,"receiving_touchdowns":1,"quarterback":"Jaxson Dart"},"first_team_usage_class":"unknown","high_value_usage":{"red_zone":"touchdown_reception","third_down":"unknown","two_minute":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["game_usage:new-york-giants-vs-minnesota:malachi-fields:observed-2026-08-16","team_context:new-york-giants:receiver-rotation-open:observed-2026-08-16"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-16T19:48:00+02:00",
+            "state_hash": "7e926df8ce6aaaf78c1a95beb8a7ccf6ef5d7d13536b156c365e67da4ad8b087",
+            "material_state": {
+              "role_summary": "Rookie Malachi Fields hat im Giants-Preseason-Spiel gegen Minnesota mit 3 Receptions für 34 Yards und einem Touchdown von Jaxson Dart einen positiven Game-Checkpoint geliefert und bleibt im offenen Wettbewerb um Receiver-Rotationsreps hinter Malik Nabers.",
+              "role_class": "rookie_competing_for_receiver_rotation_with_positive_preseason_usage",
+              "competition_summary": {
+                "room_context": "Receiver-Hierarchie hinter Malik Nabers bleibt offen",
+                "competition_status": "active_rotation_competition_with_positive_preseason_checkpoint"
+              },
+              "usage_summary": {
+                "preseason_game": "vs MIN",
+                "receptions": 3,
+                "receiving_yards": 34,
+                "receiving_touchdowns": 1,
+                "quarterback": "Jaxson Dart"
+              },
+              "first_team_usage_class": "unknown",
+              "high_value_usage": {
+                "red_zone": "touchdown_reception",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "game_usage:new-york-giants-vs-minnesota:malachi-fields:observed-2026-08-16",
+              "team_context:new-york-giants:receiver-rotation-open:observed-2026-08-16"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "matt-hibner-2026": {
         "entity_fingerprint": "player:sleeper_id:13324",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "player-role-watch"
+        ],
         "last_checked_at": "2026-08-16T19:48:00+02:00",
         "status": "active",
-        "observations": {"role-opportunity":{"status":"baseline","last_checked_at":"2026-08-16T19:48:00+02:00","state_hash":"e5f037f61d099f14047263ee24f801a19cbfc25f764118155215294bceee8787","material_state":{"role_summary":"Rookie Matt Hibner konkurriert nach den Abgängen von Isaiah Likely und Charlie Kolar mit Josh Cuevas um Baltimores primäre passfangende TE2-Rolle hinter dem klaren TE1 Mark Andrews; positive Camp- und Preseason-Receiving-Evidenz hält den Pfad offen.","role_class":"rookie_competing_for_primary_pass_catching_te2_role_behind_andrews","competition_summary":{"starter":"Mark Andrews","primary_competitor":"Josh Cuevas","competition_status":"open_primary_te2_competition"},"usage_summary":{"training_camp_started":true,"recent_evidence":"Fünf-Catch-Trainingstag und mehrere Receiving-Plays im jüngsten Preseason-Spiel."},"first_team_usage_class":"unknown","high_value_usage":{"status":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["camp_report:baltimore-ravens:matt-hibner-five-catch-practice:observed-2026-08-16","game_usage:baltimore-ravens:matt-hibner-preseason-receiving:observed-2026-08-16","team_context:baltimore-ravens:te-depth-chart:observed-2026-08-16"],"last_material_change_at":null,"last_error":null}}
+        "observations": {
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-16T19:48:00+02:00",
+            "state_hash": "e5f037f61d099f14047263ee24f801a19cbfc25f764118155215294bceee8787",
+            "material_state": {
+              "role_summary": "Rookie Matt Hibner konkurriert nach den Abgängen von Isaiah Likely und Charlie Kolar mit Josh Cuevas um Baltimores primäre passfangende TE2-Rolle hinter dem klaren TE1 Mark Andrews; positive Camp- und Preseason-Receiving-Evidenz hält den Pfad offen.",
+              "role_class": "rookie_competing_for_primary_pass_catching_te2_role_behind_andrews",
+              "competition_summary": {
+                "starter": "Mark Andrews",
+                "primary_competitor": "Josh Cuevas",
+                "competition_status": "open_primary_te2_competition"
+              },
+              "usage_summary": {
+                "training_camp_started": true,
+                "recent_evidence": "Fünf-Catch-Trainingstag und mehrere Receiving-Plays im jüngsten Preseason-Spiel."
+              },
+              "first_team_usage_class": "unknown",
+              "high_value_usage": {
+                "status": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "camp_report:baltimore-ravens:matt-hibner-five-catch-practice:observed-2026-08-16",
+              "game_usage:baltimore-ravens:matt-hibner-preseason-receiving:observed-2026-08-16",
+              "team_context:baltimore-ravens:te-depth-chart:observed-2026-08-16"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
       },
       "managed-roster-player-12481": {
         "entity_fingerprint": "player:sleeper_id:12481",
-        "target_set_ids": ["managed-roster-health"],
-        "last_checked_at": "2026-08-17T01:10:00+01:00",
-        "status": "active",
-        "observations": {"injury-status":{"status":"baseline","last_checked_at":"2026-08-17T01:10:00+01:00","state_hash":"7e33f1b6bcbbe7e13d0c8ee2fe4b5efc874278b656e7ea516f10b1222ffd2f9a","material_state":{"injury_summary":"Nach der schweren Bein-/Knöchelverletzung 2025 war Skattebo zum Campstart wieder für Teamdrills freigegeben und absolvierte im ersten Preseason-Spiel vier Carries für 19 Yards. Die Rückkehr zu echter Spielbelastung bestätigt aktuelle Verfügbarkeit; die schwere Verletzungshistorie bleibt dennoch ein Beobachtungsgrund.","availability_class":"available","designation":"returned_from_2025_lower_leg_ankle_injury","reserve_status":"active","practice_status":"unknown","return_timeline":{"status":"returned_to_game_action","next_checkpoint":"Neue Trainings- oder Spielbeschränkung, Belastungsrückgang oder erneute Beschwerden"},"confidence":"high"},"confidence":"high","source_fingerprints":["article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00","game_usage:giants-vikings:cam-skattebo:preseason-week1-2026","official_team:giants.com:cam-skattebo-training-camp-good-to-go:observed-2026-08-16"],"last_material_change_at":null,"last_error":null}}
-      },
-      "jonathon-brooks-2026": {
-        "entity_fingerprint": "player:sleeper_id:11583",
-        "target_set_ids": ["player-role-watch"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-17T01:10:00+01:00",
         "status": "active",
         "observations": {
-          "injury-status": {"status":"baseline","last_checked_at":"2026-08-17T01:10:00+01:00","state_hash":"ce95f48dc7a01c4c12d9996775ddc0616c10c9e431fccfd0441c537ddc5e9b07","material_state":{"injury_summary":"Nach der Knieverletzung, wegen der Brooks die Saison 2025 verpasste, war er im Camp wieder in voller gepolsterter Arbeit und absolvierte nun Preseason-Spielbelastung mit drei Carries für fünf Yards sowie einem Catch für neun Yards. Damit ist die Rückkehr in Game Action bestätigt; weitere Belastbarkeit ohne Rückschlag bleibt der nächste Prüfpunkt.","availability_class":"available","designation":"returned_from_knee_injury_to_game_action","reserve_status":"active","practice_status":"unknown","return_timeline":{"status":"returned_to_game_action","next_checkpoint":"Weitere volle Trainings- und Spielbeteiligung ohne erneute Kniebeschwerden"},"confidence":"high"},"confidence":"high","source_fingerprints":["article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00","game_usage:panthers-bills:jonathon-brooks:preseason-week1-2026","official_team:panthers.com:jonathon-brooks-padded-practice:observed-2026-08-16"],"last_material_change_at":null,"last_error":null},
-          "role-opportunity": {"status":"baseline","last_checked_at":"2026-08-17T01:10:00+01:00","state_hash":"8dd87cba74193a9c217c61c41505c6f944f1330dd10f6e9a052675f711a9c3ca","material_state":{"role_summary":"Brooks ist wieder Teil der aktiven Panthers-Backfield-Rotation. Weil Chuba Hubbard aktuell mit einer Hamstring-Verletzung week-to-week ist, ist der zusätzliche kurzfristige Starter-/Volumenpfad für Brooks ausdrücklich verletzungsbedingt geöffnet; daraus folgt noch kein dauerhafter Hierarchiewechsel vor Hubbard.","role_class":"available_backfield_rotation_with_injury_opened_starting_path","competition_summary":{"incumbent_lead":"Chuba Hubbard","competition_status":"temporary_opportunity_open_while_hubbard_sidelined","opportunity_provenance":"injury_opened","recheck_trigger":"Hubbards Rückkehr ins volle Training beziehungsweise in die Spielrotation"},"usage_summary":{"preseason_game_action":true,"carries":3,"rushing_yards":5,"receptions":1,"receiving_yards":9,"first_team_share_confirmed":false},"first_team_usage_class":"unknown","high_value_usage":{"goal_line":"unknown","passing_down":"unknown","third_down":"unknown","two_minute":"unknown"},"confidence":"medium"},"confidence":"medium","source_fingerprints":["article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00","game_usage:panthers-bills:jonathon-brooks:preseason-week1-2026","news:reuters:chuba-hubbard-hamstring-week-to-week:published-2026-08-13","official_team:panthers.com:jonathon-brooks-padded-practice:observed-2026-08-16"],"last_material_change_at":null,"last_error":null}
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-17T01:10:00+01:00",
+            "state_hash": "7e33f1b6bcbbe7e13d0c8ee2fe4b5efc874278b656e7ea516f10b1222ffd2f9a",
+            "material_state": {
+              "injury_summary": "Nach der schweren Bein-/Knöchelverletzung 2025 war Skattebo zum Campstart wieder für Teamdrills freigegeben und absolvierte im ersten Preseason-Spiel vier Carries für 19 Yards. Die Rückkehr zu echter Spielbelastung bestätigt aktuelle Verfügbarkeit; die schwere Verletzungshistorie bleibt dennoch ein Beobachtungsgrund.",
+              "availability_class": "available",
+              "designation": "returned_from_2025_lower_leg_ankle_injury",
+              "reserve_status": "active",
+              "practice_status": "unknown",
+              "return_timeline": {
+                "status": "returned_to_game_action",
+                "next_checkpoint": "Neue Trainings- oder Spielbeschränkung, Belastungsrückgang oder erneute Beschwerden"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00",
+              "game_usage:giants-vikings:cam-skattebo:preseason-week1-2026",
+              "official_team:giants.com:cam-skattebo-training-camp-good-to-go:observed-2026-08-16"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
+        }
+      },
+      "jonathon-brooks-2026": {
+        "entity_fingerprint": "player:sleeper_id:11583",
+        "target_set_ids": [
+          "player-role-watch"
+        ],
+        "last_checked_at": "2026-08-17T01:10:00+01:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-17T01:10:00+01:00",
+            "state_hash": "ce95f48dc7a01c4c12d9996775ddc0616c10c9e431fccfd0441c537ddc5e9b07",
+            "material_state": {
+              "injury_summary": "Nach der Knieverletzung, wegen der Brooks die Saison 2025 verpasste, war er im Camp wieder in voller gepolsterter Arbeit und absolvierte nun Preseason-Spielbelastung mit drei Carries für fünf Yards sowie einem Catch für neun Yards. Damit ist die Rückkehr in Game Action bestätigt; weitere Belastbarkeit ohne Rückschlag bleibt der nächste Prüfpunkt.",
+              "availability_class": "available",
+              "designation": "returned_from_knee_injury_to_game_action",
+              "reserve_status": "active",
+              "practice_status": "unknown",
+              "return_timeline": {
+                "status": "returned_to_game_action",
+                "next_checkpoint": "Weitere volle Trainings- und Spielbeteiligung ohne erneute Kniebeschwerden"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00",
+              "game_usage:panthers-bills:jonathon-brooks:preseason-week1-2026",
+              "official_team:panthers.com:jonathon-brooks-padded-practice:observed-2026-08-16"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          },
+          "role-opportunity": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-17T01:10:00+01:00",
+            "state_hash": "8dd87cba74193a9c217c61c41505c6f944f1330dd10f6e9a052675f711a9c3ca",
+            "material_state": {
+              "role_summary": "Brooks ist wieder Teil der aktiven Panthers-Backfield-Rotation. Weil Chuba Hubbard aktuell mit einer Hamstring-Verletzung week-to-week ist, ist der zusätzliche kurzfristige Starter-/Volumenpfad für Brooks ausdrücklich verletzungsbedingt geöffnet; daraus folgt noch kein dauerhafter Hierarchiewechsel vor Hubbard.",
+              "role_class": "available_backfield_rotation_with_injury_opened_starting_path",
+              "competition_summary": {
+                "incumbent_lead": "Chuba Hubbard",
+                "competition_status": "temporary_opportunity_open_while_hubbard_sidelined",
+                "opportunity_provenance": "injury_opened",
+                "recheck_trigger": "Hubbards Rückkehr ins volle Training beziehungsweise in die Spielrotation"
+              },
+              "usage_summary": {
+                "preseason_game_action": true,
+                "carries": 3,
+                "rushing_yards": 5,
+                "receptions": 1,
+                "receiving_yards": 9,
+                "first_team_share_confirmed": false
+              },
+              "first_team_usage_class": "unknown",
+              "high_value_usage": {
+                "goal_line": "unknown",
+                "passing_down": "unknown",
+                "third_down": "unknown",
+                "two_minute": "unknown"
+              },
+              "confidence": "medium"
+            },
+            "confidence": "medium",
+            "source_fingerprints": [
+              "article_snapshot:user-provided-2026-08-16-preseason-week-1-key-takeaways:2026-08-17T01-10+01-00",
+              "game_usage:panthers-bills:jonathon-brooks:preseason-week1-2026",
+              "news:reuters:chuba-hubbard-hamstring-week-to-week:published-2026-08-13",
+              "official_team:panthers.com:jonathon-brooks-padded-practice:observed-2026-08-16"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
+          }
         }
       },
       "managed-roster-player-12534": {
         "entity_fingerprint": "player:sleeper_id:12534",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-22T07:44:17+01:00",
         "status": "active",
         "observations": {
@@ -352,11 +1031,16 @@
               "designation": "hyperextended_right_knee",
               "reserve_status": "active",
               "practice_status": "did_not_participate",
-              "return_timeline": {"status":"week_to_week","next_checkpoint":"Belastbare Trainingsrückkehr oder bestätigte Week-1-Verfügbarkeit"},
+              "return_timeline": {
+                "status": "week_to_week",
+                "next_checkpoint": "Belastbare Trainingsrückkehr oder bestätigte Week-1-Verfügbarkeit"
+              },
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": ["news:kyle-monangai-hyperextended-right-knee-week-to-week:observed-2026-08-22"],
+            "source_fingerprints": [
+              "news:kyle-monangai-hyperextended-right-knee-week-to-week:observed-2026-08-22"
+            ],
             "last_material_change_at": null,
             "last_error": null
           }
@@ -364,7 +1048,9 @@
       },
       "managed-roster-player-12518": {
         "entity_fingerprint": "player:sleeper_id:12518",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-22T07:44:17+01:00",
         "status": "active",
         "observations": {
@@ -378,11 +1064,17 @@
               "designation": "minor_groin_injury",
               "reserve_status": "active",
               "practice_status": "did_not_participate",
-              "return_timeline": {"status":"approximately_one_week_week1_not_expected_at_risk","next_checkpoint":"Rückkehr ins Training und Bestätigung voller Week-1-Verfügbarkeit"},
+              "return_timeline": {
+                "status": "approximately_one_week_week1_not_expected_at_risk",
+                "next_checkpoint": "Rückkehr ins Training und Bestätigung voller Week-1-Verfügbarkeit"
+              },
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": ["news:tyler-warren-one-week-week1-not-at-risk:observed-2026-08-22","practice_report:colts:tyler-warren-groin-dnp:observed-2026-08-21"],
+            "source_fingerprints": [
+              "news:tyler-warren-one-week-week1-not-at-risk:observed-2026-08-22",
+              "practice_report:colts:tyler-warren-groin-dnp:observed-2026-08-21"
+            ],
             "last_material_change_at": null,
             "last_error": null
           }
@@ -390,7 +1082,9 @@
       },
       "managed-roster-player-5947": {
         "entity_fingerprint": "player:sleeper_id:5947",
-        "target_set_ids": ["managed-roster-health"],
+        "target_set_ids": [
+          "managed-roster-health"
+        ],
         "last_checked_at": "2026-08-22T07:44:17+01:00",
         "status": "active",
         "observations": {
@@ -404,11 +1098,16 @@
               "designation": "right_hand_injury",
               "reserve_status": "active",
               "practice_status": "unknown",
-              "return_timeline": {"status":"questionable_timeline_unclear","next_checkpoint":"Volle Trainingsbeteiligung oder konkreter medizinischer Zeitplan"},
+              "return_timeline": {
+                "status": "questionable_timeline_unclear",
+                "next_checkpoint": "Volle Trainingsbeteiligung oder konkreter medizinischer Zeitplan"
+              },
               "confidence": "medium"
             },
             "confidence": "medium",
-            "source_fingerprints": ["joint_practice_report:raiders-panthers:jakobi-meyers-right-hand:observed-2026-08-22"],
+            "source_fingerprints": [
+              "joint_practice_report:raiders-panthers:jakobi-meyers-right-hand:observed-2026-08-22"
+            ],
             "last_material_change_at": null,
             "last_error": null
           }
@@ -416,9 +1115,11 @@
       },
       "xavier-legette-2026": {
         "entity_fingerprint": "player:sleeper_id:11626",
-        "target_set_ids": ["player-role-watch"],
-        "last_checked_at": "2026-08-22T07:44:17+01:00",
-        "status": "active",
+        "target_set_ids": [
+          "player-role-watch"
+        ],
+        "last_checked_at": "2026-08-22T18:05:15.565068Z",
+        "status": "pending",
         "observations": {
           "injury-status": {
             "status": "baseline",
@@ -430,13 +1131,29 @@
               "designation": "lower_body_injury_after_joint_practice",
               "reserve_status": "active",
               "practice_status": "did_not_participate",
-              "return_timeline": {"status":"short_term_precautionary_absence_no_long_term_issue_expected","next_checkpoint":"Rückkehr ins Training oder neue belastbare Diagnose beziehungsweise Zeitplan"},
+              "return_timeline": {
+                "status": "short_term_precautionary_absence_no_long_term_issue_expected",
+                "next_checkpoint": "Rückkehr ins Training oder neue belastbare Diagnose beziehungsweise Zeitplan"
+              },
               "confidence": "high"
             },
             "confidence": "high",
-            "source_fingerprints": ["joint_practice_report:panthers:xavier-legette-rolled-up:observed-2026-08-19","team_report:panthers:xavier-legette-preseason-held-out:observed-2026-08-21"],
+            "source_fingerprints": [
+              "joint_practice_report:panthers:xavier-legette-rolled-up:observed-2026-08-19",
+              "team_report:panthers:xavier-legette-preseason-held-out:observed-2026-08-21"
+            ],
             "last_material_change_at": null,
             "last_error": null
+          },
+          "role-opportunity": {
+            "status": "pending",
+            "last_checked_at": "2026-08-22T18:05:15.565068Z",
+            "state_hash": null,
+            "material_state": {},
+            "confidence": null,
+            "source_fingerprints": [],
+            "last_material_change_at": null,
+            "last_error": "Initial role-opportunity baseline is required after synchronizing the active profile binding."
           }
         }
       }

@@ -34,7 +34,6 @@ function Get-GeneratedDataLabel {
     switch -Regex ($normalizedPath) {
         "^public/data/past_seasons/Drafts/" { return "Draft history" }
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
-        "^public/data/chat/players-relevant/" { return "Player chat export" }
         "^public/data/backup/" { return "Backups" }
         "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
         "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
@@ -44,7 +43,6 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
-        "/Players_Relevant\.json$" { return "Relevant players" }
         "/Players\.json$" { return "Players" }
         "/Transactions\.json$" { return "Transactions" }
         "/Drafts\.json$" { return "Drafts" }
