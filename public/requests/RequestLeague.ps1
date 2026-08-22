@@ -16,6 +16,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -146,26 +147,36 @@ try {
     }
 
 
-    # --- Transaktionen für aktuelle Saison aktualisieren ---
-    $transactionsCurrentSeason = Update-TransactionsCurrentSeason
-    $transactionsCurrentSeason = Update-CurrentTransactionDraftPickTypesFromSleeper `
+    # --- Transaktionen für aktuelle Saison in-memory aktualisieren ---
+    # RequestLeague publiziert erst nach Draft-Identity- und Pick-Detail-Enrichment,
+    # damit Transactions.json innerhalb eines League-Laufs nur einen finalen Zustand sieht.
+    $transactionsCurrentSeason = Get-LeagueTransactionsCurrentSeasonInMemory -leagueID $LeagueID
+    $transactionsCurrentSeason = Resolve-LeagueTransactionDraftPickTypesInMemory `
         -transactions $transactionsCurrentSeason `
         -leagueID $LeagueID
 
     if ($transactionsCurrentSeason) {
-        Write-Host "Transactions for current season updated." -ForegroundColor Green
+        Write-Host "Transactions for current season prepared in memory." -ForegroundColor Green
     } else {
         Write-Host "No transactions for current season generated." -ForegroundColor Yellow
     }
 
-    # --- Upcoming Drafts aktualisieren ---
-    $drafts = Update-DraftsOrderAware
+    # --- Upcoming Drafts aus demselben Transaction-Snapshot aktualisieren ---
+    $drafts = Update-LeagueDraftsOrderAwareFromTransactions `
+        -transactions $transactionsCurrentSeason `
+        -leagueID $LeagueID
     if (-not $drafts -or @($drafts).Count -eq 0) {
-        Write-Warning "Update-DraftsOrderAware returned no drafts. Falling back to local Drafts.json."
+        Write-Warning "Update-LeagueDraftsOrderAwareFromTransactions returned no drafts. Falling back to local Drafts.json."
         $drafts = Get-LeagueDraftsLocal
     }
 
-    Update-CurrentTransactionDraftPickDetails -drafts $drafts | Out-Null
+    # Fertige Draftdaten liefern Pickpositionen/Spieler in-memory zurück an die Transactions.
+    $transactionsCurrentSeason = Add-LeagueTransactionDraftPickDetailsInMemory `
+        -transactions $transactionsCurrentSeason `
+        -drafts $drafts
+
+    # Einziger Transactions-Persistierungspunkt im League-Refresh.
+    Save-TransactionsCurrentSeason -transactions $transactionsCurrentSeason
 
     # --- Liga, Teams, Standings holen ---
     $league = Get-LeagueRaw
