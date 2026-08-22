@@ -35,6 +35,7 @@ guidance:
     - Do not add, retain or shift app refresh times merely to satisfy Fantasy Management monitoring windows; app producer schedules must be justified exclusively by the app/source pipeline's own freshness and operational needs.
     - Never make successful app data generation or publication depend on Fantasy Management scripts, files, heartbeats, status contracts or other Fantasy Management runtime state without that explicit approval.
     - When Fantasy Management needs additional freshness, observability or monitoring evidence for app data, implement it in an independent Fantasy-Management-owned path that consumes published app state rather than injecting a dependency into the app producer.
+    - Do not make canonical app producers generate reduced, chunked or duplicated datasets solely for a particular AI, chat or agent client's ingestion limits; use targeted reads or consumer-owned derived contracts instead.
 
   documentation:
     - When changing architecture, update .ai-context/manual/decisions.yaml.

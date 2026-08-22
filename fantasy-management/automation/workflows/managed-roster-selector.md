@@ -14,7 +14,7 @@ Required parameters:
 
 - `team_ref`: must be `managed_team`;
 - `membership_fields`: ordered list of team fields to union, initially `Roster`, `Reserve` and `Taxi`;
-- `player_index_path`: current chunk index used to resolve player records;
+- `player_source_path`: current FM-owned player-signal contract used to resolve player records;
 - `stable_identifier`: must be `sleeper_id`;
 - `target_id_template`: stable target ID template using `{sleeper_id}`;
 - `deduplicate_player_ids`: whether duplicate membership entries are collapsed;
@@ -26,8 +26,8 @@ Required parameters:
 2. Read every configured membership field from that team.
 3. Treat `null` or a missing optional membership field as an empty list.
 4. Union all player IDs and deduplicate them before creating targets.
-5. Load `player_index_path` and only the chunks required to resolve those player IDs.
-6. Fail closed when a selected ID cannot be resolved to exactly one current player record.
+5. Load `player_source_path` once and resolve selected Sleeper IDs through `players[].player_id`.
+6. Fail closed when a selected ID cannot be resolved to exactly one current player-signal record.
 7. Build each entity with:
    - `type: player`;
    - current display name;

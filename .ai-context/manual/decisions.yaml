@@ -203,7 +203,8 @@ decisions:
 
   - id: ADR-015
     title: Relevant player chat export is generated helper output
-    status: accepted
+    status: superseded
+    supersededBy: ADR-024
     context: >
       The full generated player file is too large for practical AI/chat analysis,
       but the app should not lose player fields or introduce a manually maintained
@@ -483,3 +484,34 @@ decisions:
       negative:
         - Some existing cross-context integrations may require separate review
           and migration to comply with the stricter boundary.
+
+  - id: ADR-024
+    title: Retire app-generated AI player subsets and chat chunks
+    status: accepted
+    context: >
+      Players_Relevant.json and its ten-player chat chunks were introduced to work
+      around an earlier AI-client ingestion limit. Fantasy Operations now has
+      consumer-owned derived contracts for broad player analysis, while targeted
+      repository reads can retrieve exact raw player records without requiring a
+      duplicated app-generated player dataset.
+    decision: >
+      Keep public/data/Players.json as the canonical current raw player read model.
+      Remove public/data/Players_Relevant.json, public/data/chat/players-relevant/**
+      and their app-generation helpers. Fantasy Management should use its own
+      derived Operations contracts for broad analysis and targeted read-only access
+      to Players.json when raw player fields are required. Canonical app producers
+      must not generate reduced, chunked or duplicated datasets solely for an AI,
+      chat or agent client's ingestion limits.
+    rationale: >
+      Tool-specific convenience outputs are consumer concerns. Removing them keeps
+      the application producer independent from Fantasy Management and avoids
+      frequent League refresh churn across dozens of files that have no app
+      consumer.
+    consequences:
+      positive:
+        - RequestLeague no longer filters and republishes an AI-only player subset.
+        - The 10-minute League refresh no longer rewrites chat chunk artifacts.
+        - Fantasy Management relies on canonical app inputs and FM-owned derived contracts.
+        - There is no second relevance definition competing with player-signals population rules.
+      negative:
+        - Agents needing a raw field outside an FM-derived contract must perform a targeted Players.json read.

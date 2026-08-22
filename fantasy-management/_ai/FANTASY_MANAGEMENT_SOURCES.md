@@ -19,8 +19,6 @@ Important files:
 - `public/data/Transactions.json`
 - `public/data/Timestamps.json`
 - `public/data/Metadata.json`
-- `public/data/chat/players-relevant/index.json`
-- `public/data/chat/players-relevant/players_*.json`
 
 ## League source rules
 
@@ -52,14 +50,15 @@ Always re-check `Metadata.json` when exact owner mapping matters.
 
 ## Player source rules
 
-Do not use the full `public/data/Players.json` as the operational source for broad player lists in chat or agent workflows when chunked player exports are available.
+`public/data/Players.json` is the canonical current raw player read model from the application context. Fantasy Management consumes it read-only and must not require the app producer to create AI- or agent-specific reduced copies or chunk exports.
 
-For broad player lists, waiver/free-agent boards and candidate generation, use:
+For broad operational analysis, prefer the smallest current Fantasy-Management-owned derived contract that matches the task instead of scanning the raw player file:
 
-1. `public/data/chat/players-relevant/index.json`
-2. the matching `public/data/chat/players-relevant/players_*.json` chunks
+1. `fantasy-management/generated/operations/player-signals.json` for the league-wide QB/RB/WR/TE/K operational population and joined market, projection, activity, ownership, injury and nominal-role signals.
+2. `fantasy-management/generated/operations/free-agent-signals.json` for the complete current fantasy-free-agent population.
+3. `fantasy-management/generated/operations/managed-roster-signals.json` for Mighty Giants roster-focused work.
 
-For a single player, load the relevant chunk or exact current player record before drawing conclusions.
+When a raw app field or an exact player record is needed, read the targeted current record from `public/data/Players.json`. Do not recreate `Players_Relevant.json` or a chunked chat export merely to make the player data easier for a specific AI client to ingest.
 
 Important player fields may include ID, name fields, NFL team, position, age, salary, projected salary, status, injury fields, games played/potential, snaps, attempts, fantasy points, point history, game history, ranking, grading, FantasyPros and ESPN fields, plus `ESPNID`, `SleeperDepthChartPosition` and `SleeperDepthChartOrder` when present.
 

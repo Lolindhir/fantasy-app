@@ -119,7 +119,6 @@ class NflSourceDataTests(unittest.TestCase):
                 {"ID": "S2", "TankID": "T2", "Name": "Undrafted Player", "Position": "RB"},
             ]
             (root / "public/data/Players.json").write_text(json.dumps(players), encoding="utf-8")
-            (root / "public/data/Players_Relevant.json").write_text(json.dumps(players), encoding="utf-8")
 
             datasets = {d.id: d for d in common_mod.load_registry(root)}
             result = materialize(root, datasets)

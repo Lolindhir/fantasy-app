@@ -42,7 +42,7 @@ layers:
     path: public/requests/**
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
-      consumed by the Angular app and AI/chat helper workflows.
+      consumed by the Angular app and downstream read-only consumers.
     owns:
       - fetching external/source data
       - data transformation
@@ -50,7 +50,6 @@ layers:
       - writing generated JSON
       - current-season incremental update logic
       - force rebuild logic for generated scopes
-      - chunked helper exports derived from generated data
     doesNotOwn:
       - frontend presentation state
       - manual architecture decisions
@@ -58,13 +57,10 @@ layers:
   - name: generated-app-data
     path: public/data/*.json
     responsibility: >
-      Represents current app-readable read models consumed by Angular and
-      generated helper outputs derived from those read models.
+      Represents current app-readable read models consumed by Angular.
     owns:
       - current generated app data shape
       - generated league/team/player/draft/transaction/timestamp data
-      - relevant player subset output
-      - generated AI/chat helper chunk output
     doesNotOwn:
       - architectural decisions
       - manually authored source-of-truth documentation
@@ -84,6 +80,7 @@ layers:
       - source-of-truth league rules
       - PowerShell data generation pipeline
       - persisted generated JSON
+      - AI/chat-client-specific convenience datasets
 
 frontendStructure:
   current:

@@ -99,7 +99,6 @@ def ids_from_ff(row: dict[str, str]) -> dict[str, str]:
 
 def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
     players = load_json(repo_root / "public/data/Players.json", []) or []
-    relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
     candidates: list[IdentityCandidate] = []
     for row in players:
         ids: dict[str, str] = {}
@@ -122,7 +121,7 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
                 priority=30,
             )
         )
-    return candidates, relevant
+    return candidates, players
 
 
 def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:

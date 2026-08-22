@@ -17,7 +17,7 @@ def build_audit(
     draft_seasons: Iterable[int],
     identity_source_conflicts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    _, relevant_players = app_player_candidates(repo_root)
+    _, app_players = app_player_candidates(repo_root)
     lookup = identity_lookup(canonical)
     canonical_by_internal = {row["NFLPlayerID"]: row for row in canonical}
     ff_evidence = build_ff_draft_evidence(ff_rows, canonical)
@@ -26,7 +26,7 @@ def build_audit(
     by_position: dict[str, Counter[str]] = defaultdict(Counter)
     unmatched, unknown_draft = [], []
 
-    for player in relevant_players:
+    for player in app_players:
         sleeper = clean(player.get("ID"))
         internal_id = lookup.get(("Sleeper", sleeper)) if sleeper else None
         position = clean(player.get("Position")) or "UNKNOWN"
@@ -72,8 +72,8 @@ def build_audit(
     source_conflicts = identity_source_conflicts or []
     source_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in source_conflicts)
     return {
-        "schemaVersion": 1, "generatedAtUtc": utc_now(), "scope": "public/data/Players_Relevant.json",
-        "canonicalIdentityCount": len(canonical), "relevantPlayerCount": len(relevant_players),
+        "schemaVersion": 1, "generatedAtUtc": utc_now(), "scope": "public/data/Players.json",
+        "canonicalIdentityCount": len(canonical), "appPlayerCount": len(app_players),
         "identityCoverage": dict(identity_counts), "draftStatusCoverage": dict(draft_counts),
         "draftStatusByPosition": {position: dict(counts) for position, counts in sorted(by_position.items())},
         "identityInvariantViolations": {"duplicateLinkProviderIDs": link_duplicates,
@@ -85,7 +85,7 @@ def build_audit(
         "identitySourceMappingConflictCount": len(source_conflicts),
         "identitySourceMappingConflictsByReason": dict(source_conflicts_by_reason),
         "identitySourceMappingConflicts": source_conflicts,
-        "unmatchedRelevantPlayers": unmatched, "unknownDraftStatusRelevantPlayers": unknown_draft,
+        "unmatchedAppPlayers": unmatched, "unknownDraftStatusAppPlayers": unknown_draft,
         "rules": {
             "drafted": "Player resolves to a canonical pick in nflverse.draft-picks.",
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",

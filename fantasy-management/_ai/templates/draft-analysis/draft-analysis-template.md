@@ -27,7 +27,7 @@ supersedes: null
 |---|---|---|
 | `public/data/Drafts.json` |  | Draftreihenfolge, Pickbesitz und Trades |
 | `public/data/League.json` |  | Ligaformat, Kader und Teamfenster |
-| `public/data/chat/players-relevant/index.json` |  | Player-Zuordnung und Produktionshistorie |
+| `public/data/Players.json` |  | Gezielte aktuelle Player-Records und Produktionshistorie |
 | Externer Marktsnapshot |  | Markt- und Consensus-Kontext |
 
 ## 3. Grenzen der Analyse
