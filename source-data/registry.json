@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "datasets": [
     {
       "id": "nflverse.players",
@@ -14,6 +14,12 @@
       "kind": "identity",
       "refreshPolicy": "periodic",
       "retentionPolicy": "latest-with-git-history",
+      "lifecycle": {
+        "class": "dynamic",
+        "partitionKey": "none",
+        "finalization": "never",
+        "repairPolicy": "normal"
+      },
       "license": "CC BY 4.0",
       "attribution": "nflverse"
     },
@@ -30,6 +36,12 @@
       "kind": "identity-mapping",
       "refreshPolicy": "periodic",
       "retentionPolicy": "latest-with-git-history",
+      "lifecycle": {
+        "class": "dynamic",
+        "partitionKey": "none",
+        "finalization": "never",
+        "repairPolicy": "normal"
+      },
       "license": "CC BY 4.0",
       "attribution": "DynastyProcess data via nflverse/ffverse"
     },
@@ -44,10 +56,124 @@
       "requiredColumns": ["season", "round", "pick", "team", "gsis_id", "pfr_player_id", "pfr_player_name", "position"],
       "minimumRows": 5000,
       "kind": "historical-event",
-      "refreshPolicy": "missing-or-current-year",
+      "refreshPolicy": "discover-new-partitions",
       "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "immutable-history",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      },
       "license": "CC BY 4.0",
       "attribution": "nflverse; draft data via Pro Football Reference"
+    },
+    {
+      "id": "nflverse.combine",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/combine/combine.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/combine/raw-latest.csv",
+      "metadataPath": "providers/nflverse/combine/metadata.json",
+      "requiredColumns": ["season", "draft_year", "draft_team", "draft_round", "draft_ovr", "pfr_id", "cfb_id", "player_name", "pos", "school", "ht", "wt", "forty", "bench", "vertical", "broad_jump", "cone", "shuttle"],
+      "minimumRows": 7000,
+      "kind": "athletic-measurement-history",
+      "refreshPolicy": "discover-new-partitions",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "immutable-history",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      },
+      "license": "CC BY 4.0",
+      "attribution": "nflverse; NFL Combine data courtesy of Pro Football Reference"
+    }
+  ],
+  "plannedDatasets": [
+    {
+      "id": "nflverse.rosters",
+      "kind": "seasonal-roster",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.weekly-rosters",
+      "kind": "weekly-roster",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season-week",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.schedules",
+      "kind": "schedule",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.player-stats",
+      "kind": "weekly-player-stats",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season-week",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.snap-counts",
+      "kind": "weekly-snap-counts",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season-week",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.depth-charts",
+      "kind": "depth-chart-snapshot",
+      "refreshPolicy": "snapshot",
+      "retentionPolicy": "permanent-snapshots",
+      "lifecycle": {
+        "class": "snapshot",
+        "partitionKey": "snapshot-time",
+        "finalization": "append-only-snapshots",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "nflverse.contracts",
+      "kind": "contract-snapshot",
+      "refreshPolicy": "snapshot",
+      "retentionPolicy": "permanent-snapshots",
+      "lifecycle": {
+        "class": "snapshot",
+        "partitionKey": "snapshot-time",
+        "finalization": "append-only-snapshots",
+        "repairPolicy": "explicit-force"
+      }
     }
   ]
 }

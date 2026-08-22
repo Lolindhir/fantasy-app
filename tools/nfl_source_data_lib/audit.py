@@ -4,10 +4,70 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .common import IDENTITY_ID_KEYS, clean, load_json
+from .common import IDENTITY_ID_KEYS, clean, load_json, load_registry_manifest
 from .draft import build_ff_draft_evidence, classify_draft_status
 from .identity import LINK_ID_KEYS, identity_lookup
 from .identity_model import WEAK_ID_KEYS
+
+
+def _combine_audit(
+    app_players: list[dict[str, Any]],
+    canonical: list[dict[str, Any]],
+    combine_payloads: dict[int, dict[str, Any]] | None,
+    combine_draft_link_conflicts: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    payloads = combine_payloads or {}
+    conflicts = combine_draft_link_conflicts or []
+    records = [
+        record
+        for payload in payloads.values()
+        for record in payload.get("Records", [])
+    ]
+    resolved_ids = {
+        record["NFLPlayerID"]
+        for record in records
+        if record.get("NFLPlayerID")
+    }
+    by_season: dict[str, dict[str, int]] = {}
+    for season, payload in sorted(payloads.items()):
+        season_records = payload.get("Records", [])
+        by_season[str(season)] = {
+            "records": len(season_records),
+            "resolvedIdentity": sum(1 for record in season_records if record.get("NFLPlayerID")),
+            "unresolvedIdentity": sum(1 for record in season_records if not record.get("NFLPlayerID")),
+            "canonicalDraftLinked": sum(1 for record in season_records if record.get("Draft")),
+        }
+
+    lookup = identity_lookup(canonical)
+    app_internal_ids: set[str] = set()
+    for player in app_players:
+        sleeper = clean(player.get("ID"))
+        tank = clean(player.get("TankID"))
+        internal_id = lookup.get(("Sleeper", sleeper)) if sleeper else None
+        if internal_id is None and tank:
+            internal_id = lookup.get(("Tank01", tank))
+        if internal_id:
+            app_internal_ids.add(internal_id)
+
+    seasons = sorted(payloads)
+    return {
+        "seasonCount": len(seasons),
+        "earliestSeason": seasons[0] if seasons else None,
+        "latestSeason": seasons[-1] if seasons else None,
+        "recordCount": len(records),
+        "resolvedIdentityCount": sum(1 for record in records if record.get("NFLPlayerID")),
+        "unresolvedIdentityCount": sum(1 for record in records if not record.get("NFLPlayerID")),
+        "withoutPfrIdCount": sum(
+            1 for record in records if not (record.get("SourceIDs") or {}).get("PFR")
+        ),
+        "canonicalDraftLinkedCount": sum(1 for record in records if record.get("Draft")),
+        "currentAppResolvedPlayerCount": len(app_internal_ids),
+        "currentAppPlayersWithCombine": len(app_internal_ids & resolved_ids),
+        "currentAppPlayersWithoutCombine": len(app_internal_ids - resolved_ids),
+        "draftLinkConflictCount": len(conflicts),
+        "draftLinkConflicts": conflicts,
+        "bySeason": by_season,
+    }
 
 
 def build_audit(
@@ -20,6 +80,8 @@ def build_audit(
     provider_mapping_conflicts: list[dict[str, Any]] | None = None,
     historical_mapping_stats: dict[str, int] | None = None,
     historical_resolution_conflicts: list[dict[str, Any]] | None = None,
+    combine_payloads: dict[int, dict[str, Any]] | None = None,
+    combine_draft_link_conflicts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     app_players = load_json(repo_root / "public/data/Players.json", []) or []
     lookup = identity_lookup(canonical)
@@ -102,9 +164,21 @@ def build_audit(
     history_stats = dict(historical_mapping_stats or {})
     history_conflicts = historical_resolution_conflicts or []
     history_conflicts_by_reason = Counter(item.get("Reason") or "unknown" for item in history_conflicts)
+
+    registry = load_registry_manifest(repo_root)
+    active_ids = [value["id"] for value in registry.get("datasets", [])]
+    planned_ids = [value["id"] for value in registry.get("plannedDatasets", [])]
+
     return {
         "schemaVersion": 1,
         "scope": "public/data/Players.json",
+        "datasetRegistry": {
+            "schemaVersion": registry.get("schemaVersion"),
+            "activeDatasetCount": len(active_ids),
+            "activeDatasetIDs": active_ids,
+            "plannedDatasetCount": len(planned_ids),
+            "plannedDatasetIDs": planned_ids,
+        },
         "canonicalIdentityCount": len(canonical),
         "appPlayerCount": len(app_players),
         "identityCoverage": dict(identity_counts),
@@ -113,6 +187,12 @@ def build_audit(
         "draftStatusByPosition": {
             position: dict(counts) for position, counts in sorted(by_position.items())
         },
+        "combineCoverage": _combine_audit(
+            app_players,
+            canonical,
+            combine_payloads,
+            combine_draft_link_conflicts,
+        ),
         "identityInvariantViolations": {
             "duplicateLinkProviderIDs": link_duplicates,
             "duplicateLinkProviderIDCount": sum(len(values) for values in link_duplicates.values()),
@@ -134,10 +214,13 @@ def build_audit(
         "unmatchedAppPlayers": unmatched,
         "unknownDraftStatusAppPlayers": unknown_draft,
         "rules": {
+            "datasetLifecycle": "Registry schema v2 classifies active and planned datasets as dynamic, immutable history, seasonal-finalizable or append-only snapshots. Immutable/finalized historical partitions require an explicit force repair before replacement.",
             "drafted": "Player resolves to a canonical pick in nflverse.draft-picks.",
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
             "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
+            "combineIdentity": "Combine rows resolve to NFLPlayerID only through the PFR provider mapping. Player names are descriptive and never used as an identity join.",
+            "combineDraftLink": "Combine source draft fields are retained as provenance; the canonical nflverse.draft-picks fact is authoritative for the normalized Draft link. Contradictions are audited and never silently overwritten.",
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
             "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history. Archived app snapshots may backfill Sleeper, Tank01 and ESPN only when at least two independently resolved provider IDs agree on one canonical person.",
