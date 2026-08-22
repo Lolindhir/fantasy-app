@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize provider NFL data and materialize provider-independent identities/draft facts."""
+"""Synchronize provider NFL data and materialize provider-independent canonical NFL facts."""
 from __future__ import annotations
 
 import argparse
@@ -18,7 +18,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("command", choices=("sync", "materialize", "audit"), nargs="?", default="sync")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--dataset", action="append", dest="datasets", help="Restrict sync to a dataset id; may be repeated")
-    parser.add_argument("--force", action="store_true", help="Replace raw files even when their content hash is unchanged")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Force raw replacement during sync and allow explicit repair of finalized "
+            "canonical partitions during materialize/full sync"
+        ),
+    )
     parser.add_argument("--offline", action="store_true", help="Do not fetch; validate and use already persisted raw files")
     parser.add_argument("--raw-only", action="store_true", help="For sync, stop after validated provider raw data is persisted")
     return parser.parse_args()
@@ -59,14 +66,23 @@ def main() -> int:
             print("materialization skipped: not all registered raw datasets are available")
             return 0
 
-    result = materialize(repo_root, datasets)
+    result = materialize(repo_root, datasets, force=args.force)
     if args.command == "sync":
         print(f"canonical identities: {result['identityCount']}")
         print(f"provider mappings: {result['providerMappingCount']}")
         print(f"provider mapping conflicts: {result['providerMappingConflictCount']}")
         print(f"draft seasons: {result['draftSeasonCount']}")
+        print(f"combine seasons: {result['combineSeasonCount']}")
+        print(f"combine draft-link conflicts: {result['combineDraftLinkConflictCount']}")
         coverage = result["audit"]["draftStatusCoverage"]
         print("draft coverage: " + ", ".join(f"{key}={value}" for key, value in sorted(coverage.items())))
+        combine = result["audit"]["combineCoverage"]
+        print(
+            "combine coverage: "
+            f"records={combine['recordCount']}, "
+            f"resolved={combine['resolvedIdentityCount']}, "
+            f"app={combine['currentAppPlayersWithCombine']}/{combine['currentAppResolvedPlayerCount']}"
+        )
     else:
         print(json.dumps({key: value for key, value in result.items() if key != "audit"}, indent=2))
     return 0
