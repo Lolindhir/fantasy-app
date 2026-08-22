@@ -4,9 +4,11 @@ import type { Player } from './player.models';
 export type TransactionPlayerRosterMap = Record<string, number | string>;
 
 export interface RawTransactionDraftPick {
-  DraftType: string;
+  DraftType: string | null;
+  DraftInstance?: number | null;
+  DraftCode?: string | null;
   DraftSource: string;
-  DraftKey: string;
+  DraftKey: string | null;
   Season: string;
   Round: number;
   SleeperDraftID?: string | null;
