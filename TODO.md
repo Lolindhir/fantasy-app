@@ -160,14 +160,10 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Provenienz: Je Dataset Provider, Upstream-Quelle, Abrufzeitpunkt, Source-URL bzw. Release-Identität, Format, Content-Hash, Zeilenanzahl, Schema-Version, Lizenz und erforderliche Attribution maschinenlesbar speichern.
   - Schutz: Neue Imports zunächst validieren und fail-closed behandeln; ein fehlerhafter oder unvollständiger Fetch darf einen vorhandenen letzten guten Datenbestand nicht zerstören.
 
-- [ ] NFL-Source-Dataset-Registry und Refresh-/Retention-Regeln definieren.
-  - Ziel: Für jedes unterstützte Dataset festlegen, ob es immutable, saisonal finalisierbar, snapshot-basiert oder fortlaufend dynamisch ist.
-  - Erste Priorität: Players, Fantasy Player IDs, Draft Picks, Combine, Rosters, Weekly Rosters, Schedules, Player Stats, Snap Counts, Depth Charts und Contracts.
-  - Immutable bzw. historisch stabile Daten wie abgeschlossene Drafts und Combine-Ergebnisse dauerhaft saison- bzw. jahrgangsbezogen erhalten und im Normalbetrieb nicht erneut überschreiben.
-  - Saisonale Daten wie Stats, Schedules und Weekly Rosters während der laufenden Saison aktualisieren und nach einem validierten Saisonabschluss finalisieren.
-  - Snapshot-Daten wie Depth Charts zeitpunktbezogen speichern, sodass historische Änderungen rekonstruierbar bleiben.
-  - Große Play-Level-Datensätze wie Play-by-Play, Participation und FTN Charting zunächst nur registrieren und erst bei einem konkreten Consumer dauerhaft importieren.
-  - Für jeden Datensatz festlegen, wann ein Force-Refresh bzw. eine historische Korrektur zulässig ist.
+- [x] NFL-Source-Dataset-Registry und Refresh-/Retention-Regeln definieren.
+  - Ergebnis: `source-data/registry.json` Schema v2 definiert und validiert `dynamic`, `immutable-history`, `seasonal-finalizable` und `snapshot` inklusive Refresh, Retention, Partitionierung, Finalisierung und Repair-Policy.
+  - Ergebnis: Aktive und geplante NFL-Datasets sind mit ihren Lifecycle-Verträgen registriert; historische Partitionen werden im Normalbetrieb geschützt und bewusste Reparaturen laufen explizit über Force/Repair.
+  - Validierung: Die Registry-Regeln sind Teil der Source-Test-Suite und des produktiven Raw-first-/No-op-Vertrags.
 
 - [x] Provideradapter für nflverse mit Raw-Persistierung und Content-Hash-Vergleich entwickeln.
   - Erledigt: Die registrierten nflverse-Datasets werden zentral geladen, vor Veröffentlichung auf Schema und Mindestumfang validiert und unter `source-data/providers/nflverse/` provider-nah persistiert.
@@ -188,17 +184,16 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Historie: Abgeschlossene Draftjahrgänge sind kanonische historische Source-Daten und werden nicht als aktuelle App-Draft-Assets interpretiert.
   - Validierung: Draft-Materialisierung ist Bestandteil des Real-Data-Audits und des verpflichtenden zweiten No-op-Passes.
 
-- [ ] NFL Combine als nächstes persistentes kanonisches Source-Dataset materialisieren.
-  - Ziel: Jahrgangsbezogene Combine-Messungen mit `NFLPlayerID` und Draft-Verknüpfung in `source-data/nfl/` materialisieren.
-  - Historie: Abgeschlossene Jahrgänge dauerhaft erhalten und standardmäßig nur fehlende neue Jahrgänge ergänzen; bewusste historische Korrekturen nur über einen expliziten Force-/Repair-Pfad zulassen.
-  - Integration: Erst nach Stabilisierung des Combine-Source-Datasets entscheiden, welche Felder in `Players.json` oder weitere generierte App-Readmodels übernommen werden.
-  - Validierung: Coverage gegen den aktuellen Playerbestand prüfen, insbesondere Rookies, ältere Spieler und Spieler ohne eindeutige Combine-Zuordnung.
+- [x] NFL Combine als nächstes persistentes kanonisches Source-Dataset materialisieren.
+  - Ergebnis: Combine-Messungen sind jahrgangsbezogen unter `source-data/nfl/combine/<season>.json` materialisiert und über eindeutige PFR-Mappings an `NFLPlayerID` sowie saisonbezogen an die kanonische Draft-Historie gebunden.
+  - Schutz: Unterschiedliche Same-Season-PFR-Claims werden als `ambiguous` quarantänisiert; identische Doppelzeilen und doppelte eindeutig aufgelöste Canonical-IDs bleiben fail-closed.
+  - Validierung: Der produktive Real-Data-Lauf materialisierte 8.968 Records für 27 Saisons 2000–2026, meldet 0 Draft-Link-Konflikte und bestand den verpflichtenden zweiten semantischen No-op-Pass.
 
-- [ ] nflverse Player Stats, Schedules, Rosters und Snap Counts gegen die bestehende Tank01-/Sleeper-Datenbasis evaluieren.
-  - Ziel: Feld-Coverage, Historientiefe, Aktualität, Identitätsqualität und bekannte Lücken der Quellen systematisch vergleichen.
-  - Ergebnis: Pro fachlichem Feld festlegen, welche Quelle primär, sekundär oder nur Fallback ist; keine pauschale Ablösung von Tank01 ohne datenbezogenen Vergleich.
-  - Historie: Prüfen, ob nflverse bestehende Lücken in `public/data/past_seasons` verlässlich schließen kann.
-  - Synergie: Ergebnis mit den bestehenden TODOs zur historischen Player-/Games-/Schedule-Rekonstruktion und zum Tank01-Requestbudget abstimmen.
+- [x] nflverse Player Stats, Schedules, Rosters und Snap Counts gegen die bestehende Tank01-/Sleeper-Datenbasis evaluieren.
+  - Ergebnis: Die Feld-/Quellenentscheidung ist dauerhaft in `.ai-context/manual/nfl-source-data.yaml` dokumentiert; nflverse wird nicht pauschal als Ersatz für Tank01/Sleeper behandelt.
+  - Ergebnis: Schedules, Weekly Player Stats und Snap Counts sind als künftige kanonische Primärquellen empfohlen; NFL-Roster-/Team-Historie kommt primär aus nflverse, während Sleeper für plattformspezifische Fakten und Tank01 vorerst für aktuelle Injuries sowie ausgewählte Legacy-/Low-Latency-Fälle bestehen bleiben.
+  - Historie: Stärkster vollständiger Backfill-Bereich ist 2012–2021; 2002–2011 fehlt Snap-Historie, 1999–2001 zusätzlich Weekly-Roster-Historie.
+  - Folge: Die eigentliche Aktivierung und Materialisierung dieser Datasets bleibt ein separater Implementierungsschritt nach dem Provider-Join-Audit und der konsolidierten Source-of-Truth-Matrix.
 
 - [ ] nflverse Depth Charts als mögliche zusätzliche Depth-Chart-Quelle evaluieren.
   - Ziel: Abdeckung und Aktualität der timestamp-basierten aktuellen Depth Charts gegen Sleeper und weitere geprüfte Depth-Chart-Quellen vergleichen.
