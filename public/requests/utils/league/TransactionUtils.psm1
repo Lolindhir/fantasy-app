@@ -8,6 +8,7 @@ try {
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ObjectUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\DateTimeUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\DraftUtils.psm1" -ErrorAction Stop -Force
@@ -15,6 +16,47 @@ try {
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
     throw $_
+}
+
+# ===========================================================================
+# Identity invariants
+# ===========================================================================
+
+function Test-TransactionIdentityInvariants {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Transactions,
+
+        [string]$SourceLabel = "generated transactions"
+    )
+
+    New-UniqueObjectLookup `
+        -Items (ConvertTo-SafeArray -value $Transactions) `
+        -KeyProperty "TransactionID" `
+        -SourceLabel $SourceLabel `
+        -KeyLabel "TransactionID" `
+        -DescriptionProperties @("TransactionID", "Source", "Season", "Week", "CreatedDate") | Out-Null
+
+    return $true
+}
+
+function New-ManualTransactionBindingLookup {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$ManualTransactions,
+
+        [string]$SourceLabel = "manual transaction Sleeper bindings"
+    )
+
+    return New-UniqueObjectLookup `
+        -Items (ConvertTo-SafeArray -value $ManualTransactions) `
+        -KeyProperty "SleeperTransactionID" `
+        -SourceLabel $SourceLabel `
+        -KeyLabel "SleeperTransactionID" `
+        -DescriptionProperties @("SleeperTransactionID", "Season", "Week", "Date") `
+        -AllowMissingKey
 }
 
 # ===========================================================================
@@ -99,23 +141,23 @@ function Compare-Transactions {
         return $false
     }
 
+    $oldByID = New-UniqueObjectLookup `
+        -Items $oldTransactions `
+        -KeyProperty "TransactionID" `
+        -SourceLabel "existing transaction read model" `
+        -KeyLabel "TransactionID" `
+        -DescriptionProperties @("TransactionID", "Source", "Season", "Week", "CreatedDate")
+
+    $newByID = New-UniqueObjectLookup `
+        -Items $newTransactions `
+        -KeyProperty "TransactionID" `
+        -SourceLabel "new transaction read model" `
+        -KeyLabel "TransactionID" `
+        -DescriptionProperties @("TransactionID", "Source", "Season", "Week", "CreatedDate")
+
     if ($oldTransactions.Count -ne $newTransactions.Count) {
         Write-Host "Transactions count changed: $($oldTransactions.Count) -> $($newTransactions.Count)"
         return $true
-    }
-
-    $oldByID = @{}
-    foreach ($tx in $oldTransactions) {
-        if (-not [string]::IsNullOrWhiteSpace($tx.TransactionID)) {
-            $oldByID[[string]$tx.TransactionID] = $tx
-        }
-    }
-
-    $newByID = @{}
-    foreach ($tx in $newTransactions) {
-        if (-not [string]::IsNullOrWhiteSpace($tx.TransactionID)) {
-            $newByID[[string]$tx.TransactionID] = $tx
-        }
     }
 
     foreach ($oldID in $oldByID.Keys) {
@@ -238,26 +280,12 @@ function Get-TransactionOutput {
         $status = "complete"
     }
 
-    # $creator = $null
-    # if ($sleeperTransaction.creator) {
-    #     $creator = [string]$sleeperTransaction.creator
-    # } elseif ($manualTransaction.Creator) {
-    #     $creator = Get-OwnerIDByName -ownerName $manualTransaction.Creator
-    # }
-
     $createdAt = 0
     if ($sleeperTransaction.created) {
         $createdAt = [Int64]$sleeperTransaction.created
     } elseif ($manualTransaction.Date) {
         $createdAt = ConvertTo-UnixMillisecondsFromDateString -date $manualTransaction.Date
     }
-
-    # $updatedAt = $createdAt
-    # if ($sleeperTransaction.status_updated) {
-    #     $updatedAt = [Int64]$sleeperTransaction.status_updated
-    # } elseif ($manualTransaction.Date) {
-    #     $updatedAt = ConvertTo-UnixMillisecondsFromDateString -date $manualTransaction.Date
-    # }
 
     $notes = $null
     if ($sleeperTransaction.metadata -and $sleeperTransaction.metadata.notes) {
@@ -291,7 +319,6 @@ function Get-TransactionOutput {
     )
 
     $rosterIDs = @()
-    # in Adds, Drops und DraftPicks nach RosterIDs schauen, die hinzugefügt werden (aber nur einmal pro RosterID)
     $rosterIDs += Get-RosterIDsFromPlayerMap -map $adds
     $rosterIDs += Get-RosterIDsFromPlayerMap -map $drops
     $rosterIDs += ($draftPicks | ForEach-Object { $_.PreviousOwnerRosterID })
@@ -303,38 +330,21 @@ function Get-TransactionOutput {
             Sort-Object -Unique
     )
 
-    $output = [PSCustomObject][ordered]@{
+    return [PSCustomObject][ordered]@{
         Source        = $source
         TransactionID = $transactionID
-
         Type          = $type
         Status        = $status
-
         Season        = $season
         Week          = $week
-
-        #Creator      = $creator
         CreatedAt     = $createdAt
         CreatedDate   = ConvertFrom-UnixMillisecondsToDateString -timestamp $createdAt
-        #UpdatedAt    = $updatedAt
-
         RosterIDs     = @($rosterIDs)
-        #ConsenterIDs = ConvertTo-SafeArray -value $sleeperTransaction.consenter_ids
-
         Adds          = $adds
         Drops         = $drops
         DraftPicks    = $draftPicks
-        #WaiverBudget = ConvertTo-SafeArray -value $sleeperTransaction.waiver_budget
-
-        #Settings     = $sleeperTransaction.settings
-        #Metadata     = $sleeperTransaction.metadata
         Notes         = $notes
-
-        #SleeperData  = $sleeperTransaction
-        #ManualData   = $manualTransaction
     }
-
-    return $output
 }
 
 function Get-TransactionsSeasonOutput {
@@ -353,15 +363,13 @@ function Get-TransactionsSeasonOutput {
         [array]$transactions
     )
 
-    $output = [PSCustomObject][ordered]@{
+    return [PSCustomObject][ordered]@{
         LeagueID     = $leagueID
         Season       = $season
         SeasonStatus = $seasonStatus
         UpdatedAt    = (Get-Date).ToString("o")
         Transactions = $transactions
     }
-
-    return $output
 }
 
 function Get-RosterIDsFromPlayerMap {
@@ -444,14 +452,6 @@ function Get-ManualTransactions {
             )
         }
 
-        # if ($null -ne $week) {
-        #     $transactions = @(
-        #         $transactions | Where-Object {
-        #             $null -ne $_.Week -and [int]$_.Week -eq [int]$week
-        #         }
-        #     )
-        # }
-
         return $transactions
     }
     catch {
@@ -459,7 +459,6 @@ function Get-ManualTransactions {
         return @()
     }
 }
-
 
 # ===========================================================================
 # Update Utils
@@ -482,28 +481,15 @@ function Update-TransactionsCurrentSeason {
         Write-Host "Force enabled: rebuilding current season transactions from remote only." -ForegroundColor Cyan
 
         $weeksToFetch = @(1..$maxWeekToFetch)
-
-        $remoteTransactions = @(
-            Get-TransactionsRemoteForWeeks `
-                -leagueID $leagueID `
-                -season $season `
-                -weeks $weeksToFetch
-        )
-
-        Save-TransactionsCurrentSeason `
-            -transactions $remoteTransactions
+        $remoteTransactions = @(Get-TransactionsRemoteForWeeks -leagueID $leagueID -season $season -weeks $weeksToFetch)
+        Save-TransactionsCurrentSeason -transactions $remoteTransactions
 
         Write-Host "Current season transactions rebuilt." -ForegroundColor DarkCyan
-
         return $remoteTransactions
     }
 
-    # Normaler inkrementeller Modus
     $existingTransactions = Get-TransactionsLocalForCurrentSeason
-
-    $weeksToFetch = Get-WeeksToFetch `
-        -existingTransactions $existingTransactions `
-        -maxWeek $maxWeekToFetch
+    $weeksToFetch = Get-WeeksToFetch -existingTransactions $existingTransactions -maxWeek $maxWeekToFetch
 
     if (-not $weeksToFetch -or $weeksToFetch.Count -eq 0) {
         Write-Host "No transaction weeks need to be updated." -ForegroundColor DarkCyan
@@ -512,20 +498,12 @@ function Update-TransactionsCurrentSeason {
 
     Write-Host "Weeks to fetch: $($weeksToFetch -join ', ')" -ForegroundColor Yellow
 
-    $remoteTransactions = Get-TransactionsRemoteForWeeks `
-        -leagueID $leagueID `
-        -season $season `
-        -weeks $weeksToFetch
-
-    $mergedTransactions = Merge-TransactionsForWeeks `
-        -existingTransactions $existingTransactions `
-        -newTransactions $remoteTransactions `
-        -weeksToReplace $weeksToFetch
+    $remoteTransactions = Get-TransactionsRemoteForWeeks -leagueID $leagueID -season $season -weeks $weeksToFetch
+    $mergedTransactions = Merge-TransactionsForWeeks -existingTransactions $existingTransactions -newTransactions $remoteTransactions -weeksToReplace $weeksToFetch
 
     Save-TransactionsCurrentSeason -transactions $mergedTransactions
 
     Write-Host "Current season transactions updated." -ForegroundColor DarkCyan
-
     return $mergedTransactions
 }
 
@@ -541,26 +519,15 @@ function Update-TransactionsAllSeasons {
     $leagues = Get-LeaguesRecursive -leagueID $leagueID
 
     foreach ($league in $leagues) {
-
         $isCurrentLeague = ([string]$league.league_id -eq [string](Get-Config).LeagueID)
 
         if ($isCurrentLeague) {
-            
-            if ($ForceCurrent) {
-                Update-TransactionsCurrentSeason `
-                    -leagueID $league.league_id `
-                    -Force
-            }
-            else {
-                Update-TransactionsCurrentSeason `
-                    -leagueID $league.league_id
-            }
-
+            if ($ForceCurrent) { Update-TransactionsCurrentSeason -leagueID $league.league_id -Force }
+            else { Update-TransactionsCurrentSeason -leagueID $league.league_id }
             continue
         }
 
         $historicalFile = Get-TransactionsHistoricalFilePath -season $league.season
-
         if ((Test-Path $historicalFile) -and -not $ForceHistory) {
             Write-Host "Historical transactions for season $($league.season) already exist. Skipping." -ForegroundColor DarkGray
             continue
@@ -569,27 +536,12 @@ function Update-TransactionsAllSeasons {
         Write-Host "Fetching historical transactions for season $($league.season)..." -ForegroundColor Yellow
 
         if ($ForceHistory) {
-            $transactions = Get-TransactionsRemoteForSeason `
-                -leagueID $league.league_id `
-                -league $league `
-                -Force
+            $transactions = Get-TransactionsRemoteForSeason -leagueID $league.league_id -league $league -Force
+            Save-TransactionsHistoricalSeason -season $league.season -transactions $transactions -Force
         }
         else {
-            $transactions = Get-TransactionsRemoteForSeason `
-                -leagueID $league.league_id `
-                -league $league
-        }
-
-        if ($ForceHistory) {
-            Save-TransactionsHistoricalSeason `
-                -season $league.season `
-                -transactions $transactions `
-                -Force
-        }
-        else {
-            Save-TransactionsHistoricalSeason `
-                -season $league.season `
-                -transactions $transactions
+            $transactions = Get-TransactionsRemoteForSeason -leagueID $league.league_id -league $league
+            Save-TransactionsHistoricalSeason -season $league.season -transactions $transactions
         }
     }
 
@@ -608,15 +560,10 @@ function Save-TransactionsCurrentSeason {
     )
 
     Write-Host "Saving current season transactions data to JSON..." -ForegroundColor Yellow
+    Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "current generated transactions" | Out-Null
 
     $compare = ${function:Compare-Transactions}
-
-    Save-JsonFile `
-        -Type "Transactions" `
-        -Data $transactions `
-        -CompareScript $compare `
-        -CreateBackup `
-        -UpdateTimestamp
+    Save-JsonFile -Type "Transactions" -Data $transactions -CompareScript $compare -CreateBackup -UpdateTimestamp
 
     Write-Host "Saved current season transactions." -ForegroundColor DarkCyan
 }
@@ -637,19 +584,14 @@ function Save-TransactionsHistoricalSeason {
     $filePath = "$($cfg.TransactionsFileHistoricalPrefix)$season$($cfg.TransactionsFileHistoricalSuffix)"
 
     Write-Host "Saving historical transactions for $season to JSON..." -ForegroundColor Yellow
+    Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "historical generated transactions for season $season" | Out-Null
 
     if ($Force) {
-        Save-JsonFile `
-            -TargetFile $filePath `
-            -Data $transactions
+        Save-JsonFile -TargetFile $filePath -Data $transactions
     }
     else {
         $compare = ${function:Compare-Transactions}
-
-        Save-JsonFile `
-            -TargetFile $filePath `
-            -Data $transactions `
-            -CompareScript $compare
+        Save-JsonFile -TargetFile $filePath -Data $transactions -CompareScript $compare
     }
 
     Write-Host "Saved historical transactions for $season." -ForegroundColor DarkCyan
@@ -667,7 +609,6 @@ function Get-Transactions {
     Write-Host "Load transactions from local files..." -ForegroundColor Yellow
 
     $transactions = @()
-
     $current = Get-TransactionsLocalForCurrentSeason
     $transactions += ConvertTo-SafeArray -value $current
 
@@ -689,7 +630,9 @@ function Get-TransactionsLocalForCurrentSeason {
 
     try {
         $data = Get-Content $filePath -Raw | ConvertFrom-Json
-        return ConvertTo-SafeArray -value $data
+        $transactions = ConvertTo-SafeArray -value $data
+        Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "existing current Transactions.json" | Out-Null
+        return $transactions
     }
     catch {
         Write-Warning "Could not read existing Transactions.json: $_"
@@ -698,9 +641,7 @@ function Get-TransactionsLocalForCurrentSeason {
 }
 
 function Get-TransactionsLocalHistoricalSeasons {
-
     $cfg = Get-Config
-
     $folder = Get-TransactionsHistoricalFolder
     $filePrefix = Split-Path $cfg.TransactionsFileHistoricalPrefix -Leaf
     $filter = "$filePrefix*$($cfg.TransactionsFileHistoricalSuffix)"
@@ -715,9 +656,10 @@ function Get-TransactionsLocalHistoricalSeasons {
     Get-ChildItem $folder -Filter $filter | ForEach-Object {
         try {
             Write-Host "Loading historical transactions: $($_.Name)" -ForegroundColor DarkGray
-
             $data = Get-Content $_.FullName -Raw | ConvertFrom-Json
-            $transactions += ConvertTo-SafeArray -value $data
+            $fileTransactions = ConvertTo-SafeArray -value $data
+            Test-TransactionIdentityInvariants -Transactions $fileTransactions -SourceLabel "historical transaction file '$($_.Name)'" | Out-Null
+            $transactions += $fileTransactions
         }
         catch {
             Write-Warning "Could not read historical transactions file $($_.FullName): $_"
@@ -734,7 +676,6 @@ function Get-TransactionsHistoricalFilePath {
     )
 
     $cfg = Get-Config
-
     return "$($cfg.TransactionsFileHistoricalPrefix)$season$($cfg.TransactionsFileHistoricalSuffix)"
 }
 
@@ -757,17 +698,11 @@ function Get-TransactionsRemoteRecursive {
         $league = Get-SleeperLeague -leagueID $leagueID
 
         if ($league.previous_league_id -and $league.previous_league_id -ne "") {
-            $accumulatedData = Get-TransactionsRemoteRecursive `
-                -leagueID $league.previous_league_id `
-                -accumulatedData $accumulatedData
+            $accumulatedData = Get-TransactionsRemoteRecursive -leagueID $league.previous_league_id -accumulatedData $accumulatedData
         }
 
-        $seasonData = Get-TransactionsRemoteForSeason `
-            -leagueID $leagueID `
-            -league $league
-
+        $seasonData = Get-TransactionsRemoteForSeason -leagueID $leagueID -league $league
         $accumulatedData += $seasonData
-
         return $accumulatedData
     }
     catch {
@@ -779,34 +714,19 @@ function Get-TransactionsRemoteRecursive {
 function Get-TransactionsRemoteForSeason {
     param (
         [string]$leagueID = (Get-Config).LeagueID,
-
         [object]$league = $null,
-
         [int]$startWeek = 1,
-
         [int]$endWeek = (Get-Config).MaxTransactionWeek,
-
         [switch]$Force
     )
 
     try {
-        if (-not $league) {
-            $league = Get-SleeperLeague -leagueID $leagueID
-        }
+        if (-not $league) { $league = Get-SleeperLeague -leagueID $leagueID }
 
-        $maxWeekToFetch = if ($Force) {
-            $endWeek
-        }
-        else {
-            Get-CurrentTransactionMaxWeek -league $league
-        }
-
+        $maxWeekToFetch = if ($Force) { $endWeek } else { Get-CurrentTransactionMaxWeek -league $league }
         $weeks = @($startWeek..$maxWeekToFetch)
 
-        return Get-TransactionsRemoteForWeeks `
-            -leagueID $leagueID `
-            -season $league.season `
-            -weeks $weeks
+        return Get-TransactionsRemoteForWeeks -leagueID $leagueID -season $league.season -weeks $weeks
     }
     catch {
         Write-Error "Failed to retrieve transactions for league $leagueID."
@@ -830,64 +750,47 @@ function Get-TransactionsRemoteForWeeks {
 
     Write-Host "Get Transactions for League $leagueID / Season $season from Sleeper API..." -ForegroundColor Yellow
 
-    # hole manuell gepflegte Transaktionen für die Season
-    $manualTransactions = Get-ManualTransactions -season $season
-    $manualTransactions = ConvertTo-SafeArray -value $manualTransactions
+    $manualTransactions = ConvertTo-SafeArray -value (Get-ManualTransactions -season $season)
+    $manualBySleeperTransactionID = New-ManualTransactionBindingLookup `
+        -ManualTransactions $manualTransactions `
+        -SourceLabel "manual Sleeper transaction bindings for season $season"
 
     foreach ($week in $weeks) {
-
         Write-Host "Get Transactions for Week $week" -ForegroundColor Yellow
 
-        # hole Transaktionen von Sleeper API für die Woche
-        $weekTransactions = Get-SleeperTransactions -leagueID $leagueID -week $week
-        $weekTransactions = ConvertTo-SafeArray -value $weekTransactions
+        $weekTransactions = ConvertTo-SafeArray -value (Get-SleeperTransactions -leagueID $leagueID -week $week)
+        New-UniqueObjectLookup `
+            -Items $weekTransactions `
+            -KeyProperty "transaction_id" `
+            -SourceLabel "Sleeper transactions for league $leagueID season $season week $week" `
+            -KeyLabel "transaction_id" `
+            -DescriptionProperties @("transaction_id", "type", "status", "leg", "created") | Out-Null
 
-        # füge Transaktionen zur Ergebnisliste hinzu
         foreach ($tx in $weekTransactions) {
+            $transactionID = [string]$tx.transaction_id
+            if ($manualBySleeperTransactionID.ContainsKey($transactionID)) {
+                $manualTx = $manualBySleeperTransactionID[$transactionID]
+                Write-Host "Matching manual transaction found for Sleeper transaction ID $transactionID: Manual Transaction ID: $(Get-ManualTransactionID -manualTransaction $manualTx)" -ForegroundColor Cyan
 
-            # prüfe ob eine manuelle Transaktion mit gleicher SleeperTransactionID existiert
-            if($tx.transaction_id) {
-                $matchFound = $false
-                foreach ($manualTx in $manualTransactions) {
-                    if ($manualTx.SleeperTransactionID -and [string]$manualTx.SleeperTransactionID -eq [string]$tx.transaction_id) {
-                        Write-Host "Matching manual transaction found for Sleeper transaction ID $($tx.transaction_id): Manual Transaction ID: $(Get-ManualTransactionID -manualTransaction $manualTx)" -ForegroundColor Cyan
-
-                        $transactions += Get-TransactionOutput `
-                            -sleeperTransaction $tx `
-                            -manualTransaction $manualTx `
-                            -season $season
-
-                        $matchFound = $true
-                        break
-                    }
-                }
-                if ($matchFound) {
-                    continue
-                }
+                $transactions += Get-TransactionOutput -sleeperTransaction $tx -manualTransaction $manualTx -season $season
+                continue
             }
 
-            # keine passende manuelle Transaktion gefunden, normale Verarbeitung
-            $transactions += Get-TransactionOutput `
-                -sleeperTransaction $tx `
-                -season $season
+            $transactions += Get-TransactionOutput -sleeperTransaction $tx -season $season
         }
 
-        # füge manuelle Transaktionen dieser Woche hinzu, die keine Sleeper TransactionID haben
         $manualWeekTransactions = $manualTransactions | Where-Object {
             $_.Season -eq $season -and $_.Week -eq $week -and (-not $_.SleeperTransactionID)
         }
         foreach ($manualTx in $manualWeekTransactions) {
-            $transactions += Get-TransactionOutput `
-                -manualTransaction $manualTx `
-                -season $season
+            $transactions += Get-TransactionOutput -manualTransaction $manualTx -season $season
         }
     }
 
-    # Sortieren nach Season, Week, CreatedAt, TransactionID ... absteigend, damit die neuesten Transaktionen zuerst kommen
     $transactions = Get-SortedTransactions -transactions $transactions
+    Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "retrieved transactions for league $leagueID season $season" | Out-Null
 
     Write-Host "Transactions retrieved." -ForegroundColor Yellow
-
     return $transactions
 }
 
@@ -903,26 +806,14 @@ function Get-CurrentTransactionMaxWeek {
 
     $cfg = Get-Config
 
-    if ($league.status -eq "complete") {
-        return [int]$cfg.MaxTransactionWeek
-    }
+    if ($league.status -eq "complete") { return [int]$cfg.MaxTransactionWeek }
 
     $week = 1
+    if ($league.settings -and $league.settings.leg) { $week = [int]$league.settings.leg }
+    elseif ($league.settings -and $league.settings.last_scored_leg) { $week = [int]$league.settings.last_scored_leg + 1 }
 
-    if ($league.settings -and $league.settings.leg) {
-        $week = [int]$league.settings.leg
-    }
-    elseif ($league.settings -and $league.settings.last_scored_leg) {
-        $week = [int]$league.settings.last_scored_leg + 1
-    }
-
-    if ($week -lt 1) {
-        $week = 1
-    }
-
-    if ($week -gt [int]$cfg.MaxTransactionWeek) {
-        $week = [int]$cfg.MaxTransactionWeek
-    }
+    if ($week -lt 1) { $week = 1 }
+    if ($week -gt [int]$cfg.MaxTransactionWeek) { $week = [int]$cfg.MaxTransactionWeek }
 
     return $week
 }
@@ -938,9 +829,7 @@ function Get-WeeksToFetch {
         [switch]$Force
     )
 
-    if ($Force) {
-        return @((1..$maxWeek))
-    }
+    if ($Force) { return @((1..$maxWeek)) }
 
     $existingTransactions = ConvertTo-SafeArray -value $existingTransactions
 
@@ -952,27 +841,14 @@ function Get-WeeksToFetch {
     )
 
     $weeksToFetch = @()
-
-    # 1. Fehlende Wochen holen
     for ($week = 1; $week -le $maxWeek; $week++) {
-        if ($existingWeeks -notcontains $week) {
-            $weeksToFetch += $week
-        }
+        if ($existingWeeks -notcontains $week) { $weeksToFetch += $week }
     }
 
-    # 2. Aktuelle Woche immer aktualisieren
     $weeksToFetch += $maxWeek
+    if ($maxWeek -gt 1) { $weeksToFetch += ($maxWeek - 1) }
 
-    # 3. Letzte Woche ebenfalls aktualisieren
-    if ($maxWeek -gt 1) {
-        $weeksToFetch += ($maxWeek - 1)
-    }
-
-    return @(
-        $weeksToFetch |
-            Sort-Object -Unique
-    )
-
+    return @($weeksToFetch | Sort-Object -Unique)
 }
 
 function Merge-TransactionsForWeeks {
@@ -997,18 +873,18 @@ function Merge-TransactionsForWeeks {
             Sort-Object -Unique
     )
 
-    $keptTransactions = $existingTransactions |
-        Where-Object {
-            $null -eq $_.Week -or $weeksToReplace -notcontains [int]$_.Week
-        }
+    $keptTransactions = $existingTransactions | Where-Object {
+        $null -eq $_.Week -or $weeksToReplace -notcontains [int]$_.Week
+    }
 
     $merged = @()
     $merged += $keptTransactions
     $merged += $newTransactions
+    $merged = Get-SortedTransactions -transactions $merged
 
-    return Get-SortedTransactions -transactions $merged
+    Test-TransactionIdentityInvariants -Transactions $merged -SourceLabel "merged transaction read model" | Out-Null
+    return $merged
 }
-
 
 # ===========================================================================
 # Allgemeine Helper
