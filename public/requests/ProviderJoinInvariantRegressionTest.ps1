@@ -129,7 +129,7 @@ Test-Throws -ExpectedMessagePart "Duplicate standing identity" -Action {
 Test-Throws -ExpectedMessagePart "Duplicate PickKey '2026_Rookie_R1_OO1'" -Action {
     Get-AppliedDraftPickTrades `
         -DraftKey "2026_Rookie" `
-        -Transactions @() `
+        -Transactions @([PSCustomObject]@{ TransactionID = "noop"; Status = "ignored"; DraftPicks = @() }) `
         -Picks @(
             [PSCustomObject]@{ PickKey = "2026_Rookie_R1_OO1"; Season = "2026"; Round = 1; OriginalOwnerRosterID = 1; CurrentOwnerRosterID = 1 },
             [PSCustomObject]@{ PickKey = "2026_Rookie_R1_OO1"; Season = "2026"; Round = 1; OriginalOwnerRosterID = 1; CurrentOwnerRosterID = 2 }
