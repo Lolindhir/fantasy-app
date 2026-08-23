@@ -3,9 +3,9 @@
   "status": "failed",
   "phase": "materialize",
   "exitCode": 1,
-  "recordedAtUtc": "2026-08-22T21:46:59Z",
+  "recordedAtUtc": "2026-08-23T07:32:52Z",
   "workflow": "Data • NFL Source Sync",
-  "runId": "32600505804",
+  "runId": "32625794305",
   "runAttempt": "1",
   "datasetInput": null,
   "forceInput": false,
@@ -20,11 +20,8 @@
     "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/materialize.py\", line 143, in materialize",
     "    combine_grouped, combine_conflicts = build_combine_files(",
     "                                         ^^^^^^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/combine.py\", line 58, in build_combine_files",
-    "    draft_by_player = _draft_index(draft_payloads)",
-    "                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/combine.py\", line 47, in _draft_index",
-    "    raise ValueError(f\"Canonical player {internal_id} has multiple NFL draft facts\")",
-    "ValueError: Canonical player NFLP-5500b0746a21258154bb has multiple NFL draft facts"
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/combine.py\", line 84, in build_combine_files",
+    "    raise ValueError(f\"Duplicate combine PFR identity {season}/{pfr}\")",
+    "ValueError: Duplicate combine PFR identity 2000/GreeMi00"
   ]
 }
