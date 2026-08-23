@@ -71,6 +71,7 @@ readingOrder:
   - .ai-context/manual/draft-identity.yaml
   - .ai-context/manual/player-identity.yaml
   - .ai-context/manual/nfl-source-data.yaml
+  - .ai-context/manual/provider-join-invariants.yaml
   - .ai-context/manual/data-sources.yaml
   - .ai-context/manual/decisions.yaml
   - .ai-context/manual/routing.yaml
@@ -85,6 +86,7 @@ shortContext:
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für providerunabhängige NFLPlayerID, historische Provider-Mappings, Konflikt-Quarantäne und den unveränderten Sleeper-basierten Players.json-App-Vertrag
   .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für source-data Registry v2, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und die NFL-Combine-Materialisierung
+  .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
@@ -113,7 +115,7 @@ shortContext:
   src/app/shared/components/season-results/season-results.ts: Wiederverwendbare Season-Results-Komponente für vorherige Saisonergebnisse, Podium und Restplatzierungen
   src/app/shared/components/all-time-standings/all-time-standings.ts: Wiederverwendbare All-Time-Standings-Komponente für Overall-Standings
   src/app/shared/components/all-time-regular-season-standings/all-time-regular-season-standings.ts: Wrapper für die All-Time-Regular-Season-Ansicht über die gemeinsame Regular-Season-Standings-Liste
-  src/app/shared/components/regular-season-standings-list/regular-season-standings-list.ts: Gemeinsame kompakte Regular-Season-Zeilenkomponente für All-Time Regular Season und archivierte Season-Regular-Standings
+  src/app/shared/components/regular-season-standings-list/regular-season-standings-list.ts: Gemeinsame kompakte Regular-Season-Zeilenkomponente für All-Time Regular Season und archivierte Season-Regular-Standings je Saison
   src/app/shared/utils/league-standings-view.util.ts: Gemeinsame Frontend-ViewModel-Utility für Current Standings, Season Results, Hall of Fame und Season Archive
   src/app/shared/utils/draft-ui.util.ts: Gemeinsame Frontend-Utility für Draft-Round-Farben und Draft-Status-Klassen
   src/app/shared/utils/draft-capital.util.ts: Gemeinsame Frontend-Utility für Draft-Pick-Reihenfolge, Pick-Strength-Sortierung, RoundCounts und BestPick; aktuell display-/ranking-orientiert, bis generierte Draft-Capital-Werte existieren
