@@ -28,8 +28,10 @@ def _height_inches(value: Any) -> int | None:
     return None
 
 
-def _draft_index(draft_payloads: dict[int, dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    index: dict[str, dict[str, Any]] = {}
+def _draft_index(
+    draft_payloads: dict[int, dict[str, Any]],
+) -> dict[tuple[int, str], dict[str, Any]]:
+    index: dict[tuple[int, str], dict[str, Any]] = {}
     for season, payload in sorted(draft_payloads.items()):
         for pick in payload.get("Picks", []):
             internal_id = clean(pick.get("NFLPlayerID"))
@@ -42,10 +44,17 @@ def _draft_index(draft_payloads: dict[int, dict[str, Any]]) -> dict[str, dict[st
                 "OverallPick": pick.get("OverallPick"),
                 "Team": pick.get("Team"),
             }
-            previous = index.get(internal_id)
+            # Draft identity is season-scoped. A real player can legitimately
+            # appear in more than one NFL draft across different seasons, while
+            # conflicting facts for the same person inside one draft season are
+            # still an invariant violation.
+            draft_key = (season, internal_id)
+            previous = index.get(draft_key)
             if previous is not None and previous != candidate:
-                raise ValueError(f"Canonical player {internal_id} has multiple NFL draft facts")
-            index[internal_id] = candidate
+                raise ValueError(
+                    f"Canonical player {internal_id} has multiple NFL draft facts in season {season}"
+                )
+            index[draft_key] = candidate
     return index
 
 
@@ -88,7 +97,7 @@ def build_combine_files(
         }
         source_draft = {key: value for key, value in source_draft.items() if value is not None}
 
-        canonical_draft = draft_by_player.get(internal_id) if internal_id else None
+        canonical_draft = draft_by_player.get((season, internal_id)) if internal_id else None
         if canonical_draft and source_draft:
             comparable = (
                 ("Year", "Season"),
