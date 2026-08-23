@@ -4,6 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -13,6 +14,65 @@ catch {
 # ===========================================================================
 # 2. Funktionen
 # ===========================================================================
+
+function New-PlayerProviderLookups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$SleeperPlayers,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$TankPlayers
+    )
+
+    $sleeperByID = New-UniqueObjectLookup `
+        -Items $SleeperPlayers `
+        -KeyProperty "player_id" `
+        -SourceLabel "Sleeper NFL players" `
+        -KeyLabel "player_id" `
+        -DescriptionProperties @("player_id", "full_name", "position", "team") `
+        -AllowMissingKey
+
+    $tankByID = New-UniqueObjectLookup `
+        -Items $TankPlayers `
+        -KeyProperty "playerID" `
+        -SourceLabel "Tank01 NFL players" `
+        -KeyLabel "playerID" `
+        -DescriptionProperties @("playerID", "longName", "team", "pos")
+
+    $tankBySleeperID = New-UniqueObjectLookup `
+        -Items $TankPlayers `
+        -KeyProperty "sleeperBotID" `
+        -SourceLabel "Tank01 to Sleeper player mappings" `
+        -KeyLabel "sleeperBotID" `
+        -DescriptionProperties @("playerID", "longName", "sleeperBotID", "team", "pos") `
+        -AllowMissingKey
+
+    return [PSCustomObject][ordered]@{
+        SleeperByID     = $sleeperByID
+        TankByID        = $tankByID
+        TankBySleeperID = $tankBySleeperID
+    }
+}
+
+function New-HistoricalPlayerTankLookup {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Players,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Season
+    )
+
+    return New-UniqueObjectLookup `
+        -Items $Players `
+        -KeyProperty "TankID" `
+        -SourceLabel "historical Players_$Season" `
+        -KeyLabel "TankID" `
+        -DescriptionProperties @("TankID", "ID", "Name", "TeamID", "Position")
+}
 
 function Get-PlayersFromFile {
     param(
