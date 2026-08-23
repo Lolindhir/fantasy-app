@@ -143,7 +143,7 @@ export function getTeamSeasonSummary(team: FantasyTeam, league: League): TeamSea
 
   return {
     season: hasMeaningfulCurrentStanding ? league.Season : String(league.SeasonAsNumber - 1),
-    record: source.Regular.Record || buildRecord(source.Regular),
+    record: buildRecord(source.Regular),
     finalPlace: finalPlacement.PlaceOrdinal || (finalPlacement.Place > 0 ? ordinal(finalPlacement.Place) : undefined),
     usesPreviousSeason: !hasMeaningfulCurrentStanding
   };
@@ -178,7 +178,8 @@ function buildLensSummary(roster: Player[], league: League, lens: SalaryLens): T
     ? (player: Player) => player.Salary
     : (player: Player) => player.SalaryProjected;
   const cap = lens === 'current' ? league.SalaryCap : league.SalaryCapProjected;
-  const salaryResult = calculateTopPlayersSalary(roster, league.SalaryRelevantTeamSize, selector);
+  const salaryRelevantTeamSize = league.SalaryRelevantTeamSize || 20;
+  const salaryResult = calculateTopPlayersSalary(roster, salaryRelevantTeamSize, selector);
 
   return {
     lens,
