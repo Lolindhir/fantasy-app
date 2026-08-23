@@ -83,7 +83,7 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 - [ ] Maintenance- und Diagnose-Writer race-safe machen.
   - Betroffen: `.github/workflows/update-past-seasons-index.yml` und `.github/workflows/clean-backups.yml`; beide veröffentlichen aktuell über einen einmaligen direkten Push nach `main`.
-  - Past-Seasons-Index: Bei fortgeschrittenem `main` neu gegen den aktuellen historischen Ressourcenbestand neu berechnen, weil der Index aus Repository-Inhalten abgeleitet wird.
+  - Past-Seasons-Index: Bei fortgeschrittenem `main` neu gegen den aktuellen historischen Ressourcenbestand berechnen, weil der Index aus Repository-Inhalten abgeleitet wird.
   - Backup Cleanup: Die Retention-Entscheidung immer gegen den aktuellen Backup-Bestand neu treffen; keinen bereits auf einem alten Checkout berechneten Lösch-Commit lediglich rebasen.
   - NFL Source Sync: Der erfolgreiche Sync-Pfad besitzt bereits `rebuild-and-retry`; zusätzlich den direkten Push des `source-data/_sync/last-failure.json`-Diagnosepfads race-safe machen.
 
@@ -437,7 +437,7 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 - [x] Legacy-Kompatibilitäts-Re-Exports entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen die gerouteten Feature-Seiten unter `src/app/features/**`; alte Pfade waren temporär als Re-Export-Wrapper erhalten.
-  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts`, `src/app/about/about.ts`, `src/app/player-list/player-list.ts` und `src/app/player-detail-dialog/player-detail-dialog.ts` wurden nach Build-/Testbestätigung und Repo-Suche ohne produktive Referenzen zu den alten Pfaden entfernt.
+  - Ergebnis: Die alten Wrapper-Dateien `src/app/overview/overview.ts`, `src/app/team-list/team-list.ts`, `src/app/players-page/players-page.ts`, `src/app/trade-simulator/trade-simulator.ts`, `src/app/league-activity/league-activity.ts`, `src/app/about/about.ts`, `src/app/player-list/player-list.ts` und `src/app/player-detail-dialog/player-detail-dialog.ts` wurden nach Build-/Testbestätigung und Repo-Suche ohne produktive Referenzen entfernt.
 
 - [x] Alte Komponenten-Specs aus den früheren Root-Locations entfernen.
   - Kontext: Nach dem Angular-Struktur-Refactor lagen noch alte `.spec.ts`-Dateien in früheren Root-Locations und importierten lokale Wrapper, die nicht mehr produktiv genutzt wurden.
