@@ -5,6 +5,7 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
 }
@@ -408,7 +409,13 @@ function Get-DraftStandingBySeason {
         [Parameter(Mandatory = $true)][string]$season
     )
 
-    return $standings | Where-Object { [string]$_.Season -eq [string]$season } | Select-Object -First 1
+    $matches = @($standings | Where-Object { [string]$_.Season -eq [string]$season })
+    if ($matches.Count -gt 1) {
+        throw "Duplicate standing identity for season '$season'. Expected at most one standing record, found $($matches.Count)."
+    }
+
+    if ($matches.Count -eq 0) { return $null }
+    return $matches[0]
 }
 
 # ===========================================================================
@@ -448,6 +455,36 @@ function Resolve-DraftTypeFromSleeperDraft {
     return $null
 }
 
+function New-SleeperDraftSourceLookup {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$SleeperDrafts
+    )
+
+    return New-UniqueObjectLookup `
+        -Items $SleeperDrafts `
+        -KeyProperty "draft_id" `
+        -SourceLabel "Sleeper league drafts" `
+        -KeyLabel "draft_id" `
+        -DescriptionProperties @("draft_id", "season", "type", "status", "created")
+}
+
+function Get-ConfiguredSleeperDraftMatch {
+    param(
+        [Parameter(Mandatory = $true)][array]$UnboundDrafts,
+        [Parameter(Mandatory = $true)][string]$ConfiguredDraftID,
+        [Parameter(Mandatory = $true)][string]$Season
+    )
+
+    $matches = @($UnboundDrafts | Where-Object { [string]$_.draft_id -eq [string]$ConfiguredDraftID })
+    if ($matches.Count -ne 1) {
+        throw "Configured Sleeper draft '$ConfiguredDraftID' for season '$Season' was not found exactly once in the provider response; explicit bindings are authoritative and will not fall back to another draft."
+    }
+
+    return $matches[0]
+}
+
 function Get-SleeperDraftMap {
     param(
         [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
@@ -465,6 +502,7 @@ function Get-SleeperDraftMap {
 
     if ($sleeperDrafts.Count -eq 0) { return $map }
 
+    New-SleeperDraftSourceLookup -SleeperDrafts $sleeperDrafts | Out-Null
     $draftsBySeason = $sleeperDrafts | Group-Object -Property season
 
     foreach ($seasonGroup in $draftsBySeason) {
@@ -480,15 +518,13 @@ function Get-SleeperDraftMap {
             $configuredDraftID = Get-ConfiguredSleeperDraftID -draftTypeConfig $draftTypeConfig -season $season
             if ([string]::IsNullOrWhiteSpace($configuredDraftID)) { continue }
 
-            $matches = @($unboundDrafts | Where-Object { [string]$_.draft_id -eq $configuredDraftID })
-            if ($matches.Count -ne 1) {
-                Write-Warning "Configured Sleeper draft '$configuredDraftID' for season '$season' was not found exactly once."
-                continue
-            }
+            $draftToStore = Get-ConfiguredSleeperDraftMatch `
+                -UnboundDrafts $unboundDrafts `
+                -ConfiguredDraftID $configuredDraftID `
+                -Season $season
 
             $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
             $draftKey = New-DraftKey -season $season -draftType ([string]$draftTypeConfig.DraftType) -draftInstance $draftInstance
-            $draftToStore = $matches[0]
             try { $draftToStore = Get-SleeperDraft -draftID $configuredDraftID }
             catch { Write-Warning "Could not load Sleeper draft detail for '$configuredDraftID'. Falling back to draft list object. $_" }
 
@@ -597,8 +633,12 @@ function Get-AppliedDraftPickTrades {
         [Parameter(Mandatory = $true)][string]$draftKey
     )
 
-    $pickByKey = @{}
-    foreach ($pick in $picks) { $pickByKey[$pick.PickKey] = $pick }
+    $pickByKey = New-UniqueObjectLookup `
+        -Items $picks `
+        -KeyProperty "PickKey" `
+        -SourceLabel "generated picks for draft '$draftKey'" `
+        -KeyLabel "PickKey" `
+        -DescriptionProperties @("PickKey", "Season", "Round", "OriginalOwnerRosterID", "CurrentOwnerRosterID")
 
     $movements = @()
 
