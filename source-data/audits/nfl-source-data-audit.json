@@ -1,20 +1,40 @@
 {
   "schemaVersion": 1,
   "scope": "public/data/Players.json",
-  "canonicalIdentityCount": 28543,
-  "appPlayerCount": 1354,
+  "datasetRegistry": {
+    "schemaVersion": 2,
+    "activeDatasetCount": 4,
+    "activeDatasetIDs": [
+      "nflverse.players",
+      "nflverse.ff-player-ids",
+      "nflverse.draft-picks",
+      "nflverse.combine"
+    ],
+    "plannedDatasetCount": 7,
+    "plannedDatasetIDs": [
+      "nflverse.rosters",
+      "nflverse.weekly-rosters",
+      "nflverse.schedules",
+      "nflverse.player-stats",
+      "nflverse.snap-counts",
+      "nflverse.depth-charts",
+      "nflverse.contracts"
+    ]
+  },
+  "canonicalIdentityCount": 28547,
+  "appPlayerCount": 1328,
   "identityCoverage": {
-    "matched": 1354,
-    "withGSIS": 1081,
-    "withoutGSIS": 273
+    "matched": 1328,
+    "withGSIS": 1064,
+    "withoutGSIS": 264
   },
   "identityCoverageByProvider": {
-    "Sleeper": 1354
+    "Sleeper": 1328
   },
   "draftStatusCoverage": {
-    "drafted": 688,
-    "unknown": 252,
-    "undrafted": 414
+    "drafted": 682,
+    "unknown": 242,
+    "undrafted": 404
   },
   "draftStatusByPosition": {
     "K": {
@@ -23,39 +43,307 @@
       "unknown": 12
     },
     "QB": {
-      "drafted": 110,
-      "undrafted": 36,
-      "unknown": 22
+      "drafted": 109,
+      "undrafted": 35,
+      "unknown": 21
     },
     "RB": {
-      "drafted": 154,
-      "unknown": 37,
-      "undrafted": 99
+      "drafted": 152,
+      "unknown": 36,
+      "undrafted": 96
     },
     "TE": {
-      "drafted": 135,
-      "undrafted": 75,
-      "unknown": 60
+      "drafted": 134,
+      "undrafted": 73,
+      "unknown": 59
     },
     "WR": {
-      "drafted": 269,
-      "unknown": 121,
-      "undrafted": 171
+      "drafted": 267,
+      "unknown": 114,
+      "undrafted": 167
+    }
+  },
+  "combineCoverage": {
+    "seasonCount": 27,
+    "earliestSeason": 2000,
+    "latestSeason": 2026,
+    "recordCount": 8968,
+    "resolvedIdentityCount": 7073,
+    "unresolvedIdentityCount": 1895,
+    "ambiguousIdentityRecordCount": 6,
+    "ambiguousIdentitySourceCount": 3,
+    "ambiguousIdentitySources": [
+      {
+        "Season": 2000,
+        "PFR": "GreeMi00",
+        "Claims": [
+          {
+            "PlayerName": "Mike Green",
+            "Position": "FB",
+            "School": "Houston",
+            "CFBRef": "mike-green-4"
+          },
+          {
+            "PlayerName": "Mike Green",
+            "Position": "S",
+            "School": "NW State (LA)",
+            "CFBRef": null
+          }
+        ]
+      },
+      {
+        "Season": 2005,
+        "PFR": "JohnDe25",
+        "Claims": [
+          {
+            "PlayerName": "Derrick Johnson",
+            "Position": "CB",
+            "School": "Texas",
+            "CFBRef": "derrick-johnson-3"
+          },
+          {
+            "PlayerName": "Derrick Johnson",
+            "Position": "OLB",
+            "School": "Texas",
+            "CFBRef": "derrick-johnson-3"
+          }
+        ]
+      },
+      {
+        "Season": 2007,
+        "PFR": "DaviBu99",
+        "Claims": [
+          {
+            "PlayerName": "Buster Davis",
+            "Position": "ILB",
+            "School": "Florida State",
+            "CFBRef": "buster-davis-1"
+          },
+          {
+            "PlayerName": "Buster Davis",
+            "Position": "WR",
+            "School": "Florida State",
+            "CFBRef": "buster-davis-1"
+          }
+        ]
+      }
+    ],
+    "withoutPfrIdCount": 1531,
+    "canonicalDraftLinkedCount": 5562,
+    "currentAppResolvedPlayerCount": 1328,
+    "currentAppPlayersWithCombine": 705,
+    "currentAppPlayersWithoutCombine": 623,
+    "draftLinkConflictCount": 0,
+    "draftLinkConflicts": [],
+    "bySeason": {
+      "2000": {
+        "records": 321,
+        "resolvedIdentity": 219,
+        "unresolvedIdentity": 102,
+        "ambiguousIdentityRecords": 2,
+        "canonicalDraftLinked": 178
+      },
+      "2001": {
+        "records": 321,
+        "resolvedIdentity": 228,
+        "unresolvedIdentity": 93,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 190
+      },
+      "2002": {
+        "records": 320,
+        "resolvedIdentity": 227,
+        "unresolvedIdentity": 93,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 188
+      },
+      "2003": {
+        "records": 319,
+        "resolvedIdentity": 235,
+        "unresolvedIdentity": 84,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 195
+      },
+      "2004": {
+        "records": 335,
+        "resolvedIdentity": 244,
+        "unresolvedIdentity": 91,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 200
+      },
+      "2005": {
+        "records": 331,
+        "resolvedIdentity": 233,
+        "unresolvedIdentity": 98,
+        "ambiguousIdentityRecords": 2,
+        "canonicalDraftLinked": 191
+      },
+      "2006": {
+        "records": 328,
+        "resolvedIdentity": 234,
+        "unresolvedIdentity": 94,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 199
+      },
+      "2007": {
+        "records": 326,
+        "resolvedIdentity": 215,
+        "unresolvedIdentity": 111,
+        "ambiguousIdentityRecords": 2,
+        "canonicalDraftLinked": 190
+      },
+      "2008": {
+        "records": 330,
+        "resolvedIdentity": 251,
+        "unresolvedIdentity": 79,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 212
+      },
+      "2009": {
+        "records": 327,
+        "resolvedIdentity": 261,
+        "unresolvedIdentity": 66,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 206
+      },
+      "2010": {
+        "records": 326,
+        "resolvedIdentity": 272,
+        "unresolvedIdentity": 54,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 210
+      },
+      "2011": {
+        "records": 329,
+        "resolvedIdentity": 293,
+        "unresolvedIdentity": 36,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 218
+      },
+      "2012": {
+        "records": 324,
+        "resolvedIdentity": 280,
+        "unresolvedIdentity": 44,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 213
+      },
+      "2013": {
+        "records": 332,
+        "resolvedIdentity": 297,
+        "unresolvedIdentity": 35,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 223
+      },
+      "2014": {
+        "records": 333,
+        "resolvedIdentity": 306,
+        "unresolvedIdentity": 27,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 223
+      },
+      "2015": {
+        "records": 322,
+        "resolvedIdentity": 269,
+        "unresolvedIdentity": 53,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 213
+      },
+      "2016": {
+        "records": 332,
+        "resolvedIdentity": 290,
+        "unresolvedIdentity": 42,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 213
+      },
+      "2017": {
+        "records": 327,
+        "resolvedIdentity": 288,
+        "unresolvedIdentity": 39,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 222
+      },
+      "2018": {
+        "records": 336,
+        "resolvedIdentity": 282,
+        "unresolvedIdentity": 54,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 212
+      },
+      "2019": {
+        "records": 336,
+        "resolvedIdentity": 300,
+        "unresolvedIdentity": 36,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 217
+      },
+      "2020": {
+        "records": 337,
+        "resolvedIdentity": 315,
+        "unresolvedIdentity": 22,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 230
+      },
+      "2021": {
+        "records": 464,
+        "resolvedIdentity": 254,
+        "unresolvedIdentity": 210,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 193
+      },
+      "2022": {
+        "records": 324,
+        "resolvedIdentity": 285,
+        "unresolvedIdentity": 39,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 223
+      },
+      "2023": {
+        "records": 319,
+        "resolvedIdentity": 243,
+        "unresolvedIdentity": 76,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 192
+      },
+      "2024": {
+        "records": 321,
+        "resolvedIdentity": 252,
+        "unresolvedIdentity": 69,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 211
+      },
+      "2025": {
+        "records": 329,
+        "resolvedIdentity": 270,
+        "unresolvedIdentity": 59,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 215
+      },
+      "2026": {
+        "records": 319,
+        "resolvedIdentity": 230,
+        "unresolvedIdentity": 89,
+        "ambiguousIdentityRecords": 0,
+        "canonicalDraftLinked": 185
+      }
     }
   },
   "identityInvariantViolations": {
     "duplicateLinkProviderIDs": {},
     "duplicateLinkProviderIDCount": 0
   },
-  "identityWeakProviderCollisionCount": 16,
+  "identityWeakProviderCollisionCount": 20,
   "identityWeakProviderCollisions": {
     "NFLCom": [
       "42861",
       "43726"
     ],
     "ESB": [
+      "DIX021070",
       "EKE080143",
-      "PRY456541"
+      "KPE415291",
+      "PRY456541",
+      "RIC070406",
+      "SPE088890"
     ],
     "Fleaflicker": [
       "6636"
@@ -23566,10 +23854,10 @@
       }
     }
   ],
-  "providerMappingConflictCount": 17,
+  "providerMappingConflictCount": 21,
   "providerMappingConflictsByProvider": {
     "CBS": 10,
-    "ESB": 2,
+    "ESB": 6,
     "FantasyData": 1,
     "Fleaflicker": 1,
     "NFLCom": 2,
@@ -23768,6 +24056,22 @@
     },
     {
       "Provider": "ESB",
+      "ExternalID": "DIX021070",
+      "NFLPlayerIDs": [
+        "NFLP-9226f20764f7e2f9916e",
+        "NFLP-c6556d7030037de4d362"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByNFLPlayerID": {
+        "NFLP-c6556d7030037de4d362": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
       "ExternalID": "EKE080143",
       "NFLPlayerIDs": [
         "NFLP-1b3d3c79a70d0b4f97f6",
@@ -23787,6 +24091,22 @@
     },
     {
       "Provider": "ESB",
+      "ExternalID": "KPE415291",
+      "NFLPlayerIDs": [
+        "NFLP-91709673b7d598537cb3",
+        "NFLP-efd9d23dc82af6afd99c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByNFLPlayerID": {
+        "NFLP-efd9d23dc82af6afd99c": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
       "ExternalID": "PRY456541",
       "NFLPlayerIDs": [
         "NFLP-1db59d598591fe5d7c2b",
@@ -23800,6 +24120,38 @@
           "nflverse.players"
         ],
         "NFLP-ca6176f260ec963f238e": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
+      "ExternalID": "RIC070406",
+      "NFLPlayerIDs": [
+        "NFLP-9bcd4521373258e843af",
+        "NFLP-f0d2a2c223e8764a1599"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByNFLPlayerID": {
+        "NFLP-f0d2a2c223e8764a1599": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
+      "ExternalID": "SPE088890",
+      "NFLPlayerIDs": [
+        "NFLP-9a7d09d723e368854149",
+        "NFLP-bd223866998db1c8015b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByNFLPlayerID": {
+        "NFLP-9a7d09d723e368854149": [
           "nflverse.players"
         ]
       }
@@ -23967,14 +24319,6 @@
       "NFLPlayerID": "NFLP-73cfb4b700d87d36dbf4",
       "Name": "Joel Wilson",
       "Position": "TE",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "11115",
-      "Tank01ID": "4243319",
-      "NFLPlayerID": "NFLP-e149d09d487945e6c550",
-      "Name": "Terrell Bynum",
-      "Position": "WR",
       "DraftYear": null
     },
     {
@@ -24202,14 +24546,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "12033",
-      "Tank01ID": "4578462",
-      "NFLPlayerID": "NFLP-8e9cea213b5c2d2e7447",
-      "Name": "OJ Hiliare",
-      "Position": "WR",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "12079",
       "Tank01ID": "4430684",
       "NFLPlayerID": "NFLP-3955c97f765dc208fb0c",
@@ -24282,14 +24618,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "12144",
-      "Tank01ID": "4368341",
-      "NFLPlayerID": "NFLP-f3c5d59a31a6f8e334c2",
-      "Name": "Je'Quan Burton",
-      "Position": "WR",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "12151",
       "Tank01ID": "4244768",
       "NFLPlayerID": "NFLP-b637060432c3aee13034",
@@ -24314,14 +24642,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "12197",
-      "Tank01ID": "4361636",
-      "NFLPlayerID": "NFLP-846ec096782417f2c8e2",
-      "Name": "John Paddock",
-      "Position": "QB",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "12215",
       "Tank01ID": "5212228",
       "NFLPlayerID": "NFLP-d1cd8f593eaa8adc8adf",
@@ -24335,14 +24655,6 @@
       "NFLPlayerID": "NFLP-3344b3f0dc99683f112d",
       "Name": "Shawn Bowman",
       "Position": "TE",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "12218",
-      "Tank01ID": "4379775",
-      "NFLPlayerID": "NFLP-d92d1ae8b6cef81d1ba2",
-      "Name": "Jalen Jackson",
-      "Position": "RB",
       "DraftYear": null
     },
     {
@@ -24414,22 +24726,6 @@
       "Tank01ID": "4887705",
       "NFLPlayerID": "NFLP-1c8045e1c6d1e23a8fda",
       "Name": "John Jiles",
-      "Position": "WR",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "12395",
-      "Tank01ID": "4363528",
-      "NFLPlayerID": "NFLP-62da7cd175a511d87230",
-      "Name": "Tanner Knue",
-      "Position": "WR",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "12398",
-      "Tank01ID": "4368287",
-      "NFLPlayerID": "NFLP-8eb167395044e9638d49",
-      "Name": "Jadon Janke",
       "Position": "WR",
       "DraftYear": null
     },
@@ -25850,14 +26146,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "8421",
-      "Tank01ID": "4240625",
-      "NFLPlayerID": "NFLP-9b926ffeb26244240ba3",
-      "Name": "Mike Harley",
-      "Position": "WR",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "8441",
       "Tank01ID": "4244727",
       "NFLPlayerID": "NFLP-8ca03c3cd666dd4a16f1",
@@ -25882,28 +26170,12 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "8706",
-      "Tank01ID": "5061223",
-      "NFLPlayerID": "NFLP-a5b52c3e56a3f7678d31",
-      "Name": "Kehinde Oginni",
-      "Position": "TE",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "8924",
       "Tank01ID": "4363554",
       "NFLPlayerID": "NFLP-7802b7d6edc5fff1ea73",
       "Name": "Thomas Odukoya",
       "Position": "TE",
       "DraftYear": null
-    },
-    {
-      "SleeperID": "8931",
-      "Tank01ID": "4259976",
-      "NFLPlayerID": "NFLP-d996482fa053366c2865",
-      "Name": "Josh Ali",
-      "Position": "WR",
-      "DraftYear": 0
     },
     {
       "SleeperID": "9225",
@@ -25931,10 +26203,13 @@
     }
   ],
   "rules": {
+    "datasetLifecycle": "Registry schema v2 classifies active and planned datasets as dynamic, immutable history, seasonal-finalizable or append-only snapshots. Immutable/finalized historical partitions require an explicit force repair before replacement.",
     "drafted": "Player resolves to a canonical pick in nflverse.draft-picks.",
     "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
     "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
     "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
+    "combineIdentity": "Combine rows resolve to NFLPlayerID only through an unambiguous PFR provider mapping. Distinct same-season source rows that claim the same PFR ID are retained as ambiguous provenance and do not resolve to a canonical player; names, position, school, CFBRef and draft evidence never choose a winner. Exact duplicate source rows and duplicate resolved canonical identities remain fail-closed invariant violations.",
+    "combineDraftLink": "Combine source draft fields are retained as provenance; the canonical nflverse.draft-picks fact is authoritative for the normalized Draft link. Contradictions are audited and never silently overwritten.",
     "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
     "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
     "historicalProviderMapping": "Provider mappings are stored separately with season-level observation history. Archived app snapshots may backfill Sleeper, Tank01 and ESPN only when at least two independently resolved provider IDs agree on one canonical person.",
