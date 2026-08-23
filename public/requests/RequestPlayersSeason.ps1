@@ -41,20 +41,8 @@ Write-Host "Use data for year $year" -ForegroundColor Cyan
 Write-Host "   Input file: $InputFile"
 Write-Host "   Output file: $OutputFile"
 
-
 # --- Load all games ---
 $games = Get-Content $InputFile -Raw | ConvertFrom-Json
-
-# --- Determine total weeks in dataset ---
-# $weeks = @()
-# foreach ($g in $games) {
-#     if ($g.gameWeek -match '\d+') {
-#         $weeks += [int]($matches[0])
-#     }
-# }
-# $weeks = $weeks | Sort-Object -Unique
-# $potentialGames = ($weeks | Measure-Object).Count - 1
-# Write-Host "Found $($weeks.Count) weeks -> PotentialGames = $potentialGames" -ForegroundColor Cyan
 
 # --- Dictionary for player aggregation ---
 $playersDict = @{}
@@ -62,8 +50,18 @@ $playersDict = @{}
 foreach ($game in $games) {
     if (-not $game.playerStats) { continue }
 
-    foreach ($playerID in $game.playerStats.PSObject.Properties.Name) {
-        $p = $game.playerStats.$playerID
+    $gamePlayerIDs = @{}
+    foreach ($playerPropertyName in $game.playerStats.PSObject.Properties.Name) {
+        $p = $game.playerStats.$playerPropertyName
+        $playerID = [string]$p.playerID
+
+        if ([string]::IsNullOrWhiteSpace($playerID)) {
+            throw "Historical Games_$year contains a playerStats record without Tank01 playerID in game '$($game.gameID)' (property '$playerPropertyName')."
+        }
+        if ($gamePlayerIDs.ContainsKey($playerID)) {
+            throw "Historical Games_$year contains duplicate Tank01 playerID '$playerID' in game '$($game.gameID)' (properties '$($gamePlayerIDs[$playerID])' and '$playerPropertyName')."
+        }
+        $gamePlayerIDs[$playerID] = $playerPropertyName
 
         # --- Fantasy Points ---
         $fantasy = $p.fantasyPointsDefault
@@ -84,13 +82,13 @@ foreach ($game in $games) {
             }
         }
 
-        # --- Initialize player ---
+        # --- Initialize player by authoritative Tank01 playerID ---
         if (-not $playersDict.ContainsKey($playerID)) {
             $playersDict[$playerID] = [PSCustomObject]@{
-                TankID = $p.playerID
-                Name     = $p.longName
-                TeamIDs  = @($p.teamID)
-                Games    = @()
+                TankID  = $playerID
+                Name    = $p.longName
+                TeamIDs = @($p.teamID)
+                Games   = @()
             }
         }
         $player = $playersDict[$playerID]
@@ -102,25 +100,25 @@ foreach ($game in $games) {
         }
 
         $gameDetails = [PSCustomObject]@{
-            Week        = $week
-            Date        = $game.gameDate
-            Home        = $game.home
-            HomeID      = $game.teamIDHome
-            Away        = $game.away
-            AwayID      = $game.teamIDAway
+            Week       = $week
+            Date       = $game.gameDate
+            Home       = $game.home
+            HomeID     = $game.teamIDHome
+            Away       = $game.away
+            AwayID     = $game.teamIDAway
             HomePoints = To-IntOrNull $game.homePts
             AwayPoints = To-IntOrNull $game.awayPts
         }
 
         $gameEntry = [PSCustomObject]@{
-            GameID          = $p.gameID
-            Week            = $week
-            GameDetails     = $gameDetails
-            TeamID          = $p.teamID
-            TeamAbv         = $p.teamAbv
-            FantasyPoints   = $fp
-            SnapCount       = $snapCount
-            SnapPercentage  = $snapPct
+            GameID         = $p.gameID
+            Week           = $week
+            GameDetails    = $gameDetails
+            TeamID         = $p.teamID
+            TeamAbv        = $p.teamAbv
+            FantasyPoints  = $fp
+            SnapCount      = $snapCount
+            SnapPercentage = $snapPct
         }
 
         if (-not $player.Games) {
@@ -129,16 +127,14 @@ foreach ($game in $games) {
         $player.Games += @($gameEntry)
 
         # --- Track team switches ---
-        if (-not ($player.teamIDs -contains $p.teamID)) {
-            $player.teamIDs += $p.teamID
+        if (-not ($player.TeamIDs -contains $p.teamID)) {
+            $player.TeamIDs += $p.teamID
         }
-
-        # $player.teamAbv = $p.teamAbv
     }
 }
 
 # --- Build final player list ---
-$players = $playersDict.Values | Sort-Object PlayerID
+$players = $playersDict.Values | Sort-Object TankID
 
 # --- Export to JSON ---
 $players | ConvertTo-Json -Depth 5 | Out-File $OutputFile -Encoding UTF8
