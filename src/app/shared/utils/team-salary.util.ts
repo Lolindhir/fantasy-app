@@ -5,7 +5,7 @@ import type {
   PlacementRegularSeason,
   Player
 } from '../../core/models/fantasy.models';
-import { getPositionStyle } from './position-color.util';
+import { getPositionColor } from './position-color.util';
 import { calculateTopPlayersSalary } from './trade-calculator.util';
 
 export type SalaryLens = 'current' | 'projected';
@@ -213,7 +213,7 @@ function buildPositionBreakdown(
       position,
       salary: value.salary,
       percentage: totalSalary > 0 ? (value.salary / totalSalary) * 100 : 0,
-      color: getPositionStyle(position).background,
+      color: getPositionColor(position),
       playerCount: value.playerCount
     }))
     .sort((a, b) => positionOrder(a.position) - positionOrder(b.position) || b.salary - a.salary);
