@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -75,6 +75,11 @@ type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'age' | 'name';
   styleUrl: './team-detail-dialog.scss'
 })
 export class TeamDetailDialogComponent implements OnInit {
+  readonly data = inject<TeamDetailDialogData>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject(MatDialogRef<TeamDetailDialogComponent>);
+  private readonly dataService = inject(DataService);
+  private readonly dialog = inject(MatDialog);
+
   readonly team = this.data.team;
   readonly league = this.data.league;
   readonly salary = buildTeamSalarySummary(this.data.team, this.data.league);
@@ -91,13 +96,6 @@ export class TeamDetailDialogComponent implements OnInit {
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;
-
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: TeamDetailDialogData,
-    private dialogRef: MatDialogRef<TeamDetailDialogComponent>,
-    private dataService: DataService,
-    private dialog: MatDialog
-  ) {}
 
   ngOnInit(): void {
     this.loadDraftHistory();
@@ -125,6 +123,13 @@ export class TeamDetailDialogComponent implements OnInit {
 
   get coreAssets(): Player[] {
     return this.salary.current.mostExpensive;
+  }
+
+  get allTimeRecord(): string {
+    const regular = this.team.Placements.AllTime.Regular;
+    return regular.Ties > 0
+      ? `${regular.Wins}-${regular.Losses}-${regular.Ties}`
+      : `${regular.Wins}-${regular.Losses}`;
   }
 
   get sortedRoster(): Player[] {
@@ -256,7 +261,9 @@ export class TeamDetailDialogComponent implements OnInit {
       const paths = index.Seasons
         .filter(season => Number(season.Season) < this.league.SeasonAsNumber)
         .map(season => season.Resources['Drafts'])
-        .filter(resource => !!resource?.Exists && !!resource.Path)
+        .filter((resource): resource is { Path: string; Exists: boolean } =>
+          !!resource && resource.Exists && typeof resource.Path === 'string' && resource.Path.length > 0
+        )
         .map(resource => resource.Path);
 
       if (!paths.length) {
