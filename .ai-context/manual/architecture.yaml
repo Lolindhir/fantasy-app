@@ -277,3 +277,30 @@ frontendStructure:
         Reusable frontend utility for roster salary calculations and trade roster
         projection. DataService keeps thin compatibility delegates while consumer
         imports are still being consolidated.
+
+frontendTargets:
+  teamsFranchiseHub:
+    status: planned
+    responsibility: >
+      Replace the routed Teams overview with a compact Salary-centered franchise
+      overview while keeping team details available as an app-wide interaction
+      rather than a private child of the /teams route.
+    principles:
+      - /teams owns the team-card overview, not the lifecycle of team detail data.
+      - Team detail must be openable from any feature that has a stable team reference, including Teams, Standings, Drafts, Moves, Overview, Player Detail and the future Salary & Trade Simulator.
+      - The team detail dialog should be opened through one shared app-level interaction/service instead of feature-local MatDialog wiring duplicated across callers.
+      - Team detail uses the existing resolved FantasyTeam model and app data facade; callers should pass a stable team identity or resolved team, not rebuild team data locally.
+      - Existing PlayerListComponent, PlayerDetailDialogComponent, PositionStylePipe, standings/history presentation helpers and Material interaction patterns are reused before new UI is introduced.
+      - Draft pick presentation must not be duplicated for Teams. If the existing Drafts feature components cannot be reused without an improper cross-feature dependency, extract only the genuinely generic pick trigger/popover primitive to shared and let Drafts and Teams consume the same implementation.
+      - Shared salary calculations and presentation view models are established before Teams and the later simulator grow separate Current/Projected, cap-usage, position-allocation or salary-movement logic.
+      - New salary UI primitives such as Salary Health, Cap Usage and Salary-by-Position should accept presentation inputs rather than depend directly on one routed feature so the future simulator can reuse them.
+      - The new Teams experience represents current state only; hypothetical cuts, exclusions and trades remain outside team detail.
+      - The current salary-centric Teams implementation stays temporarily reachable as a legacy fallback until the future Salary & Trade Simulator covers the existing exclude/cut scenario functionality.
+    implementationOrder:
+      - shared salary and roster presentation foundation
+      - new /teams card overview
+      - app-wide team detail dialog and shared opener
+      - team detail Overview, Roster, Salary, Drafts and History tabs
+      - responsive and cross-feature integration validation
+      - Salary & Trade Simulator expansion using the same shared salary primitives
+      - remove the legacy Teams salary view only after functional parity for exclude/cut scenarios
