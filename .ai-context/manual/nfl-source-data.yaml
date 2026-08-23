@@ -105,6 +105,182 @@ plannedDatasets:
   - id: nflverse.contracts
     lifecycle: snapshot
 
+operationalDatasetEvaluation:
+  evaluatedAt: 2026-08-23
+  scope:
+    - nflverse.schedules
+    - nflverse.player-stats
+    - nflverse.rosters
+    - nflverse.weekly-rosters
+    - nflverse.snap-counts
+  principle: >
+    nflverse wird nicht pauschal als Ersatz fuer Tank01 oder Sleeper behandelt.
+    Feldbesitz wird nach Datenqualitaet, Historientiefe, Aktualitaet, Identitaet
+    und bestehendem App-Vertrag getrennt entschieden. Die Aktivierung eines
+    Source-Datasets aendert public/data nicht automatisch.
+
+  schedules:
+    recommendedRole: primary-canonical
+    primaryFor:
+      - NFL-Spielplan und historische Schedule-Metadaten
+      - Saison, Woche, Game Type, Datum, Teams und Scores
+      - langfristige saisonweise Historie
+    historyStart: 1999
+    freshness: every-5-minutes-during-season
+    identity:
+      gameKey: nflverse game_id
+      playerIdentityRequired: false
+    retainTank01For:
+      - expliziten aktuellen gameStatus beziehungsweise Final-State im bestehenden App-Pfad, bis eine kanonische Final-State-Regel separat validiert ist
+      - Legacy-Kompatibilitaet des heutigen Schedule.json waehrend der Migration
+    sleeperRole: none-for-nfl-schedule
+    knownGaps:
+      - nflverse Schedule besitzt keinen direkten Tank01-kompatiblen gameStatus-String
+      - der bestehende App-Request ist auf Regular Season begrenzt; eine kanonische Materialisierung muss game_type explizit behandeln und darf Postseason nicht still in den heutigen App-Vertrag mischen
+
+  playerStats:
+    recommendedRole: primary-canonical
+    primaryFor:
+      - woechentliche NFL-Player-Stats
+      - historische Passing-, Rushing-, Receiving- und Kicking-Statistik
+      - PPR-Fantasy-Points als kanonisch reproduzierbare Derived Stats
+      - historische stat-basierte Player-Readmodels
+    historyStart: 1999
+    freshness: nightly-after-game-days-plus-additional-game-day-updates
+    correctionWindow: >
+      NFL-Korrekturen koennen bis Mittwoch einfliessen; der Donnerstag-Stand ist
+      fuer abgeschlossene Wochen der bevorzugte saubere Stand.
+    identity:
+      authoritativeProviderKey: GSIS
+      canonicalTarget: NFLPlayerID
+      nameMatchingAuthoritative: false
+    fieldCoverageForCurrentPlayers:
+      covered:
+        - passing attempts
+        - rushing carries
+        - receiving targets
+        - passing, rushing und receiving touchdowns
+        - field-goal attempts
+        - PAT attempts
+        - fantasy_points_ppr
+        - season, week, game_id, team und opponent_team
+      rule: >
+        Der heutige gemischte AttemptsTotal-Wert kann fachlich aus Passing Attempts,
+        Targets, Carries, FG Attempts und PAT Attempts rekonstruiert werden. Vor
+        einer App-Vertragsmigration muss die Adapterabbildung gegen reale Seasons
+        regression-getestet werden.
+    retainTank01For:
+      - optionalen Low-Latency-Fallback, wenn der nflverse Stats-Lauf nach einem Spiel noch nicht verfuegbar ist
+      - das heutige vollstaendige Tank01-Boxscore-Schema in Games.json, solange dieser Legacy-App-Vertrag nicht gezielt ersetzt ist
+    sleeperRole: none-as-primary-nfl-stat-source
+    knownGaps:
+      - kein 1-zu-1-Ersatz fuer das komplette provider-spezifische Tank01-Boxscore-Objekt
+      - nflverse Player Stats koennen unmittelbar nach Spielende spaeter verfuegbar sein als ein Live-API-Boxscore
+
+  rosters:
+    recommendedRole: primary-canonical-for-nfl-membership
+    primaryFor:
+      - NFL-Teamzugehoerigkeit und saisonale Roster-Historie
+      - providerunabhaengige historische Team-/Status-Evidenz
+      - GSIS-basierte Identitaetsverknuepfung
+    seasonHistoryStart: 1920
+    weeklyHistoryStart: 2002
+    freshness: daily-0700-utc
+    identity:
+      authoritativeProviderKey: GSIS
+      canonicalTarget: NFLPlayerID
+      sleeper_idRole: provider-mapping-only
+      nameMatchingAuthoritative: false
+    retainSleeperFor:
+      - Sleeper-spezifischen Player-Status im App-Kontext
+      - SleeperDepthChartPosition
+      - SleeperDepthChartOrder
+      - Fantasy-Plattform- und Liga-spezifische Roster-/Availability-Fakten
+    retainTank01For:
+      - aktuelle Injury-Felder im bestehenden Players.json, solange keine separat validierte Ersatzquelle existiert
+      - provider-spezifische Metadaten wie heutige Links/Felder, die noch nicht aus einem anderen kanonischen Dataset kommen
+    knownGaps:
+      - Season-Rosters sind kein Ersatz fuer die feinere Weekly-Historie bei In-Season-Teamwechseln
+      - nflverse Injury-Daten sind nach der Saison 2024 derzeit nicht als aktuelle Ersatzquelle verfuegbar
+      - Depth-Chart-Quellen werden in einem separaten Evaluationspunkt behandelt und nicht aus Roster-Feldern zum neuen Source of Truth erklaert
+
+  snapCounts:
+    recommendedRole: primary-canonical
+    primaryFor:
+      - offensive, defensive und Special-Teams-Snaps pro Spiel
+      - historische Snap-Anteile und Snap-Counts
+    historyStart: 2012
+    freshness: four-times-daily-during-season-dependent-on-pfr
+    identity:
+      authoritativeProviderKey: PFR
+      canonicalTarget: NFLPlayerID
+      nameMatchingAuthoritative: false
+      conflictPolicy: >
+        Fehlende oder mehrdeutige PFR-Zuordnungen werden wie andere Provider-ID-
+        Konflikte quarantinisiert; Namen duerfen keine Identitaetsluecke schliessen.
+    fieldCoverageForCurrentPlayers:
+      covered:
+        - offense_snaps
+        - offense_pct
+      additionalAvailable:
+        - defense_snaps
+        - defense_pct
+        - st_snaps
+        - st_pct
+    retainTank01For:
+      - optionalen Low-Latency-Fallback, falls PFR/nflverse fuer ein gerade abgeschlossenes Spiel noch keine Snap Counts bereitstellt
+      - Legacy-Games.json waehrend der Migration
+    semanticGuard: >
+      Fehlende historische Snap-Daten vor 2012 oder noch nicht veroeffentlichte
+      aktuelle Snap-Daten duerfen nicht als 0 materialisiert werden. unavailable,
+      not-yet-available und fetch-failed muessen von einem echten Wert 0
+      unterscheidbar bleiben.
+    kickerNote: >
+      Der heutige App-Generator setzt Kicker-Snaps synthetisch aus FG- plus PAT-
+      Attempts zusammen. Echte Special-Teams-Snaps aus nflverse duerfen diese
+      Semantik nicht still veraendern; das waere eine separate App-Vertragsentscheidung.
+
+  historicalBackfill:
+    currentAppHistory: >
+      public/data/past_seasons besitzt fuer Players, Games und Schedule derzeit
+      materialisierte Saisons 2022 bis 2025.
+    bands:
+      - seasons: 2012-2021
+        coverage: schedules + player-stats + weekly-rosters + snap-counts
+        recommendation: strongest-backfill-band
+      - seasons: 2002-2011
+        coverage: schedules + player-stats + weekly-rosters
+        missing: snap-counts
+      - seasons: 1999-2001
+        coverage: schedules + player-stats + season-rosters
+        missing:
+          - weekly-rosters
+          - snap-counts
+      - seasons: before-1999
+        coverage: season-rosters-only-for-this-evaluation
+        recommendation: no-current-app-backfill-priority
+    rule: >
+      Historische App-Dateien sollen spaeter aus kanonischen source-data-Vertraegen
+      neu erzeugt werden. Fehlende Felder muessen als nicht verfuegbar modelliert
+      werden; historische Tank01-Requests sind fuer durch nflverse abgedeckte
+      Saisons kein Standard-Backfill-Pfad.
+
+  tank01BudgetImpact:
+    conclusion: substantial-reduction-possible-after-source-activation
+    opportunities:
+      - den heutigen vollen Schedule-Request je Games-Lauf perspektivisch durch persistierte nflverse-Schedules ersetzen
+      - historische Stats-/Schedule-/Snap-Backfills ohne Tank01-Requestbudget durchfuehren
+      - Tank01-Boxscores nach stabiler Stats- und Snap-Materialisierung auf Low-Latency-/Legacy-Fallback statt primaeren Dauerpfad reduzieren
+    cannotRemoveYet:
+      - Tank01 Player-List-/Metadata-Nutzung ist durch diese vier Dataset-Klassen allein nicht vollstaendig ersetzt
+      - aktuelle Injury-Felder benoetigen weiterhin Tank01 oder eine separat validierte Ersatzquelle
+    implementationOrder:
+      - nflverse.schedules
+      - nflverse.player-stats
+      - nflverse.snap-counts
+      - nflverse.weekly-rosters
+      - nflverse.rosters
+
 combine:
   providerDataset: nflverse.combine
   upstream: nflverse/nflverse-data
