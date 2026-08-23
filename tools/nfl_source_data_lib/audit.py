@@ -28,15 +28,49 @@ def _combine_audit(
         for record in records
         if record.get("NFLPlayerID")
     }
+    ambiguous_source_claims: dict[tuple[int, str], list[dict[str, Any]]] = {}
     by_season: dict[str, dict[str, int]] = {}
     for season, payload in sorted(payloads.items()):
         season_records = payload.get("Records", [])
+        ambiguous_records = [
+            record
+            for record in season_records
+            if (record.get("IdentityResolution") or {}).get("Status") == "ambiguous"
+        ]
+        for record in ambiguous_records:
+            pfr = clean((record.get("SourceIDs") or {}).get("PFR"))
+            if not pfr:
+                continue
+            ambiguous_source_claims.setdefault((season, pfr), []).append({
+                "PlayerName": record.get("PlayerName"),
+                "Position": record.get("Position"),
+                "School": record.get("School"),
+                "CFBRef": (record.get("SourceIDs") or {}).get("CFBRef"),
+            })
         by_season[str(season)] = {
             "records": len(season_records),
             "resolvedIdentity": sum(1 for record in season_records if record.get("NFLPlayerID")),
             "unresolvedIdentity": sum(1 for record in season_records if not record.get("NFLPlayerID")),
+            "ambiguousIdentityRecords": len(ambiguous_records),
             "canonicalDraftLinked": sum(1 for record in season_records if record.get("Draft")),
         }
+
+    ambiguous_sources = [
+        {
+            "Season": season,
+            "PFR": pfr,
+            "Claims": sorted(
+                claims,
+                key=lambda item: (
+                    item.get("PlayerName") or "",
+                    item.get("Position") or "",
+                    item.get("School") or "",
+                    item.get("CFBRef") or "",
+                ),
+            ),
+        }
+        for (season, pfr), claims in sorted(ambiguous_source_claims.items())
+    ]
 
     lookup = identity_lookup(canonical)
     app_internal_ids: set[str] = set()
@@ -57,6 +91,13 @@ def _combine_audit(
         "recordCount": len(records),
         "resolvedIdentityCount": sum(1 for record in records if record.get("NFLPlayerID")),
         "unresolvedIdentityCount": sum(1 for record in records if not record.get("NFLPlayerID")),
+        "ambiguousIdentityRecordCount": sum(
+            1
+            for record in records
+            if (record.get("IdentityResolution") or {}).get("Status") == "ambiguous"
+        ),
+        "ambiguousIdentitySourceCount": len(ambiguous_sources),
+        "ambiguousIdentitySources": ambiguous_sources,
         "withoutPfrIdCount": sum(
             1 for record in records if not (record.get("SourceIDs") or {}).get("PFR")
         ),
@@ -219,7 +260,7 @@ def build_audit(
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
             "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
-            "combineIdentity": "Combine rows resolve to NFLPlayerID only through the PFR provider mapping. Player names are descriptive and never used as an identity join.",
+            "combineIdentity": "Combine rows resolve to NFLPlayerID only through an unambiguous PFR provider mapping. Distinct same-season source rows that claim the same PFR ID are retained as ambiguous provenance and do not resolve to a canonical player; names, position, school, CFBRef and draft evidence never choose a winner. Exact duplicate source rows and duplicate resolved canonical identities remain fail-closed invariant violations.",
             "combineDraftLink": "Combine source draft fields are retained as provenance; the canonical nflverse.draft-picks fact is authoritative for the normalized Draft link. Contradictions are audited and never silently overwritten.",
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
