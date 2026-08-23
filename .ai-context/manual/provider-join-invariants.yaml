@@ -1,0 +1,120 @@
+schemaVersion: 1
+
+domain: provider-join-invariants
+
+purpose: >
+  Defines fail-closed cardinality and uniqueness rules for provider-specific
+  identities that feed generated app data. Provider IDs are evidence and join
+  keys, not permission to silently select a winner when multiple records claim
+  the same identity.
+
+principles:
+  noSilentWinner: >
+    A lookup that semantically expects one record per key must validate that
+    expectation before using a dictionary/hashtable. First-wins, last-wins,
+    Sort-Object -Unique and Select-Object -First are not valid conflict handling
+    unless the domain contract explicitly defines equivalent duplicate records.
+  earliestBoundary: >
+    Validate provider/cardinality invariants as early as practical and always
+    before the first publishing boundary. Existing downstream uniqueness checks
+    remain defense in depth.
+  missingVsAmbiguous: >
+    Missing IDs and ambiguous IDs are distinct states. A missing optional mapping
+    may remain unresolved when the owning contract permits it; an ambiguous claim
+    must not be resolved heuristically.
+  diagnostics: >
+    Failures should name the join key and relevant provider provenance without
+    exposing credentials or secrets.
+
+sharedHelper:
+  path: public/requests/utils/general/ProviderJoinUtils.psm1
+  contract:
+    - New-UniqueObjectLookup validates non-empty unique provider keys.
+    - Optional provider mappings may explicitly allow missing keys.
+    - Duplicate diagnostics include both the first and conflicting records.
+
+joinAudit:
+  player:
+    currentOutput:
+      canonicalKey: Players.ID
+      providerKey: TankID
+      rules:
+        - Players.ID is required and globally unique.
+        - TankID is required and globally unique in generated Players.json.
+        - Tank01 playerID must be unique in the provider input.
+        - Tank01 sleeperBotID is optional, but every non-empty value must identify at most one Tank01 record.
+        - Sleeper player_id is optional in the global player catalog, but every non-empty value must be unique before joining.
+      defenseInDepth: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
+    history:
+      key: TankID
+      rule: >
+        Every historical Players_<season>.json used for current player calculations
+        must contain at most one record per non-empty TankID. Historical lookup
+        construction must fail instead of overwriting a previous record.
+    historicalGameAggregation:
+      providerKey: Tank01 playerID
+      rule: >
+        RequestPlayersSeason.ps1 aggregates the same Tank01 playerID across games,
+        but one game may not contain multiple playerStats entries claiming that
+        same playerID. The provider playerID, not the JSON property name, is the
+        historical identity key.
+
+  team:
+    source: Sleeper
+    rules:
+      - member user_id is required and unique.
+      - roster roster_id is required and unique.
+      - roster owner_id is required and unique for the app team model.
+      - every roster owner_id resolves to exactly one league member user_id.
+    failureBehavior: >
+      Orphan owners or duplicate member/roster ownership stop team generation;
+      Get-Teams does not select the first matching member.
+
+  draft:
+    source: Sleeper
+    rules:
+      - provider draft_id is required and unique within the league draft response.
+      - an explicit Metadata SleeperDraftID binding is authoritative and must match exactly one provider draft; it may not fall back to another draft.
+      - configured standing identity is at most one record per Season.
+      - generated PickKey is unique within a draft before transaction movements are applied.
+    allowedFallback: >
+      Deterministic type/instance fallback remains valid only for provider drafts
+      that have no explicit SleeperDraftID binding.
+
+  transaction:
+    source: Sleeper plus manual enrichment
+    rules:
+      - Sleeper transaction_id is required and unique within each fetched week.
+      - generated TransactionID is required and unique within every current or historical transaction file.
+      - a non-empty manual SleeperTransactionID may bind to at most one manual transaction record.
+      - duplicate transaction identities fail before comparison or publication; no dictionary overwrite is accepted.
+    draftPickResolution: >
+      Ambiguous Sleeper draft-pick identity continues to remain unresolved instead
+      of being guessed from source type or name-like evidence.
+
+  historicalGeneration:
+    rules:
+      - recursive Sleeper league history is unique by season when mapping season to league_id.
+      - completed historical draft contexts are unique by DraftKey plus SleeperDraftID.
+      - a completed Sleeper draft context requires a non-empty SleeperDraftID.
+      - current and archived copies of the same DraftKey/PickKey may collapse only when all transaction-enrichment facts are semantically identical; conflicting copies fail closed.
+      - historical player aggregation uses Tank01 playerID as the provider identity and rejects duplicate claims inside one game.
+
+regressionCoverage:
+  entryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
+  ciEntryPoint: public/requests/DraftIdentityRegressionTest.ps1
+  cases:
+    - generic duplicate and missing provider keys
+    - Tank01-to-Sleeper player mapping collisions
+    - historical TankID collisions
+    - Sleeper member/roster owner cardinality
+    - duplicate/missing explicit Sleeper draft bindings
+    - duplicate standing identities and PickKeys
+    - duplicate generated TransactionIDs and manual SleeperTransactionID bindings
+    - missing completed historical Sleeper draft IDs
+    - identical versus conflicting current/history draft-pick copies
+
+futureSourceDataImplication: >
+  New nflverse schedules, stats, rosters and snap-count materializers must apply
+  the same contract to GSIS, PFR, game and season/week keys before their canonical
+  source-data files can become inputs to app generators.
