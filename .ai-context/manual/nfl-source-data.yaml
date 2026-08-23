@@ -118,7 +118,20 @@ combine:
     rule: >
       Ein Combine-Record darf nur ueber eine eindeutige PFR-Provider-Zuordnung an
       NFLPlayerID gebunden werden. Namen, Position oder Schule duerfen keine
-      fehlende Identitaetszuordnung heuristisch ersetzen.
+      fehlende oder widerspruechliche Identitaetszuordnung heuristisch ersetzen.
+    sourceCollisionPolicy:
+      distinctSameSeasonPfrClaims: quarantine-as-ambiguous
+      identicalDuplicateRows: fail-closed
+      duplicateResolvedCanonicalIdentity: fail-closed
+      rule: >
+        Wenn mehrere unterscheidbare Raw-Records derselben Combine-Saison dieselbe
+        PFR-ID beanspruchen, bleibt die PFR-ID als Provider-Provenienz an allen
+        betroffenen Records erhalten, nimmt fuer diese Records aber nicht an der
+        kanonischen NFLPlayerID-Aufloesung teil. Der Konflikt wird explizit als
+        ambiguous auditiert; Name, Position, Schule, CFBRef oder Draft-Evidenz
+        duerfen keinen Gewinner bestimmen. Exakt doppelte Raw-Zeilen sowie zwei
+        eindeutig aufgeloeste Records derselben Saison mit derselben NFLPlayerID
+        bleiben harte Invariant-Verletzungen.
   measurements:
     - HeightInches
     - WeightPounds
@@ -154,6 +167,7 @@ validation:
   - Registry-Schema und Lifecycle-Kombinationen werden beim Laden fail-closed validiert.
   - Historische Partitionen erhalten Regressionstests fuer Normal- und Force-Repair.
   - Combine-Identitaet wird gegen fehlende PFR-Zuordnung und Namensgleichheit getestet.
-  - Doppelte PFR- oder NFLPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
+  - Unterschiedliche Same-Season-Records mit derselben PFR-ID werden als ambige Source-Claims quarantiniert und auditiert; exakt doppelte Raw-Zeilen brechen fail-closed ab.
+  - Doppelte eindeutig aufgeloeste NFLPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
   - Combine-vs.-Draft-Widersprueche werden im Audit sichtbar.
   - Reale Source-Materialisierung muss den bestehenden zweiten semantischen No-op-Pass bestehen.
