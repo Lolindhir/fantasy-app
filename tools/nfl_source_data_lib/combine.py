@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import Any
 
 from .common import Dataset, as_float, as_int, clean, iter_csv
@@ -58,6 +58,18 @@ def _draft_index(
     return index
 
 
+def _source_identity_key(row: dict[str, str]) -> tuple[int, str] | None:
+    season = as_int(row.get("season"))
+    pfr = clean(row.get("pfr_id"))
+    if season is None or not pfr:
+        return None
+    return season, pfr
+
+
+def _raw_row_signature(row: dict[str, str]) -> tuple[tuple[str, str], ...]:
+    return tuple(sorted((key, value or "") for key, value in row.items()))
+
+
 def build_combine_files(
     dataset: Dataset,
     canonical: list[dict[str, Any]],
@@ -67,27 +79,66 @@ def build_combine_files(
     draft_by_player = _draft_index(draft_payloads)
     grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
     conflicts: list[dict[str, Any]] = []
-    seen_pfr: set[tuple[int, str]] = set()
     seen_internal: set[tuple[int, str]] = set()
 
-    for row in iter_csv(dataset.raw_path):
+    rows = list(iter_csv(dataset.raw_path))
+    pfr_claim_counts = Counter(
+        key for row in rows if (key := _source_identity_key(row)) is not None
+    )
+    ambiguous_pfr_claims = {
+        key for key, count in pfr_claim_counts.items() if count > 1
+    }
+    if ambiguous_pfr_claims:
+        signatures_by_claim: dict[tuple[int, str], list[tuple[tuple[str, str], ...]]] = defaultdict(list)
+        for row in rows:
+            key = _source_identity_key(row)
+            if key in ambiguous_pfr_claims:
+                signatures_by_claim[key].append(_raw_row_signature(row))
+        for (season, pfr), signatures in sorted(signatures_by_claim.items()):
+            if len(set(signatures)) != len(signatures):
+                raise ValueError(f"Duplicate identical combine row for PFR identity {season}/{pfr}")
+
+    for row in rows:
         season = as_int(row.get("season"))
         if season is None:
             continue
         pfr = clean(row.get("pfr_id"))
         cfb = clean(row.get("cfb_id"))
-        internal_id = lookup.get(("PFR", pfr)) if pfr else None
+        pfr_key = (season, pfr) if pfr else None
+        ambiguous_source_claim = pfr_key in ambiguous_pfr_claims if pfr_key else False
+        internal_id = None if ambiguous_source_claim else lookup.get(("PFR", pfr)) if pfr else None
 
-        if pfr:
-            pfr_key = (season, pfr)
-            if pfr_key in seen_pfr:
-                raise ValueError(f"Duplicate combine PFR identity {season}/{pfr}")
-            seen_pfr.add(pfr_key)
         if internal_id:
             internal_key = (season, internal_id)
             if internal_key in seen_internal:
                 raise ValueError(f"Duplicate combine canonical identity {season}/{internal_id}")
             seen_internal.add(internal_key)
+
+        if ambiguous_source_claim:
+            identity_resolution = {
+                "Status": "ambiguous",
+                "Provider": "PFR",
+                "ExternalID": pfr,
+                "Reason": "duplicate-source-claim",
+            }
+        elif internal_id:
+            identity_resolution = {
+                "Status": "resolved",
+                "Provider": "PFR",
+                "ExternalID": pfr,
+            }
+        elif pfr:
+            identity_resolution = {
+                "Status": "unresolved",
+                "Provider": "PFR",
+                "ExternalID": pfr,
+                "Reason": "unmapped-provider-id",
+            }
+        else:
+            identity_resolution = {
+                "Status": "unresolved",
+                "Reason": "missing-pfr-id",
+            }
 
         source_draft = {
             "Year": as_int(row.get("draft_year")),
@@ -136,6 +187,7 @@ def build_combine_files(
 
         grouped[season].append({
             "NFLPlayerID": internal_id,
+            "IdentityResolution": identity_resolution,
             "PlayerName": clean(row.get("player_name")),
             "Position": clean(row.get("pos")),
             "School": clean(row.get("school")),
@@ -154,6 +206,8 @@ def build_combine_files(
             item.get("NFLPlayerID") or "~",
             item.get("SourceIDs", {}).get("PFR") or "~",
             item.get("PlayerName") or "~",
+            item.get("Position") or "~",
+            item.get("School") or "~",
         ))
     conflicts.sort(key=lambda item: (item["Season"], item.get("PFR") or "", item.get("PlayerName") or ""))
     return grouped, conflicts
