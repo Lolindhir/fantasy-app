@@ -171,6 +171,90 @@ class RegistryCombineTests(unittest.TestCase):
             self.assertEqual(5, item["Draft"]["OverallPick"])
             self.assertEqual([], conflicts)
 
+    def test_combine_links_same_canonical_player_to_each_draft_season(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp) / "combine.csv"
+            write_csv(raw, [
+                {
+                    "season": "1986",
+                    "draft_year": "1986",
+                    "draft_round": "1",
+                    "draft_ovr": "1",
+                    "pfr_id": "PlayTe00",
+                    "player_name": "Test Player",
+                },
+                {
+                    "season": "1987",
+                    "draft_year": "1987",
+                    "draft_round": "7",
+                    "draft_ovr": "183",
+                    "pfr_id": "PlayTe00",
+                    "player_name": "Test Player",
+                },
+            ])
+            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            drafts = {
+                1986: {
+                    "Picks": [{
+                        "NFLPlayerID": "NFLP-1",
+                        "Round": 1,
+                        "PositionInRound": 1,
+                        "OverallPick": 1,
+                        "Team": "A",
+                    }]
+                },
+                1987: {
+                    "Picks": [{
+                        "NFLPlayerID": "NFLP-1",
+                        "Round": 7,
+                        "PositionInRound": 15,
+                        "OverallPick": 183,
+                        "Team": "B",
+                    }]
+                },
+            }
+
+            grouped, conflicts = build_combine_files(combine_dataset(raw), canonical, drafts)
+            self.assertEqual(1, grouped[1986][0]["Draft"]["OverallPick"])
+            self.assertEqual(183, grouped[1987][0]["Draft"]["OverallPick"])
+            self.assertEqual([], conflicts)
+
+    def test_combine_rejects_multiple_draft_facts_for_same_player_in_one_season(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp) / "combine.csv"
+            write_csv(raw, [{
+                "season": "2025",
+                "pfr_id": "PlayTe00",
+                "player_name": "Test Player",
+            }])
+            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            drafts = {
+                2025: {
+                    "Picks": [
+                        {
+                            "NFLPlayerID": "NFLP-1",
+                            "Round": 1,
+                            "PositionInRound": 5,
+                            "OverallPick": 5,
+                            "Team": "A",
+                        },
+                        {
+                            "NFLPlayerID": "NFLP-1",
+                            "Round": 2,
+                            "PositionInRound": 5,
+                            "OverallPick": 37,
+                            "Team": "B",
+                        },
+                    ]
+                }
+            }
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "multiple NFL draft facts in season 2025",
+            ):
+                build_combine_files(combine_dataset(raw), canonical, drafts)
+
     def test_combine_never_name_matches_without_pfr(self):
         with tempfile.TemporaryDirectory() as tmp:
             raw = Path(tmp) / "combine.csv"
