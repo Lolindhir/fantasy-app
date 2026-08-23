@@ -1,4 +1,10 @@
-import type { DraftPick, FantasyTeam, League, Player, TeamPlacement } from '../../core/models/fantasy.models';
+import type {
+  DraftPick,
+  FantasyTeam,
+  League,
+  PlacementRegularSeason,
+  Player
+} from '../../core/models/fantasy.models';
 import { getPositionStyle } from './position-color.util';
 import { calculateTopPlayersSalary } from './trade-calculator.util';
 
@@ -52,7 +58,7 @@ export interface TeamSalarySummary {
 }
 
 export interface TeamSeasonSummary {
-  season?: string;
+  season: string;
   record: string;
   finalPlace?: string;
   usesPreviousSeason: boolean;
@@ -80,8 +86,8 @@ export function splitTeamRoster(team: FantasyTeam): TeamRosterSplit {
 export function getTeamRosterLimits(league: League): TeamRosterLimits {
   return {
     roster: league.RosterSize?.length || undefined,
-    taxi: readPositiveSetting(league.Settings, 'taxi_slots'),
-    ir: readPositiveSetting(league.Settings, 'reserve_slots')
+    taxi: readPositiveSetting(league.Settings ?? {}, 'taxi_slots'),
+    ir: readPositiveSetting(league.Settings ?? {}, 'reserve_slots')
   };
 }
 
@@ -136,7 +142,7 @@ export function getTeamSeasonSummary(team: FantasyTeam, league: League): TeamSea
     : source.Regular;
 
   return {
-    season: hasMeaningfulCurrentStanding ? league.Season : team.Placements.Previous.Season,
+    season: hasMeaningfulCurrentStanding ? league.Season : String(league.SeasonAsNumber - 1),
     record: source.Regular.Record || buildRecord(source.Regular),
     finalPlace: finalPlacement.PlaceOrdinal || (finalPlacement.Place > 0 ? ordinal(finalPlacement.Place) : undefined),
     usesPreviousSeason: !hasMeaningfulCurrentStanding
@@ -224,11 +230,11 @@ function readPositiveSetting(settings: Record<string, unknown>, key: string): nu
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
 }
 
-function isMeaningfulPlacement(placement: TeamPlacement): boolean {
+function isMeaningfulPlacement(placement: PlacementRegularSeason): boolean {
   return placement.Place > 0 || placement.Wins > 0 || placement.Losses > 0 || placement.Ties > 0;
 }
 
-function buildRecord(placement: TeamPlacement): string {
+function buildRecord(placement: PlacementRegularSeason): string {
   return placement.Ties > 0
     ? `${placement.Wins}-${placement.Losses}-${placement.Ties}`
     : `${placement.Wins}-${placement.Losses}`;
