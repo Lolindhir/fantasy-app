@@ -26,6 +26,20 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Technische Besonderheit: Gemeinsame Outputs wie `public/data/Timestamps.json` und `public/data/backup/**` erzeugen zusätzliche Same-Path-Races; deshalb ist ein reiner Git-Rebase für App-Writer nicht generell ausreichend.
   - Validierung: Race-Tests müssen sowohl irrelevante parallele `main`-Commits als auch relevante Input-Änderungen und echte Same-Path-Konflikte abdecken.
 
+- [ ] Standalone-Transactions-Full-Rebuild auf genau eine finale Current-Transactions-Persistierung reduzieren.
+  - Kontext: Die produktiven `APP • Data • Transactions`-Runs #17 und #18 erzeugten innerhalb jeweils eines erfolgreichen Full-Rebuilds weiterhin drei `Transactions_*.json`-Backups. Der häufige `RequestLeague.ps1`-Pfad besitzt bereits den separaten Single-Persist-Vertrag; der Standalone-/History-Pfad wurde dort bewusst nicht mitbereinigt.
+  - Ziel: `RequestTransactions.ps1` und die gemeinsame Draft-/Transaction-Pipeline so ordnen, dass der aktuelle Transactions-Readmodel-Stand innerhalb eines Full-Rebuilds erst nach Base-Aufbau, Draft-Identity und finalem Pick-Enrichment genau einmal semantisch persistiert wird.
+  - Backup-/Timestamp-Regel: Ein Zwischenstand darf keinen Backup- oder Timestamp-Churn auslösen; Backups nur für die tatsächlich ersetzte finale Current-Datei und nur gemäß dem bestehenden Save-/Compare-Vertrag erzeugen.
+  - Leitplanke: Historical Transactions und Historical Drafts bleiben eigenständige generierte Outputs; ihre notwendige saisonweise Persistierung nicht mit der Current-Single-Persist-Anforderung verwechseln.
+  - Validierung: Zwei aufeinanderfolgende Full-Rebuilds ohne fachliche Source-Änderung dürfen nicht erneut mehrere Current-Transactions-Backups aus Zwischenständen erzeugen.
+
+- [ ] `Drafts.json`-`DisplayStatus` über alle Writer idempotent und kanonisch machen.
+  - Kontext: Der zweite produktive Transactions-Idempotenzlauf (#18) änderte `public/data/Drafts.json` erneut ausschließlich bei einem `DisplayStatus` von `Completed` auf `Finished`, obwohl die historischen Draft-/Transaction-Outputs bereits semantisch stabil waren.
+  - Problem: Mindestens zwei Generator-/Enrichment-Pfade verwenden offenbar unterschiedliche Display-Labels für denselben abgeschlossenen Draft-Zustand; dadurch kann ein fachlich unveränderter Lauf `Drafts.json`, Timestamps und Backups erneut churnen.
+  - Ziel: Eine einzige kanonische Draft-DisplayStatus-Abbildung zentral verwenden und alle Writer (`RequestLeague`, `RequestDrafts`, gekoppelter `RequestTransactions`-Rebuild) auf denselben Wert für denselben `Status` bringen.
+  - Leitplanke: `Status` bleibt der fachliche Zustand; `DisplayStatus` ist UI-sicheres Derived Output und darf nicht writerabhängig variieren.
+  - Validierung: Aufeinanderfolgende League-/Drafts-/Transactions-Runs ohne fachliche Draftänderung dürfen `DisplayStatus` nicht flippen und keinen allein dadurch ausgelösten `Drafts.json`-Backup erzeugen.
+
 - [ ] App-Generator-Abhängigkeiten und Orchestrierung nach Etablierung der Source-Data-Schicht neu ordnen.
   - Zeitpunkt / Abhängigkeit: Noch nicht umsetzen. Zuerst die aktuell entstehende persistente `source-data`-/NFL-Sync-Schicht etablieren und klären, welche Sleeper-, Tank01- und nflverse-Daten dort künftig provider-nah beziehungsweise normalisiert vorliegen. Danach die App-Generatorarchitektur gegen diesen tatsächlichen Source-Vertrag neu bewerten.
   - Ausgangslage: Die heutigen Generatoren besitzen mehrere historisch gewachsene gegenseitige Abhängigkeiten. Insbesondere liest `RequestPlayers.ps1` `Games.json` und `League.json`; `RequestLeague.ps1` aktualisiert selbst Transactions und Drafts und liest Players, Standings und Schedule; Drafts verwendet wiederum League, Standings und Transactions. Ein Teil dieser scheinbaren Runtime-Zyklen entstand, weil bestimmte Informationen beim initialen Saison-/Ligawechsel zunächst nur über den League-/Sleeper-Pfad verfügbar waren.
