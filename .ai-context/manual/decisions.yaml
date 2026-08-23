@@ -592,3 +592,45 @@ decisions:
       negative:
         - A full Transactions history run also regenerates Drafts and may publish both data scopes.
         - Manual Draft refreshes remain capable of enriching persisted Transactions and therefore must preserve the shared stage order.
+
+  - id: ADR-027
+    title: Team detail is app-wide and Teams migrates before the Salary & Trade Simulator
+    status: accepted
+    context: >
+      The current Teams page combines useful salary inspection with temporary
+      exclude/cut simulation, but the redesigned Teams experience is intended to
+      become a compact franchise overview with reusable team details. Team details
+      will also be useful from Standings, Drafts, Moves, Overview, Player Detail and
+      the future simulator. Building Teams and the simulator independently would
+      risk duplicated salary logic, draft-pick UI and dialog wiring.
+    decision: >
+      Build the new Teams experience before the full Salary & Trade Simulator, but
+      first establish shared salary/roster presentation logic and reusable UI
+      primitives. Treat the team detail dialog as an app-wide interaction opened
+      through one shared entry point rather than as private state of /teams. Reuse
+      PlayerList, Player Detail, position styling, standings/history helpers and
+      existing Drafts UI wherever the dependency remains architecturally sound. If
+      DraftPickTrigger/Popover needs genuine cross-feature reuse, move only the
+      generic primitive to shared instead of duplicating it or making Teams depend
+      on Drafts feature internals. Keep the current salary-centric Teams page
+      temporarily reachable as a legacy fallback while the new /teams becomes the
+      primary current-state view. Do not carry exclude/cut/trade simulation into
+      team detail. Expand the Trade Simulator afterward into a Salary & Trade
+      Simulator using the same shared salary primitives, and remove the legacy
+      Teams salary view only once exclude/cut scenario functionality has reached
+      functional parity there.
+    rationale: >
+      This delivers the already-defined Teams UX without waiting on a larger
+      simulator redesign, preserves existing simulation capability during the
+      migration and makes the shared salary/team-detail foundation reusable by the
+      next feature instead of creating two competing implementations.
+    consequences:
+      positive:
+        - Team detail can be opened consistently from any feature with a team reference.
+        - Teams and the later simulator share Current/Projected, cap usage, salary allocation and roster calculations.
+        - Existing player, standings and draft UI is reused instead of copied.
+        - The legacy page protects current exclude/cut workflows during migration.
+      negative:
+        - The app temporarily carries both the new Teams view and a legacy salary view.
+        - Some Drafts feature-local components may need a focused move to shared when a real cross-feature consumer appears.
+        - Legacy removal is blocked until the later simulator reaches scenario parity.
