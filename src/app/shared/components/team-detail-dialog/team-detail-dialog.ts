@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTabsModule } from '@angular/material/tabs';
 import { forkJoin } from 'rxjs';
@@ -9,8 +9,8 @@ import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../
 import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
+import { getDraftRoundColor } from '../../utils/draft-ui.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
-import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
 import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
@@ -78,7 +78,6 @@ export class TeamDetailDialogComponent implements OnInit {
   readonly data = inject<TeamDetailDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<TeamDetailDialogComponent>);
   private readonly dataService = inject(DataService);
-  private readonly dialog = inject(MatDialog);
 
   readonly team = this.data.team;
   readonly league = this.data.league;
@@ -219,24 +218,17 @@ export class TeamDetailDialogComponent implements OnInit {
     }
   }
 
-  openHistoricalPlayer(pick: DraftPick): void {
-    if (!pick.PlayerID) return;
-    const player = this.data.players.find(candidate => candidate.ID === pick.PlayerID);
-    if (!player) return;
-    this.dialog.open(PlayerDetailDialogComponent, {
-      data: player,
-      width: '800px',
-      maxHeight: '90vh',
-      panelClass: 'player-dialog'
-    });
+  draftRoundColor(pick: DraftPick): string {
+    return getDraftRoundColor(pick.Round, pick.Draft?.Settings.Rounds);
+  }
+
+  historicalPlayer(pick: DraftPick): Player | undefined {
+    if (!pick.PlayerID) return undefined;
+    return this.data.players.find(candidate => candidate.ID === pick.PlayerID);
   }
 
   historicalPlayerName(pick: DraftPick): string {
-    if (pick.PlayerID) {
-      const player = this.data.players.find(candidate => candidate.ID === pick.PlayerID);
-      if (player) return player.Name;
-    }
-    return pick.PlayerName || 'Unknown player';
+    return this.historicalPlayer(pick)?.Name || pick.PlayerName || 'Unknown player';
   }
 
   private sortPlayers(players: Player[]): Player[] {
