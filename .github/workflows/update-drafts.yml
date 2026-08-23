@@ -33,5 +33,11 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add public/data/**
+          before_commit="$(git rev-parse HEAD)"
           pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope drafts
+          after_commit="$(git rev-parse HEAD)"
+          if [ "$before_commit" = "$after_commit" ]; then
+            echo "No data commit created. Push skipped."
+            exit 0
+          fi
           git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
