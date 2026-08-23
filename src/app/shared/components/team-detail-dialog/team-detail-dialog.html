@@ -160,7 +160,9 @@
               <div class="draft-group">
                 <div class="draft-group-title"><strong>{{ group.title }}</strong><span>{{ group.picks.length }} picks</span></div>
                 <mat-chip-set aria-label="Open draft picks">
-                  @for (pick of group.picks; track pick.PickKey) { <mat-chip>{{ pick.DisplayPick }}</mat-chip> }
+                  @for (pick of group.picks; track pick.PickKey) {
+                    <mat-chip [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</mat-chip>
+                  }
                 </mat-chip-set>
               </div>
             } @empty { <p class="empty-state">No known open future picks.</p> }
@@ -176,9 +178,14 @@
                 <div class="historical-group">
                   <h4>{{ group.title }}</h4>
                   @for (pick of group.picks; track pick.PickKey) {
-                    <button class="historical-pick" type="button" [disabled]="!pick.PlayerID" (click)="openHistoricalPlayer(pick)">
-                      <span class="pick-label">{{ pick.DisplayPick }}</span><span>{{ historicalPlayerName(pick) }}</span>
-                    </button>
+                    <div class="historical-pick">
+                      <span class="pick-label" [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</span>
+                      @if (historicalPlayer(pick); as player) {
+                        <app-draft-pick-player-card [player]="player" />
+                      } @else {
+                        <span>{{ historicalPlayerName(pick) }}</span>
+                      }
+                    </div>
                   }
                 </div>
               } @empty { <p class="empty-state">No historical drafted players available.</p> }
