@@ -455,8 +455,7 @@ function Get-ManualTransactions {
         return $transactions
     }
     catch {
-        Write-Warning "Could not read manual transactions file at $filePath. $_"
-        return @()
+        throw "Could not read or validate manual transactions file at $filePath. $_"
     }
 }
 
@@ -635,8 +634,7 @@ function Get-TransactionsLocalForCurrentSeason {
         return $transactions
     }
     catch {
-        Write-Warning "Could not read existing Transactions.json: $_"
-        return @()
+        throw "Could not read or validate existing Transactions.json at '$filePath'. $_"
     }
 }
 
@@ -662,7 +660,7 @@ function Get-TransactionsLocalHistoricalSeasons {
             $transactions += $fileTransactions
         }
         catch {
-            Write-Warning "Could not read historical transactions file $($_.FullName): $_"
+            throw "Could not read or validate historical transactions file '$($_.FullName)'. $_"
         }
     }
 
@@ -770,7 +768,7 @@ function Get-TransactionsRemoteForWeeks {
             $transactionID = [string]$tx.transaction_id
             if ($manualBySleeperTransactionID.ContainsKey($transactionID)) {
                 $manualTx = $manualBySleeperTransactionID[$transactionID]
-                Write-Host "Matching manual transaction found for Sleeper transaction ID $transactionID: Manual Transaction ID: $(Get-ManualTransactionID -manualTransaction $manualTx)" -ForegroundColor Cyan
+                Write-Host "Matching manual transaction found for Sleeper transaction ID ${transactionID}: Manual Transaction ID: $(Get-ManualTransactionID -manualTransaction $manualTx)" -ForegroundColor Cyan
 
                 $transactions += Get-TransactionOutput -sleeperTransaction $tx -manualTransaction $manualTx -season $season
                 continue
