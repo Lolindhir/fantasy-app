@@ -106,7 +106,7 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             self.assertTrue(all(row.get("IDs", {}).get("Sleeper") != "133" for row in canonical["Players"]))
             conflicts = json.loads((root / "source-data/nfl/identities/provider-mappings.json").read_text())["Conflicts"]
             sleeper_conflict = next(item for item in conflicts if item["Provider"] == "Sleeper" and item["ExternalID"] == "133")
-            self.assertEqual(2, len(sleeper_conflict["NFLPlayerIDs"]))
+            self.assertEqual(2, len(sleeper_conflict["CanonicalPlayerIDs"]))
             self.assertEqual(0, result["audit"]["identityInvariantViolations"]["duplicateLinkProviderIDCount"])
 
     def test_provider_id_can_be_reused_in_a_later_observed_season(self):
@@ -129,7 +129,7 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             materialize(root, datasets)
             first_payload = json.loads((root / "source-data/nfl/identities/provider-mappings.json").read_text())
             first = next(item for item in first_payload["Mappings"] if item["Provider"] == "Sleeper" and item["ExternalID"] == "1000")
-            first_internal = first["NFLPlayerID"]
+            first_internal = first["CanonicalPlayerID"]
             self.assertEqual((2026, 2026), (first["FirstObservedSeason"], first["LastObservedSeason"]))
 
             write_csv(
@@ -149,8 +149,8 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             sleeper_rows = [item for item in second_payload["Mappings"] if item["Provider"] == "Sleeper" and item["ExternalID"] == "1000"]
             self.assertEqual(2, len(sleeper_rows))
             self.assertEqual({2026, 2036}, {item["FirstObservedSeason"] for item in sleeper_rows})
-            self.assertEqual(2, len({item["NFLPlayerID"] for item in sleeper_rows}))
-            self.assertIn(first_internal, {item["NFLPlayerID"] for item in sleeper_rows})
+            self.assertEqual(2, len({item["CanonicalPlayerID"] for item in sleeper_rows}))
+            self.assertIn(first_internal, {item["CanonicalPlayerID"] for item in sleeper_rows})
             self.assertEqual(0, second["providerMappingConflictCount"])
 
     def test_repeated_materialization_is_a_semantic_noop(self):
@@ -190,6 +190,8 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             self.assertEqual(before, after)
             self.assertNotIn("GeneratedAtUtc", after[paths[0]])
             self.assertNotIn("generatedAtUtc", after[paths[3]])
+            self.assertIn("CanonicalPlayerID", after[paths[0]])
+            self.assertNotIn('"NFLPlayerID"', after[paths[0]])
 
 
 if __name__ == "__main__":
