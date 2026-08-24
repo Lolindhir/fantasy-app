@@ -177,7 +177,7 @@ export class TeamDetailDialogComponent implements OnInit {
           .map(award => award.Type.DisplayText || award.Name);
         return {
           season: standing.Season,
-          record: regular.Record || `${regular.Wins ?? 0}-${regular.Losses ?? 0}${regular.Ties ? `-${regular.Ties}` : ''}`,
+          record: `${regular.Wins ?? 0}-${regular.Losses ?? 0}${regular.Ties ? `-${regular.Ties}` : ''}`,
           regularPlace: regular.PlaceOrdinal || this.ordinal(regular.Place),
           finalPlace: playoff?.PlaceOrdinal || regular.PlaceOrdinal || this.ordinal(playoff?.Place ?? regular.Place),
           awards
