@@ -2,10 +2,10 @@
   "schema_version": 1,
   "job_id": "entity-observation",
   "status": "pending",
-  "revision": 14,
-  "last_evaluated_at": "2026-08-22T18:05:15.565068Z",
+  "revision": 15,
+  "last_evaluated_at": "2026-08-24T07:35:00+01:00",
   "last_successful_run": "2026-08-22T18:05:15.565068Z",
-  "last_processed_key": "state-contract-repair:xavier-legette-role-opportunity",
+  "last_processed_key": "interactive-approved-baseline:daily-operations:2026-08-24",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -118,16 +118,23 @@
       "type": "pending",
       "severity": "info",
       "summary": "State-Contract synchronisiert: Xavier Legettes bestätigte Injury-Baseline bleibt unverändert; role-opportunity wurde ohne erfundene Evidenz als ausstehende Erstbaseline angelegt."
+    },
+    {
+      "at": "2026-08-24T07:35:00+01:00",
+      "type": "evaluated",
+      "severity": "info",
+      "summary": "Nach interaktiver Freigabe wurde George Kittle als dauerhaftes Injury-Watch-Target mit bestätigter Rückkehr-von-PUP-Baseline aufgenommen und De'Zhaun Striblings Schulter-Baseline auf die Rückkehr ins Non-Contact-Training aktualisiert."
     }
   ],
   "job_state": {
     "target_sets": {
       "player-role-watch": {
-        "last_resolved_at": "2026-08-22T07:44:17+01:00",
+        "last_resolved_at": "2026-08-24T07:35:00+01:00",
         "resolved_target_ids": [
           "aj-barner-2026",
           "braelon-allen-2026",
           "caleb-douglas-2026",
+          "george-kittle-2026",
           "jalen-coker-2026",
           "jk-dobbins-2026",
           "jonathon-brooks-2026",
@@ -412,29 +419,29 @@
         "target_set_ids": [
           "managed-roster-health"
         ],
-        "last_checked_at": "2026-08-14T18:52:00+02:00",
+        "last_checked_at": "2026-08-24T07:35:00+01:00",
         "status": "active",
         "observations": {
           "injury-status": {
             "status": "baseline",
-            "last_checked_at": "2026-08-14T18:52:00+02:00",
-            "state_hash": "faca2053e5d29947f92aaa176717b8d1337ff3bf184c2a6743b71baef8bbb5a7",
+            "last_checked_at": "2026-08-24T07:35:00+01:00",
+            "state_hash": "8c88efcc5c863c981c5e0adee8ec45625977cd0009c70dd6e844b3ca9695c9a9",
             "material_state": {
-              "injury_summary": "Vorherige Hamstring-Problematik ist so weit abgeklungen, dass Stribling im Preseason-Opener am 13. August regulär Spielzeit absolvierte und acht Targets erhielt.",
-              "availability_class": "available",
-              "designation": "hamstring_recovered_to_game_action",
+              "injury_summary": "De'Zhaun Stribling kehrte am 23. August nach der kurzfristigen Schulterverletzung bereits ins Training zurück, trug dabei aber noch ein Non-Contact-Jersey. Die Entwicklung spricht für eine kurzfristige Einschränkung; volle Contact-/Game-Freigabe ist noch nicht bestätigt.",
+              "availability_class": "limited",
+              "designation": "shoulder_injury_returned_to_practice_non_contact",
               "reserve_status": "active",
-              "practice_status": "unknown",
+              "practice_status": "limited",
               "return_timeline": {
-                "status": "returned_to_game_action",
-                "next_checkpoint": "Neue Trainings- oder Spielbeschränkung"
+                "status": "returned_to_practice_non_contact",
+                "next_checkpoint": "Volle Contact-Trainingsfreigabe beziehungsweise bestätigte Game-Verfügbarkeit"
               },
               "confidence": "high"
             },
             "confidence": "high",
             "source_fingerprints": [
-              "game_usage:49ers-vs-titans:stribling:2026-08-13",
-              "news:sfchronicle:stribling-preseason-opener:published-2026-08-14"
+              "practice_report:49ers:de-zhaun-stribling-returned-non-contact:observed-2026-08-23",
+              "news:49ers:de-zhaun-stribling-shoulder-day-to-day:observed-2026-08-22"
             ],
             "last_material_change_at": null,
             "last_error": null
@@ -1154,6 +1161,40 @@
             "source_fingerprints": [],
             "last_material_change_at": null,
             "last_error": "Initial role-opportunity baseline is required after synchronizing the active profile binding."
+          }
+        }
+      },
+      "george-kittle-2026": {
+        "entity_fingerprint": "player:sleeper_id:4217",
+        "target_set_ids": [
+          "player-role-watch"
+        ],
+        "last_checked_at": "2026-08-24T07:35:00+01:00",
+        "status": "active",
+        "observations": {
+          "injury-status": {
+            "status": "baseline",
+            "last_checked_at": "2026-08-24T07:35:00+01:00",
+            "state_hash": "bc85a1bf164f0f3f1aee44a20bd991d5ef60bd1415feb38cfc67548cccce2974",
+            "material_state": {
+              "injury_summary": "George Kittle wurde am 23. August von Active/PUP aktiviert und ist nach seiner Achilles-Reha wieder in Full Pads sowie Individual Drills. Team Drills und eine belastbare Week-1-Freigabe sind noch nicht bestätigt.",
+              "availability_class": "limited",
+              "designation": "achilles_rehab_activated_from_pup",
+              "reserve_status": "active",
+              "practice_status": "limited",
+              "return_timeline": {
+                "status": "activated_from_pup_individual_work_no_team_drills_yet",
+                "next_checkpoint": "Teilnahme an Team Drills und bestätigte Week-1-Verfügbarkeit"
+              },
+              "confidence": "high"
+            },
+            "confidence": "high",
+            "source_fingerprints": [
+              "official_team:49ers.com:george-kittle-activated-from-pup:observed-2026-08-23",
+              "practice_report:49ers:george-kittle-full-pads-individual-no-team-drills:observed-2026-08-23"
+            ],
+            "last_material_change_at": null,
+            "last_error": null
           }
         }
       }
