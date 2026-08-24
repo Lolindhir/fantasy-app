@@ -6,6 +6,7 @@ try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\LeagueUtils.psm1" -ErrorAction Stop -Force
@@ -38,8 +39,7 @@ function Get-TransactionDraftPickJsonFileContent {
         return ConvertTo-SafeArray -value ($raw | ConvertFrom-Json)
     }
     catch {
-        Write-Warning "Could not read $description file at $filePath. $_"
-        return @()
+        throw "Could not read $description file at $filePath. $_"
     }
 }
 
@@ -116,6 +116,7 @@ function Save-TransactionDraftPickTransactions {
         [Parameter(Mandatory = $true)][bool]$isCurrent
     )
 
+    Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "transaction draft-pick enrichment output '$filePath'" | Out-Null
     $compare = ${function:Compare-Transactions}
 
     if ($isCurrent) {
@@ -365,13 +366,12 @@ function Update-AllTransactionDraftPickTypesFromSleeper {
     param([string]$leagueID = (Get-Config).LeagueID)
 
     $leagues = ConvertTo-SafeArray -value (Get-LeaguesRecursive -leagueID $leagueID)
-    $leagueBySeason = @{}
-    foreach ($league in $leagues) {
-        $season = [string]$league.season
-        if (-not [string]::IsNullOrWhiteSpace($season)) {
-            $leagueBySeason[$season] = [string]$league.league_id
-        }
-    }
+    $leagueBySeason = New-UniqueObjectLookup `
+        -Items $leagues `
+        -KeyProperty "season" `
+        -SourceLabel "recursive Sleeper leagues for transaction draft identity" `
+        -KeyLabel "season" `
+        -DescriptionProperties @("season", "league_id", "previous_league_id")
 
     $contextsByLeagueID = @{}
 
@@ -385,7 +385,7 @@ function Update-AllTransactionDraftPickTypesFromSleeper {
             continue
         }
 
-        $seasonLeagueID = [string]$leagueBySeason[$season]
+        $seasonLeagueID = [string]$leagueBySeason[$season].league_id
         if (-not $contextsByLeagueID.ContainsKey($seasonLeagueID)) {
             $contextsByLeagueID[$seasonLeagueID] = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID $seasonLeagueID)
         }
@@ -400,6 +400,61 @@ function Update-AllTransactionDraftPickTypesFromSleeper {
 # ===========================================================================
 # Generated draft result enrichment
 # ===========================================================================
+
+function ConvertTo-TransactionDraftPickResultComparableJson {
+    param([Parameter(Mandatory = $true)][object]$candidate)
+
+    $draft = $candidate.Draft
+    $pick = $candidate.Pick
+    return ([PSCustomObject][ordered]@{
+        DraftKey        = [string]$draft.DraftKey
+        DraftType       = [string]$draft.DraftType
+        DraftInstance   = $draft.DraftInstance
+        DraftCode       = [string]$draft.DraftCode
+        SleeperDraftID  = $draft.SleeperDraftID
+        PickKey         = [string]$pick.PickKey
+        Season          = [string]$pick.Season
+        Round           = $pick.Round
+        PositionInRound = $pick.PositionInRound
+        OverallPick     = $pick.OverallPick
+        DisplayPick     = $pick.DisplayPick
+        PlayerID        = $pick.PlayerID
+        PlayerName      = $pick.PlayerName
+        Status          = $pick.Status
+        SleeperPickNo   = $pick.SleeperPickNo
+    } | ConvertTo-Json -Depth 10 -Compress)
+}
+
+function Get-UniqueTransactionDraftPickResultCandidates {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Candidates
+    )
+
+    $byIdentity = @{}
+    $comparableByIdentity = @{}
+
+    foreach ($candidate in $Candidates) {
+        $identity = "$([string]$candidate.Draft.DraftKey)|$([string]$candidate.Pick.PickKey)"
+        if ([string]::IsNullOrWhiteSpace([string]$candidate.Draft.DraftKey) -or [string]::IsNullOrWhiteSpace([string]$candidate.Pick.PickKey)) {
+            throw "Generated draft result candidate has an incomplete DraftKey/PickKey identity and cannot participate in transaction enrichment."
+        }
+
+        $comparable = ConvertTo-TransactionDraftPickResultComparableJson -candidate $candidate
+        if ($byIdentity.ContainsKey($identity)) {
+            if ([string]$comparableByIdentity[$identity] -ne [string]$comparable) {
+                throw "Conflicting duplicate generated draft-pick identity '$identity' found across current/historical draft inputs. Transaction enrichment will not choose a winner."
+            }
+            continue
+        }
+
+        $byIdentity[$identity] = $candidate
+        $comparableByIdentity[$identity] = $comparable
+    }
+
+    return @($byIdentity.GetEnumerator() | Sort-Object Name | ForEach-Object { $_.Value })
+}
 
 function Get-TransactionDraftPickResultCandidates {
     param(
@@ -444,7 +499,7 @@ function Get-TransactionDraftPickResultCandidates {
         }
     }
 
-    return @($candidates | Sort-Object @{ Expression = { "$($_.Draft.DraftKey)|$($_.Pick.PickKey)" } } -Unique)
+    return Get-UniqueTransactionDraftPickResultCandidates -Candidates $candidates
 }
 
 function Select-TransactionDraftPickResultCandidate {

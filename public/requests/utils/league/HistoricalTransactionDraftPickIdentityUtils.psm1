@@ -28,6 +28,9 @@ function New-HistoricalTransactionDraftPickSleeperContext {
 
     $sleeperDraft = $definition.SleeperDraft
     $draftID = [string](Get-DraftObjectProperty -object $sleeperDraft -propertyName "draft_id" -defaultValue "")
+    if ([string]::IsNullOrWhiteSpace($draftID)) {
+        throw "Completed historical draft '$($definition.DraftKey)' has no Sleeper draft_id. Historical transaction identity resolution requires a concrete provider identity."
+    }
 
     return [PSCustomObject][ordered]@{
         Season         = [string]$definition.Season
@@ -69,6 +72,10 @@ function Get-HistoricalTransactionDraftPickSleeperContexts {
                 -definition $definition `
                 -tradedPicks $tradedPicks
             $identityKey = "$($context.DraftKey)|$($context.SleeperDraftID)"
+            if ($contextsByIdentity.ContainsKey($identityKey)) {
+                $existing = $contextsByIdentity[$identityKey]
+                throw "Duplicate historical draft context '$identityKey'. Existing season '$($existing.Season)' and duplicate season '$($context.Season)' would otherwise overwrite one another."
+            }
             $contextsByIdentity[$identityKey] = $context
         }
     }

@@ -7,6 +7,7 @@ try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\AvatarUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\StandingUtils.psm1" -ErrorAction Stop -Force
 }
@@ -173,6 +174,52 @@ function Resolve-TeamDisplayName {
     return $null
 }
 
+function New-SleeperTeamSourceLookups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Members,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Rosters
+    )
+
+    $membersByUserID = New-UniqueObjectLookup `
+        -Items $Members `
+        -KeyProperty "user_id" `
+        -SourceLabel "Sleeper league members" `
+        -KeyLabel "user_id" `
+        -DescriptionProperties @("user_id", "display_name")
+
+    $rostersByRosterID = New-UniqueObjectLookup `
+        -Items $Rosters `
+        -KeyProperty "roster_id" `
+        -SourceLabel "Sleeper league rosters" `
+        -KeyLabel "roster_id" `
+        -DescriptionProperties @("roster_id", "owner_id")
+
+    $rostersByOwnerID = New-UniqueObjectLookup `
+        -Items $Rosters `
+        -KeyProperty "owner_id" `
+        -SourceLabel "Sleeper roster owners" `
+        -KeyLabel "owner_id" `
+        -DescriptionProperties @("roster_id", "owner_id")
+
+    foreach ($ownerID in $rostersByOwnerID.Keys) {
+        if (-not $membersByUserID.ContainsKey([string]$ownerID)) {
+            $roster = $rostersByOwnerID[$ownerID]
+            throw "Sleeper roster '$($roster.roster_id)' references owner_id '$ownerID', but no unique league member with that user_id exists."
+        }
+    }
+
+    return [PSCustomObject][ordered]@{
+        MembersByUserID   = $membersByUserID
+        RostersByRosterID = $rostersByRosterID
+        RostersByOwnerID  = $rostersByOwnerID
+    }
+}
+
 function Get-Teams {
     param (
         [string]$leagueID = (Get-Config).LeagueID
@@ -183,10 +230,13 @@ function Get-Teams {
         $rosters = Get-SleeperRosters -leagueID $leagueID
         Write-Host "Sleeper Teams found: $($rosters.Count)" -ForegroundColor Yellow
 
+        $sourceLookups = New-SleeperTeamSourceLookups -Members @($members) -Rosters @($rosters)
+        $membersByUserID = $sourceLookups.MembersByUserID
+
         # --- Teams bauen ---
         $teamData = @()
         foreach ($roster in $rosters) {
-            $member = $members | Where-Object { $_.user_id -eq $roster.owner_id }
+            $member = $membersByUserID[[string]$roster.owner_id]
             $ownerAvatar = $null
             if ($member.avatar) {
                 $avatarID    = $member.avatar

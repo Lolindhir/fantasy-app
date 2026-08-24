@@ -141,4 +141,6 @@ $ambiguousTransaction = [PSCustomObject][ordered]@{ TransactionID = "ambiguous";
 $ambiguousResult = Resolve-TransactionDraftPickTypesFromContexts -transactions @($ambiguousTransaction) -contexts $ambiguousContexts
 Assert-Null -Actual $ambiguousResult.Transactions[0].DraftPicks[0].DraftKey -Message "Ambiguous draft instance was guessed."
 
+. "$PSScriptRoot\ProviderJoinInvariantRegressionTest.ps1"
+
 Write-Host "Draft identity regression tests passed." -ForegroundColor Green

@@ -4,6 +4,7 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -13,6 +14,89 @@ catch {
 # ===========================================================================
 # 2. Funktionen
 # ===========================================================================
+
+function New-PlayerProviderLookups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$SleeperPlayers,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$TankPlayers
+    )
+
+    $sleeperByID = New-UniqueObjectLookup `
+        -Items $SleeperPlayers `
+        -KeyProperty "player_id" `
+        -SourceLabel "Sleeper NFL players" `
+        -KeyLabel "player_id" `
+        -DescriptionProperties @("player_id", "full_name", "position", "team") `
+        -AllowMissingKey
+
+    $tankByID = New-UniqueObjectLookup `
+        -Items $TankPlayers `
+        -KeyProperty "playerID" `
+        -SourceLabel "Tank01 NFL players" `
+        -KeyLabel "playerID" `
+        -DescriptionProperties @("playerID", "longName", "team", "pos")
+
+    $tankBySleeperID = New-UniqueObjectLookup `
+        -Items $TankPlayers `
+        -KeyProperty "sleeperBotID" `
+        -SourceLabel "Tank01 to Sleeper player mappings" `
+        -KeyLabel "sleeperBotID" `
+        -DescriptionProperties @("playerID", "longName", "sleeperBotID", "team", "pos") `
+        -AllowMissingKey
+
+    return [PSCustomObject][ordered]@{
+        SleeperByID     = $sleeperByID
+        TankByID        = $tankByID
+        TankBySleeperID = $tankBySleeperID
+    }
+}
+
+function New-HistoricalPlayerTankLookup {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [array]$Players,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Season
+    )
+
+    return New-UniqueObjectLookup `
+        -Items $Players `
+        -KeyProperty "TankID" `
+        -SourceLabel "historical Players_$Season" `
+        -KeyLabel "TankID" `
+        -DescriptionProperties @("TankID", "ID", "Name", "TeamID", "Position")
+}
+
+function Test-RequiredHistoricalPlayerTankIds {
+    $config = Get-Config
+    $leagueYear = [int]$config.LeagueYear
+
+    foreach ($offset in 1..3) {
+        $season = $leagueYear - $offset
+        $filePath = "$($config.PastSeasonPlayersFileHistoricalPrefix)$season$($config.PastSeasonPlayersFileHistoricalSuffix)"
+        if (-not (Test-Path $filePath)) {
+            continue
+        }
+
+        try {
+            $players = Get-Content $filePath -Raw | ConvertFrom-Json
+        }
+        catch {
+            throw "Could not parse historical Players_$season at '$filePath'. $_"
+        }
+
+        New-HistoricalPlayerTankLookup -Players @($players) -Season ([string]$season) | Out-Null
+    }
+
+    return $true
+}
 
 function Get-PlayersFromFile {
     param(
@@ -73,47 +157,54 @@ function Test-UniquePlayerIds {
             Sort-Object -Property Name
     )
 
-    if ($playersWithoutId.Count -eq 0 -and $duplicateGroups.Count -eq 0) {
-        return $true
-    }
+    if ($playersWithoutId.Count -gt 0 -or $duplicateGroups.Count -gt 0) {
+        $errorLines = @(
+            "Player data validation failed. Players.json will not be overwritten; the last known good file is preserved."
+        )
 
-    $errorLines = @(
-        "Player data validation failed. Players.json will not be overwritten; the last known good file is preserved."
-    )
+        if ($playersWithoutId.Count -gt 0) {
+            $errorLines += "Missing canonical Players.ID on $($playersWithoutId.Count) record(s):"
 
-    if ($playersWithoutId.Count -gt 0) {
-        $errorLines += "Missing canonical Players.ID on $($playersWithoutId.Count) record(s):"
+            foreach ($player in $playersWithoutId) {
+                $tankId = if ($null -ne $player.TankID -and -not [string]::IsNullOrWhiteSpace([string]$player.TankID)) { [string]$player.TankID } else { "<missing>" }
+                $name = if ($null -ne $player.Name -and -not [string]::IsNullOrWhiteSpace([string]$player.Name)) { [string]$player.Name } else { "<missing>" }
+                $teamId = if ($null -ne $player.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$player.TeamID)) { [string]$player.TeamID } else { "<missing>" }
+                $position = if ($null -ne $player.Position -and -not [string]::IsNullOrWhiteSpace([string]$player.Position)) { [string]$player.Position } else { "<missing>" }
 
-        foreach ($player in $playersWithoutId) {
-            $tankId = if ($null -ne $player.TankID -and -not [string]::IsNullOrWhiteSpace([string]$player.TankID)) { [string]$player.TankID } else { "<missing>" }
-            $name = if ($null -ne $player.Name -and -not [string]::IsNullOrWhiteSpace([string]$player.Name)) { [string]$player.Name } else { "<missing>" }
-            $teamId = if ($null -ne $player.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$player.TeamID)) { [string]$player.TeamID } else { "<missing>" }
-            $position = if ($null -ne $player.Position -and -not [string]::IsNullOrWhiteSpace([string]$player.Position)) { [string]$player.Position } else { "<missing>" }
-
-            $errorLines += "- ID=<missing>; TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+                $errorLines += "- ID=<missing>; TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+            }
         }
-    }
 
-    if ($duplicateGroups.Count -gt 0) {
-        $errorLines += "Duplicate canonical Players.ID values detected: $($duplicateGroups.Count)"
+        if ($duplicateGroups.Count -gt 0) {
+            $errorLines += "Duplicate canonical Players.ID values detected: $($duplicateGroups.Count)"
 
-        foreach ($group in $duplicateGroups) {
-            $recordSummaries = @(
-                @($group.Value) | ForEach-Object {
-                    $tankId = if ($null -ne $_.TankID -and -not [string]::IsNullOrWhiteSpace([string]$_.TankID)) { [string]$_.TankID } else { "<missing>" }
-                    $name = if ($null -ne $_.Name -and -not [string]::IsNullOrWhiteSpace([string]$_.Name)) { [string]$_.Name } else { "<missing>" }
-                    $teamId = if ($null -ne $_.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$_.TeamID)) { [string]$_.TeamID } else { "<missing>" }
-                    $position = if ($null -ne $_.Position -and -not [string]::IsNullOrWhiteSpace([string]$_.Position)) { [string]$_.Position } else { "<missing>" }
+            foreach ($group in $duplicateGroups) {
+                $recordSummaries = @(
+                    @($group.Value) | ForEach-Object {
+                        $tankId = if ($null -ne $_.TankID -and -not [string]::IsNullOrWhiteSpace([string]$_.TankID)) { [string]$_.TankID } else { "<missing>" }
+                        $name = if ($null -ne $_.Name -and -not [string]::IsNullOrWhiteSpace([string]$_.Name)) { [string]$_.Name } else { "<missing>" }
+                        $teamId = if ($null -ne $_.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$_.TeamID)) { [string]$_.TeamID } else { "<missing>" }
+                        $position = if ($null -ne $_.Position -and -not [string]::IsNullOrWhiteSpace([string]$_.Position)) { [string]$_.Position } else { "<missing>" }
 
-                    "TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
-                }
-            )
+                        "TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+                    }
+                )
 
-            $errorLines += "- ID=$($group.Name): $($recordSummaries -join ' | ')"
+                $errorLines += "- ID=$($group.Name): $($recordSummaries -join ' | ')"
+            }
         }
+
+        throw ($errorLines -join [Environment]::NewLine)
     }
 
-    throw ($errorLines -join [Environment]::NewLine)
+    New-UniqueObjectLookup `
+        -Items @($Players) `
+        -KeyProperty "TankID" `
+        -SourceLabel "generated Players.json provider identities" `
+        -KeyLabel "TankID" `
+        -DescriptionProperties @("TankID", "ID", "Name", "TeamID", "Position") | Out-Null
+
+    return $true
 }
 
 function Compare-Players {
@@ -122,11 +213,14 @@ function Compare-Players {
         [object]$NewPlayers
     )
 
+    Test-RequiredHistoricalPlayerTankIds | Out-Null
     Test-UniquePlayerIds -Players @($NewPlayers) | Out-Null
 
     if (-not $OldPlayers) {
         return $true
     }
+
+    Test-UniquePlayerIds -Players @($OldPlayers) | Out-Null
 
     if ($OldPlayers.Count -ne $NewPlayers.Count) {
         Write-Host "Player count changed: $($OldPlayers.Count) -> $($NewPlayers.Count)"
