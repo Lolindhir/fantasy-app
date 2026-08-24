@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from typing import Any
 
+from .canonical_identity import identity_lookup
 from .common import Dataset, as_float, as_int, clean, iter_csv
-from .identity import identity_lookup
 
 
 def _height_inches(value: Any) -> int | None:
