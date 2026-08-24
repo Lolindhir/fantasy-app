@@ -1,4 +1,4 @@
-schemaVersion: 1
+schemaVersion: 2
 
 domain: nfl-source-data
 
@@ -19,8 +19,12 @@ boundaries:
     path: source-data/nfl/
     owns:
       - providerunabhaengige NFL-Fakten
-      - dauerhafte NFLPlayerID-Verknuepfungen
+      - dauerhafte CanonicalPlayerID-Verknuepfungen
       - saison- oder snapshotbezogene historische Fakten
+    identityNamespaceRule: >
+      Der Pfadname nfl bezeichnet die Datendomaene. CanonicalPlayerID wird von
+      fantasy-app vergeben und ist ausdruecklich keine von der NFL ausgestellte ID.
+      Eine kuenftige offizielle NFL-ID waere eine weitere externe Provider-Zuordnung.
   appReadModels:
     path: public/data/
     owns:
@@ -28,6 +32,17 @@ boundaries:
     rule: >
       Source-Datasets duerfen nicht allein durch ihre Aufnahme in source-data
       automatisch neue Felder oder Identitaeten in public/data einfuehren.
+
+canonicalSchema:
+  currentVersion: 2
+  playerIdentityField: CanonicalPlayerID
+  legacyPlayerIdentityField: NFLPlayerID
+  migrationRule: >
+    Bestehende v1-Canonical-Dateien duerfen den Legacy-Feldnamen beim normalen
+    Materialize-Lauf auf CanonicalPlayerID migrieren. Der ID-Wert und die
+    historische Personenzuordnung bleiben dabei unveraendert. Diese reine
+    Schema-Migration benoetigt auch fuer eingefrorene historische Partitionen kein
+    --force; neue Outputs duerfen den Legacy-Feldnamen nicht mehr schreiben.
 
 registry:
   path: source-data/registry.json
@@ -152,7 +167,7 @@ operationalDatasetEvaluation:
       fuer abgeschlossene Wochen der bevorzugte saubere Stand.
     identity:
       authoritativeProviderKey: GSIS
-      canonicalTarget: NFLPlayerID
+      canonicalTarget: CanonicalPlayerID
       nameMatchingAuthoritative: false
     fieldCoverageForCurrentPlayers:
       covered:
@@ -188,7 +203,7 @@ operationalDatasetEvaluation:
     freshness: daily-0700-utc
     identity:
       authoritativeProviderKey: GSIS
-      canonicalTarget: NFLPlayerID
+      canonicalTarget: CanonicalPlayerID
       sleeper_idRole: provider-mapping-only
       nameMatchingAuthoritative: false
     retainSleeperFor:
@@ -213,7 +228,7 @@ operationalDatasetEvaluation:
     freshness: four-times-daily-during-season-dependent-on-pfr
     identity:
       authoritativeProviderKey: PFR
-      canonicalTarget: NFLPlayerID
+      canonicalTarget: CanonicalPlayerID
       nameMatchingAuthoritative: false
       conflictPolicy: >
         Fehlende oder mehrdeutige PFR-Zuordnungen werden wie andere Provider-ID-
@@ -287,13 +302,13 @@ combine:
   provenance: NFL Combine data courtesy of Pro Football Reference
   canonicalPath: source-data/nfl/combine/<season>.json
   identity:
-    masterKey: NFLPlayerID
+    masterKey: CanonicalPlayerID
     authoritativeJoin: PFR provider mapping
     nameMatchingAuthoritative: false
     cfbRefRole: provenance-only
     rule: >
       Ein Combine-Record darf nur ueber eine eindeutige PFR-Provider-Zuordnung an
-      NFLPlayerID gebunden werden. Namen, Position oder Schule duerfen keine
+      CanonicalPlayerID gebunden werden. Namen, Position oder Schule duerfen keine
       fehlende oder widerspruechliche Identitaetszuordnung heuristisch ersetzen.
     sourceCollisionPolicy:
       distinctSameSeasonPfrClaims: quarantine-as-ambiguous
@@ -303,10 +318,10 @@ combine:
         Wenn mehrere unterscheidbare Raw-Records derselben Combine-Saison dieselbe
         PFR-ID beanspruchen, bleibt die PFR-ID als Provider-Provenienz an allen
         betroffenen Records erhalten, nimmt fuer diese Records aber nicht an der
-        kanonischen NFLPlayerID-Aufloesung teil. Der Konflikt wird explizit als
+        kanonischen CanonicalPlayerID-Aufloesung teil. Der Konflikt wird explizit als
         ambiguous auditiert; Name, Position, Schule, CFBRef oder Draft-Evidenz
         duerfen keinen Gewinner bestimmen. Exakt doppelte Raw-Zeilen sowie zwei
-        eindeutig aufgeloeste Records derselben Saison mit derselben NFLPlayerID
+        eindeutig aufgeloeste Records derselben Saison mit derselben CanonicalPlayerID
         bleiben harte Invariant-Verletzungen.
   measurements:
     - HeightInches
@@ -341,9 +356,9 @@ publication:
 
 validation:
   - Registry-Schema und Lifecycle-Kombinationen werden beim Laden fail-closed validiert.
-  - Historische Partitionen erhalten Regressionstests fuer Normal- und Force-Repair.
+  - Historische Partitionen erhalten Regressionstests fuer Normal- und Force-Repair sowie die schema-only v1-zu-v2-Identitaetsmigration ohne Force.
   - Combine-Identitaet wird gegen fehlende PFR-Zuordnung und Namensgleichheit getestet.
   - Unterschiedliche Same-Season-Records mit derselben PFR-ID werden als ambige Source-Claims quarantiniert und auditiert; exakt doppelte Raw-Zeilen brechen fail-closed ab.
-  - Doppelte eindeutig aufgeloeste NFLPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
+  - Doppelte eindeutig aufgeloeste CanonicalPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
   - Combine-vs.-Draft-Widersprueche werden im Audit sichtbar.
   - Reale Source-Materialisierung muss den bestehenden zweiten semantischen No-op-Pass bestehen.
