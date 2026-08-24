@@ -121,14 +121,12 @@
           </section>
           <section class="section-card expensive-list">
             <span class="eyebrow">Most Expensive</span><h3>Top 5</h3>
-            @for (player of selectedSalary.mostExpensive; track player.ID; let index = $index) {
-              <div class="salary-player-row">
-                <span class="rank">{{ index + 1 }}</span>
-                <span class="player-name">{{ player.Name }}</span>
-                <span class="position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
-                <strong>{{ formatMoney(salaryLens === 'current' ? player.Salary : player.SalaryProjected) }}</strong>
-              </div>
-            }
+            <app-player-list
+              [players]="selectedSalary.mostExpensive"
+              [columns]="mostExpensiveColumns"
+              [compact]="isMobile"
+              [team]="team"
+            />
           </section>
         </div>
         <section class="section-card movement-card">
