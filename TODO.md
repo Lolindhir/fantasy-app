@@ -267,7 +267,8 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
 
 ### Frontend
 
-- [ ] Teams-Übersicht und Team-Detail als Salary-zentrierten Franchise-Hub neu gestalten.
+- [x] Teams-Übersicht und Team-Detail als Salary-zentrierten Franchise-Hub neu gestalten.
+  - Ergebnis: Die neue `/teams`-Card-Overview, der appweite Team-Detaildialog mit `Overview`, `Roster`, `Salary`, `Drafts` und `History`, die Shared Salary-/Roster-Foundation und die Legacy-Route `/teams/legacy` sind umgesetzt. `CurrentStandingsComponent` nutzt den gemeinsamen Team-Opener als erster Cross-Feature-Consumer.
   - Zielbild: `/teams` soll die sechs Teams als kompakte, responsive Material-Cards zeigen; Desktop bevorzugt als 2×3-Grid, Mobile einspaltig. Die Seite bleibt eine Ist-Zustands-/Analyseansicht und enthält keine What-if-Simulation.
   - Team-Card: Teamlogo, Teamname und Owner sowie ein kombiniertes Salary-Health-Signal anzeigen. Grün bedeutet Current und Projected im Cap, Gelb Current im Cap aber Projected über Cap, Rot bereits Current über Cap. Die Card selbst nicht vollflächig einfärben; Status nur als zurückhaltendes Signal/Pill nutzen.
   - Cap-Balken: Current und Projected mit Salary, Cap Space, Prozentwert und kompaktem Progress-Balken direkt auf der Card zeigen.
@@ -292,7 +293,13 @@ Menschenlesbare Todo-Liste für die Anwendung und die gemeinsame technische Plat
   - Wiederverwendung: `PlayerListComponent`, `PlayerDetailDialogComponent` als Interaktions-/Dialogvorbild, `PositionStylePipe`, vorhandene Draft-UI-Helfer/-Trigger und bestehende Material-Komponenten bevorzugt nutzen. Neue UI-Bausteine wie Salary-Health-Signal, Cap-Progress-Bar und Salary-by-Position-Chart bewusst wiederverwendbar statt nur teamlokal entwerfen, wenn dadurch keine unnötige Abstraktion entsteht.
   - Optik: keine neue Dark-/Dashboard-Designsprache einführen. An bestehender heller Angular-Material-Optik, ca. 900–1000 px Content-Breite, weißen/hellgrauen Cards, dünnen Borders, 8–16 px Radien, zurückhaltenden Schatten und punktuellen Akzentfarben orientieren.
   - Mobile: Cards einspaltig; Team-Dialog nahezu fullscreen; Tabs horizontal scrollbar; PlayerList im bestehenden Compact-Modus verwenden; große Tabellen und unnötige horizontale Scrollflächen vermeiden.
-  - Implementierungsreihenfolge: (1) Shared Salary/Roster Foundation, (2) neue `/teams`-Card-Overview, (3) appweiter Team-Detaildialog mit gemeinsamem Opener, (4) Overview/Roster/Salary/Drafts/History-Tabs, (5) Responsive- und Cross-Feature-Validierung, (6) Salary-&-Trade-Simulator auf denselben Shared-Bausteinen ausbauen, (7) Legacy-Teams-Ansicht erst nach Exclude/Cut-Parität entfernen.
+  - Umgesetzt: Die Schritte (1) Shared Salary/Roster Foundation, (2) neue `/teams`-Card-Overview, (3) appweiter Team-Detaildialog mit gemeinsamem Opener, (4) Overview/Roster/Salary/Drafts/History-Tabs und (5) Responsive-/Cross-Feature-Validierung sind abgeschlossen. Die Schritte Salary-&-Trade-Simulator und spätere Legacy-Entfernung bleiben als separates Folge-Todo offen.
+
+- [ ] Trade Simulator zum Salary-&-Trade-Simulator ausbauen und Legacy-Teams-Ansicht nach Funktionsparität entfernen.
+  - Ziel: What-if-Cuts, Excludes, Trades und kombinierte Salary-Szenarien im bestehenden `/trade`-Bereich zusammenführen, ohne Simulation in den aktuellen Team-Detaildialog zurückzubringen.
+  - Wiederverwendung: `team-salary.util.ts`, `SalaryHealthIndicatorComponent`, `CapUsageBarComponent` und `SalaryPositionDonutComponent` als gemeinsame Current-/Projected-/Cap-Grundlage verwenden; keine zweite Salary-Berechnungslogik aufbauen.
+  - Migration: `/teams/legacy` bleibt erreichbar, bis Exclude-/Cut-Szenarien im Salary-&-Trade-Simulator mindestens Funktionsparität erreicht haben; erst danach Legacy-Route und alte Teams-Salary-Ansicht entfernen.
+  - Abgrenzung: Dieses Folgevorhaben gehört nicht zum abgeschlossenen current-state Teams-Franchise-Hub.
 
 - [ ] Alternative Sortierung für kompakte Future-Drafts in Drafts prüfen.
   - Kontext: Future-Drafts werden aktuell nach Pick Strength sortiert: zuerst Anzahl Picks in Runde 1, dann Runde 2, dann Runde 3 usw. bis zur flexiblen Draft-Rundenzahl.
