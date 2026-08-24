@@ -6,7 +6,14 @@ from typing import Any
 
 from .audit import build_audit
 from .combine import build_combine_files
-from .common import Dataset, SCHEMA_VERSION, as_int, load_json, write_json_if_changed
+from .common import (
+    CANONICAL_SCHEMA_VERSION,
+    Dataset,
+    as_int,
+    load_json,
+    normalize_legacy_canonical_player_fields,
+    write_json_if_changed,
+)
 from .draft import build_draft_files
 from .identity import build_identities
 from .lifecycle import effective_partition_payload
@@ -38,7 +45,7 @@ def _draft_payloads(
     preserved = 0
     for season, picks in sorted(grouped.items()):
         candidate = {
-            "SchemaVersion": SCHEMA_VERSION,
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
             "Season": season,
             "SourceDataset": dataset.id,
             "Finalized": True,
@@ -59,10 +66,10 @@ def _draft_payloads(
 
 def _drafted_internal_ids(draft_payloads: dict[int, dict[str, Any]]) -> set[str]:
     return {
-        pick["NFLPlayerID"]
+        pick["CanonicalPlayerID"]
         for payload in draft_payloads.values()
         for pick in payload.get("Picks", [])
-        if pick.get("NFLPlayerID")
+        if pick.get("CanonicalPlayerID")
     }
 
 
@@ -78,7 +85,7 @@ def _combine_payloads(
     preserved = 0
     for season, records in sorted(grouped.items()):
         candidate = {
-            "SchemaVersion": SCHEMA_VERSION,
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
             "Season": season,
             "SourceDataset": dataset.id,
             "Finalized": True,
@@ -103,14 +110,23 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
             raise FileNotFoundError(f"Cannot materialize without raw dataset: {dataset.raw_path}")
 
     # Build and validate every semantic payload before writing any canonical file.
-    # This keeps a failed normalization from publishing a partially rebuilt state.
-    canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = build_identities(
+    # The identity resolver still produces its pre-v2 in-memory field labels; normalize
+    # those immediately at the materialization boundary. Canonical ID values themselves
+    # are preserved unchanged.
+    canonical_legacy, ff_rows_legacy, identity_source_conflicts_legacy, provider_claims_legacy, mapping_conflicts_legacy = build_identities(
         repo_root, datasets
     )
+    canonical = normalize_legacy_canonical_player_fields(canonical_legacy)
+    ff_rows = normalize_legacy_canonical_player_fields(ff_rows_legacy)
+    identity_source_conflicts = normalize_legacy_canonical_player_fields(identity_source_conflicts_legacy)
+    provider_claims = normalize_legacy_canonical_player_fields(provider_claims_legacy)
+    mapping_conflicts = normalize_legacy_canonical_player_fields(mapping_conflicts_legacy)
     observation_season = _observation_season(repo_root)
 
+    # Draft/Combine builders need the existing resolver's in-memory identity shape for
+    # reverse provider lookup, but their persisted records already emit CanonicalPlayerID.
     draft_dataset = datasets["nflverse.draft-picks"]
-    draft_grouped, _ = build_draft_files(draft_dataset, canonical)
+    draft_grouped, _ = build_draft_files(draft_dataset, canonical_legacy)
     draft_payloads, draft_partitions_preserved = _draft_payloads(
         repo_root,
         draft_dataset,
@@ -127,7 +143,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         observation_season,
     )
     historical_claims, historical_resolution_conflicts, historical_mapping_stats = (
-        build_historical_app_mapping_claims(repo_root, canonical)
+        build_historical_app_mapping_claims(repo_root, canonical_legacy)
     )
     provider_mapping_payload = extend_provider_mapping_payload(
         provider_mapping_payload,
@@ -142,7 +158,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     if combine_dataset is not None:
         combine_grouped, combine_conflicts = build_combine_files(
             combine_dataset,
-            canonical,
+            canonical_legacy,
             draft_payloads,
         )
         combine_payloads, combine_partitions_preserved = _combine_payloads(
@@ -168,13 +184,15 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     )
 
     identity_payload = {
-        "SchemaVersion": SCHEMA_VERSION,
+        "SchemaVersion": CANONICAL_SCHEMA_VERSION,
         "IdentityPolicy": {
-            "InternalKey": "NFLPlayerID",
+            "InternalKey": "CanonicalPlayerID",
+            "CanonicalPlayerIDNamespace": "fantasy-app",
+            "CanonicalPlayerIDIsApplicationDefined": True,
             "ExternalIDsAreMappings": True,
             "ProviderMappingsAreHistorical": True,
             "CurrentAppPlayerIDProvider": "Sleeper",
-            "ExistingNFLPlayerIDIsStable": True,
+            "ExistingCanonicalPlayerIDIsStable": True,
             "NameMatchingIsAuthoritative": False,
         },
         "Players": canonical,
