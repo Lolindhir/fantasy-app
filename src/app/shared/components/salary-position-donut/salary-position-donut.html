@@ -1,0 +1,19 @@
+<div class="salary-donut-layout">
+  <div class="donut" [style.background]="gradient" role="img" aria-label="Salary by position">
+    <div class="donut-center">
+      <strong>{{ formatMoney(total) }}</strong>
+      <span>{{ centerLabel }}</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    @for (segment of segments; track segment.position) {
+      <div class="legend-row">
+        <span class="swatch" [style.background]="segment.color"></span>
+        <span class="position">{{ segment.position }}</span>
+        <span class="amount">{{ formatMoney(segment.salary) }}</span>
+        <span class="percentage">{{ segment.percentage.toFixed(0) }}%</span>
+      </div>
+    }
+  </div>
+</div>

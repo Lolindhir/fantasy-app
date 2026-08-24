@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
+import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 
 @Component({
@@ -13,4 +14,10 @@ import type { CurrentStandingRow } from '../../utils/league-standings-view.util'
 export class CurrentStandingsComponent {
   @Input({ required: true }) standings: CurrentStandingRow[] | null | undefined;
   @Input() title = 'Current Standings';
+
+  private teamDetailDialog = inject(TeamDetailDialogService);
+
+  openTeam(teamId: number): void {
+    this.teamDetailDialog.open(teamId);
+  }
 }

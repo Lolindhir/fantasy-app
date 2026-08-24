@@ -1,0 +1,18 @@
+<div class="cap-usage" [class.compact]="compact">
+  <div class="headline">
+    <span class="label">{{ label }}</span>
+    <span class="percent">{{ utilization | number:'1.0-0' }}%</span>
+  </div>
+  <div class="values">
+    <strong>{{ formatMoney(value) }}</strong>
+    <span class="cap">/ {{ formatMoney(cap) }}</span>
+    @if (showSpace) {
+      <span class="space" [class.over]="isOverCap">
+        {{ isOverCap ? formatMoney(capSpace) + ' over cap' : '+' + formatMoney(capSpace) + ' cap space' }}
+      </span>
+    }
+  </div>
+  <div class="track" role="progressbar" [attr.aria-label]="label" [attr.aria-valuenow]="utilization" aria-valuemin="0">
+    <div class="fill" [class.over]="isOverCap" [style.width.%]="barWidth"></div>
+  </div>
+</div>

@@ -1,0 +1,217 @@
+<div class="team-dialog">
+  <header class="dialog-header">
+    <img class="team-logo" [src]="team.Avatar" [alt]="displayTeamName() + ' logo'" />
+    <div class="team-identity">
+      <h2>{{ displayTeamName() }}</h2>
+      <p>{{ team.Owner }} @if (team.TeamAbbr) { · {{ team.TeamAbbr }} }</p>
+      <app-salary-health-indicator [status]="salary.health" />
+    </div>
+    <button mat-icon-button type="button" aria-label="Close team details" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <mat-tab-group class="team-tabs" animationDuration="150ms" mat-stretch-tabs="false">
+    <mat-tab label="Overview">
+      <div class="tab-content overview-tab">
+        <section class="section-card salary-health-card">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">Salary Health</span>
+              <h3>Cap position</h3>
+            </div>
+            <app-salary-health-indicator [status]="salary.health" [compact]="true" />
+          </div>
+          <div class="two-column-bars">
+            <app-cap-usage-bar [label]="'Current ' + league.Season" [value]="salary.current.salary" [cap]="salary.current.cap" />
+            <app-cap-usage-bar [label]="'Projected ' + (league.SeasonAsNumber + 1)" [value]="salary.projected.salary" [cap]="salary.projected.cap" />
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <div><span class="eyebrow">Core Assets</span><h3>Top 5 by current salary</h3></div>
+          </div>
+          <app-player-list [players]="coreAssets" [columns]="coreAssetColumns" [compact]="isMobile" [team]="team" />
+        </section>
+
+        <div class="overview-grid">
+          <section class="section-card">
+            <span class="eyebrow">Roster Structure</span>
+            <div class="stat-grid">
+              <div><strong>{{ displayLimit(roster.roster.length, limits.roster) }}</strong><span>Roster</span></div>
+              <div><strong>{{ displayLimit(roster.taxi.length, limits.taxi) }}</strong><span>Taxi</span></div>
+              <div><strong>{{ displayLimit(roster.ir.length, limits.ir) }}</strong><span>IR</span></div>
+            </div>
+            <div class="position-counts">
+              @for (item of positionCounts; track item.position) {
+                <span class="position-count" [ngStyle]="item.position | positionStyle">{{ item.position }} {{ item.count }}</span>
+              }
+            </div>
+          </section>
+
+          <section class="section-card franchise-card">
+            <span class="eyebrow">Franchise Snapshot</span>
+            <dl>
+              <div><dt>Season</dt><dd>{{ seasonSummary.season }} · {{ seasonSummary.record }}</dd></div>
+              <div><dt>Current standing</dt><dd>{{ team.Standing > 0 ? ordinal(team.Standing) : 'Not started' }}</dd></div>
+              <div><dt>Championships</dt><dd>{{ team.Championships }}</dd></div>
+              <div><dt>All-time record</dt><dd>{{ allTimeRecord }}</dd></div>
+              @if (earliestOpenPicks) {
+                <div><dt>Next open picks</dt><dd>{{ earliestOpenPicks.season }} · {{ earliestOpenPicks.count }}</dd></div>
+              }
+            </dl>
+          </section>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Roster">
+      <div class="tab-content roster-tab">
+        <div class="tab-toolbar">
+          <div><span class="eyebrow">Roster</span><h3>Players by roster status</h3></div>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Sort by</mat-label>
+            <mat-select [(value)]="rosterSort">
+              <mat-option value="salary">Current Salary</mat-option>
+              <mat-option value="projected">Projected Salary</mat-option>
+              <mat-option value="ranking">Combined Ranking</mat-option>
+              <mat-option value="age">Age</mat-option>
+              <mat-option value="name">Name</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <section class="roster-section">
+          <h4>Roster <span>{{ displayLimit(roster.roster.length, limits.roster) }}</span></h4>
+          <app-player-list [players]="sortedRoster" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
+        </section>
+        <section class="roster-section">
+          <h4>Taxi <span>{{ displayLimit(roster.taxi.length, limits.taxi) }}</span></h4>
+          @if (sortedTaxi.length) {
+            <app-player-list [players]="sortedTaxi" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
+          } @else { <p class="empty-state">No players on Taxi.</p> }
+        </section>
+        <section class="roster-section">
+          <h4>IR <span>{{ displayLimit(roster.ir.length, limits.ir) }}</span></h4>
+          @if (sortedIr.length) {
+            <app-player-list [players]="sortedIr" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
+          } @else { <p class="empty-state">No players on IR.</p> }
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Salary">
+      <div class="tab-content salary-tab">
+        <div class="salary-toggle-row">
+          <mat-button-toggle-group [(value)]="salaryLens" aria-label="Salary season">
+            <mat-button-toggle value="current">Current {{ league.Season }}</mat-button-toggle>
+            <mat-button-toggle value="projected">Projected {{ league.SeasonAsNumber + 1 }}</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        <section class="section-card dominant-cap">
+          <app-cap-usage-bar [label]="selectedSeasonLabel" [value]="selectedSalary.salary" [cap]="selectedSalary.cap" />
+          <div class="comparison-cap">
+            <app-cap-usage-bar [label]="comparisonSeasonLabel" [value]="comparisonSalary.salary" [cap]="comparisonSalary.cap" [compact]="true" />
+          </div>
+        </section>
+        <div class="salary-grid">
+          <section class="section-card">
+            <div class="section-heading"><div><span class="eyebrow">Salary by Position</span><h3>{{ selectedSeasonLabel }}</h3></div></div>
+            <app-salary-position-donut [segments]="selectedSalary.byPosition" [total]="selectedSalary.salary" />
+          </section>
+          <section class="section-card expensive-list">
+            <span class="eyebrow">Most Expensive</span><h3>Top 5</h3>
+            @for (player of selectedSalary.mostExpensive; track player.ID; let index = $index) {
+              <div class="salary-player-row">
+                <span class="rank">{{ index + 1 }}</span>
+                <span class="player-name">{{ player.Name }}</span>
+                <span class="position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
+                <strong>{{ formatMoney(salaryLens === 'current' ? player.Salary : player.SalaryProjected) }}</strong>
+              </div>
+            }
+          </section>
+        </div>
+        <section class="section-card movement-card">
+          <div class="section-heading"><div><span class="eyebrow">Projected Movement</span><h3>Current → Projected</h3></div></div>
+          <div class="movement-grid">
+            <div>
+              <h4>Biggest Increases</h4>
+              @for (item of salary.biggestIncreases; track item.player.ID) {
+                <div class="movement-row"><span>{{ item.player.Name }}</span><span>{{ formatMoney(item.current) }} → {{ formatMoney(item.projected) }}</span><strong class="increase">+{{ formatMoney(item.delta) }}</strong></div>
+              } @empty { <p class="empty-state">No projected increases.</p> }
+            </div>
+            <div>
+              <h4>Biggest Decreases</h4>
+              @for (item of salary.biggestDecreases; track item.player.ID) {
+                <div class="movement-row"><span>{{ item.player.Name }}</span><span>{{ formatMoney(item.current) }} → {{ formatMoney(item.projected) }}</span><strong class="decrease">{{ formatMoney(item.delta) }}</strong></div>
+              } @empty { <p class="empty-state">No projected decreases.</p> }
+            </div>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Drafts">
+      <div class="tab-content drafts-tab">
+        <section class="section-card">
+          <span class="eyebrow">Future Draft Capital</span><h3>Open picks</h3>
+          <div class="draft-groups">
+            @for (group of futureDraftGroups; track group.title) {
+              <div class="draft-group">
+                <div class="draft-group-title"><strong>{{ group.title }}</strong><span>{{ group.picks.length }} picks</span></div>
+                <mat-chip-set aria-label="Open draft picks">
+                  @for (pick of group.picks; track pick.PickKey) {
+                    <mat-chip [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</mat-chip>
+                  }
+                </mat-chip-set>
+              </div>
+            } @empty { <p class="empty-state">No known open future picks.</p> }
+          </div>
+        </section>
+        <section class="section-card">
+          <span class="eyebrow">Draft History</span><h3>Players drafted by this franchise</h3>
+          @if (draftHistoryLoading) {
+            <p class="empty-state">Loading draft history…</p>
+          } @else {
+            <div class="historical-drafts">
+              @for (group of historicalDraftGroups; track group.title) {
+                <div class="historical-group">
+                  <h4>{{ group.title }}</h4>
+                  @for (pick of group.picks; track pick.PickKey) {
+                    <div class="historical-pick">
+                      <span class="pick-label" [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</span>
+                      @if (historicalPlayer(pick); as player) {
+                        <app-draft-pick-player-card [player]="player" />
+                      } @else {
+                        <span>{{ historicalPlayerName(pick) }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              } @empty { <p class="empty-state">No historical drafted players available.</p> }
+            </div>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="History">
+      <div class="tab-content history-tab">
+        <section class="legacy-summary-grid">
+          <div class="summary-stat"><strong>{{ team.Championships }}</strong><span>Championships</span></div>
+          <div class="summary-stat"><strong>{{ team.RunnerUps }}</strong><span>Runner-ups</span></div>
+          <div class="summary-stat"><strong>{{ team.RegularSeasonWins }}</strong><span>Regular Season Titles</span></div>
+          <div class="summary-stat"><strong>{{ allTimeRecord }}</strong><span>All-time Record</span></div>
+        </section>
+        <section class="section-card">
+          <span class="eyebrow">Season History</span>
+          <div class="season-history">
+            @for (row of historyRows; track row.season) {
+              <div class="season-row"><strong>{{ row.season }}</strong><span>{{ row.record }}</span><span>{{ row.regularPlace }} Regular Season</span><span>{{ row.finalPlace }} Overall</span><span class="awards">{{ row.awards.length ? row.awards.join(' · ') : '—' }}</span></div>
+            } @empty { <p class="empty-state">No season history available.</p> }
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

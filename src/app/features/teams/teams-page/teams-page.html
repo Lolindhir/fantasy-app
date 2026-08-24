@@ -1,0 +1,78 @@
+<main class="teams-page">
+  <header class="page-header">
+    <div>
+      <h1>Teams</h1>
+      <p>Franchise overview with current and projected salary health.</p>
+    </div>
+    <a mat-stroked-button routerLink="/teams/legacy">
+      <mat-icon>calculate</mat-icon>
+      Legacy Salary View
+    </a>
+  </header>
+
+  @if (loading) {
+    <div class="loading-state">
+      <mat-spinner diameter="36"></mat-spinner>
+    </div>
+  } @else {
+    <section class="team-grid" aria-label="Fantasy teams">
+      @for (card of cards; track card.team.TeamID) {
+        <mat-card
+          class="team-card"
+          role="button"
+          tabindex="0"
+          (click)="openTeam(card.team)"
+          (keydown)="onCardKeydown($event, card.team)">
+          <div class="team-card-header">
+            <img class="team-logo" [src]="card.team.Avatar" [alt]="displayTeamName(card.team) + ' logo'" />
+            <div class="identity">
+              <div class="name-row">
+                <h2>{{ displayTeamName(card.team) }}</h2>
+                <mat-icon class="chevron" aria-hidden="true">chevron_right</mat-icon>
+              </div>
+              <p>{{ card.team.Owner }} @if (card.team.TeamAbbr) { · {{ card.team.TeamAbbr }} }</p>
+              <app-salary-health-indicator [status]="card.salary.health" [compact]="true" />
+            </div>
+          </div>
+
+          <div class="salary-bars">
+            <app-cap-usage-bar
+              [label]="'Current ' + (league?.Season || '')"
+              [value]="card.salary.current.salary"
+              [cap]="card.salary.current.cap"
+              [compact]="true" />
+            <app-cap-usage-bar
+              [label]="'Projected ' + ((league?.SeasonAsNumber || 0) + 1)"
+              [value]="card.salary.projected.salary"
+              [cap]="card.salary.projected.cap"
+              [compact]="true" />
+          </div>
+
+          <div class="team-meta">
+            <span><strong>Roster</strong> {{ displayLimit(card.roster.roster.length, card.limits.roster) }}</span>
+            <span><strong>Taxi</strong> {{ displayLimit(card.roster.taxi.length, card.limits.taxi) }}</span>
+            <span><strong>IR</strong> {{ displayLimit(card.roster.ir.length, card.limits.ir) }}</span>
+          </div>
+
+          <div class="context-lines">
+            <div class="context-line">
+              <mat-icon aria-hidden="true">emoji_events</mat-icon>
+              <span>
+                {{ card.season.season }} · {{ card.season.record }} Regular Season
+                @if (card.season.finalPlace) {
+                  · {{ card.season.finalPlace }} {{ card.season.usesPreviousSeason ? 'Overall' : 'Current' }}
+                }
+              </span>
+            </div>
+            @if (card.openPicks) {
+              <div class="context-line">
+                <mat-icon aria-hidden="true">event_available</mat-icon>
+                <span>{{ card.openPicks.season }} Open Picks · {{ card.openPicks.count }}</span>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+    </section>
+  }
+</main>

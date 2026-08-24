@@ -1,0 +1,17 @@
+:host { display: block; }
+.salary-donut-layout { display: grid; grid-template-columns: minmax(150px, 190px) minmax(180px, 1fr); gap: 22px; align-items: center; }
+.donut { width: min(100%, 190px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
+.donut-center { width: 62%; aspect-ratio: 1; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .22); }
+.donut-center strong { font-size: 19px; font-weight: 650; color: #111827; font-variant-numeric: tabular-nums; }
+.donut-center span { margin-top: 2px; font-size: 11px; color: #6b7280; }
+.legend { display: grid; gap: 8px; }
+.legend-row { display: grid; grid-template-columns: 10px 38px 1fr auto; gap: 8px; align-items: center; min-width: 0; font-size: 12px; }
+.swatch { width: 9px; height: 9px; border-radius: 50%; }
+.position { font-weight: 650; color: #374151; }
+.amount, .percentage { color: #4b5563; font-variant-numeric: tabular-nums; }
+.amount { text-align: right; }
+.percentage { min-width: 32px; text-align: right; color: #6b7280; }
+@media (max-width: 560px) {
+  .salary-donut-layout { grid-template-columns: 1fr; justify-items: center; gap: 16px; }
+  .legend { width: min(100%, 320px); }
+}

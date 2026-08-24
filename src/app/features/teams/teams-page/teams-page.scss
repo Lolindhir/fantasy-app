@@ -1,0 +1,34 @@
+.teams-page { max-width: 1000px; margin: 0 auto; padding: 20px 16px 32px; }
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.page-header h1 { margin: 0; font-size: 28px; font-weight: 600; color: #1f2937; }
+.page-header p { margin: 5px 0 0; color: #6b7280; font-size: 14px; }
+.page-header a { flex: 0 0 auto; }
+.loading-state { min-height: 240px; display: grid; place-items: center; }
+.team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.team-card { padding: 18px; border: 1px solid rgba(148, 163, 184, .34); border-radius: 14px; box-shadow: 0 2px 8px rgba(15, 23, 42, .06); background: #fff; cursor: pointer; transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease; }
+.team-card:hover, .team-card:focus-visible { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(15, 23, 42, .09); border-color: rgba(99, 102, 241, .34); outline: none; }
+.team-card-header { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; align-items: center; }
+.team-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 12px; background: #f8fafc; }
+.identity { min-width: 0; }
+.name-row { display: flex; align-items: center; gap: 6px; }
+.name-row h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 650; color: #111827; }
+.chevron { margin-left: auto; color: #9ca3af; }
+.identity p { margin: 3px 0 8px; color: #6b7280; font-size: 12px; }
+.salary-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 0 14px; margin-top: 12px; border-top: 1px solid #eef0f3; border-bottom: 1px solid #eef0f3; }
+.team-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 12px 0; font-size: 12px; color: #4b5563; }
+.team-meta strong { color: #374151; font-weight: 650; }
+.context-lines { display: grid; gap: 7px; }
+.context-line { display: flex; align-items: center; gap: 7px; color: #4b5563; font-size: 12px; }
+.context-line mat-icon { width: 17px; height: 17px; font-size: 17px; color: #9ca3af; }
+@media (max-width: 720px) {
+  .teams-page { padding: 14px 10px 24px; }
+  .page-header { align-items: stretch; flex-direction: column; }
+  .page-header a { align-self: flex-start; }
+  .team-grid { grid-template-columns: 1fr; gap: 12px; }
+  .salary-bars { grid-template-columns: 1fr; gap: 12px; }
+}
+@media (max-width: 420px) {
+  .team-card { padding: 14px; }
+  .team-card-header { grid-template-columns: 58px minmax(0, 1fr); gap: 11px; }
+  .team-logo { width: 58px; height: 58px; }
+}
