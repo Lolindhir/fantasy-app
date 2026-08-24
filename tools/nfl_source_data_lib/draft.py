@@ -4,8 +4,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from .canonical_identity import identity_lookup
 from .common import Dataset, as_int, clean, iter_csv
-from .identity import identity_lookup
 
 
 def build_draft_files(dataset: Dataset, canonical: list[dict[str, Any]]) -> tuple[dict[int, list[dict[str, Any]]], set[str]]:
