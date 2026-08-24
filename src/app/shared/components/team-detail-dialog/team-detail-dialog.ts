@@ -100,21 +100,21 @@ export class TeamDetailDialogComponent implements OnInit {
 
   get playerColumns(): PlayerListColumn[] {
     return this.isMobile
-      ? ['name', 'salary', 'salaryProjected']
-      : ['picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
+      ? ['rank', 'name', 'salary', 'salaryProjected']
+      : ['rank', 'picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
   }
 
   get coreAssetColumns(): PlayerListColumn[] {
     return this.isMobile
-      ? ['name', 'salary']
-      : ['picture', 'name', 'position', 'team', 'salary'];
+      ? ['rank', 'name', 'salary']
+      : ['rank', 'picture', 'name', 'position', 'team', 'salary'];
   }
 
   get mostExpensiveColumns(): PlayerListColumn[] {
     const salaryColumn: PlayerListColumn = this.salaryLens === 'current' ? 'salary' : 'salaryProjected';
     return this.isMobile
-      ? ['name', salaryColumn]
-      : ['picture', 'name', 'position', 'team', salaryColumn];
+      ? ['rank', 'name', salaryColumn]
+      : ['rank', 'picture', 'name', 'position', 'team', salaryColumn];
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
