@@ -87,8 +87,6 @@ export class TeamDetailDialogComponent implements OnInit {
   readonly seasonSummary = getTeamSeasonSummary(this.data.team, this.data.league);
   readonly earliestOpenPicks = getEarliestOpenPicks(this.data.team, this.data.league.SeasonAsNumber);
   readonly positionCounts = getPositionCounts(this.data.team.Roster);
-  readonly playerColumns: PlayerListColumn[] = ['picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
-  readonly coreAssetColumns: PlayerListColumn[] = ['picture', 'name', 'position', 'team', 'salary'];
 
   salaryLens: SalaryLens = 'current';
   rosterSort: RosterSortMode = 'salary';
@@ -98,6 +96,25 @@ export class TeamDetailDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDraftHistory();
+  }
+
+  get playerColumns(): PlayerListColumn[] {
+    return this.isMobile
+      ? ['name', 'salary', 'salaryProjected']
+      : ['picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
+  }
+
+  get coreAssetColumns(): PlayerListColumn[] {
+    return this.isMobile
+      ? ['name', 'salary']
+      : ['picture', 'name', 'position', 'team', 'salary'];
+  }
+
+  get mostExpensiveColumns(): PlayerListColumn[] {
+    const salaryColumn: PlayerListColumn = this.salaryLens === 'current' ? 'salary' : 'salaryProjected';
+    return this.isMobile
+      ? ['name', salaryColumn]
+      : ['picture', 'name', 'position', 'team', salaryColumn];
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
