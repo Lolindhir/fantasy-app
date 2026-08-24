@@ -4,10 +4,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .common import IDENTITY_ID_KEYS, clean, load_json, load_registry_manifest
+from .canonical_identity import identity_lookup
+from .common import CANONICAL_SCHEMA_VERSION, IDENTITY_ID_KEYS, clean, load_json, load_registry_manifest
 from .draft import build_ff_draft_evidence, classify_draft_status
-from .identity import LINK_ID_KEYS, identity_lookup
-from .identity_model import WEAK_ID_KEYS
+from .identity_model import LINK_ID_KEYS, WEAK_ID_KEYS
 
 
 def _combine_audit(
@@ -24,9 +24,9 @@ def _combine_audit(
         for record in payload.get("Records", [])
     ]
     resolved_ids = {
-        record["NFLPlayerID"]
+        record["CanonicalPlayerID"]
         for record in records
-        if record.get("NFLPlayerID")
+        if record.get("CanonicalPlayerID")
     }
     ambiguous_source_claims: dict[tuple[int, str], list[dict[str, Any]]] = {}
     by_season: dict[str, dict[str, int]] = {}
@@ -49,8 +49,8 @@ def _combine_audit(
             })
         by_season[str(season)] = {
             "records": len(season_records),
-            "resolvedIdentity": sum(1 for record in season_records if record.get("NFLPlayerID")),
-            "unresolvedIdentity": sum(1 for record in season_records if not record.get("NFLPlayerID")),
+            "resolvedIdentity": sum(1 for record in season_records if record.get("CanonicalPlayerID")),
+            "unresolvedIdentity": sum(1 for record in season_records if not record.get("CanonicalPlayerID")),
             "ambiguousIdentityRecords": len(ambiguous_records),
             "canonicalDraftLinked": sum(1 for record in season_records if record.get("Draft")),
         }
@@ -89,8 +89,8 @@ def _combine_audit(
         "earliestSeason": seasons[0] if seasons else None,
         "latestSeason": seasons[-1] if seasons else None,
         "recordCount": len(records),
-        "resolvedIdentityCount": sum(1 for record in records if record.get("NFLPlayerID")),
-        "unresolvedIdentityCount": sum(1 for record in records if not record.get("NFLPlayerID")),
+        "resolvedIdentityCount": sum(1 for record in records if record.get("CanonicalPlayerID")),
+        "unresolvedIdentityCount": sum(1 for record in records if not record.get("CanonicalPlayerID")),
         "ambiguousIdentityRecordCount": sum(
             1
             for record in records
@@ -126,7 +126,7 @@ def build_audit(
 ) -> dict[str, Any]:
     app_players = load_json(repo_root / "public/data/Players.json", []) or []
     lookup = identity_lookup(canonical)
-    canonical_by_internal = {row["NFLPlayerID"]: row for row in canonical}
+    canonical_by_internal = {row["CanonicalPlayerID"]: row for row in canonical}
     ff_evidence = build_ff_draft_evidence(ff_rows, canonical)
     max_draft_season = max(draft_seasons, default=None)
     identity_counts, draft_counts = Counter(), Counter()
@@ -165,7 +165,7 @@ def build_audit(
                 {
                     "SleeperID": sleeper,
                     "Tank01ID": tank,
-                    "NFLPlayerID": internal_id,
+                    "CanonicalPlayerID": internal_id,
                     "Name": name,
                     "Position": position,
                     "DraftYear": draft_year,
@@ -175,7 +175,7 @@ def build_audit(
     alias_counts = Counter()
     provider_value_owners: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
     for row in canonical:
-        internal_id = row["NFLPlayerID"]
+        internal_id = row["CanonicalPlayerID"]
         for key, value in (row.get("IDs") or {}).items():
             provider_value_owners[key][value].add(internal_id)
         for key, aliases in (row.get("IDAliases") or {}).items():
@@ -211,7 +211,7 @@ def build_audit(
     planned_ids = [value["id"] for value in registry.get("plannedDatasets", [])]
 
     return {
-        "schemaVersion": 1,
+        "schemaVersion": CANONICAL_SCHEMA_VERSION,
         "scope": "public/data/Players.json",
         "datasetRegistry": {
             "schemaVersion": registry.get("schemaVersion"),
@@ -260,7 +260,7 @@ def build_audit(
             "undrafted": "FF Player IDs has a concrete past/current draft year but no pick fields, and no canonical draft pick exists.",
             "unknown": "Identity or draft evidence is insufficient or contradictory; draft_year=0 is never treated as proof of UDFA.",
             "not_yet_drafted": "FF Player IDs points to a draft year later than the newest materialized draft season.",
-            "combineIdentity": "Combine rows resolve to NFLPlayerID only through an unambiguous PFR provider mapping. Distinct same-season source rows that claim the same PFR ID are retained as ambiguous provenance and do not resolve to a canonical player; names, position, school, CFBRef and draft evidence never choose a winner. Exact duplicate source rows and duplicate resolved canonical identities remain fail-closed invariant violations.",
+            "combineIdentity": "Combine rows resolve to CanonicalPlayerID only through an unambiguous PFR provider mapping. Distinct same-season source rows that claim the same PFR ID are retained as ambiguous provenance and do not resolve to a canonical player; names, position, school, CFBRef and draft evidence never choose a winner. Exact duplicate source rows and duplicate resolved canonical identities remain fail-closed invariant violations.",
             "combineDraftLink": "Combine source draft fields are retained as provenance; the canonical nflverse.draft-picks fact is authoritative for the normalized Draft link. Contradictions are audited and never silently overwritten.",
             "linkProviderID": "Link-provider IDs support reverse lookup only while their mapping is unambiguous; they do not unconditionally merge distinct person components.",
             "weakProviderID": "Weak provider IDs are retained as attributes but never merge identities; cross-player collisions are audited instead.",
