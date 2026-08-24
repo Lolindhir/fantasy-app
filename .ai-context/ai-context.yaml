@@ -72,6 +72,7 @@ readingOrder:
   - .ai-context/manual/player-identity.yaml
   - .ai-context/manual/nfl-source-data.yaml
   - .ai-context/manual/provider-join-invariants.yaml
+  - .ai-context/manual/source-of-truth-matrix.yaml
   - .ai-context/manual/data-sources.yaml
   - .ai-context/manual/decisions.yaml
   - .ai-context/manual/routing.yaml
@@ -87,6 +88,7 @@ shortContext:
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für providerunabhängige NFLPlayerID, historische Provider-Mappings, Konflikt-Quarantäne und den unveränderten Sleeper-basierten Players.json-App-Vertrag
   .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für source-data Registry v2, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und die NFL-Combine-Materialisierung
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
+  .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
@@ -105,7 +107,7 @@ shortContext:
   src/app/features/**: Geroutete Angular-Feature-Seiten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator; Current entspricht League.Season, Future nur späteren Seasons und Past nur archivierten früheren Seasons
-  src/app/features/drafts/components/**: Wiederverwendbare Draft-UI-Bausteine wie DraftShell, DraftPickCard, DraftPickTrigger und DraftPickPopover
+  src/app/features/drafts/components/**: Wiederverwendbare Drafts feature UI-Bausteine wie DraftShell, DraftPickCard, DraftPickTrigger und DraftPickPopover
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete current-style Draft-Cards für Current und Past mit Overview, Teams und List; nutzen zentrale Draft-ViewModels und gemeinsame Draft-UI-Komponenten
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen, DraftShell-Header, gemeinsamem DraftPickTrigger und gemeinsamem DraftPickPopover
   src/app/shared/components/league-legacy-summary/league-legacy-summary.ts: Wiederverwendbare Hall-of-Fame-Kachelkomponente für Legacy-Highlights
