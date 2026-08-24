@@ -4,7 +4,17 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .common import IDENTITY_ID_KEYS, Dataset, clean, load_json, stable_internal_id
+from .canonical_identity import identity_lookup
+from .common import (
+    CANONICAL_PLAYER_ID_FIELD,
+    CANONICAL_PLAYER_IDS_FIELD,
+    IDENTITY_ID_KEYS,
+    Dataset,
+    clean,
+    load_json,
+    normalize_legacy_canonical_player_fields,
+    stable_internal_id,
+)
 from .identity_model import (
     ALIAS_MIN_CORROBORATORS,
     ANCHOR_ID_KEYS,
@@ -75,7 +85,9 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
 
 
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
-    payload = load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    payload = normalize_legacy_canonical_player_fields(
+        load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    )
     result: list[IdentityCandidate] = []
     for row in payload.get("Players", []):
         ids = {key: clean(value) for key, value in (row.get("IDs") or {}).items() if clean(value)}
@@ -89,7 +101,7 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
             latest_team=clean(row.get("LatestTeam")),
             source="canonical-existing",
             priority=0,
-            existing_internal_id=clean(row.get("NFLPlayerID")),
+            existing_internal_id=clean(row.get(CANONICAL_PLAYER_ID_FIELD)),
         )
         result.append(base)
         for key, values in (row.get("IDAliases") or {}).items():
@@ -350,8 +362,14 @@ def build_identities(
         members = [candidates[idx] for idx in indexes]
         existing_ids = {member.existing_internal_id for member in members if member.existing_internal_id}
         if len(existing_ids) > 1:
-            raise ValueError(f"Identity component merges multiple existing NFLPlayerIDs: {sorted(existing_ids)}")
-        root_internal[root] = next(iter(existing_ids)) if existing_ids else stable_internal_id(_seed_for_component(members))
+            raise ValueError(
+                f"Identity component merges multiple existing CanonicalPlayerIDs: {sorted(existing_ids)}"
+            )
+        root_internal[root] = (
+            next(iter(existing_ids))
+            if existing_ids
+            else stable_internal_id(_seed_for_component(members))
+        )
 
     current_claim_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
     current_claim_sources: dict[tuple[str, str, str], set[str]] = defaultdict(set)
@@ -373,8 +391,8 @@ def build_identities(
         detail = {
             "Provider": key,
             "ExternalID": value,
-            "NFLPlayerIDs": sorted(owners),
-            "SourcesByNFLPlayerID": {
+            CANONICAL_PLAYER_IDS_FIELD: sorted(owners),
+            "SourcesByCanonicalPlayerID": {
                 internal_id: sorted(current_claim_sources[(key, value, internal_id)])
                 for internal_id in sorted(owners)
             },
@@ -424,7 +442,7 @@ def build_identities(
 
         canonical.append(
             {
-                "NFLPlayerID": internal_id,
+                CANONICAL_PLAYER_ID_FIELD: internal_id,
                 "Name": first("name"),
                 "FirstName": first("first_name"),
                 "LastName": first("last_name"),
@@ -437,10 +455,21 @@ def build_identities(
             }
         )
 
-    duplicate_internal = [key for key, rows in _group(canonical, "NFLPlayerID").items() if len(rows) > 1]
+    duplicate_internal = [
+        key
+        for key, rows in _group(canonical, CANONICAL_PLAYER_ID_FIELD).items()
+        if len(rows) > 1
+    ]
     if duplicate_internal:
-        raise ValueError(f"Duplicate NFLPlayerID values generated: {duplicate_internal[:10]}")
-    canonical.sort(key=lambda item: ((item.get("Name") or "").lower(), item["NFLPlayerID"]))
+        raise ValueError(
+            f"Duplicate CanonicalPlayerID values generated: {duplicate_internal[:10]}"
+        )
+    canonical.sort(
+        key=lambda item: (
+            (item.get("Name") or "").lower(),
+            item[CANONICAL_PLAYER_ID_FIELD],
+        )
+    )
 
     provider_claims: list[dict[str, Any]] = []
     for (key, value), owners in sorted(current_claim_owners.items()):
@@ -451,7 +480,7 @@ def build_identities(
             {
                 "Provider": key,
                 "ExternalID": value,
-                "NFLPlayerID": internal_id,
+                CANONICAL_PLAYER_ID_FIELD: internal_id,
                 "Sources": sorted(current_claim_sources[(key, value, internal_id)]),
             }
         )
@@ -463,7 +492,7 @@ def build_identities(
         if candidate is not None:
             idx = candidate_index[id(candidate)]
             internal_id = root_internal[uf.find(idx)]
-        resolved["__NFLPlayerID"] = internal_id or ""
+        resolved["__CanonicalPlayerID"] = internal_id or ""
         resolved_ff_rows.append(resolved)
 
     identity_lookup(canonical)
@@ -475,187 +504,3 @@ def _group(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any
     for row in rows:
         result[row[key]].append(row)
     return result
-
-
-def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], str]:
-    lookup: dict[tuple[str, str], str] = {}
-    for row in canonical:
-        mappings = [
-            (key, value)
-            for key, value in (row.get("IDs") or {}).items()
-            if key in LINK_ID_KEYS
-        ]
-        for key, values in (row.get("IDAliases") or {}).items():
-            if key in LINK_ID_KEYS:
-                mappings.extend((key, value) for value in values or [])
-        for key, value in mappings:
-            token = (key, value)
-            previous = lookup.get(token)
-            if previous and previous != row["NFLPlayerID"]:
-                raise ValueError(f"Link ID {key}:{value} maps to multiple canonical players")
-            lookup[token] = row["NFLPlayerID"]
-    return lookup
-
-
-def build_provider_mapping_payload(
-    repo_root: Path,
-    provider_claims: list[dict[str, Any]],
-    mapping_conflicts: list[dict[str, Any]],
-    observation_season: int,
-) -> dict[str, Any]:
-    path = repo_root / "source-data/nfl/identities/provider-mappings.json"
-    existing = load_json(path, {}) or {}
-    mappings = [dict(item) for item in existing.get("Mappings", [])]
-    conflicts = [dict(item) for item in existing.get("Conflicts", [])]
-
-    def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
-        return (
-            str(item.get("Provider") or ""),
-            str(item.get("ExternalID") or ""),
-            str(item.get("NFLPlayerID") or ""),
-        )
-
-    for claim in provider_claims:
-        provider = claim["Provider"]
-        external_id = claim["ExternalID"]
-        internal_id = claim["NFLPlayerID"]
-        exact = next(
-            (item for item in mappings if mapping_key(item) == (provider, external_id, internal_id)),
-            None,
-        )
-        if exact is not None:
-            first = int(exact.get("FirstObservedSeason") or observation_season)
-            last = int(exact.get("LastObservedSeason") or observation_season)
-            exact["FirstObservedSeason"] = min(first, observation_season)
-            exact["LastObservedSeason"] = max(last, observation_season)
-            exact["Sources"] = sorted(set(exact.get("Sources") or []) | set(claim.get("Sources") or []))
-            continue
-
-        previous_for_token = [
-            item
-            for item in mappings
-            if item.get("Provider") == provider and item.get("ExternalID") == external_id
-        ]
-        overlapping = [
-            item
-            for item in previous_for_token
-            if int(item.get("LastObservedSeason") or observation_season) >= observation_season
-        ]
-        if overlapping:
-            owners = sorted({internal_id, *(str(item.get("NFLPlayerID")) for item in overlapping)})
-            mapping_conflicts.append(
-                {
-                    "Provider": provider,
-                    "ExternalID": external_id,
-                    "NFLPlayerIDs": owners,
-                    "SourcesByNFLPlayerID": {internal_id: sorted(claim.get("Sources") or [])},
-                }
-            )
-            continue
-
-        mappings.append(
-            {
-                "Provider": provider,
-                "ExternalID": external_id,
-                "NFLPlayerID": internal_id,
-                "FirstObservedSeason": observation_season,
-                "LastObservedSeason": observation_season,
-                "Sources": sorted(claim.get("Sources") or []),
-            }
-        )
-
-    for conflict in mapping_conflicts:
-        provider = str(conflict.get("Provider") or "")
-        external_id = str(conflict.get("ExternalID") or "")
-        owners = sorted(str(value) for value in conflict.get("NFLPlayerIDs") or [])
-        same = next(
-            (
-                item
-                for item in conflicts
-                if item.get("Provider") == provider
-                and item.get("ExternalID") == external_id
-                and sorted(str(value) for value in item.get("NFLPlayerIDs") or []) == owners
-            ),
-            None,
-        )
-        if same is None:
-            same = {
-                "Provider": provider,
-                "ExternalID": external_id,
-                "NFLPlayerIDs": owners,
-                "FirstObservedSeason": observation_season,
-                "LastObservedSeason": observation_season,
-                "Status": "ambiguous",
-            }
-            conflicts.append(same)
-        else:
-            same["FirstObservedSeason"] = min(
-                int(same.get("FirstObservedSeason") or observation_season), observation_season
-            )
-            same["LastObservedSeason"] = max(
-                int(same.get("LastObservedSeason") or observation_season), observation_season
-            )
-        sources_by_player = conflict.get("SourcesByNFLPlayerID") or {}
-        if sources_by_player:
-            merged = {
-                key: set(values or [])
-                for key, values in (same.get("SourcesByNFLPlayerID") or {}).items()
-            }
-            for internal_id, values in sources_by_player.items():
-                merged.setdefault(internal_id, set()).update(values or [])
-            same["SourcesByNFLPlayerID"] = {
-                key: sorted(values) for key, values in sorted(merged.items())
-            }
-
-    mappings.sort(
-        key=lambda item: (
-            item["Provider"],
-            item["ExternalID"],
-            item["FirstObservedSeason"],
-            item["NFLPlayerID"],
-        )
-    )
-    conflicts.sort(
-        key=lambda item: (
-            item["Provider"],
-            item["ExternalID"],
-            item["FirstObservedSeason"],
-            tuple(item["NFLPlayerIDs"]),
-        )
-    )
-    return {
-        "SchemaVersion": 1,
-        "TemporalResolution": "season",
-        "Mappings": mappings,
-        "Conflicts": conflicts,
-    }
-
-
-def provider_mapping_lookup(
-    payload: dict[str, Any],
-    provider: str,
-    external_id: str,
-    season: int,
-) -> str | None:
-    provider = str(provider)
-    external_id = str(external_id)
-    season = int(season)
-
-    for conflict in payload.get("Conflicts", []) or []:
-        if conflict.get("Provider") != provider or str(conflict.get("ExternalID")) != external_id:
-            continue
-        first = int(conflict.get("FirstObservedSeason") or season)
-        last = int(conflict.get("LastObservedSeason") or first)
-        if first <= season <= last:
-            return None
-
-    matches: list[str] = []
-    for mapping in payload.get("Mappings", []) or []:
-        if mapping.get("Provider") != provider or str(mapping.get("ExternalID")) != external_id:
-            continue
-        first = int(mapping.get("FirstObservedSeason") or season)
-        last = int(mapping.get("LastObservedSeason") or first)
-        if first <= season <= last:
-            matches.append(str(mapping.get("NFLPlayerID")))
-    unique = sorted(set(matches))
-    return unique[0] if len(unique) == 1 else None

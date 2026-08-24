@@ -1,0 +1,617 @@
+schemaVersion: 2
+
+domain: source-of-truth-matrix
+
+status: accepted
+consolidatedAt: 2026-08-24
+
+purpose: >
+  Consolidates field- and domain-level source ownership after the NFL source-data
+  evaluation and provider-join audit. It distinguishes durable canonical ownership
+  from the provider that still feeds the current app runtime during migration.
+  This matrix is the decision boundary used before activating additional nflverse
+  datasets or redesigning the app-generator DAG.
+
+scope:
+  includes:
+    - provider-independent NFL person identity and provider mappings
+    - NFL Draft and Combine history
+    - NFL schedules, scores and game finality
+    - NFL player stats and snap counts
+    - NFL roster membership and current player/platform status
+    - injuries, depth-chart facts and convenience metadata
+    - fantasy-league facts that must remain owned by Sleeper, Metadata or generated domain logic
+  excludes:
+    - frontend-only display state
+    - fantasy-management analysis sources and rankings
+    - league-specific rules already owned by public/data/Metadata.json
+    - generated public/data files as architectural source-of-truth owners
+
+principles:
+  canonicalVsRuntime: >
+    durableCanonicalPrimary states the intended long-lived owner of a fact.
+    currentRuntimePrimary states what the app generator currently reads. They may
+    differ while a migration is incomplete. A canonical decision does not itself
+    change public/data or activate a source-data dataset.
+  fieldLevelOwnership: >
+    A provider is primary only for the fields explicitly assigned to it. No
+    provider receives blanket ownership of a whole player, game or roster object
+    merely because it supplies some fields in that object.
+  fallbackIsNotConflictWinner: >
+    A fallback may cover temporary unavailability or a legacy consumer during a
+    controlled migration. It must not silently override a conflicting canonical
+    fact. Conflicts remain fail-closed or unresolved according to the owning
+    identity/source contract.
+  identityFirst: >
+    Provider IDs are mappings/evidence. Canonical NFL-domain person facts resolve
+    to CanonicalPlayerID through explicit provider mappings. CanonicalPlayerID is
+    issued by fantasy-app, not by the NFL or another provider; source-data/nfl is
+    the domain path, not an issuer namespace. Display names are never an
+    authoritative join key.
+  futureOfficialNflId: >
+    If the NFL later exposes a stable official player identifier, model it as an
+    external/provider mapping to CanonicalPlayerID. It does not replace or rename
+    the existing canonical identity.
+  historyIsSticky: >
+    Finalized historical facts stay bound to the identity and source evidence used
+    when they were canonically materialized. Current provider mappings do not
+    reinterpret old facts.
+  missingIsNotZero: >
+    unavailable, not-yet-available and fetch-failed states must not be serialized
+    as a genuine numeric/string zero merely to satisfy a consumer contract.
+  generatedReadModels: >
+    public/data/** remains generated app output. It may intentionally preserve a
+    legacy provider-shaped contract while canonical source-data is introduced
+    behind it.
+  providerJoinContract: >
+    Every future materializer and consumer must apply the fail-closed uniqueness,
+    missing-ID and cardinality rules in provider-join-invariants.yaml before
+    publishing.
+
+sourcePrioritySemantics:
+  primary: authoritative source for the assigned fact/domain in normal operation
+  secondary: corroborating or complementary source that may enrich but cannot silently override primary
+  fallback: temporary availability or legacy compatibility source used only under an explicit rule
+  unresolved: no durable canonical source has been accepted yet
+
+matrix:
+  nflPersonIdentity:
+    facts:
+      - permanent real-person identity
+      - historical provider-ID mappings
+    durableCanonicalPrimary: source-data/nfl/identities using CanonicalPlayerID in the fantasy-app namespace
+    currentRuntimePrimary: public/data/Players.json uses Sleeper player_id as Players.ID
+    secondary:
+      - nflverse players / ff-player-ids provider mappings
+      - Tank01 playerID mapping
+      - GSIS
+      - ESPN
+      - PFR
+      - PFF
+      - future official NFL-issued ID if one becomes available
+      - other corroborated provider IDs
+    fallback: none
+    identityKey: CanonicalPlayerID
+    providerKeys:
+      - Sleeper player_id
+      - Tank01 playerID
+      - GSIS ID
+      - ESPN ID
+      - PFR ID
+    lifecycle: dynamic identity graph with historical season-level mapping validity
+    historyCoverage: provider-mapping coverage varies by provider and season
+    migrationState: canonical-v2-active-app-id-unchanged
+    guards:
+      - no display-name identity joins
+      - overlapping provider-ID collisions are quarantined
+      - existing CanonicalPlayerID values remain stable through the legacy NFLPlayerID field-name migration
+      - public/data/Players.json[].ID remains Sleeper until a separate app-contract migration is approved
+
+  nflPlayerProfile:
+    facts:
+      - display name
+      - birth/age metadata
+      - height/weight outside Combine context
+      - college/high-school metadata
+      - generic player status fields
+    durableCanonicalPrimary: unresolved
+    currentRuntimePrimary: mixed Sleeper and Tank01 in RequestPlayers.ps1
+    secondary:
+      - nflverse players
+      - existing provider mappings
+    fallback: none-defined
+    identityKey: CanonicalPlayerID for any future canonical profile
+    lifecycle: dynamic
+    historyCoverage: not-consolidated
+    migrationState: field-level-consolidation-not-yet-approved
+    guards:
+      - do not infer that nflverse players owns every current Players.json profile field
+      - keep convenience/profile metadata separate from roster membership and injury ownership
+      - names remain descriptive rather than identity keys
+
+  nflDraftHistory:
+    facts:
+      - NFL draft year
+      - round
+      - pick within round / overall pick
+      - drafting NFL team
+      - drafted/undrafted/not-yet-drafted/unknown status
+    durableCanonicalPrimary: nflverse draft-picks normalized to source-data/nfl/draft/<season>.json
+    currentRuntimePrimary: canonical source-data for NFL Draft history; fantasy-league Drafts.json is a separate domain
+    secondary:
+      - provider raw draft evidence retained as provenance
+    fallback: none
+    identityKey: season + CanonicalPlayerID for player draft fact; canonical draft row identity remains season/pick scoped
+    lifecycle: immutable-history
+    historyCoverage: canonical materialization currently 1980-2026
+    freshness: discover new/current partition; prior seasons frozen in normal mode
+    migrationState: canonical-active
+    guards:
+      - historical repair requires explicit force except schema-only canonical field migration
+      - NFL Draft facts must never be confused with league fantasy Drafts.json ownership
+
+  nflCombine:
+    facts:
+      - height/weight measured at Combine
+      - forty-yard dash
+      - bench press
+      - vertical/broad jump
+      - three-cone/shuttle
+    durableCanonicalPrimary: nflverse Combine normalized to source-data/nfl/combine/<season>.json
+    currentRuntimePrimary: canonical source-data; not automatically projected into Players.json
+    secondary:
+      - PFR ID as authoritative identity mapping for this dataset
+      - upstream draft fields retained only as SourceDraftEvidence
+    fallback: none
+    identityKey: CanonicalPlayerID when uniquely resolved through PFR mapping
+    lifecycle: immutable-history
+    historyCoverage: 2000-2026 in current canonical materialization
+    freshness: discover new/current partition; prior seasons frozen in normal mode
+    migrationState: canonical-active
+    guards:
+      - same-season duplicate PFR claims from distinguishable rows are quarantined as ambiguous
+      - exact duplicate raw rows fail closed
+      - canonical Draft link comes from source-data/nfl/draft rather than upstream Combine draft fields
+
+  nflSchedule:
+    facts:
+      - NFL season
+      - game type
+      - week
+      - kickoff/date metadata
+      - home and away teams
+      - game identity
+      - final scores when published by schedule dataset
+    durableCanonicalPrimary: nflverse schedules
+    currentRuntimePrimary: Tank01 getNFLGamesForWeek in RequestGames.ps1
+    secondary: none-required
+    fallback:
+      - Tank01 for legacy Schedule.json compatibility during migration
+    identityKey: nflverse game_id for canonical schedule
+    lifecycle: seasonal-finalizable
+    historyCoverage: 1999-present
+    freshness: every-5-minutes-during-season
+    migrationState: evaluated-not-yet-activated
+    guards:
+      - game_type must be explicit; postseason must not silently enter the current REG-only app contract
+      - canonical game identity must be unique before materialization
+      - migrating Schedule.json is separate from accepting nflverse as canonical source
+
+  nflGameFinality:
+    facts:
+      - current game status
+      - explicit Final state
+      - derived all-games-final week closure
+    durableCanonicalPrimary: unresolved
+    currentRuntimePrimary: Tank01 gameStatus in RequestGames.ps1
+    secondary:
+      - nflverse schedule scores/time/state fields may provide evidence but no accepted direct Final mapping exists yet
+    fallback: none-defined
+    identityKey: canonical game identity
+    lifecycle: seasonal-finalizable
+    historyCoverage: current runtime follows Tank01 availability
+    freshness: current app Games run / Tank01 response
+    migrationState: explicit-canonical-rule-required-before-tank01-removal
+    guards:
+      - do not infer Final merely from score presence
+      - preserve distinction between scheduled/live/final/postponed/cancelled states when a canonical rule is designed
+      - weekFinal may only be derived after every applicable game has canonical finality
+
+  nflGameBoxscoreLegacy:
+    facts:
+      - current provider-shaped full Games.json game object
+      - provider-specific playerStats boxscore payload
+    durableCanonicalPrimary: no-single-provider-object
+    currentRuntimePrimary: Tank01 getNFLBoxScore in RequestGames.ps1
+    secondary:
+      - canonical schedule
+      - canonical player stats
+      - canonical snap counts
+    fallback: Tank01 remains legacy full-object provider until Games.json is intentionally redesigned
+    identityKey: current Tank01 gameID; future canonical join must map to canonical game identity
+    lifecycle: generated-app-readmodel
+    historyCoverage: current app archives 2022-2025; provider history is not the preferred future backfill path
+    migrationState: legacy-contract-retained
+    guards:
+      - do not declare nflverse Player Stats a 1:1 replacement for the whole Tank01 boxscore object
+      - future Games.json redesign belongs with the app-generator DAG/read-model migration
+
+  nflPlayerWeeklyStats:
+    facts:
+      - passing attempts and touchdowns
+      - rushing carries and touchdowns
+      - receiving targets and touchdowns
+      - field-goal attempts
+      - PAT attempts
+      - weekly player stat totals
+      - team/opponent/game references
+    durableCanonicalPrimary: nflverse player-stats
+    currentRuntimePrimary: Tank01 playerStats embedded in Games.json and consumed by RequestPlayers.ps1
+    secondary: none-required for finalized history
+    fallback:
+      - Tank01 as optional low-latency source while nflverse has not published a just-finished game
+      - Tank01 for legacy Games.json until that read model is redesigned
+    identityKey: GSIS -> CanonicalPlayerID
+    gameKey: nflverse game_id
+    lifecycle: seasonal-finalizable
+    historyCoverage: 1999-present
+    freshness: nightly after game days plus additional game-day updates
+    preferredFinalizedWeeklyRead: Thursday after NFL stat-correction window
+    migrationState: evaluated-not-yet-activated
+    guards:
+      - no name-based player join
+      - secondary/fallback data cannot overwrite a conflicting finalized canonical stat silently
+      - AttemptsTotal remains an app-derived metric and must be regression-tested when its inputs migrate
+
+  fantasyPointsPpr:
+    facts:
+      - PPR fantasy points derived from NFL player statistics
+    durableCanonicalPrimary: derived deterministically from canonical nflverse player stats/scoring definition
+    currentRuntimePrimary: Tank01 fantasyPointsDefault.PPR in current Games/Players pipeline
+    secondary:
+      - nflverse fantasy_points_ppr may be used as validation/corroboration
+    fallback: Tank01 only during legacy/low-latency runtime
+    identityKey: CanonicalPlayerID + season + week/game
+    lifecycle: derived-seasonal
+    historyCoverage: follows player-stats coverage from 1999
+    migrationState: evaluated-derived-rule-needs-regression-before-app-switch
+    guards:
+      - scoring definition must be explicit
+      - canonical source stat corrections must propagate deterministically
+
+  nflSnapCounts:
+    facts:
+      - offense_snaps
+      - offense_pct
+      - defense_snaps
+      - defense_pct
+      - st_snaps
+      - st_pct
+    durableCanonicalPrimary: nflverse PFR snap-count dataset
+    currentRuntimePrimary: Tank01 snapCounts embedded in Games.json
+    secondary: none-required
+    fallback:
+      - Tank01 as optional low-latency source if PFR/nflverse has not published a just-finished game
+      - Tank01 for legacy Games.json during migration
+    identityKey: PFR ID -> CanonicalPlayerID
+    gameKey: nflverse game_id / PFR game mapping
+    lifecycle: seasonal-finalizable
+    historyCoverage: 2012-present
+    freshness: four-times-daily-during-season-dependent-on-PFR
+    migrationState: evaluated-not-yet-activated
+    guards:
+      - ambiguous/missing PFR mappings remain unresolved or quarantined
+      - pre-2012 unavailable data is not zero
+      - current not-yet-published snaps are not zero
+      - current kicker synthetic FG+PAT attempt semantics must not be silently replaced by real special-teams snaps
+
+  nflWeeklyRosterMembership:
+    facts:
+      - player NFL team membership by week
+      - in-season team changes
+      - weekly roster/status evidence
+    durableCanonicalPrimary: nflverse weekly-rosters
+    currentRuntimePrimary: mixed current player team/status evidence from Tank01 and Sleeper in RequestPlayers.ps1
+    secondary:
+      - nflverse season rosters for season-level context
+    fallback: none-defined for canonical finalized history
+    identityKey: GSIS -> CanonicalPlayerID
+    lifecycle: seasonal-finalizable
+    historyCoverage: 2002-present
+    freshness: roster pipeline daily around 07:00 UTC
+    migrationState: evaluated-not-yet-activated
+    guards:
+      - season roster must not replace weekly history for in-season team changes
+      - Sleeper team fields are platform metadata and cannot silently override canonical NFL membership
+
+  nflSeasonRosterProfile:
+    facts:
+      - season-level NFL roster affiliation
+      - season-level roster/player profile evidence
+    durableCanonicalPrimary: nflverse rosters
+    currentRuntimePrimary: mixed Tank01/Sleeper player metadata
+    secondary:
+      - weekly-rosters where week-specific membership is required
+    fallback: none-defined
+    identityKey: GSIS -> CanonicalPlayerID
+    lifecycle: seasonal-finalizable
+    historyCoverage: 1920-present
+    freshness: daily around 07:00 UTC
+    migrationState: evaluated-not-yet-activated
+    guards:
+      - season-level row is not proof of a player's team for every week in that season
+
+  sleeperPlayerPlatformFacts:
+    facts:
+      - current Sleeper player_id
+      - Sleeper status
+      - Sleeper depth_chart_position
+      - Sleeper depth_chart_order
+      - Sleeper-specific fantasy/player catalog metadata
+    durableCanonicalPrimary: Sleeper for Sleeper-specific facts only
+    currentRuntimePrimary: Sleeper /players/nfl in RequestPlayers.ps1
+    secondary: none
+    fallback: none
+    identityKey: Sleeper player_id mapped to CanonicalPlayerID where cross-provider identity is required
+    lifecycle: dynamic platform state
+    historyCoverage: no canonical historical guarantee from current app path
+    freshness: Sleeper recommends persisting player map and refreshing no more than about daily
+    migrationState: retained-platform-owner
+    guards:
+      - Sleeper-specific depth fields are not automatically the canonical NFL depth-chart source
+      - Sleeper player_id remains the current Players.json ID contract
+
+  nflInjuriesCurrent:
+    facts:
+      - current injured flag
+      - injury designation
+      - injury date/description/expected return where supplied
+    durableCanonicalPrimary: unresolved-long-term; Tank01 is temporary operational primary
+    currentRuntimePrimary: Tank01 player injury object in RequestPlayers.ps1
+    secondary:
+      - Sleeper injury fields may be corroborating platform metadata but have not been accepted as canonical injury source
+    fallback: none-accepted
+    identityKey: Tank01 playerID -> CanonicalPlayerID / current Sleeper app mapping
+    lifecycle: dynamic
+    historyCoverage: no accepted canonical current+historical injury contract
+    freshness: follows current Tank01 player-list refresh
+    migrationState: retain-tank01-until-separate-injury-evaluation
+    guards:
+      - nflverse injury source is not a valid current replacement after its source ended following 2024
+      - do not merge conflicting injury claims by provider priority without a separate injury contract
+
+  nflDepthChart:
+    facts:
+      - NFL depth-chart role/order snapshots
+    durableCanonicalPrimary: unresolved
+    currentRuntimePrimary: Sleeper depth_chart_position/order for the current app fields
+    secondary:
+      - nflverse depth-charts is a candidate snapshot source pending separate evaluation
+      - other depth-chart providers may be evaluated separately
+    fallback: none-accepted
+    identityKey: provider ID -> CanonicalPlayerID
+    lifecycle: snapshot when canonicalized
+    historyCoverage: not-consolidated
+    freshness: nflverse candidate updates daily and uses timestamped snapshots from 2025 onward
+    migrationState: explicit-depth-chart-evaluation-still-open
+    guards:
+      - depth-chart rank is a role/roster signal, not direct fantasy opportunity
+      - preserve timestamped historical snapshots rather than overwriting only latest state if nflverse is adopted
+
+  nflContracts:
+    facts:
+      - NFL contract snapshots
+    durableCanonicalPrimary: unresolved
+    currentRuntimePrimary: none-as-canonical-app-source
+    secondary:
+      - nflverse contracts is registered as a planned candidate dataset
+    fallback: none
+    identityKey: provider ID -> CanonicalPlayerID
+    lifecycle: snapshot
+    historyCoverage: not-evaluated
+    freshness: not-consolidated
+    migrationState: planned-not-evaluated
+    guards:
+      - no app/source-of-truth ownership may be inferred merely because the registry contains a planned contracts dataset
+      - licensing/attribution must be validated before persistence/publication expansion
+
+  nflPlayerConvenienceMetadata:
+    facts:
+      - player headshot URL
+      - FantasyPros link
+      - ESPN link
+      - provider-specific short name
+    durableCanonicalPrimary: none-required; convenience-enrichment only
+    currentRuntimePrimary: Tank01 and Sleeper fields in RequestPlayers.ps1
+    secondary: provider-specific alternatives may be used only through an explicit consumer rule
+    fallback: consumer-specific
+    identityKey: provider mapping to current player
+    lifecycle: dynamic convenience metadata
+    historyCoverage: not-authoritative
+    migrationState: legacy-enrichment-retained
+    guards:
+      - convenience URLs/images are not identity evidence or NFL roster truth
+      - absence must not invalidate otherwise canonical player facts
+
+  nflFreeAgentAndAvailabilityStatus:
+    facts:
+      - NFL free-agent/active availability style fields in current Players.json
+    durableCanonicalPrimary: unresolved
+    currentRuntimePrimary: Tank01 isFreeAgent plus Sleeper status in RequestPlayers.ps1
+    secondary:
+      - canonical weekly/season rosters may provide membership evidence after activation
+    fallback: none-defined
+    identityKey: CanonicalPlayerID / current provider mappings
+    lifecycle: dynamic
+    historyCoverage: not-consolidated
+    migrationState: requires-separate-field-definition-during-player-readmodel-migration
+    guards:
+      - absence from a roster snapshot must not automatically equal free-agent status without an explicit rule
+      - platform status and NFL employment status are distinct concepts
+
+  byeWeek:
+    facts:
+      - current-season bye week used in player read model
+    durableCanonicalPrimary: derived-source-not-yet-formally-migrated
+    currentRuntimePrimary: current Tank01/team data path in RequestPlayers.ps1
+    secondary:
+      - future derivation from canonical nflverse schedule is the preferred candidate once schedules are active
+    fallback: Tank01 during migration
+    identityKey: NFL team + season
+    lifecycle: seasonal-derived
+    historyCoverage: follows schedule coverage when migrated
+    migrationState: derivation-rule-to-validate-with-schedule-activation
+    guards:
+      - derive from explicit team schedule rather than treating a player provider metadata field as permanent truth
+
+  fantasyLeagueSettings:
+    facts:
+      - league ID/year manual selection
+      - salary-cap and league-specific rules
+      - draft configuration
+      - Sleeper league settings such as roster positions, trade settings and playoff settings
+    durableCanonicalPrimary:
+      manualRules: public/data/Metadata.json
+      platformState: Sleeper league endpoint
+    currentRuntimePrimary: Metadata + Sleeper
+    secondary: none
+    fallback: none
+    identityKey: LeagueID / season
+    lifecycle: league-season dynamic/manual
+    migrationState: retained-domain-owners
+    guards:
+      - nflverse cannot become source of truth for fantasy-league rules
+      - ConfigUtils maps configuration but does not own league-specific domain rules
+
+  fantasyLeagueRostersAndTeams:
+    facts:
+      - fantasy roster membership
+      - roster_id
+      - owner_id
+      - fantasy league member/user relation
+      - Taxi/IR/reserve membership
+    durableCanonicalPrimary: Sleeper league rosters/users for platform facts, enriched by Metadata owner mapping where required
+    currentRuntimePrimary: Sleeper
+    secondary: Metadata for league-specific mapping/rules
+    fallback: none
+    identityKey:
+      - roster_id for fantasy roster
+      - user_id/owner_id for Sleeper member relation
+      - Sleeper player_id for rostered player reference
+    lifecycle: league-season dynamic
+    migrationState: retained-platform-owner
+    guards:
+      - nflverse NFL rosters are a different domain and cannot replace fantasy-league rosters
+      - owner/member/roster cardinality follows provider-join-invariants.yaml
+
+  fantasyLeagueTransactions:
+    facts:
+      - completed fantasy trades/adds/drops
+      - player movement
+      - fantasy draft-pick movement
+    durableCanonicalPrimary: Sleeper transactions plus explicit public/data/Transactions_Manual.json enrichment
+    currentRuntimePrimary: same
+    secondary: manual input only under documented match/enrichment rules
+    fallback: none
+    identityKey: TransactionID / Sleeper transaction_id
+    lifecycle: current-season dynamic plus historical generated archives
+    migrationState: retained-domain-owner
+    guards:
+      - manual SleeperTransactionID binds to at most one transaction
+      - no pending-transaction source is invented without reliable provider evidence
+      - duplicate transaction identities fail closed
+
+  fantasyLeagueDraftsAndPickOwnership:
+    facts:
+      - fantasy draft instances
+      - draft status/start/order
+      - selected fantasy players
+      - original/current fantasy pick owner
+    durableCanonicalPrimary:
+      draftPlatformFacts: Sleeper drafts/picks
+      configuredSlotsAndRules: Metadata Drafts configuration
+      ownershipChanges: completed fantasy transactions
+    currentRuntimePrimary: same through Draft generation pipeline
+    secondary: historical generated draft output is read model/provenance, not upstream source
+    fallback: deterministic configured virtual draft only where no explicit SleeperDraftID binding exists and domain contract allows it
+    identityKey:
+      - DraftKey for configured fantasy draft identity
+      - SleeperDraftID for concrete provider draft
+      - PickKey including OriginalOwnerRosterID for pick identity
+    lifecycle: league-season current plus generated historical archive
+    migrationState: retained-domain-owner
+    guards:
+      - explicit SleeperDraftID bindings are authoritative and never fall back to another provider draft
+      - NFL Draft history under source-data/nfl/draft is a separate domain
+      - duplicate DraftKey/PickKey/provider IDs fail closed according to provider-join-invariants.yaml
+
+unresolvedDecisionsBeforeAppGeneratorDag:
+  blocking:
+    - define canonical game-finality/status mapping before removing Tank01 gameStatus
+    - activate and validate canonical schedules, player stats, snap counts and roster materializers before rewiring their app consumers
+    - define exact Games.json replacement/compatibility strategy instead of assuming canonical stat datasets reproduce the Tank01 boxscore object
+    - define how source availability states are represented to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
+  nonBlockingForInitialDagDesign:
+    - depth-chart provider evaluation can remain separate if current Sleeper fields stay isolated as platform facts
+    - contracts may remain unactivated because no current app contract depends on canonical NFL contract data
+    - player convenience metadata can remain provider-specific while identity, schedule, stats and roster facts migrate
+
+activationOrder:
+  - nflverse.schedules
+  - nflverse.player-stats
+  - nflverse.snap-counts
+  - nflverse.weekly-rosters
+  - nflverse.rosters
+
+historicalBackfillBands:
+  - seasons: 2012-2021
+    canonicalCoverage:
+      - schedule
+      - weekly-player-stats
+      - weekly-rosters
+      - snap-counts
+    quality: strongest-complete-band-for-evaluated-datasets
+  - seasons: 2002-2011
+    canonicalCoverage:
+      - schedule
+      - weekly-player-stats
+      - weekly-rosters
+    missing:
+      - snap-counts
+  - seasons: 1999-2001
+    canonicalCoverage:
+      - schedule
+      - weekly-player-stats
+      - season-rosters
+    missing:
+      - weekly-rosters
+      - snap-counts
+  - seasons: before-1999
+    canonicalCoverage:
+      - season-rosters
+    priority: no-current-app-backfill-priority
+
+externalEvidence:
+  verifiedAt: 2026-08-24
+  nflverse:
+    updateSchedule: https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html
+    schedulesDictionary: https://nflreadr.nflverse.com/articles/dictionary_schedules.html
+    snapCountsDictionary: https://nflreadr.nflverse.com/articles/dictionary_snap_counts.html
+  sleeper:
+    apiDocumentation: https://docs.sleeper.com/
+    notes:
+      - Sleeper documents /players/nfl as a large player-ID map intended to be persisted and refreshed sparingly, approximately daily rather than per consumer request.
+      - Sleeper player records expose player_id, status, team, injury fields and depth_chart_position/depth_chart_order as platform data.
+
+repositoryEvidence:
+  - .ai-context/manual/player-identity.yaml
+  - .ai-context/manual/nfl-source-data.yaml
+  - .ai-context/manual/provider-join-invariants.yaml
+  - .ai-context/manual/data-sources.yaml
+  - public/requests/RequestPlayers.ps1
+  - public/requests/RequestGames.ps1
+
+nextArchitectureStep: >
+  After this matrix is accepted and merged, the roadmap advances to the
+  App-Generator-DAG. The DAG redesign must consume these field-level ownership
+  decisions rather than re-deciding providers implicitly inside generator code.

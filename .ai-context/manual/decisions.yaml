@@ -517,7 +517,7 @@ decisions:
         - Agents needing a raw field outside an FM-derived contract must perform a targeted Players.json read.
 
   - id: ADR-025
-    title: NFL player identity is provider-independent and provider mappings are historical
+    title: Canonical player identity is application-defined and provider mappings are historical
     status: accepted
     context: >
       The app intentionally relies on Sleeper for its current player and league
@@ -525,35 +525,47 @@ decisions:
       collides or eventually reuses an identifier. Real nflverse input has shown
       that one provider mapping can contradict otherwise distinct player
       identities, so treating every shared provider ID as an unconditional merge
-      edge is not safe.
+      edge is not safe. The original canonical field name NFLPlayerID also
+      misleadingly suggested an identifier issued by the NFL, while the identity
+      is actually defined and owned by fantasy-app.
     decision: >
-      Use NFLPlayerID as the durable provider-independent identity of one real NFL
-      player in canonical source data. Keep public/data/Players.json[].ID as the
-      Sleeper player_id because Sleeper remains the leading provider for the
-      current app and fantasy-league state; this Sleeper field is an app contract,
-      not the permanent cross-provider person key. Treat Sleeper, Tank01, GSIS,
-      ESPN, PFR, PFF and all other external IDs as historical mappings to
-      NFLPlayerID. Persist mapping validity with at least season-level resolution.
-      A conflicting provider mapping must be quarantined rather than merging two
-      otherwise distinguishable people. Historical canonical facts retain the
-      NFLPlayerID resolved for the event or season plus source provenance. Names
-      remain descriptive rather than authoritative merge keys. Runtime timestamps
-      must not make otherwise identical canonical source-data semantically different.
+      Use CanonicalPlayerID as the durable provider-independent identity of one
+      real NFL player in canonical source data. CanonicalPlayerID is issued in the
+      fantasy-app namespace; source-data/nfl describes the NFL data domain and not
+      the ID issuer. Keep public/data/Players.json[].ID as the Sleeper player_id
+      because Sleeper remains the leading provider for the current app and
+      fantasy-league state; this Sleeper field is an app contract, not the
+      permanent cross-provider person key. Treat Sleeper, Tank01, GSIS, ESPN, PFR,
+      PFF, any future official NFL-issued identifier and all other external IDs as
+      historical mappings to CanonicalPlayerID. Persist mapping validity with at
+      least season-level resolution. A conflicting provider mapping must be
+      quarantined rather than merging two otherwise distinguishable people.
+      Historical canonical facts retain the CanonicalPlayerID resolved for the
+      event or season plus source provenance. Names remain descriptive rather than
+      authoritative merge keys. Existing canonical ID values remain stable during
+      the legacy NFLPlayerID-to-CanonicalPlayerID field-name migration; the rename
+      does not create new person identities. Runtime timestamps must not make
+      otherwise identical canonical source-data semantically different.
     rationale: >
       This preserves Sleeper as the practical source of truth for the current app
       while decoupling long-lived player history from assumptions about the
-      lifetime uniqueness of any external provider identifier. The resolver can
-      fail closed on dirty mappings without corrupting canonical people.
+      lifetime uniqueness of any external provider identifier. Naming the
+      application-owned identity CanonicalPlayerID also reserves an unambiguous
+      namespace for any real NFL-issued player identifier that may become
+      available later. The resolver can fail closed on dirty mappings without
+      corrupting canonical people.
     consequences:
       positive:
         - Current Angular and generated Players.json contracts remain unchanged.
         - Historical facts can survive provider ID reuse or corrections.
         - Provider conflicts are isolated to mappings instead of collapsing people.
-        - New providers can attach without becoming a new global master ID.
+        - New providers, including a future official NFL identifier, can attach without becoming a new global master ID.
+        - Existing canonical ID values survive the schema rename unchanged.
         - Semantic no-op materialization is independent from freshness metadata.
       negative:
         - The identity bridge requires historical mappings and conflict quarantine.
         - Resolution APIs need temporal context when an external ID is not globally unique.
+        - Readers must temporarily accept the legacy NFLPlayerID field while v1 persisted source-data is migrated to canonical schema v2.
 
   - id: ADR-026
     title: Historical transaction rebuild regenerates dependent drafts in one working tree

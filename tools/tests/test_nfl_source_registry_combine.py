@@ -11,6 +11,7 @@ sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib.combine import build_combine_files
 from nfl_source_data_lib.common import (
+    CANONICAL_SCHEMA_VERSION,
     Dataset,
     REGISTRY_SCHEMA_VERSION,
     load_registry,
@@ -101,10 +102,18 @@ class RegistryCombineTests(unittest.TestCase):
     def test_prior_season_finalized_partition_is_preserved_without_explicit_force(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "2025.json"
-            existing = {"Finalized": True, "Records": [{"value": "old"}]}
+            existing = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "Finalized": True,
+                "Records": [{"value": "old"}],
+            }
             path.write_text(json.dumps(existing), encoding="utf-8")
             dataset = combine_dataset(Path(tmp) / "combine.csv")
-            candidate = {"Finalized": True, "Records": [{"value": "new"}]}
+            candidate = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "Finalized": True,
+                "Records": [{"value": "new"}],
+            }
 
             effective, preserved = effective_partition_payload(
                 dataset,
@@ -127,6 +136,39 @@ class RegistryCombineTests(unittest.TestCase):
             )
             self.assertFalse(preserved)
             self.assertEqual(candidate, effective)
+
+    def test_frozen_legacy_partition_renames_identity_field_without_force(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2025.json"
+            path.write_text(
+                json.dumps({
+                    "SchemaVersion": 1,
+                    "Finalized": True,
+                    "Records": [{"NFLPlayerID": "NFLP-keep", "value": "old"}],
+                }),
+                encoding="utf-8",
+            )
+            dataset = combine_dataset(Path(tmp) / "combine.csv")
+            candidate = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "Finalized": True,
+                "Records": [{"CanonicalPlayerID": "NFLP-new", "value": "new"}],
+            }
+
+            effective, preserved = effective_partition_payload(
+                dataset,
+                path=path,
+                candidate=candidate,
+                partition_season=2025,
+                observation_season=2026,
+                force=False,
+            )
+
+            self.assertTrue(preserved)
+            self.assertEqual(CANONICAL_SCHEMA_VERSION, effective["SchemaVersion"])
+            self.assertEqual("NFLP-keep", effective["Records"][0]["CanonicalPlayerID"])
+            self.assertNotIn("NFLPlayerID", effective["Records"][0])
+            self.assertEqual("old", effective["Records"][0]["value"])
 
     def test_combine_resolves_only_pfr_and_links_canonical_draft(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -151,11 +193,11 @@ class RegistryCombineTests(unittest.TestCase):
                 "cone": "6.91",
                 "shuttle": "4.12",
             }])
-            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
             drafts = {
                 2025: {
                     "Picks": [{
-                        "NFLPlayerID": "NFLP-1",
+                        "CanonicalPlayerID": "NFLP-1",
                         "Round": 1,
                         "PositionInRound": 5,
                         "OverallPick": 5,
@@ -166,7 +208,7 @@ class RegistryCombineTests(unittest.TestCase):
 
             grouped, conflicts = build_combine_files(combine_dataset(raw), canonical, drafts)
             item = grouped[2025][0]
-            self.assertEqual("NFLP-1", item["NFLPlayerID"])
+            self.assertEqual("NFLP-1", item["CanonicalPlayerID"])
             self.assertEqual(74, item["Measurements"]["HeightInches"])
             self.assertEqual(5, item["Draft"]["OverallPick"])
             self.assertEqual([], conflicts)
@@ -192,11 +234,11 @@ class RegistryCombineTests(unittest.TestCase):
                     "player_name": "Test Player",
                 },
             ])
-            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
             drafts = {
                 1986: {
                     "Picks": [{
-                        "NFLPlayerID": "NFLP-1",
+                        "CanonicalPlayerID": "NFLP-1",
                         "Round": 1,
                         "PositionInRound": 1,
                         "OverallPick": 1,
@@ -205,7 +247,7 @@ class RegistryCombineTests(unittest.TestCase):
                 },
                 1987: {
                     "Picks": [{
-                        "NFLPlayerID": "NFLP-1",
+                        "CanonicalPlayerID": "NFLP-1",
                         "Round": 7,
                         "PositionInRound": 15,
                         "OverallPick": 183,
@@ -227,19 +269,19 @@ class RegistryCombineTests(unittest.TestCase):
                 "pfr_id": "PlayTe00",
                 "player_name": "Test Player",
             }])
-            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
             drafts = {
                 2025: {
                     "Picks": [
                         {
-                            "NFLPlayerID": "NFLP-1",
+                            "CanonicalPlayerID": "NFLP-1",
                             "Round": 1,
                             "PositionInRound": 5,
                             "OverallPick": 5,
                             "Team": "A",
                         },
                         {
-                            "NFLPlayerID": "NFLP-1",
+                            "CanonicalPlayerID": "NFLP-1",
                             "Round": 2,
                             "PositionInRound": 5,
                             "OverallPick": 37,
@@ -263,9 +305,9 @@ class RegistryCombineTests(unittest.TestCase):
                 "player_name": "Same Name",
                 "pos": "RB",
             }])
-            canonical = [{"NFLPlayerID": "NFLP-1", "Name": "Same Name", "IDs": {}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "Name": "Same Name", "IDs": {}}]
             grouped, _ = build_combine_files(combine_dataset(raw), canonical, {})
-            self.assertIsNone(grouped[2025][0]["NFLPlayerID"])
+            self.assertIsNone(grouped[2025][0]["CanonicalPlayerID"])
 
     def test_combine_draft_disagreement_is_audited_not_overwritten(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -278,11 +320,11 @@ class RegistryCombineTests(unittest.TestCase):
                 "pfr_id": "PlayTe00",
                 "player_name": "Test Player",
             }])
-            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}}]
             drafts = {
                 2025: {
                     "Picks": [{
-                        "NFLPlayerID": "NFLP-1",
+                        "CanonicalPlayerID": "NFLP-1",
                         "Round": 1,
                         "PositionInRound": 5,
                         "OverallPick": 5,

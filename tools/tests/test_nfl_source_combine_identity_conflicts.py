@@ -79,14 +79,14 @@ class CombineIdentityConflictTests(unittest.TestCase):
                     "wt": "253",
                 },
             ])
-            canonical = [{"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "GreeMi00"}}]
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "GreeMi00"}}]
 
             grouped, conflicts = build_combine_files(combine_dataset(raw), canonical, {})
 
             self.assertEqual([], conflicts)
             self.assertEqual(2, len(grouped[2000]))
             for record in grouped[2000]:
-                self.assertIsNone(record["NFLPlayerID"])
+                self.assertIsNone(record["CanonicalPlayerID"])
                 self.assertEqual("GreeMi00", record["SourceIDs"]["PFR"])
                 self.assertEqual("ambiguous", record["IdentityResolution"]["Status"])
                 self.assertEqual("duplicate-source-claim", record["IdentityResolution"]["Reason"])
@@ -139,8 +139,8 @@ class CombineIdentityConflictTests(unittest.TestCase):
                 },
             ])
             canonical = [
-                {"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}},
-                {"NFLPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe01"}},
+                {"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe00"}},
+                {"CanonicalPlayerID": "NFLP-1", "IDs": {"PFR": "PlayTe01"}},
             ]
 
             with self.assertRaisesRegex(

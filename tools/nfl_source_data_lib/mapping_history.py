@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .common import clean, load_json
-from .identity import identity_lookup
+from .canonical_identity import identity_lookup
+from .common import clean, load_json, normalize_legacy_canonical_player_fields
 
 _SEASON_FILE = re.compile(r"Players_(\d{4})\.json$")
 _MIN_HISTORICAL_CORROBORATORS = 2
@@ -95,7 +95,7 @@ def build_historical_app_mapping_claims(
                     {
                         "Provider": provider,
                         "ExternalID": external_id,
-                        "NFLPlayerID": internal_id,
+                        "CanonicalPlayerID": internal_id,
                         "ObservedSeason": season,
                         "Sources": [f"app.PastPlayers.{season}"],
                     }
@@ -109,6 +109,7 @@ def extend_provider_mapping_payload(
     claims: list[dict[str, Any]],
     resolution_conflicts: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    payload = normalize_legacy_canonical_player_fields(payload)
     mappings = [dict(item) for item in payload.get("Mappings", [])]
     conflicts = [dict(item) for item in payload.get("Conflicts", [])]
 
@@ -123,12 +124,12 @@ def extend_provider_mapping_payload(
             int(item["ObservedSeason"]),
             item["Provider"],
             item["ExternalID"],
-            item["NFLPlayerID"],
+            item["CanonicalPlayerID"],
         ),
     ):
         provider = claim["Provider"]
         external_id = claim["ExternalID"]
-        internal_id = claim["NFLPlayerID"]
+        internal_id = claim["CanonicalPlayerID"]
         season = int(claim["ObservedSeason"])
         sources = set(claim.get("Sources") or [])
 
@@ -149,7 +150,7 @@ def extend_provider_mapping_payload(
                 for item in mappings
                 if item.get("Provider") == provider
                 and str(item.get("ExternalID")) == str(external_id)
-                and item.get("NFLPlayerID") == internal_id
+                and item.get("CanonicalPlayerID") == internal_id
             ),
             None,
         )
@@ -168,17 +169,17 @@ def extend_provider_mapping_payload(
             if first <= season <= last:
                 overlaps.append(item)
         if overlaps:
-            owners = sorted({internal_id, *(str(item.get("NFLPlayerID")) for item in overlaps)})
+            owners = sorted({internal_id, *(str(item.get("CanonicalPlayerID")) for item in overlaps)})
             conflicts.append(
                 {
                     "Provider": provider,
                     "ExternalID": external_id,
-                    "NFLPlayerIDs": owners,
+                    "CanonicalPlayerIDs": owners,
                     "FirstObservedSeason": season,
                     "LastObservedSeason": season,
                     "Status": "ambiguous",
                     "Reason": "historical_mapping_overlap",
-                    "SourcesByNFLPlayerID": {internal_id: sorted(sources)},
+                    "SourcesByCanonicalPlayerID": {internal_id: sorted(sources)},
                 }
             )
             continue
@@ -187,7 +188,7 @@ def extend_provider_mapping_payload(
             {
                 "Provider": provider,
                 "ExternalID": external_id,
-                "NFLPlayerID": internal_id,
+                "CanonicalPlayerID": internal_id,
                 "FirstObservedSeason": season,
                 "LastObservedSeason": season,
                 "Sources": sorted(sources),
@@ -224,7 +225,7 @@ def extend_provider_mapping_payload(
             item["Provider"],
             str(item["ExternalID"]),
             int(item["FirstObservedSeason"]),
-            item["NFLPlayerID"],
+            item["CanonicalPlayerID"],
         )
     )
     conflicts.sort(
@@ -232,7 +233,7 @@ def extend_provider_mapping_payload(
             item["Provider"],
             str(item["ExternalID"]),
             int(item["FirstObservedSeason"]),
-            tuple(item["NFLPlayerIDs"]),
+            tuple(item["CanonicalPlayerIDs"]),
         )
     )
     history_resolution_conflicts.sort(

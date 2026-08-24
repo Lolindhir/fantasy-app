@@ -27,7 +27,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
             )
             canonical = [
                 {
-                    "NFLPlayerID": "NFLP-a",
+                    "CanonicalPlayerID": "NFLP-a",
                     "IDs": {"Sleeper": "S1", "Tank01": "T1"},
                     "IDAliases": {},
                 }
@@ -43,19 +43,19 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                     ("Tank01", "T1", "NFLP-a", 2023),
                 },
                 {
-                    (item["Provider"], item["ExternalID"], item["NFLPlayerID"], item["ObservedSeason"])
+                    (item["Provider"], item["ExternalID"], item["CanonicalPlayerID"], item["ObservedSeason"])
                     for item in claims
                 },
             )
 
             payload = {
-                "SchemaVersion": 1,
+                "SchemaVersion": 2,
                 "TemporalResolution": "season",
                 "Mappings": [
                     {
                         "Provider": "Sleeper",
                         "ExternalID": "S1",
-                        "NFLPlayerID": "NFLP-a",
+                        "CanonicalPlayerID": "NFLP-a",
                         "FirstObservedSeason": 2026,
                         "LastObservedSeason": 2026,
                         "Sources": ["app.Players"],
@@ -85,8 +85,8 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             canonical = [
-                {"NFLPlayerID": "NFLP-a", "IDs": {"Sleeper": "S1"}, "IDAliases": {}},
-                {"NFLPlayerID": "NFLP-b", "IDs": {"Tank01": "T2"}, "IDAliases": {}},
+                {"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "S1"}, "IDAliases": {}},
+                {"CanonicalPlayerID": "NFLP-b", "IDs": {"Tank01": "T2"}, "IDAliases": {}},
             ]
 
             claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
@@ -110,7 +110,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                 encoding="utf-8",
             )
             canonical = [
-                {"NFLPlayerID": "NFLP-current", "IDs": {"Sleeper": "1000"}, "IDAliases": {}}
+                {"CanonicalPlayerID": "NFLP-current", "IDs": {"Sleeper": "1000"}, "IDAliases": {}}
             ]
 
             claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
@@ -132,7 +132,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
             )
             canonical = [
                 {
-                    "NFLPlayerID": "NFLP-a",
+                    "CanonicalPlayerID": "NFLP-a",
                     "IDs": {"Sleeper": "S1", "ESPN": "E1"},
                     "IDAliases": {},
                 }
@@ -145,17 +145,17 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                 {"Sleeper", "Tank01", "ESPN"},
                 {item["Provider"] for item in claims},
             )
-            self.assertTrue(all(item["NFLPlayerID"] == "NFLP-a" for item in claims))
+            self.assertTrue(all(item["CanonicalPlayerID"] == "NFLP-a" for item in claims))
 
     def test_non_overlapping_historical_reuse_is_kept_as_two_mappings(self):
         payload = {
-            "SchemaVersion": 1,
+            "SchemaVersion": 2,
             "TemporalResolution": "season",
             "Mappings": [
                 {
                     "Provider": "Sleeper",
                     "ExternalID": "1000",
-                    "NFLPlayerID": "NFLP-new",
+                    "CanonicalPlayerID": "NFLP-new",
                     "FirstObservedSeason": 2036,
                     "LastObservedSeason": 2036,
                     "Sources": ["app.Players"],
@@ -167,7 +167,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
             {
                 "Provider": "Sleeper",
                 "ExternalID": "1000",
-                "NFLPlayerID": "NFLP-old",
+                "CanonicalPlayerID": "NFLP-old",
                 "ObservedSeason": 2025,
                 "Sources": ["app.PastPlayers.2025"],
             }
@@ -179,7 +179,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
             if item["Provider"] == "Sleeper" and item["ExternalID"] == "1000"
         ]
         self.assertEqual(2, len(rows))
-        self.assertEqual({"NFLP-old", "NFLP-new"}, {item["NFLPlayerID"] for item in rows})
+        self.assertEqual({"NFLP-old", "NFLP-new"}, {item["CanonicalPlayerID"] for item in rows})
         self.assertEqual(0, len(extended["Conflicts"]))
 
 

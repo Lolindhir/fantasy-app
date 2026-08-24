@@ -12,7 +12,15 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 SCHEMA_VERSION = 1
+CANONICAL_SCHEMA_VERSION = 2
 REGISTRY_SCHEMA_VERSION = 2
+
+CANONICAL_PLAYER_ID_FIELD = "CanonicalPlayerID"
+LEGACY_CANONICAL_PLAYER_ID_FIELD = "NFLPlayerID"
+CANONICAL_PLAYER_IDS_FIELD = "CanonicalPlayerIDs"
+LEGACY_CANONICAL_PLAYER_IDS_FIELD = "NFLPlayerIDs"
+SOURCES_BY_CANONICAL_PLAYER_ID_FIELD = "SourcesByCanonicalPlayerID"
+LEGACY_SOURCES_BY_CANONICAL_PLAYER_ID_FIELD = "SourcesByNFLPlayerID"
 
 LIFECYCLE_CLASSES = {
     "dynamic",
@@ -37,6 +45,14 @@ IDENTITY_ID_KEYS = (
     "Rotowire", "KTC", "FantasyData",
 )
 
+_LEGACY_CANONICAL_KEY_RENAMES = {
+    LEGACY_CANONICAL_PLAYER_ID_FIELD: CANONICAL_PLAYER_ID_FIELD,
+    LEGACY_CANONICAL_PLAYER_IDS_FIELD: CANONICAL_PLAYER_IDS_FIELD,
+    LEGACY_SOURCES_BY_CANONICAL_PLAYER_ID_FIELD: SOURCES_BY_CANONICAL_PLAYER_ID_FIELD,
+    "__NFLPlayerID": "__CanonicalPlayerID",
+    "ExistingNFLPlayerIDIsStable": "ExistingCanonicalPlayerIDIsStable",
+}
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -49,6 +65,33 @@ def clean(value: Any) -> str | None:
     if not text or text.upper() in {"NA", "N/A", "NULL", "NONE", "NAN"}:
         return None
     return text
+
+
+def normalize_legacy_canonical_player_fields(value: Any) -> Any:
+    """Normalize the pre-migration canonical player field names without changing ID values."""
+    if isinstance(value, list):
+        return [normalize_legacy_canonical_player_fields(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    normalized: dict[str, Any] = {}
+    for key, item in value.items():
+        target_key = _LEGACY_CANONICAL_KEY_RENAMES.get(key, key)
+        normalized_item = normalize_legacy_canonical_player_fields(item)
+        if target_key in normalized and normalized[target_key] != normalized_item:
+            raise ValueError(
+                f"Conflicting legacy/current canonical player fields for '{target_key}'"
+            )
+        normalized[target_key] = normalized_item
+
+    if normalized.get("InternalKey") == LEGACY_CANONICAL_PLAYER_ID_FIELD:
+        normalized["InternalKey"] = CANONICAL_PLAYER_ID_FIELD
+    return normalized
+
+
+def canonical_player_id(value: dict[str, Any]) -> str | None:
+    normalized = normalize_legacy_canonical_player_fields(value)
+    return clean(normalized.get(CANONICAL_PLAYER_ID_FIELD))
 
 
 def as_int(value: Any) -> int | None:

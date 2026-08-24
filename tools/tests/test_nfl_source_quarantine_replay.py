@@ -83,14 +83,14 @@ class NflSourceQuarantineReplayTests(unittest.TestCase):
             first = materialize(root, datasets)
             canonical = json.loads((root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8"))
             legacy = next(row for row in canonical["Players"] if row.get("IDs", {}).get("MFL") == "LEGACY")
-            legacy_id = legacy["NFLPlayerID"]
+            legacy_id = legacy["CanonicalPlayerID"]
 
             second = materialize(root, datasets)
             canonical_again = json.loads((root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8"))
             replayed = next(row for row in canonical_again["Players"] if row.get("IDs", {}).get("MFL") == "LEGACY")
 
             self.assertTrue(first["identityChanged"])
-            self.assertEqual(legacy_id, replayed["NFLPlayerID"])
+            self.assertEqual(legacy_id, replayed["CanonicalPlayerID"])
             self.assertFalse(second["identityChanged"])
             self.assertFalse(second["providerMappingsChanged"])
             self.assertEqual(0, second["draftFilesChanged"])

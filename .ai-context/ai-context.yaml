@@ -72,6 +72,7 @@ readingOrder:
   - .ai-context/manual/player-identity.yaml
   - .ai-context/manual/nfl-source-data.yaml
   - .ai-context/manual/provider-join-invariants.yaml
+  - .ai-context/manual/source-of-truth-matrix.yaml
   - .ai-context/manual/data-sources.yaml
   - .ai-context/manual/decisions.yaml
   - .ai-context/manual/routing.yaml
@@ -84,9 +85,10 @@ shortContext:
   fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
   public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
-  .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für providerunabhängige NFLPlayerID, historische Provider-Mappings, Konflikt-Quarantäne und den unveränderten Sleeper-basierten Players.json-App-Vertrag
+  .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag
   .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für source-data Registry v2, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und die NFL-Combine-Materialisierung
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
+  .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons

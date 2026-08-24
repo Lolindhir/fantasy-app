@@ -4,8 +4,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from .canonical_identity import identity_lookup
 from .common import Dataset, as_int, clean, iter_csv
-from .identity import identity_lookup
 
 
 def build_draft_files(dataset: Dataset, canonical: list[dict[str, Any]]) -> tuple[dict[int, list[dict[str, Any]]], set[str]]:
@@ -25,7 +25,7 @@ def build_draft_files(dataset: Dataset, canonical: list[dict[str, Any]]) -> tupl
             drafted_internal_ids.add(internal_id)
         grouped[season].append({
             "Round": round_no, "PositionInRound": None, "OverallPick": overall_pick,
-            "Team": clean(row.get("team")), "NFLPlayerID": internal_id,
+            "Team": clean(row.get("team")), "CanonicalPlayerID": internal_id,
             "PlayerName": clean(row.get("pfr_player_name")) or clean(row.get("player_name")),
             "Position": clean(row.get("position")),
             "SourceIDs": {key: value for key, value in {"GSIS": gsis, "PFR": pfr}.items() if value},
@@ -45,8 +45,8 @@ def build_draft_files(dataset: Dataset, canonical: list[dict[str, Any]]) -> tupl
 def build_ff_draft_evidence(ff_rows: list[dict[str, str]], canonical: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     lookup, evidence = identity_lookup(canonical), {}
     for row in ff_rows:
-        if "__NFLPlayerID" in row:
-            internal_id = clean(row.get("__NFLPlayerID"))
+        if "__CanonicalPlayerID" in row:
+            internal_id = clean(row.get("__CanonicalPlayerID"))
         else:
             internal_id = None
             for key, value in (("GSIS", clean(row.get("gsis_id"))), ("Sleeper", clean(row.get("sleeper_id"))), ("PFR", clean(row.get("pfr_id")))):

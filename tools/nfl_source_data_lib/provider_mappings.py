@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .common import load_json
+from .common import CANONICAL_SCHEMA_VERSION, load_json, normalize_legacy_canonical_player_fields
 
 
 def build_provider_mapping_payload(
@@ -21,7 +21,7 @@ def build_provider_mapping_payload(
     """
 
     path = repo_root / "source-data/nfl/identities/provider-mappings.json"
-    existing = load_json(path, {}) or {}
+    existing = normalize_legacy_canonical_player_fields(load_json(path, {}) or {})
     mappings = [dict(item) for item in existing.get("Mappings", [])]
     conflicts = [dict(item) for item in existing.get("Conflicts", [])]
 
@@ -29,7 +29,7 @@ def build_provider_mapping_payload(
         return (
             str(item.get("Provider") or ""),
             str(item.get("ExternalID") or ""),
-            str(item.get("NFLPlayerID") or ""),
+            str(item.get("CanonicalPlayerID") or ""),
         )
 
     mapping_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
@@ -42,7 +42,7 @@ def build_provider_mapping_payload(
     for claim in provider_claims:
         provider = str(claim["Provider"])
         external_id = str(claim["ExternalID"])
-        internal_id = str(claim["NFLPlayerID"])
+        internal_id = str(claim["CanonicalPlayerID"])
         key = (provider, external_id, internal_id)
         exact = mapping_by_key.get(key)
         if exact is not None:
@@ -62,13 +62,13 @@ def build_provider_mapping_payload(
             if int(item.get("LastObservedSeason") or observation_season) >= observation_season
         ]
         if overlapping:
-            owners = sorted({internal_id, *(str(item.get("NFLPlayerID")) for item in overlapping)})
+            owners = sorted({internal_id, *(str(item.get("CanonicalPlayerID")) for item in overlapping)})
             mapping_conflicts.append(
                 {
                     "Provider": provider,
                     "ExternalID": external_id,
-                    "NFLPlayerIDs": owners,
-                    "SourcesByNFLPlayerID": {
+                    "CanonicalPlayerIDs": owners,
+                    "SourcesByCanonicalPlayerID": {
                         internal_id: sorted(claim.get("Sources") or [])
                     },
                 }
@@ -78,7 +78,7 @@ def build_provider_mapping_payload(
         item = {
             "Provider": provider,
             "ExternalID": external_id,
-            "NFLPlayerID": internal_id,
+            "CanonicalPlayerID": internal_id,
             "FirstObservedSeason": observation_season,
             "LastObservedSeason": observation_season,
             "Sources": sorted(claim.get("Sources") or []),
@@ -91,7 +91,7 @@ def build_provider_mapping_payload(
         return (
             str(item.get("Provider") or ""),
             str(item.get("ExternalID") or ""),
-            tuple(sorted(str(value) for value in item.get("NFLPlayerIDs") or [])),
+            tuple(sorted(str(value) for value in item.get("CanonicalPlayerIDs") or [])),
         )
 
     conflict_by_key = {conflict_key(item): item for item in conflicts}
@@ -99,14 +99,14 @@ def build_provider_mapping_payload(
     for conflict in mapping_conflicts:
         provider = str(conflict.get("Provider") or "")
         external_id = str(conflict.get("ExternalID") or "")
-        owners = sorted(str(value) for value in conflict.get("NFLPlayerIDs") or [])
+        owners = sorted(str(value) for value in conflict.get("CanonicalPlayerIDs") or [])
         key = (provider, external_id, tuple(owners))
         same = conflict_by_key.get(key)
         if same is None:
             same = {
                 "Provider": provider,
                 "ExternalID": external_id,
-                "NFLPlayerIDs": owners,
+                "CanonicalPlayerIDs": owners,
                 "FirstObservedSeason": observation_season,
                 "LastObservedSeason": observation_season,
                 "Status": "ambiguous",
@@ -123,15 +123,15 @@ def build_provider_mapping_payload(
                 observation_season,
             )
 
-        sources_by_player = conflict.get("SourcesByNFLPlayerID") or {}
+        sources_by_player = conflict.get("SourcesByCanonicalPlayerID") or {}
         if sources_by_player:
             merged = {
                 key: set(values or [])
-                for key, values in (same.get("SourcesByNFLPlayerID") or {}).items()
+                for key, values in (same.get("SourcesByCanonicalPlayerID") or {}).items()
             }
             for internal_id, values in sources_by_player.items():
                 merged.setdefault(internal_id, set()).update(values or [])
-            same["SourcesByNFLPlayerID"] = {
+            same["SourcesByCanonicalPlayerID"] = {
                 key: sorted(values) for key, values in sorted(merged.items())
             }
 
@@ -140,7 +140,7 @@ def build_provider_mapping_payload(
             item["Provider"],
             item["ExternalID"],
             item["FirstObservedSeason"],
-            item["NFLPlayerID"],
+            item["CanonicalPlayerID"],
         )
     )
     conflicts.sort(
@@ -148,11 +148,11 @@ def build_provider_mapping_payload(
             item["Provider"],
             item["ExternalID"],
             item["FirstObservedSeason"],
-            tuple(item["NFLPlayerIDs"]),
+            tuple(item["CanonicalPlayerIDs"]),
         )
     )
     return {
-        "SchemaVersion": 1,
+        "SchemaVersion": CANONICAL_SCHEMA_VERSION,
         "TemporalResolution": "season",
         "Mappings": mappings,
         "Conflicts": conflicts,

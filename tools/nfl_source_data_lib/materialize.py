@@ -6,7 +6,7 @@ from typing import Any
 
 from .audit import build_audit
 from .combine import build_combine_files
-from .common import Dataset, SCHEMA_VERSION, as_int, load_json, write_json_if_changed
+from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_int, load_json, write_json_if_changed
 from .draft import build_draft_files
 from .identity import build_identities
 from .lifecycle import effective_partition_payload
@@ -38,7 +38,7 @@ def _draft_payloads(
     preserved = 0
     for season, picks in sorted(grouped.items()):
         candidate = {
-            "SchemaVersion": SCHEMA_VERSION,
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
             "Season": season,
             "SourceDataset": dataset.id,
             "Finalized": True,
@@ -59,10 +59,10 @@ def _draft_payloads(
 
 def _drafted_internal_ids(draft_payloads: dict[int, dict[str, Any]]) -> set[str]:
     return {
-        pick["NFLPlayerID"]
+        pick["CanonicalPlayerID"]
         for payload in draft_payloads.values()
         for pick in payload.get("Picks", [])
-        if pick.get("NFLPlayerID")
+        if pick.get("CanonicalPlayerID")
     }
 
 
@@ -78,7 +78,7 @@ def _combine_payloads(
     preserved = 0
     for season, records in sorted(grouped.items()):
         candidate = {
-            "SchemaVersion": SCHEMA_VERSION,
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
             "Season": season,
             "SourceDataset": dataset.id,
             "Finalized": True,
@@ -102,10 +102,11 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         if not dataset.raw_path.exists():
             raise FileNotFoundError(f"Cannot materialize without raw dataset: {dataset.raw_path}")
 
-    # Build and validate every semantic payload before writing any canonical file.
-    # This keeps a failed normalization from publishing a partially rebuilt state.
-    canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = build_identities(
-        repo_root, datasets
+    # Build every semantic payload before publishing anything. Existing v1
+    # canonical files are normalized by the resolver when they are read, so the
+    # persisted v2 field rename preserves the established canonical ID values.
+    canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = (
+        build_identities(repo_root, datasets)
     )
     observation_season = _observation_season(repo_root)
 
@@ -168,13 +169,15 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     )
 
     identity_payload = {
-        "SchemaVersion": SCHEMA_VERSION,
+        "SchemaVersion": CANONICAL_SCHEMA_VERSION,
         "IdentityPolicy": {
-            "InternalKey": "NFLPlayerID",
+            "InternalKey": "CanonicalPlayerID",
+            "CanonicalPlayerIDNamespace": "fantasy-app",
+            "CanonicalPlayerIDIsApplicationDefined": True,
             "ExternalIDsAreMappings": True,
             "ProviderMappingsAreHistorical": True,
             "CurrentAppPlayerIDProvider": "Sleeper",
-            "ExistingNFLPlayerIDIsStable": True,
+            "ExistingCanonicalPlayerIDIsStable": True,
             "NameMatchingIsAuthoritative": False,
         },
         "Players": canonical,
