@@ -25,6 +25,10 @@ export class App implements OnInit {
 
   @HostListener('window:scroll')
   onScroll(): void {
+    if (document.documentElement.classList.contains('cdk-global-scrollblock')) {
+      return;
+    }
+
     this.isScrolled = window.scrollY > 10;
   }
 
