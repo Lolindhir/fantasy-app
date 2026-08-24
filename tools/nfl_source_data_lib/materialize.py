@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import identity as identity_module
 from .audit import build_audit
 from .combine import build_combine_files
 from .common import (
@@ -15,7 +16,6 @@ from .common import (
     write_json_if_changed,
 )
 from .draft import build_draft_files
-from .identity import build_identities
 from .lifecycle import effective_partition_payload
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
 from .provider_mappings import build_provider_mapping_payload
@@ -31,6 +31,46 @@ def _observation_season(repo_root: Path) -> int:
     if season is not None:
         return season
     return datetime.now(timezone.utc).year
+
+
+def _build_identities_with_schema_compatibility(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, str]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
+    """Preserve existing ID values while the resolver's internal field label is migrated.
+
+    The persisted v2 contract exposes only CanonicalPlayerID. The established resolver
+    still reads its old internal label when seeding existing identities; provide that
+    alias in memory only so a second materialization keeps exactly the same IDs. The
+    legacy key is never written back by this compatibility bridge.
+    """
+    canonical_identity_path = (repo_root / "source-data/nfl/identities/players.json").resolve()
+    original_load_json = identity_module.load_json
+
+    def compatible_load_json(path: Path, default: Any = None) -> Any:
+        payload = original_load_json(path, default)
+        if Path(path).resolve() != canonical_identity_path or not isinstance(payload, dict):
+            return payload
+        normalized = normalize_legacy_canonical_player_fields(payload)
+        for row in normalized.get("Players", []) or []:
+            if not isinstance(row, dict):
+                continue
+            canonical_player_id = row.get("CanonicalPlayerID")
+            if canonical_player_id and "NFLPlayerID" not in row:
+                row["NFLPlayerID"] = canonical_player_id
+        return normalized
+
+    identity_module.load_json = compatible_load_json
+    try:
+        return identity_module.build_identities(repo_root, datasets)
+    finally:
+        identity_module.load_json = original_load_json
 
 
 def _draft_payloads(
@@ -109,12 +149,11 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         if not dataset.raw_path.exists():
             raise FileNotFoundError(f"Cannot materialize without raw dataset: {dataset.raw_path}")
 
-    # Build and validate every semantic payload before writing any canonical file.
-    # The identity resolver still produces its pre-v2 in-memory field labels; normalize
-    # those immediately at the materialization boundary. Canonical ID values themselves
-    # are preserved unchanged.
-    canonical_legacy, ff_rows_legacy, identity_source_conflicts_legacy, provider_claims_legacy, mapping_conflicts_legacy = build_identities(
-        repo_root, datasets
+    # Build every semantic payload before publishing anything. The established
+    # identity resolver may still emit its pre-v2 in-memory labels; normalize them
+    # immediately at this boundary. Canonical identity values themselves do not change.
+    canonical_legacy, ff_rows_legacy, identity_source_conflicts_legacy, provider_claims_legacy, mapping_conflicts_legacy = (
+        _build_identities_with_schema_compatibility(repo_root, datasets)
     )
     canonical = normalize_legacy_canonical_player_fields(canonical_legacy)
     ff_rows = normalize_legacy_canonical_player_fields(ff_rows_legacy)
@@ -123,10 +162,8 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     mapping_conflicts = normalize_legacy_canonical_player_fields(mapping_conflicts_legacy)
     observation_season = _observation_season(repo_root)
 
-    # Draft/Combine builders need the existing resolver's in-memory identity shape for
-    # reverse provider lookup, but their persisted records already emit CanonicalPlayerID.
     draft_dataset = datasets["nflverse.draft-picks"]
-    draft_grouped, _ = build_draft_files(draft_dataset, canonical_legacy)
+    draft_grouped, _ = build_draft_files(draft_dataset, canonical)
     draft_payloads, draft_partitions_preserved = _draft_payloads(
         repo_root,
         draft_dataset,
@@ -143,7 +180,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         observation_season,
     )
     historical_claims, historical_resolution_conflicts, historical_mapping_stats = (
-        build_historical_app_mapping_claims(repo_root, canonical_legacy)
+        build_historical_app_mapping_claims(repo_root, canonical)
     )
     provider_mapping_payload = extend_provider_mapping_payload(
         provider_mapping_payload,
@@ -158,7 +195,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     if combine_dataset is not None:
         combine_grouped, combine_conflicts = build_combine_files(
             combine_dataset,
-            canonical_legacy,
+            canonical,
             draft_payloads,
         )
         combine_payloads, combine_partitions_preserved = _combine_payloads(
