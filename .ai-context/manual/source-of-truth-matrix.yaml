@@ -1,4 +1,4 @@
-schemaVersion: 1
+schemaVersion: 2
 
 domain: source-of-truth-matrix
 
@@ -43,9 +43,15 @@ principles:
     fact. Conflicts remain fail-closed or unresolved according to the owning
     identity/source contract.
   identityFirst: >
-    Provider IDs are mappings/evidence. Canonical NFL person facts resolve to
-    NFLPlayerID through explicit provider mappings. Display names are never an
+    Provider IDs are mappings/evidence. Canonical NFL-domain person facts resolve
+    to CanonicalPlayerID through explicit provider mappings. CanonicalPlayerID is
+    issued by fantasy-app, not by the NFL or another provider; source-data/nfl is
+    the domain path, not an issuer namespace. Display names are never an
     authoritative join key.
+  futureOfficialNflId: >
+    If the NFL later exposes a stable official player identifier, model it as an
+    external/provider mapping to CanonicalPlayerID. It does not replace or rename
+    the existing canonical identity.
   historyIsSticky: >
     Finalized historical facts stay bound to the identity and source evidence used
     when they were canonically materialized. Current provider mappings do not
@@ -73,7 +79,7 @@ matrix:
     facts:
       - permanent real-person identity
       - historical provider-ID mappings
-    durableCanonicalPrimary: source-data/nfl/identities using NFLPlayerID
+    durableCanonicalPrimary: source-data/nfl/identities using CanonicalPlayerID in the fantasy-app namespace
     currentRuntimePrimary: public/data/Players.json uses Sleeper player_id as Players.ID
     secondary:
       - nflverse players / ff-player-ids provider mappings
@@ -82,9 +88,10 @@ matrix:
       - ESPN
       - PFR
       - PFF
+      - future official NFL-issued ID if one becomes available
       - other corroborated provider IDs
     fallback: none
-    identityKey: NFLPlayerID
+    identityKey: CanonicalPlayerID
     providerKeys:
       - Sleeper player_id
       - Tank01 playerID
@@ -93,10 +100,11 @@ matrix:
       - PFR ID
     lifecycle: dynamic identity graph with historical season-level mapping validity
     historyCoverage: provider-mapping coverage varies by provider and season
-    migrationState: canonical-active-app-id-unchanged
+    migrationState: canonical-v2-active-app-id-unchanged
     guards:
       - no display-name identity joins
       - overlapping provider-ID collisions are quarantined
+      - existing CanonicalPlayerID values remain stable through the legacy NFLPlayerID field-name migration
       - public/data/Players.json[].ID remains Sleeper until a separate app-contract migration is approved
 
   nflPlayerProfile:
@@ -112,7 +120,7 @@ matrix:
       - nflverse players
       - existing provider mappings
     fallback: none-defined
-    identityKey: NFLPlayerID for any future canonical profile
+    identityKey: CanonicalPlayerID for any future canonical profile
     lifecycle: dynamic
     historyCoverage: not-consolidated
     migrationState: field-level-consolidation-not-yet-approved
@@ -133,13 +141,13 @@ matrix:
     secondary:
       - provider raw draft evidence retained as provenance
     fallback: none
-    identityKey: season + NFLPlayerID for player draft fact; canonical draft row identity remains season/pick scoped
+    identityKey: season + CanonicalPlayerID for player draft fact; canonical draft row identity remains season/pick scoped
     lifecycle: immutable-history
     historyCoverage: canonical materialization currently 1980-2026
     freshness: discover new/current partition; prior seasons frozen in normal mode
     migrationState: canonical-active
     guards:
-      - historical repair requires explicit force
+      - historical repair requires explicit force except schema-only canonical field migration
       - NFL Draft facts must never be confused with league fantasy Drafts.json ownership
 
   nflCombine:
@@ -155,7 +163,7 @@ matrix:
       - PFR ID as authoritative identity mapping for this dataset
       - upstream draft fields retained only as SourceDraftEvidence
     fallback: none
-    identityKey: NFLPlayerID when uniquely resolved through PFR mapping
+    identityKey: CanonicalPlayerID when uniquely resolved through PFR mapping
     lifecycle: immutable-history
     historyCoverage: 2000-2026 in current canonical materialization
     freshness: discover new/current partition; prior seasons frozen in normal mode
@@ -243,7 +251,7 @@ matrix:
     fallback:
       - Tank01 as optional low-latency source while nflverse has not published a just-finished game
       - Tank01 for legacy Games.json until that read model is redesigned
-    identityKey: GSIS -> NFLPlayerID
+    identityKey: GSIS -> CanonicalPlayerID
     gameKey: nflverse game_id
     lifecycle: seasonal-finalizable
     historyCoverage: 1999-present
@@ -263,7 +271,7 @@ matrix:
     secondary:
       - nflverse fantasy_points_ppr may be used as validation/corroboration
     fallback: Tank01 only during legacy/low-latency runtime
-    identityKey: NFLPlayerID + season + week/game
+    identityKey: CanonicalPlayerID + season + week/game
     lifecycle: derived-seasonal
     historyCoverage: follows player-stats coverage from 1999
     migrationState: evaluated-derived-rule-needs-regression-before-app-switch
@@ -285,7 +293,7 @@ matrix:
     fallback:
       - Tank01 as optional low-latency source if PFR/nflverse has not published a just-finished game
       - Tank01 for legacy Games.json during migration
-    identityKey: PFR ID -> NFLPlayerID
+    identityKey: PFR ID -> CanonicalPlayerID
     gameKey: nflverse game_id / PFR game mapping
     lifecycle: seasonal-finalizable
     historyCoverage: 2012-present
@@ -307,7 +315,7 @@ matrix:
     secondary:
       - nflverse season rosters for season-level context
     fallback: none-defined for canonical finalized history
-    identityKey: GSIS -> NFLPlayerID
+    identityKey: GSIS -> CanonicalPlayerID
     lifecycle: seasonal-finalizable
     historyCoverage: 2002-present
     freshness: roster pipeline daily around 07:00 UTC
@@ -325,7 +333,7 @@ matrix:
     secondary:
       - weekly-rosters where week-specific membership is required
     fallback: none-defined
-    identityKey: GSIS -> NFLPlayerID
+    identityKey: GSIS -> CanonicalPlayerID
     lifecycle: seasonal-finalizable
     historyCoverage: 1920-present
     freshness: daily around 07:00 UTC
@@ -344,7 +352,7 @@ matrix:
     currentRuntimePrimary: Sleeper /players/nfl in RequestPlayers.ps1
     secondary: none
     fallback: none
-    identityKey: Sleeper player_id mapped to NFLPlayerID where cross-provider identity is required
+    identityKey: Sleeper player_id mapped to CanonicalPlayerID where cross-provider identity is required
     lifecycle: dynamic platform state
     historyCoverage: no canonical historical guarantee from current app path
     freshness: Sleeper recommends persisting player map and refreshing no more than about daily
@@ -363,7 +371,7 @@ matrix:
     secondary:
       - Sleeper injury fields may be corroborating platform metadata but have not been accepted as canonical injury source
     fallback: none-accepted
-    identityKey: Tank01 playerID -> NFLPlayerID / current Sleeper app mapping
+    identityKey: Tank01 playerID -> CanonicalPlayerID / current Sleeper app mapping
     lifecycle: dynamic
     historyCoverage: no accepted canonical current+historical injury contract
     freshness: follows current Tank01 player-list refresh
@@ -381,7 +389,7 @@ matrix:
       - nflverse depth-charts is a candidate snapshot source pending separate evaluation
       - other depth-chart providers may be evaluated separately
     fallback: none-accepted
-    identityKey: provider ID -> NFLPlayerID
+    identityKey: provider ID -> CanonicalPlayerID
     lifecycle: snapshot when canonicalized
     historyCoverage: not-consolidated
     freshness: nflverse candidate updates daily and uses timestamped snapshots from 2025 onward
@@ -398,7 +406,7 @@ matrix:
     secondary:
       - nflverse contracts is registered as a planned candidate dataset
     fallback: none
-    identityKey: provider ID -> NFLPlayerID
+    identityKey: provider ID -> CanonicalPlayerID
     lifecycle: snapshot
     historyCoverage: not-evaluated
     freshness: not-consolidated
@@ -433,7 +441,7 @@ matrix:
     secondary:
       - canonical weekly/season rosters may provide membership evidence after activation
     fallback: none-defined
-    identityKey: NFLPlayerID / current provider mappings
+    identityKey: CanonicalPlayerID / current provider mappings
     lifecycle: dynamic
     historyCoverage: not-consolidated
     migrationState: requires-separate-field-definition-during-player-readmodel-migration
