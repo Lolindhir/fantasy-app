@@ -137,6 +137,10 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertIn("Sleeper", conflict["SuppressedIDs"])
 
             canonical = json.loads((root / "source-data/nfl/identities/players.json").read_text())
+            self.assertEqual(common_mod.CANONICAL_SCHEMA_VERSION, canonical["SchemaVersion"])
+            self.assertEqual("CanonicalPlayerID", canonical["IdentityPolicy"]["InternalKey"])
+            self.assertEqual("fantasy-app", canonical["IdentityPolicy"]["CanonicalPlayerIDNamespace"])
+            self.assertTrue(canonical["IdentityPolicy"]["CanonicalPlayerIDIsApplicationDefined"])
             by_sleeper = {row["IDs"]["Sleeper"]: row for row in canonical["Players"] if row["IDs"].get("Sleeper")}
             self.assertEqual("T1", by_sleeper["S1"]["IDs"]["Tank01"])
             self.assertEqual("41405", by_sleeper["S1"]["IDs"]["NFL"])
@@ -148,10 +152,19 @@ class NflSourceDataTests(unittest.TestCase):
             quarantined = next(row for row in canonical["Players"] if row["IDs"].get("MFL") == "99")
             self.assertNotIn("Sleeper", quarantined["IDs"])
             self.assertNotIn("GSIS", quarantined["IDs"])
+            self.assertTrue(all("CanonicalPlayerID" in row for row in canonical["Players"]))
+            self.assertTrue(all("NFLPlayerID" not in row for row in canonical["Players"]))
 
             draft = json.loads((root / "source-data/nfl/draft/2025.json").read_text())
-            self.assertEqual(by_sleeper["S1"]["NFLPlayerID"], draft["Picks"][0]["NFLPlayerID"])
+            self.assertEqual(by_sleeper["S1"]["CanonicalPlayerID"], draft["Picks"][0]["CanonicalPlayerID"])
+            self.assertNotIn("NFLPlayerID", draft["Picks"][0])
             self.assertEqual(1, draft["Picks"][0]["PositionInRound"])
+
+            second = materialize(root, datasets)
+            self.assertFalse(second["identityChanged"])
+            self.assertFalse(second["providerMappingsChanged"])
+            self.assertEqual(0, second["draftFilesChanged"])
+            self.assertFalse(second["auditChanged"])
 
     def test_write_json_if_changed_avoids_timestampless_churn(self):
         with tempfile.TemporaryDirectory() as tmp:
