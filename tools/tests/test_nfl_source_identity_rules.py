@@ -5,11 +5,11 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
+from nfl_source_data_lib.canonical_identity import provider_mapping_lookup
 from nfl_source_data_lib.identity import (
     IdentityCandidate,
     _can_merge_on_anchor,
     _seed_for_component,
-    provider_mapping_lookup,
 )
 
 
@@ -58,14 +58,14 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
                 {
                     "Provider": "Sleeper",
                     "ExternalID": "1000",
-                    "NFLPlayerID": "NFLP-old",
+                    "CanonicalPlayerID": "NFLP-old",
                     "FirstObservedSeason": 2024,
                     "LastObservedSeason": 2028,
                 },
                 {
                     "Provider": "Sleeper",
                     "ExternalID": "1000",
-                    "NFLPlayerID": "NFLP-new",
+                    "CanonicalPlayerID": "NFLP-new",
                     "FirstObservedSeason": 2036,
                     "LastObservedSeason": 2038,
                 },
@@ -82,7 +82,7 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
                 {
                     "Provider": "Sleeper",
                     "ExternalID": "133",
-                    "NFLPlayerID": "NFLP-a",
+                    "CanonicalPlayerID": "NFLP-a",
                     "FirstObservedSeason": 2026,
                     "LastObservedSeason": 2026,
                 }
@@ -91,7 +91,7 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
                 {
                     "Provider": "Sleeper",
                     "ExternalID": "133",
-                    "NFLPlayerIDs": ["NFLP-a", "NFLP-b"],
+                    "CanonicalPlayerIDs": ["NFLP-a", "NFLP-b"],
                     "FirstObservedSeason": 2026,
                     "LastObservedSeason": 2026,
                     "Status": "ambiguous",
