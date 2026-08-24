@@ -34,7 +34,7 @@ def _draft_index(
     index: dict[tuple[int, str], dict[str, Any]] = {}
     for season, payload in sorted(draft_payloads.items()):
         for pick in payload.get("Picks", []):
-            internal_id = clean(pick.get("NFLPlayerID"))
+            internal_id = clean(pick.get("CanonicalPlayerID"))
             if not internal_id:
                 continue
             candidate = {
@@ -168,7 +168,7 @@ def build_combine_files(
             if differences:
                 conflicts.append({
                     "Season": season,
-                    "NFLPlayerID": internal_id,
+                    "CanonicalPlayerID": internal_id,
                     "PFR": pfr,
                     "PlayerName": clean(row.get("player_name")),
                     "Differences": differences,
@@ -186,7 +186,7 @@ def build_combine_files(
         }
 
         grouped[season].append({
-            "NFLPlayerID": internal_id,
+            "CanonicalPlayerID": internal_id,
             "IdentityResolution": identity_resolution,
             "PlayerName": clean(row.get("player_name")),
             "Position": clean(row.get("pos")),
@@ -203,7 +203,7 @@ def build_combine_files(
 
     for records in grouped.values():
         records.sort(key=lambda item: (
-            item.get("NFLPlayerID") or "~",
+            item.get("CanonicalPlayerID") or "~",
             item.get("SourceIDs", {}).get("PFR") or "~",
             item.get("PlayerName") or "~",
             item.get("Position") or "~",
