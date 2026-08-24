@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .canonical_identity import identity_lookup
 from .common import clean, load_json, normalize_legacy_canonical_player_fields
-from .identity import identity_lookup
 
 _SEASON_FILE = re.compile(r"Players_(\d{4})\.json$")
 _MIN_HISTORICAL_CORROBORATORS = 2
