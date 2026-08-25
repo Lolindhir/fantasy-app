@@ -1,0 +1,261 @@
+name: REPO • Project • Fields Sync
+
+run-name: REPO • Project • Fields Sync • #${{ github.event.issue.number || inputs.issue_number }}
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue number to synchronize
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-fields-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  sync_fields:
+    name: Sync Project fields
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+      PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+
+    steps:
+      - name: Synchronize Status and Priority
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          fail() {
+            echo "::error::$1"
+            exit 1
+          }
+
+          [[ -n "${GH_TOKEN:-}" ]] || fail "Missing repository secret PROJECTS_TOKEN."
+          [[ -n "${PROJECT_NUMBER:-}" ]] || fail "Missing repository variable PROJECT_NUMBER."
+          [[ -n "${ISSUE_NUMBER:-}" ]] || fail "Could not resolve an issue number."
+
+          issue_json="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}")"
+          issue_node_id="$(jq -r '.node_id' <<< "${issue_json}")"
+          issue_state="$(jq -r '.state' <<< "${issue_json}")"
+
+          mapfile -t status_labels < <(
+            jq -r '.labels[].name | select(startswith("status:"))' <<< "${issue_json}"
+          )
+          mapfile -t priority_labels < <(
+            jq -r '.labels[].name | select(startswith("priority:"))' <<< "${issue_json}"
+          )
+
+          (( ${#status_labels[@]} <= 1 )) \
+            || fail "Issue #${ISSUE_NUMBER} has multiple status labels: ${status_labels[*]}"
+          (( ${#priority_labels[@]} <= 1 )) \
+            || fail "Issue #${ISSUE_NUMBER} has multiple priority labels: ${priority_labels[*]}"
+
+          if [[ "${issue_state}" == "closed" ]]; then
+            status_value="Done"
+          elif (( ${#status_labels[@]} == 0 )); then
+            status_value="Backlog"
+          else
+            case "${status_labels[0]}" in
+              status:ready) status_value="Ready" ;;
+              status:in-progress) status_value="In progress" ;;
+              status:blocked) status_value="Blocked" ;;
+              *) fail "Unsupported status label: ${status_labels[0]}" ;;
+            esac
+          fi
+
+          priority_value=""
+          if (( ${#priority_labels[@]} == 1 )); then
+            case "${priority_labels[0]}" in
+              priority:p0) priority_value="P0" ;;
+              priority:p1) priority_value="P1" ;;
+              priority:p2) priority_value="P2" ;;
+              priority:p3) priority_value="P3" ;;
+              priority:p4) priority_value="P4" ;;
+              *) fail "Unsupported priority label: ${priority_labels[0]}" ;;
+            esac
+          fi
+
+          project_json="$(
+            gh api graphql \
+              -F number="${PROJECT_NUMBER}" \
+              -f query='
+                query($number: Int!) {
+                  viewer {
+                    projectV2(number: $number) {
+                      id
+                      title
+                      fields(first: 100) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }'
+          )"
+
+          project_id="$(jq -r '.data.viewer.projectV2.id // empty' <<< "${project_json}")"
+          project_title="$(jq -r '.data.viewer.projectV2.title // empty' <<< "${project_json}")"
+          [[ -n "${project_id}" ]] \
+            || fail "Could not resolve viewer Project #${PROJECT_NUMBER}."
+
+          field_id() {
+            jq -r --arg name "$1" '
+              .data.viewer.projectV2.fields.nodes[]
+              | select(.name == $name)
+              | .id
+            ' <<< "${project_json}" | head -n 1
+          }
+
+          option_id() {
+            local field="$1"
+            local value="$2"
+            jq -r --arg field "${field}" --arg value "${value}" '
+              .data.viewer.projectV2.fields.nodes[]
+              | select(.name == $field)
+              | .options[]
+              | select(.name == $value)
+              | .id
+            ' <<< "${project_json}" | head -n 1
+          }
+
+          status_field_id="$(field_id "Status")"
+          priority_field_id="$(field_id "Priority")"
+          [[ -n "${status_field_id}" ]] \
+            || fail "Project '${project_title}' has no single-select field named Status."
+          [[ -n "${priority_field_id}" ]] \
+            || fail "Project '${project_title}' has no single-select field named Priority."
+
+          status_option_id="$(option_id "Status" "${status_value}")"
+          [[ -n "${status_option_id}" ]] \
+            || fail "Status option '${status_value}' does not exist."
+
+          priority_option_id=""
+          if [[ -n "${priority_value}" ]]; then
+            priority_option_id="$(option_id "Priority" "${priority_value}")"
+            [[ -n "${priority_option_id}" ]] \
+              || fail "Priority option '${priority_value}' does not exist."
+          fi
+
+          resolve_item_id() {
+            local result
+            result="$(
+              gh api graphql \
+                -f issueId="${issue_node_id}" \
+                -f query='
+                  query($issueId: ID!) {
+                    node(id: $issueId) {
+                      ... on Issue {
+                        projectItems(first: 100) {
+                          nodes { id project { id } }
+                        }
+                      }
+                    }
+                  }'
+            )"
+            jq -r --arg project "${project_id}" '
+              .data.node.projectItems.nodes[]
+              | select(.project.id == $project)
+              | .id
+            ' <<< "${result}" | head -n 1
+          }
+
+          item_id="$(resolve_item_id)"
+          if [[ -z "${item_id}" ]]; then
+            echo "Issue is not in '${project_title}' yet; adding it."
+
+            if add_json="$(
+              gh api graphql \
+                -f projectId="${project_id}" \
+                -f contentId="${issue_node_id}" \
+                -f query='
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(
+                      input: { projectId: $projectId, contentId: $contentId }
+                    ) {
+                      item { id }
+                    }
+                  }' 2>/tmp/project-add-error.log
+            )"; then
+              item_id="$(
+                jq -r '.data.addProjectV2ItemById.item.id // empty' <<< "${add_json}"
+              )"
+            else
+              echo "Project add raced with auto-add; resolving the item again."
+              sleep 2
+              item_id="$(resolve_item_id)"
+              if [[ -z "${item_id}" ]]; then
+                cat /tmp/project-add-error.log >&2
+                fail "Could not add or resolve the Project item."
+              fi
+            fi
+          fi
+
+          set_single_select() {
+            local field_id="$1"
+            local option_id="$2"
+            gh api graphql \
+              -f projectId="${project_id}" \
+              -f itemId="${item_id}" \
+              -f fieldId="${field_id}" \
+              -f optionId="${option_id}" \
+              -f query='
+                mutation(
+                  $projectId: ID!
+                  $itemId: ID!
+                  $fieldId: ID!
+                  $optionId: String!
+                ) {
+                  updateProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                      value: { singleSelectOptionId: $optionId }
+                    }
+                  ) {
+                    projectV2Item { id }
+                  }
+                }' \
+              --silent
+          }
+
+          set_single_select "${status_field_id}" "${status_option_id}"
+
+          if [[ -n "${priority_option_id}" ]]; then
+            set_single_select "${priority_field_id}" "${priority_option_id}"
+          else
+            gh api graphql \
+              -f projectId="${project_id}" \
+              -f itemId="${item_id}" \
+              -f fieldId="${priority_field_id}" \
+              -f query='
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
+                  clearProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                    }
+                  ) {
+                    projectV2Item { id }
+                  }
+                }' \
+              --silent
+          fi
+
+          echo "Synchronized Issue #${ISSUE_NUMBER}: Status=${status_value}, Priority=${priority_value:-<clear>}."
