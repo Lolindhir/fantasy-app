@@ -58,7 +58,10 @@ export class TeamsPageComponent implements OnInit {
     this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ league, teams }) => {
       this.league = league;
       this.cards = [...teams]
-        .sort((a, b) => a.TeamID - b.TeamID)
+        .sort((a, b) =>
+          a.Placements.AllTime.Playoffs.Place - b.Placements.AllTime.Playoffs.Place
+          || a.TeamID - b.TeamID
+        )
         .map(team => ({
           team,
           salary: buildTeamSalarySummary(team, league),
