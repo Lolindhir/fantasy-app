@@ -14,6 +14,7 @@ principles:
   - Routine Issue bookkeeping should normally remain invisible to the user unless it fails, needs a decision or the user asks for status.
   - Issue synchronization is a mandatory lifecycle gate after every commit associated with active Issue-tracked work.
   - A repository work step is not post-commit complete while its active Issue body still describes a pre-commit state.
+  - A successful merge or native GitHub auto-closure does not complete the agent lifecycle while the Issue body still describes a pre-merge state or conflicts with the native Issue state.
 
 issueGranularity:
   preferredModel: flat-checklist-issues
@@ -43,6 +44,7 @@ bodyContract:
     - Before handoff, a longer pause, chat end or a major work-phase transition, verify that the body reflects the actual current state.
     - If an older comment conflicts with a later updated body, the current body wins unless explicitly documented otherwise.
     - The instruction to keep routine Issue bookkeeping invisible to the user changes reporting only; it never permits skipping the synchronization itself.
+    - Native GitHub open/closed state does not replace the body contract; after merge or auto-closure, reconcile the Issue body and native state before treating the lifecycle transition as complete.
 
 lifecycle:
   start:
@@ -67,16 +69,19 @@ lifecycle:
     - Keep the Issue open when the PR is only partial.
     - After creating or materially updating a Pull Request, add or refresh the PR reference and resulting validation/status information in the Issue body before treating that transition as complete.
   postMerge:
-    - Verify the merge actually succeeded.
-    - Re-evaluate all acceptance criteria.
-    - Close as completed only when the full Issue is done.
-    - Otherwise leave it open and update the body handoff.
+    - Treat post-merge Issue reconciliation as a mandatory lifecycle gate after every authorized successful merge associated with Issue-tracked work.
+    - Verify the merge actually succeeded and fetch the resulting Pull Request and Issue state even when a closing reference such as `Fixes #N` has already closed the Issue automatically.
+    - Re-evaluate all acceptance criteria against the merged result and available validation evidence.
+    - Update the Issue body to the actual merged state, including completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
+    - If the full Issue is complete, ensure the Issue is closed with state reason `completed` and remove active work-status labels unless intentionally retained for history.
+    - If GitHub auto-closed the Issue but any acceptance criterion or meaningful scope remains incomplete, reopen the Issue, restore the appropriate active status label and update the body handoff.
+    - Do not report the merge/close lifecycle as complete while the Issue body still describes a pre-merge state or otherwise conflicts with the native Issue state.
   regression:
     - Reopen an old Issue when the same original scope regresses.
     - Create a linked new Issue for a distinct new problem.
   syncFailure:
     - Inform the user transparently.
-    - Do not silently continue to a later lifecycle transition such as PR creation/update, handoff or completion reporting while synchronization is known to be stale or failed.
+    - Do not silently continue to a later lifecycle transition such as PR creation/update, post-merge completion, handoff or completion reporting while synchronization is known to be stale or failed.
     - Do not silently fall back to a Markdown TODO file.
     - Do not claim tracking is current if Issue synchronization failed.
 
