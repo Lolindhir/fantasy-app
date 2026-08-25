@@ -4,6 +4,7 @@
     [class.chip]="variant === 'chip'"
     [class.round-pill]="variant === 'round-pill'"
     [class.traded-pick]="isTradedPick"
+    [ngStyle]="pillStyle"
     type="button">
     {{ label }}
   </button>
@@ -12,7 +13,8 @@
     class="draft-pick-pill"
     [class.chip]="variant === 'chip'"
     [class.round-pill]="variant === 'round-pill'"
-    [class.traded-pick]="isTradedPick">
+    [class.traded-pick]="isTradedPick"
+    [ngStyle]="pillStyle">
     {{ label }}
   </span>
 }
