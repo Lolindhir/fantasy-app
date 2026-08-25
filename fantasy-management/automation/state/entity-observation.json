@@ -2,10 +2,10 @@
   "schema_version": 1,
   "job_id": "entity-observation",
   "status": "pending",
-  "revision": 15,
-  "last_evaluated_at": "2026-08-24T07:35:00+01:00",
+  "revision": 16,
+  "last_evaluated_at": "2026-08-25T09:53:00+01:00",
   "last_successful_run": "2026-08-22T18:05:15.565068Z",
-  "last_processed_key": "interactive-approved-baseline:daily-operations:2026-08-24",
+  "last_processed_key": "interactive-approved-baseline:daily-operations:2026-08-25",
   "last_input_fingerprints": {
     "fantasy-management/automation/jobs/entity-observation.json": "c81458aa03c3f5c8bfe20c7123f1ab635f0f6d90",
     "fantasy-management/automation/profiles/injury-status.json": "1455ca0f78a7e976f725406a2964a39b61a0a4e2",
@@ -124,6 +124,12 @@
       "type": "evaluated",
       "severity": "info",
       "summary": "Nach interaktiver Freigabe wurde George Kittle als dauerhaftes Injury-Watch-Target mit bestätigter Rückkehr-von-PUP-Baseline aufgenommen und De'Zhaun Striblings Schulter-Baseline auf die Rückkehr ins Non-Contact-Training aktualisiert."
+    },
+    {
+      "at": "2026-08-25T09:53:00+01:00",
+      "type": "evaluated",
+      "severity": "info",
+      "summary": "Nach interaktiver Freigabe wurden die Daily-Operations-Injury-Baselines aktualisiert: Chris Bell trainiert ohne Non-Contact-Beschränkung vollständig in Team-Drills; Malik Nabers arbeitet ohne rotes Non-Contact-Jersey in 7-on-7 und 11-on-11 bei weiterhin kontrollierter Kontaktbelastung."
     }
   ],
   "job_state": {
@@ -351,31 +357,32 @@
         "target_set_ids": [
           "managed-roster-health"
         ],
-        "last_checked_at": "2026-08-18T09:40:00+01:00",
+        "last_checked_at": "2026-08-25T09:53:00+01:00",
         "status": "active",
         "observations": {
           "injury-status": {
             "status": "baseline",
-            "last_checked_at": "2026-08-18T09:40:00+01:00",
-            "state_hash": "aa61d5d82d42d1ffddd89dd64c2ef79ea4a3b291e042b5f294d9cda9521c7e80",
+            "last_checked_at": "2026-08-25T09:53:00+01:00",
+            "state_hash": "c188c5e46640de19c6548310da38720ae6e818144fb01288e1d18cf2c0aeb5be",
             "material_state": {
-              "injury_summary": "Nach fortgeschrittener ACL-Reha wurde Chris Bell am 17. August vom Active/NFI aktiviert und kehrte ins reguläre Mannschaftstraining zurück. Beim ersten Training trug er weiterhin ein rotes Non-Contact-Jersey; die vollständige Contact-/Game-Freigabe ist noch nicht bestätigt.",
+              "injury_summary": "Chris Bell trainierte am 24. August im Rahmen seiner ACL-Reha erstmals vollständig ohne rotes Non-Contact-Jersey und nahm voll an Team-Drills teil. Damit ist die bisherige Non-Contact-Beschränkung aufgehoben; die tatsächliche Game-/Week-1-Freigabe bleibt der nächste belastbare Checkpoint.",
               "availability_class": "limited",
-              "designation": "acl_rehab_activated_from_nfi_non_contact",
+              "designation": "acl_rehab_full_practice_without_non_contact_restriction",
               "reserve_status": "active",
-              "practice_status": "limited",
+              "practice_status": "full",
               "return_timeline": {
-                "status": "activated_from_nfi_limited_non_contact_practice",
-                "next_checkpoint": "Vollständige Contact-Freigabe beziehungsweise uneingeschränkte Team-Trainingsbeteiligung"
+                "status": "full_practice_without_non_contact_restriction",
+                "next_checkpoint": "Bestätigte Game-/Week-1-Freigabe"
               },
               "confidence": "high"
             },
             "confidence": "high",
             "source_fingerprints": [
               "official_team:miamidolphins.com:chris-bell-activated-from-nfi:observed-2026-08-17",
-              "practice_report:miami:chris-bell-non-contact:observed-2026-08-17"
+              "practice_report:miami:chris-bell-non-contact:observed-2026-08-17",
+              "practice_report:miami:chris-bell-full-participant-no-non-contact-jersey:observed-2026-08-24"
             ],
-            "last_material_change_at": null,
+            "last_material_change_at": "2026-08-25T09:53:00+01:00",
             "last_error": null
           }
         }
@@ -385,31 +392,33 @@
         "target_set_ids": [
           "managed-roster-health"
         ],
-        "last_checked_at": "2026-08-18T09:40:00+01:00",
+        "last_checked_at": "2026-08-25T09:53:00+01:00",
         "status": "active",
         "observations": {
           "injury-status": {
             "status": "baseline",
-            "last_checked_at": "2026-08-18T09:40:00+01:00",
-            "state_hash": "62a429e53435deb7521ee627ffd11d1d008d2bcb27a1d3d4197afa3e7a8e3804",
+            "last_checked_at": "2026-08-25T09:53:00+01:00",
+            "state_hash": "bd829e5c9e8c63f4c8fc8e47107a214718c8d02929274c7bdb1bbe1e939b211a",
             "material_state": {
-              "injury_summary": "Malik Nabers nahm am 17. August erstmals seit ACL-/Meniskusverletzung wieder an Full-Speed-Live-Teamdrills in 11-on-11 und 7-on-7 teil und fing mehrere Bälle. Er trug weiterhin ein Non-Contact-Jersey und arbeitete unter engem Rep-Limit; eine vollständige Contact- oder Week-1-Freigabe ist noch nicht bestätigt.",
+              "injury_summary": "Malik Nabers legte am 24. August im weiteren Verlauf seiner ACL-/Meniskus-Reha erstmals das rote Non-Contact-Jersey ab und nahm im normalen Jersey an 7-on-7- und 11-on-11-Teamdrills teil. Die Kontaktbelastung bleibt kontrolliert; eine vollständig uneingeschränkte Trainings- oder Game-Freigabe ist noch nicht bestätigt.",
               "availability_class": "limited",
-              "designation": "acl_meniscus_rehab_returned_to_full_speed_team_periods_non_contact",
+              "designation": "acl_meniscus_rehab_team_drills_without_non_contact_jersey",
               "reserve_status": "active",
               "practice_status": "limited",
               "return_timeline": {
-                "status": "returned_to_full_speed_team_periods_non_contact",
-                "next_checkpoint": "Vollständige Contact-Freigabe, Aufhebung des Rep-Limits oder bestätigte Week-1-Verfügbarkeit"
+                "status": "team_drills_without_non_contact_jersey_contact_load_still_controlled",
+                "next_checkpoint": "Vollständige Trainings-/Game-Freigabe ohne Belastungsbeschränkung"
               },
               "confidence": "high"
             },
             "confidence": "high",
             "source_fingerprints": [
               "official_team:giants.com:malik-nabers-full-speed-team-drills:observed-2026-08-17",
-              "practice_report:giants:malik-nabers-non-contact-rep-limit:observed-2026-08-17"
+              "practice_report:giants:malik-nabers-non-contact-rep-limit:observed-2026-08-17",
+              "official_team:giants.com:malik-nabers-no-non-contact-jersey-team-drills:observed-2026-08-24",
+              "practice_report:giants:malik-nabers-normal-jersey-7on7-11on11:observed-2026-08-24"
             ],
-            "last_material_change_at": null,
+            "last_material_change_at": "2026-08-25T09:53:00+01:00",
             "last_error": null
           }
         }
