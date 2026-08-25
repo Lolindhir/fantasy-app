@@ -13,18 +13,22 @@ describe('team roster view utilities', () => {
     expect(isCombinedRankingAvailable(3)).toBeTrue();
   });
 
-  it('groups roster status with IR taking precedence over Taxi', () => {
+  it('groups the resolved roster status buckets independently', () => {
     const roster = makePlayer('roster', { salary: 10 });
-    const taxi = makePlayer('taxi', { salary: 8, taxi: true });
-    const ir = makePlayer('ir', { salary: 7, reserve: true });
-    const taxiIr = makePlayer('taxi-ir', { salary: 6, taxi: true, reserve: true });
+    const taxi = makePlayer('taxi', { salary: 8 });
+    const ir = makePlayer('ir', { salary: 7 });
 
-    const groups = buildRosterPlayerGroups([roster, taxi, ir, taxiIr], 'rosterStatus', 'salary');
+    const groups = buildRosterPlayerGroups(
+      [roster, taxi, ir],
+      'rosterStatus',
+      'salary',
+      { roster: [roster], taxi: [taxi], ir: [ir] }
+    );
 
     expect(groups.map(group => group.key)).toEqual(['roster', 'taxi', 'ir']);
     expect(groups[0].players.map(player => player.ID)).toEqual(['roster']);
     expect(groups[1].players.map(player => player.ID)).toEqual(['taxi']);
-    expect(groups[2].players.map(player => player.ID)).toEqual(['ir', 'taxi-ir']);
+    expect(groups[2].players.map(player => player.ID)).toEqual(['ir']);
   });
 
   it('groups positions in football order and sorts each group independently', () => {
@@ -82,6 +86,17 @@ describe('team roster view utilities', () => {
 
     expect(sorted.map(player => player.ID)).toEqual(['current', 'zero']);
   });
+
+  it('sorts age in both ascending and descending direction', () => {
+    const younger = makePlayer('younger', { age: 22 });
+    const middle = makePlayer('middle', { age: 27 });
+    const older = makePlayer('older', { age: 31 });
+
+    expect(sortRosterPlayers([middle, older, younger], 'ageAsc').map(player => player.ID))
+      .toEqual(['younger', 'middle', 'older']);
+    expect(sortRosterPlayers([middle, older, younger], 'ageDesc').map(player => player.ID))
+      .toEqual(['older', 'middle', 'younger']);
+  });
 });
 
 interface PlayerOptions {
@@ -89,8 +104,6 @@ interface PlayerOptions {
   projected?: number;
   position?: string;
   age?: number;
-  taxi?: boolean;
-  reserve?: boolean;
   currentRank?: number;
   previousRank?: number;
 }
@@ -107,8 +120,6 @@ function makePlayer(id: string, options: PlayerOptions = {}): Player {
     Salary: options.salary ?? 0,
     SalaryProjected: options.projected ?? 0,
     Age: options.age ?? 25,
-    Taxi: options.taxi ?? false,
-    Reserve: options.reserve ?? false,
     Stats: { Ranking: ranking }
   } as unknown as Player;
 }
