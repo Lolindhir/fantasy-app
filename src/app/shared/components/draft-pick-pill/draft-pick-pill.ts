@@ -2,7 +2,7 @@ import { NgStyle } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 export type DraftPickPillVariant = 'chip' | 'round-pill';
-export type DraftPickPillStyle = Record<string, string | number | null | undefined>;
+export type DraftPickPillStyle = Record<string, any>;
 
 @Component({
   selector: 'app-draft-pick-pill',
