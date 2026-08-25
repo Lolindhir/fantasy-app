@@ -646,3 +646,42 @@ decisions:
         - The app temporarily carries both the new Teams view and a legacy salary view.
         - Some Drafts feature-local components may need a focused move to shared when a real cross-feature consumer appears.
         - Legacy removal is blocked until the later simulator reaches scenario parity.
+
+  - id: ADR-028
+    title: GitHub Issues are the canonical operative work-tracking system
+    status: accepted
+    context: >
+      Operative repository work was previously distributed across root and
+      Fantasy Management Markdown TODO files plus chat context. That made
+      prioritization, mobile review, continuity across chats and handoff between
+      agents or humans fragile, while the TODO files also accumulated durable
+      architectural context that belonged in canonical documentation.
+    decision: >
+      Use GitHub Issues as the canonical operative source for backlog, progress,
+      current handoff and retrospective work history. Keep durable architecture,
+      domain, source and Fantasy Management knowledge in the existing canonical
+      repository documentation. Treat the current Issue body as the canonical
+      mutable work state; comments are supplemental history or communication and
+      must not be required to reconstruct current work. Prefer flat coherent
+      Issues with internal Markdown checklists for multi-step deliverables;
+      parent/sub-issue relationships are optional. Do not maintain Markdown TODO
+      files in parallel after migration. Commits and Pull Requests remain the
+      implementation/change history, while the GitHub Project is a presentation
+      and prioritization cockpit. Label semantics, mutable P0-P4 priorities and
+      work-tracking drift governance are defined in
+      .ai-context/manual/work-tracking.yaml.
+    rationale: >
+      This keeps operative state searchable, filterable, mobile-readable and
+      handoff-safe without mixing temporary backlog with durable architecture
+      knowledge or depending on one chat session. A documented label contract
+      also lets agents validate GitHub metadata against repository-defined meaning.
+    consequences:
+      positive:
+        - Work can continue across chats, AI models and humans from the Issue body.
+        - Priorities and work status can change without rewriting durable architecture docs.
+        - Open and historical work remains searchable after Markdown TODO retirement.
+        - Durable repository documentation keeps its established ownership boundaries.
+        - Label and Project drift can be detected during structural audits.
+      negative:
+        - GitHub Issue metadata and repository documentation must be kept semantically aligned.
+        - Retrospectively migrated Issues have migration-time GitHub created_at values, so original dates must be documented separately when known.
