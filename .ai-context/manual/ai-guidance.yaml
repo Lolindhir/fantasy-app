@@ -19,6 +19,9 @@ guidance:
     - Phrases like "mach das", "setze das um", "erstelle den Branch", "committe das" or "ja, bitte umsetzen" count as explicit action instructions.
     - 'Examples of non-action questions: "Kannst du ...?", "Geht das ...?", "Wäre es sinnvoll ...?", "Wie würdest du ...?"'
     - 'Examples of action instructions: "Mach das bitte", "Setze das um", "Erstelle ...", "Committe ...", "Füge ... hinzu".'
+    - Once concrete repository work is explicitly authorized, the administrative GitHub Issue maintenance required to track that authorized work is implicitly authorized and does not require a separate confirmation.
+    - Administrative Issue maintenance includes searching/reusing/creating the relevant Issue, updating its body/checklist/labels/handoff, adding commit or PR references, closing it when all acceptance criteria are actually complete after an authorized successful merge, reopening the same scope on regression, and creating a separate follow-up Issue for independently meaningful newly discovered work.
+    - This Issue-maintenance exception does not authorize extra code or architecture scope, GitHub Actions workflow changes without their specific approval, merge without the applicable merge approval, or Fantasy Management State/Knowledge/Decision/board/baseline/review persistence.
 
   sourceOfTruth:
     - Do not infer source-of-truth domain ownership from Angular components alone.
@@ -40,11 +43,18 @@ guidance:
   documentation:
     - When changing architecture, update .ai-context/manual/decisions.yaml.
     - When changing generated data contracts, regenerate generated context documentation.
-    - Do not create separate todo lists in .ai-context unless explicitly requested.
+    - Do not create separate todo lists in .ai-context or elsewhere; operative repository work belongs in GitHub Issues.
+    - Use .ai-context/manual/work-tracking.yaml as the canonical contract for Issue lifecycle, label semantics, priority rules, handoff and work-tracking drift governance.
 
-  todos:
-    - Store open todos in TODO.md at the repository root.
-    - Write todos in German.
+  workTracking:
+    - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
+    - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
+    - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
+    - Prefer one coherent Issue with an internal checklist for a multi-step deliverable.
+    - Do not create child Issues merely for implementation steps, commits, PRs or chat-sized work units.
+    - Create a separate Issue only when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
+    - Routine Issue bookkeeping should normally remain invisible to the user unless synchronization fails, a decision is required or the user asks for status.
+    - Follow .ai-context/manual/work-tracking.yaml for label cardinality, origin/history semantics, mutable P0-P4 priorities and drift checks.
 
   powershell:
     - Use Get-Verb approved verbs for PowerShell function names.
@@ -71,16 +81,28 @@ guidance:
     - Preserve file content unchanged during pure moves and verify that the resulting diff represents a move, not an unintended rewrite.
     - If a write operation is blocked or fails because of payload size, safety checks or tool limitations, do not retry the same large full-content update.
     - Switch to a smaller patch, split commit, tree/blob/SHA-based strategy, or ask before falling back to manual instructions after a blocked write operation.
-    - Before committing large or structural changes, present a concise commit plan with affected files, intended operations, validation approach and whether documentation or TODO.md may be affected.
+    - Before committing large or structural changes, present a concise commit plan with affected files, intended operations, validation approach and whether durable documentation or active GitHub Issues may be affected.
 
   postCommit:
     - After each commit, review whether manual AI context documentation or file-local documentation should be updated based on both the committed changes and the conversation that led to the commit.
-    - After each commit, review TODO.md for completed, obsolete or newly discovered tasks based on both the committed changes and the conversation that led to the commit.
-    - After each commit, review whether the discussion or committed actions suggest new or changed AI guidance rules. If so, propose concrete rule changes before applying them.
-    - If documentation or TODO.md changes are needed after a commit, propose the concrete changes first and ask before applying them.
+    - After each commit, synchronize the relevant GitHub Issue body with meaningful progress, completed checklist items, validation, remaining work and the next handoff step.
+    - Administrative Issue synchronization that belongs to already authorized work does not require a separate confirmation.
+    - If documentation changes outside the already authorized scope are needed after a commit, propose the concrete changes first and ask before applying them.
     - If a commit was created without being previewed or explicitly approved in the chat beforehand, summarize that commit in the chat after it is created.
     - Always end the chat response after a commit with a visible post-commit check.
-    - "The visible post-commit check must contain: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; AI guidance rules: updated / proposal needed / no change needed; Documentation: updated / proposal needed / no change needed; TODO.md: updated / proposal needed / no change needed."
+    - "The visible post-commit check must contain: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; AI guidance rules: updated / proposal needed / no change needed; Documentation: updated / proposal needed / no change needed."
+    - Routine Issue bookkeeping does not need a separate visible checklist line unless Issue synchronization failed or needs a decision.
     - Include deploy status in the visible post-commit check when a commit could trigger deployment.
     - State validation as run, not run, or not applicable.
     - Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, JSON/YAML validity for data or AI context changes, and deploy status for commits to main.
+
+  postMerge:
+    - After an authorized merge actually succeeds, re-check all acceptance criteria in the relevant Issue.
+    - Close the Issue as completed only if the full scope is done; otherwise leave it open and update the body handoff.
+    - Administrative Issue update/closure after the authorized merge does not require another approval.
+
+  handoff:
+    - Before a longer pause, chat end or major work-phase transition, ensure the current Issue body contains enough current state for another agent or human to continue without chat history or reading every comment.
+
+  architectureAudit:
+    - Structural architecture/AI-context audits must include the work-tracking drift checks defined in .ai-context/manual/work-tracking.yaml when GitHub Issue/label state is in scope or observable.
