@@ -35,29 +35,29 @@ For any Fantasy Operations, Daily Monitoring, Free-Agent Monitoring, Weekly Line
 For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup/waiver, roster-capacity or roster-flexibility task, `fantasy-management/_ai/ROSTER_ARCHITECTURE.md` is additionally mandatory and must be read before classifying player roles/security or deciding whether a transaction consumes protected churn capacity.
 
 1. `fantasy-management/AGENTS.md`
-2. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
-3. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
-4. `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast/source extraction, source takes, mention coverage, knowledge derivation or structure matters
-5. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
-6. `fantasy-management/_ai/PODCAST_PACKAGE_STORAGE.md` when podcast package size, splitting, aggregation or storage matters
-7. `fantasy-management/_ai/PODCAST_EXTRACTION_PIPELINE.md` for new podcast work packages, Content Maps, Golden Set evaluation, incremental commits or publication architecture
-8. `fantasy-management/_ai/PODCAST_PIPELINE_TOOLING.md` when validating, building or publishing a pipeline work package
-9. `fantasy-management/_ai/golden-set/README.md` and `fantasy-management/_ai/golden-set/profile-list.json` when selecting, evaluating or extending podcast quality profiles
-10. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
-11. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
-12. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
-13. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
-14. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
-15. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
-16. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
-17. `fantasy-management/_ai/WORKFLOWS.md`
-18. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-19. relevant source files under `fantasy-management/sources/`
-20. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-21. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
-22. relevant analyses under `fantasy-management/analyses/` when such files exist
-23. relevant decisions under `fantasy-management/decisions/` when such files exist
-24. `fantasy-management/TODO.md` when planning, prioritizing or recording open Fantasy Management work
+2. `.ai-context/manual/work-tracking.yaml` when planning, prioritizing, recording or resuming repository work
+3. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
+4. `fantasy-management/_ai/FANTASY_MANAGEMENT_RULES.md`
+5. `fantasy-management/_ai/PODCAST_SOURCE_MODEL.md` when podcast/source extraction, source takes, mention coverage, knowledge derivation or structure matters
+6. `fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md` when podcast/source extraction matters
+7. `fantasy-management/_ai/PODCAST_PACKAGE_STORAGE.md` when podcast package size, splitting, aggregation or storage matters
+8. `fantasy-management/_ai/PODCAST_EXTRACTION_PIPELINE.md` for new podcast work packages, Content Maps, Golden Set evaluation, incremental commits or publication architecture
+9. `fantasy-management/_ai/PODCAST_PIPELINE_TOOLING.md` when validating, building or publishing a pipeline work package
+10. `fantasy-management/_ai/golden-set/README.md` and `fantasy-management/_ai/golden-set/profile-list.json` when selecting, evaluating or extending podcast quality profiles
+11. `fantasy-management/_ai/templates/podcast/README.md` and relevant podcast templates when podcast/source extraction matters
+12. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
+13. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
+14. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
+15. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
+16. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
+17. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
+18. `fantasy-management/_ai/WORKFLOWS.md`
+19. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+20. relevant source files under `fantasy-management/sources/`
+21. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+22. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
+23. relevant analyses under `fantasy-management/analyses/` when such files exist
+24. relevant decisions under `fantasy-management/decisions/` when such files exist
 
 ## Canonical app data
 
@@ -81,14 +81,19 @@ Store them only under:
 
 `fantasy-management/`
 
-## Todo guidance
+## Work tracking
 
-- Open Fantasy Management and Fantasy Operations work is maintained in `fantasy-management/TODO.md`.
-- Classify todos by their purpose and owning context, not by whether the implementation uses Python, PowerShell, GitHub Actions, ChatGPT tasks or another technical mechanism.
-- A pipeline, materialized dataset or workflow whose purpose is to support Fantasy Management monitoring, analyses or reviews belongs in `fantasy-management/TODO.md` even when the implementation touches shared repository tooling.
-- Application, frontend, generated-app-data and shared technical-platform work remains in the root `TODO.md`.
-- Avoid duplicating the same todo in both files. Add a cross-reference only when one delivery genuinely requires coordinated work in both contexts.
-- Move durable Fantasy Management decisions from the todo list into the relevant canonical rules, source maps or workflow documentation under `fantasy-management/_ai`.
+- GitHub Issues are the canonical operative source of truth for Fantasy Management and Fantasy Operations backlog, progress, handoff and historical work records.
+- Follow `.ai-context/manual/work-tracking.yaml` for Issue lifecycle, granularity, labels, mutable priority semantics and drift governance.
+- The current Issue body is the canonical mutable work state; comments are supplemental history or communication and must not be required to reconstruct current work state.
+- Do not maintain parallel Markdown todo lists. `fantasy-management/TODO.md` is a legacy artifact to be removed after the lossless migration to Issues is complete.
+- Classify work by its purpose and owning context, not by whether the implementation uses Python, PowerShell, GitHub Actions, ChatGPT tasks or another technical mechanism.
+- A pipeline, materialized dataset or workflow whose purpose is Fantasy Management monitoring, analyses or reviews remains Fantasy Management work even when implementation touches shared repository tooling.
+- Application, frontend, generated-app-data and shared technical-platform work remains application/platform work; coordinated cross-context work should use one coherent Issue where appropriate rather than duplicate canonical work.
+- Move durable Fantasy Management decisions into the relevant canonical rules, source maps or workflow documentation under `fantasy-management/_ai`; Issues do not replace durable knowledge.
+- Questions and analysis alone do not authorize repository mutation. Once the user explicitly authorizes concrete repository work, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
+- Durable Fantasy Management State, Knowledge, Decisions, boards, baselines, reviews and similar persisted analysis remain subject to their existing explicit-approval rules; administrative Issue bookkeeping is not such persistence and does not expand those permissions.
+- `origin:automation` is reserved in the label contract but does not authorize current scheduled monitoring or automation to create Issues. Automatic Issue creation requires a separate explicit automation contract.
 
 ## Source, knowledge and analysis separation
 
@@ -132,7 +137,6 @@ Use this target structure as a logical layout. Create optional folders only when
 fantasy-management/
   AGENTS.md
   README.md
-  TODO.md
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
@@ -241,6 +245,6 @@ fantasy-management/
 
 ## Language
 
-Use German for human-facing Fantasy Management notes, summaries, todo entries, podcast episode summaries, take indexes, rollups and recommendations unless the user explicitly asks otherwise.
+Use German for human-facing Fantasy Management notes, summaries, Issue bodies, source summaries, rollups and recommendations unless the user explicitly asks otherwise.
 
 Machine-readable JSON keys may remain English.
