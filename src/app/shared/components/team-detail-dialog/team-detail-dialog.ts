@@ -12,6 +12,7 @@ import { SharedMaterialImports } from '../../shared-material-imports';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
+import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
 import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
 import {
@@ -68,6 +69,7 @@ type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'age' | 'name';
     PositionStylePipe,
     PlayerListComponent,
     CapUsageBarComponent,
+    SalaryAssetLeaderboardComponent,
     SalaryHealthIndicatorComponent,
     SalaryPositionDonutComponent
   ],
@@ -102,19 +104,6 @@ export class TeamDetailDialogComponent implements OnInit {
     return this.isMobile
       ? ['rank', 'name', 'salary', 'salaryProjected']
       : ['rank', 'picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
-  }
-
-  get coreAssetColumns(): PlayerListColumn[] {
-    return this.isMobile
-      ? ['rank', 'name', 'salary']
-      : ['rank', 'picture', 'name', 'position', 'team', 'salary'];
-  }
-
-  get mostExpensiveColumns(): PlayerListColumn[] {
-    const salaryColumn: PlayerListColumn = this.salaryLens === 'current' ? 'salary' : 'salaryProjected';
-    return this.isMobile
-      ? ['rank', 'name', salaryColumn]
-      : ['rank', 'picture', 'name', 'position', 'team', salaryColumn];
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
