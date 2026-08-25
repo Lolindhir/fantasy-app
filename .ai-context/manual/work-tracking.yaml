@@ -1,0 +1,212 @@
+version: 1
+status: active
+purpose: >-
+  Canonical repository contract for GitHub Issue work tracking, label semantics,
+  lifecycle, handoff, prioritization and drift governance.
+
+principles:
+  - GitHub Issues are the canonical operative source of truth for repository work.
+  - Durable architecture, domain, source and Fantasy Management knowledge remains in its canonical repository documentation and is not replaced by Issues.
+  - The current Issue body is the canonical mutable work state; comments are supplemental history or communication.
+  - A new worker must be able to continue from the current Issue body without reading chat history or every Issue comment.
+  - Questions and analysis alone do not authorize repository mutation.
+  - Once concrete repository work is explicitly authorized, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
+  - Routine Issue bookkeeping should normally remain invisible to the user unless it fails, needs a decision or the user asks for status.
+
+issueGranularity:
+  preferredModel: flat-checklist-issues
+  rules:
+    - Prefer one coherent Issue with an internal checklist for a multi-step deliverable.
+    - An Issue may span multiple chats, commits and pull requests.
+    - Do not create child Issues merely for implementation steps, commits, PRs or chat-sized work units.
+    - Create a separate Issue when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
+    - Native parent/sub-issue relationships are optional and are not required by the current work-tracking contract.
+
+bodyContract:
+  canonicalState: issue-body
+  comments: supplemental
+  requiredCurrentInformation:
+    - goal
+    - relevant context
+    - scope and relevant non-goals
+    - applicable rules and guardrails
+    - current checklist/progress
+    - acceptance criteria
+    - validation state
+    - current handoff, next step and blockers
+    - relevant commit, pull-request and Issue references
+  rules:
+    - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
+    - If a comment contains durable current-state information, consolidate that information into the body.
+    - Before handoff, a longer pause, chat end or a major work-phase transition, verify that the body reflects the actual current state.
+    - If an older comment conflicts with a later updated body, the current body wins unless explicitly documented otherwise.
+
+lifecycle:
+  start:
+    - If the user names an Issue, fetch and use it.
+    - Otherwise search open Issues semantically for an existing matching work package.
+    - Reuse one appropriate existing Issue; create a new one only if no appropriate Issue exists.
+    - Bring the body and labels up to date before or while beginning non-trivial implementation.
+  progress:
+    - Update the body after meaningful technical findings, completed logical subtasks, scope changes, blockers or significant phase changes.
+  postCommit:
+    - Update body checklist/progress.
+    - Reference the commit or its durable result.
+    - Record validation performed.
+    - Update remaining work and the next handoff step.
+    - Create a separate follow-up Issue only for independently meaningful new work.
+  pullRequest:
+    - Reference the relevant Issue from the PR.
+    - Use a closing reference only if the PR completes the entire Issue.
+    - Keep the Issue open when the PR is only partial.
+  postMerge:
+    - Verify the merge actually succeeded.
+    - Re-evaluate all acceptance criteria.
+    - Close as completed only when the full Issue is done.
+    - Otherwise leave it open and update the body handoff.
+  regression:
+    - Reopen an old Issue when the same original scope regresses.
+    - Create a linked new Issue for a distinct new problem.
+  syncFailure:
+    - Inform the user transparently.
+    - Do not silently fall back to a Markdown TODO file.
+    - Do not claim tracking is current if Issue synchronization failed.
+
+labels:
+  priority:
+    cardinality: exactly-one-for-active-operative-issues
+    mutable: true
+    meaning: current urgency and importance, not permanent classification
+    values:
+      priority:p0:
+        name: Critical
+        meaning: Critical; treat as soon as possible. Acute blocker, production/data/workflow risk or equivalent urgency that should not wait in normal backlog order.
+      priority:p1:
+        name: Must
+        meaning: Must be done. Required work without necessarily being an acute P0 emergency.
+      priority:p2:
+        name: Should
+        meaning: Should be done. Clearly valuable and important but may wait behind Must work.
+      priority:p3:
+        name: Could
+        meaning: Could be done. Useful improvement without a clear requirement.
+      priority:p4:
+        name: Nice to have
+        meaning: Optional work for when time and capacity permit.
+    rules:
+      - Priorities may be raised or lowered whenever risks, deadlines, dependencies, impact or project context change.
+      - Structural work-tracking audits should check both presence and current plausibility of priority.
+      - Do not invent historical priority for retrospective completed Issues.
+      - Open Issues migrated from legacy TODOs are prioritized according to current need.
+
+  origin:
+    cardinality: exactly-one
+    meaning: Fachliche Herkunft des Work Packages, not the technical actor that created the Issue.
+    values:
+      origin:todo-migration:
+        meaning: Work package originated in the one-time migration from TODO.md or fantasy-management/TODO.md.
+      origin:user-request:
+        meaning: New work was explicitly commissioned by the user after Issue-based tracking was introduced.
+      origin:discovered:
+        meaning: Independently meaningful follow-up work was discovered during analysis or implementation of other work.
+      origin:automation:
+        meaning: An explicitly authorized automated process detected the work and created the Issue.
+    rules:
+      - Do not use origin:ai; technical creation by an AI agent does not define the work origin.
+      - The existence of origin:automation does not authorize current automations to create Issues. That capability requires a separate explicit automation contract.
+
+  history:
+    cardinality: optional
+    values:
+      history:retrospective:
+        meaning: The Issue was created retrospectively for work completed before Issue-based tracking was introduced.
+    rules:
+      - history:retrospective is independent of origin and may coexist with origin:todo-migration.
+      - An open migrated TODO is not retrospective merely because it is old.
+
+  area:
+    cardinality: one-or-more-when-applicable
+    values:
+      area:app:
+        meaning: Application behavior or application-level domain/read-model work.
+      area:frontend:
+        meaning: Angular/UI/frontend work.
+      area:data:
+        meaning: Data generation, source-data, generated-data contracts or data pipelines.
+      area:platform:
+        meaning: Shared technical platform, infrastructure or cross-cutting repository engineering.
+      area:fantasy-management:
+        meaning: Fantasy Management domain, research, roster, trade, draft, player evaluation or related workflows.
+      area:fantasy-operations:
+        meaning: Fantasy Operations automation/materialization/monitoring work.
+      area:documentation:
+        meaning: Canonical documentation, agent context or documentation governance.
+    rules:
+      - Prefer the smallest accurate set of areas.
+      - Multiple areas are allowed when the work genuinely spans them.
+
+  type:
+    cardinality: exactly-one-for-operative-issues
+    values:
+      type:bug:
+        meaning: Defect or regression.
+      type:feature:
+        meaning: New user-facing or functional capability.
+      type:architecture:
+        meaning: Architecture, contract or structural design work.
+      type:research:
+        meaning: Investigation or research whose output is a decision, evidence or recommendation rather than an immediate implementation.
+      type:maintenance:
+        meaning: Maintenance, cleanup, modernization or operational hardening.
+      type:migration:
+        meaning: Migration from one canonical structure, process or representation to another.
+
+  status:
+    cardinality: zero-or-one
+    exclusive: true
+    values:
+      status:ready:
+        meaning: Defined and ready to start when prioritized.
+      status:in-progress:
+        meaning: Actively being worked.
+      status:blocked:
+        meaning: Cannot currently proceed without an external dependency, missing authorization or unresolved decision.
+    rules:
+      - Do not use status:done; GitHub closed/completed is the canonical completion state.
+      - Remove active work-status labels when an Issue is closed unless retaining one is intentionally useful for history.
+
+migration:
+  legacySources:
+    - TODO.md
+    - fantasy-management/TODO.md
+  losslessness:
+    - Every relevant legacy work item must map to at least one GitHub Issue before the TODO file is removed.
+    - Preserve meaningful subtask, context, guardrail, acceptance and validation information in the Issue even when it does not become a separate Issue.
+    - Prefer more retained context or an additional Issue over silently dropping legacy work.
+    - Historical completed work is represented by retrospective Issues and then closed as completed.
+    - Do not invent historical dates, outcomes, priorities or implementation references; clearly mark inference when reconstruction is uncertain.
+
+projectIntegration:
+  role: presentation-and-prioritization-cockpit
+  sourceOfTruth: issues-and-labels
+  rules:
+    - Project custom fields are not required for the agent work-tracking contract.
+    - Project auto-add and closed-to-Done automation may be configured in GitHub UI.
+    - Normal current-work views should be able to exclude history:retrospective.
+
+driftGovernance:
+  fullAuditTriggers:
+    - work-tracking or label-system changes
+    - architecture or AI-context audits that compare documentation to repository reality
+    - finalization of the TODO-to-Issue migration
+  checks:
+    - Every documented label exists in GitHub.
+    - Work-tracking labels present in GitHub are documented or intentionally outside this schema.
+    - Label meaning and actual usage still match.
+    - Cardinality and exclusivity rules are still appropriate and followed.
+    - Active Issues have plausible current priorities.
+    - Project views and filters still match the documented schema.
+    - Deprecated or unused labels are identified for cleanup.
+  normalWork:
+    - Perform opportunistic drift detection when a documented label is missing, renamed or semantically inconsistent; do not silently ignore the mismatch.
+    - A full label audit is not required after every normal commit.
