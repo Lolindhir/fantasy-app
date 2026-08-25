@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { DraftCapitalOverviewComponent } from './components/draft-capital-overview/draft-capital-overview';
+import { DraftPickPillComponent } from './components/draft-pick-pill/draft-pick-pill';
 import { DraftPickPlayerCardComponent } from './components/draft-pick-player-card/draft-pick-player-card';
 
 export const SharedMaterialImports = [
@@ -35,5 +36,6 @@ export const SharedMaterialImports = [
   MatInputModule,
   MatSelectModule,
   DraftCapitalOverviewComponent,
+  DraftPickPillComponent,
   DraftPickPlayerCardComponent
 ];

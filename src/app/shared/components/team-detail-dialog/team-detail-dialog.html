@@ -168,11 +168,15 @@
             @for (group of futureDraftGroups; track group.title) {
               <div class="draft-group">
                 <div class="draft-group-title"><strong>{{ group.title }}</strong><span>{{ group.picks.length }} picks</span></div>
-                <mat-chip-set aria-label="Open draft picks">
+                <div class="draft-pick-list" role="list" aria-label="Open draft picks">
                   @for (pick of group.picks; track pick.PickKey) {
-                    <mat-chip [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</mat-chip>
+                    <app-draft-pick-pill
+                      role="listitem"
+                      [label]="'R' + pick.Round"
+                      variant="round-pill"
+                      [style.background-color]="draftRoundColor(pick)" />
                   }
-                </mat-chip-set>
+                </div>
               </div>
             } @empty { <p class="empty-state">No known open future picks.</p> }
           </div>
