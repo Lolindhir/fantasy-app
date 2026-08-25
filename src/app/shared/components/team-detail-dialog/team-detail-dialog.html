@@ -165,16 +165,15 @@
         <section class="section-card">
           <span class="eyebrow">Future Draft Capital</span><h3>Open picks</h3>
           <div class="draft-groups">
-            @for (group of futureDraftGroups; track group.title) {
+            @for (group of futureDraftGroups; track group.draft.DraftKey) {
               <div class="draft-group">
                 <div class="draft-group-title"><strong>{{ group.title }}</strong><span>{{ group.picks.length }} picks</span></div>
                 <div class="draft-pick-list" role="list" aria-label="Open draft picks">
                   @for (pick of group.picks; track pick.PickKey) {
-                    <app-draft-pick-pill
+                    <app-draft-pick-context-trigger
                       role="listitem"
-                      [label]="'R' + pick.Round"
-                      variant="round-pill"
-                      [pillStyle]="{ background: draftRoundColor(pick) }" />
+                      [context]="draftPickContext(group.draft, pick, 'R' + pick.Round)"
+                      variant="round-pill" />
                   }
                 </div>
               </div>
@@ -187,12 +186,15 @@
             <p class="empty-state">Loading draft history…</p>
           } @else {
             <div class="historical-drafts">
-              @for (group of historicalDraftGroups; track group.title) {
+              @for (group of historicalDraftGroups; track group.draft.DraftKey) {
                 <div class="historical-group">
                   <h4>{{ group.title }}</h4>
                   @for (pick of group.picks; track pick.PickKey) {
                     <div class="historical-pick">
-                      <span class="pick-label" [style.background-color]="draftRoundColor(pick)">{{ pick.DisplayPick }}</span>
+                      <app-draft-pick-context-trigger
+                        [context]="draftPickContext(group.draft, pick, pick.DisplayPick)"
+                        variant="chip"
+                        [usePickedPositionColor]="true" />
                       @if (historicalPlayer(pick); as player) {
                         <app-draft-pick-player-card [player]="player" />
                       } @else {
