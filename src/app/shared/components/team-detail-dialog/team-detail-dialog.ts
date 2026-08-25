@@ -121,7 +121,7 @@ export class TeamDetailDialogComponent implements OnInit {
       ? 'salary'
       : this.rosterSort;
 
-    return buildRosterPlayerGroups(this.team.Roster, groupMode, sortMode);
+    return buildRosterPlayerGroups(this.team.Roster, groupMode, sortMode, this.roster);
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
