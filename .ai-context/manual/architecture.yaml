@@ -174,13 +174,14 @@ frontendStructure:
 
     - path: src/app/features/drafts/components/**
       responsibility: >
-        Contains reusable Drafts feature UI building blocks shared by current,
-        past and future draft views. DraftShellComponent owns the common draft
-        card header and metric line, DraftPickCardComponent owns the compact
-        Overview pick tile, DraftPickTriggerComponent owns shared compact token
-        trigger mechanics for concrete pick chips and future round pills, and
-        DraftPickPopoverComponent owns shared pick detail popover content for full
-        concrete picks and compact future round picks.
+        Contains Drafts feature UI building blocks shared by current, past and
+        future draft views. DraftShellComponent owns the common draft card header
+        and metric line, DraftPickCardComponent owns the compact Overview pick tile,
+        and DraftPickTriggerComponent is the Drafts-facing adapter that maps Drafts
+        feature ViewModels into the app-wide shared draft-pick context trigger.
+        Generic compact token interaction and pick-detail popover content live under
+        src/app/shared/components/draft-pick-context/** so Team Detail and Drafts use
+        one implementation without a shared-to-feature dependency.
 
     - path: src/app/features/drafts/tabs/current-drafts/**
       responsibility: >
@@ -190,18 +191,18 @@ frontendStructure:
         where rows are rounds and columns are positions in the round. Teams uses
         current-owner pick groups from the central DraftViewModel. List renders
         orderedPicks from the central DraftViewModel with compact mobile and more
-        detailed desktop layout. Pick tiles/chips open the shared draft pick
-        popover for open/picked state, owner, original-owner, selected-player and
-        trade context. CurrentDraftPickChipComponent remains a wrapper around the
-        shared DraftPickTriggerComponent for current/past pick-chip use cases.
+        detailed desktop layout. Pick tiles/chips open the app-wide shared draft-pick
+        context popover for open/picked state, owner, original-owner, selected-player
+        and trade context. CurrentDraftPickChipComponent remains a wrapper around the
+        Drafts adapter DraftPickTriggerComponent for current/past pick-chip use cases.
 
     - path: src/app/features/drafts/tabs/future-drafts/**
       responsibility: >
         Future draft presentation. It uses DraftShellComponent for the shared
         draft card header and metric line, renders team-owned round summaries,
-        marks traded/non-own picks with a dot through DraftPickTriggerComponent
-        and opens the shared draft pick popover in a future-compatible mode for
-        pick ownership context.
+        marks traded/non-own picks with a dot through the Drafts adapter
+        DraftPickTriggerComponent and opens the app-wide shared draft-pick context
+        popover in a future-compatible mode for pick ownership context.
 
     - path: src/app/features/league-activity/league-activity.ts
       responsibility: >
@@ -227,16 +228,23 @@ frontendStructure:
     - path: src/app/shared/components/**
       responsibility: >
         Contains reusable Angular UI components that are not owned by one routed
-        feature page. LeagueLegacySummaryComponent renders Hall-of-Fame highlight
-        cards; CurrentStandingsComponent renders current standing rows;
-        AllTimeStandingsComponent renders all-time overall placement rows;
-        AllTimeRegularSeasonStandingsComponent wraps the shared compact
+        feature page. DraftPickPillComponent owns the generic draft-pick token shape;
+        DraftPickContextTriggerComponent and DraftPickContextPopoverComponent own the
+        app-wide clickable draft-pick context interaction used by Drafts and Team
+        Detail without depending on Drafts feature ViewModels. LeagueLegacySummaryComponent
+        renders Hall-of-Fame highlight cards; CurrentStandingsComponent renders current
+        standing rows; AllTimeStandingsComponent renders all-time overall placement
+        rows; AllTimeRegularSeasonStandingsComponent wraps the shared compact
         RegularSeasonStandingsListComponent for all-time regular-season rows;
         SeasonArchiveComponent renders season-level playoff results, awards and
         regular-season standings and reuses the same regular-season list;
         SeasonResultsComponent remains available for previous-season podium
         rendering in Overview.
       examples:
+        - src/app/shared/components/draft-pick-pill/draft-pick-pill.ts
+        - src/app/shared/components/draft-pick-context/draft-pick-context-trigger.ts
+        - src/app/shared/components/draft-pick-context/draft-pick-context-popover.ts
+        - src/app/shared/components/team-detail-dialog/team-detail-dialog.ts
         - src/app/shared/components/player-list/player-list.ts
         - src/app/shared/components/player-detail-dialog/player-detail-dialog.ts
         - src/app/shared/components/league-legacy-summary/league-legacy-summary.ts
