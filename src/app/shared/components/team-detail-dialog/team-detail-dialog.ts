@@ -20,6 +20,8 @@ import {
   type RosterSortMode
 } from '../../utils/team-roster-view.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
+import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
+import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
 import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
@@ -45,13 +47,16 @@ export interface TeamDetailDialogData {
 interface TeamDraftGroup {
   title: string;
   season: number;
-  draftType: string;
+  draftNo: number;
+  draft: RawDraft;
   picks: DraftPick[];
 }
 
 interface HistoricalDraftGroup {
   title: string;
   season: number;
+  draftNo: number;
+  draft: RawDraft;
   picks: DraftPick[];
 }
 
@@ -76,6 +81,7 @@ interface TeamHistoryRow {
     PositionStylePipe,
     PlayerListComponent,
     CapUsageBarComponent,
+    DraftPickContextTriggerComponent,
     SalaryAssetLeaderboardComponent,
     SalaryHealthIndicatorComponent,
     SalaryPositionDonutComponent
@@ -173,16 +179,21 @@ export class TeamDetailDialogComponent implements OnInit {
 
   get futureDraftGroups(): TeamDraftGroup[] {
     const groups = new Map<string, TeamDraftGroup>();
+
     this.team.DraftPicks
       .filter(pick => Number(pick.Season) >= this.league.SeasonAsNumber && pick.Status !== 'Picked' && !pick.PlayerID)
       .forEach(pick => {
-        const season = Number(pick.Season);
-        const draftType = pick.DraftType || 'Draft';
-        const key = `${season}|${draftType}`;
+        const draft = pick.Draft ?? this.data.drafts.find(candidate => candidate.DraftKey === pick.DraftKey);
+        if (!draft) return;
+
+        const season = Number(draft.Season);
+        const draftNo = Number(draft.DraftNo) || Number(draft.DraftInstance) || Number.MAX_SAFE_INTEGER;
+        const key = draft.DraftKey;
         const group = groups.get(key) ?? {
-          title: `${season} ${this.displayDraftType(draftType)}`,
+          title: draft.DisplayDraftKey || `${season} ${this.displayDraftType(draft.DraftType)}`,
           season,
-          draftType,
+          draftNo,
+          draft,
           picks: []
         };
         group.picks.push(pick);
@@ -191,7 +202,11 @@ export class TeamDetailDialogComponent implements OnInit {
 
     return [...groups.values()]
       .map(group => ({ ...group, picks: [...group.picks].sort(this.comparePicks) }))
-      .sort((a, b) => a.season - b.season || a.draftType.localeCompare(b.draftType));
+      .sort((a, b) =>
+        a.season - b.season
+        || a.draftNo - b.draftNo
+        || a.draft.DraftType.localeCompare(b.draft.DraftType)
+      );
   }
 
   get historyRows(): TeamHistoryRow[] {
@@ -281,8 +296,20 @@ export class TeamDetailDialogComponent implements OnInit {
     }
   }
 
-  draftRoundColor(pick: DraftPick): string {
-    return getDraftRoundColor(pick.Round, pick.Draft?.Settings.Rounds);
+  draftPickContext(draft: RawDraft, pick: DraftPick, label: string): DraftPickContext {
+    const selectedPlayer = this.historicalPlayer(pick);
+
+    return {
+      draft,
+      pick,
+      label,
+      currentOwner: this.draftOwnerDisplay(pick.CurrentOwnerRosterID),
+      originalOwner: this.draftOwnerDisplay(pick.OriginalOwnerRosterID),
+      selectedPlayer,
+      selectedPlayerName: selectedPlayer ? undefined : (pick.PlayerName || undefined),
+      isTradedPick: (pick.TradeHistory?.length ?? 0) > 0,
+      roundColor: getDraftRoundColor(pick.Round, draft.Settings?.Rounds)
+    };
   }
 
   historicalPlayer(pick: DraftPick): Player | undefined {
@@ -319,7 +346,11 @@ export class TeamDetailDialogComponent implements OnInit {
           .flat()
           .map(draft => this.buildHistoricalDraftGroup(draft))
           .filter((group): group is HistoricalDraftGroup => !!group && group.picks.length > 0)
-          .sort((a, b) => b.season - a.season || a.title.localeCompare(b.title));
+          .sort((a, b) =>
+            b.season - a.season
+            || a.draftNo - b.draftNo
+            || a.title.localeCompare(b.title)
+          );
         this.draftHistoryLoading = false;
       });
     });
@@ -334,6 +365,8 @@ export class TeamDetailDialogComponent implements OnInit {
     return {
       title: draft.DisplayDraftKey || `${draft.Season} ${this.displayDraftType(draft.DraftType)}`,
       season: Number(draft.Season),
+      draftNo: Number(draft.DraftNo) || Number(draft.DraftInstance) || Number.MAX_SAFE_INTEGER,
+      draft,
       picks
     };
   }
@@ -344,6 +377,19 @@ export class TeamDetailDialogComponent implements OnInit {
     const matchesRoster = String(pick.CurrentOwnerRosterID) === String(this.team.TeamID);
 
     return matchesSleeperOwner || matchesRoster;
+  }
+
+  private draftOwnerDisplay(rosterId: number): DraftPickOwnerDisplay {
+    const normalizedRosterId = Number(rosterId);
+    const owner = this.league.Teams.find(candidate => Number(candidate.TeamID) === normalizedRosterId);
+    const ownerName = owner?.Team || (owner?.Owner ? `Team ${owner.Owner}` : `Roster ${normalizedRosterId}`);
+
+    return {
+      id: normalizedRosterId,
+      name: ownerName,
+      abbr: owner?.TeamAbbr || ownerName,
+      avatar: owner?.Avatar || 'assets/default-team-avatar.png'
+    };
   }
 
   private comparePicks = (a: DraftPick, b: DraftPick): number =>

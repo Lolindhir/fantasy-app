@@ -1,15 +1,4 @@
-<app-draft-pick-pill
-  [label]="label"
+<app-draft-pick-context-trigger
+  [context]="context"
   [variant]="variant"
-  [isTradedPick]="isTradedPick"
-  [interactive]="true"
-  [pillStyle]="usePositionColor ? (selectedPlayerPosition | positionStyle) : { background: roundColor }"
-  [matMenuTriggerFor]="pickInfoMenu" />
-
-<mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
-  <app-draft-pick-popover
-    [draftVm]="draftVm"
-    [item]="item"
-    [compactPick]="compactPick"
-    [currentOwner]="currentOwner" />
-</mat-menu>
+  [usePickedPositionColor]="usePickedPositionColor" />

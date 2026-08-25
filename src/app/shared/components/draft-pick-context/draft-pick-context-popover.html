@@ -1,5 +1,5 @@
 <div class="pick-info-menu-content" (click)="$event.stopPropagation()">
-  <strong>{{ displayPick }} · {{ draftVm.draft.DisplayDraftKey }}</strong>
+  <strong>{{ displayPick }} · {{ context.draft.DisplayDraftKey }}</strong>
   @if (overallPick !== null) {
     <span class="pick-overall-label">Overall #{{ overallPick }}</span>
   }
@@ -9,10 +9,7 @@
       <span class="picked-player-main">
         <strong>{{ player.NameShort || player.Name }}</strong>
         <span class="picked-player-meta">
-          <span
-            class="picked-player-position"
-            [ngStyle]="player.Position | positionStyle"
-          >
+          <span class="picked-player-position" [ngStyle]="player.Position | positionStyle">
             {{ player.Position }}
           </span>
           @if (player.TeamNFL?.Logo) {
@@ -22,10 +19,10 @@
         </span>
       </span>
     </button>
-  } @else {
-    @if (showOpenPickLabel) {
-      <span class="open-pick-label">Pick Open</span>
-    }
+  } @else if (selectedPlayerName; as playerName) {
+    <span class="picked-player-fallback">{{ playerName }}</span>
+  } @else if (showOpenPickLabel) {
+    <span class="open-pick-label">Pick Open</span>
   }
   @if (currentOwnerDisplay; as owner) {
     <span class="pick-info-owner-line">
@@ -42,7 +39,7 @@
       </span>
     }
   }
-  @if (isTradedPick) {
+  @if (context.isTradedPick) {
     <span class="traded-pick-label">Traded Pick</span>
   }
 </div>

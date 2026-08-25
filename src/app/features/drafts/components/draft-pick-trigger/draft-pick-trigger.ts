@@ -1,9 +1,7 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
-import { DraftPickPillComponent } from '../../../../shared/components/draft-pick-pill/draft-pick-pill';
-import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
-import { DraftPickPopoverComponent } from '../draft-pick-popover/draft-pick-popover';
+
+import { DraftPickContextTriggerComponent } from '../../../../shared/components/draft-pick-context/draft-pick-context-trigger';
+import type { DraftPickContext } from '../../../../shared/components/draft-pick-context/draft-pick-context.models';
 import type {
   CompactRoundPickViewModel,
   DraftPickViewModel,
@@ -16,7 +14,7 @@ export type DraftPickTriggerVariant = 'chip' | 'round-pill';
 @Component({
   selector: 'app-draft-pick-trigger',
   standalone: true,
-  imports: [CommonModule, MatMenuModule, DraftPickPillComponent, PositionStylePipe, DraftPickPopoverComponent],
+  imports: [DraftPickContextTriggerComponent],
   templateUrl: './draft-pick-trigger.html',
   styleUrl: './draft-pick-trigger.scss'
 })
@@ -28,23 +26,17 @@ export class DraftPickTriggerComponent {
   @Input() variant: DraftPickTriggerVariant = 'chip';
   @Input() usePickedPositionColor = false;
 
-  get label(): string {
-    return this.item?.pick.DisplayPick ?? this.compactPick?.label ?? 'Pick';
-  }
-
-  get isTradedPick(): boolean {
-    return this.item?.isCurrentlyTraded ?? this.compactPick?.isCurrentlyTraded ?? false;
-  }
-
-  get roundColor(): string | undefined {
-    return this.item?.roundColor ?? this.compactPick?.color;
-  }
-
-  get selectedPlayerPosition(): string | null | undefined {
-    return this.item?.selectedPlayer?.Position;
-  }
-
-  get usePositionColor(): boolean {
-    return this.usePickedPositionColor && !!this.selectedPlayerPosition;
+  get context(): DraftPickContext {
+    return {
+      draft: this.draftVm.draft,
+      pick: this.item?.pick,
+      label: this.item?.pick.DisplayPick ?? this.compactPick?.label ?? 'Pick',
+      currentOwner: this.item?.currentOwner ?? this.currentOwner,
+      originalOwner: this.item?.originalOwner ?? this.compactPick?.originalOwner,
+      selectedPlayer: this.item?.selectedPlayer,
+      selectedPlayerName: this.item?.selectedPlayerName ?? this.item?.pick.PlayerName ?? undefined,
+      isTradedPick: this.item?.isCurrentlyTraded ?? this.compactPick?.isCurrentlyTraded ?? false,
+      roundColor: this.item?.roundColor ?? this.compactPick?.color
+    };
   }
 }
