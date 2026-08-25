@@ -1,0 +1,43 @@
+<div class="salary-asset-leaderboard">
+  @for (player of players; track player.ID; let rank = $index) {
+    <button
+      type="button"
+      class="asset-row"
+      (click)="openPlayerDetail(player)"
+      [attr.aria-label]="'Open ' + player.Name + ' details'"
+    >
+      <span class="rank">{{ rank + 1 }}</span>
+
+      <span class="player-block">
+        <span class="portrait-wrap">
+          @if (player.Picture) {
+            <img class="portrait" [src]="player.Picture" [alt]="player.Name" />
+          }
+        </span>
+
+        <span class="identity">
+          <strong>{{ player.NameShort || player.Name }}</strong>
+          <span class="meta">
+            @if (player.TeamNFL?.Logo) {
+              <img [src]="player.TeamNFL.Logo" [alt]="player.TeamNFL.Name || 'NFL team'" />
+            }
+            <span class="position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
+          </span>
+        </span>
+      </span>
+
+      <span class="salary-block">
+        <strong>{{ formatMoney(primarySalary(player)) }}</strong>
+        <span class="cap-share">{{ capShare(player) }}</span>
+        <span class="comparison">
+          {{ comparisonLabel() }} {{ formatMoney(comparisonSalary(player)) }}
+          <span
+            class="delta"
+            [class.delta-increase]="projectedDelta(player) > 0"
+            [class.delta-decrease]="projectedDelta(player) < 0"
+          >{{ formatDelta(projectedDelta(player)) }}</span>
+        </span>
+      </span>
+    </button>
+  }
+</div>

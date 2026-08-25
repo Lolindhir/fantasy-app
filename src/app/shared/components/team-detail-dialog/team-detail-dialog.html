@@ -32,7 +32,7 @@
           <div class="section-heading">
             <div><span class="eyebrow">Core Assets</span><h3>Top 5 by current salary</h3></div>
           </div>
-          <app-player-list [players]="coreAssets" [columns]="coreAssetColumns" [compact]="isMobile" [team]="team" />
+          <app-salary-asset-leaderboard [players]="coreAssets" lens="current" [cap]="salary.current.cap" />
         </section>
 
         <div class="overview-grid">
@@ -121,12 +121,7 @@
           </section>
           <section class="section-card expensive-list">
             <span class="eyebrow">Most Expensive</span><h3>Top 5</h3>
-            <app-player-list
-              [players]="selectedSalary.mostExpensive"
-              [columns]="mostExpensiveColumns"
-              [compact]="isMobile"
-              [team]="team"
-            />
+            <app-salary-asset-leaderboard [players]="selectedSalary.mostExpensive" [lens]="salaryLens" [cap]="selectedSalary.cap" />
           </section>
         </div>
         <section class="section-card movement-card">

@@ -1,0 +1,61 @@
+:host { display: block; }
+.salary-asset-leaderboard { display: grid; }
+.asset-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 2px;
+  border: 0;
+  border-bottom: 1px solid #eef0f3;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.asset-row:last-child { border-bottom: 0; }
+.asset-row:hover { background: #fafbfc; }
+.asset-row:focus-visible { outline: 2px solid rgba(99, 102, 241, .45); outline-offset: 2px; border-radius: 8px; }
+.rank {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.player-block { min-width: 0; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 10px; align-items: center; }
+.portrait-wrap { width: 48px; height: 48px; display: grid; align-items: end; justify-items: center; overflow: hidden; border-radius: 10px; background: #f8fafc; }
+.portrait { max-width: 48px; max-height: 48px; object-fit: contain; }
+.identity { min-width: 0; display: grid; gap: 5px; }
+.identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #111827; font-size: 15px; font-weight: 700; }
+.meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.meta img { width: 22px; height: 22px; object-fit: contain; }
+.position-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; padding: 3px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.salary-block { min-width: 132px; display: grid; justify-items: end; gap: 2px; font-variant-numeric: tabular-nums; }
+.salary-block > strong { color: #111827; font-size: 16px; font-weight: 750; }
+.cap-share { color: #64748b; font-size: 11px; }
+.comparison { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; color: #6b7280; font-size: 11px; }
+.delta { font-weight: 700; }
+.delta-increase { color: #c62828; }
+.delta-decrease { color: #2e7d32; }
+
+@media (max-width: 600px) {
+  .asset-row { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; padding: 9px 0; }
+  .rank { width: 25px; height: 25px; font-size: 11px; }
+  .player-block { grid-template-columns: 40px minmax(0, 1fr); gap: 8px; }
+  .portrait-wrap { width: 40px; height: 40px; border-radius: 8px; }
+  .portrait { max-width: 40px; max-height: 40px; }
+  .identity strong { font-size: 14px; }
+  .meta img { width: 19px; height: 19px; }
+  .position-chip { min-width: 27px; padding: 2px 6px; font-size: 10px; }
+  .salary-block { min-width: 112px; }
+  .salary-block > strong { font-size: 15px; }
+  .cap-share, .comparison { font-size: 10px; }
+}
