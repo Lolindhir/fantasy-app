@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "package_id": "thescore-2026-08-22-fantasy-notes-analysis-from-week-2-of-nfl-preseason",
+  "source_kind": "article",
+  "snapshot": {
+    "capture_id": "2026-08-25T12-51-00Z",
+    "captured_at": "2026-08-25T12:51:00Z",
+    "input_method": "user_provided_chat",
+    "living_article": true,
+    "previous_capture": "legacy_root_capture_2026-08-22"
+  },
+  "source_identity": {
+    "publisher": "theScore",
+    "author": "Eric Patterson",
+    "title": "Fantasy notes, analysis from Week 2 of NFL preseason",
+    "url": "https://video.thescore.com/nfl/news/3572142/fantasy-notes-analysis-from-week-2-of-nfl-preseason"
+  },
+  "interpretation_policy": {
+    "note": "Source claims are historical evidence. Current injury, role and availability truth requires fresh verification. Missing legacy claims in this shorter later snapshot are not treated as retractions unless the source explicitly retracts or contradicts them.",
+    "same_source_independence": "Repeated or changed claims from this Living Article do not count as independent source confirmation."
+  },
+  "claims": [
+    {
+      "claim_id": "w2-jeanty-ankle-sprain",
+      "delta_status": "new",
+      "entities": ["Ashton Jeanty", "Jeremiyah Love", "Mike Washington Jr."],
+      "source_claim": "Jeanty left Sunday's practice with an ankle sprain; the severity is unknown. The article says more information is needed before solidifying his new rank.",
+      "source_conclusion": "The later Mike Washington note says Jeanty is likely to miss the start of the season.",
+      "signal_type": "injury_status",
+      "preseason_classification": "injury_opened_opportunity",
+      "opportunity_provenance": "injury_opened",
+      "verification_status": "source_only",
+      "mighty_giants_relevance": "opponent_context",
+      "durable_effect": "none",
+      "interpretation": "The ankle sprain and unknown severity are direct source statements. The projected absence at the start of the season is the article's inference and is not stored as independently confirmed availability truth."
+    },
+    {
+      "claim_id": "w2-mike-washington-explosiveness",
+      "delta_status": "changed",
+      "entities": ["Mike Washington Jr.", "Ashton Jeanty"],
+      "previous_source_claim": "Washington followed a 63-yard preseason opener with another explosive performance, including a 33-yard run, while Jeanty remains the clear starter.",
+      "source_claim": "With Jeanty likely to miss the start of the season, the article now calls Washington a must-draft handcuff.",
+      "signal_type": "contingent_upside",
+      "preseason_classification": "injury_opened_opportunity",
+      "opportunity_provenance": "injury_opened",
+      "verification_status": "source_only",
+      "mighty_giants_relevance": "opponent_context_role_strengthened",
+      "durable_effect": "none",
+      "repo_context": {
+        "checked_on": "2026-08-25",
+        "sleeper_id": "13305",
+        "nfl_team": "LV",
+        "position": "RB",
+        "ownership_status": "opponent_rostered"
+      },
+      "interpretation": "This materially strengthens the prior contingent-upside claim: the article moves from pure explosiveness with Jeanty as clear starter to an injury-opened handcuff thesis. Because Washington is currently opponent-rostered, this does not create a managed-team manual player-role-watch target; broad opponent monitoring remains the appropriate layer."
+    },
+    {
+      "claim_id": "w2-croskey-merritt-washington-rb1",
+      "delta_status": "new",
+      "entities": ["Jacory Croskey-Merritt", "Washington Commanders"],
+      "source_claim": "The article says Croskey-Merritt seems to be winning Washington's RB1 battle, calls him the most explosive back on the team, and expects him to receive the majority of the goal-line work.",
+      "signal_type": "role_hierarchy",
+      "preseason_classification": "backup_hierarchy_change",
+      "opportunity_provenance": "earned",
+      "verification_status": "source_only",
+      "mighty_giants_relevance": "opponent_context",
+      "durable_effect": "none",
+      "repo_context": {
+        "checked_on": "2026-08-25",
+        "sleeper_id": "12533",
+        "nfl_team": "WSH",
+        "position": "RB",
+        "ownership_status": "opponent_rostered",
+        "owner_context": "Flo, per user-provided league context"
+      },
+      "interpretation": "This is meaningful opponent-roster and league-context evidence, but not by itself a reason for a manual player-role-watch target. The source's RB1 and goal-line projections remain source conclusions until independently verified."
+    }
+  ],
+  "durable_derivations": [
+    {
+      "path": "fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md",
+      "action": "clarify_opponent_target_escalation_rule",
+      "reason": "The snapshot produced material role signals for two opponent-rostered players, exposing the need to distinguish broad opponent monitoring from manual player-role-watch escalation."
+    }
+  ]
+}
