@@ -180,14 +180,6 @@ export interface RawPlayer {
   Ranking: RankingEntry[];
   PointHistory: PointHistory;
   GameHistory?: GameHistory[];
-  [key: string]: unknown;
-}
-
-export interface NFLTeam {
-  ID: string;
-  Name: string;
-  Abv: string;
-  Logo: string;
 }
 
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
@@ -201,11 +193,21 @@ export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'Game
   SalaryDisplay: string;
   SalaryProjectedDisplay: string;
   Stats: PlayerStats;
-  GameHistoryFull: GameHistory[];
-  RosterID?: number;
-  Taxi?: boolean;
-  Reserve?: boolean;
-  Starter?: boolean;
+  GameHistoryFull?: GameHistory[];
 }
 
-export type SortField = keyof Pick<Player, 'Salary' | 'SalaryProjected' | 'Age' | 'Year' | 'Name' | 'NameShort' | 'Position'>;
+export interface RawNFLTeam {
+  ID: string;
+  Name: string;
+  Abv: string;
+  Logo: string;
+}
+
+export interface NFLTeam extends RawNFLTeam {}
+
+export interface TopPlayersSalaryResult {
+  cap: number;
+  topPlayers: Player[];
+}
+
+export type SortField = keyof Player;
