@@ -1,0 +1,18 @@
+@if (interactive) {
+  <button
+    class="draft-pick-pill interactive"
+    [class.chip]="variant === 'chip'"
+    [class.round-pill]="variant === 'round-pill'"
+    [class.traded-pick]="isTradedPick"
+    type="button">
+    {{ label }}
+  </button>
+} @else {
+  <span
+    class="draft-pick-pill"
+    [class.chip]="variant === 'chip'"
+    [class.round-pill]="variant === 'round-pill'"
+    [class.traded-pick]="isTradedPick">
+    {{ label }}
+  </span>
+}

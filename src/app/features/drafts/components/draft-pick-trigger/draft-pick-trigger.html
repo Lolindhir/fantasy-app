@@ -1,13 +1,10 @@
-<button
-  class="draft-pick-trigger"
-  [class.chip]="variant === 'chip'"
-  [class.round-pill]="variant === 'round-pill'"
-  [class.traded-pick]="isTradedPick"
+<app-draft-pick-pill
+  [label]="label"
+  [variant]="variant"
+  [isTradedPick]="isTradedPick"
+  [interactive]="true"
   [ngStyle]="usePositionColor ? (selectedPlayerPosition | positionStyle) : { background: roundColor }"
-  [matMenuTriggerFor]="pickInfoMenu"
-  type="button">
-  {{ label }}
-</button>
+  [matMenuTriggerFor]="pickInfoMenu" />
 
 <mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
   <app-draft-pick-popover

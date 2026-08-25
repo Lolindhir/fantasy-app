@@ -1,0 +1,47 @@
+:host {
+  display: inline-block;
+  color: #1f2937;
+}
+
+.draft-pick-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: inherit;
+  color: inherit;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.draft-pick-pill.interactive {
+  cursor: pointer;
+}
+
+.draft-pick-pill.chip {
+  min-width: 40px;
+  padding: 5px 7px;
+  font-size: 0.9rem;
+}
+
+.draft-pick-pill.round-pill {
+  min-width: 28px;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+}
+
+.draft-pick-pill.traded-pick::after {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid white;
+  border-radius: 999px;
+  background: #1e3a8a;
+  content: '';
+}
