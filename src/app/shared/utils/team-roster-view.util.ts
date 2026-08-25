@@ -9,6 +9,12 @@ export interface RosterPlayerGroup {
   players: Player[];
 }
 
+export interface RosterStatusPlayerGroups {
+  roster: Player[];
+  taxi: Player[];
+  ir: Player[];
+}
+
 export const COMBINED_RANKING_MIN_FINAL_WEEK = 3;
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DST'];
@@ -37,15 +43,18 @@ export function getPreviousCombinedRanking(player: Player): number | undefined {
 export function buildRosterPlayerGroups(
   players: Player[],
   groupMode: RosterGroupMode,
-  sortMode: RosterSortMode
+  sortMode: RosterSortMode,
+  rosterStatusGroups?: RosterStatusPlayerGroups
 ): RosterPlayerGroup[] {
   switch (groupMode) {
-    case 'rosterStatus':
+    case 'rosterStatus': {
+      const statusGroups = rosterStatusGroups ?? { roster: players, taxi: [], ir: [] };
       return [
-        buildGroup('roster', 'Roster', players.filter(player => !player.Reserve && !player.Taxi), sortMode),
-        buildGroup('taxi', 'Taxi', players.filter(player => !player.Reserve && !!player.Taxi), sortMode),
-        buildGroup('ir', 'IR', players.filter(player => !!player.Reserve), sortMode)
+        buildGroup('roster', 'Roster', statusGroups.roster, sortMode),
+        buildGroup('taxi', 'Taxi', statusGroups.taxi, sortMode),
+        buildGroup('ir', 'IR', statusGroups.ir, sortMode)
       ];
+    }
 
     case 'position': {
       const positions = [...new Set(players.map(player => player.Position).filter(Boolean))]
