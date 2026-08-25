@@ -339,10 +339,11 @@ export class TeamDetailDialogComponent implements OnInit {
   }
 
   private wasDraftedByTeam(pick: DraftPick): boolean {
-    if (pick.SleeperPickedBy != null) {
-      return String(pick.SleeperPickedBy) === String(this.team.TeamID);
-    }
-    return String(pick.CurrentOwnerRosterID) === String(this.team.TeamID);
+    const matchesSleeperOwner = pick.SleeperPickedBy != null
+      && String(pick.SleeperPickedBy) === String(this.team.OwnerID);
+    const matchesRoster = String(pick.CurrentOwnerRosterID) === String(this.team.TeamID);
+
+    return matchesSleeperOwner || matchesRoster;
   }
 
   private comparePicks = (a: DraftPick, b: DraftPick): number =>
