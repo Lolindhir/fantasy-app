@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .common import Dataset, clean, iter_csv, load_json
+from .common import Dataset, canonical_player_id, clean, iter_csv, load_json
 from .identity_model import (
     ANCHOR_ID_KEYS,
     ATTACH_ID_KEYS,
@@ -74,7 +74,7 @@ def _existing_weak_replay_index(
             clean(row.get("Position")),
             clean(row.get("Name")),
         )
-        internal_id = clean(row.get("NFLPlayerID"))
+        internal_id = canonical_player_id(row)
         if signature is not None and internal_id:
             index[signature].add(internal_id)
     return index
