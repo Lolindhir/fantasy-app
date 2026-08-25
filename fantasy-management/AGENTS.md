@@ -86,7 +86,7 @@ Store them only under:
 - GitHub Issues are the canonical operative source of truth for Fantasy Management and Fantasy Operations backlog, progress, handoff and historical work records.
 - Follow `.ai-context/manual/work-tracking.yaml` for Issue lifecycle, granularity, labels, mutable priority semantics and drift governance.
 - The current Issue body is the canonical mutable work state; comments are supplemental history or communication and must not be required to reconstruct current work state.
-- Do not maintain parallel Markdown todo lists. `fantasy-management/TODO.md` is a legacy artifact to be removed after the lossless migration to Issues is complete.
+- Do not maintain parallel Markdown todo lists; operative repository work belongs in GitHub Issues.
 - Classify work by its purpose and owning context, not by whether the implementation uses Python, PowerShell, GitHub Actions, ChatGPT tasks or another technical mechanism.
 - A pipeline, materialized dataset or workflow whose purpose is Fantasy Management monitoring, analyses or reviews remains Fantasy Management work even when implementation touches shared repository tooling.
 - Application, frontend, generated-app-data and shared technical-platform work remains application/platform work; coordinated cross-context work should use one coherent Issue where appropriate rather than duplicate canonical work.
