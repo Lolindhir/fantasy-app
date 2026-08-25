@@ -8,7 +8,7 @@ export interface InjuryDetails {
 }
 
 export interface RankingEntry {
-  Type: 'Total' | 'PerGame' | 'Combined' | 'Total_Pos' | 'PerGame_Pos' | 'Combined_Pos';
+  Type: 'Total' | 'PerGame' | 'Combined' | 'Total_Pos' | 'PerGame_Pos' | 'Combined_Pos' | 'Combined_Previous';
   Value: number;
 }
 

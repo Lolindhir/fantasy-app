@@ -68,35 +68,43 @@
 
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
-        <div class="tab-toolbar">
-          <div><span class="eyebrow">Roster</span><h3>Players by roster status</h3></div>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <div class="roster-controls" aria-label="Roster grouping and sorting">
+          <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Group by</mat-label>
+            <mat-select [(value)]="rosterGroup">
+              <mat-option value="rosterStatus">Roster Status</mat-option>
+              <mat-option value="position">Position</mat-option>
+              <mat-option value="rankingStatus" [disabled]="!combinedRankingAvailable">
+                {{ combinedRankingAvailable ? 'Ranking Status' : 'Ranking Status · after Week 3' }}
+              </mat-option>
+              <mat-option value="none">None</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Sort by</mat-label>
             <mat-select [(value)]="rosterSort">
               <mat-option value="salary">Current Salary</mat-option>
               <mat-option value="projected">Projected Salary</mat-option>
-              <mat-option value="ranking">Combined Ranking</mat-option>
+              <mat-option value="ranking" [disabled]="!combinedRankingAvailable">
+                {{ combinedRankingAvailable ? 'Combined Ranking' : 'Combined Ranking · after Week 3' }}
+              </mat-option>
               <mat-option value="age">Age</mat-option>
               <mat-option value="name">Name</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
-        <section class="roster-section">
-          <h4>Roster <span>{{ displayLimit(roster.roster.length, limits.roster) }}</span></h4>
-          <app-player-list [players]="sortedRoster" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
-        </section>
-        <section class="roster-section">
-          <h4>Taxi <span>{{ displayLimit(roster.taxi.length, limits.taxi) }}</span></h4>
-          @if (sortedTaxi.length) {
-            <app-player-list [players]="sortedTaxi" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
-          } @else { <p class="empty-state">No players on Taxi.</p> }
-        </section>
-        <section class="roster-section">
-          <h4>IR <span>{{ displayLimit(roster.ir.length, limits.ir) }}</span></h4>
-          @if (sortedIr.length) {
-            <app-player-list [players]="sortedIr" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
-          } @else { <p class="empty-state">No players on IR.</p> }
-        </section>
+
+        @for (group of rosterGroups; track group.key) {
+          <section class="roster-section">
+            <h4>{{ group.label }} <span>{{ rosterGroupCount(group) }}</span></h4>
+            @if (group.players.length) {
+              <app-player-list [players]="group.players" [columns]="playerColumns" [compact]="isMobile" [team]="team" />
+            } @else {
+              <p class="empty-state">{{ rosterGroupEmptyText(group) }}</p>
+            }
+          </section>
+        }
       </div>
     </mat-tab>
 

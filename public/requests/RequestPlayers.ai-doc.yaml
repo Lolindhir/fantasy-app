@@ -11,9 +11,9 @@ owns:
   - generation of public/data/Players.json
   - Tank01-to-Sleeper player identity join
   - canonical player ID assignment
+  - player ranking enrichment, including previous-season Combined fallback ranking
   - player-data integrity validation before persistence
   - timestamp and backup creation for successful changed outputs
-
 doesNotOwn:
   - Angular player presentation
   - Fantasy Management recommendations
@@ -33,6 +33,27 @@ identityContract:
     purpose: >
       Preserves the Tank01 source identity so collisions in the canonical Sleeper
       identity can be diagnosed without losing provider provenance.
+
+rankingContract:
+  currentCombined:
+    field: Players[].Ranking[Type=Combined]
+    source: current-season generated fantasy-point ranks
+    meaning: >
+      Current-season Combined ranking. Players without qualifying current-season
+      values do not receive a usable positive Combined rank.
+  previousCombined:
+    field: Players[].Ranking[Type=Combined_Previous]
+    source: Players[].PointHistory.SeasonMinus1
+    meaning: >
+      Previous-season Combined ranking generated with the same configured Total
+      and PerGame rank weights and tie behavior as the current Combined ranking.
+      It exists as a fallback ordering signal and must not be presented as a
+      current-season rank.
+  comparisonEnrichment: >
+    Compare-Players adds Combined_Previous to the newly generated in-memory
+    player collection before semantic comparison so the derived ranking is part
+    of the persisted Players.json change contract without manually editing
+    generated data.
 
 integrityValidation:
   helper: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
@@ -67,4 +88,5 @@ relatedManualDocs:
 aiWarnings:
   - Never resolve duplicate canonical IDs by silently dropping one record.
   - A duplicate Players.ID is an upstream identity collision and must remain visible as a data-quality failure.
+  - Combined_Previous is a previous-season fallback signal and must never be silently mixed into the current Ranked group.
   - Downstream materializers may keep their own duplicate-ID guard as defense in depth, but the player generator is the earliest publishing boundary and must fail first.
