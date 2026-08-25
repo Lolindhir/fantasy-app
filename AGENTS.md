@@ -36,10 +36,11 @@ Before making architecture, data model, generation or frontend changes, read:
 
 1. `.ai-context/ai-context.yaml`
 2. `.ai-context/manual/ai-guidance.yaml`
-3. `.ai-context/manual/architecture.yaml`
-4. `.ai-context/manual/domain.yaml`
-5. `.ai-context/manual/data-sources.yaml`
-6. `.ai-context/manual/decisions.yaml`
+3. `.ai-context/manual/work-tracking.yaml`
+4. `.ai-context/manual/architecture.yaml`
+5. `.ai-context/manual/domain.yaml`
+6. `.ai-context/manual/data-sources.yaml`
+7. `.ai-context/manual/decisions.yaml`
 
 ## Source-of-truth rules
 
@@ -58,24 +59,25 @@ Before making architecture, data model, generation or frontend changes, read:
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
-- Fantasy Management rules, sources, workflows, stored analyses, decisions and todos belong under `fantasy-management/`.
+- Fantasy Management rules, sources, workflows, stored analyses and decisions belong under `fantasy-management/`.
+- Repository work tracking belongs in GitHub Issues according to `.ai-context/manual/work-tracking.yaml`; do not create parallel Markdown todo lists.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
 - When updating application documentation:
   - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
+  - work-tracking and label semantics go to `.ai-context/manual/work-tracking.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
   - domain rules go to `.ai-context/manual/domain.yaml`
   - data sources and data flow go to `.ai-context/manual/data-sources.yaml`
   - file-local documentation goes to file headers or sidecar `.ai-doc.yaml` files
 
-## Todo guidance
+## Work tracking
 
-- Application, frontend, generated-data and shared technical-platform todos are maintained in `TODO.md` at the repository root.
-- Fantasy Management and Fantasy Operations todos are maintained in `fantasy-management/TODO.md`.
-- Classify a todo by its purpose and owning context, not merely by its implementation mechanism. A script or GitHub Action whose purpose is to prepare Fantasy Management data belongs in `fantasy-management/TODO.md`.
-- Todos must be written in German.
-- Do not create additional todo lists in `.ai-context` or `docs`.
-- Move durable application decisions from `TODO.md` into `.ai-context/manual` when appropriate.
-- Move durable Fantasy Management decisions from `fantasy-management/TODO.md` into the canonical rules, source maps or workflow documentation under `fantasy-management/_ai` when appropriate.
+- GitHub Issues are the canonical operative source of truth for repository work, including backlog, progress, handoff and historical work records.
+- The current Issue body is the canonical mutable work state. Comments are supplemental history/communication and must not be required to reconstruct the current state.
+- Follow `.ai-context/manual/work-tracking.yaml` for issue lifecycle, granularity, labels, priorities and drift checks.
+- Questions and analysis alone do not authorize repository mutation. Once the user explicitly authorizes concrete repository work, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
+- Prefer one coherent Issue with an internal checklist for a multi-step deliverable. Do not create child Issues merely for implementation steps, commits, PRs or chat-sized units.
+- Durable application decisions belong in `.ai-context/manual`; durable Fantasy Management decisions belong in the canonical documents under `fantasy-management/_ai` and are not replaced by Issues.
 
 ## Generated files
 
