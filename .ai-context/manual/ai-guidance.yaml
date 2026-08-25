@@ -50,10 +50,11 @@ guidance:
     - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
     - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
+    - A repository work step is not post-commit complete while its active Issue body still describes a pre-commit state.
     - Prefer one coherent Issue with an internal checklist for a multi-step deliverable.
     - Do not create child Issues merely for implementation steps, commits, PRs or chat-sized work units.
     - Create a separate Issue only when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
-    - Routine Issue bookkeeping should normally remain invisible to the user unless synchronization fails, a decision is required or the user asks for status.
+    - Routine Issue bookkeeping should normally remain invisible to the user unless synchronization fails, a decision is required or the user asks for status; invisibility affects reporting only and never authorizes skipping required Issue maintenance.
     - Follow .ai-context/manual/work-tracking.yaml for label cardinality, origin/history semantics, mutable P0-P4 priorities and drift checks.
 
   powershell:
@@ -85,16 +86,24 @@ guidance:
 
   postCommit:
     - After each commit, review whether manual AI context documentation or file-local documentation should be updated based on both the committed changes and the conversation that led to the commit.
-    - After each commit, synchronize the relevant GitHub Issue body with meaningful progress, completed checklist items, validation, remaining work and the next handoff step.
+    - After each commit associated with active Issue-tracked work, treat synchronization of the relevant GitHub Issue body as a mandatory lifecycle gate.
+    - Before creating or updating a Pull Request, starting another work package, handing off the work, or reporting the commit/work step as complete, verify that the Issue body reflects the committed state.
+    - The synchronized Issue body must include meaningful checklist/progress updates, the commit or durable result reference, validation performed, remaining work and the next handoff step.
     - Administrative Issue synchronization that belongs to already authorized work does not require a separate confirmation.
+    - If Issue synchronization fails or is known to be stale, do not silently continue to the next lifecycle transition; inform the user and do not claim the work-tracking state is current.
     - If documentation changes outside the already authorized scope are needed after a commit, propose the concrete changes first and ask before applying them.
     - If a commit was created without being previewed or explicitly approved in the chat beforehand, summarize that commit in the chat after it is created.
     - Always end the chat response after a commit with a visible post-commit check.
     - "The visible post-commit check must contain: Commit summary; changed-file scope; validation status; source-of-truth alignment; generated data impact; secrets or sensitive data check; follow-up items; AI guidance rules: updated / proposal needed / no change needed; Documentation: updated / proposal needed / no change needed."
-    - Routine Issue bookkeeping does not need a separate visible checklist line unless Issue synchronization failed or needs a decision.
+    - Routine Issue bookkeeping does not need a separate visible checklist line unless Issue synchronization failed or needs a decision. This reporting rule never permits skipping the required Issue synchronization itself.
     - Include deploy status in the visible post-commit check when a commit could trigger deployment.
     - State validation as run, not run, or not applicable.
     - Consider Angular build/tests for frontend changes, PowerShell syntax and approved verbs for ps1/psm1 changes, JSON/YAML validity for data or AI context changes, and deploy status for commits to main.
+
+  pullRequest:
+    - Before creating a Pull Request, verify that the linked Issue body already reflects the committed state, including checklist/progress, commit/result reference, validation, remaining work and current handoff.
+    - Reference the relevant Issue from the Pull Request and use a closing reference only when the PR completes the entire Issue.
+    - After creating or materially updating a Pull Request, update the Issue body with the PR reference and resulting validation/status information before treating the PR transition as complete.
 
   postMerge:
     - After an authorized merge actually succeeds, re-check all acceptance criteria in the relevant Issue.
