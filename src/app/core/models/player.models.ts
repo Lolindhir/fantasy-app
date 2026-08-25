@@ -8,7 +8,7 @@ export interface InjuryDetails {
 }
 
 export interface RankingEntry {
-  Type: 'Total' | 'PerGame' | 'Combined' | 'Total_Pos' | 'PerGame_Pos' | 'Combined_Pos';
+  Type: 'Total' | 'PerGame' | 'Combined' | 'Total_Pos' | 'PerGame_Pos' | 'Combined_Pos' | 'Combined_Previous';
   Value: number;
 }
 
@@ -180,6 +180,14 @@ export interface RawPlayer {
   Ranking: RankingEntry[];
   PointHistory: PointHistory;
   GameHistory?: GameHistory[];
+  [key: string]: unknown;
+}
+
+export interface NFLTeam {
+  ID: string;
+  Name: string;
+  Abv: string;
+  Logo: string;
 }
 
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
@@ -193,21 +201,11 @@ export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'Game
   SalaryDisplay: string;
   SalaryProjectedDisplay: string;
   Stats: PlayerStats;
-  GameHistoryFull?: GameHistory[];
+  GameHistoryFull: GameHistory[];
+  RosterID?: number;
+  Taxi?: boolean;
+  Reserve?: boolean;
+  Starter?: boolean;
 }
 
-export interface RawNFLTeam {
-  ID: string;
-  Name: string;
-  Abv: string;
-  Logo: string;
-}
-
-export interface NFLTeam extends RawNFLTeam {}
-
-export interface TopPlayersSalaryResult {
-  cap: number;
-  topPlayers: Player[];
-}
-
-export type SortField = keyof Player;
+export type SortField = keyof Pick<Player, 'Salary' | 'SalaryProjected' | 'Age' | 'Year' | 'Name' | 'NameShort' | 'Position'>;
