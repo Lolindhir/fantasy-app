@@ -12,6 +12,8 @@ import { SharedMaterialImports } from '../../shared-material-imports';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
 import {
   buildRosterPlayerGroups,
+  getCombinedRanking,
+  getPreviousCombinedRanking,
   isCombinedRankingAvailable,
   type RosterGroupMode,
   type RosterPlayerGroup,
@@ -97,7 +99,7 @@ export class TeamDetailDialogComponent implements OnInit {
   readonly combinedRankingAvailable = isCombinedRankingAvailable(this.data.league.FinalScoredWeek);
 
   salaryLens: SalaryLens = 'current';
-  rosterGroup: RosterGroupMode = 'rosterStatus';
+  rosterGroup: RosterGroupMode = 'none';
   rosterSort: RosterSortMode = 'salary';
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
@@ -108,14 +110,28 @@ export class TeamDetailDialogComponent implements OnInit {
   }
 
   get playerColumns(): PlayerListColumn[] {
+    const sortColumn: PlayerListColumn[] = this.showsRosterSortColumn ? ['dynamicStat'] : [];
+
     return this.isMobile
-      ? ['rank', 'name', 'salary', 'salaryProjected']
-      : ['rank', 'picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
+      ? ['rank', 'name', ...sortColumn, 'salary', 'salaryProjected']
+      : ['rank', 'picture', 'name', 'position', 'team', ...sortColumn, 'salary', 'salaryProjected'];
+  }
+
+  get rosterDynamicColumnHeader(): string {
+    switch (this.rosterSort) {
+      case 'ageAsc':
+      case 'ageDesc':
+        return 'Age';
+      case 'ranking':
+        return 'Rank';
+      default:
+        return '';
+    }
   }
 
   get rosterGroups(): RosterPlayerGroup[] {
     const groupMode = this.rosterGroup === 'rankingStatus' && !this.combinedRankingAvailable
-      ? 'rosterStatus'
+      ? 'none'
       : this.rosterGroup;
     const sortMode = this.rosterSort === 'ranking' && !this.combinedRankingAvailable
       ? 'salary'
@@ -230,6 +246,22 @@ export class TeamDetailDialogComponent implements OnInit {
     }
   }
 
+  getRosterDynamicColumnValue = (player: Player): string => {
+    switch (this.rosterSort) {
+      case 'ageAsc':
+      case 'ageDesc':
+        return `${player.Age}`;
+      case 'ranking': {
+        const currentRank = getCombinedRanking(player);
+        if (currentRank !== undefined) return `#${currentRank}`;
+        const previousRank = getPreviousCombinedRanking(player);
+        return previousRank !== undefined ? `Prev #${previousRank}` : '—';
+      }
+      default:
+        return '';
+    }
+  };
+
   formatMoney(value: number): string {
     const absolute = Math.abs(value);
     const prefix = value < 0 ? '-' : '';
@@ -260,6 +292,10 @@ export class TeamDetailDialogComponent implements OnInit {
 
   historicalPlayerName(pick: DraftPick): string {
     return this.historicalPlayer(pick)?.Name || pick.PlayerName || 'Unknown player';
+  }
+
+  private get showsRosterSortColumn(): boolean {
+    return this.rosterSort === 'ranking' || this.rosterSort === 'ageAsc' || this.rosterSort === 'ageDesc';
   }
 
   private loadDraftHistory(): void {
