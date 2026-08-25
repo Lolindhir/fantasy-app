@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-08-25T04:51:49.153858Z",
-  "input_fingerprint": "e23d488d6f83d02fac4771336379c06c440e30236fbcf126f11030c4f2631e08",
+  "generated_at": "2026-08-25T04:59:19.296208Z",
+  "input_fingerprint": "97ade6bd89dfef474c18de30ccdaf8c5353dfc3cc7500c5e30716959094fbeed",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "1be2a49e26625586dbfc9e6124042d136995dd6b1d6de3c040bff9af32264c32"
+      "input_fingerprint": "805287b2e6a113c3a884c2b5d8020d03d608b783c32c3c847756e48402b00a68"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "9c0867f7281f876d67688bbf271eb66fdf8bed01e65a7710a519d71542391f38"
+      "input_fingerprint": "f77e1e26d843e4193f02f3a8252bb07a805e24a523023375941eef160c547285"
     },
     "league": "public/data/League.json",
     "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
@@ -29,7 +29,7 @@
     "comparison_anchor_policy": "calendar windows are anchored to the evaluation date; each source uses the last available snapshot at or before the cutoff",
     "previous_free_agent_signals": {
       "status": "available",
-      "input_fingerprint": "f3b7b7676527965567edc27615e6e2bd1aa6e5c26cc2872e43eabd73b1a4dada"
+      "input_fingerprint": "1be2a49e26625586dbfc9e6124042d136995dd6b1d6de3c040bff9af32264c32"
     },
     "ranking_histories": {
       "cbs-sports-redraft-kicker-preseason": {
@@ -902,15 +902,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 48,
+              "to": 3
+            },
+            {
+              "field": "add_count",
+              "from": 5728,
+              "to": 32208
+            },
+            {
+              "field": "drop_rank",
+              "from": 41,
+              "to": 81
+            },
+            {
+              "field": "drop_count",
+              "from": 10232,
+              "to": 4784
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 48,
-        "add_count": 5728,
-        "drop_rank": 41,
-        "drop_count": 10232,
+        "add_rank": 3,
+        "add_count": 32208,
+        "drop_rank": 81,
+        "drop_count": 4784,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -964,7 +985,8 @@
         ],
         "reasons": [
           "material_movement_threshold",
-          "relevant_source_coverage_change"
+          "relevant_source_coverage_change",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -1342,13 +1364,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 92
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 2460
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 92,
+        "add_count": 2460,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -2656,13 +2689,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 80,
+              "to": 71
+            },
+            {
+              "field": "add_count",
+              "from": 3376,
+              "to": 3048
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 80,
-        "add_count": 3376,
+        "add_rank": 71,
+        "add_count": 3048,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -3526,15 +3570,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 44,
+              "to": 56
+            },
+            {
+              "field": "add_count",
+              "from": 6040,
+              "to": 3880
+            },
+            {
+              "field": "drop_rank",
+              "from": 64,
+              "to": 4
+            },
+            {
+              "field": "drop_count",
+              "from": 8168,
+              "to": 14296
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 44,
-        "add_count": 6040,
-        "drop_rank": 64,
-        "drop_count": 8168,
+        "add_rank": 56,
+        "add_count": 3880,
+        "drop_rank": 4,
+        "drop_count": 14296,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -3632,7 +3697,8 @@
         "reasons": [
           "material_movement_threshold",
           "cross_signal_pattern",
-          "relevant_source_coverage_change"
+          "relevant_source_coverage_change",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -4012,15 +4078,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 68,
+              "to": 72
+            },
+            {
+              "field": "add_count",
+              "from": 3944,
+              "to": 3024
+            },
+            {
+              "field": "drop_rank",
+              "from": 1,
+              "to": 5
+            },
+            {
+              "field": "drop_count",
+              "from": 22336,
+              "to": 14096
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 68,
-        "add_count": 3944,
-        "drop_rank": 1,
-        "drop_count": 22336,
+        "add_rank": 72,
+        "add_count": 3024,
+        "drop_rank": 5,
+        "drop_count": 14096,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -4461,15 +4548,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 95
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4380
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 95,
+        "drop_count": 4380,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -7124,15 +7222,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 21,
+              "to": 20
+            },
+            {
+              "field": "add_count",
+              "from": 13914,
+              "to": 10008
+            },
+            {
+              "field": "drop_rank",
+              "from": 10,
+              "to": 34
+            },
+            {
+              "field": "drop_count",
+              "from": 14697,
+              "to": 7821
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 21,
-        "add_count": 13914,
-        "drop_rank": 10,
-        "drop_count": 14697,
+        "add_rank": 20,
+        "add_count": 10008,
+        "drop_rank": 34,
+        "drop_count": 7821,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -7981,15 +8100,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 2,
+              "to": 1
+            },
+            {
+              "field": "add_count",
+              "from": 66897,
+              "to": 123435
+            },
+            {
+              "field": "drop_rank",
+              "from": 73,
+              "to": 23
+            },
+            {
+              "field": "drop_count",
+              "from": 7587,
+              "to": 8577
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 2,
-        "add_count": 66897,
-        "drop_rank": 73,
-        "drop_count": 7587,
+        "add_rank": 1,
+        "add_count": 123435,
+        "drop_rank": 23,
+        "drop_count": 8577,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -8442,15 +8582,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 7,
+              "to": 8
+            },
+            {
+              "field": "add_count",
+              "from": 34533,
+              "to": 21114
+            },
+            {
+              "field": "drop_rank",
+              "from": 23,
+              "to": 53
+            },
+            {
+              "field": "drop_count",
+              "from": 13032,
+              "to": 6435
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 7,
-        "add_count": 34533,
-        "drop_rank": 23,
-        "drop_count": 13032,
+        "add_rank": 8,
+        "add_count": 21114,
+        "drop_rank": 53,
+        "drop_count": 6435,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -8892,15 +9053,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 24,
+              "to": 34
+            },
+            {
+              "field": "add_count",
+              "from": 12820,
+              "to": 6660
+            },
+            {
+              "field": "drop_rank",
+              "from": 29,
+              "to": 41
+            },
+            {
+              "field": "drop_count",
+              "from": 11105,
+              "to": 7170
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 24,
-        "add_count": 12820,
-        "drop_rank": 29,
-        "drop_count": 11105,
+        "add_rank": 34,
+        "add_count": 6660,
+        "drop_rank": 41,
+        "drop_count": 7170,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -10763,15 +10945,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 86,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 3267,
+              "to": null
+            },
+            {
+              "field": "drop_rank",
+              "from": 31,
+              "to": 16
+            },
+            {
+              "field": "drop_count",
+              "from": 10917,
+              "to": 9531
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 86,
-        "add_count": 3267,
-        "drop_rank": 31,
-        "drop_count": 10917,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": 16,
+        "drop_count": 9531,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -10823,7 +11026,8 @@
         ],
         "reasons": [
           "material_movement_threshold",
-          "relevant_source_coverage_change"
+          "relevant_source_coverage_change",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -12985,15 +13189,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 50,
+              "to": 58
+            },
+            {
+              "field": "drop_count",
+              "from": 9328,
+              "to": 6208
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 50,
-        "drop_count": 9328,
+        "drop_rank": 58,
+        "drop_count": 6208,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -13421,13 +13636,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 94,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 2995,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
-        "add_rank": 94,
-        "add_count": 2995,
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -13848,13 +14074,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 94
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 2398
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 94,
+        "add_count": 2398,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -14313,15 +14550,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 34,
+              "to": 36
+            },
+            {
+              "field": "drop_count",
+              "from": 10840,
+              "to": 7730
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 34,
-        "drop_count": 10840,
+        "drop_rank": 36,
+        "drop_count": 7730,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -15212,15 +15460,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 46,
+              "to": 49
+            },
+            {
+              "field": "add_count",
+              "from": 5912,
+              "to": 4688
+            },
+            {
+              "field": "drop_rank",
+              "from": 48,
+              "to": 42
+            },
+            {
+              "field": "drop_count",
+              "from": 9760,
+              "to": 7160
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 46,
-        "add_count": 5912,
-        "drop_rank": 48,
-        "drop_count": 9760,
+        "add_rank": 49,
+        "add_count": 4688,
+        "drop_rank": 42,
+        "drop_count": 7160,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -15683,15 +15952,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 9,
+              "to": 7
+            },
+            {
+              "field": "add_count",
+              "from": 26888,
+              "to": 21216
+            },
+            {
+              "field": "drop_rank",
+              "from": 71,
+              "to": 61
+            },
+            {
+              "field": "drop_count",
+              "from": 7816,
+              "to": 5984
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 9,
-        "add_count": 26888,
-        "drop_rank": 71,
-        "drop_count": 7816,
+        "add_rank": 7,
+        "add_count": 21216,
+        "drop_rank": 61,
+        "drop_count": 5984,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -16207,15 +16497,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 88,
+              "to": 82
+            },
+            {
+              "field": "drop_count",
+              "from": 6846,
+              "to": 4746
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 88,
-        "drop_count": 6846,
+        "drop_rank": 82,
+        "drop_count": 4746,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -16647,15 +16948,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 25,
+              "to": 21
+            },
+            {
+              "field": "add_count",
+              "from": 12126,
+              "to": 9510
+            },
+            {
+              "field": "drop_rank",
+              "from": 37,
+              "to": 60
+            },
+            {
+              "field": "drop_count",
+              "from": 10416,
+              "to": 6054
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 25,
-        "add_count": 12126,
-        "drop_rank": 37,
-        "drop_count": 10416,
+        "add_rank": 21,
+        "add_count": 9510,
+        "drop_rank": 60,
+        "drop_count": 6054,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -17143,15 +17465,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 28,
+              "to": 19
+            },
+            {
+              "field": "drop_count",
+              "from": 11277,
+              "to": 8820
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 28,
-        "drop_count": 11277,
+        "drop_rank": 19,
+        "drop_count": 8820,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -17190,7 +17523,8 @@
         ],
         "coverage_changes": [],
         "reasons": [
-          "material_movement_threshold"
+          "material_movement_threshold",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -18036,13 +18370,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 14,
+              "to": 12
+            },
+            {
+              "field": "add_count",
+              "from": 19145,
+              "to": 15379
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 14,
-        "add_count": 19145,
+        "add_rank": 12,
+        "add_count": 15379,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -18495,13 +18840,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 90
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 2490
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 90,
+        "add_count": 2490,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -19396,15 +19752,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 62,
+              "to": 57
+            },
+            {
+              "field": "drop_count",
+              "from": 8248,
+              "to": 6288
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 62,
-        "drop_count": 8248,
+        "drop_rank": 57,
+        "drop_count": 6288,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -19848,15 +20215,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 98,
+              "to": 86
+            },
+            {
+              "field": "drop_count",
+              "from": 6448,
+              "to": 4704
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 98,
-        "drop_count": 6448,
+        "drop_rank": 86,
+        "drop_count": 4704,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -20257,15 +20635,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 59,
+              "to": 54
+            },
+            {
+              "field": "add_count",
+              "from": 4617,
+              "to": 3996
+            },
+            {
+              "field": "drop_rank",
+              "from": 13,
+              "to": 11
+            },
+            {
+              "field": "drop_count",
+              "from": 14202,
+              "to": 10278
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 59,
-        "add_count": 4617,
-        "drop_rank": 13,
-        "drop_count": 14202,
+        "add_rank": 54,
+        "add_count": 3996,
+        "drop_rank": 11,
+        "drop_count": 10278,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -21137,15 +21536,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 98,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 2889,
+              "to": null
+            },
+            {
+              "field": "drop_rank",
+              "from": 35,
+              "to": 32
+            },
+            {
+              "field": "drop_count",
+              "from": 10782,
+              "to": 7929
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 98,
-        "add_count": 2889,
-        "drop_rank": 35,
-        "drop_count": 10782,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": 32,
+        "drop_count": 7929,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -21600,13 +22020,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 47
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 4980
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 47,
+        "add_count": 4980,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -22040,15 +22471,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 10,
+              "to": 9
+            },
+            {
+              "field": "add_count",
+              "from": 23032,
+              "to": 17216
+            },
+            {
+              "field": "drop_rank",
+              "from": 21,
+              "to": 20
+            },
+            {
+              "field": "drop_count",
+              "from": 13128,
+              "to": 8736
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 10,
-        "add_count": 23032,
-        "drop_rank": 21,
-        "drop_count": 13128,
+        "add_rank": 9,
+        "add_count": 17216,
+        "drop_rank": 20,
+        "drop_count": 8736,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -22916,13 +23368,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 47,
+              "to": 53
+            },
+            {
+              "field": "add_count",
+              "from": 5877,
+              "to": 4032
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 47,
-        "add_count": 5877,
+        "add_rank": 53,
+        "add_count": 4032,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -24232,15 +24695,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 30,
+              "to": 27
+            },
+            {
+              "field": "add_count",
+              "from": 10672,
+              "to": 8504
+            },
+            {
+              "field": "drop_rank",
+              "from": 92,
+              "to": 71
+            },
+            {
+              "field": "drop_count",
+              "from": 6696,
+              "to": 5336
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 30,
-        "add_count": 10672,
-        "drop_rank": 92,
-        "drop_count": 6696,
+        "add_rank": 27,
+        "add_count": 8504,
+        "drop_rank": 71,
+        "drop_count": 5336,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -24659,13 +25143,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 31,
+              "to": 29
+            },
+            {
+              "field": "add_count",
+              "from": 9558,
+              "to": 8448
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 31,
-        "add_count": 9558,
+        "add_rank": 29,
+        "add_count": 8448,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -25992,15 +26487,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 3,
+              "to": 4
+            },
+            {
+              "field": "add_count",
+              "from": 50883,
+              "to": 29400
+            },
+            {
+              "field": "drop_rank",
+              "from": 32,
+              "to": 1
+            },
+            {
+              "field": "drop_count",
+              "from": 10899,
+              "to": 16604
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 3,
-        "add_count": 50883,
-        "drop_rank": 32,
-        "drop_count": 10899,
+        "add_rank": 4,
+        "add_count": 29400,
+        "drop_rank": 1,
+        "drop_count": 16604,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -26550,15 +27066,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 56,
+              "to": 65
+            },
+            {
+              "field": "drop_count",
+              "from": 8752,
+              "to": 5608
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 56,
-        "drop_count": 8752,
+        "drop_rank": 65,
+        "drop_count": 5608,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -28152,13 +28679,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 52,
+              "to": 40
+            },
+            {
+              "field": "add_count",
+              "from": 5352,
+              "to": 5480
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 52,
-        "add_count": 5352,
+        "add_rank": 40,
+        "add_count": 5480,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -28982,13 +29520,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 92,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 3020,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
-        "add_rank": 92,
-        "add_count": 3020,
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -30534,13 +31083,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 42,
+              "to": 79
+            },
+            {
+              "field": "add_count",
+              "from": 6104,
+              "to": 2668
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 42,
-        "add_count": 6104,
+        "add_rank": 79,
+        "add_count": 2668,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -30797,13 +31357,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 78,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 3405,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
-        "add_rank": 78,
-        "add_count": 3405,
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -31333,13 +31904,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 72,
+              "to": 82
+            },
+            {
+              "field": "add_count",
+              "from": 3867,
+              "to": 2631
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 72,
-        "add_count": 3867,
+        "add_rank": 82,
+        "add_count": 2631,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -33388,13 +33970,19 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_count",
+              "from": 2919,
+              "to": 2352
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": 97,
-        "add_count": 2919,
+        "add_count": 2352,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -33789,13 +34377,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 81,
+              "to": 83
+            },
+            {
+              "field": "add_count",
+              "from": 3375,
+              "to": 2619
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 81,
-        "add_count": 3375,
+        "add_rank": 83,
+        "add_count": 2619,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -37650,13 +38249,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 1,
+              "to": 2
+            },
+            {
+              "field": "add_count",
+              "from": 147505,
+              "to": 75250
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 1,
-        "add_count": 147505,
+        "add_rank": 2,
+        "add_count": 75250,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -38515,15 +39125,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 57,
+              "to": 28
+            },
+            {
+              "field": "drop_count",
+              "from": 8634,
+              "to": 8154
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 57,
-        "drop_count": 8634,
+        "drop_rank": 28,
+        "drop_count": 8154,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -39794,15 +40415,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 63,
+              "to": 70
+            },
+            {
+              "field": "drop_count",
+              "from": 8199,
+              "to": 5373
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 63,
-        "drop_count": 8199,
+        "drop_rank": 70,
+        "drop_count": 5373,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -40216,13 +40848,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 17,
+              "to": 25
+            },
+            {
+              "field": "add_count",
+              "from": 15928,
+              "to": 9064
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 17,
-        "add_count": 15928,
+        "add_rank": 25,
+        "add_count": 9064,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -41114,15 +41757,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 68,
+              "to": 51
+            },
+            {
+              "field": "drop_count",
+              "from": 7908,
+              "to": 6462
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 68,
-        "drop_count": 7908,
+        "drop_rank": 51,
+        "drop_count": 6462,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -42467,15 +43121,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 19,
+              "to": 16
+            },
+            {
+              "field": "add_count",
+              "from": 14301,
+              "to": 11179
+            },
+            {
+              "field": "drop_rank",
+              "from": 85,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6888,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 19,
-        "add_count": 14301,
-        "drop_rank": 85,
-        "drop_count": 6888,
+        "add_rank": 16,
+        "add_count": 11179,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -44132,15 +44807,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 26,
+              "to": 33
+            },
+            {
+              "field": "drop_count",
+              "from": 11700,
+              "to": 7893
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 26,
-        "drop_count": 11700,
+        "drop_rank": 33,
+        "drop_count": 7893,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -45795,7 +46481,13 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_count",
+              "from": 7272,
+              "to": 4904
+            }
+          ]
         }
       },
       "activity": {
@@ -45803,7 +46495,7 @@
         "add_rank": null,
         "add_count": null,
         "drop_rank": 79,
-        "drop_count": 7272,
+        "drop_count": 4904,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -46657,15 +47349,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 67,
+              "to": 70
+            },
+            {
+              "field": "add_count",
+              "from": 3952,
+              "to": 3048
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 78
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4904
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 67,
-        "add_count": 3952,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 70,
+        "add_count": 3048,
+        "drop_rank": 78,
+        "drop_count": 4904,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -50478,15 +51191,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 86,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6868,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
+        "listed": false,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 86,
-        "drop_count": 6868,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -50900,15 +51624,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 19,
+              "to": 14
+            },
+            {
+              "field": "drop_count",
+              "from": 13307,
+              "to": 9849
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 19,
-        "drop_count": 13307,
+        "drop_rank": 14,
+        "drop_count": 9849,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -51297,15 +52032,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 29,
+              "to": 26
+            },
+            {
+              "field": "add_count",
+              "from": 11250,
+              "to": 8982
+            },
+            {
+              "field": "drop_rank",
+              "from": 12,
+              "to": 45
+            },
+            {
+              "field": "drop_count",
+              "from": 14436,
+              "to": 6849
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 29,
-        "add_count": 11250,
-        "drop_rank": 12,
-        "drop_count": 14436,
+        "add_rank": 26,
+        "add_count": 8982,
+        "drop_rank": 45,
+        "drop_count": 6849,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -51322,8 +52078,7 @@
           }
         ],
         "reasons": [
-          "relevant_source_coverage_change",
-          "activity_near_replacement_boundary"
+          "relevant_source_coverage_change"
         ],
         "final_roster_recommendation": null
       }
@@ -54241,15 +54996,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 16,
+              "to": 13
+            },
+            {
+              "field": "drop_count",
+              "from": 13752,
+              "to": 10053
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 16,
-        "drop_count": 13752,
+        "drop_rank": 13,
+        "drop_count": 10053,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -54649,15 +55415,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 81,
+              "to": 72
+            },
+            {
+              "field": "drop_count",
+              "from": 7215,
+              "to": 5310
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 81,
-        "drop_count": 7215,
+        "drop_rank": 72,
+        "drop_count": 5310,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -55063,13 +55840,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 6,
+              "to": 15
+            },
+            {
+              "field": "add_count",
+              "from": 36449,
+              "to": 11865
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 6,
-        "add_count": 36449,
+        "add_rank": 15,
+        "add_count": 11865,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -57189,15 +57977,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 93,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 3015,
+              "to": null
+            },
+            {
+              "field": "drop_rank",
+              "from": 25,
+              "to": 18
+            },
+            {
+              "field": "drop_count",
+              "from": 11871,
+              "to": 9297
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 93,
-        "add_count": 3015,
-        "drop_rank": 25,
-        "drop_count": 11871,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": 18,
+        "drop_count": 9297,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -57214,7 +58023,8 @@
           }
         ],
         "reasons": [
-          "relevant_source_coverage_change"
+          "relevant_source_coverage_change",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -57590,15 +58400,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 90,
+              "to": 98
+            },
+            {
+              "field": "add_count",
+              "from": 3051,
+              "to": 2349
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 88
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4572
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 90,
-        "add_count": 3051,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 98,
+        "add_count": 2349,
+        "drop_rank": 88,
+        "drop_count": 4572,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -60530,15 +61361,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 93
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4400
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 93,
+        "drop_count": 4400,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -61783,13 +62625,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 69,
+              "to": 76
+            },
+            {
+              "field": "add_count",
+              "from": 3930,
+              "to": 2905
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 69,
-        "add_count": 3930,
+        "add_rank": 76,
+        "add_count": 2905,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -62199,15 +63052,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 34,
+              "to": 22
+            },
+            {
+              "field": "add_count",
+              "from": 8055,
+              "to": 9414
+            },
+            {
+              "field": "drop_rank",
+              "from": 59,
+              "to": 73
+            },
+            {
+              "field": "drop_count",
+              "from": 8568,
+              "to": 5256
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 34,
-        "add_count": 8055,
-        "drop_rank": 59,
-        "drop_count": 8568,
+        "add_rank": 22,
+        "add_count": 9414,
+        "drop_rank": 73,
+        "drop_count": 5256,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -62606,15 +63480,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 89
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4545
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 89,
+        "drop_count": 4545,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -63057,15 +63942,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 30,
+              "to": 25
+            },
+            {
+              "field": "drop_count",
+              "from": 10920,
+              "to": 8280
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 30,
-        "drop_count": 10920,
+        "drop_rank": 25,
+        "drop_count": 8280,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -63458,15 +64354,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 100
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4248
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 100,
+        "drop_count": 4248,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -66005,13 +66912,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 15,
+              "to": 33
+            },
+            {
+              "field": "add_count",
+              "from": 17346,
+              "to": 6960
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 15,
-        "add_count": 17346,
+        "add_rank": 33,
+        "add_count": 6960,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -66457,13 +67375,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 53,
+              "to": 55
+            },
+            {
+              "field": "add_count",
+              "from": 5292,
+              "to": 3900
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 53,
-        "add_count": 5292,
+        "add_rank": 55,
+        "add_count": 3900,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -66860,13 +67789,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 13,
+              "to": 10
+            },
+            {
+              "field": "add_count",
+              "from": 19696,
+              "to": 17192
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 13,
-        "add_count": 19696,
+        "add_rank": 10,
+        "add_count": 17192,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -68100,15 +69040,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 55,
+              "to": 50
+            },
+            {
+              "field": "add_count",
+              "from": 4998,
+              "to": 4543
+            },
+            {
+              "field": "drop_rank",
+              "from": 20,
+              "to": 37
+            },
+            {
+              "field": "drop_count",
+              "from": 13300,
+              "to": 7637
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 55,
-        "add_count": 4998,
-        "drop_rank": 20,
-        "drop_count": 13300,
+        "add_rank": 50,
+        "add_count": 4543,
+        "drop_rank": 37,
+        "drop_count": 7637,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -68139,8 +69100,7 @@
         "reasons": [
           "material_movement_threshold",
           "cross_signal_pattern",
-          "relevant_source_coverage_change",
-          "activity_near_replacement_boundary"
+          "relevant_source_coverage_change"
         ],
         "final_roster_recommendation": null
       }
@@ -70635,15 +71595,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 95,
+              "to": 85
+            },
+            {
+              "field": "add_count",
+              "from": 2970,
+              "to": 2605
+            },
+            {
+              "field": "drop_rank",
+              "from": 52,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 9135,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 95,
-        "add_count": 2970,
-        "drop_rank": 52,
-        "drop_count": 9135,
+        "add_rank": 85,
+        "add_count": 2605,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -72366,13 +73347,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 36,
+              "to": 41
+            },
+            {
+              "field": "add_count",
+              "from": 7500,
+              "to": 5394
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 36,
-        "add_count": 7500,
+        "add_rank": 41,
+        "add_count": 5394,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -74014,15 +75006,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 82,
+              "to": 80
+            },
+            {
+              "field": "drop_count",
+              "from": 7188,
+              "to": 4794
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 82,
-        "drop_count": 7188,
+        "drop_rank": 80,
+        "drop_count": 4794,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -77921,13 +78924,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 54,
+              "to": 58
+            },
+            {
+              "field": "add_count",
+              "from": 5061,
+              "to": 3696
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 54,
-        "add_count": 5061,
+        "add_rank": 58,
+        "add_count": 3696,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -82173,15 +83187,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 38,
+              "to": 27
+            },
+            {
+              "field": "drop_count",
+              "from": 10409,
+              "to": 8169
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 38,
-        "drop_count": 10409,
+        "drop_rank": 27,
+        "drop_count": 8169,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -83497,13 +84522,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 99,
+              "to": 96
+            },
+            {
+              "field": "add_count",
+              "from": 2880,
+              "to": 2370
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 99,
-        "add_count": 2880,
+        "add_rank": 96,
+        "add_count": 2370,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -84375,13 +85411,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 45,
+              "to": 91
+            },
+            {
+              "field": "add_count",
+              "from": 6035,
+              "to": 2465
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 45,
-        "add_count": 6035,
+        "add_rank": 91,
+        "add_count": 2465,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -84780,13 +85827,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 89,
+              "to": 100
+            },
+            {
+              "field": "add_count",
+              "from": 3080,
+              "to": 2289
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 89,
-        "add_count": 3080,
+        "add_rank": 100,
+        "add_count": 2289,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -85206,15 +86264,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 87
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 4644
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 87,
+        "drop_count": 4644,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -87733,13 +88802,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 84
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 2611
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 84,
+        "add_count": 2611,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -88631,15 +89711,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 87,
+              "to": 63
+            },
+            {
+              "field": "drop_count",
+              "from": 6853,
+              "to": 5775
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 87,
-        "drop_count": 6853,
+        "drop_rank": 63,
+        "drop_count": 5775,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -90843,15 +91934,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 7,
+              "to": 9
+            },
+            {
+              "field": "drop_count",
+              "from": 16164,
+              "to": 12798
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 7,
-        "drop_count": 16164,
+        "drop_rank": 9,
+        "drop_count": 12798,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -92145,15 +93247,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 74,
+              "to": 63
+            },
+            {
+              "field": "add_count",
+              "from": 3600,
+              "to": 3249
+            },
+            {
+              "field": "drop_rank",
+              "from": 42,
+              "to": 49
+            },
+            {
+              "field": "drop_count",
+              "from": 10134,
+              "to": 6696
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 74,
-        "add_count": 3600,
-        "drop_rank": 42,
-        "drop_count": 10134,
+        "add_rank": 63,
+        "add_count": 3249,
+        "drop_rank": 49,
+        "drop_count": 6696,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -93489,15 +94612,31 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_count",
+              "from": 41886,
+              "to": 24741
+            },
+            {
+              "field": "drop_rank",
+              "from": 80,
+              "to": 52
+            },
+            {
+              "field": "drop_count",
+              "from": 7272,
+              "to": 6444
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": 5,
-        "add_count": 41886,
-        "drop_rank": 80,
-        "drop_count": 7272,
+        "add_count": 24741,
+        "drop_rank": 52,
+        "drop_count": 6444,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -93997,15 +95136,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 44,
+              "to": 39
+            },
+            {
+              "field": "drop_count",
+              "from": 10098,
+              "to": 7263
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 44,
-        "drop_count": 10098,
+        "drop_rank": 39,
+        "drop_count": 7263,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -94877,15 +96027,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 4,
+              "to": 7
+            },
+            {
+              "field": "drop_count",
+              "from": 18630,
+              "to": 13824
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 4,
-        "drop_count": 18630,
+        "drop_rank": 7,
+        "drop_count": 13824,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -95708,13 +96869,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 57,
+              "to": 89
+            },
+            {
+              "field": "add_count",
+              "from": 4796,
+              "to": 2500
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 57,
-        "add_count": 4796,
+        "add_rank": 89,
+        "add_count": 2500,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -96140,13 +97312,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 23,
+              "to": 18
+            },
+            {
+              "field": "add_count",
+              "from": 13494,
+              "to": 10830
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 23,
-        "add_count": 13494,
+        "add_rank": 18,
+        "add_count": 10830,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -97871,13 +99054,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 85,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 3270,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
-        "add_rank": 85,
-        "add_count": 3270,
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -106871,15 +108065,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 12,
+              "to": 11
+            },
+            {
+              "field": "add_count",
+              "from": 21258,
+              "to": 16191
+            },
+            {
+              "field": "drop_rank",
+              "from": 18,
+              "to": 29
+            },
+            {
+              "field": "drop_count",
+              "from": 13347,
+              "to": 8082
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 12,
-        "add_count": 21258,
-        "drop_rank": 18,
-        "drop_count": 13347,
+        "add_rank": 11,
+        "add_count": 16191,
+        "drop_rank": 29,
+        "drop_count": 8082,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -109392,15 +110607,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 39,
+              "to": 44
+            },
+            {
+              "field": "drop_count",
+              "from": 10352,
+              "to": 6872
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 39,
-        "drop_count": 10352,
+        "drop_rank": 44,
+        "drop_count": 6872,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -110771,15 +111997,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 50,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 5579,
+              "to": null
+            },
+            {
+              "field": "drop_rank",
+              "from": 84,
+              "to": 68
+            },
+            {
+              "field": "drop_count",
+              "from": 6944,
+              "to": 5474
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 50,
-        "add_count": 5579,
-        "drop_rank": 84,
-        "drop_count": 6944,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": 68,
+        "drop_count": 5474,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -116740,15 +117987,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 17,
+              "to": 15
+            },
+            {
+              "field": "drop_count",
+              "from": 13617,
+              "to": 9648
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 17,
-        "drop_count": 13617,
+        "drop_rank": 15,
+        "drop_count": 9648,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -117617,15 +118875,36 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 71,
+              "to": 48
+            },
+            {
+              "field": "add_count",
+              "from": 3888,
+              "to": 4736
+            },
+            {
+              "field": "drop_rank",
+              "from": 94,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6520,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 71,
-        "add_count": 3888,
-        "drop_rank": 94,
-        "drop_count": 6520,
+        "add_rank": 48,
+        "add_count": 4736,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -122170,15 +123449,26 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 89,
+              "to": 83
+            },
+            {
+              "field": "drop_count",
+              "from": 6839,
+              "to": 4746
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 89,
-        "drop_count": 6839,
+        "drop_rank": 83,
+        "drop_count": 4746,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -126030,13 +127320,24 @@
         "structural_day_over_day": {
           "comparison_status": "compared",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 73,
+              "to": 59
+            },
+            {
+              "field": "add_count",
+              "from": 3852,
+              "to": 3636
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 73,
-        "add_count": 3852,
+        "add_rank": 59,
+        "add_count": 3636,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -126095,7 +127396,7 @@
   "quality": {
     "status": "ok",
     "source_quality_status": "ok",
-    "source_issue_count": 1,
+    "source_issue_count": 2,
     "history_status": "partial",
     "previous_state_status": "available",
     "history_issue_count": 11,
@@ -126173,6 +127474,6 @@
     "fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805"
   },
   "evidence": {
-    "input_fingerprint": "8eac57a28b562e2f75a81afb8e8d29e813a9bcc783bc1656399d28368b6773a7"
+    "input_fingerprint": "0bc5d37d5b5bcc7656b5fb0ef4f44974eb842e5b84971830d4c183c633b67435"
   }
 }
