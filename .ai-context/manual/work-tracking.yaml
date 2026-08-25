@@ -12,6 +12,8 @@ principles:
   - Questions and analysis alone do not authorize repository mutation.
   - Once concrete repository work is explicitly authorized, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
   - Routine Issue bookkeeping should normally remain invisible to the user unless it fails, needs a decision or the user asks for status.
+  - Issue synchronization is a mandatory lifecycle gate after every commit associated with active Issue-tracked work.
+  - A repository work step is not post-commit complete while its active Issue body still describes a pre-commit state.
 
 issueGranularity:
   preferredModel: flat-checklist-issues
@@ -40,6 +42,7 @@ bodyContract:
     - If a comment contains durable current-state information, consolidate that information into the body.
     - Before handoff, a longer pause, chat end or a major work-phase transition, verify that the body reflects the actual current state.
     - If an older comment conflicts with a later updated body, the current body wins unless explicitly documented otherwise.
+    - The instruction to keep routine Issue bookkeeping invisible to the user changes reporting only; it never permits skipping the synchronization itself.
 
 lifecycle:
   start:
@@ -50,15 +53,19 @@ lifecycle:
   progress:
     - Update the body after meaningful technical findings, completed logical subtasks, scope changes, blockers or significant phase changes.
   postCommit:
+    - Treat Issue-body synchronization as a mandatory lifecycle gate for every commit associated with active Issue-tracked work.
+    - Do not create or update a Pull Request, start another work package, hand off the work, or report the commit/work step as complete until the relevant Issue body reflects the committed state.
     - Update body checklist/progress.
     - Reference the commit or its durable result.
     - Record validation performed.
     - Update remaining work and the next handoff step.
     - Create a separate follow-up Issue only for independently meaningful new work.
   pullRequest:
+    - Before creating a Pull Request, verify that the linked Issue body already reflects the committed state, including checklist/progress, commit/result reference, validation, remaining work and current handoff.
     - Reference the relevant Issue from the PR.
     - Use a closing reference only if the PR completes the entire Issue.
     - Keep the Issue open when the PR is only partial.
+    - After creating or materially updating a Pull Request, add or refresh the PR reference and resulting validation/status information in the Issue body before treating that transition as complete.
   postMerge:
     - Verify the merge actually succeeded.
     - Re-evaluate all acceptance criteria.
@@ -69,6 +76,7 @@ lifecycle:
     - Create a linked new Issue for a distinct new problem.
   syncFailure:
     - Inform the user transparently.
+    - Do not silently continue to a later lifecycle transition such as PR creation/update, handoff or completion reporting while synchronization is known to be stale or failed.
     - Do not silently fall back to a Markdown TODO file.
     - Do not claim tracking is current if Issue synchronization failed.
 
