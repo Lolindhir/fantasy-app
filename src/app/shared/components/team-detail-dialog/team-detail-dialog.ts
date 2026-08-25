@@ -10,6 +10,13 @@ import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
+import {
+  buildRosterPlayerGroups,
+  isCombinedRankingAvailable,
+  type RosterGroupMode,
+  type RosterPlayerGroup,
+  type RosterSortMode
+} from '../../utils/team-roster-view.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
 import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
@@ -54,8 +61,6 @@ interface TeamHistoryRow {
   awards: string[];
 }
 
-type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'age' | 'name';
-
 @Component({
   selector: 'app-team-detail-dialog',
   standalone: true,
@@ -89,8 +94,10 @@ export class TeamDetailDialogComponent implements OnInit {
   readonly seasonSummary = getTeamSeasonSummary(this.data.team, this.data.league);
   readonly earliestOpenPicks = getEarliestOpenPicks(this.data.team, this.data.league.SeasonAsNumber);
   readonly positionCounts = getPositionCounts(this.data.team.Roster);
+  readonly combinedRankingAvailable = isCombinedRankingAvailable(this.data.league.FinalScoredWeek);
 
   salaryLens: SalaryLens = 'current';
+  rosterGroup: RosterGroupMode = 'rosterStatus';
   rosterSort: RosterSortMode = 'salary';
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
@@ -104,6 +111,17 @@ export class TeamDetailDialogComponent implements OnInit {
     return this.isMobile
       ? ['rank', 'name', 'salary', 'salaryProjected']
       : ['rank', 'picture', 'name', 'position', 'team', 'salary', 'salaryProjected'];
+  }
+
+  get rosterGroups(): RosterPlayerGroup[] {
+    const groupMode = this.rosterGroup === 'rankingStatus' && !this.combinedRankingAvailable
+      ? 'rosterStatus'
+      : this.rosterGroup;
+    const sortMode = this.rosterSort === 'ranking' && !this.combinedRankingAvailable
+      ? 'salary'
+      : this.rosterSort;
+
+    return buildRosterPlayerGroups(this.team.Roster, groupMode, sortMode);
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
@@ -135,18 +153,6 @@ export class TeamDetailDialogComponent implements OnInit {
     return regular.Ties > 0
       ? `${regular.Wins}-${regular.Losses}-${regular.Ties}`
       : `${regular.Wins}-${regular.Losses}`;
-  }
-
-  get sortedRoster(): Player[] {
-    return this.sortPlayers(this.roster.roster);
-  }
-
-  get sortedTaxi(): Player[] {
-    return this.sortPlayers(this.roster.taxi);
-  }
-
-  get sortedIr(): Player[] {
-    return this.sortPlayers(this.roster.ir);
   }
 
   get futureDraftGroups(): TeamDraftGroup[] {
@@ -205,6 +211,25 @@ export class TeamDetailDialogComponent implements OnInit {
     return limit ? `${value} / ${limit}` : `${value}`;
   }
 
+  rosterGroupCount(group: RosterPlayerGroup): string {
+    switch (group.key) {
+      case 'roster': return this.displayLimit(group.players.length, this.limits.roster);
+      case 'taxi': return this.displayLimit(group.players.length, this.limits.taxi);
+      case 'ir': return this.displayLimit(group.players.length, this.limits.ir);
+      default: return `${group.players.length}`;
+    }
+  }
+
+  rosterGroupEmptyText(group: RosterPlayerGroup): string {
+    switch (group.key) {
+      case 'taxi': return 'No players on Taxi.';
+      case 'ir': return 'No players on IR.';
+      case 'ranked': return 'No players have a current Combined Ranking.';
+      case 'unranked': return 'All players currently have a Combined Ranking.';
+      default: return `No players in ${group.label}.`;
+    }
+  }
+
   formatMoney(value: number): string {
     const absolute = Math.abs(value);
     const prefix = value < 0 ? '-' : '';
@@ -235,22 +260,6 @@ export class TeamDetailDialogComponent implements OnInit {
 
   historicalPlayerName(pick: DraftPick): string {
     return this.historicalPlayer(pick)?.Name || pick.PlayerName || 'Unknown player';
-  }
-
-  private sortPlayers(players: Player[]): Player[] {
-    return [...players].sort((a, b) => {
-      switch (this.rosterSort) {
-        case 'salary': return b.Salary - a.Salary || a.Name.localeCompare(b.Name);
-        case 'projected': return b.SalaryProjected - a.SalaryProjected || a.Name.localeCompare(b.Name);
-        case 'ranking': return this.combinedRanking(a) - this.combinedRanking(b) || a.Name.localeCompare(b.Name);
-        case 'age': return a.Age - b.Age || a.Name.localeCompare(b.Name);
-        case 'name': return a.Name.localeCompare(b.Name);
-      }
-    });
-  }
-
-  private combinedRanking(player: Player): number {
-    return player.Stats.Ranking.find(entry => entry.Type === 'Combined')?.Value ?? Number.MAX_SAFE_INTEGER;
   }
 
   private loadDraftHistory(): void {
