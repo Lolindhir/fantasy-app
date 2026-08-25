@@ -51,6 +51,7 @@ guidance:
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
     - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
     - A repository work step is not post-commit complete while its active Issue body still describes a pre-commit state.
+    - A merge/close lifecycle is not complete while the Issue body still describes a pre-merge state or conflicts with the native GitHub Issue state.
     - Prefer one coherent Issue with an internal checklist for a multi-step deliverable.
     - Do not create child Issues merely for implementation steps, commits, PRs or chat-sized work units.
     - Create a separate Issue only when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
@@ -106,9 +107,14 @@ guidance:
     - After creating or materially updating a Pull Request, update the Issue body with the PR reference and resulting validation/status information before treating the PR transition as complete.
 
   postMerge:
-    - After an authorized merge actually succeeds, re-check all acceptance criteria in the relevant Issue.
-    - Close the Issue as completed only if the full scope is done; otherwise leave it open and update the body handoff.
-    - Administrative Issue update/closure after the authorized merge does not require another approval.
+    - After an authorized merge actually succeeds, treat Issue reconciliation as a mandatory lifecycle gate before reporting the merge/close lifecycle as complete.
+    - Verify the Pull Request is actually merged and fetch the linked Issue after the merge even when GitHub has already closed it through `Fixes #N` or another closing reference.
+    - Re-check every acceptance criterion against the merged result and available validation evidence.
+    - Finalize the Issue body with completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
+    - If the full scope is complete, ensure the Issue is closed as `completed` and remove active work-status labels unless intentionally retained for history.
+    - If GitHub auto-closed the Issue but scope or acceptance criteria remain incomplete, reopen it, restore the appropriate active status label and update the body handoff.
+    - Do not claim the lifecycle is complete while the Issue body still describes a pre-merge state or conflicts with the native Issue state.
+    - Administrative Issue finalization, closure or reopening after the authorized merge does not require another approval.
 
   handoff:
     - Before a longer pause, chat end or major work-phase transition, ensure the current Issue body contains enough current state for another agent or human to continue without chat history or reading every comment.
