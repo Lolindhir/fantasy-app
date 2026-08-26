@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasy-football-calculator",
+  "source_name": "Fantasy Football Calculator",
+  "ranking_kind": "adp",
+  "ranking_id": "redraft-ppr-8-team",
+  "ranking_name": "Fantasy Football Calculator Redraft PPR 8-Team ADP",
+  "ranking_type": "observed_mock_draft_average_draft_position",
+  "official_source_url": "https://fantasyfootballcalculator.com/",
+  "api_url": "https://fantasyfootballcalculator.com/api/v1/adp/ppr?teams=8&year=2026&position=all",
+  "fetched_at": "2026-08-26T04:23:58.088783+00:00",
+  "season_label": 2026,
+  "format": {
+    "dynasty": false,
+    "scoring": "ppr",
+    "two_qb": false,
+    "source_team_count": 8,
+    "actual_league_team_count": 6,
+    "team_count_usage": "nearest_supported_proxy",
+    "fixed_two_te_modeled_by_source": false
+  },
+  "sample": {
+    "type": "PPR",
+    "teams": 8,
+    "rounds": 15,
+    "total_drafts": 7726,
+    "start_date": "2026-08-18",
+    "end_date": "2026-08-25",
+    "age_days": 1,
+    "quality": "high_sample"
+  },
+  "snapshot": {
+    "snapshot_date": "2026-08-26",
+    "ranking_file": "ranking.csv",
+    "metadata_file": "metadata.json",
+    "raw_latest_file": "../../raw-latest.json",
+    "row_count": 222,
+    "position_counts": {
+      "QB": 31,
+      "RB": 69,
+      "TE": 28,
+      "WR": 94
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "source_rank",
+      "position",
+      "team",
+      "source_player_id",
+      "adp",
+      "adp_formatted",
+      "times_drafted",
+      "high",
+      "low",
+      "stdev",
+      "bye",
+      "source_format",
+      "source_team_count",
+      "actual_league_team_count",
+      "sample_total_drafts",
+      "sample_start_date",
+      "sample_end_date"
+    ],
+    "ranking_sha256": "d96c2efc7efda1fe1b173c4f00dd8e79030cd8bf94c5e43f7aed3fcbc6900057",
+    "source_raw_sha256_at_snapshot": "c4384c687711dcafd52bf49c125d845d7a9b3c7f2dfddfb46dd904a73c148fcf",
+    "diagnostics": {
+      "source_player_count": 270,
+      "normalized_player_count": 222,
+      "source_position_counts": {
+        "DEF": 25,
+        "PK": 23,
+        "QB": 31,
+        "RB": 69,
+        "TE": 28,
+        "WR": 94
+      },
+      "excluded_position_counts": {
+        "DEF": 25,
+        "PK": 23
+      },
+      "normalized_rank_unique": true
+    }
+  },
+  "raw_schema": {
+    "top_level_keys": [
+      "meta",
+      "players",
+      "status"
+    ],
+    "meta_keys": [
+      "end_date",
+      "rounds",
+      "start_date",
+      "teams",
+      "total_drafts",
+      "type"
+    ],
+    "player_count": 270,
+    "player_field_names": [
+      "adp",
+      "adp_formatted",
+      "bye",
+      "high",
+      "low",
+      "name",
+      "player_id",
+      "position",
+      "stdev",
+      "team",
+      "times_drafted"
+    ]
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.json",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_unchanged": true
+  },
+  "extraction_provenance": {
+    "method": "direct_official_rest_api",
+    "uses_mirror": false,
+    "response_headers": {
+      "etag": "",
+      "last_modified": "Wed, 26 Aug 2026 04:23:58 GMT",
+      "content_type": "text/html; charset=utf-8"
+    }
+  },
+  "analysis_usage": {
+    "role": "Observed human mock-draft cost and uncertainty context",
+    "primary_use": "small_league_full_ppr_draft_cost",
+    "not_expert_consensus": true,
+    "not_trade_market_value": true,
+    "not_projection": true,
+    "comparison_contract": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json",
+    "rank_comparison": "Use list-length-aware percentiles; never average the PPR and 2-QB feeds.",
+    "league_adjustment": "Apply six-team replacement level and fixed two-QB/two-TE context during analysis."
+  },
+  "attribution": {
+    "requested": true,
+    "display_name": "Fantasy Football Calculator",
+    "website": "https://fantasyfootballcalculator.com/"
+  }
+}
