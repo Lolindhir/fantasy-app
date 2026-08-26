@@ -66,6 +66,11 @@ jobs:
             -p "test_*.py" \
             -v
 
+      - name: Validate canonical state JSON formatting
+        run: |
+          python fantasy-management/_ai/scripts/validate_json_format.py \
+            fantasy-management/automation/state/entity-observation.json
+
       - name: Validate podcast package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
