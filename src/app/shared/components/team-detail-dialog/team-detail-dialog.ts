@@ -348,7 +348,7 @@ export class TeamDetailDialogComponent implements OnInit {
           .filter((group): group is HistoricalDraftGroup => !!group && group.picks.length > 0)
           .sort((a, b) =>
             b.season - a.season
-            || a.draftNo - b.draftNo
+            || b.draftNo - a.draftNo
             || a.title.localeCompare(b.title)
           );
         this.draftHistoryLoading = false;
