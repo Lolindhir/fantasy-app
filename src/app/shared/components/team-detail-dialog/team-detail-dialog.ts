@@ -329,7 +329,7 @@ export class TeamDetailDialogComponent implements OnInit {
     this.draftHistoryLoading = true;
     this.dataService.getPastSeasonsIndex().subscribe(index => {
       const paths = index.Seasons
-        .filter(season => Number(season.Season) < this.league.SeasonAsNumber)
+        .filter(season => Number(season.Season) <= this.league.SeasonAsNumber)
         .map(season => season.Resources['Drafts'])
         .filter((resource): resource is { Path: string; Exists: boolean } =>
           !!resource && resource.Exists && typeof resource.Path === 'string' && resource.Path.length > 0
