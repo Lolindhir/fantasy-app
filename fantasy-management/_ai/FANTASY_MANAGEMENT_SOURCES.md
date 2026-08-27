@@ -131,6 +131,23 @@ Always:
 - do not store dynamic external values or signals as permanent truth
 - reconcile every source with the actual league format and Mighty Giants context
 
+### Automated external-source HTTP resilience
+
+Automated external-source fetchers that depend on HTTP or public HTML must treat temporary transport and provider throttling as an operational failure mode without weakening source validation.
+
+Operational rules:
+
+- use bounded retries for transient network failures and retryable HTTP responses, including `403`, `408`, `425`, `429` and relevant `5xx` statuses when the source contract makes a later retry meaningful;
+- use increasing backoff with small jitter between attempts and respect a valid `Retry-After` response header within a bounded maximum wait;
+- keep retries finite; a persistently blocked, unavailable or invalid source must still fail closed rather than being treated as a successful refresh;
+- fail immediately on non-retryable client errors unless a source-specific audited contract explicitly documents otherwise;
+- when a final HTTP error is available, retain actionable diagnostics such as status, reason and a short sanitized response excerpt without storing an entire error page as source data;
+- do not overwrite the last good published source state or success heartbeat after an unsuccessful fetch;
+- run source-identity, schema, completeness, freshness and plausibility validation only on a successful response and never relax those checks merely because retries were needed;
+- add source-specific pacing when repeated requests or pagination make provider throttling likely;
+- retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
+- when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
+
 ### External-ranking hierarchy
 
 All ordered external player or asset evaluations belong under:

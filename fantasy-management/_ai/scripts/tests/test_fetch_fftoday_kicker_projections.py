@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 import sys
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1]
@@ -10,6 +11,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import fetch_fftoday_kicker_projections as module
+import http_fetch_resilience as http
 
 
 def fixture(*, updated="8/6/2026", changed=False, duplicate=False, next_page=False):
@@ -132,6 +134,15 @@ class FFTodayTests(unittest.TestCase):
                 skip_unchanged=True,
             )
             self.assertTrue(created)
+
+    def test_fetch_html_preserves_kicker_error_contract(self):
+        with patch.object(
+            module,
+            "fetch_text_with_retry",
+            side_effect=http.HttpFetchError("FFToday fetch failed after 4 attempt(s): status=403"),
+        ):
+            with self.assertRaisesRegex(module.FFTodayProjectionError, "status=403"):
+                module.fetch_html("https://example.test", 30)
 
 
 if __name__ == "__main__":
