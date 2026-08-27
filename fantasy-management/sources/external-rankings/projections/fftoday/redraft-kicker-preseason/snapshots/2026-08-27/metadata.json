@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "source_id": "fftoday",
+  "source_name": "FFToday",
+  "ranking_kind": "projections",
+  "ranking_id": "redraft-kicker-preseason",
+  "ranking_name": "FFToday Preseason Kicker Projections",
+  "ranking_type": "provider_regular_season_stat_projection_ordered_by_source_fantasy_points",
+  "source_url": "https://www.fftoday.com/rankings/playerproj.php?LeagueID=&PosID=80&Season=2026&order_by=FFPts&sort_order=DESC",
+  "fetched_at": "2026-08-27T22:48:40.863275+00:00",
+  "season_label": 2026,
+  "source_updated_date": "2026-08-27",
+  "format": {
+    "dynasty": false,
+    "horizon": "preseason_full_regular_season",
+    "position": "K",
+    "source_scoring_label": "FFToday Half-PPR",
+    "custom_scoring_used": false,
+    "actual_league_team_count": 6,
+    "actual_fixed_kicker_starters": 1
+  },
+  "snapshot": {
+    "snapshot_date": "2026-08-27",
+    "ranking_file": "ranking.csv",
+    "metadata_file": "metadata.json",
+    "raw_latest_file": "../../raw-latest.html",
+    "row_count": 32,
+    "position_counts": {
+      "K": 32
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "source_rank",
+      "position",
+      "team",
+      "source_player_id",
+      "bye",
+      "fgm",
+      "fga",
+      "fg_pct",
+      "epm",
+      "epa",
+      "projected_fantasy_points",
+      "source_updated_date",
+      "season"
+    ],
+    "ranking_sha256": "529c7a41dede6797b2f50a057f40351d0084b88ba21c9a9055cc5d9554a36340",
+    "source_raw_sha256_at_snapshot": "ad7417f940bf9888fe27655e796f828d62cb7565f321e5f6e19559fe9aca5f1e",
+    "diagnostics": {
+      "source_updated_date": "2026-08-27",
+      "source_age_days": 0,
+      "source_scoring_label": "FFToday Half-PPR",
+      "row_count": 32,
+      "unique_source_player_ids": true,
+      "pagination_detected": false
+    }
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.html",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_unchanged": true
+  },
+  "extraction_provenance": {
+    "method": "public_provider_html_table",
+    "uses_login": false,
+    "uses_custom_scoring_profile": false,
+    "response_headers": {
+      "etag": "",
+      "last_modified": "",
+      "content_type": "text/html; charset=UTF-8"
+    }
+  },
+  "analysis_usage": {
+    "role": "Projected full-season kicker production",
+    "not_expert_consensus": true,
+    "not_adp": true,
+    "not_trade_market_value": true,
+    "source_points_are_league_specific": false,
+    "rank_comparison": "Use K-only list-length-aware percentiles across ranking sources.",
+    "league_adjustment": "Use projected kicking stats as source evidence; apply actual league scoring separately when needed."
+  }
+}
