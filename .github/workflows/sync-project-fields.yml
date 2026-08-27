@@ -55,7 +55,7 @@ jobs:
             jq -r '.labels[].name | select(startswith("priority:"))' <<< "${issue_json}"
           )
           blocked_present="$(
-            jq -r 'any(.labels[].name; . == "Blocked")' <<< "${issue_json}"
+            jq -r 'any(.labels[].name; ascii_downcase == "blocked")' <<< "${issue_json}"
           )"
 
           (( ${#status_labels[@]} <= 1 )) \
