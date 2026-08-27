@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "source_id": "cbs-sports",
+  "source_name": "CBS Sports",
+  "ranking_kind": "projections",
+  "ranking_id": "redraft-kicker-preseason",
+  "ranking_name": "CBS Sports Preseason Kicker Projections",
+  "ranking_type": "provider_regular_season_stat_projection_ordered_by_source_fantasy_points",
+  "source_url": "https://www.cbssports.com/fantasy/football/stats/K/2026/season/projections/nonppr/",
+  "fetched_at": "2026-08-27T15:12:27.222702+00:00",
+  "season_label": 2026,
+  "source_update_timestamp_available": false,
+  "format": {
+    "dynasty": false,
+    "horizon": "preseason_full_regular_season",
+    "position": "K",
+    "source_scoring_label": "Non-PPR",
+    "custom_scoring_used": false,
+    "actual_league_team_count": 6,
+    "actual_fixed_kicker_starters": 1
+  },
+  "snapshot": {
+    "snapshot_date": "2026-08-27",
+    "ranking_file": "ranking.csv",
+    "metadata_file": "metadata.json",
+    "raw_latest_file": "../../raw-latest.html",
+    "row_count": 36,
+    "position_counts": {
+      "K": 36
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "source_rank",
+      "position",
+      "team",
+      "source_player_id",
+      "games_played",
+      "fgm",
+      "fga",
+      "longest_field_goal",
+      "fg_1_19_made",
+      "fg_1_19_attempts",
+      "fg_20_29_made",
+      "fg_20_29_attempts",
+      "fg_30_39_made",
+      "fg_30_39_attempts",
+      "fg_40_49_made",
+      "fg_40_49_attempts",
+      "fg_50_plus_made",
+      "fg_50_plus_attempts",
+      "xpm",
+      "xpa",
+      "projected_fantasy_points",
+      "projected_fantasy_points_per_game",
+      "season"
+    ],
+    "ranking_sha256": "2e8bd31816d6be23bdfd9562ffaee0ac619716018dd9925590bc0e6704c34e89",
+    "source_raw_sha256_at_snapshot": "d4e6774db541020dc500318c1b7863f98a7515d66f77c8601a1aa61d8057b5f7",
+    "diagnostics": {
+      "row_count": 36,
+      "unique_source_player_ids": true,
+      "source_scoring_label": "Non-PPR",
+      "source_update_timestamp_available": false,
+      "pagination_detected": false
+    }
+  },
+  "raw_retention": {
+    "policy": "latest_only",
+    "file_name": "raw-latest.html",
+    "historical_raw_snapshots": false
+  },
+  "normalized_history": {
+    "archived": true,
+    "files": [
+      "ranking.csv",
+      "metadata.json"
+    ],
+    "skip_unchanged": true
+  },
+  "extraction_provenance": {
+    "method": "public_provider_html_table",
+    "uses_login": false,
+    "uses_custom_scoring_profile": false,
+    "response_headers": {
+      "etag": "W/\"181de05576dd95b16606d3449723aeee\"",
+      "last_modified": "",
+      "content_type": "text/html; charset=UTF-8"
+    }
+  },
+  "analysis_usage": {
+    "role": "Projected full-season kicker production",
+    "not_expert_consensus": true,
+    "not_adp": true,
+    "not_trade_market_value": true,
+    "source_points_are_league_specific": false,
+    "rank_comparison": "Use K-only list-length-aware percentiles across ranking sources.",
+    "league_adjustment": "Use projected kicking stats as source evidence; apply actual league scoring separately when needed."
+  }
+}
