@@ -197,14 +197,14 @@ labels:
 
   blocked:
     cardinality: zero-or-one
-    label: Blocked
+    label: blocked
     orthogonalTo: status
     meaning: A real impediment currently prevents the next meaningful step while preserving the Issue's lifecycle position.
     rules:
-      - Blocked may coexist with implicit Backlog, status:analysis, status:ready, status:in-progress or status:review.
-      - Use Blocked only for a real impediment such as an unavailable dependency, missing required access, an unresolved external prerequisite or another condition that prevents meaningful progress.
-      - Do not use Blocked merely because human or agent review, approval or acceptance is the next normal step; use status:review for that.
-      - Remove Blocked when the impediment is resolved.
+      - The `blocked` label may coexist with implicit Backlog, status:analysis, status:ready, status:in-progress or status:review.
+      - Use `blocked` only for a real impediment such as an unavailable dependency, missing required access, an unresolved external prerequisite or another condition that prevents meaningful progress.
+      - Do not use `blocked` merely because human or agent review, approval or acceptance is the next normal step; use status:review for that.
+      - Remove `blocked` when the impediment is resolved.
       - The Issue body must state the current blocker clearly enough for another worker to understand what prevents progress and what can unblock it.
 
 migration:
@@ -236,13 +236,13 @@ projectIntegration:
       priority:p3: P3
       priority:p4: P4
     blocked:
-      label: Blocked
+      label: blocked
       present: Yes
       absent: clear
   rules:
     - Project fields mirror canonical Issue state and labels; Project fields are never the source of truth.
     - Backlog is intentionally inferred from an open Issue with no status:* label.
-    - Project Blocked is a single-select field with option Yes; absence of the Blocked label clears the field rather than writing No.
+    - Project Blocked is a single-select field with option Yes; absence of the `blocked` label clears the field rather than writing No.
     - Project auto-add and closed-to-Done automation may be configured in GitHub UI.
     - Normal current-work views should be able to exclude history:retrospective.
 
