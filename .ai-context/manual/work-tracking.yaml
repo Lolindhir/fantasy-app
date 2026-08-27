@@ -177,16 +177,35 @@ labels:
   status:
     cardinality: zero-or-one
     exclusive: true
+    meaning: Lifecycle position of an open operative Issue.
     values:
+      status:analysis:
+        meaning: The topic has been taken up and analyzed or discussed, but it is not yet sufficiently defined or decided to be Ready for implementation.
       status:ready:
-        meaning: Defined and ready to start when prioritized.
+        meaning: Defined and sufficiently clarified to start implementation when prioritized.
       status:in-progress:
-        meaning: Actively being worked.
-      status:blocked:
-        meaning: Cannot currently proceed without an external dependency, missing authorization or unresolved decision.
+        meaning: Actively being implemented or otherwise executed.
+      status:review:
+        meaning: The current work has reached a reviewable checkpoint and review, approval or acceptance is the explicit next lifecycle step.
     rules:
+      - An open Issue with no status:* label is intentionally Backlog; Backlog is the implicit default for raw ideas, reminders or work that has not yet been qualified.
+      - Do not create status:backlog or status:new labels for the normal backlog state.
+      - Use status:analysis when meaningful analysis or discussion has happened but the Issue is deliberately not yet Ready.
+      - Use status:review for a normal review or approval handoff; do not model that handoff as a blocker.
       - Do not use status:done; GitHub closed/completed is the canonical completion state.
       - Remove active work-status labels when an Issue is closed unless retaining one is intentionally useful for history.
+
+  blocked:
+    cardinality: zero-or-one
+    label: Blocked
+    orthogonalTo: status
+    meaning: A real impediment currently prevents the next meaningful step while preserving the Issue's lifecycle position.
+    rules:
+      - Blocked may coexist with implicit Backlog, status:analysis, status:ready, status:in-progress or status:review.
+      - Use Blocked only for a real impediment such as an unavailable dependency, missing required access, an unresolved external prerequisite or another condition that prevents meaningful progress.
+      - Do not use Blocked merely because human or agent review, approval or acceptance is the next normal step; use status:review for that.
+      - Remove Blocked when the impediment is resolved.
+      - The Issue body must state the current blocker clearly enough for another worker to understand what prevents progress and what can unblock it.
 
 migration:
   legacySources:
@@ -202,8 +221,28 @@ migration:
 projectIntegration:
   role: presentation-and-prioritization-cockpit
   sourceOfTruth: issues-and-labels
+  fieldMapping:
+    status:
+      open-without-status-label: Backlog
+      status:analysis: Analysis
+      status:ready: Ready
+      status:in-progress: In progress
+      status:review: Review
+      closed: Done
+    priority:
+      priority:p0: P0
+      priority:p1: P1
+      priority:p2: P2
+      priority:p3: P3
+      priority:p4: P4
+    blocked:
+      label: Blocked
+      present: Yes
+      absent: clear
   rules:
-    - Project custom fields are not required for the agent work-tracking contract.
+    - Project fields mirror canonical Issue state and labels; Project fields are never the source of truth.
+    - Backlog is intentionally inferred from an open Issue with no status:* label.
+    - Project Blocked is a single-select field with option Yes; absence of the Blocked label clears the field rather than writing No.
     - Project auto-add and closed-to-Done automation may be configured in GitHub UI.
     - Normal current-work views should be able to exclude history:retrospective.
 
