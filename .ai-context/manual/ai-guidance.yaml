@@ -50,13 +50,22 @@ guidance:
     - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
     - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
+    - Use lifecycle status and blocking as separate dimensions: status:* describes where the Issue is in the work lifecycle, while the standalone `Blocked` label describes whether a real impediment currently prevents the next meaningful step.
+    - Treat an open Issue with no status:* label as intentional Backlog. Do not add status:backlog or status:new merely to represent the default backlog state.
+    - Use status:analysis when the topic has been meaningfully discussed or investigated but remains deliberately not Ready because scope, options, requirements or decisions are still unresolved.
+    - Use status:ready only when the Issue is sufficiently defined that an implementing worker should not need to invent fundamental product or architecture decisions before starting.
+    - Use status:in-progress while implementation or another authorized execution step is actively underway.
+    - Use status:review when the current work has reached a reviewable checkpoint and review, approval or acceptance is the normal next step.
+    - Do not use `Blocked` merely for a normal review/approval handoff. A Review Issue may also be Blocked, but only when a separate real impediment prevents the review or next step.
+    - When `Blocked` is present, keep the lifecycle status unchanged and state the blocker and unblock condition in the current Issue body.
+    - Remove `Blocked` when the impediment is resolved instead of advancing or rewinding lifecycle status solely because the blocker changed.
     - A repository work step is not post-commit complete while its active Issue body still describes a pre-commit state.
     - A merge/close lifecycle is not complete while the Issue body still describes a pre-merge state or conflicts with the native GitHub Issue state.
     - Prefer one coherent Issue with an internal checklist for a multi-step deliverable.
     - Do not create child Issues merely for implementation steps, commits, PRs or chat-sized work units.
     - Create a separate Issue only when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
     - Routine Issue bookkeeping should normally remain invisible to the user unless synchronization fails, a decision is required or the user asks for status; invisibility affects reporting only and never authorizes skipping required Issue maintenance.
-    - Follow .ai-context/manual/work-tracking.yaml for label cardinality, origin/history semantics, mutable P0-P4 priorities and drift checks.
+    - Follow .ai-context/manual/work-tracking.yaml for lifecycle status, orthogonal Blocked semantics, label cardinality, origin/history semantics, mutable P0-P4 priorities and drift checks.
 
   powershell:
     - Use Get-Verb approved verbs for PowerShell function names.
