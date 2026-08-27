@@ -30,7 +30,7 @@ jobs:
       ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
 
     steps:
-      - name: Synchronize Status and Priority
+      - name: Synchronize Status, Priority and Blocked
         shell: bash
         run: |
           set -euo pipefail
@@ -54,6 +54,9 @@ jobs:
           mapfile -t priority_labels < <(
             jq -r '.labels[].name | select(startswith("priority:"))' <<< "${issue_json}"
           )
+          blocked_present="$(
+            jq -r 'any(.labels[].name; . == "Blocked")' <<< "${issue_json}"
+          )"
 
           (( ${#status_labels[@]} <= 1 )) \
             || fail "Issue #${ISSUE_NUMBER} has multiple status labels: ${status_labels[*]}"
@@ -66,9 +69,10 @@ jobs:
             status_value="Backlog"
           else
             case "${status_labels[0]}" in
+              status:analysis) status_value="Analysis" ;;
               status:ready) status_value="Ready" ;;
               status:in-progress) status_value="In progress" ;;
-              status:blocked) status_value="Blocked" ;;
+              status:review) status_value="Review" ;;
               *) fail "Unsupported status label: ${status_labels[0]}" ;;
             esac
           fi
@@ -135,10 +139,13 @@ jobs:
 
           status_field_id="$(field_id "Status")"
           priority_field_id="$(field_id "Priority")"
+          blocked_field_id="$(field_id "Blocked")"
           [[ -n "${status_field_id}" ]] \
             || fail "Project '${project_title}' has no single-select field named Status."
           [[ -n "${priority_field_id}" ]] \
             || fail "Project '${project_title}' has no single-select field named Priority."
+          [[ -n "${blocked_field_id}" ]] \
+            || fail "Project '${project_title}' has no single-select field named Blocked."
 
           status_option_id="$(option_id "Status" "${status_value}")"
           [[ -n "${status_option_id}" ]] \
@@ -150,6 +157,10 @@ jobs:
             [[ -n "${priority_option_id}" ]] \
               || fail "Priority option '${priority_value}' does not exist."
           fi
+
+          blocked_option_id="$(option_id "Blocked" "Yes")"
+          [[ -n "${blocked_option_id}" ]] \
+            || fail "Blocked option 'Yes' does not exist."
 
           resolve_item_id() {
             local result
@@ -234,15 +245,12 @@ jobs:
               --silent
           }
 
-          set_single_select "${status_field_id}" "${status_option_id}"
-
-          if [[ -n "${priority_option_id}" ]]; then
-            set_single_select "${priority_field_id}" "${priority_option_id}"
-          else
+          clear_single_select() {
+            local field_id="$1"
             gh api graphql \
               -f projectId="${project_id}" \
               -f itemId="${item_id}" \
-              -f fieldId="${priority_field_id}" \
+              -f fieldId="${field_id}" \
               -f query='
                 mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!) {
                   clearProjectV2ItemFieldValue(
@@ -256,6 +264,22 @@ jobs:
                   }
                 }' \
               --silent
+          }
+
+          set_single_select "${status_field_id}" "${status_option_id}"
+
+          if [[ -n "${priority_option_id}" ]]; then
+            set_single_select "${priority_field_id}" "${priority_option_id}"
+          else
+            clear_single_select "${priority_field_id}"
           fi
 
-          echo "Synchronized Issue #${ISSUE_NUMBER}: Status=${status_value}, Priority=${priority_value:-<clear>}."
+          if [[ "${blocked_present}" == "true" ]]; then
+            set_single_select "${blocked_field_id}" "${blocked_option_id}"
+            blocked_value="Yes"
+          else
+            clear_single_select "${blocked_field_id}"
+            blocked_value="<clear>"
+          fi
+
+          echo "Synchronized Issue #${ISSUE_NUMBER}: Status=${status_value}, Priority=${priority_value:-<clear>}, Blocked=${blocked_value}."
