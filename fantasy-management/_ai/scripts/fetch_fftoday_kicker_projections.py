@@ -11,13 +11,13 @@ import json
 import os
 import re
 import tempfile
-import urllib.error
-import urllib.request
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+
+from http_fetch_resilience import HttpFetchError, fetch_text_with_retry
 
 SOURCE_ID = "fftoday"
 SOURCE_NAME = "FFToday"
@@ -110,22 +110,19 @@ def parse_timestamp(value: str | None) -> datetime:
 
 
 def fetch_html(url: str, timeout: int) -> tuple[str, dict[str, str]]:
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
-    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            body = response.read().decode(charset, errors="replace")
-            headers = {
-                "etag": response.headers.get("ETag") or "",
-                "last_modified": response.headers.get("Last-Modified") or "",
-                "content_type": response.headers.get("Content-Type") or "",
-            }
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise FFTodayProjectionError(f"FFToday fetch failed: {exc}") from exc
-    return body, headers
+        return fetch_text_with_retry(
+            url,
+            timeout=timeout,
+            source_name=SOURCE_NAME,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+        )
+    except HttpFetchError as exc:
+        raise FFTodayProjectionError(str(exc)) from exc
 
 
 def _decimal(value: str, field: str, name: str, minimum: Decimal = Decimal("0")) -> Decimal:
