@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-08-28T16:36:06.224178Z",
-  "input_fingerprint": "18eec3acd37cbcc12483338a2f83124896797cf91e91d0593e9ba1a0f62db01b",
+  "generated_at": "2026-08-28T16:44:33.984580Z",
+  "input_fingerprint": "c7120b8739dd417177e465aeff3477164496c55926439f483e3e3d80225d75ea",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 33,
@@ -64,9 +64,9 @@
     "external_signals": {
       "sleeper-trending": {
         "row_count": 149,
-        "materialized_entity_count": 156,
-        "resolved_players": 155,
-        "unresolved_players": 1,
+        "materialized_entity_count": 160,
+        "resolved_players": 158,
+        "unresolved_players": 2,
         "excluded_non_player_entities": {
           "count": 6,
           "by_type": {
@@ -82,9 +82,9 @@
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 110,
+          "fantasy_free_agent": 112,
           "mighty_giants": 8,
-          "opponent_rostered": 38
+          "opponent_rostered": 40
         },
         "baseline": false,
         "material_event_eligible": true
@@ -98,6 +98,13 @@
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
       "player_id": "13403"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "13603"
     }
   ],
   "source_freshness": [
@@ -194,7 +201,7 @@
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-08-27T15:21:24.542767Z"
+      "source_timestamp": "2026-08-28T16:44:33.984580Z"
     }
   ],
   "interpretation_limits": [
