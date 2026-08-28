@@ -37,10 +37,11 @@ Before making architecture, data model, generation or frontend changes, read:
 1. `.ai-context/ai-context.yaml`
 2. `.ai-context/manual/ai-guidance.yaml`
 3. `.ai-context/manual/work-tracking.yaml`
-4. `.ai-context/manual/architecture.yaml`
-5. `.ai-context/manual/domain.yaml`
-6. `.ai-context/manual/data-sources.yaml`
-7. `.ai-context/manual/decisions.yaml`
+4. `.ai-context/manual/workflow-monitoring.yaml`
+5. `.ai-context/manual/architecture.yaml`
+6. `.ai-context/manual/domain.yaml`
+7. `.ai-context/manual/data-sources.yaml`
+8. `.ai-context/manual/decisions.yaml`
 
 ## Source-of-truth rules
 
@@ -97,6 +98,7 @@ Exception:
 ## GitHub Actions approval
 
 - Do not create, modify, enable or commit GitHub Actions workflow files unless the user has explicitly approved the specific workflow change.
+- Every GitHub Actions workflow that is created, renamed or materially repurposed must be classified in `.ai-context/manual/workflow-monitoring.yaml` in the same authorized change; unclassified workflows are a fail-closed monitoring configuration error.
 - Topic-specific, one-off, migration, upload, recovery or branch-manipulation workflows are prohibited by default.
 - For one-off tasks, use existing repository tooling, local scripts, connector actions or temporary uncommitted files. If no safe alternative exists, ask for explicit approval before touching `.github/workflows/`.
 

@@ -1,0 +1,255 @@
+schemaVersion: 1
+
+purpose: >
+  Canonical repository contract for external GitHub Actions health monitoring.
+  The repository defines which workflows matter operationally and when a run
+  becomes actionable; external monitors read this file and remain read-only.
+
+ownership:
+  canonicalFile: .ai-context/manual/workflow-monitoring.yaml
+  monitoredRepository: Lolindhir/fantasy-app
+  monitoredRef: main
+  monitorImplementation: external-chatgpt-condition-watch
+  requiresMonitoringWorkflowInRepository: false
+
+principles:
+  - Monitoring configuration is versioned in the repository; alert logic must not be duplicated across individual workflow YAML files.
+  - Every GitHub Actions workflow file must have exactly one entry in this contract.
+  - A newly created, renamed or materially repurposed workflow must update this contract in the same authorized change.
+  - An unclassified workflow is a fail-closed monitoring configuration error and must be surfaced.
+  - A configured workflow path that no longer exists is configuration drift and must be surfaced.
+  - Feature-branch pull-request runs and normal manual workflow_dispatch runs are not production paging signals unless a workflow entry explicitly opts in.
+  - A failure is healed when a newer relevant completed run succeeds; healed failures must not be alerted.
+  - Cancelled, skipped and neutral runs are not failures for paging purposes.
+  - Disabled workflows remain classified but are excluded from run-health and staleness checks until re-enabled.
+  - The monitor is read-only and must not retry workflows, change repository state, create Issues or edit this contract.
+
+runEvaluation:
+  defaultBranch: main
+  recentRunsToInspect: 20
+  defaultIgnoredEvents:
+    - pull_request
+    - workflow_dispatch
+  healthyConclusions:
+    - success
+  unhealthyConclusions:
+    - failure
+    - timed_out
+    - action_required
+    - startup_failure
+  ignoredConclusions:
+    - cancelled
+    - skipped
+    - neutral
+  incompleteRuns: ignore-until-completed
+  branchRule: >
+    Require main when the run exposes a meaningful head branch. Repository-level
+    events such as issues may not expose a normal branch and are evaluated by event.
+  failureStreakRule: >
+    After filtering to relevant events, count consecutive unhealthy completed runs
+    from newest to oldest and stop at the first healthy completed run.
+  healedFailureRule: >
+    If the newest relevant completed run is healthy, do not alert for any older failure.
+  stalenessRule: >
+    Only evaluate staleness when staleAfterMinutes is explicitly configured for the
+    workflow. Measure from the newest successful relevant completed run. A successful
+    relevant push run may satisfy freshness for the same workflow because it proves
+    the production workflow logic completed successfully.
+  notificationDeduplication:
+    sameIncident: suppress
+    reNotifyAfterHours: 24
+    incidentFingerprint: >
+      Use workflow path plus alert type and incident onset. For failure streaks,
+      onset is the first unhealthy run after the latest healthy run. For staleness,
+      onset is the latest healthy run used by the stale calculation. For
+      configuration drift, use the affected workflow path.
+    materialChangeExamples:
+      - failure streak increased substantially
+      - alert category became more severe
+      - a different failure replaced the previous incident after a recovery
+      - the same unresolved incident has reached the re-notification interval
+
+categories:
+  non-paging:
+    notify: false
+    consecutiveFailures: null
+    description: >
+      Classified for inventory completeness but intentionally excluded from
+      production paging, typically PR/manual validation or repair-only workflows.
+
+  critical:
+    notify: true
+    consecutiveFailures: 1
+    description: >
+      Production integrity or deployment failures that should be surfaced on the
+      first relevant unresolved failure.
+
+  important:
+    notify: true
+    consecutiveFailures: 2
+    description: >
+      Important production workflows where one transient failure may self-heal,
+      but a short failure streak or configured staleness is actionable.
+
+  routine:
+    notify: true
+    consecutiveFailures: 2
+    description: >
+      Scheduled maintenance or provider refreshes where transient failure noise
+      should be suppressed and freshness is the main backstop.
+
+workflows:
+  .github/workflows/build.yml:
+    category: non-paging
+    relevantEvents: []
+    rationale: PR/manual CI; failures are handled in the active development/review context.
+
+  .github/workflows/deploy.yml:
+    category: critical
+    relevantEvents:
+      - push
+      - workflow_call
+    rationale: Main deployment failure can leave the published app behind repository state.
+
+  .github/workflows/fantasy-management-validation.yml:
+    category: critical
+    relevantEvents:
+      - push
+    rationale: A failing validation run on main indicates repository-integrity drift; pull-request runs stay non-paging.
+
+  .github/workflows/sync-nfl-source-data.yml:
+    category: important
+    consecutiveFailures: 1
+    relevantEvents:
+      - push
+      - workflow_call
+    rationale: Source-data tooling failures on main/called production paths should surface promptly; manual repair runs stay non-paging.
+
+  .github/workflows/sync-project-fields.yml:
+    category: important
+    relevantEvents:
+      - issues
+    rationale: Repeated issue-event failures can desynchronize the GitHub Project from canonical Issue metadata.
+
+  .github/workflows/clean-backups.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 11520
+    rationale: Weekly maintenance; alert after the scheduled cycle has effectively been missed for about a day.
+
+  .github/workflows/materialize-fantasy-operations-inputs.yml:
+    category: important
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily Operations materialization should not silently miss a complete daily cycle.
+
+  .github/workflows/update-cbs-sports-projections.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-fantasy-football-calculator-adp.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-fantasycalc-rankings.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-fantasypros-rankings.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-fftoday-projections.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-sleeper-trending.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+      - push
+    staleAfterMinutes: 1800
+    rationale: Daily pre-Operations signal refresh; tolerate a transient failure but surface a missed daily cycle.
+
+  .github/workflows/update-league.yml:
+    category: important
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 45
+    rationale: Ten-minute league refresh; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
+
+  .github/workflows/update-players.yml:
+    category: important
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 840
+    rationale: Three scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
+
+  .github/workflows/update-games.yml:
+    category: important
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 960
+    rationale: Two scheduled daily refreshes; 16 hours covers the longest normal gap with operational grace.
+
+  .github/workflows/update-transactions.yml:
+    category: important
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 11520
+    rationale: Weekly transaction/history rebuild; surface a missed weekly cycle without paging on a single transient run immediately.
+
+  .github/workflows/update-standings.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 11520
+    rationale: Weekly between-week standings refresh; alert after the weekly cycle has effectively been missed for about a day.
+
+  .github/workflows/update-teams.yml:
+    category: routine
+    relevantEvents:
+      - schedule
+    staleAfterMinutes: 11520
+    rationale: Weekly between-week teams refresh; alert after the weekly cycle has effectively been missed for about a day.
+
+  .github/workflows/update-drafts.yml:
+    category: non-paging
+    relevantEvents: []
+    rationale: Manual repair/refresh workflow with no production schedule.
+
+  .github/workflows/update-past-seasons-index.yml:
+    category: non-paging
+    relevantEvents: []
+    rationale: Manual maintenance/repair workflow with no production schedule.
+
+future:
+  dailyDigest:
+    status: planned-later
+    principle: >
+      A separate daily digest may summarize healthy runs, transient recovered
+      failures and ignored development noise. It is deliberately not part of the
+      hourly paging contract.
