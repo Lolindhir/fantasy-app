@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: ""
+      season:
+        description: "Optional comma-separated season(s) for partitioned datasets; leave blank for current season"
+        required: false
+        type: string
+        default: ""
       force:
         description: "Force replacement even when the downloaded content hash is unchanged"
         required: false
@@ -25,6 +30,11 @@ on:
     inputs:
       dataset:
         description: "Optional registry dataset ID; leave blank to sync all datasets"
+        required: false
+        type: string
+        default: ""
+      season:
+        description: "Optional comma-separated season(s) for partitioned datasets; leave blank for current season"
         required: false
         type: string
         default: ""
@@ -69,6 +79,7 @@ jobs:
         shell: bash
         env:
           DATASET: ${{ inputs.dataset }}
+          SEASON: ${{ inputs.season }}
           FORCE: ${{ inputs.force }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
         run: |
@@ -77,6 +88,15 @@ jobs:
           raw_sync_args=(sync --raw-only)
           if [[ -n "${DATASET:-}" ]]; then
             raw_sync_args+=(--dataset "$DATASET")
+          fi
+          if [[ -n "${SEASON:-}" ]]; then
+            IFS=',' read -ra season_values <<< "$SEASON"
+            for season in "${season_values[@]}"; do
+              season="${season//[[:space:]]/}"
+              if [[ -n "$season" ]]; then
+                raw_sync_args+=(--season "$season")
+              fi
+            done
           fi
           if [[ "${FORCE:-false}" == "true" ]]; then
             raw_sync_args+=(--force)
@@ -141,6 +161,7 @@ jobs:
               "runId": os.environ.get("GITHUB_RUN_ID"),
               "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
               "datasetInput": os.environ.get("DATASET") or None,
+              "seasonInput": os.environ.get("SEASON") or None,
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
