@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-08-28T15:36:41.593857Z",
+  "generated_at": "2026-08-28T15:43:14.167689Z",
   "berlin_date": "2026-08-28",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 2,
-    "stale_count": 4,
+    "fresh_count": 4,
+    "stale_count": 2,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -23,21 +23,16 @@
     "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "fantasy-football-calculator",
-      "fftoday",
       "cbs-sports",
       "sleeper-trending"
     ],
     "blocking_source_ids": [],
     "no_event_blocking_source_ids": [
-      "fantasy-football-calculator",
-      "fftoday",
       "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
       "external_activity",
-      "redraft_adp",
       "season_projection"
     ]
   },
@@ -56,7 +51,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-28T15:29:35.736197Z",
-      "age_minutes": 7.1,
+      "age_minutes": 13.64,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -74,7 +69,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-08-28T15:34:40.406174Z",
-      "age_minutes": 2.02,
+      "age_minutes": 8.56,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -88,10 +83,10 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-08-27T14:46:53.277012Z",
-      "age_minutes": 1489.81,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-28T15:40:55.003753Z",
+      "age_minutes": 2.32,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -105,12 +100,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_before_required_morning_window",
-      "checked_at": "2026-08-27T22:48:42.953337Z",
-      "age_minutes": 1007.98,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-08-28T15:43:05.637612Z",
+      "age_minutes": 0.14,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "schedule"
     },
     {
       "id": "cbs-sports",
@@ -125,7 +120,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-27T15:12:38.317863Z",
-      "age_minutes": 1464.05,
+      "age_minutes": 1470.6,
       "content_changed": true,
       "trigger": "schedule"
     },
@@ -142,7 +137,7 @@
       "status": "stale",
       "reason": "heartbeat_exceeds_max_age",
       "checked_at": "2026-08-27T15:21:24.755510Z",
-      "age_minutes": 1455.28,
+      "age_minutes": 1461.82,
       "content_changed": true,
       "trigger": "schedule"
     }
