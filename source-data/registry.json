@@ -140,6 +140,18 @@
       }
     },
     {
+      "id": "nflverse.game-finality",
+      "kind": "game-finality-evidence",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      }
+    },
+    {
       "id": "nflverse.player-stats",
       "kind": "weekly-player-stats",
       "refreshPolicy": "current-season",
@@ -161,6 +173,18 @@
         "partitionKey": "season-week",
         "finalization": "freeze-prior-seasons",
         "repairPolicy": "explicit-force"
+      }
+    },
+    {
+      "id": "sleeper.players",
+      "kind": "current-player-platform-state",
+      "refreshPolicy": "periodic",
+      "retentionPolicy": "latest-with-git-history",
+      "lifecycle": {
+        "class": "dynamic",
+        "partitionKey": "none",
+        "finalization": "never",
+        "repairPolicy": "normal"
       }
     },
     {

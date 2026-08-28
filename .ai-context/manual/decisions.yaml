@@ -685,3 +685,46 @@ decisions:
       negative:
         - GitHub Issue metadata and repository documentation must be kept semantically aligned.
         - Retrospectively migrated Issues have migration-time GitHub created_at values, so original dates must be documented separately when known.
+
+  - id: ADR-029
+    title: NFL source acquisition mode and availability are executable registry contracts
+    status: accepted
+    context: >
+      The first source-data registry handled active sources as one fixed URL per
+      dataset. The next approved NFL datasets include season-partitioned releases
+      and sources that can legitimately be unpublished for the current season.
+      Treating those cases as ad-hoc fetcher behavior would make availability,
+      freezing and repair semantics inconsistent across datasets.
+    decision: >
+      Use source-data registry schema v3 to separate acquisition mode from dataset
+      lifecycle. A fixed source maps one URL to one validated raw snapshot. A
+      season-partitioned source requires {season} in its URL, raw path and metadata
+      path and normally resolves the current source season, with explicit repeated
+      --season selection for backfill/repair. Keep `required` as the default
+      availability policy. Permit `current-season-may-be-unavailable` only for an
+      HTTP 404 on a not-yet-persisted current-season partition; represent that as a
+      stable not-yet-available state rather than empty data or zero. Historical
+      404s, schema failures and implausibly small/empty data fail closed. Existing
+      prior-season raw partitions are frozen in normal sync and historical repair
+      requires --force. `materialize` explicitly distinguishes registered raw-only
+      sources from datasets already consumed by the current canonical materializer.
+      Activating a raw source never changes public/data or the app generator by
+      itself.
+    rationale: >
+      Acquisition shape, source availability and historical repair are source-data
+      concerns and should be reusable across schedules, stats, snaps, rosters and
+      platform snapshots instead of being duplicated in per-dataset scripts. The
+      narrow not-yet-available rule preserves Missing-vs-Zero semantics while the
+      last-known-good contract protects production data from transient provider
+      failures.
+    consequences:
+      positive:
+        - Fixed and season-partitioned datasets share one validated sync path.
+        - Current-season pre-publication is distinguishable from fetch/schema failure.
+        - Prior-season raw evidence is stable unless repair is explicitly requested.
+        - Raw sources can be activated and audited before canonical/app consumers are migrated.
+        - PR CI can validate the common source tooling before productive source sync runs.
+      negative:
+        - Registry entries carry additional acquisition and availability metadata.
+        - Dataset-specific activation still requires schema, license, join and materialization work.
+        - The current-source-season fallback must remain aligned with the league/bootstrap lifecycle.
