@@ -13,11 +13,14 @@ snapshot:
   builder: tools/build_workflow_health_snapshot.py
   stateBranch: workflow-health-state
   statePath: workflow-health.json
+  stateBranchInitialization: producer-created-orphan-branch
   schemaVersion: 1
   maxAgeMinutes: 150
   principles:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
   - The snapshotter writes only the isolated workflow-health-state branch; it must never publish health snapshots to main.
+  - If the state branch does not yet exist, the snapshot producer initializes it as an orphan branch containing only monitoring state.
+  - Pushes to main that change the snapshot workflow, builder, tests or policy trigger an immediate snapshot in addition to the hourly schedule.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
   - If the snapshot is older than maxAgeMinutes or cannot be read, the external watcher must treat monitoring infrastructure
     as unhealthy.
@@ -70,8 +73,8 @@ runEvaluation:
     incidentFingerprint: Use workflow path plus alert type and incident onset. The snapshot carries firstObservedAt and notificationDue
       across runs so the external watcher can remain stateless for basic deduplication.
     materialChangeExamples:
-    - failure streak increased substantially
-    - alert category became more severe
+    - failure streak increased
+    - alert category changed
     - a different failure replaced the previous incident after a recovery
     - the same unresolved incident has reached the re-notification interval
 categories:

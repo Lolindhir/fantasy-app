@@ -274,7 +274,13 @@ def carry_incident_observation_state(incidents: list[JsonDict], previous: JsonDi
         previous_epoch = -1
         if prior and previous_generated and renotify_hours > 0:
             previous_epoch = int(max(0, (previous_generated - first_dt).total_seconds()) // (renotify_hours * 3600))
-        item["notificationDue"] = prior is None or current_epoch > previous_epoch
+        materially_changed = False
+        if prior:
+            if item.get("category") != prior.get("category"):
+                materially_changed = True
+            elif item.get("type") == "failure-streak":
+                materially_changed = int(item.get("failureStreak") or 0) > int(prior.get("failureStreak") or 0)
+        item["notificationDue"] = prior is None or current_epoch > previous_epoch or materially_changed
 
 
 def build_snapshot(

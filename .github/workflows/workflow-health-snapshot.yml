@@ -3,6 +3,14 @@ name: REPO • Monitoring • Workflow Health Snapshot
 on:
   schedule:
     - cron: "17 * * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/workflow-health-snapshot.yml"
+      - ".ai-context/manual/workflow-monitoring.yaml"
+      - "tools/build_workflow_health_snapshot.py"
+      - "tools/tests/test_build_workflow_health_snapshot.py"
   workflow_dispatch:
 
 permissions:
@@ -40,7 +48,7 @@ jobs:
           if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
             git show origin/workflow-health-state:workflow-health.json > /tmp/previous-workflow-health.json || true
           else
-            echo "workflow-health-state branch is missing; publication will fail closed later."
+            echo "workflow-health-state branch is missing; the publish step will initialize it."
           fi
 
       - name: Test snapshot logic
@@ -67,8 +75,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state
-          git switch -C workflow-health-state origin/workflow-health-state
+          if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
+            git switch -C workflow-health-state origin/workflow-health-state
+          else
+            git switch --orphan workflow-health-state
+            git rm -rf . || true
+          fi
           cp /tmp/workflow-health.json workflow-health.json
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"

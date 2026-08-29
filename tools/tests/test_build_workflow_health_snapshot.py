@@ -105,6 +105,20 @@ class SnapshotTests(unittest.TestCase):
         module.carry_incident_observation_state(current, first, NOW, 24)
         self.assertFalse(current[0]["notificationDue"])
 
+    def test_failure_streak_growth_is_material_change(self):
+        prior_incident = {
+            "incidentKey": "abc",
+            "type": "failure-streak",
+            "workflow": "w.yml",
+            "category": "important",
+            "failureStreak": 2,
+            "firstObservedAt": "2026-08-29T23:00:00Z",
+        }
+        previous = {"generatedAt": "2026-08-29T23:30:00Z", "incidents": [prior_incident]}
+        current = [{**prior_incident, "failureStreak": 3}]
+        module.carry_incident_observation_state(current, previous, NOW, 24)
+        self.assertTrue(current[0]["notificationDue"])
+
 
 if __name__ == "__main__":
     unittest.main()
