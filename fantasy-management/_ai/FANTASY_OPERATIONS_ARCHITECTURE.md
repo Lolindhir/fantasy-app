@@ -6,6 +6,10 @@ Fantasy Operations uses a provider-neutral hybrid architecture. Deterministic re
 
 The repository must not depend on a specific AI provider, AI SDK, hosted model, or paid inference API.
 
+## Authoritative observation-state storage
+
+For approved qualitative `entity-observation` baseline persistence, `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is authoritative. The large `fantasy-management/automation/state/entity-observation.json` file is the immutable migration-time base snapshot; normal approved updates are written as bounded per-target shards under `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`. Any older full-replacement wording in this architecture document is superseded by that storage contract.
+
 ## Runtime layers
 
 ### 1. Source refresh
@@ -227,24 +231,19 @@ A durable write to State, Knowledge, Decisions, boards, baselines or stored revi
 
 The approved write is then performed interactively with the normal repository validation and publication rules.
 
-For qualitative observations that use the existing entity-observation profile model, the canonical persisted approved baseline state is:
+For qualitative `entity-observation` baselines, `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is the authoritative persistence contract. The migration-time base snapshot remains:
 
 ```text
 fantasy-management/automation/state/entity-observation.json
 ```
 
-This State is durable comparison memory for later monitoring and for other agents. It is not generated data and it is not an authorization for autonomous writes.
+Normal approved qualitative baseline writes must not replace that large base file. They write one bounded target shard instead:
 
-An approved interactive observation-State write must:
+```text
+fantasy-management/automation/state/entity-observation-targets/{target_id}.json
+```
 
-- persist only the specifically approved target/profile observations;
-- normalize `material_state` according to the applicable profile `output_fields` and workflow rules;
-- calculate `state_hash` with the existing canonical compact sorted-JSON SHA-256 contract;
-- preserve unrelated previous good states and existing input provenance;
-- increment the State revision exactly once for the complete logical State change;
-- validate the complete replacement State against `automation-observation-state.schema.json` and the repository cross-file validator;
-- pin the current target-branch parent commit and current State blob before publication;
-- publish only by a non-forced fast-forward and recompute on concurrency conflicts.
+The effective observation state is Base + deterministic target-shard overlays. An approved interactive observation write must therefore follow `OBSERVATION_STATE_STORAGE.md`, preserve the complete current target and unrelated profiles, recalculate changed profile hashes, keep the stable entity fingerprint, use a deterministic `write_id`, validate Base + all shards, pin an existing shard blob when replacing it, and publish only non-forced/fast-forward. The base file's legacy global revision is not incremented by normal shard persistence.
 
 A missing target/profile baseline does not activate or authorize autonomous bootstrap work. Scheduled monitoring may form an internal first-observation baseline for comparison during that run, but durable persistence still requires explicit approval unless a later architecture decision deliberately changes this rule.
 
@@ -268,157 +267,49 @@ The active Operations Source Catalog includes the following signal families for 
 
 - FantasyPros Dynasty expert consensus;
 - FantasyCalc Dynasty market value;
-- Fantasy Football Calculator Redraft ADP, including the Kicker-only view;
-- FFToday and CBS Sports Season Projections for the currently configured positions.
+- Fantasy Football Calculator Redraft ADP, including the dedicated Kicker feed;
+- FFToday projections;
+- CBS Sports projections.
 
-Rank-based cross-source comparisons use list-length-aware percentiles. Provider-native values remain intact in the source-specific provider view.
+Additional sources may be added only through the same catalog/materialization boundary.
 
-The external-signal materializer supports the normalized `top_n_activity_v1` comparison contract. It preserves:
+## Scheduled execution
 
-- current top-N membership;
-- `entered_top_n` and `left_top_n` changes;
-- rank changes;
-- count changes;
-- silent baseline and material-event eligibility state.
+Current scheduled execution is intentionally read-only.
 
-A player absent from a top-N list is not assigned zero activity. The central player-signal dataset and Movement contract preserve the same rule: `not_listed` means outside the current provider top-N result, and rank/count remain null.
+The active ChatGPT task may:
 
-## Identity and ownership rule
+- read repository state and generated Operations inputs;
+- inspect `source-freshness.json` before interpreting events;
+- use targeted web research where the profile requires current qualitative verification;
+- compare current evidence with approved baselines;
+- notify on material changes;
+- propose the exact durable change that would be made after approval.
 
-External signal identity is resolved through the configured stable player ID. Current league ownership is derived only from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+The active ChatGPT task must not:
 
-Permitted ownership states are:
+- create or update repository files;
+- write observation State or target shards;
+- create observation events;
+- create Knowledge, Decisions, boards or stored reviews;
+- run legacy autonomous bootstrap/replacement-State writers;
+- mutate target sets or profiles;
+- change GitHub Actions.
 
-- `mighty_giants`;
-- `opponent_rostered`;
-- `fantasy_free_agent`;
-- `multiple_rosters` as a data-quality error.
+When proposing an approved-follow-up `entity-observation` baseline write, the task must describe the bounded target-shard path from `OBSERVATION_STATE_STORAGE.md`, not the legacy monolithic replacement path.
 
-An unresolved player remains in the external-signal dataset as an explicit data-quality finding and is never silently discarded. A central player row is keyed by the current app/Sleeper player ID; source join gaps remain quality/coverage information rather than being guessed away.
+## Validation and failure semantics
 
-## NFL roster-status interpretation rule
+All deterministic materialized datasets must fail closed on structural validation errors.
 
-`public/data/Players.json` contains several source-specific fields that describe different aspects of NFL player status and must not be collapsed into one roster-status inference.
+A failed materialization must not replace the previous successful published state.
 
-- `IsFreeAgent` is normalized from the Tank01 `isFreeAgent` signal and is the repository's direct structured NFL free-agent signal.
-- `Status` is sourced independently from Sleeper player metadata. A value such as `Active` must not be interpreted by itself as proof that the player is currently under contract with an NFL team.
-- `TeamID` and `TeamAbbr` are sourced independently from Tank01 team metadata. They may remain populated for a player whose `IsFreeAgent` value is `true`; their presence does not override the free-agent signal or by itself prove a current NFL contract.
-- Deterministic Operations materialization must preserve the explicit free-agent signal, for example as `app_data.is_free_agent`, rather than infer NFL roster status only from team or Sleeper-status fields.
-- Monitoring and analysis must explicitly consider `IsFreeAgent` when determining current NFL roster status. Do not report a repository data-quality error merely because `TeamAbbr`/`TeamID` or `Status = Active` coexist with `IsFreeAgent = true`.
-- When these fields conflict with a decision-relevant current transaction or roster claim, verify the current NFL status against fresh authoritative transaction, league or team evidence and preserve the conflict instead of silently selecting one field.
+Monitoring must distinguish:
 
-This rule concerns **NFL roster status only**. Fantasy-league ownership and fantasy-free-agent availability remain derived exclusively from the union of every team's `Roster`, `Reserve` and `Taxi` lists in `League.json`; `Players.json -> IsFreeAgent` must never be used as fantasy-league availability.
+- source refresh failure;
+- materialization failure;
+- source-freshness block/degradation;
+- external research uncertainty;
+- no material change.
 
-## Non-player entity rule
-
-An external source may expose entities that participate in the provider activity feed but are not player entities for the managed league format, such as NFL team defenses.
-
-These entities must be classified declaratively in `operations-external-signal-catalog.json`. A matching entity is excluded from player identity resolution, ownership assignment, free-agent views and player-level monitoring. The source row remains accounted for through separate `excluded_non_player_entities` counts and entity-type metadata.
-
-Invalid classification rules fail closed. A provider-specific non-player pattern must not be embedded directly in monitoring or recommendation logic.
-
-## Injury-data rule
-
-`public/data/Players.json` currently contains a structured secondary injury signal from the existing player refresh pipeline:
-
-- `Injured`
-- `InjuryDetails.ReturnDate`
-- `InjuryDetails.Description`
-- `InjuryDetails.Date`
-- `InjuryDetails.Designation`
-
-These fields are useful for candidate detection and prioritization. They are not an official-injury-report source and must not be treated as proof of health when empty. Decision-relevant positive signals require fresh external verification.
-
-## Role-data rule
-
-`public/data/Players.json` may contain Sleeper-backed `SleeperDepthChartPosition` and `SleeperDepthChartOrder` fields. The central player-signal contract may expose them as a nominal role hint.
-
-They do not establish snap share, routes, targets, carries, red-zone work, kicking opportunity or job security. Missing values are valid and do not automatically indicate a data-quality error. Weekly or decision-relevant role conclusions still require stronger usage data or current external verification.
-
-## Generated-data rule
-
-`fantasy-management/generated/**` is reserved exclusively for fully reproducible derived outputs. Every artifact stored there must be rebuildable from versioned source data, configuration and deterministic repository tooling.
-
-Generated artifacts may contain provenance, input fingerprints, joins, normalized views, derived metrics and quality findings. They must not contain manually maintained evaluations, recommendations, decisions, Knowledge, human-authored baselines or stored reviews.
-
-Manually curated or interpretive artifacts remain in their owning Fantasy Management areas such as `knowledge/`, `analyses/`, `decisions/`, source packages or other explicitly documented canonical locations.
-
-Current published generated layout:
-
-```text
-fantasy-management/generated/
-└── operations/
-    ├── source-freshness.json
-    ├── managed-roster-signals.json
-    ├── external-signal-relevance.json
-    ├── player-signals.json
-    ├── free-agent-signals.json
-    ├── free-agent-movement-signals.json
-    ├── free-agent-movement-events.json
-    ├── kicker-streaming-inputs.json
-    └── data-quality.json
-```
-
-`generated/operations/` owns deterministic read models prepared specifically for Fantasy Operations. These files do not replace canonical current league data under `public/data/` or canonical source snapshots under `fantasy-management/sources/`.
-
-### Generated-artifact read verification
-
-Tool- oder Transportdarstellung ist nicht automatisch Dateizustand. Insbesondere bei großen Generated-Artefakten darf ein leerer oder ausgelassener Inline-`content`-Wert eines Connectors, einer API-Antwort oder einer UI-Vorschau **nicht** allein als Beleg für eine leere Repository-Datei oder eine echte Nullpopulation verwendet werden.
-
-Vor einer Aussage wie „Datei ist leer“, „Feed enthält null Spieler“ oder „Publish hat einen leeren Contract erzeugt“ muss der tatsächliche aktuelle Artefaktzustand verifiziert werden. Zulässige Verifikation ist insbesondere:
-
-- aktuellen Repository-Ref und Blob-SHA auflösen;
-- Blob-Inhalt oder verlässliche Byte-/Dateigröße lesen;
-- bei strukturierten Contracts den Inhalt mit dem vorgesehenen Parser beziehungsweise Schema prüfen;
-- bei widersprüchlicher Tooldarstellung einen zweiten verlässlichen Read-Pfad verwenden.
-
-Eine Connector-Trunkierung, ausgelassene Inline-Darstellung oder Antwortbegrenzung ist ein **Tooling-/Transportbefund**, kein Fantasy-Operations-Datenqualitätsbefund. Sie darf weder einen Datenqualitäts-TODO noch eine Spieler-/Populationsempfehlung auslösen, solange der tatsächliche Blob nicht entsprechend verifiziert wurde.
-
-Umgekehrt bleibt eine verifiziert leere oder strukturell unerwartete Generated-Datei ein echter Fail-Closed-Fall und muss nach den normalen Datenqualitätsregeln behandelt werden.
-
-If the amount or variety of deterministic generated data grows materially, `fantasy-management/generated/` may be extended with additional domain-specific subdirectories rather than mixing unrelated outputs into `operations/`. Examples include a future `reports/`, `indexes/` or another clearly owned generated domain. A `podcasts/` generated namespace is permitted only for strictly reproducible derived podcast artifacts; authored source packages, editorial extraction, Knowledge and analyses must remain in their existing non-generated locations.
-
-New generated subdirectories must follow the same reproducibility rule and should be created only when real artifacts require them; do not create empty placeholder folders.
-
-## Production order
-
-The intended daily order is:
-
-```text
-league/source refreshes
-→ external ranking/projection refreshes
-→ external signal refreshes
-→ immediate deterministic materialization after each successful relevant source/heartbeat publication
-→ optional 06:45 Europe/Berlin catch-up
-→ scheduled monitoring
-```
-
-The morning workflows remain scheduled in Europe/Berlin order before the 07:00 monitoring window. Their successful relevant source or Success-Heartbeat commits are independently materializable; there is no 05:00-06:45 batching exception. Multiple morning materializer runs are an accepted cost of publishing the latest derived state as early as possible.
-
-The scheduled 06:45 run is only a best-effort reconciliation/catch-up. Its timing is not a readiness guarantee, and the 07:00 consumer must not assume that a scheduled materializer has started or finished. It must read the latest successfully published canonical Operations state and evaluate `source-freshness.json` before interpreting deterministic events. The Freshness Gate owns `proceed`, `proceed_degraded`, `block`, `no_event_conclusion_allowed`, blocking/unfresh sources and affected signal families.
-
-A successful source refresh that leaves content unchanged is still fresh when its Success-Heartbeat is current. `public/data/Timestamps.json` remains provenance and must not be used as a substitute fetch-success proof.
-
-Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer after the Freshness Gate. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
-
-## Legacy observation runner
-
-The former autonomous State-writing observation runner is retained only as historical configuration while migration is in progress. Its autonomous execution path must operate read-only and must not attempt State, event, Knowledge, Decision or board publication.
-
-The legacy boundary applies to autonomous execution, not to every artifact created by that framework. Until an explicit replacement architecture is approved, the following contracts remain reusable for human-approved persistence and comparison:
-
-- `fantasy-management/automation/state/entity-observation.json` as the canonical approved qualitative observation baseline State;
-- target and profile identity plus normalization semantics where they remain applicable;
-- `automation-observation-state.schema.json`;
-- canonical material-State hashing semantics;
-- cross-file validation and optimistic-concurrency publication safeguards.
-
-The following legacy behaviors are not part of scheduled production monitoring and must not be triggered merely because baselines are missing:
-
-- autonomous Observation Bootstrap execution;
-- autonomous incremental baseline backfill;
-- autonomous State-only checkpoint publication;
-- autonomous Replacement-State-Writer execution;
-- autonomous Observation Event bundle publication.
-
-Legacy workflow and helper files may remain in the repository as historical implementation contracts while migration is incomplete. Their existence does not override this architecture or the current `runner-config.json` mode.
+These states must not be collapsed into a false no-change result.
