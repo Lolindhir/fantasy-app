@@ -584,7 +584,7 @@ decisions:
       pipeline: rebuild current and historical transaction base data from canonical
       inputs; resolve concrete draft identity; regenerate current/open and completed
       historical drafts from that fresh transaction state; enrich transaction picks
-      from those freshly regenerated draft outputs; refresh PastSeasonsIndex. Do not
+      from those freshly generated draft outputs; refresh PastSeasonsIndex. Do not
       add compatibility mappings for legacy generated keys such as
       2024_D1_Free_Agent. The scheduled RequestTransactions workflow owns this
       coupled weekly rebuild. RequestDrafts remains manually dispatchable as an
@@ -685,3 +685,42 @@ decisions:
       negative:
         - GitHub Issue metadata and repository documentation must be kept semantically aligned.
         - Retrospectively migrated Issues have migration-time GitHub created_at values, so original dates must be documented separately when known.
+
+  - id: ADR-029
+    title: Workflow health uses an isolated repository snapshot plus external notification
+    status: accepted
+    context: >
+      The initial monitoring design expected the external ChatGPT watcher to read
+      workflow-specific GitHub Actions run histories directly. The available
+      ChatGPT GitHub connector cannot reliably list those run collections, so
+      failure streaks, recovery and staleness cannot be evaluated there without
+      incomplete evidence.
+    decision: >
+      Keep .ai-context/manual/workflow-monitoring.yaml as the canonical monitoring
+      policy. Run a small repository-owned scheduled workflow that reads the policy
+      and GitHub Actions metadata with actions:read, computes deterministic health
+      state outside workflow YAML in tools/build_workflow_health_snapshot.py, and
+      publishes workflow-health.json only to the isolated workflow-health-state
+      branch. The snapshot producer never sends notifications or mutates Issues.
+      The external ChatGPT condition watch reads the policy from main and the
+      snapshot from workflow-health-state, treats an over-age or missing snapshot
+      as monitoring-infrastructure failure, and remains the user notification layer.
+      The snapshot workflow is non-paging in recursive run evaluation; its own
+      availability is represented by snapshot freshness.
+    rationale: >
+      GitHub Actions has authoritative access to its own run API, while the external
+      watcher is better suited to user-facing conditional notification. Separating
+      deterministic state materialization from notification avoids duplicating
+      policy, avoids another notification source, and prevents hourly snapshot
+      commits from triggering main-bound product workflows.
+    consequences:
+      positive:
+        - Workflow-specific run evaluation uses complete GitHub-side evidence.
+        - The existing category, failure and staleness policy remains versioned in one place.
+        - Snapshot commits are isolated from main and do not trigger main-only product workflows.
+        - Snapshot freshness provides independent self-monitoring for the snapshot producer.
+        - The external notification layer no longer depends on unavailable run-list connector capabilities.
+      negative:
+        - Monitoring now depends on one additional scheduled GitHub Actions workflow and a state branch.
+        - The snapshot workflow needs contents:write solely for the isolated state branch.
+        - A missing or stale snapshot becomes a separate infrastructure incident that the external watcher must handle.
