@@ -1,13 +1,27 @@
 {
   "schemaVersion": 1,
+  "registrySchemaVersion": 3,
   "dataset": "nflverse.ff-player-ids",
   "provider": "nflverse-ffverse",
   "upstream": "dynastyprocess/data",
   "sourceUrl": "https://raw.githubusercontent.com/dynastyprocess/data/master/files/db_playerids.csv",
   "sourceFormat": "csv",
-  "retrievedAtUtc": "2026-08-21T21:26:19Z",
-  "contentHashSha256": "d0099fa8817cf60cc7c38d6d98832efdf8a27cfe50fcf9793d51e2e578b78fc1",
-  "rowCount": 12480,
+  "sourceMode": "fixed",
+  "availabilityStatus": "available",
+  "kind": "identity-mapping",
+  "refreshPolicy": "periodic",
+  "retentionPolicy": "latest-with-git-history",
+  "lifecycle": {
+    "class": "dynamic",
+    "partitionKey": "none",
+    "finalization": "never",
+    "repairPolicy": "normal"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "DynastyProcess data via nflverse/ffverse",
+  "retrievedAtUtc": "2026-08-29T23:23:22Z",
+  "contentHashSha256": "a4952322946d00868fcd2e78b0c54014c0c694bedbf3717a50a7c01d5d3b2efb",
+  "rowCount": 12484,
   "columns": [
     "mfl_id",
     "sportradar_id",
@@ -44,10 +58,5 @@
     "weight",
     "college",
     "db_season"
-  ],
-  "kind": "identity-mapping",
-  "refreshPolicy": "periodic",
-  "retentionPolicy": "latest-with-git-history",
-  "license": "CC BY 4.0",
-  "attribution": "DynastyProcess data via nflverse/ffverse"
+  ]
 }
