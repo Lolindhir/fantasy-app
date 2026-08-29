@@ -6,6 +6,8 @@ This document is authoritative for the durable storage layout of approved qualit
 
 Scheduled Fantasy Operations monitoring remains read-only. Durable qualitative baseline persistence still requires explicit human approval.
 
+Any Fantasy Operations task that compares qualitative `entity-observation` baselines, reports a material qualitative change, or proposes the durable follow-up write must read this document before interpreting the repository observation baseline. If another active document still describes the large base file as the normal full-replacement write target, this storage contract wins for persistence semantics.
+
 ## Storage model
 
 The effective state has two layers:
@@ -18,6 +20,8 @@ The base snapshot contains all approved state that existed at migration time and
 A target overlay replaces exactly one `job_state.targets[target_id]` object from the base snapshot. A target that did not exist in the base may also be introduced by a shard when its configured target identity is otherwise valid.
 
 The effective target map is produced by loading the base and then applying all target shards in deterministic filename order. Because target IDs map one-to-one to filenames, there can be at most one active shard per target.
+
+For monitoring comparisons, an existing target shard is the current approved baseline for that target and must take precedence over the corresponding base target. The base target is used only when no shard exists for that target.
 
 ## Target shard contract
 
@@ -58,6 +62,8 @@ For an approved baseline update:
 10. Pin the current target-shard blob when replacing an existing shard and publish only non-forced/fast-forward.
 
 A normal approved target/profile update must not rewrite the large base snapshot.
+
+A scheduled read-only monitoring task must not perform this write itself. When it reports a material qualitative change, however, it should identify the proposed post-approval target-shard path and the affected target/profile so the later interactive write can be performed without falling back to the legacy monolithic replacement path.
 
 ## Revision and processed-state semantics
 
