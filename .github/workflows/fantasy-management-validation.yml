@@ -71,6 +71,10 @@ jobs:
           python fantasy-management/_ai/scripts/validate_json_format.py \
             fantasy-management/automation/state/entity-observation.json
 
+      - name: Validate entity observation base and shards
+        run: |
+          python fantasy-management/_ai/scripts/validate_observation_state_shards.py
+
       - name: Validate podcast package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
