@@ -4,6 +4,8 @@
 
 Diese Datei definiert die dauerhafte Trennung zwischen laufender Fantasy-Operations-Beobachtung und konkreten wöchentlichen Entscheidungen.
 
+Für qualitative `entity-observation`-Baselines ist `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` der autoritative Storage-Vertrag. Daily Monitoring muss für Baseline-Vergleiche den effektiven Base+Shard-State verwenden; vorhandene Target-Shards haben Vorrang vor dem entsprechenden Target im großen Migration-Base-Snapshot. Geplante dauerhafte Baseline-Änderungen werden nach Freigabe als kleiner Target-Shard vorgeschlagen, nicht als Full-Replacement von `entity-observation.json`.
+
 Die zentrale Architekturregel lautet:
 
 > Positionsspezifische Analysebausteine liefern strukturierte Signale, Vergleichslogik und Research-Priorität. Daily Monitoring erkennt materielle Veränderungen. Die endgültige Start-/Sit-, Add-/Drop-, Waiver- und Roster-Entscheidung gehört in einen übergeordneten Entscheidungsworkflow, der alle Positionen und die Opportunity Cost des gesamten Rosters gemeinsam bewertet.
@@ -231,249 +233,67 @@ Zusätzliche Leitplanken:
 
 ## 3. Positionsübergreifendes Free-Agent Daily Monitoring
 
-Free-Agent Daily Monitoring ist ein gemeinsamer Discovery- und Materialitätspfad für QB, RB, WR, TE und K. Kicker werden hier nicht als separate Population oder als eigener Discovery-Workflow behandelt.
+Free-Agent Daily Monitoring ist ein positionsübergreifender Discovery- und Research-Priorisierungspfad. Es ist kein autonomer Transaktionsworkflow.
 
-### Population
+Der normale tägliche Pfad ist:
 
-Der gemeinsame Free-Agent-Pfad beobachtet alle tatsächlichen Fantasy Free Agents aus `free-agent-signals.json`, soweit sie zu den aktiven Fantasy-Positionen QB, RB, WR, TE oder K gehören.
+1. `source-freshness.json` prüfen;
+2. `free-agent-movement-events.json` als Event-first-Schicht lesen;
+3. nur bei freigegebenem Freshness-Gate relevante `new`, `changed`, `structural_change` und gegebenenfalls `resolved` Events weiter untersuchen;
+4. `free-agent-movement-signals.json` nur als Detail-/Current-State-Ansicht für diese Events verwenden;
+5. qualitative Recherche gezielt auslösen;
+6. bei echter dauerhafter Relevanz die Aufnahme in `player-role-watch` vorschlagen;
+7. keine finale Add-/Drop-Empfehlung aus Daily Monitoring allein ableiten.
 
-Die gleiche Ownership- und Availability-Logik gilt für alle Positionen. Ein Spieler, der von einem Gegner aufgenommen oder wieder freigegeben wird, wechselt über dieselbe ligaweite Ownership-Schicht in oder aus der Free-Agent-Population.
+`event_count = 0` ist nur dann ein belastbarer No-Event-Befund, wenn `source-freshness.json -> monitoring.no_event_conclusion_allowed = true` ist. Bei degradiertem oder blockiertem Freshness-State gelten die dort definierten Einschränkungen.
 
-### Gemeinsame Signalfamilien
+## 4. Persistierte qualitative Baselines
 
-Je nach Positions- und Quellenabdeckung werden insbesondere beobachtet:
+Persistierte qualitative `entity-observation`-Baselines dienen als Vergleichsgedächtnis für spätere Monitoringläufe. Sie sind nicht Generated Data und bleiben genehmigungspflichtig.
 
-- Injury und Availability;
-- NFL-Team und relevante Transactions;
-- Rolle und Opportunity;
-- Usage;
-- Dynasty-Ranking und Marktwert;
-- Redraft-ADP;
-- Season Projections und liga-spezifisch neu berechnete vergleichbare Core Points;
-- Projection Consensus und Provider Spread;
-- Sleeper Activity;
-- Cross-Signal-Confirmation und -Divergence;
-- positionsspezifische Replacement-Relevanz.
+Der effektive State folgt `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md`:
 
-Positionsspezifische Signale dürfen denselben Spielerrecord ergänzen. Für Kicker können dazu insbesondere FFC-Kicker-ADP, nominaler K1-Status, Job Security, bestehender Kicker-Baseline-Score oder eine Kicker-spezifische Projection-Auswertung gehören. Diese Features bleiben Teil derselben Discovery- und Priorisierungsarchitektur.
+- Base: `fantasy-management/automation/state/entity-observation.json`;
+- Target-Shards: `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`;
+- vorhandener Shard gewinnt gegenüber dem Base-Target;
+- normale genehmigte Updates schreiben nur den vollständigen betroffenen Target-Shard;
+- der große Base-Snapshot wird bei normalen Baseline-Updates nicht ersetzt;
+- der Scheduled Monitoring Task bleibt read-only und darf nur den konkreten späteren Shard-Write vorschlagen.
 
-### Bestehende Kicker-Implementierung
+Damit muss ein Monitoringlauf beim Vergleich eines Spielers immer zuerst prüfen, ob für dessen Target ein Shard existiert. Nur wenn kein Shard existiert, wird die entsprechende Baseline aus dem Base-Snapshot verwendet.
 
-Die bereits implementierten Dateien
+## 5. Weekly Lineup + Waiver
 
-```text
-fantasy-management/automation/target-sets/kicker-daily-monitoring.json
-fantasy-management/automation/profiles/kicker-signal-movement.json
-fantasy-management/automation/workflows/kicker-daily-monitoring.md
-```
+Weekly Lineup + Waiver ist der konkrete Entscheidungsworkflow für den vollständigen aktuellen Kader.
 
-bleiben als vorhandene technische und fachliche Bausteine nutzbar. Sie definieren jedoch nicht mehr die Zielarchitektur für Free-Agent-Discovery.
+Er kombiniert:
 
-Beim Ausbau sollen Kicker-Signale in den gemeinsamen positionsübergreifenden Movement- und Monitoring-Pfad einfließen, ohne parallele Discovery-Baselines, doppelte Ownership-Logik oder separate Kicker-Benachrichtigungen für denselben materiellen Sachverhalt zu erzeugen.
-
-Die Kicker-Streaming-Engine bleibt ein nachgelagertes positionsspezifisches Analysemodul für Weekly Decisions; sie ist keine Discovery-Schicht.
-
-### Was Daily Free-Agent Monitoring nicht macht
-
-Es bewertet im normalen täglichen Lauf nicht automatisch:
-
-- konkrete Weekly Matchups;
-- konkrete Stadion-/Roof-/Weather-Bedingungen einer einzelnen Spielwoche;
-- finale Start/Sit-Entscheidungen;
-- finale Add/Drop-Entscheidungen;
-- die globale Opportunity Cost eines Roster-Moves.
-
-Diese Faktoren sind Weekly Decision Context oder gehören in andere übergeordnete Entscheidungsprozesse.
-
-## 4. Weekly Lineup + Waiver Workflow: Zielbild
-
-Der Weekly Workflow ist kein Kicker-Workflow, sondern ein Gesamtteam-Entscheidungsprozess.
-
-### Kerninputs
-
-Mindestens:
-
-- aktuelles `League.json`;
-- vollständiger aktueller Managed Roster;
-- tatsächliche Fantasy-Free-Agent-Population;
-- NFL Schedule und aktuelle Week;
-- aktuelle Injury-/Availability-Daten;
-- aktuelle Usage- und Opportunity-Daten, sobald materialisiert;
-- aktuelle Rankings/ADP/Projections;
+- aktuelle Roster- und League-Regeln;
+- Injury/Availability;
+- Rolle/Usage/Opportunity;
+- Matchup und Schedule;
+- Projections;
+- Free-Agent-Alternativen;
 - positionsspezifische Module;
-- Roster-/Bench-/Taxi-/Reserve-Regeln;
-- gegebenenfalls Waiver-/Transaction-Deadlines.
+- Drop-/Bench-Slot-Opportunity-Cost.
 
-### Entscheidungsreihenfolge
+Eine positionsspezifische Verbesserung reicht nicht automatisch für eine Transaktion. Der Gesamtroster-Nutzen muss positiv sein.
 
-1. **Availability klären**
-   - Bye;
-   - Out/Doubtful/Questionable;
-   - Suspension/IR/PUP;
-   - aktuelle NFL- und Fantasy-Ownership.
+### Kicker innerhalb des Weekly Workflows
 
-2. **Startbare Population bestimmen**
-   - nur tatsächlich verfügbare Spieler;
-   - Positions- und Flex-Berechtigung beachten.
+Kicker Streaming ist ein Untermodul. Es darf Kandidaten vergleichen und einen positionsspezifischen `switch_recommended`- oder `no_switch_recommended`-Befund liefern. Die finale Entscheidung muss zusätzlich prüfen, welcher Spieler für den Move den Roster-Slot verliert und ob dieser Preis gerechtfertigt ist.
 
-3. **Weekly Projection + Opportunity bewerten**
-   - Matchup;
-   - Team-Scoring-Environment;
-   - Usage;
-   - Rolle;
-   - Injury-Kontext;
-   - relevante positionsspezifische Faktoren.
+## 6. Dauerhafte Änderungen
 
-4. **Beste legale Startaufstellung bestimmen**
-   - 2 QB;
-   - 2 RB;
-   - 2 WR;
-   - 2 TE;
-   - 4 FLEX;
-   - 1 K;
-   - aktuelle Ligaregeln aus dem Repo sind verbindlich.
+Daily Monitoring selbst bleibt read-only. Dauerhafte Änderungen benötigen die jeweils geltende ausdrückliche Freigabe.
 
-5. **Free-Agent-Upgrades prüfen**
-   - nicht nur Top Projection suchen;
-   - tatsächliche Fantasy-Verfügbarkeit prüfen;
-   - erwarteten Vorteil gegen aktuellen Starter/Bench-Spieler bewerten.
+Insbesondere:
 
-6. **Drop Opportunity Cost berechnen**
-   - welcher Spieler müsste weichen?
-   - verliert das Team dadurch wertvolle Upside, Injury Insurance, Scarcity oder Trade Value?
-   - ist der Move nur für eine Woche oder auch mittelfristig sinnvoll?
+- neue oder geänderte `player-role-watch`-Targets;
+- qualitative `entity-observation`-Baselines;
+- Knowledge;
+- Decisions;
+- Boards;
+- gespeicherte Reviews.
 
-7. **Waiver-/Add-/Drop-Empfehlung erzeugen**
-   - nur wenn der Gesamtnutzen positiv ist;
-   - Alternativen und Mindestvorteil nennen;
-   - Unsicherheit explizit machen.
-
-8. **Finale Lineup-Empfehlung erzeugen**
-   - Starter;
-   - Bench;
-   - nötige Moves davor;
-   - Backup-Plan bei Questionable-/Late-Game-Spielern.
-
-### Output
-
-Der spätere Workflow soll mindestens liefern:
-
-- empfohlene Startaufstellung;
-- wichtigste Start/Sit-Entscheidungen;
-- empfohlene Waiver Adds;
-- zugehörige Drops;
-- priorisierte Alternativen;
-- Injury-/Bye-Risiken;
-- Kicker Hold/Stream;
-- Entscheidungskonfidenz;
-- zeitkritische nächste Aktion.
-
-## 5. Kicker als Sonderfall im Weekly Workflow
-
-### Default-Rosterstrategie
-
-Normalfall:
-
-> genau einen Kicker halten.
-
-Grund:
-
-- die Liga hat nur einen Kicker-Starterplatz;
-- Replacement Level ist in einer 6-Team-Liga hoch;
-- ein zweiter Kicker verbraucht einen Bench-Slot, der häufig wertvollere RB-/WR-/TE-/QB-Upside oder Injury Insurance tragen kann.
-
-### Stabiler Kicker vs. Streamer
-
-Ein stabil guter Kicker soll nicht automatisch jede Woche gedroppt werden, nur weil ein anderer Kicker minimal höher projiziert ist.
-
-Die bestehende Kicker-Engine verwendet deshalb eine materielle Wechselhürde.
-
-Der Weekly Workflow soll:
-
-1. den gehaltenen Kicker vollständig bewerten;
-2. die besten tatsächlich verfügbaren Alternativen bewerten;
-3. nur bei materiellem Wochenvorteil streamen;
-4. Job Security als Eligibility-Gate behandeln;
-5. Sleeper Activity nur als Research-Priorität verwenden.
-
-### Bye
-
-Ein Bye ist ein eigener Schedule-Fall.
-
-- kein künstlicher Null-Score;
-- keine falsche Job-Security-Abwertung;
-- beste verifizierte spielende Alternative bestimmen.
-
-Danach muss der übergeordnete Workflow entscheiden:
-
-- Kicker droppen und Streamer aufnehmen;
-- oder wertvollen Kicker behalten und einen anderen Bench-Spieler für genau eine Woche opfern.
-
-### Zwei Kicker
-
-Zwei Kicker sind kein Default.
-
-Sie können sinnvoll sein, wenn:
-
-- der gehaltene Kicker längerfristig deutlich über Replacement Level liegt;
-- sein Bye nur kurzfristig überbrückt werden muss;
-- der zu opfernde Bench-Slot aktuell wenig langfristigen Wert trägt;
-- das Risiko, den gehaltenen Kicker nach einem Drop nicht zurückzubekommen, höher ist als die Opportunity Cost des zweiten Kicker-Slots.
-
-Diese Entscheidung kann die Kicker-Engine allein nicht treffen, weil sie den Wert des zu droppenden Nicht-Kickers nicht kennt.
-
-## 6. Verhältnis zu anderen geplanten Workflows
-
-### Weekly Roster Review
-
-Strategischer als Weekly Lineup + Waiver.
-
-Fragen:
-
-- Hold/Shop/Cut/Stash/Package;
-- Salary-/Cap-Risiko;
-- mittelfristige Rollenentwicklung;
-- Roster Construction.
-
-### Free-Agent Board
-
-Breiter Marktüberblick unabhängig von der konkreten Startwoche.
-
-Fragen:
-
-- beste verfügbaren Talente;
-- Upside;
-- Handcuffs;
-- Stashes;
-- mittelfristiger Marktwert.
-
-### Weekly Lineup + Waiver
-
-Kurzfristiger, konkreter Entscheidungsworkflow.
-
-Fragen:
-
-- diese Woche starten;
-- diese Woche ersetzen;
-- jetzt adden/droppen;
-- welches Lineup maximiert die aktuelle Siegchance ohne unverhältnismäßigen Roster-Schaden?
-
-Diese drei Prozesse dürfen dieselben Derived Datasets wiederverwenden, müssen aber unterschiedliche Zeithorizonte und Outputs behalten.
-
-## 7. Automationsgrenze
-
-Daily Monitoring darf regelmäßig laufen und bei materiellen Änderungen benachrichtigen.
-
-Der Weekly Lineup + Waiver Workflow benötigt später eine separat definierte Ausführungszeit und Orchestrierung.
-
-Vor einer automatischen Aktivierung müssen festgelegt werden:
-
-- Waiver-Zeitfenster;
-- gewünschter Hauptanalysezeitpunkt;
-- spätester Recheck vor den Spielen;
-- Umgang mit Thursday-/Saturday-/International-Games;
-- Late-Swap-/Late-Injury-Logik;
-- ob ein zusätzlicher Spieltags-Recheck nur ereignisgesteuert oder immer ausgeführt wird;
-- ob Empfehlungen nur gemeldet oder irgendwann technisch in der App vorbereitet werden.
-
-Änderungen an `.github/workflows/**` benötigen weiterhin eine separate ausdrückliche Freigabe.
+Für genehmigte qualitative `entity-observation`-Baseline-Writes ist ausschließlich `OBSERVATION_STATE_STORAGE.md` maßgeblich. Ein interaktiver Folge-Write muss den vollständigen aktuellen Target-State übernehmen, nur die genehmigten Profile ändern, vorhandene andere Profile erhalten, Hashes neu berechnen und den kleinen Target-Shard schreiben. Ein Full-Replacement der großen Base-Datei ist dafür nicht zulässig.
