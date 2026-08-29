@@ -1,0 +1,89 @@
+name: REPO • Monitoring • Workflow Health Snapshot
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/workflow-health-snapshot.yml"
+      - ".ai-context/manual/workflow-monitoring.yaml"
+      - "tools/build_workflow_health_snapshot.py"
+      - "tools/tests/test_build_workflow_health_snapshot.py"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: workflow-health-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install monitoring dependency
+        run: python -m pip install "PyYAML>=6,<7"
+
+      - name: Load previous health snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
+            git show origin/workflow-health-state:workflow-health.json > /tmp/previous-workflow-health.json || true
+          else
+            echo "workflow-health-state branch is missing; the publish step will initialize it."
+          fi
+
+      - name: Test snapshot logic
+        run: python -m unittest discover -s tools/tests -p "test_build_workflow_health_snapshot.py" -v
+
+      - name: Build workflow health snapshot
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          args=(
+            --repository "${GITHUB_REPOSITORY}"
+            --policy .ai-context/manual/workflow-monitoring.yaml
+            --output /tmp/workflow-health.json
+            --source-sha "${GITHUB_SHA}"
+          )
+          if [[ -f /tmp/previous-workflow-health.json ]]; then
+            args+=(--previous-snapshot /tmp/previous-workflow-health.json)
+          fi
+          python tools/build_workflow_health_snapshot.py "${args[@]}"
+
+      - name: Publish snapshot to isolated state branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
+            git switch -C workflow-health-state origin/workflow-health-state
+          else
+            git switch --orphan workflow-health-state
+            git rm -rf . || true
+          fi
+          cp /tmp/workflow-health.json workflow-health.json
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add workflow-health.json
+          git commit -m "chore(monitoring): refresh workflow health snapshot"
+          git push origin HEAD:workflow-health-state

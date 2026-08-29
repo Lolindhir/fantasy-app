@@ -66,17 +66,20 @@ contextModel:
 
   workflowMonitoring:
     description: >
-      Versioned operational contract that classifies every GitHub Actions workflow
-      and defines external alerting thresholds, relevant events, staleness and
-      fail-closed configuration-drift behavior.
+      Versioned operational contract that classifies every GitHub Actions workflow,
+      defines run-health thresholds and routes deterministic health snapshots to an
+      external notification layer.
     contract: .ai-context/manual/workflow-monitoring.yaml
-    monitor: external ChatGPT condition watch
+    monitor: GitHub health snapshot plus external ChatGPT condition watch
+    snapshotBranch: workflow-health-state
+    snapshotPath: workflow-health.json
     mayBeEditedByAI: true
     mayBeRegeneratedAutomatically: false
     rules:
       - The repository contract owns workflow monitoring semantics; individual workflow YAML files do not duplicate alert policy.
       - Every workflow must be classified; unclassified or stale configured paths are monitoring configuration errors.
-      - The external monitor is read-only and does not require a repository monitoring workflow.
+      - The repository snapshotter evaluates run metadata deterministically and writes only the isolated workflow-health-state branch.
+      - The external monitor remains read-only and decides user notification from the current snapshot and its freshness.
 
 readingOrder:
   - .ai-context/manual/ai-guidance.yaml
@@ -100,7 +103,7 @@ readingOrder:
 shortContext:
   fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
   .ai-context/manual/work-tracking.yaml: Kanonischer Vertrag für GitHub-Issue-Work-Tracking, Label-Semantik, Prioritäten, Handoff und Drift-Governance
-  .ai-context/manual/workflow-monitoring.yaml: Kanonischer fail-closed Vertrag für Workflow-Klassifizierung, produktive GitHub-Actions-Alarmierung, Failure-Streaks und Staleness
+  .ai-context/manual/workflow-monitoring.yaml: Kanonischer fail-closed Vertrag für Workflow-Klassifizierung, Failure-/Staleness-Auswertung, isolierten Health-Snapshot und externe Alarmierung
   public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag
