@@ -3,7 +3,7 @@ schemaVersion: 2
 domain: source-of-truth-matrix
 
 status: accepted
-consolidatedAt: 2026-08-24
+consolidatedAt: 2026-08-28
 
 purpose: >
   Consolidates field- and domain-level source ownership after the NFL source-data
@@ -199,22 +199,24 @@ matrix:
 
   nflGameFinality:
     facts:
-      - current game status
       - explicit Final state
       - derived all-games-final week closure
-    durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: Tank01 gameStatus in RequestGames.ps1
+    durableCanonicalPrimary: nflverse released-games evidence normalized by canonical game_id
+    currentRuntimePrimary: Tank01 gameStatus in RequestGames.ps1 until the later generator migration
     secondary:
-      - nflverse schedule scores/time/state fields may provide evidence but no accepted direct Final mapping exists yet
-    fallback: none-defined
-    identityKey: canonical game identity
+      - nflverse schedules own canonical game identity, game type and final score fields
+    fallback:
+      - Tank01 only for the existing legacy runtime contract until that consumer is migrated
+    identityKey: nflverse game_id / canonical game identity
     lifecycle: seasonal-finalizable
-    historyCoverage: current runtime follows Tank01 availability
-    freshness: current app Games run / Tank01 response
-    migrationState: explicit-canonical-rule-required-before-tank01-removal
+    historyCoverage: follows validated released-games evidence; backfill coverage must be audited when activated
+    freshness: nflverse released-game publication during the season
+    migrationState: canonical-source-approved-not-yet-activated
     guards:
       - do not infer Final merely from score presence
-      - preserve distinction between scheduled/live/final/postponed/cancelled states when a canonical rule is designed
+      - Final requires membership in the validated released-games evidence for the same canonical game_id
+      - the abandoned BUF-CIN Week 17/2022 game must not be treated as Final merely because schedule/score evidence exists
+      - postponed/cancelled/no-contest semantics remain distinct terminal-state work if encountered
       - weekFinal may only be derived after every applicable game has canonical finality
 
   nflGameBoxscoreLegacy:
@@ -243,13 +245,13 @@ matrix:
       - receiving targets and touchdowns
       - field-goal attempts
       - PAT attempts
+      - punt/kick return yards and return touchdowns where published
       - weekly player stat totals
       - team/opponent/game references
     durableCanonicalPrimary: nflverse player-stats
     currentRuntimePrimary: Tank01 playerStats embedded in Games.json and consumed by RequestPlayers.ps1
     secondary: none-required for finalized history
     fallback:
-      - Tank01 as optional low-latency source while nflverse has not published a just-finished game
       - Tank01 for legacy Games.json until that read model is redesigned
     identityKey: GSIS -> CanonicalPlayerID
     gameKey: nflverse game_id
@@ -261,23 +263,25 @@ matrix:
     guards:
       - no name-based player join
       - secondary/fallback data cannot overwrite a conflicting finalized canonical stat silently
+      - raw stat fields, including return-yard facts, must remain available for league-specific scoring
       - AttemptsTotal remains an app-derived metric and must be regression-tested when its inputs migrate
 
-  fantasyPointsPpr:
+  fantasyPointsLeagueScoring:
     facts:
-      - PPR fantasy points derived from NFL player statistics
-    durableCanonicalPrimary: derived deterministically from canonical nflverse player stats/scoring definition
-    currentRuntimePrimary: Tank01 fantasyPointsDefault.PPR in current Games/Players pipeline
+      - league-specific fantasy points derived from canonical NFL player statistics
+    durableCanonicalPrimary: deterministic derivation from canonical NFL player stats plus Sleeper league scoring_settings
+    currentRuntimePrimary: Tank01 fantasyPointsDefault.PPR in the current Games/Players pipeline
     secondary:
-      - nflverse fantasy_points_ppr may be used as validation/corroboration
-    fallback: Tank01 only during legacy/low-latency runtime
+      - nflverse/provider fantasy-point values may be used as validation/corroboration only
+    fallback: Tank01 only for the legacy runtime contract until scoring is migrated
     identityKey: CanonicalPlayerID + season + week/game
     lifecycle: derived-seasonal
-    historyCoverage: follows player-stats coverage from 1999
-    migrationState: evaluated-derived-rule-needs-regression-before-app-switch
+    historyCoverage: follows canonical player-stats coverage
+    migrationState: target-approved-generator-migration-not-started
     guards:
-      - scoring definition must be explicit
+      - scoring definition comes from the league settings rather than a provider-default fantasy-point field
       - canonical source stat corrections must propagate deterministically
+      - return-yard scoring changes must be possible without changing the NFL stat provider
 
   nflSnapCounts:
     facts:
@@ -291,7 +295,6 @@ matrix:
     currentRuntimePrimary: Tank01 snapCounts embedded in Games.json
     secondary: none-required
     fallback:
-      - Tank01 as optional low-latency source if PFR/nflverse has not published a just-finished game
       - Tank01 for legacy Games.json during migration
     identityKey: PFR ID -> CanonicalPlayerID
     gameKey: nflverse game_id / PFR game mapping
@@ -363,22 +366,24 @@ matrix:
 
   nflInjuriesCurrent:
     facts:
-      - current injured flag
-      - injury designation
-      - injury date/description/expected return where supplied
-    durableCanonicalPrimary: unresolved-long-term; Tank01 is temporary operational primary
-    currentRuntimePrimary: Tank01 player injury object in RequestPlayers.ps1
+      - current injury designation/status
+      - injury start date where supplied
+      - practice participation where supplied
+      - richer description/expected return only when a separately accepted source supplies it
+    durableCanonicalPrimary: Sleeper /players/nfl for the current core injury/status fields; richer injury narrative/return-date contract remains unresolved
+    currentRuntimePrimary: Tank01 player injury object in RequestPlayers.ps1 until the later generator migration
     secondary:
-      - Sleeper injury fields may be corroborating platform metadata but have not been accepted as canonical injury source
-    fallback: none-accepted
-    identityKey: Tank01 playerID -> CanonicalPlayerID / current Sleeper app mapping
+      - Tank01 may remain legacy/current-runtime evidence during migration and later a bounded control source
+    fallback: none-accepted-for-conflict-resolution
+    identityKey: Sleeper player_id -> CanonicalPlayerID
     lifecycle: dynamic
-    historyCoverage: no accepted canonical current+historical injury contract
-    freshness: follows current Tank01 player-list refresh
-    migrationState: retain-tank01-until-separate-injury-evaluation
+    historyCoverage: no accepted canonical historical injury timeline; this decision is for current state
+    freshness: persist Sleeper player map and refresh sparingly, approximately daily
+    migrationState: core-source-approved-not-yet-activated
     guards:
       - nflverse injury source is not a valid current replacement after its source ended following 2024
-      - do not merge conflicting injury claims by provider priority without a separate injury contract
+      - missing Tank01-style ReturnDate/Description is allowed and is not synthesized
+      - conflicting provider injury claims are not silently resolved by fallback priority
 
   nflDepthChart:
     facts:
@@ -469,7 +474,7 @@ matrix:
       - league ID/year manual selection
       - salary-cap and league-specific rules
       - draft configuration
-      - Sleeper league settings such as roster positions, trade settings and playoff settings
+      - Sleeper league settings such as roster positions, scoring, trade settings and playoff settings
     durableCanonicalPrimary:
       manualRules: public/data/Metadata.json
       platformState: Sleeper league endpoint
@@ -547,10 +552,10 @@ matrix:
 
 unresolvedDecisionsBeforeAppGeneratorDag:
   blocking:
-    - define canonical game-finality/status mapping before removing Tank01 gameStatus
-    - activate and validate canonical schedules, player stats, snap counts and roster materializers before rewiring their app consumers
+    - activate and validate canonical schedules, released-game finality, player stats, snap counts, roster and current Sleeper-player/injury materializers before rewiring their app consumers
     - define exact Games.json replacement/compatibility strategy instead of assuming canonical stat datasets reproduce the Tank01 boxscore object
-    - define how source availability states are represented to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
+    - validate how canonical source availability states are exposed to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
+    - regression-test league-settings-based fantasy scoring against current outputs before replacing provider point values
   nonBlockingForInitialDagDesign:
     - depth-chart provider evaluation can remain separate if current Sleeper fields stay isolated as platform facts
     - contracts may remain unactivated because no current app contract depends on canonical NFL contract data
@@ -558,6 +563,8 @@ unresolvedDecisionsBeforeAppGeneratorDag:
 
 activationOrder:
   - nflverse.schedules
+  - nflverse.game-finality
+  - sleeper.players
   - nflverse.player-stats
   - nflverse.snap-counts
   - nflverse.weekly-rosters
@@ -592,11 +599,12 @@ historicalBackfillBands:
     priority: no-current-app-backfill-priority
 
 externalEvidence:
-  verifiedAt: 2026-08-24
+  verifiedAt: 2026-08-28
   nflverse:
     updateSchedule: https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html
     schedulesDictionary: https://nflreadr.nflverse.com/articles/dictionary_schedules.html
     snapCountsDictionary: https://nflreadr.nflverse.com/articles/dictionary_snap_counts.html
+    releasedGamesEvidence: nflverse/nflverse-pbp-internal released_games.csv and its FINAL-gated release logic
   sleeper:
     apiDocumentation: https://docs.sleeper.com/
     notes:
@@ -612,6 +620,7 @@ repositoryEvidence:
   - public/requests/RequestGames.ps1
 
 nextArchitectureStep: >
-  After this matrix is accepted and merged, the roadmap advances to the
-  App-Generator-DAG. The DAG redesign must consume these field-level ownership
-  decisions rather than re-deciding providers implicitly inside generator code.
+  Complete Issue #184 Phase 1 by activating, persisting, validating and canonically
+  materializing the approved source datasets first. Only after the source layer is
+  accepted should the App-Generator-DAG consume these field-level ownership
+  decisions and migrate runtime providers/read models.

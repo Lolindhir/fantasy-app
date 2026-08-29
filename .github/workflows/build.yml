@@ -17,6 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run NFL source-data regression tests
+        run: python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
+
       - name: Run PowerShell data regression tests
         shell: pwsh
         run: |
