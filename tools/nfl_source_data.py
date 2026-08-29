@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from nfl_source_data_lib.common import load_json, load_registry, sync_dataset
+from nfl_source_data_lib.common import current_source_season, load_json, load_registry, sync_dataset
 from nfl_source_data_lib.materialize import materialize
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
@@ -18,6 +18,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("command", choices=("sync", "materialize", "audit"), nargs="?", default="sync")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--dataset", action="append", dest="datasets", help="Restrict sync to a dataset id; may be repeated")
+    parser.add_argument(
+        "--season",
+        action="append",
+        dest="seasons",
+        type=int,
+        help="Restrict season-partitioned sync to a season; may be repeated. Defaults to the current source season.",
+    )
     parser.add_argument(
         "--force",
         action="store_true",
@@ -49,6 +56,8 @@ def main() -> int:
 
     if args.raw_only and args.command != "sync":
         raise ValueError("--raw-only is only valid with the sync command")
+    if args.seasons and args.command != "sync":
+        raise ValueError("--season is only valid with the sync command")
 
     if args.command == "sync":
         requested = set(args.datasets or [])
@@ -56,17 +65,33 @@ def main() -> int:
         if unknown:
             raise ValueError(f"Unknown dataset id(s): {', '.join(sorted(unknown))}")
         selected = [dataset for dataset in registry if not requested or dataset.id in requested]
+        if args.seasons and not any(dataset.is_season_partitioned for dataset in selected):
+            raise ValueError("--season requires at least one selected season-partitioned dataset")
+
+        source_season = current_source_season(repo_root)
         for dataset in selected:
-            result = sync_dataset(dataset, force=args.force, offline=args.offline)
-            print(f"{dataset.id}: {result['status']} ({result['rowCount']} rows)")
+            partitions = (args.seasons or [source_season]) if dataset.is_season_partitioned else [None]
+            for season in partitions:
+                result = sync_dataset(
+                    dataset,
+                    force=args.force,
+                    offline=args.offline,
+                    season=season,
+                    current_season=source_season,
+                )
+                partition = f" season={season}" if season is not None else ""
+                row_count = result["rowCount"] if result["rowCount"] is not None else "n/a"
+                print(f"{dataset.id}{partition}: {result['status']} ({row_count} rows)")
         if args.raw_only:
             print("canonical materialization skipped: --raw-only requested")
             return 0
-        if not all(dataset.raw_path.exists() for dataset in registry):
-            print("materialization skipped: not all registered raw datasets are available")
+        materialized = [dataset for dataset in registry if dataset.materialize]
+        if not all(dataset.raw_path.exists() for dataset in materialized if not dataset.is_season_partitioned):
+            print("materialization skipped: not all materialized fixed raw datasets are available")
             return 0
 
-    result = materialize(repo_root, datasets, force=args.force)
+    materialize_datasets = {dataset.id: dataset for dataset in registry if dataset.materialize}
+    result = materialize(repo_root, materialize_datasets, force=args.force)
     if args.command == "sync":
         print(f"canonical identities: {result['identityCount']}")
         print(f"provider mappings: {result['providerMappingCount']}")

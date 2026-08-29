@@ -1,6 +1,6 @@
 # NFL source data
 
-`source-data/` is the persistent input layer for provider-backed NFL facts. It is intentionally separate from both generated app read models under `public/data/` and Fantasy Management source material under `fantasy-management/sources/`.
+`source-data/` is the persistent input layer for provider-backed NFL facts. It is intentionally separate from generated app read models under `public/data/` and from Fantasy Management source material under `fantasy-management/sources/`.
 
 ## Layers
 
@@ -20,13 +20,37 @@ public/requests/**                  app generators / downstream consumers
 public/data/**                      generated app read models
 ```
 
-The provider layer preserves the successfully validated input used by normalization. The canonical layer must not expose provider-specific download paths or field names as its contract.
+The provider layer preserves the successfully validated input used by normalization. The canonical layer must not expose provider-specific download paths or field names as its contract. Registering a source does not automatically make it an app provider or change `public/data/**`.
 
-## Dataset registry and lifecycle
+## Dataset registry, source modes and lifecycle
 
-`registry.json` is the machine-readable source contract. Schema v2 owns each active or planned dataset's lifecycle in addition to its provider, upstream, URL, schema guard, minimum plausible row count, license and attribution.
+`registry.json` is the machine-readable source contract. Registry schema v3 keeps the existing lifecycle policy and adds an executable source/acquisition contract.
 
-Supported lifecycle classes are deliberately constrained:
+Every active dataset declares:
+
+- `sourceMode`: `fixed` or `season-partitioned`;
+- `sourceFormat`: currently `csv` or `json`;
+- `sourceUrl`, `rawPath` and `metadataPath`;
+- required fields/columns and a minimum plausible record count;
+- `availabilityPolicy`;
+- `materialize`, which distinguishes raw-only registered sources from datasets already consumed by the current canonical materializer;
+- refresh, retention, lifecycle, repair, license and attribution metadata.
+
+### Source modes
+
+`fixed` sources resolve one URL to one validated raw snapshot. Their URL/path fields must not contain a `{season}` template.
+
+`season-partitioned` sources resolve one upstream file per season. `sourceUrl`, `rawPath` and `metadataPath` must all contain `{season}`. Normal sync defaults to the current source season; explicit backfill/repair can select one or more seasons with `--season`.
+
+### Availability
+
+`availabilityPolicy: required` is the fail-closed default.
+
+`availabilityPolicy: current-season-may-be-unavailable` is intentionally narrow: only a 404 for the current, not-yet-persisted season of a season-partitioned dataset may become the stable state `not-yet-available`. It is not treated as an empty dataset or numeric zero. Historical 404s, schema mismatches, malformed input and implausibly small/empty datasets remain errors. If a last-known-good raw partition already exists, a later fetch failure does not replace it with `not-yet-available`.
+
+A `not-yet-available` metadata record intentionally has no per-run timestamp, so repeated checks without a state change remain semantic no-ops.
+
+### Lifecycle classes
 
 | Lifecycle | Refresh | Retention | Partition | Finalization / repair |
 | --- | --- | --- | --- | --- |
@@ -35,20 +59,20 @@ Supported lifecycle classes are deliberately constrained:
 | `seasonal-finalizable` | `current-season` | `permanent-by-season` | season or season-week | prior seasons are frozen; repair requires explicit `--force` |
 | `snapshot` | `snapshot` | `permanent-snapshots` | snapshot-time | append-only snapshots; repair requires explicit `--force` |
 
-Invalid combinations fail while loading the registry. The lifecycle fields are therefore executable policy, not descriptive free text.
+Invalid combinations fail while loading the registry. Lifecycle and source fields are executable policy, not descriptive free text.
 
-For season-partitioned historical datasets the current `League.Season` remains refreshable. This prevents a partially available current Draft or Combine class from being frozen by an early source sync. Once the league season advances, an already materialized prior-season partition is retained unchanged by normal materialization. A deliberate historical correction must use the explicit force/repair path.
+For season-partitioned raw sources, an already persisted season older than the current source season is reused as `frozen-existing` during a normal sync and is not fetched again. `--force` is the explicit repair path. The current source season is resolved from `public/data/League.json -> Season`, then `public/data/Metadata.json -> LeagueYear`, with the UTC calendar year only as a final technical fallback.
 
-Active datasets:
+Current active datasets:
 
 - `nflverse.players` — dynamic identity source
 - `nflverse.ff-player-ids` — dynamic identity-mapping source
 - `nflverse.draft-picks` — immutable season history
 - `nflverse.combine` — immutable season history
 
-Planned datasets are also lifecycle-classified before activation: Rosters, Weekly Rosters, Schedules, Player Stats, Snap Counts, Depth Charts and Contracts.
+Additional schedules, finality, player stats, snap counts, rosters, weekly rosters and Sleeper player snapshots are being added under Issue #184 before any app-generator migration.
 
-The durable architecture is documented in `.ai-context/manual/nfl-source-data.yaml` and ADR-026.
+The durable architecture is documented in `.ai-context/manual/nfl-source-data.yaml` and ADR-029.
 
 ## Tooling
 
@@ -67,10 +91,13 @@ python tools/nfl_source_data.py sync --raw-only
 # Validate and materialize from already persisted raw data without network access.
 python tools/nfl_source_data.py sync --offline
 
-# Refresh one provider dataset and materialize when all registered raw inputs exist.
+# Refresh one provider dataset.
 python tools/nfl_source_data.py sync --dataset nflverse.combine
 
-# Rebuild canonical identities, mappings, Draft, Combine and coverage audit.
+# For a season-partitioned dataset, target one or several seasons explicitly.
+python tools/nfl_source_data.py sync --dataset <dataset-id> --season 2025 --season 2026 --raw-only
+
+# Rebuild current canonical identities, mappings, Draft, Combine and coverage audit.
 python tools/nfl_source_data.py materialize
 
 # Explicitly repair frozen historical canonical partitions.
@@ -80,25 +107,21 @@ python tools/nfl_source_data.py materialize --force
 python tools/nfl_source_data.py audit
 ```
 
-`audit` is intentionally read-only. A normal workflow materializes once and then reads the resulting audit; it must not perform a second materialization merely to print coverage.
+`--season` is valid only for `sync` and requires at least one selected season-partitioned dataset. If no season is supplied, season-partitioned sources use the current source season automatically.
 
-A failed download, missing required column or implausibly small source file must fail before replacing the last known good raw input. Unchanged content does not rewrite metadata only to advance a timestamp. The workflow publishes successfully validated provider raw data before canonical normalization, so a later identity/materialization failure does not discard the raw evidence that caused it. Canonical publication remains fail-closed and keeps the last known good canonical state.
+`audit` is intentionally read-only. A normal workflow materializes once and then reads the resulting audit; it must not perform another materialization merely to print coverage. The production workflow separately performs an explicit second materialize pass as an idempotence guard.
 
-The existing production workflow intentionally performs normal, non-forced canonical materialization. `--force` is a deliberate repair operation and is not implicit in routine source refreshes.
+A failed download, missing required field or implausibly small source file must fail before replacing the last-known-good raw input. Unchanged available content does not rewrite metadata only to advance a timestamp. The workflow publishes successfully validated provider raw data before canonical normalization, so a later identity/materialization failure does not discard the raw evidence that caused it. Canonical publication remains fail-closed and keeps the last-known-good canonical state.
 
 ## Identity contract
 
-The durable identity architecture is documented in `.ai-context/manual/player-identity.yaml`.
+The durable identity architecture is documented in `.ai-context/manual/player-identity.yaml` and ADR-025.
 
-`NFLPlayerID` is the internal, provider-independent identity of one real NFL player. It is the stable person key for canonical NFL source data and historical facts. Sleeper, Tank01, GSIS, ESPN, PFR, PFF and other provider IDs are mappings to that person, not the permanent cross-provider key themselves.
+`CanonicalPlayerID` is the application-defined, provider-independent identity of one real NFL player. It is issued in the `fantasy-app` namespace. Sleeper, Tank01, GSIS, ESPN, PFR, PFF and other provider IDs are mappings/evidence, not the permanent cross-provider person key.
 
-Sleeper still has a special application role: it is the leading source for the current app and league state, and `public/data/Players.json -> ID` remains the Sleeper player ID. This preserves the current app contract without making Sleeper IDs globally timeless person identifiers.
+Sleeper still has a special application role: `public/data/Players.json -> ID` remains the Sleeper player ID until a separate app-contract migration. That current app field is not the canonical timeless person key.
 
-The resolver establishes person components from corroborated NFL identity evidence and an already persisted `NFLPlayerID`. Sleeper and Tank01 are attachment/provider mappings: they can attach provider-only or app-only rows to one unambiguous person, but they must not transitively merge two otherwise distinguishable people. When one provider ID currently claims multiple people, that provider mapping is suppressed from canonical reverse lookup and recorded as ambiguous instead.
-
-Known same-person provider aliases remain evidence-gated. Exact birth-date disagreement blocks a person merge. ESPN aliasing requires at least one other matching strong identity; PFR aliasing requires at least two. A contradictory FF-ID row with no corroborating NFL anchor remains fully quarantined, while a row that has at least one exact-birthdate corroborating anchor suppresses only the specific contradictory anchor mappings.
-
-### Canonical persons and provider mapping history
+The resolver establishes person components from corroborated NFL identity evidence and already persisted canonical identities. Attachment/provider mappings may attach provider-only or app-only rows to one unambiguous person but must not silently merge otherwise distinguishable people. Ambiguous provider claims are quarantined rather than resolved by name.
 
 Canonical persons are stored in:
 
@@ -106,34 +129,23 @@ Canonical persons are stored in:
 source-data/nfl/identities/players.json
 ```
 
-Historical provider mappings are stored separately in:
+Historical provider mappings are stored in:
 
 ```text
 source-data/nfl/identities/provider-mappings.json
 ```
 
-The mapping file uses season-level observation intervals. A provider ID may map to different `NFLPlayerID` values in non-overlapping seasons. An overlapping claim for multiple people is recorded in `Conflicts` and resolves fail-closed.
+Provider mappings use season-level observation intervals. A provider ID may map to different `CanonicalPlayerID` values in non-overlapping seasons; overlapping contradictory claims fail closed and are recorded as conflicts.
 
-Archived app player snapshots may contribute historical Sleeper/Tank01/ESPN observations only when at least two independently resolvable provider IDs agree on the same `NFLPlayerID`. A single historical Sleeper ID is deliberately insufficient, so later provider-ID reuse cannot silently rewrite old history. If resolved provider IDs disagree, no mapping from that archived row is guessed.
-
-Historical canonical facts persist the resolved `NFLPlayerID` together with source provenance. Once an old trade, draft pick, roster snapshot or other historical fact is anchored to a person, it must not be reinterpreted only from today's provider mapping.
-
-The current app contract is unchanged: `public/data/Players.json -> ID` remains the Sleeper player ID. Adding `NFLPlayerID` or Combine fields to generated app read models is a separate contract change.
+The legacy field name `NFLPlayerID` is accepted only for migration reads. Current canonical outputs write `CanonicalPlayerID`, while preserving existing ID values during schema migration.
 
 ## Draft contract
 
-`source-data/nfl/draft/<season>.json` stores NFL selections as historical facts with:
-
-- round
-- position within round
-- overall pick
-- drafting NFL team
-- canonical `NFLPlayerID` when resolved
-- source GSIS/PFR IDs for provenance
+`source-data/nfl/draft/<season>.json` stores NFL selections as historical facts with round, position within round, overall pick, drafting NFL team, canonical `CanonicalPlayerID` when resolved, and source GSIS/PFR IDs for provenance.
 
 The draft status audit distinguishes `drafted`, `undrafted`, `unknown` and `not_yet_drafted`. In particular, `draft_year = 0` is never treated as proof of UDFA.
 
-Draft is an `immutable-history` dataset. Existing prior-season canonical files are preserved in normal materialization; the current league season can continue to refresh until it becomes historical.
+Draft is an `immutable-history` dataset. Existing prior-season canonical files are preserved in normal materialization; deliberate historical repair uses `--force`.
 
 ## Combine contract
 
@@ -149,30 +161,17 @@ Canonical Combine data is season-partitioned at:
 source-data/nfl/combine/<season>.json
 ```
 
-The upstream data is the nflverse Combine release, which exposes NFL Combine data courtesy of Pro Football Reference. Canonical records retain the descriptive player name, position, school and source IDs plus normalized measurements:
+Combine identity resolves to `CanonicalPlayerID` only through an unambiguous PFR provider mapping. `player_name`, position and school are descriptive evidence and never authoritative identity joins. `cfb_id` remains provenance rather than a matching shortcut.
 
-- height in inches
-- weight in pounds
-- 40-yard dash seconds
-- bench-press reps
-- vertical jump inches
-- broad jump inches
-- three-cone seconds
-- shuttle seconds
-
-Combine identity resolves to `NFLPlayerID` only through an unambiguous PFR provider mapping. `player_name`, position and school are descriptive evidence and are never authoritative identity joins. `cfb_id` is retained as provenance rather than promoted into a matching shortcut.
-
-The normalized `Draft` link comes from the canonical `source-data/nfl/draft/<season>.json` facts. Combine's own draft year/round/overall fields remain under `SourceDraftEvidence`. If those facts disagree, canonical Draft remains authoritative and the disagreement is emitted in the audit rather than silently overwritten.
-
-Duplicate PFR identities or duplicate resolved `NFLPlayerID` values inside the same Combine season fail closed.
+The normalized `Draft` link comes from canonical `source-data/nfl/draft/<season>.json`; Combine's own draft evidence remains separately preserved. Conflicts are audited instead of silently selecting a winner. Duplicate PFR identities or duplicate resolved `CanonicalPlayerID` values inside the same Combine season fail closed according to the documented invariants.
 
 ## Metadata and no-op contract
 
-Technical fetch, generation and freshness metadata belongs in dedicated provider metadata, timestamp, manifest, audit or sidecar structures. Do not add fields such as `GeneratedAt`, `GeneratedAtUtc` or `UpdatedAt` to app domain records merely to record that a pipeline ran.
+Technical fetch, generation and freshness metadata belongs in dedicated provider metadata, manifests, audits or sidecars. Do not add runtime timestamps to domain records merely to record that a pipeline ran.
 
-Canonical source datasets preserve semantic no-op behavior. If the validated source content and derived canonical facts are unchanged, materialization must not rewrite the dataset solely because a runtime timestamp changed.
+Canonical source datasets preserve semantic no-op behavior. If validated source content and derived canonical facts are unchanged, materialization must not rewrite the dataset solely because runtime time advanced.
 
-The materializer computes and validates identities, provider mapping history, Draft, Combine and the audit before writing any canonical file. A normalization failure therefore must not leave a partially rebuilt canonical source-data state.
+The materializer computes and validates semantic payloads before publishing canonical files. A normalization failure must not leave a partially rebuilt canonical source-data state.
 
 ## Audit contract
 
@@ -182,17 +181,6 @@ The materialized audit lives at:
 source-data/audits/nfl-source-data-audit.json
 ```
 
-It reports, among other things:
+It reports registry coverage, current app-player identity coverage, draft status coverage, Combine coverage/conflicts, duplicate or ambiguous provider mappings, historical resolution conflicts and other data-quality invariants. As new Phase-1 datasets become canonical, their availability/freshness/coverage and join conflicts must be added to the same audit contract.
 
-- registry schema plus active/planned dataset IDs;
-- current app-player identity coverage and which provider resolved the player;
-- draft-status coverage by position;
-- Combine season/record coverage, resolved/unresolved identity counts and current-app coverage;
-- Combine-to-canonical-Draft conflicts;
-- duplicate canonical link-provider IDs;
-- weak-provider collisions and verified aliases;
-- quarantined source mapping conflicts;
-- ambiguous historical/current provider mappings;
-- archived provider disagreement rows and insufficiently corroborated history.
-
-An ambiguous provider mapping or source disagreement is an auditable data-quality result, not a reason to merge canonical people or choose a silent winner.
+An ambiguous provider mapping or source disagreement is an auditable data-quality result, not permission to merge canonical people or choose a silent winner.

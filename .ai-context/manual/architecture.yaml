@@ -44,22 +44,24 @@ layers:
     responsibility: >
       Persists validated provider raw inputs under source-data/providers and
       provider-independent canonical NFL facts under source-data/nfl. Dataset
-      refresh, retention, partitioning, finalization and repair semantics are
-      machine-validated through source-data/registry.json schema v2.
+      acquisition mode, availability, refresh, retention, partitioning,
+      finalization and repair semantics are machine-validated through
+      source-data/registry.json schema v3.
     owns:
       - validated provider raw data and provenance
       - provider-independent CanonicalPlayerID identities and historical mappings; CanonicalPlayerID is application-defined by fantasy-app, not NFL-issued
       - canonical season-partitioned Draft and Combine history
-      - dataset lifecycle contracts and source-data audit output
+      - dataset acquisition/lifecycle contracts and source-data audit output
     doesNotOwn:
       - league-specific fantasy rules
       - public/data app read-model contracts
       - Angular display behavior
       - Fantasy Management analysis sources
     lifecycleRule: >
+      Fixed and season-partitioned acquisition are explicit registry contracts.
       Dynamic datasets remain replaceable; season-partitioned historical datasets
-      keep the current League.Season refreshable but preserve existing prior-season
-      partitions during normal materialization; historical repair requires an
+      keep the current source season refreshable but preserve existing prior-season
+      partitions during normal sync/materialization; historical repair requires an
       explicit --force path. Snapshot datasets are append-oriented. See
       .ai-context/manual/nfl-source-data.yaml.
 

@@ -5,6 +5,7 @@ import hashlib
 import json
 import shutil
 import tempfile
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -13,7 +14,8 @@ from typing import Any, Iterable, Iterator
 
 SCHEMA_VERSION = 1
 CANONICAL_SCHEMA_VERSION = 2
-REGISTRY_SCHEMA_VERSION = 2
+REGISTRY_SCHEMA_VERSION = 3
+SUPPORTED_REGISTRY_SCHEMA_VERSIONS = {1, 2, REGISTRY_SCHEMA_VERSION}
 
 CANONICAL_PLAYER_ID_FIELD = "CanonicalPlayerID"
 LEGACY_CANONICAL_PLAYER_ID_FIELD = "NFLPlayerID"
@@ -38,6 +40,9 @@ FINALIZATION_POLICIES = {
 REPAIR_POLICIES = {"normal", "explicit-force"}
 REFRESH_POLICIES = {"periodic", "discover-new-partitions", "current-season", "snapshot"}
 RETENTION_POLICIES = {"latest-with-git-history", "permanent-by-season", "permanent-snapshots"}
+SOURCE_MODES = {"fixed", "season-partitioned"}
+SOURCE_FORMATS = {"csv", "json"}
+AVAILABILITY_POLICIES = {"required", "current-season-may-be-unavailable"}
 
 IDENTITY_ID_KEYS = (
     "GSIS", "Sleeper", "Tank01", "ESPN", "PFR", "PFF", "OTC", "NFL", "NFLCom", "ESB",
@@ -165,6 +170,37 @@ def inspect_csv(path: Path, required_columns: Iterable[str], minimum_rows: int) 
     return header, row_count
 
 
+def inspect_json(path: Path, required_fields: Iterable[str], minimum_rows: int) -> tuple[list[str], int]:
+    payload = load_json(path)
+    if isinstance(payload, dict):
+        records = [value for value in payload.values() if isinstance(value, dict)]
+    elif isinstance(payload, list):
+        records = [value for value in payload if isinstance(value, dict)]
+    else:
+        raise ValueError(f"JSON dataset must be an object-of-records or array-of-records: {path}")
+    row_count = len(records)
+    if row_count < minimum_rows:
+        raise ValueError(f"JSON {path} has implausibly few records ({row_count}); expected at least {minimum_rows}.")
+    available_fields = sorted({key for record in records for key in record})
+    missing = sorted(set(required_fields) - set(available_fields))
+    if missing:
+        raise ValueError(f"JSON {path} is missing required record fields: {', '.join(missing)}")
+    return available_fields, row_count
+
+
+def inspect_source_file(
+    path: Path,
+    source_format: str,
+    required_fields: Iterable[str],
+    minimum_rows: int,
+) -> tuple[list[str], int]:
+    if source_format == "csv":
+        return inspect_csv(path, required_fields, minimum_rows)
+    if source_format == "json":
+        return inspect_json(path, required_fields, minimum_rows)
+    raise ValueError(f"Unsupported source format: {source_format}")
+
+
 def download(url: str, target: Path) -> None:
     request = urllib.request.Request(url, headers={"User-Agent": "Lolindhir-fantasy-app-nfl-source-data/1.0"})
     with urllib.request.urlopen(request, timeout=120) as response, target.open("wb") as output:
@@ -174,7 +210,7 @@ def download(url: str, target: Path) -> None:
 def _validate_lifecycle(value: dict[str, Any], dataset_id: str) -> dict[str, str]:
     lifecycle = value.get("lifecycle")
     if not isinstance(lifecycle, dict):
-        raise ValueError(f"Dataset {dataset_id} requires lifecycle metadata in registry schema v2")
+        raise ValueError(f"Dataset {dataset_id} requires lifecycle metadata in registry schema v2+")
 
     lifecycle_class = str(lifecycle.get("class") or "").strip()
     partition_key = str(lifecycle.get("partitionKey") or "").strip()
@@ -244,6 +280,45 @@ def _validate_refresh_retention(value: dict[str, Any], dataset_id: str, lifecycl
         )
 
 
+def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[str, Any]:
+    source_mode = str(value.get("sourceMode") or "fixed").strip()
+    source_format = str(value.get("sourceFormat") or "csv").strip()
+    availability_policy = str(value.get("availabilityPolicy") or "required").strip()
+    materialize = value.get("materialize", True)
+
+    if source_mode not in SOURCE_MODES:
+        raise ValueError(f"Dataset {dataset_id} has unsupported sourceMode: {source_mode}")
+    if source_format not in SOURCE_FORMATS:
+        raise ValueError(f"Dataset {dataset_id} has unsupported sourceFormat: {source_format}")
+    if availability_policy not in AVAILABILITY_POLICIES:
+        raise ValueError(
+            f"Dataset {dataset_id} has unsupported availabilityPolicy: {availability_policy}"
+        )
+    if not isinstance(materialize, bool):
+        raise ValueError(f"Dataset {dataset_id} materialize must be boolean")
+
+    source_url = str(value.get("sourceUrl") or "").strip()
+    raw_path = str(value.get("rawPath") or "").strip()
+    metadata_path = str(value.get("metadataPath") or "").strip()
+    if not source_url or not raw_path or not metadata_path:
+        raise ValueError(f"Dataset {dataset_id} requires sourceUrl, rawPath and metadataPath")
+
+    has_season_tokens = tuple("{season}" in item for item in (source_url, raw_path, metadata_path))
+    if source_mode == "season-partitioned" and not all(has_season_tokens):
+        raise ValueError(
+            f"Season-partitioned dataset {dataset_id} requires {{season}} in sourceUrl, rawPath and metadataPath"
+        )
+    if source_mode == "fixed" and any(has_season_tokens):
+        raise ValueError(f"Fixed dataset {dataset_id} must not contain {{season}} path/url templates")
+
+    return {
+        "sourceMode": source_mode,
+        "sourceFormat": source_format,
+        "availabilityPolicy": availability_policy,
+        "materialize": materialize,
+    }
+
+
 @dataclass(frozen=True)
 class Dataset:
     id: str
@@ -263,10 +338,34 @@ class Dataset:
     partition_key: str = "none"
     finalization_policy: str = "never"
     repair_policy: str = "normal"
+    source_mode: str = "fixed"
+    source_format: str = "csv"
+    availability_policy: str = "required"
+    materialize: bool = True
+
+    @property
+    def is_season_partitioned(self) -> bool:
+        return self.source_mode == "season-partitioned"
+
+    def _resolve_template(self, value: str, season: int | None) -> str:
+        if not self.is_season_partitioned:
+            return value
+        if season is None:
+            raise ValueError(f"Dataset {self.id} requires an explicit season partition")
+        return value.format(season=season)
+
+    def source_url_for(self, season: int | None = None) -> str:
+        return self._resolve_template(self.source_url, season)
+
+    def raw_path_for(self, season: int | None = None) -> Path:
+        return Path(self._resolve_template(str(self.raw_path), season))
+
+    def metadata_path_for(self, season: int | None = None) -> Path:
+        return Path(self._resolve_template(str(self.metadata_path), season))
 
     @staticmethod
     def from_dict(source_root: Path, value: dict[str, Any], *, registry_schema_version: int) -> "Dataset":
-        if registry_schema_version >= REGISTRY_SCHEMA_VERSION:
+        if registry_schema_version >= 2:
             lifecycle = _validate_lifecycle(value, value["id"])
             _validate_refresh_retention(value, value["id"], lifecycle["class"])
         else:
@@ -277,6 +376,15 @@ class Dataset:
                 "finalization": "never",
                 "repairPolicy": "normal",
             }
+        if registry_schema_version >= REGISTRY_SCHEMA_VERSION:
+            source_contract = _validate_source_contract(value, value["id"])
+        else:
+            source_contract = {
+                "sourceMode": "fixed",
+                "sourceFormat": str(value.get("sourceFormat") or "csv"),
+                "availabilityPolicy": "required",
+                "materialize": True,
+            }
         return Dataset(
             id=value["id"], provider=value["provider"], upstream=value["upstream"],
             source_url=value["sourceUrl"], raw_path=source_root / value["rawPath"],
@@ -286,6 +394,8 @@ class Dataset:
             retention_policy=value["retentionPolicy"], license=value["license"], attribution=value["attribution"],
             lifecycle_class=lifecycle["class"], partition_key=lifecycle["partitionKey"],
             finalization_policy=lifecycle["finalization"], repair_policy=lifecycle["repairPolicy"],
+            source_mode=source_contract["sourceMode"], source_format=source_contract["sourceFormat"],
+            availability_policy=source_contract["availabilityPolicy"], materialize=source_contract["materialize"],
         )
 
 
@@ -295,7 +405,7 @@ def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
     if not isinstance(registry, dict):
         raise ValueError("source-data/registry.json is missing or invalid")
     version = as_int(registry.get("schemaVersion"))
-    if version not in {1, REGISTRY_SCHEMA_VERSION}:
+    if version not in SUPPORTED_REGISTRY_SCHEMA_VERSIONS:
         raise ValueError("source-data/registry.json has an unsupported schemaVersion")
     datasets = registry.get("datasets")
     if not isinstance(datasets, list) or not datasets:
@@ -323,7 +433,7 @@ def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
         if dataset_id in seen:
             raise ValueError(f"Duplicate active/planned registry dataset id: {dataset_id}")
         seen.add(dataset_id)
-        if version >= REGISTRY_SCHEMA_VERSION:
+        if version >= 2:
             lifecycle = _validate_lifecycle(value, dataset_id)
             _validate_refresh_retention(value, dataset_id, lifecycle["class"])
     return registry
@@ -344,44 +454,162 @@ def planned_dataset_ids(repo_root: Path) -> list[str]:
     return [value["id"] for value in registry.get("plannedDatasets", [])]
 
 
-def sync_dataset(dataset: Dataset, *, force: bool = False, offline: bool = False) -> dict[str, Any]:
-    if offline:
-        if not dataset.raw_path.exists():
-            raise FileNotFoundError(f"Offline mode requires existing raw data: {dataset.raw_path}")
-        header, row_count = inspect_csv(dataset.raw_path, dataset.required_columns, dataset.minimum_rows)
-        return {"dataset": dataset.id, "status": "offline-existing", "rowCount": row_count,
-                "contentHash": sha256_file(dataset.raw_path), "columns": header,
-                "metadata": load_json(dataset.metadata_path, {}) or {}}
+def current_source_season(repo_root: Path) -> int:
+    league = load_json(repo_root / "public/data/League.json", {}) or {}
+    season = as_int(league.get("Season"))
+    if season is not None:
+        return season
+    metadata = load_json(repo_root / "public/data/Metadata.json", {}) or {}
+    season = as_int(metadata.get("LeagueYear"))
+    if season is not None:
+        return season
+    return datetime.now(timezone.utc).year
 
-    dataset.raw_path.parent.mkdir(parents=True, exist_ok=True)
+
+def _availability_metadata(dataset: Dataset, season: int | None, status: str) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "schemaVersion": SCHEMA_VERSION,
+        "registrySchemaVersion": REGISTRY_SCHEMA_VERSION,
+        "dataset": dataset.id,
+        "provider": dataset.provider,
+        "upstream": dataset.upstream,
+        "sourceUrl": dataset.source_url_for(season),
+        "sourceFormat": dataset.source_format,
+        "sourceMode": dataset.source_mode,
+        "availabilityStatus": status,
+        "kind": dataset.kind,
+        "refreshPolicy": dataset.refresh_policy,
+        "retentionPolicy": dataset.retention_policy,
+        "lifecycle": {
+            "class": dataset.lifecycle_class,
+            "partitionKey": dataset.partition_key,
+            "finalization": dataset.finalization_policy,
+            "repairPolicy": dataset.repair_policy,
+        },
+        "license": dataset.license,
+        "attribution": dataset.attribution,
+    }
+    if season is not None:
+        payload["partition"] = {"season": season}
+    return payload
+
+
+def sync_dataset(
+    dataset: Dataset,
+    *,
+    force: bool = False,
+    offline: bool = False,
+    season: int | None = None,
+    current_season: int | None = None,
+) -> dict[str, Any]:
+    raw_path = dataset.raw_path_for(season)
+    metadata_path = dataset.metadata_path_for(season)
+    source_url = dataset.source_url_for(season)
+
+    if dataset.is_season_partitioned and current_season is None:
+        raise ValueError(f"Dataset {dataset.id} requires current_season for partition lifecycle checks")
+
+    if (
+        dataset.is_season_partitioned
+        and season is not None
+        and current_season is not None
+        and season < current_season
+        and raw_path.exists()
+        and not force
+    ):
+        columns, row_count = inspect_source_file(
+            raw_path, dataset.source_format, dataset.required_columns, dataset.minimum_rows
+        )
+        return {
+            "dataset": dataset.id,
+            "status": "frozen-existing",
+            "season": season,
+            "rowCount": row_count,
+            "contentHash": sha256_file(raw_path),
+            "columns": columns,
+            "metadata": load_json(metadata_path, {}) or {},
+        }
+
+    if offline:
+        if not raw_path.exists():
+            metadata = load_json(metadata_path, {}) or {}
+            if metadata.get("availabilityStatus") == "not-yet-available":
+                return {
+                    "dataset": dataset.id,
+                    "status": "not-yet-available",
+                    "season": season,
+                    "rowCount": None,
+                    "contentHash": None,
+                    "columns": [],
+                    "metadata": metadata,
+                }
+            raise FileNotFoundError(f"Offline mode requires existing raw data: {raw_path}")
+        columns, row_count = inspect_source_file(
+            raw_path, dataset.source_format, dataset.required_columns, dataset.minimum_rows
+        )
+        return {
+            "dataset": dataset.id,
+            "status": "offline-existing",
+            "season": season,
+            "rowCount": row_count,
+            "contentHash": sha256_file(raw_path),
+            "columns": columns,
+            "metadata": load_json(metadata_path, {}) or {},
+        }
+
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="nfl-source-") as temp_dir:
-        candidate = Path(temp_dir) / "candidate.csv"
-        download(dataset.source_url, candidate)
-        header, row_count = inspect_csv(candidate, dataset.required_columns, dataset.minimum_rows)
+        candidate = Path(temp_dir) / f"candidate.{dataset.source_format}"
+        try:
+            download(source_url, candidate)
+        except urllib.error.HTTPError as exc:
+            can_be_not_yet_available = (
+                exc.code == 404
+                and dataset.availability_policy == "current-season-may-be-unavailable"
+                and dataset.is_season_partitioned
+                and season == current_season
+                and not raw_path.exists()
+            )
+            if not can_be_not_yet_available:
+                raise
+            metadata = _availability_metadata(dataset, season, "not-yet-available")
+            write_json_if_changed(metadata_path, metadata)
+            return {
+                "dataset": dataset.id,
+                "status": "not-yet-available",
+                "season": season,
+                "rowCount": None,
+                "contentHash": None,
+                "columns": [],
+                "metadata": metadata,
+            }
+
+        columns, row_count = inspect_source_file(
+            candidate, dataset.source_format, dataset.required_columns, dataset.minimum_rows
+        )
         candidate_hash = sha256_file(candidate)
-        old_hash = sha256_file(dataset.raw_path) if dataset.raw_path.exists() else None
+        old_hash = sha256_file(raw_path) if raw_path.exists() else None
         changed = force or old_hash != candidate_hash
         if changed:
-            shutil.copyfile(candidate, dataset.raw_path)
+            shutil.copyfile(candidate, raw_path)
 
-        metadata = {
-            "schemaVersion": SCHEMA_VERSION, "registrySchemaVersion": REGISTRY_SCHEMA_VERSION,
-            "dataset": dataset.id, "provider": dataset.provider,
-            "upstream": dataset.upstream, "sourceUrl": dataset.source_url, "sourceFormat": "csv",
-            "retrievedAtUtc": utc_now(), "contentHashSha256": candidate_hash, "rowCount": row_count,
-            "columns": header, "kind": dataset.kind, "refreshPolicy": dataset.refresh_policy,
-            "retentionPolicy": dataset.retention_policy,
-            "lifecycle": {
-                "class": dataset.lifecycle_class,
-                "partitionKey": dataset.partition_key,
-                "finalization": dataset.finalization_policy,
-                "repairPolicy": dataset.repair_policy,
-            },
-            "license": dataset.license, "attribution": dataset.attribution,
-        }
-        if changed or not dataset.metadata_path.exists():
-            write_json_if_changed(dataset.metadata_path, metadata)
+        metadata = _availability_metadata(dataset, season, "available")
+        metadata.update({
+            "retrievedAtUtc": utc_now(),
+            "contentHashSha256": candidate_hash,
+            "rowCount": row_count,
+            "columns": columns,
+        })
+        if changed or not metadata_path.exists():
+            write_json_if_changed(metadata_path, metadata)
         else:
-            metadata = load_json(dataset.metadata_path, metadata)
-        return {"dataset": dataset.id, "status": "updated" if changed else "unchanged",
-                "rowCount": row_count, "contentHash": candidate_hash, "columns": header, "metadata": metadata}
+            metadata = load_json(metadata_path, metadata)
+        return {
+            "dataset": dataset.id,
+            "status": "updated" if changed else "unchanged",
+            "season": season,
+            "rowCount": row_count,
+            "contentHash": candidate_hash,
+            "columns": columns,
+            "metadata": metadata,
+        }
