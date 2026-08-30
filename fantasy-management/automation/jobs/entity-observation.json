@@ -4,7 +4,7 @@
   "title": "Generische Entitätsbeobachtung",
   "enabled": true,
   "category": "monitoring",
-  "description": "Löst konfigurierte Target Sets auf, bewertet ihre Observation Profiles und erzeugt nur bei materiellen Zustandsänderungen ein Ereignis. Positionsspezifische Profile wie das Kicker-Daily-Monitoring bleiben Beobachtungsmodule und treffen keine Weekly-Lineup- oder Waiver-Entscheidung.",
+  "description": "Löst konfigurierte Target Sets auf, bewertet ihre Observation Profiles und meldet nur materielle Zustandsänderungen. Scheduled Monitoring bleibt read-only; durable qualitative Baselines werden ausschließlich nach expliziter Freigabe als vollständige Target-Shards persistiert.",
   "trigger": {
     "type": "interval",
     "minimum_hours": 24,
@@ -77,19 +77,9 @@
       "condition": "Kicker-Profil, liga-spezifischer Input, Baseline-Wiederverwendung und Materialitätsschwellen sind valide."
     },
     {
-      "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json",
+      "path": "fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md",
       "required": true,
-      "condition": "Zeitbudget, gruppierte Bootstrap-Phasen und Checkpoint-Regeln sind valide."
-    },
-    {
-      "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
-      "required": true,
-      "condition": "Der deterministische vollständige Replacement-State-Writer ist verfügbar."
-    },
-    {
-      "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
-      "required": true,
-      "condition": "Checkpoint-Eingaben können vor der State-Erzeugung validiert werden."
+      "condition": "Der autoritative Full-Shard-Storage-Vertrag für qualitative Baselines ist verfügbar."
     }
   ],
   "configuration_refs": [
@@ -170,32 +160,12 @@
     },
     {
       "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/entity-observation-bootstrap.md",
-      "required": true
-    },
-    {
-      "kind": "other",
-      "path": "fantasy-management/automation/bootstrap/entity-observation-bootstrap.json",
-      "required": true
-    },
-    {
-      "kind": "evaluator",
-      "path": "fantasy-management/_ai/scripts/apply_observation_state_batch.py",
-      "required": true
-    },
-    {
-      "kind": "other",
-      "path": "fantasy-management/_ai/schemas/automation-observation-state-batch.schema.json",
-      "required": true
-    },
-    {
-      "kind": "workflow",
       "path": "fantasy-management/automation/workflows/source-binding-resolution.md",
       "required": true
     },
     {
-      "kind": "workflow",
-      "path": "fantasy-management/automation/workflows/atomic-publication.md",
+      "kind": "other",
+      "path": "fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md",
       "required": true
     }
   ],
@@ -204,16 +174,11 @@
     "perspective": "managed_team",
     "requires_external_research": true,
     "idempotency_key_template": "{target_id}-{profile_id}-{material_state_hash}",
-    "write_scope": [
-      "fantasy-management/automation/state/entity-observation.json",
-      "fantasy-management/analyses/{season}/observation-events/"
-    ]
+    "write_scope": []
   },
   "output": {
-    "mode": "analysis_bundle",
-    "markdown_path_template": "fantasy-management/analyses/{season}/observation-events/{date}_{target_id}_{classification}.md",
-    "json_path_template": "fantasy-management/analyses/{season}/observation-events/{date}_{target_id}_{classification}.json",
-    "write_condition": "Nur bei einer nach Profilkriterien materiellen Änderung; die erste Baseline bleibt standardmäßig still."
+    "mode": "notification_only",
+    "write_condition": "Scheduled execution is read-only. A durable qualitative baseline write is a separate interactive, explicitly approved operation under OBSERVATION_STATE_STORAGE.md."
   },
   "notification": {
     "mode": "material_changes_only",
@@ -224,14 +189,11 @@
     "rules": [
       "Profile criteria are authoritative for materiality.",
       "A recommendation change may raise severity but cannot replace missing evidence.",
-      "The first baseline is not a material change unless the target set explicitly enables it.",
+      "The first observation is silent by default and is not persisted automatically.",
       "Positionsspezifische Monitoring-Profile beobachten Veränderungen; endgültige Start/Sit-, Add/Drop- und Waiver-Entscheidungen gehören in den übergeordneten Entscheidungsworkflow.",
       "Season Projection Monitoring darf erwartete Produktion, Provider-Consensus und liga-spezifische Core Points als Veränderungssignale nutzen, aber Projection nicht mit ADP, Dynasty-Marktwert oder einer finalen Weekly-Entscheidung gleichsetzen.",
       "Kicker Daily Monitoring darf Baseline-, ADP-, Projection-, Activity-, Injury- und Job-Signale priorisieren, aber keinen Weekly Context oder automatischen Kicker-Wechsel vortäuschen.",
-      "While active pairs lack a good initial state, entity-observation-bootstrap.json and entity-observation-bootstrap.md supersede the fixed deep-evaluation pair budget and control a time-budgeted source-grouped bootstrap.",
-      "A successful bootstrap checkpoint is a successful pending run, may write State-only progress and must not create an Observation Event or user notification.",
-      "Every bootstrap checkpoint must use the deterministic complete replacement State helper, full schema and cross-file validation, and optimistic parent and State-blob SHA checks.",
-      "A remaining retryable baseline backlog or a technical checkpoint failure must not pause or disable the external scheduled runner wakeup."
+      "Durable qualitative baseline persistence requires explicit human approval and writes only the complete canonical target shard for the affected target."
     ]
   }
 }

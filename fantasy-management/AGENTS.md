@@ -32,7 +32,7 @@ For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tend
 
 For any Fantasy Operations, Daily Monitoring, Free-Agent Monitoring, Weekly Lineup/Waiver separation or monitoring-triggered watchlist task, `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` is additionally mandatory and must be read before evaluating monitoring materiality, proposing durable watch targets or separating monitoring from final roster decisions.
 
-For any `entity-observation` baseline read/write, monitoring-triggered durable observation proposal, approved qualitative baseline persistence or Observation-State repair/migration, `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is additionally mandatory. It is authoritative for the current Base + Target-Shard storage contract and supersedes older procedural text that describes the large `fantasy-management/automation/state/entity-observation.json` file as the normal full-replacement write target.
+For any `entity-observation` baseline read/write, monitoring-triggered durable observation proposal, approved qualitative baseline persistence or Observation-State repair/migration, `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is additionally mandatory. It is authoritative for the current bounded-header + canonical Target-Shard storage contract. `fantasy-management/automation/state/entity-observation.json` contains only bounded global job metadata; qualitative target baselines live exclusively under `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`.
 
 For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup/waiver, roster-capacity or roster-flexibility task, `fantasy-management/_ai/ROSTER_ARCHITECTURE.md` is additionally mandatory and must be read before classifying player roles/security or deciding whether a transaction consumes protected churn capacity.
 
@@ -237,7 +237,7 @@ fantasy-management/
 - Golden Set profiles evaluate extraction quality and may propose improvements, but canonical rules and profiles change only after explicit user approval.
 - `fantasy-management/_ai/golden-set/profile-list.json` is the canonical list of active Golden Set profiles. Unregistered profile files are drafts or proposals, not active extraction requirements.
 - The local podcast builder may aggregate and validate authored work-package artifacts, but it must not create new editorial interpretation.
-- `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is the canonical storage contract for approved qualitative `entity-observation` baselines. Normal approved baseline writes go to deterministic per-target shards under `fantasy-management/automation/state/entity-observation-targets/`; the large `entity-observation.json` file is the immutable migration-time base snapshot, not the normal replacement-write target.
+- `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is the canonical storage contract for approved qualitative `entity-observation` baselines. `fantasy-management/automation/state/entity-observation.json` is the bounded global header and must not contain canonical target payloads. Normal approved qualitative baseline writes replace only the complete deterministic target shard under `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`.
 
 ## GitHub connector large-file guard
 

@@ -2,76 +2,74 @@
 
 ## Status
 
-This document is authoritative for the durable storage layout of approved qualitative `entity-observation` baselines. It supersedes older procedural text that requires every approved baseline change to replace the complete `fantasy-management/automation/state/entity-observation.json` file.
+This document is authoritative for durable approved qualitative `entity-observation` baseline storage. Scheduled Fantasy Operations monitoring remains read-only. Durable qualitative persistence still requires explicit human approval.
 
-Scheduled Fantasy Operations monitoring remains read-only. Durable qualitative baseline persistence still requires explicit human approval.
+The former monolithic Target payload in `fantasy-management/automation/state/entity-observation.json` and the transitional Base + Overlay interpretation are retired. The path remains only as a bounded global State header for backward-compatible job/state discovery.
 
-Any Fantasy Operations task that compares qualitative `entity-observation` baselines, reports a material qualitative change, or proposes the durable follow-up write must read this document before interpreting the repository observation baseline. If another active document still describes the large base file as the normal full-replacement write target, this storage contract wins for persistence semantics.
+## Canonical storage model
 
-## Storage model
+The durable State consists of exactly two layers with distinct ownership:
 
-The effective state has two layers:
+1. Global bounded State header: `fantasy-management/automation/state/entity-observation.json`
+2. One complete Target shard per persisted Target: `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`
 
-1. Base snapshot: `fantasy-management/automation/state/entity-observation.json`
-2. Target overlays: `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`
+The global header preserves job-level metadata such as schema/job identity, historical revision, evaluation metadata, input fingerprints, recent events and target-set resolution metadata. Its `job_state.targets` object must always be empty. It is not a baseline payload store and is not touched by a normal approved Target/profile update.
 
-The base snapshot contains all approved state that existed at migration time and is retained losslessly. It is no longer the normal write target for qualitative baseline changes.
-
-A target overlay replaces exactly one `job_state.targets[target_id]` object from the base snapshot. A target that did not exist in the base may also be introduced by a shard when its configured target identity is otherwise valid.
-
-The effective target map is produced by loading the base and then applying all target shards in deterministic filename order. Because target IDs map one-to-one to filenames, there can be at most one active shard per target.
-
-For monitoring comparisons, an existing target shard is the current approved baseline for that target and must take precedence over the corresponding base target. The base target is used only when no shard exists for that target.
+All current qualitative baseline payloads live directly in Target shards. There is no Base fallback and no overlay precedence after the full-shard migration.
 
 ## Target shard contract
 
-Each file is pretty-printed UTF-8 JSON with one trailing newline:
+Each shard is canonical pretty UTF-8 JSON with one trailing newline and contains:
 
 ```json
 {
   "schema_version": 1,
-  "target_id": "alec-pierce-2026",
+  "target_id": "managed-roster-player-8142",
   "base_state_revision": 17,
-  "write_id": "interactive-approved-baseline:alec-pierce-2026:2026-08-30",
-  "updated_at": "2026-08-30T00:00:00Z",
+  "write_id": "interactive-approved-baseline:managed-roster-player-8142:2026-08-30",
+  "updated_at": "2026-08-30T09:22:00Z",
   "target": {
     "entity_fingerprint": "player:sleeper_id:8142",
     "target_set_ids": ["managed-roster-health"],
-    "last_checked_at": "2026-08-30T00:00:00Z",
+    "last_checked_at": "2026-08-30T09:22:00Z",
     "status": "active",
     "observations": {}
   }
 }
 ```
 
-The example is structural only; an actual shard must contain the complete validated target and its complete observation objects.
+The example is structural only. A real shard contains the complete Target and all of its persisted observations.
 
-## Write rules
+`base_state_revision` is retained as the migration-anchor revision for wrapper compatibility. It must equal the current global State-header revision. Normal Target-shard writes do not increment the global revision.
 
-For an approved baseline update:
+## Effective State
 
-1. Read the base target and an existing shard for that target, if present.
-2. Treat the existing shard as the current target state; otherwise use the base target.
-3. Modify only the explicitly approved target/profile scope.
-4. Preserve unrelated profile states in that target.
-5. Recalculate changed `state_hash` values using the existing canonical compact sorted-JSON SHA-256 contract.
-6. Keep the stable `entity_fingerprint`; an identity change fails closed.
-7. Set a deterministic, descriptive `write_id` for the approved logical write.
-8. Write only `entity-observation-targets/{target_id}.json`.
-9. Validate Base + all shards before publication.
-10. Pin the current target-shard blob when replacing an existing shard and publish only non-forced/fast-forward.
+For consumers that still need the legacy in-memory shape:
 
-A normal approved target/profile update must not rewrite the large base snapshot.
+1. read the global State header;
+2. require `job_state.targets == {}`;
+3. read every canonical Target shard;
+4. populate an in-memory `job_state.targets[target_id]` map from those shards.
 
-A scheduled read-only monitoring task must not perform this write itself. When it reports a material qualitative change, however, it should identify the proposed post-approval target-shard path and the affected target/profile so the later interactive write can be performed without falling back to the legacy monolithic replacement path.
+No consumer may treat absence of a shard as permission to recover a Target payload from Git history, an old monolith, connector cache or another fallback.
 
-## Revision and processed-state semantics
+## Approved write rules
 
-The base file's global `revision`, `last_processed_key`, `recent_events` and other historical job-level metadata are migration-time legacy metadata. They are not advanced by target-shard persistence.
+For an approved qualitative Target/profile update:
 
-Shard persistence is identified by the target path plus `write_id`. Repeating an already-persisted logical write with identical target content is a no-op. A later approved update to the same target replaces that target's shard and receives a new `write_id`.
+1. Read `entity-observation-targets/{target_id}.json` when it exists.
+2. Treat that shard as the complete current durable Target state.
+3. Modify only the explicitly approved Target/profile scope.
+4. Preserve every unrelated observation in that Target.
+5. Recalculate changed `state_hash` values with canonical compact sorted-JSON SHA-256 semantics.
+6. Preserve the stable `entity_fingerprint`; an identity change fails closed.
+7. Preserve the migration-anchor `base_state_revision` unless a separately approved storage-schema migration changes it.
+8. Set a deterministic descriptive `write_id` for the approved logical write.
+9. Write only that Target shard for a normal Target/profile update.
+10. Validate the global header plus all shards before publication.
+11. Pin the current Target-shard blob when replacing an existing shard and publish only non-forced/fast-forward.
 
-This separation is intentional because current scheduled monitoring is read-only; there is no autonomous checkpoint queue whose progress needs a globally incremented observation-state revision.
+A normal approved baseline update must not rewrite `entity-observation.json`.
 
 ## Validation
 
@@ -81,20 +79,27 @@ Canonical validator:
 fantasy-management/_ai/scripts/validate_observation_state_shards.py
 ```
 
-It validates the base formatting, every shard's structure and formatting, filename/target identity, base-revision compatibility, duplicate write IDs, target shape and immutable base identity. It can also materialize a merged effective state for consumers that still need the legacy in-memory shape.
+It validates canonical formatting, the bounded header invariant, shard structure, filename/Target identity, revision-anchor compatibility, unique write IDs, unique entity fingerprints, Target shape and target-set references. It can materialize the legacy in-memory State shape with `--dump-merged` for compatibility consumers.
 
-`CI • Fantasy Management` runs both the unit-test suite and the productive Base + Shard validator.
+`CI • Fantasy Management` runs the unit-test suite, validates the bounded header formatting, and validates the complete full-shard State.
 
-## Migration safety
+## Migration provenance
 
-This is an overlay migration rather than a destructive split of the existing large file. Therefore:
+The full-shard migration was built from the effective pre-migration Base + Overlay State and was required to round-trip exactly before publication. The migration contained 22 persisted Targets. The already approved Alec Pierce Target shard was preserved as the newer effective Target; the remaining 21 shards were generated deterministically from the legacy State.
 
-- no approved legacy baseline is copied by hand or dropped;
-- rollback is immediate by ignoring/removing shards and returning to the untouched base snapshot;
-- connector truncation of the base body can never justify a replacement write;
-- all new normal writes are bounded to one target-sized file;
-- readers can materialize the complete effective state deterministically when needed.
+The verified effective pre-migration canonical-State SHA-256 was:
 
-## Superseded legacy behavior
+```text
+41deb08044c0bbe71ca5f8f0ff541c9567249ee865950468dd95acf64683a790
+```
 
-Any active documentation that still describes `apply_observation_state_batch.py` or a complete replacement of `entity-observation.json` as the normal approved interactive persistence path is historical for storage purposes. The current scheduled architecture remains read-only, and approved interactive qualitative persistence uses this Base + Target-Shard contract.
+The old large Target payload remains recoverable from Git history, so no separate active archive copy is required.
+
+## Superseded behavior
+
+The following are historical only and must not be used as active persistence instructions:
+
+- complete replacement of the former monolithic `entity-observation.json` Target payload;
+- Base + Target-Overlay resolution;
+- autonomous Observation Bootstrap State checkpoints;
+- the legacy complete Replacement-State Writer as the normal interactive persistence path.

@@ -18,6 +18,8 @@ on:
       - "fantasy-management/_ai/PODCAST_SOURCE_MODEL.md"
       - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
       - "fantasy-management/_ai/WORKFLOWS.md"
+      - "fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md"
+      - "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md"
       - "fantasy-management/AGENTS.md"
       - ".github/workflows/fantasy-management-validation.yml"
   pull_request:
@@ -34,6 +36,8 @@ on:
       - "fantasy-management/_ai/PODCAST_SOURCE_MODEL.md"
       - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
       - "fantasy-management/_ai/WORKFLOWS.md"
+      - "fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md"
+      - "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md"
       - "fantasy-management/AGENTS.md"
       - ".github/workflows/fantasy-management-validation.yml"
   workflow_dispatch:
@@ -59,21 +63,29 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install jsonschema
 
-      - name: Test entity mention coverage validator
+      - name: Test Fantasy Management validators
         run: |
           python -m unittest discover \
             -s fantasy-management/_ai/scripts/tests \
             -p "test_*.py" \
             -v
 
+      - name: Validate automation configuration
+        run: |
+          python fantasy-management/_ai/scripts/validate_automation.py
+
       - name: Validate canonical state JSON formatting
         run: |
           python fantasy-management/_ai/scripts/validate_json_format.py \
             fantasy-management/automation/state/entity-observation.json
 
-      - name: Validate entity observation base and shards
+      - name: Validate fully sharded entity observation state
         run: |
           python fantasy-management/_ai/scripts/validate_observation_state_shards.py
+
+      - name: Validate sharded observation state against configuration
+        run: |
+          python fantasy-management/_ai/scripts/validate_observation_state_configuration.py
 
       - name: Validate podcast package structure and takes
         run: |

@@ -227,24 +227,34 @@ A durable write to State, Knowledge, Decisions, boards, baselines or stored revi
 
 The approved write is then performed interactively with the normal repository validation and publication rules.
 
-For qualitative observations that use the existing entity-observation profile model, the canonical persisted approved baseline state is:
+For qualitative observations that use the existing entity-observation profile model, the mandatory storage contract is:
+
+```text
+fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md
+```
+
+The durable layout is:
 
 ```text
 fantasy-management/automation/state/entity-observation.json
+fantasy-management/automation/state/entity-observation-targets/{target_id}.json
 ```
 
-This State is durable comparison memory for later monitoring and for other agents. It is not generated data and it is not an authorization for autonomous writes.
+`entity-observation.json` is the bounded global job header and contains no canonical qualitative target payloads. The complete approved qualitative baseline for each target lives exclusively in its target shard. A target without a shard has no durable qualitative baseline.
 
-An approved interactive observation-State write must:
+An approved interactive qualitative observation write must:
 
 - persist only the specifically approved target/profile observations;
+- read the existing complete shard for the affected target when present and preserve unrelated observation profiles in that target;
 - normalize `material_state` according to the applicable profile `output_fields` and workflow rules;
-- calculate `state_hash` with the existing canonical compact sorted-JSON SHA-256 contract;
-- preserve unrelated previous good states and existing input provenance;
-- increment the State revision exactly once for the complete logical State change;
-- validate the complete replacement State against `automation-observation-state.schema.json` and the repository cross-file validator;
-- pin the current target-branch parent commit and current State blob before publication;
-- publish only by a non-forced fast-forward and recompute on concurrency conflicts.
+- calculate changed `state_hash` values with the canonical compact sorted-JSON SHA-256 contract;
+- preserve the stable `entity_fingerprint` and fail closed on identity drift;
+- assign a new deterministic descriptive `write_id` to the logical target write;
+- keep `base_state_revision` aligned with the bounded global header revision;
+- validate the bounded header plus all canonical target shards with `validate_observation_state_shards.py` and the repository automation validation path;
+- pin the current target-shard blob when replacing an existing shard;
+- publish only by a non-forced fast-forward and recompute on concurrency conflicts;
+- not rewrite the bounded global header merely because one qualitative target baseline changed.
 
 A missing target/profile baseline does not activate or authorize autonomous bootstrap work. Scheduled monitoring may form an internal first-observation baseline for comparison during that run, but durable persistence still requires explicit approval unless a later architecture decision deliberately changes this rule.
 
@@ -403,15 +413,17 @@ Downstream scheduled Free-Agent monitoring should read `free-agent-movement-even
 
 ## Legacy observation runner
 
-The former autonomous State-writing observation runner is retained only as historical configuration while migration is in progress. Its autonomous execution path must operate read-only and must not attempt State, event, Knowledge, Decision or board publication.
+The former autonomous State-writing observation runner is retained only as historical configuration. Its autonomous execution path is not part of current scheduled production monitoring and must not attempt State, event, Knowledge, Decision or board publication.
 
-The legacy boundary applies to autonomous execution, not to every artifact created by that framework. Until an explicit replacement architecture is approved, the following contracts remain reusable for human-approved persistence and comparison:
+The reusable current contracts are:
 
-- `fantasy-management/automation/state/entity-observation.json` as the canonical approved qualitative observation baseline State;
-- target and profile identity plus normalization semantics where they remain applicable;
-- `automation-observation-state.schema.json`;
-- canonical material-State hashing semantics;
-- cross-file validation and optimistic-concurrency publication safeguards.
+- `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` as the authoritative qualitative baseline storage contract;
+- `fantasy-management/automation/state/entity-observation.json` as the bounded global job header with no canonical target payloads;
+- `fantasy-management/automation/state/entity-observation-targets/{target_id}.json` as the exclusive durable qualitative target-baseline storage;
+- target/profile identity and normalization semantics where they remain applicable;
+- `automation-observation-state.schema.json` for the bounded global header shape;
+- canonical material-state hashing semantics;
+- the full-shard validator plus repository cross-file validation and optimistic-concurrency publication safeguards.
 
 The following legacy behaviors are not part of scheduled production monitoring and must not be triggered merely because baselines are missing:
 
@@ -421,4 +433,4 @@ The following legacy behaviors are not part of scheduled production monitoring a
 - autonomous Replacement-State-Writer execution;
 - autonomous Observation Event bundle publication.
 
-Legacy workflow and helper files may remain in the repository as historical implementation contracts while migration is incomplete. Their existence does not override this architecture or the current `runner-config.json` mode.
+Legacy workflow and helper files may remain only where another explicitly documented historical purpose requires them. Their existence does not override this architecture, `OBSERVATION_STATE_STORAGE.md`, the current `entity-observation` job definition or the current `runner-config.json` mode.
