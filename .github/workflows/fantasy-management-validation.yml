@@ -39,7 +39,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-fantasy-management:
@@ -89,6 +89,29 @@ jobs:
           path: ${{ runner.temp }}/entity-observation-full-shard-migration/
           if-no-files-found: error
           retention-days: 1
+
+      - name: Publish validated full-shard migration candidate
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'agent/263-full-shard-observation-state'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git fetch origin "${HEAD_REF}"
+          git switch -C "${HEAD_REF}" "origin/${HEAD_REF}"
+          cp "${RUNNER_TEMP}/entity-observation-full-shard-migration/entity-observation-index.json" \
+            fantasy-management/automation/state/entity-observation-index.json
+          cp "${RUNNER_TEMP}/entity-observation-full-shard-migration/entity-observation-targets/"*.json \
+            fantasy-management/automation/state/entity-observation-targets/
+          git add \
+            fantasy-management/automation/state/entity-observation-index.json \
+            fantasy-management/automation/state/entity-observation-targets/
+          if git diff --cached --quiet; then
+            echo "Validated migration candidate already materialized; commit skipped."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Materialize full-shard observation state"
+          git push origin "HEAD:${HEAD_REF}"
 
       - name: Validate podcast package structure and takes
         run: |
