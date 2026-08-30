@@ -17,19 +17,30 @@ snapshot:
   schemaVersion: 1
   maxAgeMinutes: 150
   cadence:
-    primarySchedule: "17,47 * * * *"
+    primarySchedule: "7-59/30 * * * *"
     fallback:
-      event: workflow_run
-      workflow: APP • Data • League
-      sourceEvents:
-      - schedule
       minimumStateAgeMinutes: 40
+      mainPush:
+        event: push
+        branch: main
+        immediatePaths:
+        - .github/workflows/workflow-health-snapshot.yml
+        - .ai-context/manual/workflow-monitoring.yaml
+        - tools/build_workflow_health_snapshot.py
+        - tools/tests/test_build_workflow_health_snapshot.py
+      leagueWorkflowRun:
+        event: workflow_run
+        workflow: APP • Data • League
+        sourceEvents:
+        - schedule
   principles:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
   - The snapshotter writes only the isolated workflow-health-state branch; it must never publish health snapshots to main.
   - If the state branch does not yet exist, the snapshot producer initializes it as an orphan branch containing only monitoring state.
-  - Pushes to main that change the snapshot workflow, builder, tests or policy trigger an immediate snapshot in addition to the twice-hourly schedule.
-  - Completed scheduled runs of APP • Data • League provide a workflow_run fallback; the fallback rebuilds only when the current snapshot is missing, unreadable or at least 40 minutes old.
+  - The offset 30-minute schedule (`:07` and `:37` each hour) is best-effort. All pushes to main also trigger the snapshot producer so repository activity provides a scheduler-independent refresh opportunity.
+  - Pushes to main that change the snapshot workflow, builder, tests or policy bypass the freshness gate and trigger an immediate snapshot.
+  - Other pushes to main rebuild only when the current snapshot is missing, unreadable or at least 40 minutes old.
+  - Completed scheduled runs of APP • Data • League remain an opportunistic workflow_run fallback and use the same 40-minute freshness gate.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
   - If the snapshot is older than maxAgeMinutes or cannot be read, the external watcher must treat monitoring infrastructure
     as unhealthy.
@@ -240,7 +251,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Twice-hourly snapshot producer with a freshness-gated League workflow-run fallback; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Best-effort offset 30-minute snapshot producer with scheduler-independent main-push refresh opportunities and an additional freshness-gated League workflow_run fallback; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later
