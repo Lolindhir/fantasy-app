@@ -21,6 +21,7 @@ from .identity_model import (
     ATTACH_ID_KEYS,
     LINK_ID_KEYS,
     PRIMARY_SOURCE_PREFERENCE,
+    WEAK_ID_KEYS,
     IdentityCandidate,
     ids_from_ff,
     ids_from_players,
@@ -29,6 +30,8 @@ from .identity_sources import raw_identity_candidates
 
 
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
+_CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
+_CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
 
 
 class UnionFind:
@@ -131,37 +134,84 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     return result
 
 
-def _can_merge_on_anchor(left: IdentityCandidate, right: IdentityCandidate, shared_key: str) -> bool:
-    shared = {
+def _is_authoritative_canonical_replay_pair(
+    left: IdentityCandidate,
+    right: IdentityCandidate,
+) -> bool:
+    return {left.source, right.source} == {"canonical-existing", "nflverse.players"}
+
+
+def _shared_ids(
+    left: IdentityCandidate,
+    right: IdentityCandidate,
+    keys: set[str] | tuple[str, ...],
+) -> set[str]:
+    return {
         key
-        for key in ANCHOR_ID_KEYS
+        for key in keys
         if left.ids.get(key) and left.ids.get(key) == right.ids.get(key)
     }
-    conflicting = {
+
+
+def _conflicting_ids(
+    left: IdentityCandidate,
+    right: IdentityCandidate,
+    keys: set[str] | tuple[str, ...],
+) -> set[str]:
+    return {
         key
-        for key in ANCHOR_ID_KEYS
+        for key in keys
         if left.ids.get(key)
         and right.ids.get(key)
         and left.ids.get(key) != right.ids.get(key)
     }
 
+
+def _can_merge_on_anchor(left: IdentityCandidate, right: IdentityCandidate, shared_key: str) -> bool:
+    shared = _shared_ids(left, right, ANCHOR_ID_KEYS)
+    conflicting = _conflicting_ids(left, right, ANCHOR_ID_KEYS)
+    replay_pair = _is_authoritative_canonical_replay_pair(left, right)
+
     if left.birth_date and right.birth_date and left.birth_date != right.birth_date:
-        # Current sources still fail closed on birth-date disagreement. A persisted
-        # canonical row may reconnect across an authoritative DOB correction only
-        # when at least three independent strong IDs still identify the same person
-        # and no strong provider ID contradicts that identity.
-        if "canonical-existing" not in {left.source, right.source}:
+        # Current-vs-current evidence remains fail-closed on DOB disagreement.
+        # Persisted canonical state may reconnect to the authoritative current
+        # nflverse player snapshot only under strong provider corroboration and
+        # with no provider ID counter-evidence at all.
+        if not replay_pair:
             return False
-        return (
-            shared_key in shared
-            and not conflicting
-            and len(shared) >= _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS
+        if _conflicting_ids(left, right, IDENTITY_ID_KEYS):
+            return False
+        shared_secondary = _shared_ids(left, right, WEAK_ID_KEYS)
+        return shared_key in shared and (
+            len(shared) >= _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS
+            or (
+                len(shared) >= _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS
+                and len(shared_secondary)
+                >= _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS
+            )
         )
 
     if not conflicting:
         return True
     if not left.birth_date or left.birth_date != right.birth_date:
         return False
+
+    # Exact DOB is independent corroboration during replay of a persisted
+    # canonical identity against the authoritative current nflverse player row.
+    # It may compensate for one otherwise-required strong corroborator when one
+    # aliasable anchor value was corrected upstream. Current-vs-current merges
+    # keep the stricter ordinary alias rule unchanged.
+    if replay_pair:
+        if len(conflicting) != 1:
+            return False
+        if _conflicting_ids(left, right, IDENTITY_ID_KEYS) != conflicting:
+            return False
+        conflict_key = next(iter(conflicting))
+        required = ALIAS_MIN_CORROBORATORS.get(conflict_key)
+        if required is None:
+            return False
+        corroborators = len(shared - {conflict_key}) + 1
+        return shared_key in shared and corroborators >= required
 
     for conflict_key in conflicting:
         required = ALIAS_MIN_CORROBORATORS.get(conflict_key)
@@ -387,6 +437,7 @@ def build_identities(
 
     current_claim_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
     current_claim_sources: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    current_values_by_internal_provider: dict[tuple[str, str], set[str]] = defaultdict(set)
     for idx, candidate in enumerate(candidates):
         if candidate.source == "canonical-existing":
             continue
@@ -395,6 +446,7 @@ def build_identities(
             token = (key, value)
             current_claim_owners[token].add(internal_id)
             current_claim_sources[(key, value, internal_id)].add(candidate.source)
+            current_values_by_internal_provider[(internal_id, key)].add(value)
 
     lookup_conflicts: list[dict[str, Any]] = []
     mapping_conflicts: list[dict[str, Any]] = []
@@ -431,8 +483,21 @@ def build_identities(
         values_by_key: dict[str, set[str]] = defaultdict(set)
         for member in members:
             for key, value in member.ids.items():
-                if member.source == "canonical-existing" and key in ATTACH_ID_KEYS:
-                    if internal_id not in current_claim_owners.get((key, value), set()):
+                if member.source == "canonical-existing":
+                    current_values = current_values_by_internal_provider.get((internal_id, key))
+                    if current_values and value not in current_values:
+                        # Canonical output represents the active provider bridge.
+                        # Once current evidence for this person supplies a corrected
+                        # value for the same provider, a stale persisted snapshot
+                        # value is not promoted to a permanent active alias.
+                        continue
+                    current_owners = current_claim_owners.get((key, value), set())
+                    if key in LINK_ID_KEYS and current_owners and internal_id not in current_owners:
+                        # A current person now owns this external link value. Keep
+                        # historical validity in provider-mappings, not as a second
+                        # active canonical link on the old person.
+                        continue
+                    if key in ATTACH_ID_KEYS and internal_id not in current_owners:
                         continue
                 if key in LINK_ID_KEYS and (key, value) in ambiguous_lookup_tokens:
                     continue
