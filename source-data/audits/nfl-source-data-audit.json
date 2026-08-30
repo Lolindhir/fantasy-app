@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "scope": "public/data/Players.json",
   "datasetRegistry": {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "activeDatasetCount": 4,
     "activeDatasetIDs": [
       "nflverse.players",
@@ -10,31 +10,33 @@
       "nflverse.draft-picks",
       "nflverse.combine"
     ],
-    "plannedDatasetCount": 7,
+    "plannedDatasetCount": 9,
     "plannedDatasetIDs": [
       "nflverse.rosters",
       "nflverse.weekly-rosters",
       "nflverse.schedules",
+      "nflverse.game-finality",
       "nflverse.player-stats",
       "nflverse.snap-counts",
+      "sleeper.players",
       "nflverse.depth-charts",
       "nflverse.contracts"
     ]
   },
-  "canonicalIdentityCount": 28548,
-  "appPlayerCount": 1262,
+  "canonicalIdentityCount": 28563,
+  "appPlayerCount": 1243,
   "identityCoverage": {
-    "matched": 1262,
-    "withGSIS": 1022,
-    "withoutGSIS": 240
+    "matched": 1243,
+    "withGSIS": 1008,
+    "withoutGSIS": 235
   },
   "identityCoverageByProvider": {
-    "Sleeper": 1262
+    "Sleeper": 1243
   },
   "draftStatusCoverage": {
-    "drafted": 666,
-    "unknown": 218,
-    "undrafted": 378
+    "drafted": 662,
+    "unknown": 213,
+    "undrafted": 368
   },
   "draftStatusByPosition": {
     "K": {
@@ -43,23 +45,23 @@
       "unknown": 12
     },
     "QB": {
-      "drafted": 106,
+      "drafted": 104,
       "undrafted": 32,
       "unknown": 21
     },
     "RB": {
       "drafted": 145,
-      "unknown": 33,
-      "undrafted": 89
+      "unknown": 32,
+      "undrafted": 86
     },
     "TE": {
       "drafted": 132,
-      "undrafted": 66,
-      "unknown": 54
+      "undrafted": 65,
+      "unknown": 50
     },
     "WR": {
-      "drafted": 263,
-      "undrafted": 158,
+      "drafted": 261,
+      "undrafted": 152,
       "unknown": 98
     }
   },
@@ -68,8 +70,8 @@
     "earliestSeason": 2000,
     "latestSeason": 2026,
     "recordCount": 8968,
-    "resolvedIdentityCount": 7075,
-    "unresolvedIdentityCount": 1893,
+    "resolvedIdentityCount": 7083,
+    "unresolvedIdentityCount": 1885,
     "ambiguousIdentityRecordCount": 6,
     "ambiguousIdentitySourceCount": 3,
     "ambiguousIdentitySources": [
@@ -129,10 +131,10 @@
       }
     ],
     "withoutPfrIdCount": 1531,
-    "canonicalDraftLinkedCount": 5564,
-    "currentAppResolvedPlayerCount": 1262,
-    "currentAppPlayersWithCombine": 688,
-    "currentAppPlayersWithoutCombine": 574,
+    "canonicalDraftLinkedCount": 5571,
+    "currentAppResolvedPlayerCount": 1243,
+    "currentAppPlayersWithCombine": 680,
+    "currentAppPlayersWithoutCombine": 563,
     "draftLinkConflictCount": 0,
     "draftLinkConflicts": [],
     "bySeason": {
@@ -320,10 +322,10 @@
       },
       "2026": {
         "records": 319,
-        "resolvedIdentity": 232,
-        "unresolvedIdentity": 87,
+        "resolvedIdentity": 240,
+        "unresolvedIdentity": 79,
         "ambiguousIdentityRecords": 0,
-        "canonicalDraftLinked": 187
+        "canonicalDraftLinked": 194
       }
     }
   },
@@ -331,7 +333,7 @@
     "duplicateLinkProviderIDs": {},
     "duplicateLinkProviderIDCount": 0
   },
-  "identityWeakProviderCollisionCount": 20,
+  "identityWeakProviderCollisionCount": 21,
   "identityWeakProviderCollisions": {
     "NFLCom": [
       "42861",
@@ -344,6 +346,9 @@
       "PRY456541",
       "RIC070406",
       "SPE088890"
+    ],
+    "MFL": [
+      "17740"
     ],
     "Fleaflicker": [
       "6636"
@@ -370,9 +375,9 @@
     "MFL": 2,
     "PFR": 1
   },
-  "identitySourceMappingConflictCount": 482,
+  "identitySourceMappingConflictCount": 484,
   "identitySourceMappingConflictsByReason": {
-    "birthdate_conflict_with_nflverse_players": 481,
+    "birthdate_conflict_with_nflverse_players": 483,
     "provider_id_maps_to_multiple_people": 1
   },
   "identitySourceMappingConflicts": [
@@ -1348,6 +1353,50 @@
       "Source": "nflverse.ff-player-ids",
       "Reason": "birthdate_conflict_with_nflverse_players",
       "QuarantineScope": "row",
+      "MFLID": "17740",
+      "Name": "Michael Heldman",
+      "BirthDate": "2003-01-02",
+      "Position": "DE",
+      "DraftYear": "2026",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0041329",
+          "NFLVerseBirthDates": [
+            "2003-03-10"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "4705926",
+          "NFLVerseBirthDates": [
+            "2003-03-10"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "145731",
+          "NFLVerseBirthDates": [
+            "2003-03-10"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {
+        "GSIS": "00-0041329",
+        "Sleeper": "13643",
+        "ESPN": "4705926",
+        "PFF": "145731",
+        "NFLCom": "63568",
+        "Sportradar": "cef62250-41b1-11f1-985b-cb31865e3411",
+        "Rotowire": "19711",
+        "FantasyData": "28180"
+      }
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "row",
       "MFLID": "17746",
       "Name": "Wesley Bailey",
       "BirthDate": "2005-01-01",
@@ -1435,6 +1484,59 @@
         "Sportradar": "d6066da0-41a9-11f1-a265-01abfcf61716",
         "Rotowire": "19593",
         "FantasyData": "28130"
+      }
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "row",
+      "MFLID": "17757",
+      "Name": "Ja'Mori Maclin",
+      "BirthDate": "2001-09-08",
+      "Position": "WR",
+      "DraftYear": "2026",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0041272",
+          "NFLVerseBirthDates": [
+            "2001-09-22"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "4430270",
+          "NFLVerseBirthDates": [
+            "2001-09-22"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "MaclJa00",
+          "NFLVerseBirthDates": [
+            "2001-09-22"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "124211",
+          "NFLVerseBirthDates": [
+            "2001-09-22"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {
+        "GSIS": "00-0041272",
+        "Sleeper": "13696",
+        "ESPN": "4430270",
+        "PFR": "MaclJa00",
+        "PFF": "124211",
+        "NFLCom": "63432",
+        "Sportradar": "95c171e0-426c-11f1-90b2-7d51536c8a9e",
+        "CBS": "3162257",
+        "Rotowire": "19941",
+        "FantasyData": "28307"
       }
     },
     {
@@ -3576,6 +3678,7 @@
         "PFR": "JennTe00",
         "PFF": "102408",
         "NFLCom": "57841",
+        "FantasyPros": "26964",
         "Sportradar": "e6fc9a80-1168-11ef-8e6a-d7d3a1fb0861",
         "CBS": "3133899",
         "Rotowire": "18368",
@@ -6255,7 +6358,8 @@
         "Yahoo": "33576",
         "CBS": "2866410",
         "CFBRef": "joshuah-bledsoe-1",
-        "Rotowire": "15471"
+        "Rotowire": "15471",
+        "FantasyData": "22712"
       }
     },
     {
@@ -23854,12 +23958,13 @@
       }
     }
   ],
-  "providerMappingConflictCount": 21,
+  "providerMappingConflictCount": 22,
   "providerMappingConflictsByProvider": {
     "CBS": 10,
     "ESB": 6,
     "FantasyData": 1,
     "Fleaflicker": 1,
+    "MFL": 1,
     "NFLCom": 2,
     "Sleeper": 1
   },
@@ -24195,6 +24300,22 @@
       }
     },
     {
+      "Provider": "MFL",
+      "ExternalID": "17740",
+      "CanonicalPlayerIDs": [
+        "NFLP-8845f819d1f754e375f3",
+        "NFLP-ac52b067c8fe715cc1ef"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-8845f819d1f754e375f3": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
       "Provider": "NFLCom",
       "ExternalID": "42861",
       "CanonicalPlayerIDs": [
@@ -24346,14 +24467,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "11540",
-      "Tank01ID": "3916911",
-      "CanonicalPlayerID": "NFLP-eeb5e08087cf25ae11eb",
-      "Name": "La'Michael Pettway",
-      "Position": "TE",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "11558",
       "Tank01ID": "4361994",
       "CanonicalPlayerID": "NFLP-d15e6f4152f34c0f177c",
@@ -24466,14 +24579,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "12121",
-      "Tank01ID": "4362841",
-      "CanonicalPlayerID": "NFLP-90536b0e3873f2332c59",
-      "Name": "Deshaun Fenwick",
-      "Position": "RB",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "12135",
       "Tank01ID": "4429927",
       "CanonicalPlayerID": "NFLP-594affc637bc7d5daf98",
@@ -24528,14 +24633,6 @@
       "Name": "Baylor Cupp",
       "Position": "TE",
       "DraftYear": 0
-    },
-    {
-      "SleeperID": "12260",
-      "Tank01ID": "4427164",
-      "CanonicalPlayerID": "NFLP-dff7d8f42c93c1c8ad8b",
-      "Name": "Mason Fairchild",
-      "Position": "TE",
-      "DraftYear": null
     },
     {
       "SleeperID": "12267",
@@ -25935,22 +26032,6 @@
       "CanonicalPlayerID": "NFLP-4994a3239abdfe952a92",
       "Name": "Brandon Smith",
       "Position": "WR",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "7938",
-      "Tank01ID": "4038952",
-      "CanonicalPlayerID": "NFLP-bcb4c9e7b5b6baea7e65",
-      "Name": "Hunter Kampmoyer",
-      "Position": "TE",
-      "DraftYear": null
-    },
-    {
-      "SleeperID": "8033",
-      "Tank01ID": "4832523",
-      "CanonicalPlayerID": "NFLP-a76173ddde929a0ef2ed",
-      "Name": "Bernhard Seikovits",
-      "Position": "TE",
       "DraftYear": null
     },
     {
