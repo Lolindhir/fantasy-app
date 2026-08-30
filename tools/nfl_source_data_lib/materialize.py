@@ -11,6 +11,7 @@ from .draft import build_draft_files
 from .identity import build_identities
 from .lifecycle import effective_partition_payload
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
+from .phase1 import build_phase1_outputs
 from .provider_mappings import build_provider_mapping_payload
 
 
@@ -99,12 +100,11 @@ def _combine_payloads(
 
 def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = False) -> dict[str, Any]:
     for dataset in datasets.values():
+        if dataset.is_season_partitioned:
+            continue
         if not dataset.raw_path.exists():
             raise FileNotFoundError(f"Cannot materialize without raw dataset: {dataset.raw_path}")
 
-    # Build every semantic payload before publishing anything. Existing v1
-    # canonical files are normalized by the resolver when they are read, so the
-    # persisted v2 field rename preserves the established canonical ID values.
     canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = (
         build_identities(repo_root, datasets)
     )
@@ -154,6 +154,14 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
             force=force,
         )
 
+    phase1_outputs, phase1_audit, phase1_partitions_preserved = build_phase1_outputs(
+        repo_root,
+        datasets,
+        canonical,
+        observation_season,
+        force=force,
+    )
+
     audit = build_audit(
         repo_root,
         canonical,
@@ -167,6 +175,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         combine_payloads=combine_payloads,
         combine_draft_link_conflicts=combine_conflicts,
     )
+    audit["phase1Datasets"] = phase1_audit
 
     identity_payload = {
         "SchemaVersion": CANONICAL_SCHEMA_VERSION,
@@ -197,6 +206,10 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     for season, payload in combine_payloads.items():
         if write_json_if_changed(repo_root / "source-data/nfl/combine" / f"{season}.json", payload):
             combine_changed += 1
+    phase1_changed = 0
+    for path, payload in phase1_outputs:
+        if write_json_if_changed(path, payload):
+            phase1_changed += 1
     audit_changed = write_json_if_changed(
         repo_root / "source-data/audits/nfl-source-data-audit.json", audit
     )
@@ -218,6 +231,9 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         "combineFilesChanged": combine_changed,
         "combinePartitionsPreserved": combine_partitions_preserved,
         "combineDraftLinkConflictCount": len(combine_conflicts),
+        "phase1CanonicalFileCount": len(phase1_outputs),
+        "phase1FilesChanged": phase1_changed,
+        "phase1PartitionsPreserved": phase1_partitions_preserved,
         "identitySourceMappingConflictCount": len(identity_source_conflicts),
         "auditChanged": audit_changed,
         "audit": audit,

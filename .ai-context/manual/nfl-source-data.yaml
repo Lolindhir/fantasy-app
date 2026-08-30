@@ -25,16 +25,15 @@ boundaries:
       - saison- oder snapshotbezogene historische Fakten
     identityNamespaceRule: >
       Der Pfadname nfl bezeichnet die Datendomaene. CanonicalPlayerID wird von
-      fantasy-app vergeben und ist keine von der NFL ausgestellte ID. Eine
-      kuenftige offizielle NFL-ID waere eine weitere externe Provider-Zuordnung.
+      fantasy-app vergeben und ist keine von der NFL ausgestellte ID.
   appReadModels:
     path: public/data/
     owns:
       - generierte App-Vertraege
     rule: >
       Source-Datasets duerfen nicht allein durch ihre Aufnahme in source-data
-      automatisch neue Felder, Provider oder Identitaeten in public/data einfuehren.
-      Die App-Generator-Migration ist ein eigener spaeterer Schritt.
+      automatisch neue Felder, Provider oder Identitaeten in public/data
+      einfuehren. Die App-Generator-Migration ist ein eigener spaeterer Schritt.
 
 canonicalSchema:
   currentVersion: 2
@@ -42,10 +41,9 @@ canonicalSchema:
   legacyPlayerIdentityField: NFLPlayerID
   migrationRule: >
     Bestehende v1-Canonical-Dateien duerfen den Legacy-Feldnamen beim normalen
-    Materialize-Lauf auf CanonicalPlayerID migrieren. Der ID-Wert und die
-    historische Personenzuordnung bleiben unveraendert. Diese reine Schema-
-    Migration benoetigt auch fuer eingefrorene historische Partitionen kein
-    --force; neue Outputs duerfen den Legacy-Feldnamen nicht mehr schreiben.
+    Materialize-Lauf auf CanonicalPlayerID migrieren. ID-Wert und historische
+    Personenzuordnung bleiben unveraendert. Neue Outputs schreiben nur
+    CanonicalPlayerID.
 
 registry:
   path: source-data/registry.json
@@ -79,10 +77,10 @@ registry:
   materializerParticipation:
     field: materialize
     rule: >
-      materialize=true bedeutet, dass das Dataset bereits vom bestehenden
-      kanonischen Materializer konsumiert wird. materialize=false erlaubt die
-      Aktivierung und Persistierung einer Raw-Source, ohne sie versehentlich in
-      die aktuelle Identity/Draft/Combine-Materialisierung einzuspeisen.
+      materialize=true bedeutet, dass das Dataset bereits vom kanonischen
+      Materializer konsumiert wird. Das umfasst Identity, Draft, Combine sowie
+      die aktivierten Phase-1-Materializer. materialize=false erlaubt Raw-
+      Persistierung ohne kanonische Publikation.
 
   availabilityPolicies:
     required:
@@ -93,11 +91,11 @@ registry:
       rule: >
         Nur ein HTTP-404 fuer eine noch nicht persistierte aktuelle Season eines
         season-partitioned Datasets darf als not-yet-available materialisiert
-        werden. Historische 404s bleiben Fehler. Ein bereits vorhandener Raw-Stand
-        wird durch einen spaeteren 404 niemals durch not-yet-available ersetzt.
+        werden. Historische 404s bleiben Fehler. Ein bereits vorhandener Raw-
+        Stand wird durch einen spaeteren 404 niemals ersetzt.
       noOpRule: >
-        not-yet-available-Metadata enthaelt keinen per-run Timestamp. Wiederholte
-        Checks ohne Zustandsaenderung bleiben semantische No-ops.
+        not-yet-available-Metadata enthaelt keinen per-run Timestamp.
+        Wiederholte Checks ohne Zustandsaenderung bleiben semantische No-ops.
 
   sourceSeason:
     resolutionOrder:
@@ -111,13 +109,11 @@ registry:
 
   lifecycleClasses:
     dynamic:
-      useFor: fortlaufend aktualisierte, nicht saisonweise eingefrorene Quellen
       refreshPolicy: periodic
       retentionPolicy: latest-with-git-history
       partitionKey: none
       finalization: never
       repairPolicy: normal
-
     immutable-history:
       useFor: historisch stabile, saisonweise kanonisierte Fakten wie Draft und Combine
       refreshPolicy: discover-new-partitions
@@ -126,12 +122,9 @@ registry:
       finalization: freeze-prior-seasons
       repairPolicy: explicit-force
       rule: >
-        Die aktuelle League-/Source-Season bleibt aktualisierbar, damit ein noch
-        wachsender oder upstream-korrigierter aktueller Jahrgang nicht durch einen
-        fruehen Lauf versehentlich eingefroren wird. Bereits vorhandene fruehere
-        Saisons werden im normalen Materialize-Pfad unveraendert beibehalten. Eine
-        bewusste historische Korrektur benoetigt --force.
-
+        Die aktuelle Source-Season bleibt aktualisierbar. Bereits vorhandene
+        fruehere Saisons werden im normalen Materialize-Pfad unveraendert
+        beibehalten; historische Reparatur benoetigt --force.
     seasonal-finalizable:
       useFor: laufende saisonale oder woechentliche Fakten wie Rosters, Schedules, Stats und Snap Counts
       refreshPolicy: current-season
@@ -141,7 +134,6 @@ registry:
         - season-week
       finalization: freeze-prior-seasons
       repairPolicy: explicit-force
-
     snapshot:
       useFor: zeitpunktbezogene Zustaende wie Depth Charts und Contracts
       refreshPolicy: snapshot
@@ -151,10 +143,9 @@ registry:
       repairPolicy: explicit-force
 
   rawFreezeRule: >
-    Bereits persistierte season-partitioned Raw-Seasons, die vor der aktuellen
-    Source-Season liegen, werden im normalen Sync als frozen-existing validiert
-    und ohne Netzabruf wiederverwendet. Bewusste historische Reparaturen verwenden
-    --force.
+    Bereits persistierte season-partitioned Raw-Seasons vor der aktuellen
+    Source-Season werden normal als frozen-existing validiert und ohne Netzabruf
+    wiederverwendet. Historische Reparaturen verwenden --force.
 
 activeDatasets:
   - id: nflverse.players
@@ -173,175 +164,166 @@ activeDatasets:
     lifecycle: immutable-history
     sourceMode: fixed
     materialize: true
-
-plannedDatasets:
-  - id: nflverse.rosters
-    lifecycle: seasonal-finalizable
-    intendedSourceMode: season-partitioned
-  - id: nflverse.weekly-rosters
-    lifecycle: seasonal-finalizable
-    intendedSourceMode: season-partitioned
   - id: nflverse.schedules
     lifecycle: seasonal-finalizable
-    intendedSourceMode: fixed-or-normalized-season-source
+    sourceMode: fixed
+    materialize: true
   - id: nflverse.game-finality
     lifecycle: seasonal-finalizable
-    intendedSourceMode: fixed
+    sourceMode: fixed
+    materialize: true
+  - id: nflverse.rosters
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    materialize: true
+  - id: nflverse.weekly-rosters
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    materialize: true
   - id: nflverse.player-stats
     lifecycle: seasonal-finalizable
-    intendedSourceMode: season-partitioned
+    sourceMode: season-partitioned
+    materialize: true
   - id: nflverse.snap-counts
     lifecycle: seasonal-finalizable
-    intendedSourceMode: season-partitioned
+    sourceMode: season-partitioned
+    materialize: true
   - id: sleeper.players
     lifecycle: dynamic
-    intendedSourceMode: fixed
+    sourceMode: fixed
+    materialize: true
+
+plannedDatasets:
   - id: nflverse.depth-charts
     lifecycle: snapshot
   - id: nflverse.contracts
     lifecycle: snapshot
 
+canonicalOutputs:
+  schedules: source-data/nfl/schedules/<season>.json
+  gameFinality: source-data/nfl/game-finality/<season>.json
+  rosters: source-data/nfl/rosters/<season>.json
+  weeklyRosters: source-data/nfl/weekly-rosters/<season>/<week>.json
+  playerStats: source-data/nfl/player-stats/<season>/<week>.json
+  snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
+  sleeperPlayers: source-data/nfl/platform/sleeper/players.json
+  audit: source-data/audits/nfl-source-data-audit.json
+
 operationalDatasetEvaluation:
-  evaluatedAt: 2026-08-28
+  evaluatedAt: 2026-08-30
   principle: >
-    nflverse und Sleeper werden feldbezogen bewertet; die Aktivierung einer
-    Raw-Source aendert public/data nicht automatisch. Aktuelle Runtime-Provider
-    koennen waehrend der Migration von der dauerhaften Source-Entscheidung
-    abweichen.
+    nflverse und Sleeper werden feldbezogen bewertet. Die Phase-1-Datasets sind
+    im Source-Data-Vertrag aktiviert; dies aendert public/data und seine Runtime-
+    Provider noch nicht. App-Generator-Migration bleibt Phase 2.
 
   schedules:
     recommendedRole: primary-canonical
+    canonicalPath: source-data/nfl/schedules/<season>.json
     primaryFor:
       - NFL-Spielplan und historische Schedule-Metadaten
       - Saison, Woche, Game Type, Datum, Teams und Scores
       - langfristige saisonweise Historie
     historyStart: 1999
-    freshness: every-5-minutes-during-season
     identity:
       gameKey: nflverse game_id
       playerIdentityRequired: false
     currentRuntimeUntilMigration:
-      - Tank01 liefert weiterhin gameStatus/Final und das heutige Schedule.json-Format, bis Phase 2 den Consumer umstellt
-    knownGaps:
-      - game_type muss explizit behandelt werden; Postseason darf nicht still in den heutigen REG-only App-Vertrag gelangen
-      - Aktivierung der Source ist getrennt von der spaeteren Schedule.json-Migration
+      - Tank01 liefert weiterhin das heutige Schedule.json-Format bis Phase 2
+    guards:
+      - game_id ist innerhalb des kanonischen Schedule-Datasets eindeutig
+      - game_type wird explizit erhalten
+      - Postseason gelangt nicht still in einen spaeteren REG-only Consumer
 
   gameFinality:
     recommendedRole: canonical-finality-evidence
+    canonicalPath: source-data/nfl/game-finality/<season>.json
     evidence: nflverse released_games.csv
     rule: >
-      Ein Score allein ist niemals Final-Nachweis. Die validierte released-games-
-      Evidenz darf spaeter einen kanonischen Final-State fuer dieselbe game_id
-      bestaetigen; weekFinal wird erst aus allen anwendbaren finalen Spielen einer
-      Woche abgeleitet. Die App-Generatoren bleiben bis zur Phase-1-Abnahme
-      unveraendert auf ihrem heutigen Runtime-Pfad.
+      Ein Score allein ist niemals Final-Nachweis. Final=true gilt nur fuer eine
+      canonical game_id, die in der validierten released-games-Evidenz enthalten
+      ist. WeekFinal wird pro GameType/Woche erst dann true, wenn alle
+      anwendbaren Spiele Final=true sind.
     specialCaseEvidence: >
-      Das abgebrochene BUF-CIN-Spiel der Week 17/2022 ist nicht als released/final
-      enthalten und darf durch diese Regel nicht faelschlich abgeschlossen werden.
+      Das abgebrochene BUF-CIN-Spiel der Week 17/2022 bleibt trotz vorhandener
+      Schedule-/Score-Werte nicht final, solange es nicht released ist.
+    guards:
+      - doppelte released game_id bricht fail-closed ab
+      - released game_id ohne korrespondierendes Schedule-Spiel bricht fail-closed ab
+      - score presence darf nie als Ersatz-Evidenz dienen
 
   playerStats:
     recommendedRole: primary-canonical
+    canonicalPath: source-data/nfl/player-stats/<season>/<week>.json
     primaryFor:
       - woechentliche NFL-Player-Rohstats
       - historische Passing-, Rushing-, Receiving-, Kicking- und Return-Statistik
       - Rohfakten fuer spaetere ligaeigene Fantasy-Point-Berechnung
     historyStart: 1999
-    freshness: nightly-after-game-days-plus-additional-game-day-updates
-    correctionWindow: >
-      NFL-Korrekturen koennen bis Mittwoch einfliessen; der Donnerstag-Stand ist
-      fuer abgeschlossene Wochen der bevorzugte saubere Stand.
     identity:
       authoritativeProviderKey: GSIS
       canonicalTarget: CanonicalPlayerID
       nameMatchingAuthoritative: false
-    fieldCoverageForCurrentPlayers:
-      covered:
-        - passing attempts
-        - rushing carries
-        - receiving targets
-        - passing, rushing und receiving touchdowns
-        - field-goal attempts
-        - PAT attempts
-        - punt_return_yards
-        - kickoff_return_yards
-        - Return-TDs
-        - season, week, team und opponent_team
-      rule: >
-        Der heutige gemischte AttemptsTotal-Wert kann fachlich aus Passing Attempts,
-        Targets, Carries, FG Attempts und PAT Attempts rekonstruiert werden. Vor
-        einer App-Vertragsmigration muss die Adapterabbildung gegen reale Seasons
-        regression-getestet werden.
+    rawFactRule: >
+      Alle nicht-kontextuellen Upstream-Stat-Felder bleiben im Stats-Objekt
+      erhalten. Das umfasst insbesondere Punt-/Kickoff-Return-Yards und
+      Return-TDs. Provider-Fantasy-Point-Werte sind keine dauerhafte kanonische
+      Punktequelle.
+    availabilityRule: >
+      Noch nicht veroeffentlichte aktuelle Stats duerfen als not-yet-available
+      gelten. Missing ist nicht 0.
     currentRuntimeUntilMigration:
       - Tank01 bleibt Quelle des heutigen provider-spezifischen Games.json-Boxscore-Schemas bis Phase 2
-    rawFactRule: >
-      Provider-Fantasy-Point-Werte sind keine dauerhafte kanonische Punktequelle.
-      Vollstaendige relevante Rohstats bleiben erhalten, damit spaetere ligaeigene
-      Scoring-Regeln reproduzierbar berechnet werden koennen.
-    knownGaps:
-      - kein 1-zu-1-Ersatz fuer das komplette provider-spezifische Tank01-Boxscore-Objekt
-      - nflverse Player Stats koennen unmittelbar nach Spielende spaeter verfuegbar sein als ein Live-API-Boxscore; Live-Werte sind fuer den bestehenden WeekFinal-Aggregationsvertrag kein Kernbedarf
 
   rosters:
     recommendedRole: primary-canonical-for-nfl-membership
+    canonicalSeasonPath: source-data/nfl/rosters/<season>.json
+    canonicalWeeklyPath: source-data/nfl/weekly-rosters/<season>/<week>.json
     primaryFor:
       - NFL-Teamzugehoerigkeit und saisonale Roster-Historie
-      - providerunabhaengige historische Team-/Status-Evidenz
-      - GSIS-basierte Identitaetsverknuepfung
+      - In-Season-Teamwechsel ueber Weekly Rosters
+      - providerunabhaengige Team-/Status-Evidenz
     seasonHistoryStart: 1920
     weeklyHistoryStart: 2002
-    freshness: daily-0700-utc
     identity:
       authoritativeProviderKey: GSIS
       canonicalTarget: CanonicalPlayerID
-      sleeper_idRole: provider-mapping-only
       nameMatchingAuthoritative: false
     retainSleeperFor:
-      - Sleeper-spezifischen Player-Status im App-Kontext
-      - SleeperDepthChartPosition
-      - SleeperDepthChartOrder
-      - Fantasy-Plattform- und Liga-spezifische Roster-/Availability-Fakten
+      - Sleeper-spezifischen Player-/Platform-Status
+      - Sleeper Depth-Chart-Felder als Plattformfakten
+      - Fantasy-Plattform- und Liga-spezifische Availability-Fakten
     rule: >
       Season-Rosters ersetzen keine Weekly-Historie fuer In-Season-Teamwechsel.
-      Sleeper-spezifische Plattform-/Depth-Fakten bleiben getrennt.
-    knownGaps:
-      - nflverse Injury-Daten sind nach der Saison 2024 derzeit nicht als aktuelle Ersatzquelle verfuegbar
-      - Depth-Chart-Quellen werden separat evaluiert und nicht aus Roster-Feldern pauschal zum Source of Truth erklaert
+      Rows ohne GSIS bleiben in Raw-Evidence, werden aber nicht per Name in die
+      kanonische Player-Zuordnung geraten.
 
   snapCounts:
     recommendedRole: primary-canonical
+    canonicalPath: source-data/nfl/snap-counts/<season>/<week>.json
     primaryFor:
       - offensive, defensive und Special-Teams-Snaps pro Spiel
       - historische Snap-Anteile und Snap-Counts
     historyStart: 2012
-    freshness: four-times-daily-during-season-dependent-on-pfr
     identity:
       authoritativeProviderKey: PFR
       canonicalTarget: CanonicalPlayerID
       nameMatchingAuthoritative: false
-      conflictPolicy: >
-        Fehlende oder mehrdeutige PFR-Zuordnungen werden wie andere Provider-ID-
-        Konflikte quarantinisiert; Namen duerfen keine Identitaetsluecke schliessen.
-    fieldCoverageForCurrentPlayers:
-      covered:
-        - offense_snaps
-        - offense_pct
-      additionalAvailable:
-        - defense_snaps
-        - defense_pct
-        - st_snaps
-        - st_pct
     semanticGuard: >
-      Fehlende historische Snap-Daten vor 2012 oder noch nicht veroeffentlichte
-      aktuelle Snap-Daten duerfen nicht als 0 materialisiert werden. unavailable,
-      not-yet-available und fetch-failed muessen von einem echten Wert 0
-      unterscheidbar bleiben.
+      Fehlende historische oder noch nicht veroeffentlichte aktuelle Snap-Daten
+      duerfen nicht als 0 materialisiert werden. unavailable,
+      not-yet-available und fetch-failed bleiben von einem echten 0-Wert
+      unterscheidbar.
     kickerNote: >
-      Der heutige App-Generator setzt Kicker-Snaps synthetisch aus FG- plus PAT-
-      Attempts zusammen. Echte Special-Teams-Snaps aus nflverse duerfen diese
-      Semantik nicht still veraendern; das waere eine separate App-Vertragsentscheidung.
+      Echte nflverse Special-Teams-Snaps aendern nicht still die bisherige
+      synthetische Kicker-Snap-Semantik der App; das gehoert in Phase 2.
 
   sleeperPlayers:
     recommendedRole: current-platform-and-interim-injury-source
+    canonicalPath: source-data/nfl/platform/sleeper/players.json
+    identity:
+      authoritativeProviderKey: Sleeper player_id
+      canonicalTarget: CanonicalPlayerID
+      objectKeyInvariant: object key and record player_id must agree when both exist
     fields:
       - sleeper player_id and platform status
       - team/platform metadata
@@ -350,11 +332,9 @@ operationalDatasetEvaluation:
       - practice_participation
       - Sleeper depth-chart fields as platform facts
     injuryRule: >
-      Fuer den spaeteren Current-Injury-Vertrag darf Sleeper den benoetigten
-      aktuellen Status/Start-/Practice-State liefern. Tank01-spezifische Rich-
-      Fields wie ReturnDate oder Description sind kein Pflichtfeld, wenn keine
-      gleichwertige Source vorhanden ist. Die heutige Generator-Nutzung von
-      Tank01 wird in Phase 1 noch nicht geaendert.
+      Sleeper liefert den benoetigten aktuellen Injury-/Practice-State. Tank01-
+      spezifische Rich-Fields wie ReturnDate oder Description sind kein
+      Pflichtfeld, wenn keine gleichwertige kanonische Source vorhanden ist.
 
 scoringTarget:
   rawFacts: canonical NFL player stats
@@ -368,16 +348,12 @@ scoringTarget:
 tank01Target:
   normalPrimaryAfterMigration: false
   intendedRole: limited-periodic-control-provider
-  opportunities:
-    - Schedule-/Finality-Runtime nach Phase 2 aus kanonischen Sources statt Tank01 speisen
-    - historische Stats-/Schedule-/Snap-Backfills ohne Tank01-Requestbudget durchfuehren
-    - Tank01 spaeter nur fuer begrenzte Kontrolle oder bewusst erhaltene Legacy-Felder verwenden
   rule: >
     Nach erfolgreicher Source- und spaeterer Generator-Migration soll Tank01
-    moeglichst nicht Primary fuer Schedule, Finality, Weekly Stats, Snaps,
-    Fantasy Points oder den benoetigten Current-Injury-Status sein. Ein begrenzter
-    Kontrollabgleich darf Abweichungen auditieren/melden, aber kanonische Daten
-    niemals automatisch ueberschreiben.
+    nicht Primary fuer Schedule, Finality, Weekly Stats, Snaps, Fantasy Points
+    oder den benoetigten Current-Injury-Status sein. Ein begrenzter
+    Kontrollabgleich darf Abweichungen auditieren, aber kanonische Daten nicht
+    automatisch ueberschreiben.
 
 historicalBackfill:
   currentAppHistory: >
@@ -401,8 +377,7 @@ historicalBackfill:
   rule: >
     Historische App-Dateien sollen spaeter aus kanonischen source-data-Vertraegen
     neu erzeugt werden. Fehlende Felder muessen als nicht verfuegbar modelliert
-    werden; historische Tank01-Requests sind fuer durch nflverse abgedeckte
-    Saisons kein Standard-Backfill-Pfad.
+    werden.
 
 combine:
   providerDataset: nflverse.combine
@@ -413,60 +388,35 @@ combine:
     masterKey: CanonicalPlayerID
     authoritativeJoin: PFR provider mapping
     nameMatchingAuthoritative: false
-    cfbRefRole: provenance-only
-    rule: >
-      Ein Combine-Record darf nur ueber eine eindeutige PFR-Provider-Zuordnung an
-      CanonicalPlayerID gebunden werden. Namen, Position oder Schule duerfen keine
-      fehlende oder widerspruechliche Identitaetszuordnung heuristisch ersetzen.
     sourceCollisionPolicy:
       distinctSameSeasonPfrClaims: quarantine-as-ambiguous
       identicalDuplicateRows: fail-closed
       duplicateResolvedCanonicalIdentity: fail-closed
-      rule: >
-        Wenn mehrere unterscheidbare Raw-Records derselben Combine-Saison dieselbe
-        PFR-ID beanspruchen, bleibt die PFR-ID als Provider-Provenienz an allen
-        betroffenen Records erhalten, nimmt fuer diese Records aber nicht an der
-        kanonischen CanonicalPlayerID-Aufloesung teil. Der Konflikt wird explizit als
-        ambiguous auditiert; Name, Position, Schule, CFBRef oder Draft-Evidenz
-        duerfen keinen Gewinner bestimmen. Exakt doppelte Raw-Zeilen sowie zwei
-        eindeutig aufgeloeste Records derselben Saison mit derselben CanonicalPlayerID
-        bleiben harte Invariant-Verletzungen.
-  measurements:
-    - HeightInches
-    - WeightPounds
-    - FortyYardDashSeconds
-    - BenchPressReps
-    - VerticalJumpInches
-    - BroadJumpInches
-    - ThreeConeSeconds
-    - ShuttleSeconds
+    rule: >
+      Combine-Records werden nur ueber eindeutige PFR-Mappings gebunden. Namen,
+      Position oder Schule duerfen keinen Gewinner bestimmen. Widerspruechliche
+      Same-Season-PFR-Claims werden quarantinisiert.
   draftLink:
     authoritativeSource: source-data/nfl/draft/<season>.json
     sourceEvidenceField: SourceDraftEvidence
     rule: >
-      Draftjahr, Runde und Overall Pick aus dem Combine-Upstream bleiben als
-      Provenienz erhalten. Die normalisierte Draft-Verknuepfung stammt aus dem
-      kanonischen Draft-Dataset. Widersprueche werden auditiert und nicht durch
-      eine stille Gewinnerauswahl aufgeloest.
+      Upstream-Draftfelder bleiben Provenienz. Die normalisierte Draft-
+      Verknuepfung stammt aus dem kanonischen Draft-Dataset.
 
 publication:
   rawFirst: true
   failClosed: true
   semanticNoOpRequired: true
   normalRepairBehavior: >
-    Normale Materialisierung/Raw-Synchronisierung darf vorhandene eingefrorene
-    historische Partitionen nicht ersetzen. Der explizite CLI-Repair-Pfad ist
-    `python tools/nfl_source_data.py materialize --force` oder ein vollstaendiger
-    `sync --force`, wenn bewusst Raw- und Canonical-Reparatur gemeinsam gewuenscht
-    sind.
+    Normale Materialisierung/Raw-Synchronisierung darf eingefrorene historische
+    Partitionen nicht ersetzen. Bewusste Reparatur verwendet --force.
   workflow:
     path: .github/workflows/sync-nfl-source-data.yml
-    seasonInput: >
-      workflow_dispatch/workflow_call akzeptieren optional eine kommagetrennte
-      Season-Liste und reichen sie als wiederholtes --season an den Sync weiter.
-    failureDiagnostic: >
-      Der Diagnose-State zeichnet Dataset-, Season- und Force-Input auf, ohne
-      Credentials oder Secrets zu persistieren.
+    rule: >
+      Der bestehende Workflow publiziert zuerst validierte Raw-Daten, baut danach
+      kanonische Daten aus dem auf main persistierten Raw-Stand und fuehrt sofort
+      einen zweiten semantischen No-op-Pass aus. Phase 1 aendert die Workflow-
+      Datei selbst nicht.
 
 validation:
   - Registry-v3 Source-/Lifecycle-Kombinationen werden beim Laden fail-closed validiert.
@@ -474,9 +424,11 @@ validation:
   - Vorhandene prior-season Raw-Partitionen werden normal ohne Netzabruf erhalten.
   - Unerwartet kleine/leere oder schema-inkompatible Inputs koennen keinen letzten guten Stand ersetzen.
   - PR-CI fuehrt die komplette test_nfl_source*.py-Suite vor den bestehenden PowerShell-/Angular-Checks aus.
-  - Historische Partitionen behalten Regressionstests fuer Normal- und Force-Repair sowie die schema-only v1-zu-v2-Identitaetsmigration ohne Force.
-  - Combine-Identitaet wird gegen fehlende PFR-Zuordnung und Namensgleichheit getestet.
-  - Unterschiedliche Same-Season-Records mit derselben PFR-ID werden als ambige Source-Claims quarantiniert und auditiert; exakt doppelte Raw-Zeilen brechen fail-closed ab.
-  - Doppelte eindeutig aufgeloeste CanonicalPlayerID-Zuordnungen innerhalb einer Combine-Saison brechen fail-closed ab.
-  - Combine-vs.-Draft-Widersprueche werden im Audit sichtbar.
+  - Schedules und released-games game_id muessen eindeutig sein; unbekannte released game_id bricht fail-closed ab.
+  - BUF-CIN Week 17/2022 bleibt ohne released-Evidenz nicht final, auch wenn Scores vorliegen.
+  - Roster/Stats/Snap/Sleeper-Player-Zuordnung verwendet nur Provider-IDs; Namen sind nie autoritativ.
+  - Player Stats behalten Return-Yards/-TDs und alle weiteren Rohstat-Felder fuer spaetere deterministische Scoring-Regeln.
+  - Missing/unavailable Stats oder Snaps werden nie als numerische 0 erfunden.
+  - Sleeper object key und player_id duerfen sich nicht widersprechen.
+  - Phase-1-Abdeckung und Identity-Resolution werden im Audit unter phase1Datasets publiziert.
   - Reale Source-Materialisierung muss den bestehenden zweiten semantischen No-op-Pass bestehen.
