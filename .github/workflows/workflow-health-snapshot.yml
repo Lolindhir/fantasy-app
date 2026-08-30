@@ -5,7 +5,24 @@ on:
     - cron: "7-59/30 * * * *"
   workflow_run:
     workflows:
+      - "APP • Deploy • GitHub Pages"
+      - "CI • Fantasy Management"
+      - "Data • NFL Source Sync"
+      - "REPO • Project • Fields Sync"
+      - "APP • Maintenance • Backups"
+      - "FM • Materialize • Operations Inputs"
+      - "FM • Projection • CBS Sports"
+      - "FM • Ranking • FFC ADP"
+      - "FM • Ranking • FantasyCalc Market"
+      - "FM • Ranking • FantasyPros ECR"
+      - "FM • Projection • FFToday"
+      - "FM • Signal • Sleeper Trending"
       - "APP • Data • League"
+      - "APP • Data • Players"
+      - "APP • Data • Games"
+      - "APP • Data • Transactions"
+      - "APP • Data • Standings"
+      - "APP • Data • Teams"
     types:
       - completed
     branches:
@@ -34,6 +51,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TRIGGERING_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
           TRIGGERING_WORKFLOW_EVENT: ${{ github.event.workflow_run.event }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           FALLBACK_MIN_AGE_MINUTES: "40"
@@ -116,13 +134,7 @@ jobs:
               fallback_label="Main push fallback"
               ;;
             workflow_run)
-              if [[ "${TRIGGERING_WORKFLOW_EVENT}" != "schedule" ]]; then
-                echo "should-run=false" >> "${GITHUB_OUTPUT}"
-                echo "Ignoring League fallback from non-scheduled event: ${TRIGGERING_WORKFLOW_EVENT:-unknown}."
-                exit 0
-              fi
-
-              fallback_label="League workflow_run fallback"
+              fallback_label="Workflow completion fallback (${TRIGGERING_WORKFLOW_NAME:-unknown}, event=${TRIGGERING_WORKFLOW_EVENT:-unknown})"
               ;;
             *)
               echo "should-run=true" >> "${GITHUB_OUTPUT}"
