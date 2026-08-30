@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.game-finality",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-pbp-internal",
+  "sourceUrl": "https://raw.githubusercontent.com/nflverse/nflverse-pbp-internal/main/released_games.csv",
+  "sourceFormat": "csv",
+  "sourceMode": "fixed",
+  "availabilityStatus": "available",
+  "kind": "game-finality-evidence",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "See upstream data terms",
+  "attribution": "nflverse released-games evidence",
+  "retrievedAtUtc": "2026-08-30T20:58:14Z",
+  "contentHashSha256": "e1a301e200e3642d85c9c3d3487fc4754dfee8b6408dc6549eee87ad5b72dc67",
+  "rowCount": 7274,
+  "columns": [
+    "game_id"
+  ]
+}

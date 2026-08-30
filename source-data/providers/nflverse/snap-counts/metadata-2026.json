@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.snap-counts",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-data",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2026.csv",
+  "sourceFormat": "csv",
+  "sourceMode": "season-partitioned",
+  "availabilityStatus": "not-yet-available",
+  "kind": "weekly-snap-counts",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season-week",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse snap-count data via Pro Football Reference",
+  "partition": {
+    "season": 2026
+  }
+}
