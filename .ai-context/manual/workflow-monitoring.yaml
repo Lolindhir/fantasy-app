@@ -17,7 +17,7 @@ snapshot:
   schemaVersion: 1
   maxAgeMinutes: 150
   cadence:
-    primarySchedule: "17,47 * * * *"
+    primarySchedule: "7-59/30 * * * *"
     fallback:
       minimumStateAgeMinutes: 40
       mainPush:
@@ -37,7 +37,7 @@ snapshot:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
   - The snapshotter writes only the isolated workflow-health-state branch; it must never publish health snapshots to main.
   - If the state branch does not yet exist, the snapshot producer initializes it as an orphan branch containing only monitoring state.
-  - The twice-hourly schedule is best-effort. All pushes to main also trigger the snapshot producer so repository activity provides a scheduler-independent refresh opportunity.
+  - The offset 30-minute schedule (`:07` and `:37` each hour) is best-effort. All pushes to main also trigger the snapshot producer so repository activity provides a scheduler-independent refresh opportunity.
   - Pushes to main that change the snapshot workflow, builder, tests or policy bypass the freshness gate and trigger an immediate snapshot.
   - Other pushes to main rebuild only when the current snapshot is missing, unreadable or at least 40 minutes old.
   - Completed scheduled runs of APP • Data • League remain an opportunistic workflow_run fallback and use the same 40-minute freshness gate.
@@ -251,7 +251,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Best-effort twice-hourly snapshot producer with scheduler-independent main-push refresh opportunities and an additional freshness-gated League workflow_run fallback; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Best-effort offset 30-minute snapshot producer with scheduler-independent main-push refresh opportunities and an additional freshness-gated League workflow_run fallback; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later
