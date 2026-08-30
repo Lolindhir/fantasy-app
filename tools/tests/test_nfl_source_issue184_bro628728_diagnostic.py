@@ -10,16 +10,6 @@ from nfl_source_data_lib.identity_model import LINK_ID_KEYS
 
 
 ROOT = Path(__file__).resolve().parents[2]
-TOKENS = {"BRO628728", "BrowBo03", "BrowRo02"}
-
-
-def rows_containing(path: Path):
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        return [
-            row
-            for row in csv.DictReader(handle)
-            if TOKENS.intersection({str(value) for value in row.values() if value is not None})
-        ]
 
 
 def canonical_rows_containing(payload, tokens):
@@ -35,31 +25,49 @@ def canonical_rows_containing(payload, tokens):
     return result
 
 
-class Issue184Bro628728Diagnostic(unittest.TestCase):
-    def test_print_exact_conflict_evidence_and_all_latent_link_collisions(self):
-        players_rows = rows_containing(
-            ROOT / "source-data/providers/nflverse/players/raw-latest.csv"
-        )
-        ff_rows = rows_containing(
-            ROOT / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv"
-        )
+def source_rows_containing(path: Path, tokens, source):
+    keep = {
+        "nflverse.players": [
+            "display_name",
+            "first_name",
+            "last_name",
+            "birth_date",
+            "position",
+            "latest_team",
+            "gsis_id",
+            "espn_id",
+            "pfr_id",
+            "pff_id",
+            "esb_id",
+            "nfl_id",
+            "otc_id",
+        ],
+        "nflverse.ff-player-ids": [
+            "name",
+            "birthdate",
+            "position",
+            "gsis_id",
+            "sleeper_id",
+            "espn_id",
+            "pfr_id",
+            "pff_id",
+            "nfl_id",
+            "mfl_id",
+            "fantasypros_id",
+        ],
+    }[source]
+    rows = []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            values = {str(value) for value in row.values() if value is not None}
+            if not tokens.intersection(values):
+                continue
+            rows.append({field: row.get(field, "") for field in keep if row.get(field, "")})
+    return rows
 
-        identity_payload = json.loads(
-            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
-        )
-        persisted_rows = canonical_rows_containing(identity_payload.get("Players", []), TOKENS)
 
-        mapping_payload = json.loads(
-            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
-                encoding="utf-8-sig"
-            )
-        )
-        mapping_rows = [
-            row
-            for row in mapping_payload.get("Mappings", [])
-            if str(row.get("ExternalID")) in TOKENS
-        ]
-
+class Issue184LinkCollisionDiagnostic(unittest.TestCase):
+    def test_print_all_latent_link_collisions_with_current_source_claims(self):
         datasets = {dataset.id: dataset for dataset in load_registry(ROOT)}
         original_guard = identity_mod.identity_lookup
         identity_mod.identity_lookup = lambda canonical: {}
@@ -87,17 +95,44 @@ class Issue184Bro628728Diagnostic(unittest.TestCase):
             if len(set(canonical_ids)) > 1
         }
         duplicate_tokens = {token.split(":", 1)[1] for token in duplicates}
-        duplicate_rows = canonical_rows_containing(canonical, duplicate_tokens)
+
+        identity_payload = json.loads(
+            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
+        )
+        mapping_payload = json.loads(
+            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
+                encoding="utf-8-sig"
+            )
+        )
 
         evidence = {
-            "specific": {
-                "nflverse.players": players_rows,
-                "nflverse.ff-player-ids": ff_rows,
-                "persistedCanonical": persisted_rows,
-                "persistedProviderMappings": mapping_rows,
-            },
             "latentDuplicateLinkIDs": duplicates,
-            "latentDuplicateCanonicalRows": duplicate_rows,
+            "currentSourceRows": {
+                "nflverse.players": source_rows_containing(
+                    ROOT / "source-data/providers/nflverse/players/raw-latest.csv",
+                    duplicate_tokens,
+                    "nflverse.players",
+                ),
+                "nflverse.ff-player-ids": source_rows_containing(
+                    ROOT / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                    duplicate_tokens,
+                    "nflverse.ff-player-ids",
+                ),
+            },
+            "persistedCanonicalRows": canonical_rows_containing(
+                identity_payload.get("Players", []), duplicate_tokens
+            ),
+            "candidateCanonicalRows": canonical_rows_containing(canonical, duplicate_tokens),
+            "persistedProviderMappings": [
+                row
+                for row in mapping_payload.get("Mappings", [])
+                if str(row.get("ExternalID")) in duplicate_tokens
+            ],
+            "persistedProviderConflicts": [
+                row
+                for row in mapping_payload.get("Conflicts", [])
+                if str(row.get("ExternalID")) in duplicate_tokens
+            ],
         }
         self.fail("ISSUE184_LINK_COLLISION_EVIDENCE=" + json.dumps(evidence, sort_keys=True))
 
