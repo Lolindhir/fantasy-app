@@ -104,6 +104,18 @@ mergeEvidence:
     collapse two conflicting person identities. In particular, Sleeper remains
     important for app resolution while still being treated as an external mapping
     in the permanent identity graph.
+  canonicalBirthDateCorrection:
+    authoritativeCurrentSource: nflverse.players
+    minimumSharedStrongAnchors: 3
+    rule: >
+      A birth-date mismatch remains fail-closed for current-vs-current identity
+      evidence and for weakly corroborated historical replay. A previously
+      persisted canonical identity may reconnect to current nflverse.players
+      evidence across a corrected birth date only when at least three independent
+      strong provider IDs agree and no strong provider ID conflicts. The stable
+      CanonicalPlayerID is preserved, and after that high-confidence
+      reconciliation the current nflverse.players birth date replaces the stale
+      persisted birth date. Display names are never part of this exception.
 
 metadataSeparation:
   appReadModels:
