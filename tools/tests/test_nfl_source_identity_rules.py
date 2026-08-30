@@ -13,7 +13,7 @@ from nfl_source_data_lib.identity import (
 )
 
 
-def candidate(ids, birth_date="2000-01-01", name="Test Player"):
+def candidate(ids, birth_date="2000-01-01", name="Test Player", source="test"):
     return IdentityCandidate(
         ids=ids,
         name=name,
@@ -22,7 +22,7 @@ def candidate(ids, birth_date="2000-01-01", name="Test Player"):
         birth_date=birth_date,
         position="WR",
         latest_team=None,
-        source="test",
+        source=source,
         priority=10,
     )
 
@@ -45,6 +45,39 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
     def test_birthdate_conflict_never_merges_shared_anchor(self):
         left = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1980-01-01")
         right = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1990-01-01")
+        self.assertFalse(_can_merge_on_anchor(left, right, "GSIS"))
+
+    def test_persisted_birthdate_correction_requires_three_matching_strong_anchors(self):
+        existing = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            "1990-01-01",
+            source="nflverse.players",
+        )
+        self.assertTrue(_can_merge_on_anchor(existing, current, "GSIS"))
+
+        two_anchor_current = candidate(
+            {"GSIS": "00-1", "ESPN": "111"},
+            "1990-01-01",
+            source="nflverse.players",
+        )
+        self.assertFalse(_can_merge_on_anchor(existing, two_anchor_current, "GSIS"))
+
+    def test_current_birthdate_conflict_still_fails_closed_with_three_matching_anchors(self):
+        left = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            "1980-01-01",
+            source="nflverse.players",
+        )
+        right = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            "1990-01-01",
+            source="test-current-provider",
+        )
         self.assertFalse(_can_merge_on_anchor(left, right, "GSIS"))
 
     def test_component_seed_disambiguates_shared_provider_id(self):

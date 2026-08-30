@@ -28,6 +28,9 @@ from .identity_model import (
 from .identity_sources import raw_identity_candidates
 
 
+_CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
+
+
 class UnionFind:
     def __init__(self) -> None:
         self.parent: list[int] = []
@@ -129,9 +132,6 @@ def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
 
 
 def _can_merge_on_anchor(left: IdentityCandidate, right: IdentityCandidate, shared_key: str) -> bool:
-    if left.birth_date and right.birth_date and left.birth_date != right.birth_date:
-        return False
-
     shared = {
         key
         for key in ANCHOR_ID_KEYS
@@ -144,6 +144,20 @@ def _can_merge_on_anchor(left: IdentityCandidate, right: IdentityCandidate, shar
         and right.ids.get(key)
         and left.ids.get(key) != right.ids.get(key)
     }
+
+    if left.birth_date and right.birth_date and left.birth_date != right.birth_date:
+        # Current sources still fail closed on birth-date disagreement. A persisted
+        # canonical row may reconnect across an authoritative DOB correction only
+        # when at least three independent strong IDs still identify the same person
+        # and no strong provider ID contradicts that identity.
+        if "canonical-existing" not in {left.source, right.source}:
+            return False
+        return (
+            shared_key in shared
+            and not conflicting
+            and len(shared) >= _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS
+        )
+
     if not conflicting:
         return True
     if not left.birth_date or left.birth_date != right.birth_date:
@@ -438,6 +452,17 @@ def build_identities(
         ranked = sorted(members, key=lambda item: item.priority)
 
         def first(field: str) -> str | None:
+            if field == "birth_date":
+                authoritative = next(
+                    (
+                        item.birth_date
+                        for item in ranked
+                        if item.source == "nflverse.players" and item.birth_date
+                    ),
+                    None,
+                )
+                if authoritative:
+                    return authoritative
             return next((getattr(item, field) for item in ranked if getattr(item, field)), None)
 
         canonical.append(
