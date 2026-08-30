@@ -13,11 +13,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/workflow-health-snapshot.yml"
-      - ".ai-context/manual/workflow-monitoring.yaml"
-      - "tools/build_workflow_health_snapshot.py"
-      - "tools/tests/test_build_workflow_health_snapshot.py"
   workflow_dispatch:
 
 permissions:
@@ -44,17 +39,65 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${GITHUB_EVENT_NAME}" != "workflow_run" ]]; then
-            echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Primary trigger (${GITHUB_EVENT_NAME}); building snapshot."
-            exit 0
-          fi
+          fallback_label=""
 
-          if [[ "${TRIGGERING_WORKFLOW_EVENT}" != "schedule" ]]; then
-            echo "should-run=false" >> "${GITHUB_OUTPUT}"
-            echo "Ignoring League fallback from non-scheduled event: ${TRIGGERING_WORKFLOW_EVENT:-unknown}."
-            exit 0
-          fi
+          case "${GITHUB_EVENT_NAME}" in
+            schedule|workflow_dispatch)
+              echo "should-run=true" >> "${GITHUB_OUTPUT}"
+              echo "Primary trigger (${GITHUB_EVENT_NAME}); building snapshot."
+              exit 0
+              ;;
+            push)
+              monitoring_change="$(python3 - <<'PY'
+          import json
+          import os
+
+          immediate_paths = {
+              ".github/workflows/workflow-health-snapshot.yml",
+              ".ai-context/manual/workflow-monitoring.yaml",
+              "tools/build_workflow_health_snapshot.py",
+              "tools/tests/test_build_workflow_health_snapshot.py",
+          }
+
+          with open(os.environ["GITHUB_EVENT_PATH"], "r", encoding="utf-8") as handle:
+              event = json.load(handle)
+
+          changed = set()
+          for commit in event.get("commits") or []:
+              for field in ("added", "modified", "removed"):
+                  changed.update(commit.get(field) or [])
+
+          head_commit = event.get("head_commit") or {}
+          for field in ("added", "modified", "removed"):
+              changed.update(head_commit.get(field) or [])
+
+          print("true" if changed & immediate_paths else "false")
+          PY
+              )"
+
+              if [[ "${monitoring_change}" == "true" ]]; then
+                echo "should-run=true" >> "${GITHUB_OUTPUT}"
+                echo "Monitoring implementation or policy changed on main; building snapshot immediately."
+                exit 0
+              fi
+
+              fallback_label="Main push fallback"
+              ;;
+            workflow_run)
+              if [[ "${TRIGGERING_WORKFLOW_EVENT}" != "schedule" ]]; then
+                echo "should-run=false" >> "${GITHUB_OUTPUT}"
+                echo "Ignoring League fallback from non-scheduled event: ${TRIGGERING_WORKFLOW_EVENT:-unknown}."
+                exit 0
+              fi
+
+              fallback_label="League workflow_run fallback"
+              ;;
+            *)
+              echo "should-run=true" >> "${GITHUB_OUTPUT}"
+              echo "Unrecognized trigger (${GITHUB_EVENT_NAME}); failing open to a fresh snapshot."
+              exit 0
+              ;;
+          esac
 
           snapshot_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/workflow-health.json?ref=workflow-health-state"
           if ! snapshot_json="$(curl -fsSL \
@@ -63,20 +106,20 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "${snapshot_url}")"; then
             echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is missing or unreadable; fallback will rebuild it."
+            echo "Existing snapshot is missing or unreadable; ${fallback_label} will rebuild it."
             exit 0
           fi
 
           generated_at="$(printf '%s' "${snapshot_json}" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("generatedAt", ""))')"
           if [[ -z "${generated_at}" ]]; then
             echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot has no generatedAt; fallback will rebuild it."
+            echo "Existing snapshot has no generatedAt; ${fallback_label} will rebuild it."
             exit 0
           fi
 
           if ! generated_epoch="$(date -u -d "${generated_at}" +%s 2>/dev/null)"; then
             echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot generatedAt is invalid; fallback will rebuild it."
+            echo "Existing snapshot generatedAt is invalid; ${fallback_label} will rebuild it."
             exit 0
           fi
 
@@ -86,10 +129,10 @@ jobs:
 
           if (( age_seconds >= threshold_seconds )); then
             echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; fallback will rebuild it."
+            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; ${fallback_label} will rebuild it."
           else
             echo "should-run=false" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; fallback is not needed."
+            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; ${fallback_label} is not needed."
           fi
 
       - name: Checkout main
