@@ -3,7 +3,7 @@ schemaVersion: 2
 domain: source-of-truth-matrix
 
 status: accepted
-consolidatedAt: 2026-08-28
+consolidatedAt: 2026-08-30
 
 purpose: >
   Consolidates field- and domain-level source ownership after the NFL source-data
@@ -191,7 +191,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 1999-present
     freshness: every-5-minutes-during-season
-    migrationState: evaluated-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - game_type must be explicit; postseason must not silently enter the current REG-only app contract
       - canonical game identity must be unique before materialization
@@ -211,7 +211,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: follows validated released-games evidence; backfill coverage must be audited when activated
     freshness: nflverse released-game publication during the season
-    migrationState: canonical-source-approved-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - do not infer Final merely from score presence
       - Final requires membership in the validated released-games evidence for the same canonical game_id
@@ -259,7 +259,7 @@ matrix:
     historyCoverage: 1999-present
     freshness: nightly after game days plus additional game-day updates
     preferredFinalizedWeeklyRead: Thursday after NFL stat-correction window
-    migrationState: evaluated-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - no name-based player join
       - secondary/fallback data cannot overwrite a conflicting finalized canonical stat silently
@@ -301,7 +301,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 2012-present
     freshness: four-times-daily-during-season-dependent-on-PFR
-    migrationState: evaluated-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - ambiguous/missing PFR mappings remain unresolved or quarantined
       - pre-2012 unavailable data is not zero
@@ -322,7 +322,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 2002-present
     freshness: roster pipeline daily around 07:00 UTC
-    migrationState: evaluated-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - season roster must not replace weekly history for in-season team changes
       - Sleeper team fields are platform metadata and cannot silently override canonical NFL membership
@@ -340,7 +340,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 1920-present
     freshness: daily around 07:00 UTC
-    migrationState: evaluated-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - season-level row is not proof of a player's team for every week in that season
 
@@ -359,7 +359,7 @@ matrix:
     lifecycle: dynamic platform state
     historyCoverage: no canonical historical guarantee from current app path
     freshness: Sleeper recommends persisting player map and refreshing no more than about daily
-    migrationState: retained-platform-owner
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - Sleeper-specific depth fields are not automatically the canonical NFL depth-chart source
       - Sleeper player_id remains the current Players.json ID contract
@@ -379,7 +379,7 @@ matrix:
     lifecycle: dynamic
     historyCoverage: no accepted canonical historical injury timeline; this decision is for current state
     freshness: persist Sleeper player map and refresh sparingly, approximately daily
-    migrationState: core-source-approved-not-yet-activated
+    migrationState: canonical-active-runtime-not-migrated
     guards:
       - nflverse injury source is not a valid current replacement after its source ended following 2024
       - missing Tank01-style ReturnDate/Description is allowed and is not synthesized
@@ -465,7 +465,7 @@ matrix:
     identityKey: NFL team + season
     lifecycle: seasonal-derived
     historyCoverage: follows schedule coverage when migrated
-    migrationState: derivation-rule-to-validate-with-schedule-activation
+    migrationState: derivation-rule-to-validate-during-generator-migration
     guards:
       - derive from explicit team schedule rather than treating a player provider metadata field as permanent truth
 
@@ -552,7 +552,7 @@ matrix:
 
 unresolvedDecisionsBeforeAppGeneratorDag:
   blocking:
-    - activate and validate canonical schedules, released-game finality, player stats, snap counts, roster and current Sleeper-player/injury materializers before rewiring their app consumers
+    - migrate app consumers from direct/legacy provider reads to the accepted canonical source-data layer without changing public contracts unintentionally
     - define exact Games.json replacement/compatibility strategy instead of assuming canonical stat datasets reproduce the Tank01 boxscore object
     - validate how canonical source availability states are exposed to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
     - regression-test league-settings-based fantasy scoring against current outputs before replacing provider point values
@@ -561,6 +561,7 @@ unresolvedDecisionsBeforeAppGeneratorDag:
     - contracts may remain unactivated because no current app contract depends on canonical NFL contract data
     - player convenience metadata can remain provider-specific while identity, schedule, stats and roster facts migrate
 
+phase1ActivationState: completed-2026-08-30
 activationOrder:
   - nflverse.schedules
   - nflverse.game-finality
@@ -620,7 +621,6 @@ repositoryEvidence:
   - public/requests/RequestGames.ps1
 
 nextArchitectureStep: >
-  Complete Issue #184 Phase 1 by activating, persisting, validating and canonically
-  materializing the approved source datasets first. Only after the source layer is
-  accepted should the App-Generator-DAG consume these field-level ownership
-  decisions and migrate runtime providers/read models.
+  Phase 1 source-data is accepted. Proceed with the App-Generator-DAG and consumer
+  migration using these field-level ownership decisions while preserving public
+  contracts unless a separate contract change is explicitly approved.
