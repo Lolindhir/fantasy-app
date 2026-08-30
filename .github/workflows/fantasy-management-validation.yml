@@ -75,6 +75,21 @@ jobs:
         run: |
           python fantasy-management/_ai/scripts/validate_observation_state_shards.py
 
+      - name: Build lossless full-shard migration candidate
+        if: github.event_name == 'pull_request'
+        run: |
+          python fantasy-management/_ai/scripts/migrate_observation_state_to_full_shards.py \
+            --output-root "${RUNNER_TEMP}/entity-observation-full-shard-migration"
+
+      - name: Upload full-shard migration candidate
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: entity-observation-full-shard-migration
+          path: ${{ runner.temp }}/entity-observation-full-shard-migration/
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Validate podcast package structure and takes
         run: |
           python fantasy-management/_ai/scripts/validate_episode_package.py --all
