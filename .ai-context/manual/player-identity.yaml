@@ -74,14 +74,28 @@ identityModel:
         - ValidFrom
         - ValidTo
       rule: >
-        The first implementation may resolve mapping validity by season, but the
-        persisted contract must not prevent later migration to more precise
-        observation or validity intervals.
+        The first implementation resolves mapping validity by season. When an
+        anchor provider corrects the current value for an already reconciled
+        CanonicalPlayerID, a stale mapping observed only in the same current season
+        is replaced rather than pretending to be valid for the entire season. If
+        that old mapping reaches into earlier seasons, preserve the historical
+        interval and close it before the current observation season. This contract
+        must remain forward-compatible with more precise observation/validity
+        intervals later.
+    activeVsHistoricalLinks:
+      rule: >
+        source-data/nfl/identities/players.json represents the active canonical
+        provider bridge, not an append-only bag of every identifier ever observed.
+        If current corroborated evidence for a CanonicalPlayerID supplies a
+        different value for the same provider, the stale persisted latest-snapshot
+        value is not promoted to an active IDAlias. Historical validity belongs in
+        provider-mappings.json with a non-overlapping interval when it is actually
+        supported by earlier observations.
     conflictRules:
       - A provider ID collision must never merge two otherwise distinguishable people.
       - If one provider ID claims multiple distinct CanonicalPlayerIDs for an overlapping period, quarantine the provider mapping as ambiguous or conflicting.
       - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
-      - Do not choose a winner silently and do not add provider-specific hard-coded identity exceptions as the primary conflict strategy.
+      - Do not choose a winner silently and do not add provider-specific or player-specific hard-coded identity exceptions as the primary conflict strategy.
 
 historicalResolution:
   rule: >
@@ -104,18 +118,33 @@ mergeEvidence:
     collapse two conflicting person identities. In particular, Sleeper remains
     important for app resolution while still being treated as an external mapping
     in the permanent identity graph.
+  authoritativeReplaySource: nflverse.players
+  providerLinkCorrection:
+    rule: >
+      Current-vs-current provider disagreement keeps the ordinary strict alias
+      thresholds. During replay of an already persisted CanonicalPlayerID against
+      the authoritative current nflverse.players row, an exact birth date may act
+      as one additional independent corroborator for a single aliasable strong
+      provider-ID correction, but only when at least one strong provider anchor is
+      still shared and no additional provider ID contradicts the match. The
+      corrected current value becomes the active provider link; the stale persisted
+      latest-snapshot value is not retained as an active alias. Names do not
+      participate in this exception.
   canonicalBirthDateCorrection:
     authoritativeCurrentSource: nflverse.players
-    minimumSharedStrongAnchors: 3
+    strongOnlyMinimumSharedAnchors: 3
+    mixedEvidenceMinimumSharedStrongAnchors: 2
+    mixedEvidenceMinimumSharedSecondaryProviderIDs: 2
     rule: >
       A birth-date mismatch remains fail-closed for current-vs-current identity
-      evidence and for weakly corroborated historical replay. A previously
-      persisted canonical identity may reconnect to current nflverse.players
-      evidence across a corrected birth date only when at least three independent
-      strong provider IDs agree and no strong provider ID conflicts. The stable
-      CanonicalPlayerID is preserved, and after that high-confidence
-      reconciliation the current nflverse.players birth date replaces the stale
-      persisted birth date. Display names are never part of this exception.
+      evidence and for weakly corroborated replay. A previously persisted canonical
+      identity may reconnect to current nflverse.players evidence across a corrected
+      birth date only when no provider ID contradicts the match and either at least
+      three independent strong provider anchors agree, or at least two strong
+      anchors plus two additional secondary provider IDs agree. The stable
+      CanonicalPlayerID is preserved and the current nflverse.players birth date
+      replaces the stale persisted value. Display names are never evidence for this
+      reconciliation.
 
 metadataSeparation:
   appReadModels:
@@ -147,9 +176,9 @@ boundaries:
   - Integration of CanonicalPlayerID into any generated app JSON is a separate contract change and requires explicit design and validation.
 
 implementationOrder:
-  - Add regression coverage for conflicting and historically reused provider IDs, including the observed duplicate-Sleeper-ID class.
-  - Refactor identity resolution so person identity is established before ambiguous provider mappings can join components.
-  - Persist historical provider mappings with at least season-level validity and explicit conflict quarantine.
+  - Add regression coverage for conflicting, corrected and historically reused provider IDs.
+  - Establish person identity before ambiguous provider mappings can join components.
+  - Keep active provider links separate from historical mapping validity and quarantine overlapping conflicts.
   - Anchor canonical historical NFL datasets to CanonicalPlayerID plus source provenance.
-  - Remove runtime timestamp churn from semantic source-data payloads and ensure identical materialization is a real no-op.
+  - Ensure identical materialization is a real semantic no-op.
   - Re-run the real-source bootstrap and inspect identity and draft coverage before expanding downstream integration.

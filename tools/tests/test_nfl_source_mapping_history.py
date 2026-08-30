@@ -11,6 +11,7 @@ from nfl_source_data_lib.mapping_history import (
     build_historical_app_mapping_claims,
     extend_provider_mapping_payload,
 )
+from nfl_source_data_lib.provider_mappings import build_provider_mapping_payload
 
 
 class NflSourceMappingHistoryTests(unittest.TestCase):
@@ -181,6 +182,162 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
         self.assertEqual(2, len(rows))
         self.assertEqual({"NFLP-old", "NFLP-new"}, {item["CanonicalPlayerID"] for item in rows})
         self.assertEqual(0, len(extended["Conflicts"]))
+
+    def _write_mapping_payload(self, root: Path, mappings):
+        path = root / "source-data/nfl/identities/provider-mappings.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "SchemaVersion": 2,
+                    "TemporalResolution": "season",
+                    "Mappings": mappings,
+                    "Conflicts": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_same_season_stale_anchor_mapping_is_replaced_for_same_player(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_mapping_payload(
+                root,
+                [
+                    {
+                        "Provider": "PFR",
+                        "ExternalID": "Old00",
+                        "CanonicalPlayerID": "NFLP-a",
+                        "FirstObservedSeason": 2026,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["nflverse.players"],
+                    }
+                ],
+            )
+            claims = [
+                {
+                    "Provider": "PFR",
+                    "ExternalID": "New00",
+                    "CanonicalPlayerID": "NFLP-a",
+                    "Sources": ["nflverse.players"],
+                }
+            ]
+            payload = build_provider_mapping_payload(root, claims, [], 2026)
+            self.assertEqual(
+                [("New00", 2026, 2026)],
+                [
+                    (item["ExternalID"], item["FirstObservedSeason"], item["LastObservedSeason"])
+                    for item in payload["Mappings"]
+                    if item["Provider"] == "PFR"
+                ],
+            )
+            self.assertEqual([], payload["Conflicts"])
+
+    def test_earlier_anchor_history_is_closed_before_corrected_current_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_mapping_payload(
+                root,
+                [
+                    {
+                        "Provider": "PFR",
+                        "ExternalID": "Old00",
+                        "CanonicalPlayerID": "NFLP-a",
+                        "FirstObservedSeason": 2024,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["nflverse.players"],
+                    }
+                ],
+            )
+            claims = [
+                {
+                    "Provider": "PFR",
+                    "ExternalID": "New00",
+                    "CanonicalPlayerID": "NFLP-a",
+                    "Sources": ["nflverse.players"],
+                }
+            ]
+            payload = build_provider_mapping_payload(root, claims, [], 2026)
+            rows = {
+                item["ExternalID"]: (item["FirstObservedSeason"], item["LastObservedSeason"])
+                for item in payload["Mappings"]
+                if item["Provider"] == "PFR"
+            }
+            self.assertEqual((2024, 2025), rows["Old00"])
+            self.assertEqual((2026, 2026), rows["New00"])
+            self.assertEqual([], payload["Conflicts"])
+
+    def test_anchor_mapping_owned_by_different_current_player_still_conflicts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_mapping_payload(
+                root,
+                [
+                    {
+                        "Provider": "PFR",
+                        "ExternalID": "Shared00",
+                        "CanonicalPlayerID": "NFLP-old",
+                        "FirstObservedSeason": 2026,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["nflverse.players"],
+                    }
+                ],
+            )
+            claims = [
+                {
+                    "Provider": "PFR",
+                    "ExternalID": "Shared00",
+                    "CanonicalPlayerID": "NFLP-new",
+                    "Sources": ["nflverse.players"],
+                }
+            ]
+            payload = build_provider_mapping_payload(root, claims, [], 2026)
+            self.assertEqual(1, len(payload["Conflicts"]))
+            self.assertEqual(
+                ["NFLP-new", "NFLP-old"],
+                payload["Conflicts"][0]["CanonicalPlayerIDs"],
+            )
+            self.assertFalse(
+                any(
+                    item["CanonicalPlayerID"] == "NFLP-new"
+                    and item["ExternalID"] == "Shared00"
+                    for item in payload["Mappings"]
+                )
+            )
+
+    def test_non_anchor_mapping_is_not_auto_retired_as_latest_correction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_mapping_payload(
+                root,
+                [
+                    {
+                        "Provider": "Sleeper",
+                        "ExternalID": "OldSleeper",
+                        "CanonicalPlayerID": "NFLP-a",
+                        "FirstObservedSeason": 2026,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["app.Players"],
+                    }
+                ],
+            )
+            claims = [
+                {
+                    "Provider": "Sleeper",
+                    "ExternalID": "NewSleeper",
+                    "CanonicalPlayerID": "NFLP-a",
+                    "Sources": ["app.Players"],
+                }
+            ]
+            payload = build_provider_mapping_payload(root, claims, [], 2026)
+            self.assertEqual(
+                {"OldSleeper", "NewSleeper"},
+                {
+                    item["ExternalID"]
+                    for item in payload["Mappings"]
+                    if item["Provider"] == "Sleeper"
+                },
+            )
 
 
 if __name__ == "__main__":

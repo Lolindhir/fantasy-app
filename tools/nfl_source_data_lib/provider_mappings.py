@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .common import CANONICAL_SCHEMA_VERSION, load_json, normalize_legacy_canonical_player_fields
+from .identity_model import ANCHOR_ID_KEYS
 
 
 def build_provider_mapping_payload(
@@ -15,15 +16,53 @@ def build_provider_mapping_payload(
 ) -> dict[str, Any]:
     """Build season-aware provider mappings without quadratic list scans.
 
-    The semantic contract matches the original identity-layer implementation, but
-    exact mappings, provider tokens and conflicts are indexed once so a first real
-    bootstrap scales linearly with the number of provider claims.
+    Current canonical claims represent the active provider bridge for the current
+    observation season. Persisted anchor mappings may still represent real older
+    history, but a stale value from a previous latest snapshot must not block a
+    corrected current mapping for the same canonical person.
     """
 
     path = repo_root / "source-data/nfl/identities/provider-mappings.json"
     existing = normalize_legacy_canonical_player_fields(load_json(path, {}) or {})
     mappings = [dict(item) for item in existing.get("Mappings", [])]
     conflicts = [dict(item) for item in existing.get("Conflicts", [])]
+
+    current_values_by_owner_provider: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for claim in provider_claims:
+        current_values_by_owner_provider[
+            (str(claim["CanonicalPlayerID"]), str(claim["Provider"]))
+        ].add(str(claim["ExternalID"]))
+
+    # Canonical identity stores the active provider bridge, while this mapping
+    # payload also retains true historical validity. If an anchor provider has a
+    # corrected current value for the same canonical person, retire the stale
+    # latest-snapshot value from the current season. Preserve earlier seasons by
+    # closing the old interval immediately before the current observation season.
+    reconciled_mappings: list[dict[str, Any]] = []
+    for item in mappings:
+        provider = str(item.get("Provider") or "")
+        external_id = str(item.get("ExternalID") or "")
+        internal_id = str(item.get("CanonicalPlayerID") or "")
+        current_values = current_values_by_owner_provider.get((internal_id, provider))
+        if provider not in ANCHOR_ID_KEYS or not current_values or external_id in current_values:
+            reconciled_mappings.append(item)
+            continue
+
+        first = int(item.get("FirstObservedSeason") or observation_season)
+        last = int(item.get("LastObservedSeason") or first)
+        if last < observation_season or first > observation_season:
+            reconciled_mappings.append(item)
+            continue
+        if first < observation_season:
+            item["LastObservedSeason"] = observation_season - 1
+            reconciled_mappings.append(item)
+            continue
+        # first == observation_season: this value only came from an earlier
+        # snapshot inside the same season and is no longer current evidence.
+        # Git history retains that raw observation; season-resolution mappings
+        # must not pretend it remained valid for the whole season.
+
+    mappings = reconciled_mappings
 
     def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
         return (
@@ -59,7 +98,8 @@ def build_provider_mapping_payload(
         overlapping = [
             item
             for item in mappings_by_token.get(token, [])
-            if int(item.get("LastObservedSeason") or observation_season) >= observation_season
+            if int(item.get("FirstObservedSeason") or observation_season) <= observation_season
+            <= int(item.get("LastObservedSeason") or observation_season)
         ]
         if overlapping:
             owners = sorted({internal_id, *(str(item.get("CanonicalPlayerID")) for item in overlapping)})

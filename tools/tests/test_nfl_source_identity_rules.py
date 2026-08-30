@@ -42,12 +42,51 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
         weak_right = candidate({"GSIS": "00-1", "PFR": "New00"})
         self.assertFalse(_can_merge_on_anchor(weak_left, weak_right, "GSIS"))
 
+    def test_persisted_pfr_correction_can_use_exact_birthdate_as_corroboration(self):
+        existing = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "Old00", "ESB": "ESB-1"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "New00", "ESB": "ESB-1"},
+            "1980-01-01",
+            source="nflverse.players",
+        )
+        self.assertTrue(_can_merge_on_anchor(existing, current, "GSIS"))
+
+    def test_current_pfr_correction_does_not_get_replay_birthdate_credit(self):
+        left = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "Old00", "ESB": "ESB-1"},
+            "1980-01-01",
+            source="current-a",
+        )
+        right = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "New00", "ESB": "ESB-1"},
+            "1980-01-01",
+            source="nflverse.players",
+        )
+        self.assertFalse(_can_merge_on_anchor(left, right, "GSIS"))
+
+    def test_persisted_provider_correction_rejects_secondary_counterevidence(self):
+        existing = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "Old00", "ESB": "ESB-old"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "OLD-GSIS", "PFR": "New00", "ESB": "ESB-new"},
+            "1980-01-01",
+            source="nflverse.players",
+        )
+        self.assertFalse(_can_merge_on_anchor(existing, current, "GSIS"))
+
     def test_birthdate_conflict_never_merges_shared_anchor(self):
         left = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1980-01-01")
         right = candidate({"GSIS": "00-1", "PFR": "Same00"}, "1990-01-01")
         self.assertFalse(_can_merge_on_anchor(left, right, "GSIS"))
 
-    def test_persisted_birthdate_correction_requires_three_matching_strong_anchors(self):
+    def test_persisted_birthdate_correction_accepts_three_matching_strong_anchors(self):
         existing = candidate(
             {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
             "1980-01-01",
@@ -60,21 +99,53 @@ class NflSourceIdentityRuleTests(unittest.TestCase):
         )
         self.assertTrue(_can_merge_on_anchor(existing, current, "GSIS"))
 
-        two_anchor_current = candidate(
-            {"GSIS": "00-1", "ESPN": "111"},
+    def test_persisted_birthdate_correction_accepts_two_strong_and_two_secondary_ids(self):
+        existing = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1", "NFL": "NFL-1"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1", "NFL": "NFL-1"},
             "1990-01-01",
             source="nflverse.players",
         )
-        self.assertFalse(_can_merge_on_anchor(existing, two_anchor_current, "GSIS"))
+        self.assertTrue(_can_merge_on_anchor(existing, current, "GSIS"))
 
-    def test_current_birthdate_conflict_still_fails_closed_with_three_matching_anchors(self):
+    def test_persisted_birthdate_correction_rejects_insufficient_mixed_evidence(self):
+        existing = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1"},
+            "1990-01-01",
+            source="nflverse.players",
+        )
+        self.assertFalse(_can_merge_on_anchor(existing, current, "GSIS"))
+
+    def test_persisted_birthdate_correction_rejects_provider_counterevidence(self):
+        existing = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1", "NFL": "NFL-old"},
+            "1980-01-01",
+            source="canonical-existing",
+        )
+        current = candidate(
+            {"GSIS": "00-1", "ESPN": "111", "ESB": "ESB-1", "NFL": "NFL-new"},
+            "1990-01-01",
+            source="nflverse.players",
+        )
+        self.assertFalse(_can_merge_on_anchor(existing, current, "GSIS"))
+
+    def test_current_birthdate_conflict_still_fails_closed_with_strong_and_secondary_ids(self):
         left = candidate(
-            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222", "ESB": "ESB-1", "NFL": "NFL-1"},
             "1980-01-01",
             source="nflverse.players",
         )
         right = candidate(
-            {"GSIS": "00-1", "ESPN": "111", "PFF": "222"},
+            {"GSIS": "00-1", "ESPN": "111", "PFF": "222", "ESB": "ESB-1", "NFL": "NFL-1"},
             "1990-01-01",
             source="test-current-provider",
         )
