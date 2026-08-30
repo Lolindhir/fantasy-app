@@ -27,6 +27,13 @@ def _observation_season(repo_root: Path) -> int:
     return datetime.now(timezone.utc).year
 
 
+def _persisted_phase1_audit(phase1_audit: dict[str, Any]) -> dict[str, Any]:
+    """Keep execution-only counters out of the persisted semantic audit payload."""
+    persisted = dict(phase1_audit)
+    persisted.pop("frozenPartitionsPreserved", None)
+    return persisted
+
+
 def _draft_payloads(
     repo_root: Path,
     dataset: Dataset,
@@ -175,7 +182,7 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         combine_payloads=combine_payloads,
         combine_draft_link_conflicts=combine_conflicts,
     )
-    audit["phase1Datasets"] = phase1_audit
+    audit["phase1Datasets"] = _persisted_phase1_audit(phase1_audit)
 
     identity_payload = {
         "SchemaVersion": CANONICAL_SCHEMA_VERSION,
