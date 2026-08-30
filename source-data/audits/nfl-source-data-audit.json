@@ -3,22 +3,22 @@
   "scope": "public/data/Players.json",
   "datasetRegistry": {
     "schemaVersion": 3,
-    "activeDatasetCount": 4,
+    "activeDatasetCount": 11,
     "activeDatasetIDs": [
       "nflverse.players",
       "nflverse.ff-player-ids",
       "nflverse.draft-picks",
-      "nflverse.combine"
-    ],
-    "plannedDatasetCount": 9,
-    "plannedDatasetIDs": [
-      "nflverse.rosters",
-      "nflverse.weekly-rosters",
+      "nflverse.combine",
       "nflverse.schedules",
       "nflverse.game-finality",
+      "nflverse.rosters",
+      "nflverse.weekly-rosters",
       "nflverse.player-stats",
       "nflverse.snap-counts",
-      "sleeper.players",
+      "sleeper.players"
+    ],
+    "plannedDatasetCount": 2,
+    "plannedDatasetIDs": [
       "nflverse.depth-charts",
       "nflverse.contracts"
     ]
@@ -26105,5 +26105,63 @@
     "quarantinedProviderMapping": "A provider ID that currently claims multiple distinguishable people is suppressed from canonical reverse lookup and recorded as ambiguous instead of merging those people.",
     "historicalSnapshotConflict": "If resolved provider IDs from one archived player snapshot disagree, no historical mapping from that row is accepted. A single resolved historical provider ID is also insufficient because later ID reuse cannot be excluded.",
     "quarantinedIdentityMapping": "FF Player IDs mappings that contradict nflverse.players on exact birth date do not participate in provider-ID resolution; when another exact-birthdate anchor corroborates the row, only the contradictory anchor mapping is suppressed, otherwise the row remains fully quarantined."
+  },
+  "phase1Datasets": {
+    "schedules": {
+      "seasonCount": 28,
+      "gameCount": 7548,
+      "earliestSeason": 1999,
+      "latestSeason": 2026
+    },
+    "gameFinality": {
+      "releasedEvidenceCount": 7274,
+      "scheduleGameCount": 7548,
+      "finalGameCount": 7274,
+      "weekFinalCount": 570,
+      "unknownReleasedGameIDs": []
+    },
+    "rosters": {
+      "partitionCount": 1,
+      "recordCount": 2930,
+      "resolvedIdentityCount": 2890,
+      "unresolvedIdentityCount": 40,
+      "missingProviderIDRowCount": 0
+    },
+    "weeklyRosters": {
+      "partitionCount": 1,
+      "recordCount": 2930,
+      "resolvedIdentityCount": 2890,
+      "unresolvedIdentityCount": 40,
+      "missingProviderIDRowCount": 0
+    },
+    "playerStats": {
+      "partitionCount": 0,
+      "recordCount": 0,
+      "resolvedIdentityCount": 0,
+      "unresolvedIdentityCount": 0,
+      "missingProviderIDRowCount": 0
+    },
+    "snapCounts": {
+      "partitionCount": 0,
+      "recordCount": 0,
+      "resolvedIdentityCount": 0,
+      "unresolvedIdentityCount": 0,
+      "missingProviderIDRowCount": 0
+    },
+    "sleeperPlayers": {
+      "recordCount": 12225,
+      "resolvedIdentityCount": 6291,
+      "unresolvedIdentityCount": 5934
+    },
+    "activeDatasetIDs": [
+      "nflverse.game-finality",
+      "nflverse.player-stats",
+      "nflverse.rosters",
+      "nflverse.schedules",
+      "nflverse.snap-counts",
+      "nflverse.weekly-rosters",
+      "sleeper.players"
+    ],
+    "canonicalOutputFileCount": 59
   }
 }
