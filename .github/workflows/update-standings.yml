@@ -1,9 +1,9 @@
 name: APP • Data • Standings
 
 on:
-  schedule:
-    - cron: "35 3 * * 3"   # Between-Week-Refresh im NFL-Zeitkontext
-      timezone: "America/New_York"
+  repository_dispatch:
+    types:
+      - scheduler-update-standings
   workflow_dispatch: # manueller Start
 
 permissions:

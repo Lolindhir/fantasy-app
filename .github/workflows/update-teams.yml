@@ -1,9 +1,9 @@
 name: APP • Data • Teams
 
 on:
-  schedule:
-    - cron: "35 4 * * 3"   # Between-Week-Refresh im NFL-Zeitkontext
-      timezone: "America/New_York"
+  repository_dispatch:
+    types:
+      - scheduler-update-teams
   workflow_dispatch: # manueller Start
 
 permissions:

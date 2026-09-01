@@ -1,8 +1,9 @@
 name: APP • Data • League
 
 on:
-  schedule:
-    - cron: '*/10 * * * *' # alle 10 Minuten
+  repository_dispatch:
+    types:
+      - scheduler-update-league
   workflow_dispatch: # manueller Start
 
 permissions:

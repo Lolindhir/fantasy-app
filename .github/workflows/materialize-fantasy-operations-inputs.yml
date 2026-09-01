@@ -3,9 +3,9 @@ run-name: "FM • Materializer • ${{ github.event.head_commit.message || githu
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "45 6 * * *"  # Catch-up vor dem 07:00-Europe/Berlin-Lauf
-      timezone: "Europe/Berlin"
+  repository_dispatch:
+    types:
+      - scheduler-materialize-fantasy-operations-inputs
   push:
     branches:
       - main
@@ -50,7 +50,7 @@ on:
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py
-      - fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py
+      - fantasy-management/_ai/scripts/tests/test_kicker_streaming_inputs.py
       - fantasy-management/_ai/scripts/tests/test_build_source_freshness_gate.py
       - fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py
       - fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py
@@ -187,7 +187,7 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py \
-            fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py \
+            fantasy-management/_ai/scripts/tests/test_kicker_streaming_inputs.py \
             fantasy-management/_ai/scripts/tests/test_build_source_freshness_gate.py \
             fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py \
             fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py \

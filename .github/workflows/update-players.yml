@@ -1,13 +1,9 @@
 name: APP • Data • Players
 
 on:
-  schedule:
-    - cron: "15 1 * * *" # Post-Game-Refresh im NFL-Zeitkontext
-      timezone: "America/New_York"
-    - cron: "0 8 * * *" # zusätzlicher Tages-Refresh
-      timezone: "America/New_York"
-    - cron: "30 13 * * *" # Refresh nach dem mittäglichen Games-Lauf
-      timezone: "America/New_York"
+  repository_dispatch:
+    types:
+      - scheduler-update-players
   workflow_dispatch: # manueller Start
 
 permissions:

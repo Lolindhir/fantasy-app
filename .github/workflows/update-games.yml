@@ -1,11 +1,9 @@
 name: APP • Data • Games
 
 on:
-  schedule:
-    - cron: "45 0 * * *"  # Post-Game-Refresh im NFL-Zeitkontext
-      timezone: "America/New_York"
-    - cron: "0 13 * * *"  # zusätzlicher Tages-/Korrektur-Refresh
-      timezone: "America/New_York"
+  repository_dispatch:
+    types:
+      - scheduler-update-games
   workflow_dispatch: # manueller Start
 
 permissions:
