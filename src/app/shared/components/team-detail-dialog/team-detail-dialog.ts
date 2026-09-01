@@ -327,9 +327,28 @@ export class TeamDetailDialogComponent implements OnInit {
 
   private loadDraftHistory(): void {
     this.draftHistoryLoading = true;
+    const currentSeasonGroups = this.data.drafts
+      .filter(draft => Number(draft.Season) === this.league.SeasonAsNumber)
+      .map(draft => this.buildHistoricalDraftGroup(draft))
+      .filter((group): group is HistoricalDraftGroup => !!group && group.picks.length > 0);
+
+    const applyDraftHistory = (historicalDrafts: RawDraft[]): void => {
+      this.historicalDraftGroups = [
+        ...currentSeasonGroups,
+        ...historicalDrafts
+          .map(draft => this.buildHistoricalDraftGroup(draft))
+          .filter((group): group is HistoricalDraftGroup => !!group && group.picks.length > 0)
+      ].sort((a, b) =>
+        b.season - a.season
+        || b.draftNo - a.draftNo
+        || a.title.localeCompare(b.title)
+      );
+      this.draftHistoryLoading = false;
+    };
+
     this.dataService.getPastSeasonsIndex().subscribe(index => {
       const paths = index.Seasons
-        .filter(season => Number(season.Season) <= this.league.SeasonAsNumber)
+        .filter(season => Number(season.Season) < this.league.SeasonAsNumber)
         .map(season => season.Resources['Drafts'])
         .filter((resource): resource is { Path: string; Exists: boolean } =>
           !!resource && resource.Exists && typeof resource.Path === 'string' && resource.Path.length > 0
@@ -337,21 +356,12 @@ export class TeamDetailDialogComponent implements OnInit {
         .map(resource => resource.Path);
 
       if (!paths.length) {
-        this.draftHistoryLoading = false;
+        applyDraftHistory([]);
         return;
       }
 
       forkJoin(paths.map(path => this.dataService.getPastDraftsRaw(path))).subscribe(draftLists => {
-        this.historicalDraftGroups = draftLists
-          .flat()
-          .map(draft => this.buildHistoricalDraftGroup(draft))
-          .filter((group): group is HistoricalDraftGroup => !!group && group.picks.length > 0)
-          .sort((a, b) =>
-            b.season - a.season
-            || b.draftNo - a.draftNo
-            || a.title.localeCompare(b.title)
-          );
-        this.draftHistoryLoading = false;
+        applyDraftHistory(draftLists.flat());
       });
     });
   }
