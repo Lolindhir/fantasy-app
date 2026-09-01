@@ -163,6 +163,31 @@ Der dritte Slot wird nicht pauschal dauerhaft erzwungen. Seine Opportunity Cost 
 
 ## 8. Transaktions-Guardrail
 
+### 8.1 Free-Agent-Draft Availability Gate (fail-closed)
+
+Für den Free-Agent Draft werden **Discovery** und **Availability** strikt getrennt.
+
+Preboards, Monitoring-/Watchlists, externe Rankings/ADPs, FantasyCalc-/ECR-Signale, Free-Agent-Movement-Discovery, News und In-Draft-Cuts dürfen Kandidaten **finden und priorisieren**, sind aber keine kanonische Quelle dafür, ob ein Spieler tatsächlich noch verfügbar ist.
+
+Ein Spieler darf für einen laufenden Free-Agent Draft nur dann den Status `available` erhalten und in einer verfügbaren Shortlist oder Pick-Empfehlung erscheinen, wenn beide Prüfungen positiv abgeschlossen sind:
+
+1. **Ownership-Check gegen aktuelles `public/data/League.json`:** Die PlayerID steht bei **keinem** Team in `Roster`, `Taxi` oder `Reserve`.
+2. **Draftstatus-Check gegen aktuelles `public/data/Drafts.json`:** Die PlayerID ist im aktuellen Free-Agent-Draft nicht bereits mit `Status: Picked` einem früheren Pick zugeordnet.
+
+Die Prüfung ist **fail-closed**:
+
+- fehlt eine der beiden kanonischen Quellen, ist sie erkennbar veraltet, unvollständig oder lässt sich die PlayerID nicht eindeutig auflösen, lautet der Availability-Status `unknown` und **nicht** `available`;
+- `unknown`-Spieler dürfen nicht als freie Optionen, Value-Falls oder Pick-Empfehlungen dargestellt werden, bis die Unsicherheit aufgelöst ist;
+- externe Ranking-, ADP-, Marktwert-, Depth-Chart- oder Monitoring-Daten dürfen Ownership niemals überschreiben oder implizieren;
+- ein Spieler, der in `League.json` rostered/taxi/reserve ist, bleibt unabhängig von externen Free-Agent-Listen **nicht verfügbar**;
+- ein Spieler, der noch nicht im League-Roster materialisiert ist, aber im laufenden `Drafts.json` bereits gepickt wurde, bleibt ebenfalls **nicht verfügbar**.
+
+Vor **jedem eigenen FA-Draft-Pick** und nach jedem materiellen gegnerischen Pick/Cut muss die relevante Shortlist erneut gegen beide kanonischen Quellen validiert werden. Bei dynamischen Drafts darf ein früher im Chat bestätigter Availability-Status nicht ungeprüft fortgeschrieben werden.
+
+Erst nach bestandener Availability-Prüfung wird die eigentliche Mighty-Giants-Opportunity-Cost gegen Rosterstruktur, Coverage, Taxi/Reserve, Churn-Slots und nächsten Cut bewertet.
+
+### 8.2 Roster- und Opportunity-Cost-Prüfung
+
 Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang:
 
 1. aktuelle Starterstruktur und aktive Kapazität dynamisch aus `League.json` ableiten;
@@ -176,7 +201,7 @@ Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang
 9. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
 10. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
 
-Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste verfügbare Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
+Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste **validiert verfügbare** Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
 
 ## 9. Notfall- und Timing-Ausnahme
 
@@ -243,6 +268,7 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
 - ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
+- bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände;
 - welcher Spieler bei einem geplanten Zugang zum neuen Coverage- oder Churn-Boundary-Spieler würde.
 
 Aktuelle Spielerzuordnungen und konkrete Coverage-Zielzahlen gehören in datierte Analysen unter `fantasy-management/analyses/` und nicht als permanente Wahrheit in dieses Dokument.
