@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-01T18:01:02Z",
-  "input_fingerprint": "b1ca126bcb5d46c1cf89d89923f5b0322d87f9b6bc9f0e7befc15ade93431caf",
+  "generated_at": "2026-09-01T20:02:13Z",
+  "input_fingerprint": "bc52bb1d0eb5e0b7febe1fc344ef50d87011f9cab04ae9487115737c90f61b63",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "9340806b12f0ef2362e6fb1d8444ac43e15c00fde517c9689ac4c52eb1d2081a"
+      "input_fingerprint": "614745f6044b7981bbd1d3bb2312eb113768f7c03760beeb257f2e733042034f"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "9d1de7a04aad363da03bf35833c5c9a1525c3b521127689d763ff3774efc8860"
+      "input_fingerprint": "9340806b12f0ef2362e6fb1d8444ac43e15c00fde517c9689ac4c52eb1d2081a"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,13 +23,15 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 344,
-    "previous_discovery_count": 343,
-    "event_count": 1,
+    "current_discovery_count": 345,
+    "previous_discovery_count": 344,
+    "event_count": 2,
     "event_type_counts": {
+      "changed": 1,
       "new": 1
     },
     "event_priority_counts": {
+      "high": 1,
       "medium": 1
     },
     "baseline_mode": "comparison"
@@ -38,47 +40,39 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "5cd2427f859e7e0a8343c90f4a44a3487bf2769713a98ce9bba18c24490cccde",
-    "previous_evidence_fingerprint": "26ddcbb6c6f9efe6878a3e23a030b3abd0a0767e8a225c7b3c1e0b9bc75547f3",
+    "current_evidence_fingerprint": "37db0f8862cedd02b67dbc658a234f4259ee6b473a25a9c9bf1ca53fda410175",
+    "previous_evidence_fingerprint": "5cd2427f859e7e0a8343c90f4a44a3487bf2769713a98ce9bba18c24490cccde",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 1,
+    "comparison_event_count_before_suppression": 2,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
   "events": [
     {
-      "player_id": "12457",
-      "name": "Jaydon Blue",
-      "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "625eb5fd595a7f1f64dc51f929e68ff57723ec464a6da50d7acf44b480bd175e",
-      "previous_state_hash": null,
+      "player_id": "11617",
+      "name": "Malachi Corley",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "95235fd41467c83f9999dc757d9cfffa328c463dc369f1e0aac8ad80ac85d421",
+      "previous_state_hash": "2b682437153ac0b2f030b788b44639ae78d51fe641fe78de9195c9f92c4a686f",
       "changed_dimensions": [
-        "new_discovery"
+        "research_priority",
+        "structural_change"
       ],
       "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
         "dynasty_market"
       ],
-      "previous_material_families": [],
       "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
         {
           "family": "dynasty_market",
           "kind": "overall_rank_movement",
@@ -90,30 +84,57 @@
           "kind": "position_rank_movement",
           "severity": "medium",
           "direction": "down"
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "divergence",
-          "families": [],
-          "up_families": [
-            "redraft_adp"
-          ],
-          "down_families": [
-            "dynasty_market"
-          ]
         },
         {
-          "kind": "confirmation_down",
-          "families": [
-            "dynasty_market",
-            "redraft_adp"
-          ],
-          "up_families": [],
-          "down_families": []
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
         }
       ],
-      "structural_changes": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 5,
+          "to": 6
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7595",
+      "name": "Tylan Wallace",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 6,
+          "to": 5
+        }
+      ],
       "final_roster_recommendation": null
     }
   ],
