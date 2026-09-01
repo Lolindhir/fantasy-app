@@ -3,8 +3,11 @@ schemaVersion: 1
 architecture:
   summary: >
     fantasy-app separates league/domain configuration, technical generation
-    configuration, persistent provider-backed NFL source data, generated app data
-    and frontend rendering.
+    configuration, a shared persistent provider-backed source-data layer,
+    generated app read models, Fantasy Management derivations and frontend
+    rendering. The shared source layer is split into provider-independent NFL
+    facts under source-data/nfl and canonical fantasy-league facts under
+    source-data/leagues.
 
 layers:
   - name: manual-domain-config
@@ -39,40 +42,42 @@ layers:
       - generated JSON content as source of truth
       - UI state
 
-  - name: persistent-nfl-source-data
+  - name: persistent-source-data
     path: source-data/**
     responsibility: >
-      Persists validated provider raw inputs under source-data/providers and
-      provider-independent canonical NFL facts under source-data/nfl. Dataset
-      acquisition mode, availability, refresh, retention, partitioning,
-      finalization and repair semantics are machine-validated through
-      source-data/registry.json schema v3.
+      Persists validated provider raw inputs under source-data/providers,
+      provider-independent NFL facts under source-data/nfl and, in Phase 1B,
+      canonical fantasy-league facts under source-data/leagues. The target is one
+      shared facts substrate consumed independently by the App generators and
+      Fantasy Management instead of making either consumer depend on the other's
+      derived read models.
     owns:
       - validated provider raw data and provenance
       - provider-independent CanonicalPlayerID identities and historical mappings; CanonicalPlayerID is application-defined by fantasy-app, not NFL-issued
-      - canonical season-partitioned Draft and Combine history
+      - stable CanonicalLeagueID and CanonicalLeagueSeasonID identities for fantasy-league lineage once Phase 1B is implemented
+      - canonical season-partitioned NFL facts such as Draft, Combine, schedules, rosters, stats and snaps
+      - canonical fantasy-league facts such as league instances, members, rosters, transactions and fantasy drafts once Phase 1B is implemented
       - dataset acquisition/lifecycle contracts and source-data audit output
     doesNotOwn:
-      - league-specific fantasy rules
+      - manually authored league-specific rules that remain owned by Metadata
       - public/data app read-model contracts
       - Angular display behavior
-      - Fantasy Management analysis sources
+      - Fantasy Management rankings, monitoring judgments, Knowledge, analyses or decisions
     lifecycleRule: >
-      Fixed and season-partitioned acquisition are explicit registry contracts.
-      Dynamic datasets remain replaceable; season-partitioned historical datasets
-      keep the current source season refreshable but preserve existing prior-season
-      partitions during normal sync/materialization; historical repair requires an
-      explicit --force path. Snapshot datasets are append-oriented. See
-      .ai-context/manual/nfl-source-data.yaml.
+      NFL acquisition and lifecycle semantics follow
+      .ai-context/manual/nfl-source-data.yaml. League-source identity, multi-league,
+      provider-lineage and Phase-1B target semantics follow
+      .ai-context/manual/league-source-data.yaml. Provider/raw and canonical facts
+      remain distinct from consumer-specific derived outputs.
 
   - name: generator-scripts
     path: public/requests/**
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
-      consumed by the Angular app and downstream read-only consumers. As the
-      persistent source-data layer expands, generators should consume its stable
-      canonical contracts instead of treating other app read models as substitute
-      source data when an upstream fact is available there.
+      consumed by the Angular app. During the transition some generators still
+      read providers directly. After Phase 1B acceptance, Phase 2 migrates them to
+      the stable canonical NFL and League source-data contracts while preserving
+      existing public/data contracts unless separately approved.
     owns:
       - fetching external/source data not yet migrated into source-data
       - data transformation
@@ -88,7 +93,10 @@ layers:
   - name: generated-app-data
     path: public/data/*.json
     responsibility: >
-      Represents current app-readable read models consumed by Angular.
+      Represents current app-readable read models consumed by Angular. During the
+      current transition Fantasy Management also reads these files for current
+      league state, but the target shared-facts architecture removes that
+      cross-consumer dependency after Phase 2.
     owns:
       - current generated app data shape
       - generated league/team/player/draft/transaction/timestamp data
@@ -96,6 +104,25 @@ layers:
       - architectural decisions
       - manually authored source-of-truth documentation
       - persistent provider raw data
+      - the future shared canonical League facts layer
+
+  - name: fantasy-management-derived-data
+    path: fantasy-management/**
+    responsibility: >
+      Produces Fantasy Management source context, Operations datasets, monitoring,
+      Knowledge, analyses and decisions. Today current league state is read from
+      public/data; the Phase-2 target is to derive shared NFL/League base facts
+      directly from source-data while keeping Fantasy-Management-specific
+      interpretation in fantasy-management.
+    owns:
+      - Fantasy Management external source processing
+      - Operations signal datasets
+      - monitoring/watch state according to its own contracts
+      - Knowledge, analyses and decisions
+    doesNotOwn:
+      - shared canonical NFL facts
+      - shared canonical fantasy-league facts
+      - App public/data read-model contracts
 
   - name: frontend
     path: src/app/**
@@ -113,6 +140,53 @@ layers:
       - PowerShell data generation pipeline
       - persisted generated JSON
       - AI/chat-client-specific convenience datasets
+
+sourceDataTarget:
+  phases:
+    phase1A:
+      name: NFL Source Layer
+      status: completed-and-productively-accepted
+      contract: .ai-context/manual/nfl-source-data.yaml
+    phase1B:
+      name: League Source Layer
+      status: next
+      contract: .ai-context/manual/league-source-data.yaml
+    phase2:
+      name: Consumer Migration
+      status: after-phase1B-acceptance
+
+  targetFlow: |
+    nflverse / Sleeper NFL ------> source-data/providers/** ----> source-data/nfl/**
+                                                                    |
+    Sleeper league APIs --------> source-data/providers/** ----> source-data/leagues/**
+                                                                    |
+                                                       +------------+------------+
+                                                       |                         |
+                                                       v                         v
+                                                App generators          Fantasy Management
+                                                       |                 derivations/Operations
+                                                       v
+                                                public/data/**
+                                                       |
+                                                       v
+                                                    Angular
+
+  leagueIdentity:
+    CanonicalLeagueID: >
+      Stable fantasy-app-issued identity for the logical league across seasons and
+      provider migrations. It is not a Sleeper league_id and must not be derived
+      from a display name.
+    CanonicalLeagueSeasonID: >
+      Stable identity for one season instance inside a CanonicalLeagueID. Sleeper
+      league_id maps to this seasonal instance as a provider identifier.
+    sleeperPreviousLeagueID: >
+      Sleeper previous_league_id is retained as provider lineage evidence linking
+      seasonal Sleeper instances. It can support historical discovery but does not
+      replace the canonical league identity and cannot silently override an
+      existing conflicting canonical mapping.
+    multiLeague: >
+      The source-data model supports multiple independent CanonicalLeagueID values;
+      no shared-source contract may assume exactly one fantasy league globally.
 
 frontendStructure:
   current:
