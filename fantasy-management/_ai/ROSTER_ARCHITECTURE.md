@@ -203,6 +203,34 @@ Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang
 
 Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste **validiert verfügbare** Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
 
+### 8.3 Folgejahres-Retention- und Salary-Guardrail
+
+Bei finalen Cut-/Keep-, Roster-Limit- und FA-Draft-Opportunity-Cost-Entscheidungen wird nicht nur eine aktuelle `cut_line`, sondern zusätzlich eine **Retention-Line** für den nächsten relevanten Cap-/Roster-Zyklus bewertet.
+
+Für jeden Spieler an oder nahe dieser Grenze müssen mindestens folgende Dimensionen gemeinsam betrachtet werden:
+
+1. **Current-season Mighty-Giants utility:** Wie wahrscheinlich ist es, dass der Spieler in der aktuellen Saison tatsächlich einen festen Starter-, FLEX-, Coverage- oder wertvollen Injury-Insurance-Beitrag für Mighty Giants liefert?
+2. **Dynasty-/Trade-Asset-Wert:** Welchen langfristigen Markt-, Trade- und Replacement-Wert verliert Mighty Giants bei einem Abgang?
+3. **Folgejahres-Salary-Risiko:** Wie hoch ist das aktuelle `SalaryProjected` relativ zum dann relevanten League-Cap und zur erwartbaren Teamrolle? Die Berechnung des League-Caps und `SalaryRelevantTeamSize` wird aus den aktuellen League-/App-Daten übernommen und nicht aus einer alten Annahme fortgeschrieben.
+4. **Cap-adjustierte Alternative:** Welchen Spieler oder Rosterplatz könnte Mighty Giants stattdessen mit geringerem Salary-Risiko halten, insbesondere einen Rookie/Prospect mit noch unvollständiger Salary-Historie?
+5. **Retention-Horizon:** Ist der Spieler bei unverändertem Rollen-/Marktbild realistisch auch im nächsten Cap-Zyklus ein sinnvoller und finanzierbarer Hold, oder wird sein Rosterplatz sehr wahrscheinlich ohnehin wieder freigesetzt?
+6. **Exit-Option:** Besteht vor einem Cut ein realistischer Trade-, Package- oder späterer Cut-Pfad, mit dem aktueller Produktions-/Asset-Wert noch genutzt werden kann?
+
+Die Retention-Line kann deshalb von einer reinen Redraft-, Dynasty- oder Marktwert-Reihenfolge abweichen. Insbesondere darf ein etablierter Veteran trotz höherem aktuellen Redraft-Rank unter einen günstigeren jungen Asset-Hold fallen, wenn seine **marginale** Mighty-Giants-Lineup-Utility klein, sein Folgejahres-Salary-Risiko hoch, seine langfristige Retention-Wahrscheinlichkeit niedrig und die Alternative als Prospect-Asset attraktiver ist.
+
+Gleichzeitig gilt ausdrücklich:
+
+- Salary bleibt ein Cap-/Roster-Management-Signal und **kein** primäres Talent-, Qualitäts- oder Player-Rank-Signal;
+- ein Salary- oder `SalaryProjected`-Wert von `0` bei Rookies/Young Players kann aus fehlender Dreijahreshistorie entstehen und ist kein automatischer Surplus-Value-Beweis;
+- ein produktiver Veteran wird nicht allein wegen eines hypothetisch hohen Folgejahres-Salary früh geopfert, wenn er aktuell materiell zur Championship-Wahrscheinlichkeit beiträgt oder noch sinnvollen Trade-Wert besitzt;
+- bei einem möglichen „jetzt cutten vs. später cutten“-Fall muss der Nutzen des zusätzlichen aktuellen Jahres gegen den Verlust des günstigen Alternativ-Assets und gegen die Exit-Option abgewogen werden;
+- bei sehr tiefen Mighty-Giants-Positionsgruppen zählt nicht die generische Startbarkeit des Veteranen, sondern seine **wahrscheinliche tatsächliche Nutzung im Mighty-Giants-Lineup**;
+- Coverage Floors, Taxi-Regeln und notwendige Spezialplätze dürfen durch Salary-Optimierung nicht stillschweigend verletzt werden.
+
+Kernfrage der Retention-Line:
+
+**Welcher Spieler liefert Mighty Giants über den aktuellen und nächsten Cap-/Roster-Zyklus den höheren erwarteten Teamwert pro gebundenem Rosterplatz und Cap-Risiko, nachdem aktuelle Weekly Utility, Asset-Liquidität, Coverage, Upside und Exit-Option gemeinsam berücksichtigt wurden?**
+
 ## 9. Notfall- und Timing-Ausnahme
 
 Eine kurzfristige Unterschreitung des Zwei-Slot-Ziels oder einer Preferred-Coverage-Zone ist erlaubt, wenn Draft-/Waiver-/Transaction-Timing oder ein echter Notfall dies sinnvoll macht.
@@ -269,6 +297,8 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - aktuelle Churn-/Conditional-Boundary;
 - ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
 - bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände;
-- welcher Spieler bei einem geplanten Zugang zum neuen Coverage- oder Churn-Boundary-Spieler würde.
+- bei finalen Cut-/Keep- und FA-Draft-Opportunity-Cost-Entscheidungen für alle Grenzfälle: aktuelles `SalaryProjected`, erwartete Mighty-Giants-Lineup-/Coverage-Utility, Dynasty-/Trade-Asset-Wert, `retention_risk` und realistische Exit-Option;
+- bei Salary-relevanten Entscheidungen den aktuellen League-Cap-/`SalaryRelevantTeamSize`-Kontext ausweisen und Salary klar von Spielerqualität trennen;
+- welcher Spieler bei einem geplanten Zugang zum neuen Coverage-, Churn- oder Retention-Boundary-Spieler würde.
 
-Aktuelle Spielerzuordnungen und konkrete Coverage-Zielzahlen gehören in datierte Analysen unter `fantasy-management/analyses/` und nicht als permanente Wahrheit in dieses Dokument.
+Aktuelle Spielerzuordnungen und konkrete Coverage-, Salary- und Retention-Bewertungen gehören in datierte Analysen unter `fantasy-management/analyses/` und nicht als permanente Wahrheit in dieses Dokument.
