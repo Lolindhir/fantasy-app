@@ -767,3 +767,46 @@ decisions:
         - Monitoring now depends on one additional scheduled GitHub Actions workflow and a state branch.
         - The snapshot workflow needs contents:write solely for the isolated state branch.
         - A missing or stale snapshot becomes a separate infrastructure incident that the external watcher must handle.
+
+  - id: ADR-031
+    title: Central scheduler owns productive workflow timing
+    status: accepted
+    context: >
+      Productive refresh schedules were previously embedded independently in many
+      GitHub Actions workflow files. This made the effective operating calendar
+      difficult to inspect and duplicated scheduling concerns across producers.
+      In addition, GitHub schedule events have shown repeated severe delay and
+      silent-drop behavior, so merely moving individual cron minutes does not
+      provide a robust scheduling model or a clean path to an external clock.
+    decision: >
+      Make .github/workflow-schedules.json the canonical repository schedule for
+      time-driven productive workflows. REPO • Scheduler wakes every five minutes,
+      evaluates those cron expressions in their declared IANA time zones, finds the
+      latest due slot within the configured lookback and dispatches an unsatisfied
+      target through its unique repository_dispatch event type. Target workflows
+      no longer own schedule triggers; their existing push, pull_request and manual
+      workflow_dispatch paths remain where applicable. A run started after the
+      latest due slot satisfies that slot regardless of eventual conclusion, so
+      failures are surfaced by workflow health rather than retriggered every five
+      minutes. Missed scheduler ticks are caught up at the next successful tick and
+      multiple missed slots for one workflow coalesce into one current refresh.
+      The workflow-health snapshot producer keeps its own independent best-effort
+      clock so monitoring is not made dependent on the scheduler it observes. A
+      future external clock may replace GitHub cron as the Scheduler wake-up source
+      without changing target schedules or target workflow trigger contracts.
+    rationale: >
+      Separating the clock, the operating schedule and the productive workflow
+      implementation makes timing centrally visible, provides deterministic
+      catch-up/dedupe behavior and limits a future external-scheduler migration to
+      one wake-up workflow instead of every producer.
+    consequences:
+      positive:
+        - All productive time-based refresh schedules are visible in one canonical file.
+        - Target workflows are decoupled from the reliability of their own GitHub cron triggers.
+        - Missed scheduler ticks can catch up without replaying every missed interval.
+        - A future external scheduler can wake one workflow without changing producer schedules.
+        - Manual and event-driven workflow paths remain independently usable.
+      negative:
+        - Until an external wake-up source is added, the central scheduler still depends on GitHub cron for its own five-minute ticks.
+        - The Actions run list contains many lightweight Scheduler runs.
+        - The Scheduler becomes critical shared infrastructure and therefore requires explicit monitoring and regression coverage.

@@ -32,6 +32,14 @@ class MaterializationTriggerTests(unittest.TestCase):
                 self.assertTrue(decision.run)
                 self.assertEqual(decision.reason, "scheduled_0645_berlin_catch_up")
 
+    def test_central_scheduler_dispatch_runs(self) -> None:
+        decision = MODULE.decide(
+            event_name="repository_dispatch",
+            now=datetime(2026, 8, 17, 6, 45, tzinfo=BERLIN),
+        )
+        self.assertTrue(decision.run)
+        self.assertEqual(decision.reason, "scheduled_central_dispatch")
+
     def test_relevant_source_push_runs_immediately_at_0530(self) -> None:
         decision = MODULE.decide(
             event_name="push",
