@@ -11,14 +11,12 @@
     <div class="matchups-grid">
       <article *ngFor="let matchup of matchupRows" class="matchup-card">
         <div class="matchup-team matchup-team--left">
-          <span class="matchup-avatar">
-            <img *ngIf="matchup.left.team.Avatar" [src]="matchup.left.team.Avatar" alt="" />
-            <span *ngIf="!matchup.left.team.Avatar">{{ matchup.left.fallback }}</span>
-          </span>
-          <div class="matchup-team-copy">
-            <div class="matchup-team-name">{{ matchup.left.team.Team }}</div>
-            <div class="matchup-owner">{{ matchup.left.team.Owner }}</div>
-          </div>
+          <app-team-identity
+            class="matchup-team-identity"
+            [team]="matchup.left.team"
+            [elements]="teamIdentityElements"
+            size="medium"
+          ></app-team-identity>
           <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.left.points | number:'1.0-2' }}</strong>
         </div>
 
@@ -26,14 +24,13 @@
 
         <div class="matchup-team matchup-team--right">
           <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.right.points | number:'1.0-2' }}</strong>
-          <div class="matchup-team-copy matchup-team-copy--right">
-            <div class="matchup-team-name">{{ matchup.right.team.Team }}</div>
-            <div class="matchup-owner">{{ matchup.right.team.Owner }}</div>
-          </div>
-          <span class="matchup-avatar">
-            <img *ngIf="matchup.right.team.Avatar" [src]="matchup.right.team.Avatar" alt="" />
-            <span *ngIf="!matchup.right.team.Avatar">{{ matchup.right.fallback }}</span>
-          </span>
+          <app-team-identity
+            class="matchup-team-identity"
+            [team]="matchup.right.team"
+            [elements]="teamIdentityElements"
+            size="medium"
+            align="end"
+          ></app-team-identity>
         </div>
       </article>
     </div>

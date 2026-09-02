@@ -1,0 +1,40 @@
+<ng-template #identityContent>
+  <span *ngIf="hasElement('logo')" class="team-identity__avatar" aria-hidden="true">
+    <img *ngIf="team.Avatar; else avatarFallbackTemplate" [src]="team.Avatar" alt="" />
+    <ng-template #avatarFallbackTemplate>
+      <span>{{ avatarFallback }}</span>
+    </ng-template>
+  </span>
+
+  <span *ngIf="hasText" class="team-identity__copy" [title]="displayName">
+    <span *ngIf="hasElement('name')" class="team-identity__name">{{ displayName }}</span>
+    <span *ngIf="hasElement('abbr')" class="team-identity__abbr">{{ displayAbbreviation }}</span>
+    <span *ngIf="hasElement('owner')" class="team-identity__owner">{{ team.Owner }}</span>
+  </span>
+</ng-template>
+
+<button
+  *ngIf="interactive; else staticIdentity"
+  type="button"
+  class="team-identity team-identity--interactive"
+  [class.team-identity--small]="size === 'small'"
+  [class.team-identity--medium]="size === 'medium'"
+  [class.team-identity--large]="size === 'large'"
+  [class.team-identity--end]="align === 'end'"
+  [attr.aria-label]="ariaLabel"
+  (click)="openTeam()"
+>
+  <ng-container *ngTemplateOutlet="identityContent"></ng-container>
+</button>
+
+<ng-template #staticIdentity>
+  <span
+    class="team-identity"
+    [class.team-identity--small]="size === 'small'"
+    [class.team-identity--medium]="size === 'medium'"
+    [class.team-identity--large]="size === 'large'"
+    [class.team-identity--end]="align === 'end'"
+  >
+    <ng-container *ngTemplateOutlet="identityContent"></ng-container>
+  </span>
+</ng-template>
