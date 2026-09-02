@@ -187,6 +187,102 @@
     <app-draft-capital-overview></app-draft-capital-overview>
   </ng-container>
 
+  <ng-container *ngIf="vm.activeLeague">
+    <section *ngIf="vm.seasonPulse as pulse" class="season-pulse-card">
+      <div class="season-pulse-heading">
+        <div>
+          <div class="season-pulse-eyebrow">{{ pulse.eyebrow }}</div>
+          <h2>{{ pulse.title }}</h2>
+          <div class="season-pulse-subtitle">{{ pulse.subtitle }}</div>
+        </div>
+        <span class="season-pulse-status">{{ vm.league.Status }}</span>
+      </div>
+
+      <div class="season-pulse-metrics">
+        <div *ngFor="let metric of pulse.metrics" class="season-pulse-metric">
+          <div class="season-pulse-metric-label">{{ metric.label }}</div>
+          <div class="season-pulse-metric-value">{{ metric.value }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="active-overview-card active-standings-card">
+      <app-current-standings
+        [standings]="vm.currentStandings"
+        title="Current Standings"
+      ></app-current-standings>
+    </section>
+
+    <section *ngIf="vm.seasonLeaders.length > 0" class="active-overview-card">
+      <div class="active-card-heading">
+        <div>
+          <div class="active-card-eyebrow">Season Snapshot</div>
+          <h2>Season Leaders</h2>
+        </div>
+        <span class="active-card-meta">through Week {{ vm.league.FinalScoredWeek }}</span>
+      </div>
+
+      <div class="season-leader-grid">
+        <article *ngFor="let leader of vm.seasonLeaders" class="season-leader-card">
+          <div class="season-leader-icon">
+            <mat-icon>{{ leader.icon }}</mat-icon>
+          </div>
+          <div class="season-leader-content">
+            <div class="season-leader-label">{{ leader.label }}</div>
+            <div class="season-leader-team-row">
+              <span class="season-leader-avatar">
+                <img *ngIf="leader.avatar" [src]="leader.avatar" alt="" />
+                <span *ngIf="!leader.avatar">{{ leader.fallback }}</span>
+              </span>
+              <span class="season-leader-team">{{ leader.team }}</span>
+            </div>
+            <div class="season-leader-value">{{ leader.value }}</div>
+            <div class="season-leader-detail">{{ leader.detail }}</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="active-overview-card">
+      <div class="active-card-heading recent-moves-heading">
+        <div>
+          <div class="active-card-eyebrow">League Activity</div>
+          <h2>Recent Moves</h2>
+        </div>
+        <a mat-button routerLink="/moves" class="recent-moves-link">
+          View all
+          <mat-icon>chevron_right</mat-icon>
+        </a>
+      </div>
+
+      <div *ngIf="vm.recentMoves.length > 0; else noRecentMoves" class="recent-move-list">
+        <article *ngFor="let move of vm.recentMoves" class="recent-move-row">
+          <span
+            class="recent-move-icon"
+            [class.recent-move-icon--trade]="move.category === 'trade'"
+            [class.recent-move-icon--add]="move.category === 'add'"
+            [class.recent-move-icon--cut]="move.category === 'cut'"
+          >
+            <mat-icon>{{ move.icon }}</mat-icon>
+          </span>
+
+          <div class="recent-move-content">
+            <div class="recent-move-title-row">
+              <span class="recent-move-type">{{ move.typeLabel }}</span>
+              <span class="recent-move-date">{{ move.dateLabel }}</span>
+            </div>
+            <div class="recent-move-teams">{{ move.teamLabel }}</div>
+            <div class="recent-move-summary">{{ move.summary }}</div>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #noRecentMoves>
+        <div class="active-empty-state">No completed league moves yet this season.</div>
+      </ng-template>
+    </section>
+  </ng-container>
+
   <!-- 📊 Cap Space Overview -->
   <section *ngIf="vm.offSeason">
     <section
