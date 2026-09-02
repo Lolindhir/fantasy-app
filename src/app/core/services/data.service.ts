@@ -33,6 +33,10 @@ export interface LeagueWithPlayers {
   drafts: RawDraft[];
 }
 
+export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
+  transactions: Transaction[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -103,7 +107,9 @@ export class DataService {
   }
 
   getTransactions(sortFields: SortField[] = ['NameLast']): Observable<Transaction[]> {
-    return this.getTransactionsForSources(true, [], sortFields);
+    return this.getLeagueWithPlayersAndTransactions(sortFields).pipe(
+      map(res => res.transactions)
+    );
   }
 
   getTransactionsForSources(
@@ -150,6 +156,27 @@ export class DataService {
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<LeagueWithPlayers> {
     return this.dataApiService.getLeagueData().pipe(
       map(data => this.mapLeagueData(data, sortFields))
+    );
+  }
+
+  getLeagueWithPlayersAndTransactions(
+    sortFields: SortField[] = ['NameLast']
+  ): Observable<LeagueWithPlayersAndTransactions> {
+    return this.dataApiService.getMovesData().pipe(
+      map(data => {
+        const mappedLeagueData = this.mapLeagueData(data, sortFields);
+        const transactionsRaw = mergeCompletedRawTransactions([data.transactionsRaw]);
+        const transactions = mapRawTransactions(
+          transactionsRaw,
+          mappedLeagueData.teams,
+          mappedLeagueData.players
+        );
+
+        return {
+          ...mappedLeagueData,
+          transactions
+        };
+      })
     );
   }
 
