@@ -2,11 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 import type { FantasyTeam, League, LeagueMatchupParticipant } from '../../../core/models/league.models';
+import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 
 interface LeagueMatchupTeamView {
   team: FantasyTeam;
   points: number;
-  fallback: string;
 }
 
 interface LeagueMatchupView {
@@ -19,12 +19,14 @@ interface LeagueMatchupView {
 @Component({
   selector: 'app-league-matchups',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TeamIdentityComponent],
   templateUrl: './league-matchups.html',
   styleUrl: './league-matchups.scss'
 })
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
+
+  readonly teamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
 
   get week(): number | null {
     return this.league.Matchups?.Week ?? null;
@@ -63,12 +65,9 @@ export class LeagueMatchupsComponent {
     const team = teamByID.get(participant.TeamID);
     if (!team) return null;
 
-    const teamName = team.Team || team.Owner || `Team ${team.TeamID}`;
-
     return {
       team,
-      points: participant.Points ?? 0,
-      fallback: teamName.trim().charAt(0).toUpperCase() || '?'
+      points: participant.Points ?? 0
     };
   }
 }

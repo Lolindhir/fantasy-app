@@ -11,13 +11,12 @@
   <div *ngFor="let row of rows" class="standing-row">
     <div class="standing-place">{{ row.displayPlace }}</div>
 
-    <button class="standing-team team-link" type="button" (click)="openTeam(row.team.TeamID)">
-      <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
-      <div>
-        <div class="standing-team-name">{{ row.team.Team }}</div>
-        <div class="standing-owner">{{ row.team.Owner }}</div>
-      </div>
-    </button>
+    <app-team-identity
+      class="standing-team-identity"
+      [team]="row.team"
+      [elements]="teamIdentityElements"
+      size="small"
+    ></app-team-identity>
 
     <div>{{ row.team.Record }}</div>
     <div>{{ row.team.Points | number:'1.0-2' }}</div>
