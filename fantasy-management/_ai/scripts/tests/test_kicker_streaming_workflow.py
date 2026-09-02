@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -9,6 +10,12 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[4]
         workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
         return workflow_path.read_text(encoding="utf-8")
+
+    def schedule_target(self, target_id: str) -> dict:
+        root = Path(__file__).resolve().parents[4]
+        config_path = root / ".github/workflow-schedules.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        return next(target for target in config["targets"] if target["id"] == target_id)
 
     def test_production_workflow_materializes_kicker_inputs_after_free_agents(self) -> None:
         workflow = self.workflow_text()
@@ -39,11 +46,14 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
 
     def test_materializer_keeps_0645_as_non_disruptive_catch_up(self) -> None:
         workflow = self.workflow_text()
+        target = self.schedule_target("fantasy-operations-materializer")
 
-        self.assertIn('cron: "45 6 * * *"', workflow)
-        self.assertIn('timezone: "Europe/Berlin"', workflow)
-        self.assertNotIn('cron: "45 4 * * *"', workflow)
-        self.assertNotIn('cron: "45 5 * * *"', workflow)
+        self.assertEqual(target["cron"], ["45 6 * * *"])
+        self.assertEqual(target["timezone"], "Europe/Berlin")
+        self.assertEqual(target["eventType"], "scheduler-materialize-fantasy-operations-inputs")
+        self.assertIn("repository_dispatch:", workflow)
+        self.assertIn("- scheduler-materialize-fantasy-operations-inputs", workflow)
+        self.assertNotIn("\n  schedule:\n", workflow)
         self.assertIn("- fantasy-management/sources/external-rankings/**", workflow)
         self.assertIn("- fantasy-management/sources/external-signals/**", workflow)
         self.assertIn(

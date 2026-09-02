@@ -3,9 +3,9 @@ run-name: "FM • Materializer • ${{ github.event.head_commit.message || githu
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "45 6 * * *"  # Catch-up vor dem 07:00-Europe/Berlin-Lauf
-      timezone: "Europe/Berlin"
+  repository_dispatch:
+    types:
+      - scheduler-materialize-fantasy-operations-inputs
   push:
     branches:
       - main

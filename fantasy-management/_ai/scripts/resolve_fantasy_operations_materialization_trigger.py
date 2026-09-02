@@ -70,6 +70,9 @@ def decide(
     if event_name == "workflow_dispatch":
         return TriggerDecision(True, "manual_materialization")
 
+    if event_name == "repository_dispatch":
+        return TriggerDecision(True, "scheduled_central_dispatch")
+
     if event_name == "schedule":
         return TriggerDecision(True, "scheduled_0645_berlin_catch_up")
 

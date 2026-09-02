@@ -2,9 +2,9 @@ name: FM • Ranking • FantasyCalc Market
 run-name: "FM • Ranking • FantasyCalc Market • ${{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}"
 
 on:
-  schedule:
-    - cron: "32 5 * * *"  # Pre-Operations-Refresh vor dem 07:00-Europe/Berlin-Lauf
-      timezone: "Europe/Berlin"
+  repository_dispatch:
+    types:
+      - scheduler-update-fantasycalc-rankings
   push:
     branches:
       - main

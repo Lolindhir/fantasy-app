@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "repository": "Lolindhir/fantasy-app",
+  "ref": "main",
+  "lookbackMinutes": 11520,
+  "targets": [
+    {
+      "id": "league",
+      "workflow": "update-league.yml",
+      "path": ".github/workflows/update-league.yml",
+      "eventType": "scheduler-update-league",
+      "timezone": "Etc/UTC",
+      "cron": ["*/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "games",
+      "workflow": "update-games.yml",
+      "path": ".github/workflows/update-games.yml",
+      "eventType": "scheduler-update-games",
+      "timezone": "America/New_York",
+      "cron": ["45 0 * * *", "0 13 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "players",
+      "workflow": "update-players.yml",
+      "path": ".github/workflows/update-players.yml",
+      "eventType": "scheduler-update-players",
+      "timezone": "America/New_York",
+      "cron": ["15 1 * * *", "0 8 * * *", "30 13 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "standings",
+      "workflow": "update-standings.yml",
+      "path": ".github/workflows/update-standings.yml",
+      "eventType": "scheduler-update-standings",
+      "timezone": "America/New_York",
+      "cron": ["35 3 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "transactions",
+      "workflow": "update-transactions.yml",
+      "path": ".github/workflows/update-transactions.yml",
+      "eventType": "scheduler-update-transactions",
+      "timezone": "America/New_York",
+      "cron": ["5 4 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "teams",
+      "workflow": "update-teams.yml",
+      "path": ".github/workflows/update-teams.yml",
+      "eventType": "scheduler-update-teams",
+      "timezone": "America/New_York",
+      "cron": ["35 4 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "fantasypros",
+      "workflow": "update-fantasypros-rankings.yml",
+      "path": ".github/workflows/update-fantasypros-rankings.yml",
+      "eventType": "scheduler-update-fantasypros-rankings",
+      "timezone": "Europe/Berlin",
+      "cron": ["20 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "fantasycalc",
+      "workflow": "update-fantasycalc-rankings.yml",
+      "path": ".github/workflows/update-fantasycalc-rankings.yml",
+      "eventType": "scheduler-update-fantasycalc-rankings",
+      "timezone": "Europe/Berlin",
+      "cron": ["32 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "ffc-adp",
+      "workflow": "update-fantasy-football-calculator-adp.yml",
+      "path": ".github/workflows/update-fantasy-football-calculator-adp.yml",
+      "eventType": "scheduler-update-ffc-adp",
+      "timezone": "Europe/Berlin",
+      "cron": ["44 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "fftoday",
+      "workflow": "update-fftoday-projections.yml",
+      "path": ".github/workflows/update-fftoday-projections.yml",
+      "eventType": "scheduler-update-fftoday-projections",
+      "timezone": "Europe/Berlin",
+      "cron": ["56 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "cbs-sports",
+      "workflow": "update-cbs-sports-projections.yml",
+      "path": ".github/workflows/update-cbs-sports-projections.yml",
+      "eventType": "scheduler-update-cbs-sports-projections",
+      "timezone": "Europe/Berlin",
+      "cron": ["8 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "sleeper-trending",
+      "workflow": "update-sleeper-trending.yml",
+      "path": ".github/workflows/update-sleeper-trending.yml",
+      "eventType": "scheduler-update-sleeper-trending",
+      "timezone": "Europe/Berlin",
+      "cron": ["20 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "fantasy-operations-materializer",
+      "workflow": "materialize-fantasy-operations-inputs.yml",
+      "path": ".github/workflows/materialize-fantasy-operations-inputs.yml",
+      "eventType": "scheduler-materialize-fantasy-operations-inputs",
+      "timezone": "Europe/Berlin",
+      "cron": ["45 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "backup-cleanup",
+      "workflow": "clean-backups.yml",
+      "path": ".github/workflows/clean-backups.yml",
+      "eventType": "scheduler-clean-backups",
+      "timezone": "Europe/Berlin",
+      "cron": ["0 17 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    }
+  ]
+}

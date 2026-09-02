@@ -37,6 +37,8 @@ snapshot:
         - critical
         - important
         - routine
+        exclusions:
+        - .github/workflows/scheduler.yml
   principles:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
   - The snapshotter writes only the isolated workflow-health-state branch; it must never publish health snapshots to main.
@@ -44,8 +46,9 @@ snapshot:
   - The offset 30-minute schedule (`:07` and `:37` each hour) is best-effort. All pushes to main also trigger the snapshot producer so repository activity provides a scheduler-independent refresh opportunity.
   - Pushes to main that change the snapshot workflow, builder, tests or policy bypass the freshness gate and trigger an immediate snapshot.
   - Other pushes to main rebuild only when the current snapshot is missing, unreadable or at least 40 minutes old.
-  - Completed runs on main of every paging-relevant workflow (`critical`, `important` or `routine`) are additional workflow_run heartbeat opportunities and use the same 40-minute freshness gate.
-  - The workflow_run trigger list must cover every paging-relevant workflow and must exclude `non-paging` workflows, especially the snapshot producer itself, so monitoring cannot recursively trigger on its own completion.
+  - Completed runs on main of paging-relevant workflows are additional workflow_run heartbeat opportunities and use the same 40-minute freshness gate.
+  - The central five-minute scheduler is intentionally excluded from the snapshot workflow_run trigger list so every scheduler tick does not create a second monitoring workflow run. Scheduler health is still evaluated from its own scheduled run history whenever a snapshot is materialized through the independent snapshot cron, main-push fallback or another productive workflow heartbeat.
+  - The workflow_run trigger list must cover every other paging-relevant workflow and must exclude `non-paging` workflows, especially the snapshot producer itself, so monitoring cannot recursively trigger on its own completion.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
   - If the snapshot is older than maxAgeMinutes or cannot be read, the external watcher must treat monitoring infrastructure
     as unhealthy.
@@ -60,6 +63,7 @@ principles:
 - A configured workflow path that no longer exists is configuration drift and must be surfaced.
 - Feature-branch pull-request runs and normal manual workflow_dispatch runs are not production paging signals unless a workflow
   entry explicitly opts in.
+- Central-scheduler repository_dispatch runs are production paging signals for migrated scheduled workflows.
 - A failure is healed when a newer relevant completed run succeeds; healed failures must not be alerted.
 - Cancelled, skipped and neutral runs are not failures for paging purposes.
 - Disabled workflows remain classified but are excluded from run-health and staleness checks until re-enabled.
@@ -84,7 +88,7 @@ runEvaluation:
   - neutral
   incompleteRuns: ignore-until-completed
   unknownCompletedConclusion: fail-closed
-  branchRule: Require main when the run exposes a meaningful head branch. Repository-level events such as issues may not expose
+  branchRule: Require main when the run exposes a meaningful head branch. Repository-level events such as issues or repository_dispatch may not expose
     a normal branch and are evaluated by event.
   failureStreakRule: After filtering to relevant events, count consecutive unhealthy completed runs from newest to oldest
     and stop at the first healthy completed run.
@@ -111,7 +115,7 @@ categories:
   critical:
     notify: true
     consecutiveFailures: 1
-    description: Production integrity or deployment failures that should be surfaced on the first relevant unresolved failure.
+    description: Production integrity, deployment or central scheduling failures that should be surfaced on the first relevant unresolved failure.
   important:
     notify: true
     consecutiveFailures: 2
@@ -138,6 +142,12 @@ workflows:
     relevantEvents:
     - push
     rationale: A failing validation run on main indicates repository-integrity drift; pull-request runs stay non-paging.
+  .github/workflows/scheduler.yml:
+    category: critical
+    relevantEvents:
+    - schedule
+    staleAfterMinutes: 20
+    rationale: Central five-minute scheduling layer for all migrated time-driven productive workflows; a scheduler failure or roughly 20 minutes without a successful scheduler tick can prevent downstream refreshes and is immediately actionable.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
@@ -154,97 +164,94 @@ workflows:
   .github/workflows/clean-backups.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly maintenance; alert after the scheduled cycle has effectively been missed for about a day.
+    rationale: Weekly maintenance dispatched by the central scheduler; alert after the scheduled cycle has effectively been missed for about a day.
   .github/workflows/materialize-fantasy-operations-inputs.yml:
     category: important
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily Operations materialization should not silently miss a complete daily cycle.
+    rationale: Daily Operations materialization dispatched by the central scheduler should not silently miss a complete daily cycle.
   .github/workflows/update-cbs-sports-projections.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-fantasy-football-calculator-adp.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-fantasycalc-rankings.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-fantasypros-rankings.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-fftoday-projections.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-sleeper-trending.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     - push
     staleAfterMinutes: 1800
-    rationale: Daily pre-Operations signal refresh; tolerate a transient failure but surface a missed daily cycle.
+    rationale: Daily pre-Operations signal refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/update-league.yml:
     category: important
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 45
-    rationale: Ten-minute league refresh; two consecutive failures or roughly 45 minutes without a successful production run
-      are actionable.
+    rationale: Ten-minute league refresh dispatched by the central scheduler; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
   .github/workflows/update-players.yml:
     category: important
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 840
-    rationale: Three scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
+    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
   .github/workflows/update-games.yml:
     category: important
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 960
-    rationale: Two scheduled daily refreshes; 16 hours covers the longest normal gap with operational grace.
+    rationale: Two centrally scheduled daily refreshes; 16 hours covers the longest normal gap with operational grace.
   .github/workflows/update-transactions.yml:
     category: important
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly transaction/history rebuild; surface a missed weekly cycle without paging on a single transient run
-      immediately.
+    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; surface a missed weekly cycle without paging on a single transient run immediately.
   .github/workflows/update-standings.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh; alert after the weekly cycle has effectively been missed for about a
-      day.
+    rationale: Weekly between-week standings refresh dispatched by the central scheduler; alert after the weekly cycle has effectively been missed for about a day.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:
-    - schedule
+    - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly between-week teams refresh; alert after the weekly cycle has effectively been missed for about a day.
+    rationale: Weekly between-week teams refresh dispatched by the central scheduler; alert after the weekly cycle has effectively been missed for about a day.
   .github/workflows/update-drafts.yml:
     category: non-paging
     relevantEvents: []
@@ -256,7 +263,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Best-effort offset 30-minute snapshot producer with scheduler-independent main-push refresh opportunities plus freshness-gated workflow_run heartbeats from all paging-relevant workflows; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Best-effort offset 30-minute snapshot producer with scheduler-independent main-push refresh opportunities plus freshness-gated workflow_run heartbeats from paging-relevant workflows except the five-minute central scheduler; its own availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later

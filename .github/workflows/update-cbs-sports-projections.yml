@@ -2,9 +2,9 @@ name: FM • Projection • CBS Sports
 run-name: "FM • Projection • CBS Sports • ${{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}"
 
 on:
-  schedule:
-    - cron: "8 6 * * *"  # Pre-Operations-Refresh vor dem 07:00-Europe/Berlin-Lauf
-      timezone: "Europe/Berlin"
+  repository_dispatch:
+    types:
+      - scheduler-update-cbs-sports-projections
   push:
     branches:
       - main

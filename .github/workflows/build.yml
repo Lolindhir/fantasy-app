@@ -22,6 +22,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Run workflow-health regression tests
+        run: python -m unittest tools/tests/test_build_workflow_health_snapshot.py -v
+
       - name: Run NFL source-data regression tests
         run: python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
 
@@ -37,6 +40,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Run central scheduler regression tests
+        run: node --test tools/tests/run-workflow-scheduler.test.cjs
 
       - name: Install dependencies
         run: npm ci

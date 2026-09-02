@@ -74,6 +74,17 @@ class WorkflowEvaluationTests(unittest.TestCase):
         self.assertEqual(result["successAgeMinutes"], 120)
         self.assertIn("stale-success", [i["type"] for i in incidents])
 
+    def test_scheduler_repository_dispatch_is_relevant_but_manual_dispatch_is_ignored(self):
+        entry = {"category": "important", "relevantEvents": ["repository_dispatch"]}
+        runs = [
+            run(2, "success", "2026-08-29T23:50:00Z", event="workflow_dispatch"),
+            run(1, "success", "2026-08-29T23:40:00Z", event="repository_dispatch"),
+        ]
+        result, incidents = module.evaluate_workflow("w.yml", entry, CATEGORY, API_WORKFLOW, runs, EVALUATION, NOW)
+        self.assertEqual(result["latestRelevantRun"]["id"], 1)
+        self.assertEqual(result["latestRelevantRun"]["event"], "repository_dispatch")
+        self.assertEqual(incidents, [])
+
 
 class SnapshotTests(unittest.TestCase):
     def test_configuration_drift_is_fail_closed(self):
