@@ -10,6 +10,7 @@ Dynamic facts must still be re-checked from current `public/data/League.json`, `
 
 - On 2026-08-14 Robert supplied WhatsApp text exports for Marcel, Flo, Jan, Tim and Dennis. The entries below distill Fantasy-relevant text messages through July 2026.
 - On 2026-08-18 Robert additionally supplied the complete current Antonio Williams negotiation with Jan from 2026-08-17 to 2026-08-18. It is likewise stored only as Fantasy-relevant distilled context, not as a raw private chat log.
+- On 2026-09-02 Robert additionally supplied the complete live-FA-draft trade exchange with Marcel around 2026 FA 4.04 and AJ Barner. It is likewise stored only as Fantasy-relevant distilled context, not as a raw private chat log.
 - A chat-confirmed deal is recorded as a negotiation outcome. Re-check `Transactions.json` / draft ownership when exact current or official asset provenance matters.
 - Player/value arguments below are historical beliefs used during the negotiation, not current player evaluations.
 - `<Medien ausgeschlossen>` content is not reconstructed and no missing screenshot content is inferred.
@@ -760,11 +761,77 @@ Evidence / source:
 - Current WhatsApp negotiation excerpt supplied directly by Robert on 2026-08-18, covering 2026-08-17 to 2026-08-18.
 - Stored 2026 Buy-Young analysis for Antonio Williams and FA-pick opportunity cost as historical decision context.
 
+## 2026-09-02 — Marcel / TeamID 2 — 2026 FA 4.04 for 2027 Rookie 4th
+
+Context:
+
+- Robert was on the clock at 2026 FA 4.04 and shopped the pick because he did not need another current-year selection or another immediate roster addition.
+- Marcel reacted quickly and first proposed a swap plus a late Rookie pick.
+- Within minutes Marcel explicitly corrected that first construction as something written "im excitement" rather than defending it as a deliberate valuation anchor.
+- Robert said he was not interested in moving down one slot and instead offered the current 2026 FA 4.04 outright for Marcel's 2027 Rookie 4th.
+
+Assets / offer path:
+
+1. Marcel's spontaneous opening idea:
+   - swap the current FA picks plus a late Rookie pick.
+2. Marcel immediately self-corrected the opening structure as excitement-driven.
+3. Robert proposed a cleaner cross-year deal:
+   - Marcel receives: 2026 FA 4.04.
+   - Robert receives: Marcel's 2027 Rookie 4th.
+4. Marcel accepted the proposal without further bargaining.
+5. Marcel offered Robert the alternative of getting back his own future 4th-round asset instead; Robert explicitly preferred the Rookie 4th.
+6. Marcel agreed and described the Rookie return as part of Robert's longer-term planning.
+
+Target / roster reasoning at the time:
+
+- After the agreement Robert said he suspected Marcel wanted a Tight End and specifically named AJ Barner as the attractive remaining player Robert himself would have selected if his TE room were not already strong.
+- Marcel confirmed that Barner was indeed his target.
+- Marcel later said he already felt reasonably positioned with Dalton Schultz and viewed the additional move as creating a better TE starting position.
+- Marcel acknowledged that the roster was full enough that a cut would still be necessary, but said he could get through it with one cut.
+- These are historical beliefs and roster-state comments from the live conversation; current role and roster facts must be re-checked before future use.
+
+Outcome:
+
+- Chat-confirmed deal:
+  - Mighty Giants / Robert receive: Marcel's 2027 Rookie 4th.
+  - Ruhr Valley Packers / Marcel receive: 2026 FA 4.04.
+- Robert said the Sleeper trade request had already been submitted during the conversation.
+- Marcel confirmed the deal structure and then identified AJ Barner as his intended selection target.
+
+Post-deal reflection:
+
+- Marcel again explicitly said that trading itself was fun and that he enjoyed the process.
+- He later reflected on the earlier Waddle trade: after the preseason he felt the move had weakened his team in outcome/development terms, while still acknowledging that he had received value and crediting Robert for the resulting position.
+- Marcel told Robert that Mighty Giants were in a good position for the 2026 season.
+
+Observed tendencies:
+
+- Marcel's enjoyment of trading is not just historical rapport language; he again stated it directly in a live-draft transaction.
+- Specific target conviction can make a current FA slot worth future Rookie capital to him. The exact player shelf matters more than the generic displayed round.
+- Live-draft excitement can produce an impulsive first structure, but Marcel is capable of immediately self-correcting rather than becoming anchored to his own spontaneous offer.
+- Future Rookie picks are available as bridge assets when the target is specific enough; his June concern about having given away too many picks is therefore not a blanket pick-protection rule.
+- Roster pressure does not automatically stop him from acquiring another asset when he believes the target improves a position; in this case he accepted the need for a subsequent cut.
+- TE need/conviction again mattered strongly: Barner was the explicit reason to acquire 4.04 even after Marcel described Schultz as a decent existing starting point.
+- Marcel evaluates past trades through subsequent player development and outcome as well as original value. His Waddle reflection shows he can believe a trade was fair on value and still later judge that it weakened his team.
+
+Follow-up strategy:
+
+- In a live draft, ask or infer whether Marcel has a concrete target before pricing his desire to move up; a target-locked slot can command more than a generic round valuation suggests.
+- When Robert wants to reduce immediate roster volume, a future Rookie pick can be a cleaner return than a same-draft swap or extra current selection.
+- Treat Marcel's visible excitement as evidence of genuine interest, but do not assume the first excited construction is his stable price; he may correct it immediately.
+- Do not treat his post-June pick-regret as a hard refusal to move future picks. Test the strength of the current target first.
+- If Marcel raises regret about a prior outcome, use it as evidence about his current risk perception, not as proof that the original deal was objectively bad or that he will reverse the same asset type immediately.
+
+Evidence / source:
+
+- Current WhatsApp negotiation excerpt supplied directly by Robert on 2026-09-02, covering 17:41 to 18:03 local time.
+- Deal and target are chat-confirmed; re-check current Sleeper-derived draft/transaction data when official platform provenance matters.
+
 ## Cross-manager communication memory for Robert
 
 These are interaction-level observations from the supplied WhatsApp exports and later directly supplied negotiations. They supplement, but do not replace, each manager's individual profile.
 
-- **Marcel:** Robert's maximum-detail style is a strength. Marcel actively rewards transparency, research, multiple variables and collaborative package-building.
+- **Marcel:** Robert's maximum-detail style is a strength. Marcel actively rewards transparency, research, multiple variables and collaborative package-building. In live drafts, target conviction and the actual player shelf can also create fast, clean cross-year pick trades.
 - **Flo:** The key blocker can be state uncertainty rather than value. First resolve whether Flo is ready to act; extra argument does not fix a deliberate wait-and-see posture.
 - **Jan:** Availability tier and price matter more than a long preamble. Both the Pickens and Antonio Williams deals closed as soon as one clean threshold was met; personal motivation can be disclosed without needing a long analytical pitch.
 - **Dennis:** Robert must compress. Dennis explicitly said the detailed initial offer overwhelmed him. Give a simple structure and let him research.

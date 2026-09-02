@@ -43,6 +43,14 @@ draftIdentity:
         A known SleeperDraftID may be bound per season in Metadata.json. Explicit
         bindings are authoritative; unbound drafts may be bootstrapped by Sleeper
         metadata/type classification plus configured instance order.
+    SleeperFuturePickPool:
+      meaning: >
+        Explicit role on the configured draft instance whose future-season picks
+        are represented by Sleeper's single future draft-pick pool before a concrete
+        future Sleeper draft exists.
+      rule: >
+        This role is configuration-driven and is not synonymous with the name
+        Rookie. At most one configured draft instance may own the role at a time.
 
   metadataContract:
     source: public/data/Metadata.json
@@ -57,10 +65,15 @@ draftIdentity:
           Map from season to concrete Sleeper draft ID. Existing known bindings
           should be persisted here so later classification changes cannot remap a
           concrete draft silently.
+        SleeperFuturePickPool: >
+          Boolean role flag identifying which configured draft instance receives
+          Sleeper future-season pick movements while no concrete future Sleeper
+          draft exists yet.
     invariants:
       - DraftType plus DraftInstance must be unique across configured draft definitions.
       - DraftNo must be unique across configured draft definitions.
       - One SleeperDraftID must not be bound to multiple configured draft instances.
+      - At most one configured draft instance may set SleeperFuturePickPool to true.
 
   transactionContract:
     sourceOfTruth:
@@ -78,8 +91,11 @@ draftIdentity:
       - Match traded_picks by season, round, original owner and, when available, previous/new owner movement.
       - A non-Sleeper sibling pick in the same transaction with the same movement claims its explicit DraftKey and excludes that concrete context for the unresolved Sleeper sibling.
       - Resolve only when exactly one concrete draft context remains.
+      - If no concrete context exists and the pick season is later than LeagueYear, use the one configured SleeperFuturePickPool role to build that future DraftKey.
+      - The future-pick fallback is driven only by the explicit role flag; it must never hard-code Rookie or infer a type from DraftSource.
+      - If the future role is absent, preserve unresolved identity; if multiple future roles are configured, fail closed as invalid configuration.
       - Never collapse multiple same-type instances into a type-only answer.
-      - If multiple contexts remain, preserve unresolved identity and emit a diagnostic warning instead of guessing.
+      - If multiple concrete contexts remain, preserve unresolved identity and emit a diagnostic warning instead of guessing.
     provenanceRule: >
       One TransactionID may legitimately contain assets from multiple DraftKeys and
       SleeperDraftIDs. Transaction provenance and draft-asset identity are separate dimensions.
@@ -88,8 +104,15 @@ draftIdentity:
     roleOfTradedPicks: >
       Sleeper traded_picks is evidence for movement/ownership inside one concrete
       Sleeper draft. It is not by itself a globally unique transaction-provenance key.
+    futurePickPool: >
+      Sleeper exposes one future pick pool per season before concrete future drafts
+      exist. Metadata explicitly maps that provider concept to one configured app
+      draft instance through SleeperFuturePickPool so the mapping can change without
+      changing resolver code.
     precedence:
       - explicit Metadata SleeperDraftIDs binding
+      - concrete Sleeper traded_picks context for the transaction movement
+      - configured SleeperFuturePickPool for later-than-LeagueYear picks when no concrete context exists
       - Sleeper metadata/type classification among still-unbound configured instances
       - deterministic configured DraftInstance/DraftNo order as bootstrap fallback
       - unresolved rather than silently overwrite an already bound concrete identity
@@ -121,4 +144,5 @@ draftIdentity:
       - Existing 2026 Rookie and Free Agent definitions are DraftInstance 1, so their DraftKeys remain 2026_Rookie and 2026_Free_Agent.
       - Existing manual transaction picks are migrated to explicit 2026_Free_Agent / 2027_Free_Agent DraftKeys.
       - The former source-based defaults Sleeper=>Rookie and Manual=>Free_Agent are removed from the generator contract.
+      - Future Sleeper picks use the explicit SleeperFuturePickPool role instead of restoring a source-based Rookie default.
       - Historical generated outputs are regenerated through the coupled full-rebuild contract rather than migrated in place.
