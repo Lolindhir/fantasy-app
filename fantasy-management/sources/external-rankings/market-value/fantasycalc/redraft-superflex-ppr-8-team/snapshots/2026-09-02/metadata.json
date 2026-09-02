@@ -1,0 +1,164 @@
+{
+  "schema_version": 3,
+  "source_id": "fantasycalc",
+  "source_name": "FantasyCalc",
+  "ranking_id": "redraft-superflex-ppr-8-team",
+  "ranking_name": "FantasyCalc Redraft Superflex PPR 8-Team Market Values",
+  "ranking_type": "observed_trade_market_value_ranking",
+  "official_source_url": "https://fantasycalc.com/",
+  "api_url": "https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=2&numTeams=8&ppr=1&includeAdp=true&includeRosterPercent=true",
+  "fetched_at": "2026-09-02T08:03:56.560887+00:00",
+  "source_updated_at": null,
+  "format": {
+    "dynasty": false,
+    "season_scope": "single_season",
+    "scoring": "ppr",
+    "superflex": true,
+    "source_team_count": 8,
+    "actual_league_team_count": 6,
+    "team_count_usage": "nearest_supported_proxy",
+    "te_premium": false,
+    "fixed_two_te_modeled_by_source": false
+  },
+  "request_parameters": {
+    "isDynasty": "false",
+    "numQbs": "2",
+    "numTeams": "8",
+    "ppr": "1",
+    "includeAdp": "true",
+    "includeRosterPercent": "true"
+  },
+  "snapshot": {
+    "snapshot_date": "2026-09-02",
+    "ranking_file": "ranking.csv",
+    "metadata_file": "metadata.json",
+    "raw_latest_file": "../../raw-latest.json",
+    "row_count": 199,
+    "asset_type_counts": {
+      "player": 199
+    },
+    "position_counts": {
+      "QB": 35,
+      "RB": 62,
+      "TE": 24,
+      "WR": 78
+    },
+    "csv_columns": [
+      "name",
+      "Rank",
+      "source_overall_rank",
+      "asset_type",
+      "position",
+      "team",
+      "value",
+      "position_rank",
+      "tier",
+      "trend_30_day",
+      "source_asset_id",
+      "sleeper_id",
+      "mfl_id",
+      "espn_id",
+      "age",
+      "years_experience",
+      "adp",
+      "trade_frequency",
+      "roster_percent",
+      "redraft_value",
+      "combined_value",
+      "redraft_dynasty_value_difference",
+      "redraft_dynasty_value_percent_difference",
+      "starter"
+    ],
+    "ranking_sha256": "d7ce98a6f1f64757ffc6fe4d85108df76d35b36cbda5f8cad05cb12f7a34f1d4",
+    "source_raw_sha256_at_snapshot": "3077528de5dc300edb2e066493cb4606689b28961066d6c9d1454a7e9512e033",
+    "rank_diagnostics": {
+      "source_overall_rank_unique": true,
+      "duplicate_source_rank_group_count": 0,
+      "duplicate_source_rank_row_count": 0,
+      "duplicate_source_rank_samples": [],
+      "sample_limit": 20,
+      "normalized_rank_method": "source_overall_rank_asc_then_value_desc_then_source_asset_id"
+    }
+  },
+  "raw_schema": {
+    "top_level_type": "array",
+    "entry_count": 199,
+    "entry_field_names": [
+      "combinedValue",
+      "displayTrend",
+      "maybeAdp",
+      "maybeMovingStandardDeviation",
+      "maybeMovingStandardDeviationAdjusted",
+      "maybeMovingStandardDeviationPerc",
+      "maybeOwner",
+      "maybeRosterPercent",
+      "maybeTier",
+      "maybeTradeFrequency",
+      "overallRank",
+      "player",
+      "positionRank",
+      "redraftDynastyValueDifference",
+      "redraftDynastyValuePercDifference",
+      "redraftValue",
+      "starter",
+      "trend30Day",
+      "value"
+    ],
+    "player_field_names": [
+      "espnId",
+      "ffpcId",
+      "fleaflickerId",
+      "id",
+      "maybeAge",
+      "maybeBirthday",
+      "maybeCollege",
+      "maybeDraftInfo",
+      "maybeHeight",
+      "maybeTeam",
+      "maybeWeight",
+      "maybeYoe",
+      "mflId",
+      "name",
+      "position",
+      "sleeperId"
+    ]
+  },
+  "extraction_provenance": {
+    "method": "direct_public_json_api",
+    "response_headers": {
+      "etag": "",
+      "last_modified": "",
+      "content_type": "application/json"
+    },
+    "raw_retention": "latest_only",
+    "historical_archive": "normalized_rankings_and_metadata_only"
+  },
+  "freshness": {
+    "status": "live_fetch",
+    "source_timestamp_available": false,
+    "refresh_before_value_sensitive_analysis": true
+  },
+  "analysis_usage": {
+    "role": "Observed trade-market value and plausibility context",
+    "value_horizon": "single_season",
+    "primary_use": "current_season_trade_market_value",
+    "not_projection": true,
+    "not_expert_consensus": true,
+    "comparison_contract": "fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json",
+    "preferred_player_join": [
+      "sleeper_id",
+      "source_asset_id",
+      "normalized_name_position"
+    ],
+    "rank_semantics": {
+      "Rank": "Repository-normalized unique row order. Use for deterministic joins and list-length percentiles.",
+      "source_overall_rank": "FantasyCalc-published overallRank. May contain duplicate values and must not be treated as a unique key."
+    },
+    "league_adjustment": "FantasyCalc uses the nearest supported eight-team proxy for the actual six-team league. It models Superflex and PPR, but not two fixed TE starters; apply additional replacement-level and TE-scarcity context during analysis."
+  },
+  "attribution": {
+    "required": true,
+    "display_name": "FantasyCalc",
+    "website": "https://fantasycalc.com/"
+  }
+}
