@@ -26,6 +26,29 @@ function Assert-Null {
     }
 }
 
+function Assert-Throws {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Action,
+        [Parameter(Mandatory = $true)][string]$ExpectedMessagePart,
+        [Parameter(Mandatory = $true)][string]$Message
+    )
+
+    $threw = $false
+    try {
+        & $Action | Out-Null
+    }
+    catch {
+        $threw = $true
+        if ([string]$_.Exception.Message -notlike "*$ExpectedMessagePart*") {
+            throw "$Message Unexpected error: $($_.Exception.Message)"
+        }
+    }
+
+    if (-not $threw) {
+        throw "$Message Expected an exception containing '$ExpectedMessagePart'."
+    }
+}
+
 # First instances keep the historical public keys; later instances add a suffix.
 Assert-Equal -Actual (New-DraftKey -season "2035" -draftType "Free_Agent" -draftInstance 1) -Expected "2035_Free_Agent" -Message "First Free Agent instance key changed."
 Assert-Equal -Actual (New-DraftKey -season "2035" -draftType "Free_Agent" -draftInstance 2) -Expected "2035_Free_Agent_2" -Message "Second Free Agent instance key is not unique."
@@ -40,6 +63,25 @@ Assert-DraftTypeConfigs -draftTypeConfigs $instanceConfigs
 $secondIdentity = Get-DraftIdentityFromKey -draftKey "2035_Free_Agent_2" -draftTypeConfigs $instanceConfigs
 Assert-Equal -Actual $secondIdentity.DraftType -Expected "Free_Agent" -Message "DraftType was not preserved for instance 2."
 Assert-Equal -Actual $secondIdentity.DraftInstance -Expected 2 -Message "DraftInstance was not resolved from DraftKey."
+
+# The future Sleeper pick owner is configuration-driven rather than hard-coded
+# to Rookie. This makes a future league-rule change a Metadata change only.
+$alternateFuturePoolConfigs = @(
+    [PSCustomObject]@{ DraftType = "Rookie"; DraftInstance = 1; DraftNo = 1; Rounds = 5; SleeperFuturePickPool = $false },
+    [PSCustomObject]@{ DraftType = "Free_Agent"; DraftInstance = 1; DraftNo = 2; Rounds = 5; SleeperFuturePickPool = $true }
+)
+$alternateFuturePool = Get-SleeperFuturePickDraftTypeConfig -draftTypeConfigs $alternateFuturePoolConfigs
+Assert-Equal -Actual $alternateFuturePool.DraftType -Expected "Free_Agent" -Message "Future Sleeper pick pool was hard-coded instead of following configuration."
+
+Assert-Throws `
+    -Action {
+        Get-SleeperFuturePickDraftTypeConfig -draftTypeConfigs @(
+            [PSCustomObject]@{ DraftType = "Rookie"; DraftInstance = 1; DraftNo = 1; Rounds = 5; SleeperFuturePickPool = $true },
+            [PSCustomObject]@{ DraftType = "Free_Agent"; DraftInstance = 1; DraftNo = 2; Rounds = 5; SleeperFuturePickPool = $true }
+        )
+    } `
+    -ExpectedMessagePart "Multiple draft instances are configured as SleeperFuturePickPool" `
+    -Message "Multiple future Sleeper pick pools were not rejected."
 
 # A manually declared sibling asset claims its concrete draft context. The same
 # movement from the Sleeper league transaction must then resolve to the other
@@ -108,8 +150,86 @@ Assert-Equal -Actual $resolvedSleeperPick.DraftInstance -Expected 1 -Message "Sl
 Assert-Equal -Actual $resolvedSleeperPick.SleeperDraftID -Expected "rookie-draft" -Message "Sleeper draft binding was not propagated."
 Assert-Equal -Actual $result.Transactions[0].DraftPicks[1].DraftKey -Expected "2026_Free_Agent" -Message "Manual pick identity was modified."
 
+# Sleeper exposes one future draft-pick pool before the concrete future draft
+# exists. With the current Metadata role this must resolve Marcel's 2027 round-4
+# pick to 2027_Rookie without requiring a 2027 SleeperDraftID.
+$futureSleeperPick = [PSCustomObject][ordered]@{
+    DraftType             = $null
+    DraftInstance         = $null
+    DraftCode             = $null
+    DraftSource           = "Sleeper"
+    DraftKey              = $null
+    Season                = "2027"
+    Round                 = 4
+    OriginalOwnerRosterID = 2
+    PreviousOwnerRosterID = 2
+    NewOwnerRosterID      = 1
+}
+$futureTransaction = [PSCustomObject][ordered]@{
+    Source        = "Sleeper"
+    TransactionID = "1400904559005532160"
+    Type          = "trade"
+    Status        = "complete"
+    CreatedAt     = [Int64]1
+    CreatedDate   = "2026-09-02"
+    DraftPicks    = @($futureSleeperPick)
+}
+$futureResult = Resolve-TransactionDraftPickTypesFromContexts -transactions @($futureTransaction) -contexts @()
+$resolvedFuturePick = $futureResult.Transactions[0].DraftPicks[0]
+Assert-Equal -Actual $resolvedFuturePick.DraftKey -Expected "2027_Rookie" -Message "Future Sleeper pick did not resolve to the configured future pick pool."
+Assert-Equal -Actual $resolvedFuturePick.DraftType -Expected "Rookie" -Message "Current Metadata future pick pool is not Rookie."
+Assert-Equal -Actual $resolvedFuturePick.DraftInstance -Expected 1 -Message "Future Sleeper pick resolved to the wrong draft instance."
+Assert-Null -Actual $resolvedFuturePick.SleeperDraftID -Message "Future Sleeper pick unexpectedly received a concrete draft ID."
+
+# Applying the resolved trade must transfer only the 2027 Rookie asset. The
+# same original-owner/round Free Agent asset must remain with Marcel.
+$rookieDraftPick = [PSCustomObject][ordered]@{
+    PickKey               = "2027_Rookie_R4_OO2"
+    Season                = "2027"
+    Round                 = 4
+    OriginalOwnerRosterID = 2
+    CurrentOwnerRosterID  = 2
+    WasTraded             = $false
+    IsCurrentlyTraded     = $false
+    TradeSource           = $null
+    TradeHistory          = @()
+}
+$freeAgentDraftPick = [PSCustomObject][ordered]@{
+    PickKey               = "2027_Free_Agent_R4_OO2"
+    Season                = "2027"
+    Round                 = 4
+    OriginalOwnerRosterID = 2
+    CurrentOwnerRosterID  = 2
+    WasTraded             = $false
+    IsCurrentlyTraded     = $false
+    TradeSource           = $null
+    TradeHistory          = @()
+}
+$rookieApplied = Get-AppliedDraftPickTrades -picks @($rookieDraftPick) -transactions @($futureResult.Transactions[0]) -draftKey "2027_Rookie"
+$freeAgentApplied = Get-AppliedDraftPickTrades -picks @($freeAgentDraftPick) -transactions @($futureResult.Transactions[0]) -draftKey "2027_Free_Agent"
+Assert-Equal -Actual $rookieApplied[0].CurrentOwnerRosterID -Expected 1 -Message "2027 Rookie round-4 pick did not transfer from Marcel to Robert."
+Assert-Equal -Actual $freeAgentApplied[0].CurrentOwnerRosterID -Expected 2 -Message "2027 Free Agent round-4 pick was incorrectly transferred with the Sleeper future pick."
+
+# Detail enrichment must be safe when a deliberately unresolved pick has no
+# generated draft candidate. This is the regression for the League update crash.
+$unmatchedPick = [PSCustomObject][ordered]@{
+    DraftSource           = "Sleeper"
+    Season                = "2099"
+    Round                 = 5
+    OriginalOwnerRosterID = 6
+    PreviousOwnerRosterID = 6
+    NewOwnerRosterID      = 1
+}
+$unmatchedTransaction = [PSCustomObject][ordered]@{
+    TransactionID = "no-draft-result-candidate"
+    DraftPicks    = @($unmatchedPick)
+}
+Assert-Null `
+    -Actual (Get-TransactionDraftPickResultMatch -transaction $unmatchedTransaction -transactionPick $unmatchedPick -drafts @()) `
+    -Message "Zero draft-result candidates must return null instead of failing parameter binding."
+
 # If two concrete draft instances remain viable and no sibling asset claims one,
-# the resolver must not invent an answer.
+# the resolver must not invent an answer, even for a future season.
 $ambiguousPick = [PSCustomObject][ordered]@{
     DraftType             = $null
     DraftInstance         = $null
