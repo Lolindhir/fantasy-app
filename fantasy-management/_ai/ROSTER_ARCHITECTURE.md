@@ -186,24 +186,47 @@ Vor **jedem eigenen FA-Draft-Pick** und nach jedem materiellen gegnerischen Pick
 
 Erst nach bestandener Availability-Prüfung wird die eigentliche Mighty-Giants-Opportunity-Cost gegen Rosterstruktur, Coverage, Taxi/Reserve, Churn-Slots und nächsten Cut bewertet.
 
-### 8.2 Roster- und Opportunity-Cost-Prüfung
+### 8.2 Materialisierte vs. effektiv kontrollierte Roster-Kapazität
+
+Während eines laufenden Drafts darf die Roster-Kapazität nicht ausschließlich aus dem bereits in `League.json` materialisierten Sleeper-State abgeleitet werden. Bereits fest gepickte Spieler gehören wirtschaftlich und operativ schon zum kontrollierten Mighty-Giants-Bestand, auch wenn Sleeper sie erst später in `Roster`, `Taxi` oder `Reserve` einträgt.
+
+Für Capacity-, Cut-, Churn- und Opportunity-Cost-Rechnungen werden deshalb mindestens folgende Größen getrennt:
+
+- `materialized_roster_count` = Anzahl unterschiedlicher Mighty-Giants-PlayerIDs, die im aktuellen `League.json` bereits in `Roster`, `Taxi` oder `Reserve` materialisiert sind;
+- `pending_controlled_draft_count` = Anzahl unterschiedlicher PlayerIDs, die Mighty Giants im aktuellen Draft bereits mit `Status: Picked` kontrolliert, die aber noch in keinem eigenen `League.json`-Rosterbereich materialisiert sind;
+- `effective_controlled_roster_count` = Vereinigungsmenge aus materialisierten Mighty-Giants-Spielern und bereits gepickten, noch nicht materialisierten eigenen Draftzugängen; jede PlayerID wird genau einmal gezählt;
+- `effective_active_roster_count` = der nach gültiger Taxi-/Reserve-Behandlung tatsächlich aktive Teil dieser effektiven Kontrollmenge, der gegen das harte aktive Roster-Limit läuft.
+
+Dabei gilt:
+
+- `League.json` bleibt kanonisch für den bereits materialisierten Roster-State und die aktuell ausgewiesene harte Roster-/Starter-Struktur;
+- `Drafts.json` ergänzt für die Kapazitätsrechnung nur bereits **eigene** `Status: Picked`-Zugänge, solange diese noch nicht in `League.json` materialisiert sind;
+- sobald eine gepickte PlayerID in einem eigenen `League.json`-Rosterbereich erscheint, darf sie nicht zusätzlich als pending Draftzugang gezählt werden;
+- ein pending Draftzugang wird nicht automatisch als aktiver Platz behandelt, wenn er nach den aktuell gültigen Regeln realistisch Taxi- oder Reserve-eligible ist; vor dem Taxi-Lock gehört er aber zwingend in den gemeinsam optimierten Taxi-eligible Pool und darf nicht aus der Rechnung verschwinden;
+- Reserve entlastet aktive Kapazität nur bei tatsächlich gültiger aktueller Eligibility; hypothetische spätere IR-/Reserve-Nutzbarkeit darf keinen freien Platz vortäuschen;
+- wenn `League.json` und der relevante aktuelle Draft-State nicht gemeinsam ausreichend frisch oder eindeutig auflösbar sind, ist die exakte effektive Kapazität `unknown`; die Analyse darf dann keine sichere Zahl freier Slots oder notwendiger Cuts behaupten.
+
+Die harte aktive Kapazität wird damit weiterhin aus der Liga-Struktur abgeleitet, die **Belegung** dieser Kapazität aber aus dem effektiv kontrollierten Bestand nach deduplizierter Draft-Ergänzung und gültiger Taxi-/Reserve-Zuweisung. Bereits gepickte, noch nicht materialisierte Spieler dürfen eine Cut-Line daher genauso auslösen wie bereits materialisierte Zugänge.
+
+### 8.3 Roster- und Opportunity-Cost-Prüfung
 
 Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang:
 
-1. aktuelle Starterstruktur und aktive Kapazität dynamisch aus `League.json` ableiten;
-2. aktuellen `coverage_floor` / `preferred_coverage` je relevante Position bestimmen;
-3. gemeinsamen `startable_skill_pool` und seine Marge gegen die benötigten Skill-Lineup-Slots prüfen;
-4. Taxi/Reserve separat nach aktueller Eligibility und aktueller Saisonphase behandeln;
-5. solange der Taxi-Lock noch nicht erfolgt ist, alle Taxi-eligible Rookies gemeinsam ranken und die Taxi-Slots für die Rosterrechnung virtuell optimal zuweisen, statt die aktuelle Sleeper-Platzierung als fest anzunehmen;
-6. Rolle und Security des eingehenden Spielers bestimmen;
-7. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen, der keine Coverage-Grenze verletzt;
-8. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
-9. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
-10. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
+1. aktuelle Starterstruktur und harte aktive Kapazität dynamisch aus `League.json` ableiten;
+2. `materialized_roster_count`, `pending_controlled_draft_count`, `effective_controlled_roster_count` und daraus nach gültiger Taxi-/Reserve-Behandlung `effective_active_roster_count` bestimmen;
+3. aktuellen `coverage_floor` / `preferred_coverage` je relevante Position bestimmen;
+4. gemeinsamen `startable_skill_pool` und seine Marge gegen die benötigten Skill-Lineup-Slots prüfen;
+5. Taxi/Reserve separat nach aktueller Eligibility und aktueller Saisonphase behandeln;
+6. solange der Taxi-Lock noch nicht erfolgt ist, alle Taxi-eligible Rookies einschließlich noch nicht materialisierter eigener Draft-Picks gemeinsam ranken und die Taxi-Slots für die Rosterrechnung virtuell optimal zuweisen, statt die aktuelle Sleeper-Platzierung als fest anzunehmen;
+7. Rolle und Security des eingehenden Spielers bestimmen;
+8. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen, der keine Coverage-Grenze verletzt;
+9. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
+10. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
+11. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
 
 Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste **validiert verfügbare** Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
 
-### 8.3 Folgejahres-Retention- und Salary-Guardrail
+### 8.4 Folgejahres-Retention- und Salary-Guardrail
 
 Bei finalen Cut-/Keep-, Roster-Limit- und FA-Draft-Opportunity-Cost-Entscheidungen wird nicht nur eine aktuelle `cut_line`, sondern zusätzlich eine **Retention-Line** für den nächsten relevanten Cap-/Roster-Zyklus bewertet.
 
@@ -287,11 +310,12 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - `roster_role` je relevanter Mighty-Giants-Spieler;
 - `roster_security` je relevanter Mighty-Giants-Spieler;
 - aktuelle harte aktive Kapazität;
+- `materialized_roster_count`, `pending_controlled_draft_count`, `effective_controlled_roster_count` und `effective_active_roster_count` inklusive der verwendeten aktuellen `League.json`-/`Drafts.json`-Stände;
 - dynamisch abgeleitete feste Starteranforderungen je Position;
 - aktuellen `coverage_floor` und `preferred_coverage` je relevante feste Position;
 - aktuellen `startable_skill_pool`, `required_skill_lineup_slots` und `skill_pool_margin`;
 - aktuelle Taxi-Phase: `pre_lock` oder `locked`;
-- bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool und die aktuell optimale **virtuelle** Taxi-Zuweisung;
+- bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool einschließlich noch nicht materialisierter eigener Draft-Picks und die aktuell optimale **virtuelle** Taxi-Zuweisung;
 - bei `locked`: die tatsächliche bindende Taxi-Zuweisung;
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
