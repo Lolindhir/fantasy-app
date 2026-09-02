@@ -81,10 +81,10 @@
 
           </div>
 
-          <div *ngIf="vm.deadlineInfo && vm.offSeason" class="deadlineHeader">
-            <div class="deadline">⏱️ {{ vm.deadlineInfo.displayText }} <span class="deadline-label">until Cap Deadline</span></div>
-            <div class="deadline-text">({{ vm.league.CapDeadline.slice(8, 10) }}.{{ vm.league.CapDeadline.slice(5, 7) }}.{{ vm.league.CapDeadline.slice(0, 4) }}, {{ vm.league.LeagueTimeZone || "UTC" }})</div>
-          </div>
+          <app-league-timeline
+            [league]="vm.league"
+            [drafts]="vm.draftSeasonDashboard?.drafts ?? []"
+          ></app-league-timeline>
 
         </div>
       </div>
@@ -187,25 +187,9 @@
     <app-draft-capital-overview></app-draft-capital-overview>
   </ng-container>
 
+  <app-league-matchups [league]="vm.league"></app-league-matchups>
+
   <ng-container *ngIf="vm.activeLeague">
-    <section *ngIf="vm.seasonPulse as pulse" class="season-pulse-card">
-      <div class="season-pulse-heading">
-        <div>
-          <div class="season-pulse-eyebrow">{{ pulse.eyebrow }}</div>
-          <h2>{{ pulse.title }}</h2>
-          <div class="season-pulse-subtitle">{{ pulse.subtitle }}</div>
-        </div>
-        <span class="season-pulse-status">{{ vm.league.Status }}</span>
-      </div>
-
-      <div class="season-pulse-metrics">
-        <div *ngFor="let metric of pulse.metrics" class="season-pulse-metric">
-          <div class="season-pulse-metric-label">{{ metric.label }}</div>
-          <div class="season-pulse-metric-value">{{ metric.value }}</div>
-        </div>
-      </div>
-    </section>
-
     <section
       *ngIf="vm.league.Status === 'In-Season' || vm.league.Status === 'Playoffs'"
       class="active-overview-card active-standings-card"

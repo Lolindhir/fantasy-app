@@ -1,0 +1,19 @@
+<section *ngIf="timeline as view" class="league-timeline">
+  <div class="league-timeline-eyebrow">Next milestone</div>
+
+  <div class="league-timeline-primary">
+    <span class="league-timeline-icon" aria-hidden="true">{{ view.primary.icon }}</span>
+    <div class="league-timeline-primary-copy">
+      <div class="league-timeline-label">{{ view.primary.label }}</div>
+      <div class="league-timeline-value">{{ view.primary.value }}</div>
+      <div *ngIf="view.primary.detail" class="league-timeline-detail">{{ view.primary.detail }}</div>
+    </div>
+  </div>
+
+  <div *ngIf="view.secondary as secondary" class="league-timeline-secondary">
+    <span aria-hidden="true">{{ secondary.icon }}</span>
+    <span class="league-timeline-secondary-label">{{ secondary.label }}</span>
+    <strong>{{ secondary.value }}</strong>
+    <span *ngIf="secondary.detail" class="league-timeline-secondary-detail">· {{ secondary.detail }}</span>
+  </div>
+</section>
