@@ -149,6 +149,29 @@ function Get-SleeperTransactions {
     return $transactionsData
 }
 
+function Get-SleeperMatchups {
+    param (
+        [string]$leagueID = (Get-Config).LeagueID,
+        [Parameter(Mandatory = $true)][int]$week
+    )
+
+    Write-Host "Get Sleeper Matchups for Week $week..." -ForegroundColor Yellow
+
+    try {
+        $url = "https://api.sleeper.app/v1/league/$leagueID/matchups/$week"
+        $response = Invoke-ApiWithKeyRotation -Url $url
+        $matchupsData = $response.result
+    }
+    catch {
+        Write-Error "Failed to retrieve Sleeper matchups data for week $week."
+        throw $_
+    }
+
+    Write-Host "Sleeper Matchups for Week $week found." -ForegroundColor Yellow
+
+    return $matchupsData
+}
+
 function Get-SleeperDrafts {
     param (
         [string]$leagueID = (Get-Config).LeagueID

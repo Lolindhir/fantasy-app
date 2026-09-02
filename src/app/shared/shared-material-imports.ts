@@ -18,6 +18,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { DraftCapitalOverviewComponent } from './components/draft-capital-overview/draft-capital-overview';
 import { DraftPickPillComponent } from './components/draft-pick-pill/draft-pick-pill';
 import { DraftPickPlayerCardComponent } from './components/draft-pick-player-card/draft-pick-player-card';
+import { LeagueMatchupsComponent } from './components/league-matchups/league-matchups';
+import { LeagueTimelineComponent } from './components/league-timeline/league-timeline';
 
 export const SharedMaterialImports = [
   MatCardModule,
@@ -37,5 +39,7 @@ export const SharedMaterialImports = [
   MatSelectModule,
   DraftCapitalOverviewComponent,
   DraftPickPillComponent,
-  DraftPickPlayerCardComponent
+  DraftPickPlayerCardComponent,
+  LeagueMatchupsComponent,
+  LeagueTimelineComponent
 ];

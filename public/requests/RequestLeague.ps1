@@ -13,6 +13,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
@@ -78,7 +79,7 @@ function Get-Compare {
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
             'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
-            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
+            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SeasonKickoff', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
 
@@ -87,6 +88,13 @@ function Get-Compare {
                 Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
                 return $true
             }
+        }
+
+        $oldMatchupsJson = $oldLeague.Matchups | ConvertTo-Json -Depth 8 -Compress
+        $newMatchupsJson = $newLeague.Matchups | ConvertTo-Json -Depth 8 -Compress
+        if ($oldMatchupsJson -ne $newMatchupsJson) {
+            Write-Host "League matchups snapshot changed."
+            return $true
         }
 
         # Arrays
@@ -367,6 +375,44 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
+    # Season kickoff and current matchup snapshot
+    $seasonKickoffUtc = Get-LeagueSeasonKickoffUtc -Schedule $schedule
+    $seasonKickoff = if ($null -ne $seasonKickoffUtc) {
+        $seasonKickoffUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
+    } else {
+        $null
+    }
+
+    $matchupWeek = 0
+    if ([string]$league.status -ne "complete" -and $currentWeek -gt 0 -and [int]$lastWeek -gt 0) {
+        $matchupWeek = [Math]::Min([int]$currentWeek, [int]$lastWeek)
+    }
+
+    $matchupSnapshot = $null
+    if ($matchupWeek -gt 0) {
+        $matchupSnapshot = Get-LeagueMatchupSnapshot `
+            -LeagueID $LeagueID `
+            -Week $matchupWeek `
+            -Season ([string]$league.season)
+
+        if ($null -eq $matchupSnapshot -and (Test-Path $config.LeagueFile)) {
+            try {
+                $existingLeague = Get-Content $config.LeagueFile -Raw | ConvertFrom-Json
+                if (
+                    $null -ne $existingLeague.Matchups -and
+                    [string]$existingLeague.Matchups.Season -eq [string]$league.season -and
+                    [int]$existingLeague.Matchups.Week -eq $matchupWeek
+                ) {
+                    $matchupSnapshot = $existingLeague.Matchups
+                    Write-Warning "Using previous generated matchup snapshot for Week $matchupWeek after refresh failure."
+                }
+            }
+            catch {
+                Write-Warning "Could not reuse previous matchup snapshot. $_"
+            }
+        }
+    }
+
     # Offenheit von Trades, Cuts, Waivers prüfen
     $cutsAllowed = $true
     $cutsMetaText = ""
@@ -386,12 +432,12 @@ try {
         $tradesMetaTextParts += "Trades will be declined by Commissioner Review"
     }
 
-    $tradeDeadlineWeek = [int]$league.settings.trade_deadline
+    $tradeDeadlineWeek = Resolve-LeagueTradeDeadlineWeek -TradeDeadline $league.settings.trade_deadline
     $leagueWeekForTradeDeadline = $currentWeek
     if ($leagueWeekForTradeDeadline -le 0) {
         $leagueWeekForTradeDeadline = $finalWeek
     }
-    if ($tradeDeadlineWeek -gt 0 -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
+    if ($null -ne $tradeDeadlineWeek -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
         $tradesOpen = $false
         $tradesMetaTextParts += "Trade Deadline reached"
     }
@@ -447,7 +493,7 @@ try {
         FinalScoredWeek         = $finalWeek
         LastLeagueWeek          = $lastWeek
         PlayoffStartWeek        = $playoffStart
-        TradeDeadlineWeek       = $league.settings.trade_deadline
+        TradeDeadlineWeek       = $tradeDeadlineWeek
         TradeReviewDays         = $tradeReviewDays
         CutsAllowed             = $cutsAllowed
         CutsMetaText            = $cutsMetaText
@@ -459,8 +505,10 @@ try {
         SalaryCap               = $salaryCapTotal
         SalaryCapProjected      = $salaryCapProjected
         CapDeadline             = $CapDeadline
+        SeasonKickoff           = $seasonKickoff
         LeagueTimeZone          = $LeagueTimeZone
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
+        Matchups                = $matchupSnapshot
         Teams                   = $teamData
         Standings               = $standings
         Playoffs                = $playoffs
