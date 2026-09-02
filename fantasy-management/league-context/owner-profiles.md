@@ -25,6 +25,8 @@ On 2026-08-14 Robert supplied WhatsApp text exports for Marcel, Flo, Jan, Tim an
 
 On 2026-08-18 Robert additionally supplied the complete Antonio Williams negotiation with Jan from 2026-08-17 to 2026-08-18. That current exchange was used to update Jan's process evidence and Robert's negotiation-style evidence below.
 
+On 2026-09-02 Robert additionally supplied the complete live-FA-draft trade exchange with Marcel around 2026 FA 4.04 and AJ Barner. That exchange was used to update Marcel's negotiation and target-conviction evidence below.
+
 - Treat paraphrased historical player/value statements as beliefs at the time of the conversation, not as current player truth.
 - `<Medien ausgeschlossen>` content was not reconstructed and must not be inferred.
 - Private non-Fantasy conversation is not part of the league context.
@@ -110,6 +112,7 @@ Draft and roster-construction tendencies:
 - **Confirmed, high confidence:** Prioritizes Running Backs and Tight Ends more aggressively than the neutral market when he sees scarcity, role value or immediate production.
   - Startup evidence: Breece Hall, De'Von Achane, Rachaad White, Travis Kelce, Derrick Henry and multiple later RBs.
   - 2025/2026 evidence: Mason Taylor, Eli Stowers, Jadarian Price und Mike Washington.
+  - In the 2026 live FA draft he actively traded up for AJ Barner, explicitly confirming Barner as his target and framing the move as improving his TE starting position alongside Dalton Schultz.
 - **Confirmed, high confidence:** Accepts veteran age and handcuff risk when it raises immediate contender production.
   - Startup examples: Kelce, Henry, Deebo Samuel, Cooper Kupp and James Conner.
   - 2026 example: Mike Washington as a Jeanty-handcuff and possible trade chip.
@@ -122,10 +125,12 @@ Negotiation tendencies:
 - **Confirmed, high confidence:** Marcel enjoys detailed, transparent, collaborative negotiation and treats the negotiation process itself as part of the game.
   - In the Hall talks he spent long stretches researching rosters, draft positions and external rankings, openly shared his reasoning and asked Robert for the same.
   - He explicitly said he appreciated the open communication and back-and-forth, called Robert a cooperative and likeable trade partner after the deal, and later contrasted this positively with less constructive negotiations elsewhere.
+  - On 2026-09-02 he again explicitly said that trading itself was fun immediately after completing the FA 4.04 deal.
   - He is a good target for long-form reasoning rather than a minimal offer-only message.
 - **Confirmed, high confidence:** He is comfortable with complex packages and extra variables when they help close the perceived value gap.
   - Hall/Odunze expanded into Rookie-Draft and FA/Veteran-Draft position swaps.
   - In the Waddle talks he explicitly suggested adding another component and said he liked the details.
+  - In the live 2026 FA draft his first instinct was again a swap plus a late Rookie pick before he immediately corrected that spontaneous construction and accepted a clean cross-year pick trade instead.
   - Pick swaps, future picks and cross-draft asset types are legitimate negotiation tools with him.
 - **Confirmed, high confidence:** Floor, immediate roster function and salary/cap are central components of his value model, but he also values youth and ceiling.
   - He repeatedly framed Hall and Waddle around floor and current startability.
@@ -135,15 +140,25 @@ Negotiation tendencies:
   - He considered the 2026 Rookie class weak and repeatedly questioned the value of later Rookie picks.
   - During the Waddle negotiation he viewed Rookie rounds 4/5 as close to cosmetic and said meaningful Rookie value likely ended around round 3 in this skill-player-only draft context.
   - He was more interested in FA/Veteran picks when cap cuts were expected to create usable immediate players.
+  - On 2026-09-02 he was willing to exchange his 2027 Rookie 4th for the current 2026 FA 4.04 because a specific target, AJ Barner, remained available; this is strong evidence that the actual player shelf can outweigh the nominal preference for preserving a future Rookie pick.
 - **Confirmed, medium-high confidence:** Personal or emotional player context can materially alter his preference among otherwise comparable assets.
   - Loveland was especially attractive partly because of Marcel's Chicago connection.
   - Jakobi Meyers carried a negative personal bias from previously disappointing him as a rotation player.
   - Kincaid's prior injury experience made Marcel reluctant even when he accepted that Kincaid could produce when healthy.
 - **Confirmed, medium-high confidence:** Marcel will research and revise his own initial anchor rather than rigidly defend it.
   - His first Hall/Metcalf package was very aggressive, but he later acknowledged areas of agreement, researched independently, moved through several structures and closed on a substantially different construction.
-- **Provisional, medium confidence:** After the June 2026 deals he may become more protective of draft capital.
-  - Marcel explicitly worried that he might have been too generous with his picks.
-  - Treat this as a potential post-deal adjustment, not yet a stable trait.
+  - In the 2026 FA 4.04 exchange he immediately self-corrected his first "swap + late Rookie" suggestion as excitement-driven rather than defending it.
+- **Provisional, medium-high confidence:** Specific live-draft target conviction can accelerate Marcel's willingness to spend future draft capital and tolerate near-term roster pressure.
+  - Startup pick trading already showed willingness to pay for a concentrated target window.
+  - In September 2026 he moved a future Rookie 4th for FA 4.04 to secure AJ Barner even while acknowledging that his roster would still require a cut.
+  - Treat this as target-specific behavior, not a generic willingness to overpay for any move-up.
+- **Provisional, medium confidence:** After the June 2026 deals he may become more protective of draft capital, but the September 2026 Barner trade is direct counter-evidence against treating that concern as a blanket rule.
+  - Marcel explicitly worried in June that he might have been too generous with his picks.
+  - In September he nevertheless willingly moved a 2027 Rookie 4th for a current FA 4.04 when he liked the available player and framed the deal partly through the fun of trading.
+  - Treat pick protection as situational and target-dependent rather than a stable hard constraint.
+- **Candidate, medium confidence:** Marcel explicitly re-evaluates prior trades through subsequent player development and outcome, even when he still believes the original transaction returned fair value.
+  - After the 2026 preseason he said the earlier Waddle deal had probably weakened his team despite acknowledging that he had received value, and credited Robert for the resulting development.
+  - This may increase caution after adverse outcomes, but one retrospective comment is not enough to establish a stable loss-aversion pattern.
 - **Confirmed, high confidence:** Trust and reciprocity matter. Marcel shares potentially sensitive thoughts, such as considering a Baker Mayfield sale, when he sees the counterparty as a trusted partner and expects joint reflection rather than exploitation.
 
 Recommended approach for Robert:
@@ -151,9 +166,12 @@ Recommended approach for Robert:
 - Use a substantive first offer with clear reasoning; Marcel is unlikely to be put off by detail.
 - Invite him to co-construct the package and leave multiple movable variables.
 - Explicitly address floor, salary effect, roster need and the quality of the specific draft class.
+- In live drafts, identify whether Marcel has a specific target before pricing a move-up; target conviction can make a current slot materially more valuable to him than the nominal round suggests.
+- Future Rookie picks can be legitimate return assets when Robert wants to reduce current roster volume and Marcel wants a specific current player.
 - Do not assume late picks can bridge a meaningful gap; explain the realistic player shelf.
 - Ask about personal targets and emotional preferences when choosing between similar return assets.
-- Re-check whether his June 2026 concern about giving away too many picks has made him more pick-protective before leaning on the same tactic again.
+- Treat excitement as a useful signal of genuine interest, but not as a pricing mistake to exploit automatically; Marcel has shown that he can self-correct a spontaneous construction immediately.
+- Re-check whether adverse outcomes from prior trades have changed his willingness to repeat a similar asset conversion before relying on old precedents.
 
 ## TeamID 3 / Flo (Just Bill)
 
