@@ -114,12 +114,14 @@ shortContext:
   .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
+  public/data/League.json: Generiertes League-Home-Read-Model; enthält neben Lifecycle/Teams auch SeasonKickoff, nullable TradeDeadlineWeek und den aktuellen Sleeper-Matchup-Snapshot für die relevante Woche
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
   public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ/Instanz die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
   public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; nutzt dieselbe Season+DraftType+DraftInstance-Identität wie Current Drafts und reichert completed Pick-Ergebnisse sowie CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
+  public/requests/utils/league/LeagueOverviewUtils.psm1: Generator-Helper für nullable TradeDeadlineWeek, echten Regular-Season-Kickoff und deterministischen aktuellen Sleeper-Matchup-Snapshot in League.json
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/interceptors/json-data-cache-busting.interceptor.ts: Fügt lokalen GET-Requests für JSON unter data/ den aktuellen Build-Commit als Queryparameter hinzu; data/past_seasons/** bleibt für langfristiges historisches Caching ausgenommen
@@ -128,12 +130,15 @@ shortContext:
   src/app/core/models/transaction.models.ts: Explizite Raw- und Frontend-Modelle für abgeschlossene Transaktionen, Teilnehmer, Spieler-Assets und Draft-Pick-Bewegungen; unresolved Sleeper-Picks dürfen bis zur eindeutigen Instanzauflösung null DraftType/DraftKey tragen
   src/app/core/mappers/transaction.mapper.ts: Reiner Mapper für Transactions.json; löst Teams und Spieler auf und ordnet Assets je Teilnehmer als acquired/sent zu
   src/app/features/**: Geroutete Angular-Feature-Seiten
+  src/app/features/overview/overview.html: League-Home-Overview; Hero nutzt League Timeline, Matchups werden verfügbarkeitsgetrieben auch im späten Draft gezeigt, Current Standings bleiben auf In-Season/Playoffs begrenzt und All-Time bleibt separat erhalten
   src/app/features/standings/standings-page.ts: Geroutete Standings-Seite für Hall of Fame, All-Time Overview, Current Standings und Season Archive
   src/app/features/drafts/drafts-page.ts: Gerouteter Drafts-Seiten-Aggregator; Current entspricht League.Season, Future nur späteren Seasons und Past nur archivierten früheren Seasons
   src/app/features/drafts/components/**: Wiederverwendbare Draft-UI-Bausteine wie DraftShell, DraftPickCard, DraftPickTrigger und DraftPickPopover
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete current-style Draft-Cards für Current und Past mit Overview, Teams und List; nutzen zentrale Draft-ViewModels und gemeinsame Draft-UI-Komponenten
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen, DraftShell-Header, gemeinsamem DraftPickTrigger und gemeinsamem DraftPickPopover
   src/app/shared/components/league-legacy-summary/league-legacy-summary.ts: Wiederverwendbare Hall-of-Fame-Kachelkomponente für Legacy-Highlights
+  src/app/shared/components/league-timeline/league-timeline.ts: Wiederverwendbare Hero-Timeline; priorisiert pro League-Phase genau den nächsten relevanten Meilenstein und höchstens einen sekundären Termin
+  src/app/shared/components/league-matchups/league-matchups.ts: Wiederverwendbare Matchup-Darstellung; löst TeamIDs des generated League.Matchups-Snapshots gegen gemappte Teams auf und blendet sich ohne valide Paarungen aus
   src/app/shared/components/all-time-overview/all-time-overview.ts: Wiederverwendbare All-Time-Übersicht mit Reitern für Overall und Regular Season
   src/app/shared/components/current-standings/current-standings.ts: Wiederverwendbare Current-Standings-Komponente für aktuelle Tabellenzeilen
   src/app/shared/components/season-archive/season-archive.ts: Wiederverwendbares Season Archive für Playoff-Ergebnisse, Awards und Regular-Season-Standings je Saison
