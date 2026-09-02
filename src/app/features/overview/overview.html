@@ -206,7 +206,10 @@
       </div>
     </section>
 
-    <section class="active-overview-card active-standings-card">
+    <section
+      *ngIf="vm.league.Status === 'In-Season' || vm.league.Status === 'Playoffs'"
+      class="active-overview-card active-standings-card"
+    >
       <app-current-standings
         [standings]="vm.currentStandings"
         title="Current Standings"
