@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -11,6 +12,10 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
 
     def _read(self, path: str) -> str:
         return (self.root / path).read_text(encoding="utf-8")
+
+    def _schedule_target(self, target_id: str) -> dict:
+        config = json.loads(self._read(".github/workflow-schedules.json"))
+        return next(target for target in config["targets"] if target["id"] == target_id)
 
     def test_source_workflows_publish_success_heartbeats(self) -> None:
         workflows = {
@@ -145,15 +150,21 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
     def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume League app data, not own its producer.
         workflow = self._read(".github/workflows/update-league.yml")
+        target = self._schedule_target("league")
 
+        self.assertEqual(target["cron"], ["*/10 * * * *"])
+        self.assertEqual(target["timezone"], "Etc/UTC")
+        self.assertEqual(target["eventType"], "scheduler-update-league")
         for required in (
-            "cron: '*/10 * * * *'",
+            "repository_dispatch:",
+            "- scheduler-update-league",
             "pwsh ./public/requests/RequestLeague.ps1",
             "git add public/data/**",
         ):
             self.assertIn(required, workflow)
 
         for forbidden in (
+            "\n  schedule:\n",
             "refresh_mode",
             "freshness_heartbeat",
             "write_source_refresh_heartbeat.py",
@@ -167,18 +178,21 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
     def test_players_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume Players.json, not own its producer.
         workflow = self._read(".github/workflows/update-players.yml")
+        target = self._schedule_target("players")
 
+        self.assertEqual(target["cron"], ["15 1 * * *", "0 8 * * *", "30 13 * * *"])
+        self.assertEqual(target["timezone"], "America/New_York")
+        self.assertEqual(target["eventType"], "scheduler-update-players")
         for required in (
-            'cron: "15 1 * * *"',
-            'cron: "0 8 * * *"',
-            'cron: "30 13 * * *"',
-            'timezone: "America/New_York"',
+            "repository_dispatch:",
+            "- scheduler-update-players",
             "pwsh ./public/requests/RequestPlayers.ps1",
             "git add public/data/**",
         ):
             self.assertIn(required, workflow)
 
         for forbidden in (
+            "\n  schedule:\n",
             'cron: "0 8,12,18 * * *"',
             'cron: "5 3 * * *"',
             'cron: "5 4 * * *"',
@@ -216,11 +230,14 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
 
     def test_0645_catch_up_uses_native_berlin_schedule_and_does_not_cancel_running_source_materialization(self) -> None:
         workflow = self._read(".github/workflows/materialize-fantasy-operations-inputs.yml")
+        target = self._schedule_target("fantasy-operations-materializer")
 
-        self.assertIn('cron: "45 6 * * *"', workflow)
-        self.assertIn('timezone: "Europe/Berlin"', workflow)
-        self.assertNotIn('cron: "45 4 * * *"', workflow)
-        self.assertNotIn('cron: "45 5 * * *"', workflow)
+        self.assertEqual(target["cron"], ["45 6 * * *"])
+        self.assertEqual(target["timezone"], "Europe/Berlin")
+        self.assertEqual(target["eventType"], "scheduler-materialize-fantasy-operations-inputs")
+        self.assertIn("repository_dispatch:", workflow)
+        self.assertIn("- scheduler-materialize-fantasy-operations-inputs", workflow)
+        self.assertNotIn("\n  schedule:\n", workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
 
     def test_materializer_reports_trigger_start_and_publish_observability_without_using_it_for_readiness(self) -> None:
