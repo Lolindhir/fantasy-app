@@ -282,6 +282,34 @@ app-overview .pick-overview-owner-name {
   }
 }
 
+@media (min-width: 768px) {
+  app-overview .header .header-content {
+    max-width: none;
+  }
+
+  app-overview .header .header-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    align-items: start;
+    justify-content: stretch;
+    gap: 6px 24px;
+  }
+
+  app-overview .header .header-columns app-league-timeline {
+    grid-column: 1 / -1;
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  app-overview .header .league-logo {
+    align-self: start;
+    width: 180px;
+    height: 180px;
+    min-height: 0;
+  }
+}
+
 @media (max-width: 600px) {
   app-current-drafts-tab .pick-row {
     grid-template-columns: 64px minmax(0, 1fr);
