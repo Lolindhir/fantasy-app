@@ -212,12 +212,22 @@ Assert-Equal -Actual $crossSeasonResult.Transactions[0].Season -Expected "2024" 
 Assert-Equal -Actual $crossSeasonResult.Transactions[0].DraftPicks[0].DraftKey -Expected "2025_Rookie" -Message "Cross-season historical pick did not resolve against the completed 2025 draft context."
 Assert-Equal -Actual $crossSeasonResult.Transactions[0].DraftPicks[0].DraftInstance -Expected 1 -Message "Cross-season historical pick lost concrete DraftInstance."
 
-# Weekly ownership: Transactions is the scheduled coupled rebuild. Drafts remains
-# independently dispatchable for manual repair/refresh but is no longer a second
-# scheduled writer that can run on stale historical transactions first.
+# Weekly ownership: Transactions remains the coupled weekly rebuild owner, but the
+# schedule itself is now owned by the central repository scheduler. Drafts remains
+# independently dispatchable for manual repair/refresh and is not a scheduled writer.
 $transactionsWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
 $draftsWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-drafts.yml" -Raw
-Assert-True -Condition $transactionsWorkflow.Contains("schedule:") -Message "Transactions workflow lost its weekly schedule."
+$schedulerConfig = Get-Content "$PSScriptRoot\..\..\.github\workflow-schedules.json" -Raw | ConvertFrom-Json
+$transactionsTargets = @($schedulerConfig.targets | Where-Object { $_.id -eq "transactions" })
+Assert-Equal -Actual $transactionsTargets.Count -Expected 1 -Message "Central scheduler must define exactly one Transactions target."
+$transactionsTarget = $transactionsTargets[0]
+Assert-Equal -Actual $transactionsTarget.timezone -Expected "America/New_York" -Message "Transactions central schedule timezone changed unexpectedly."
+Assert-Equal -Actual $transactionsTarget.eventType -Expected "scheduler-update-transactions" -Message "Transactions central scheduler event type changed unexpectedly."
+Assert-Equal -Actual @($transactionsTarget.cron).Count -Expected 1 -Message "Transactions central scheduler must own exactly one weekly cron slot."
+Assert-Equal -Actual @($transactionsTarget.cron)[0] -Expected "5 4 * * 3" -Message "Transactions central weekly cron changed unexpectedly."
+Assert-True -Condition $transactionsWorkflow.Contains("repository_dispatch:") -Message "Transactions workflow no longer accepts central scheduler dispatches."
+Assert-True -Condition $transactionsWorkflow.Contains("scheduler-update-transactions") -Message "Transactions workflow lost its central scheduler event type."
+Assert-True -Condition (-not $transactionsWorkflow.Contains("schedule:")) -Message "Transactions workflow must not own a local schedule after central scheduler migration."
 Assert-True -Condition $transactionsWorkflow.Contains("RequestTransactions.ps1") -Message "Transactions workflow no longer runs RequestTransactions.ps1."
 Assert-True -Condition $draftsWorkflow.Contains("workflow_dispatch:") -Message "Drafts workflow is no longer manually dispatchable."
 Assert-True -Condition (-not $draftsWorkflow.Contains("schedule:")) -Message "Drafts workflow must be manual-only after the coupled history rebuild change."
