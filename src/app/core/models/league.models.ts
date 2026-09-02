@@ -91,6 +91,22 @@ export interface Standing {
   Awards?: AwardInStanding[];
 }
 
+export interface LeagueMatchupParticipant {
+  TeamID: number;
+  Points: number;
+}
+
+export interface LeagueMatchup {
+  MatchupID: number;
+  Participants: LeagueMatchupParticipant[];
+}
+
+export interface LeagueMatchupSnapshot {
+  Season: string;
+  Week: number;
+  Matchups: LeagueMatchup[];
+}
+
 export interface RawLeague {
   LeagueID: string;
   Name: string;
@@ -103,7 +119,7 @@ export interface RawLeague {
   FinalScoredWeek: number;
   LastLeagueWeek: number;
   PlayoffStartWeek: number;
-  TradeDeadlineWeek: number;
+  TradeDeadlineWeek: number | null;
   TradeReviewDays: number;
   CutsAllowed: boolean;
   CutsMetaText: string;
@@ -115,8 +131,10 @@ export interface RawLeague {
   SalaryCap: number;
   SalaryCapProjected: number;
   CapDeadline: string;
+  SeasonKickoff?: string | null;
   LeagueTimeZone?: string;
   SalaryRelevantTeamSize: number;
+  Matchups?: LeagueMatchupSnapshot | null;
   Teams: RawFantasyTeam[];
   Standings: Standing[];
   Playoffs?: unknown;
