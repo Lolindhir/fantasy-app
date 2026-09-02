@@ -210,7 +210,30 @@ Die harte aktive Kapazität wird damit weiterhin aus der Liga-Struktur abgeleite
 
 ### 8.3 Roster- und Opportunity-Cost-Prüfung
 
-Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang:
+Bei Roster-Zugängen werden **Akquisezeitpunkt** und **Retention-Zeitpunkt** ausdrücklich getrennt. Ein Spieler muss beim Erwerb nicht bereits beweisen, dass er einen später dauerhaft gebundenen Rosterplatz verdient, wenn die Akquise selbst noch keine entsprechende irreversible Roster-Entscheidung erzwingt.
+
+#### Acquisition Stage
+
+Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Zugang wird zuerst `acquisition_cost_now` bestimmt. Dazu zählen alle **unmittelbaren irreversiblen** Kosten des Erwerbs, insbesondere:
+
+- ein sofort notwendiger Cut/Drop oder Verlust eines bereits kontrollierten Assets;
+- ein sofortiger Cap-/Salary-Effekt;
+- ein Taxi-/Reserve-/Eligibility-Verlust oder eine andere sofort bindende Roster-Restriktion;
+- das Verbrauchen eines knappen Transaktionsmittels, wenn dadurch eine realistische bessere Alternative verloren geht;
+- beim Draft-Pick die Opportunity Cost gegenüber anderen validiert verfügbaren Kandidaten sowie gegenüber einem realistisch verfügbaren Trade-/Pick-Verwertungsweg.
+
+Wenn ein FA-Draft-Pick **sonst verfällt**, nach Prüfung realistischer Trade-/Alternativnutzung kein besserer unmittelbarer Einsatz vorhanden ist und die Auswahl eines Spielers **keinen sofortigen Cut, Cap-Nachteil, Taxi-Verlust oder anderen irreversiblen Roster-Preis** erzwingt, gilt:
+
+- ein Spieler mit **positivem Optionswert** darf gepickt werden, auch wenn er die spätere permanente Churn-/Retention-Boundary aktuell noch nicht schlägt;
+- positiver Optionswert kann aus künftiger Rollen-/Injury-Upside, Markt-/Trade-Wert, zusätzlicher Informationsgewinn-Zeit oder der Chance entstehen, bis zum tatsächlichen Roster-Lock einen heutigen Boundary-Spieler noch zu überholen;
+- der Vergleich lautet in dieser Stufe nicht zwingend `neuer Spieler vs. sofortiger Cut`, sondern `bestes verfügbares kontrollierbares Asset vs. Pick verfallen lassen / beste unmittelbare Alternative`;
+- dies ist **kein** pauschales `always pick`: Spieler ohne positiven erwarteten Optionswert, klar schlechtere Kandidaten oder ein besser verwertbarer Trade-/Pick-Pfad dürfen weiterhin zu Pass/Trade führen.
+
+Ein so gepickter Spieler erhöht gemäß Abschnitt 8.2 sofort `pending_controlled_draft_count` bzw. `effective_controlled_roster_count`. Die spätere Rosterbelastung wird also nicht ignoriert; nur der Zeitpunkt der irreversiblen Cut-/Retention-Entscheidung wird korrekt aufgeschoben, wenn die Liga dies zulässt.
+
+#### Retention Stage
+
+Sobald Materialisierung, Roster-Limit, Taxi-Lock, Deadline oder eine andere Liga-Restriktion das weitere Halten tatsächlich an einen gebundenen aktiven Platz, einen Cut oder einen anderen irreversiblen Preis koppelt, wird `retention_cost_later` fällig. Spätestens dann erfolgt die volle Roster-/Opportunity-Cost-Prüfung:
 
 1. aktuelle Starterstruktur und harte aktive Kapazität dynamisch aus `League.json` ableiten;
 2. `materialized_roster_count`, `pending_controlled_draft_count`, `effective_controlled_roster_count` und daraus nach gültiger Taxi-/Reserve-Behandlung `effective_active_roster_count` bestimmen;
@@ -222,9 +245,14 @@ Vor jedem Add, Waiver Claim, Free-Agent-Draft-Pick oder ähnlichen Roster-Zugang
 8. den aktuell schwächsten realistisch repurposable aktiven Platz bestimmen, der keine Coverage-Grenze verletzt;
 9. prüfen, wie viele allgemeine Churn-Slots nach der Transaktion verbleiben;
 10. wenn ein Churn-Slot in einen dauerhaften Hold umgewandelt wird, den **neuen** Churn-Boundary-Spieler explizit benennen;
-11. den Move ablehnen, traden oder verschieben, wenn ein marginaler Zugang nur dadurch möglich wäre, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
+11. den Move bzw. weiteren Hold ablehnen, traden oder verschieben, wenn der Zugang nur dadurch dauerhaft gehalten werden könnte, dass Coverage oder operative Flexibilität ohne ausreichenden Mehrwert geopfert wird.
 
-Für den Free-Agent Draft gilt insbesondere: Ein später Pick muss nicht genutzt werden, wenn der beste **validiert verfügbare** Spieler den nächsten Mighty-Giants-Roster-Cut, die Positions-Coverage und den Verlust eines Churn-Slots nicht rechtfertigt.
+Wenn die Acquisition Stage bereits unmittelbar einen Cut oder eine andere Retention-Konsequenz erzwingt, fallen Acquisition Stage und Retention Stage zusammen und die volle Prüfung gilt **sofort**.
+
+Für den Free-Agent Draft gilt deshalb differenziert:
+
+- ein später Pick **muss nicht genutzt werden**, wenn die Akquise selbst bereits negative unmittelbare Opportunity Cost erzeugt oder kein validiert verfügbarer Spieler positiven Optionswert gegenüber Pass/Trade/Alternativen besitzt;
+- ein später Pick soll aber **nicht allein deshalb verfallen**, weil der beste Kandidat heute noch nicht die spätere permanente Cut-/Retention-Boundary schlägt, wenn diese Retention-Entscheidung regelkonform erst später anfällt und die heutige Akquise keinen entsprechenden irreversiblen Preis verursacht.
 
 ### 8.4 Folgejahres-Retention- und Salary-Guardrail
 
@@ -321,6 +349,7 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - aktuelle Churn-/Conditional-Boundary;
 - ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
 - bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände;
+- bei Free-Agent-Draft-Pick-Empfehlungen: getrennt `acquisition_cost_now` und – falls erst später bindend – den erwarteten `retention_cost_later` samt Trigger nennen; ein deferred Retention-Risiko darf nicht als heutiger sofortiger Cut ausgegeben werden;
 - bei finalen Cut-/Keep- und FA-Draft-Opportunity-Cost-Entscheidungen für alle Grenzfälle: aktuelles `SalaryProjected`, erwartete Mighty-Giants-Lineup-/Coverage-Utility, Dynasty-/Trade-Asset-Wert, `retention_risk` und realistische Exit-Option;
 - bei Salary-relevanten Entscheidungen den aktuellen League-Cap-/`SalaryRelevantTeamSize`-Kontext ausweisen und Salary klar von Spielerqualität trennen;
 - welcher Spieler bei einem geplanten Zugang zum neuen Coverage-, Churn- oder Retention-Boundary-Spieler würde.
