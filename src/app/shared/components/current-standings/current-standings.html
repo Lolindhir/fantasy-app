@@ -1,20 +1,17 @@
 <section class="current-standings" *ngIf="standings as rows">
-  <h2>{{ title }}</h2>
+  <div class="standing-mobile-heading">
+    <h2 class="standing-mobile-title">{{ title === 'Current Standings' ? 'Standings' : title }}</h2>
+    <div>Record</div>
+    <div>PF</div>
+  </div>
+
+  <h2 class="standing-desktop-title">{{ title }}</h2>
 
   <div class="standing-row standing-header">
-    <div>
-      <span class="standing-header-label standing-header-label--mobile">#</span>
-      <span class="standing-header-label standing-header-label--desktop">Place</span>
-    </div>
+    <div>Place</div>
     <div>Team</div>
-    <div>
-      <span class="standing-header-label standing-header-label--mobile">W-L</span>
-      <span class="standing-header-label standing-header-label--desktop">Record</span>
-    </div>
-    <div>
-      <span class="standing-header-label standing-header-label--mobile">PF</span>
-      <span class="standing-header-label standing-header-label--desktop">Points</span>
-    </div>
+    <div>Record</div>
+    <div>Points</div>
   </div>
 
   <div *ngFor="let row of rows" class="standing-row">
