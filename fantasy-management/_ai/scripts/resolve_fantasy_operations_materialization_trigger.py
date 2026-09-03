@@ -13,6 +13,7 @@ GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {
     "public/data/League.json",
     "public/data/Players.json",
+    "public/data/Drafts.json",
     "public/data/Timestamps.json",
 }
 MATERIALIZATION_DEFINITION_PREFIXES = (

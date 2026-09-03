@@ -12,6 +12,7 @@ on:
     paths:
       - public/data/League.json
       - public/data/Players.json
+      - public/data/Drafts.json
       - public/data/Timestamps.json
       - fantasy-management/sources/external-rankings/**
       - fantasy-management/sources/external-signals/**
@@ -22,6 +23,7 @@ on:
       - fantasy-management/automation/managed-roster-overview.json
       - fantasy-management/automation/roster-evaluation-state.json
       - fantasy-management/automation/free-agent-materialization.json
+      - fantasy-management/automation/fa-board-materialization.json
       - fantasy-management/automation/free-agent-movement-materialization.json
       - fantasy-management/automation/free-agent-movement-event-materialization.json
       - fantasy-management/automation/kicker-streaming-input-materialization.json
@@ -35,6 +37,7 @@ on:
       - fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
       - fantasy-management/_ai/scripts/build_managed_roster_overview.py
       - fantasy-management/_ai/scripts/build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/build_fa_board_readmodel.py
       - fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/build_free_agent_movement_events.py
       - fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
@@ -48,6 +51,7 @@ on:
       - fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py
       - fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/tests/test_build_fa_board_readmodel.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py
       - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py
       - fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py
@@ -63,6 +67,7 @@ on:
       - fantasy-management/_ai/schemas/player-signal-dataset.schema.json
       - fantasy-management/_ai/schemas/managed-roster-overview.schema.json
       - fantasy-management/_ai/schemas/free-agent-dataset.schema.json
+      - fantasy-management/_ai/schemas/fa-board-readmodel.schema.json
       - fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json
       - fantasy-management/_ai/schemas/free-agent-movement-events.schema.json
       - fantasy-management/_ai/schemas/kicker-streaming-inputs.schema.json
@@ -185,6 +190,7 @@ jobs:
             fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py \
             fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py \
+            fantasy-management/_ai/scripts/tests/test_build_fa_board_readmodel.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py \
             fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py \
             fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py \
@@ -222,6 +228,7 @@ jobs:
             python fantasy-management/_ai/scripts/materialize_external_signals.py
             python fantasy-management/_ai/scripts/build_player_signal_dataset.py --check
             python fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
+            python fantasy-management/_ai/scripts/build_fa_board_readmodel.py
             python fantasy-management/_ai/scripts/build_free_agent_dataset.py
             if test -s "$previous_free_agent"; then
               python fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py --previous-free-agent-signals "$previous_free_agent"
@@ -246,6 +253,12 @@ jobs:
               exit 1
             }
             python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/player-signals.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/player-signal-dataset.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=data["population"]["player_count"]; assert count > 0 and len(data["players"]) == count, "invalid player-signals population"; print(f"Validated player-signals.json with {count} players.")'
+
+            test -s fantasy-management/generated/operations/fa-board-readmodel.json || {
+              echo "fa-board-readmodel.json is missing or empty after materialization" >&2
+              exit 1
+            }
+            python -c 'import json; from pathlib import Path; from jsonschema import Draft202012Validator; data=json.loads(Path("fantasy-management/generated/operations/fa-board-readmodel.json").read_text(encoding="utf-8")); schema=json.loads(Path("fantasy-management/_ai/schemas/fa-board-readmodel.schema.json").read_text(encoding="utf-8")); Draft202012Validator(schema).validate(data); count=data["population"]["player_count"]; assert count > 0 and len(data["players"]) == count, "invalid FA-board population"; assert data["quality"]["availability_fail_closed"] is True, "FA-board must be fail-closed"; print("Validated fa-board-readmodel.json with {} players; availability={}; draft={}; quality={}.".format(count, data["population"]["availability"], data["current_fa_draft"]["resolution_status"], data["quality"]["status"]))'
 
             test -s fantasy-management/generated/operations/managed-roster-overview.json || {
               echo "managed-roster-overview.json is missing or empty after materialization" >&2
@@ -286,6 +299,7 @@ jobs:
               fantasy-management/generated/operations/managed-roster-signals.json \
               fantasy-management/generated/operations/external-signal-relevance.json \
               fantasy-management/generated/operations/player-signals.json \
+              fantasy-management/generated/operations/fa-board-readmodel.json \
               fantasy-management/generated/operations/managed-roster-overview.json \
               fantasy-management/generated/operations/managed-roster-overview.md \
               fantasy-management/generated/operations/free-agent-signals.json \

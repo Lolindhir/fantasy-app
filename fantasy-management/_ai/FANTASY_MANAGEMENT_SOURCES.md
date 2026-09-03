@@ -55,8 +55,9 @@ Always re-check `Metadata.json` when exact owner mapping matters.
 For broad operational analysis, prefer the smallest current Fantasy-Management-owned derived contract that matches the task instead of scanning the raw player file:
 
 1. `fantasy-management/generated/operations/player-signals.json` for the league-wide QB/RB/WR/TE/K operational population and joined market, projection, activity, ownership, injury and nominal-role signals.
-2. `fantasy-management/generated/operations/free-agent-signals.json` for the complete current fantasy-free-agent population.
-3. `fantasy-management/generated/operations/managed-roster-signals.json` for Mighty Giants roster-focused work.
+2. `fantasy-management/generated/operations/free-agent-signals.json` for the complete current ownership-derived fantasy-free-agent population used by general discovery and movement processing.
+3. `fantasy-management/generated/operations/fa-board-readmodel.json` for current/live Free-Agent-Draft availability, current draft assignment, Reserve-/Taxi-Eligibility, immediate slot-cost and compact market context.
+4. `fantasy-management/generated/operations/managed-roster-signals.json` for Mighty Giants roster-focused work.
 
 When a raw app field or an exact player record is needed, read the targeted current record from `public/data/Players.json`. Do not recreate `Players_Relevant.json` or a chunked chat export merely to make the player data easier for a specific AI client to ingest.
 
@@ -86,16 +87,32 @@ Operational rules:
 
 A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`. A fantasy free agent is only a player whose ID does not appear in any of those lists.
 
-For free-agent boards, prefer the current `fantasy-management/generated/operations/free-agent-signals.json` contract. It represents the complete current fantasy-free-agent population for Fantasy Operations and must remain downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
+`fantasy-management/generated/operations/free-agent-signals.json` remains the complete current ownership-derived free-agent population for general Fantasy Operations discovery, movement analysis and research prioritization. It remains downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
 
-When the population must be reconstructed from base contracts instead of using `free-agent-signals.json` directly:
+For a live or current Free-Agent Draft, use `fantasy-management/generated/operations/fa-board-readmodel.json` as the preferred compact decision-infrastructure source. It combines the fully evaluated league ownership state, the currently resolved Free-Agent Draft from `Drafts.json`, provider-neutral player/injury signals, current Reserve-/Taxi-Eligibility and compact FantasyCalc/FantasyPros context. It exposes per player:
 
-1. load current `League.json`
-2. collect every owned player ID from roster, reserve and taxi
-3. load the current operational player population from `fantasy-management/generated/operations/player-signals.json`
-4. exclude every owned player ID
-5. evaluate the remaining candidates with the current derived signals
-6. read targeted records from `public/data/Players.json` only when exact raw app fields are needed
+- `availability_status` (`available`, `rostered`, `drafted`, `unknown`);
+- owner and roster bucket when currently owned;
+- current FA-draft status and assigned pick/owner where applicable;
+- current Reserve-/Taxi-Eligibility and special-capacity context;
+- `active_slot_cost_now` and `active_slot_cost_on_materialization`;
+- market/ranking snapshot and freshness metadata.
+
+Availability is fail-closed. Only an explicit `availability_status = available` from a schema-valid readmodel with resolved mandatory inputs is a positive availability result. `unknown` must not be presented as available. External rankings, activity or `free-agent-signals.json` alone must never override a positive ownership or already-assigned current-draft result.
+
+The distinction is intentional: `free-agent-signals.json` can correctly say that a player is absent from every materialized League roster while the same player has already been selected in the running FA Draft but not yet materialized into `League.json`. The FA-board readmodel closes that gap by evaluating both canonical axes together.
+
+When the population or availability must be reconstructed from base contracts instead of using the current derived contract directly:
+
+1. load complete current `League.json` and build the union of every team's `Roster`, `Reserve` and `Taxi` IDs;
+2. load complete current `Drafts.json` and resolve the current relevant Free-Agent Draft plus every assigned `Status: Picked` player;
+3. load the current operational player population from `fantasy-management/generated/operations/player-signals.json`;
+4. treat a positive league ownership or current assigned draft pick as not available;
+5. emit `available` only when both negative checks are complete and unambiguous; otherwise keep `unknown`;
+6. evaluate Reserve-/Taxi-Eligibility and capacity from current `League.json` rules plus current player/injury fields;
+7. read targeted records from `public/data/Players.json` only when exact raw app fields are needed.
+
+A negative result from a truncated or incomplete connector response is never sufficient to prove absence.
 
 ## Draft source rules
 
@@ -108,6 +125,8 @@ Pick metadata is resolved through:
 `public/data/Drafts.json -> Picks[]`
 
 Never infer true pick position only from a pick key such as `R1` or `OO5`. For current ownership, use `CurrentOwnerRosterID`, not `OriginalOwnerRosterID`.
+
+For live/current Free-Agent-Draft player availability, `Drafts.json` is the canonical raw draft-status source, while `fantasy-management/generated/operations/fa-board-readmodel.json` is the preferred fully joined operational readmodel. A player already assigned to a current FA-draft pick remains unavailable even if Sleeper has not yet materialized that player into `League.json`.
 
 ## Transaction source rules
 

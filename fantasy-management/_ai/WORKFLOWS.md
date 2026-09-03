@@ -82,14 +82,20 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 
 ## Free-agent board workflow
 
-1. Load current League data.
-2. Build the owned-player ID set from roster, reserve and taxi.
-3. Load relevant player chunks.
-4. Exclude all owned IDs.
-5. Load league-format notes and relevant Knowledge.
-6. Evaluate role, production, age, format fit and salary.
-7. Verify top candidates.
-8. Store under `analyses/YYYY/free-agents/` when requested.
+Use the materialized FA-board contract for live or current Free-Agent-Draft availability and roster-capacity decisions. Do not manually recreate the League/Drafts join when a valid current readmodel is available.
+
+1. Load `fantasy-management/generated/operations/fa-board-readmodel.json` first and verify its `quality`, `sources` and `current_fa_draft.resolution_status` fields before treating any player as available.
+2. Treat `availability_status` as the canonical compact availability gate for the current FA-board context: only `available` may enter an available shortlist; `rostered`, `drafted` and `unknown` are not available.
+3. Use `owner_team_id`, `owner_team_name` and `roster_bucket` for current fantasy ownership; use the current-FA-draft fields for already assigned picks that may not yet be materialized in `League.json`.
+4. Use `reserve_eligible_now`, `taxi_eligible_now`, current special-capacity information, `active_slot_cost_now` and `active_slot_cost_on_materialization` when comparing normal BPA with Reserve-/IR-/Taxi stash paths. `active_slot_cost_now = 0` does not imply zero future retention cost.
+5. Use the compact FantasyCalc/FantasyPros views in the readmodel for initial market/value context. Load broader `player-signals.json`, source snapshots or fresh external research only when the decision needs fields or qualitative context not carried by the readmodel.
+6. Perform the Mandatory Stash Sweep from `ROSTER_ARCHITECTURE.md` before every own FA-Draft pick or `PASS`: active BPA, Reserve-/IR stashes, Taxi stashes before lock and any other currently valid special-capacity pool.
+7. Re-read the current readmodel after every material opponent pick/cut or before each Mighty Giants pick; do not carry an earlier availability result forward through a dynamic draft.
+8. If the readmodel is missing, schema-invalid, has unresolved mandatory inputs or cannot safely establish a negative ownership/draft result, fail closed. Reconstruct from complete current `League.json` + `Drafts.json` + `player-signals.json` only when necessary; never infer availability from `Players.json -> IsFreeAgent`, external rankings or a truncated tool response.
+9. Load league-format notes, relevant Knowledge and fresh role/injury/news context for the highest-value candidates after deterministic availability is established.
+10. Store a dated analysis under `analyses/YYYY/free-agents/` only when requested or otherwise explicitly approved.
+
+`free-agent-signals.json` remains the complete ownership-derived free-agent population and the basis for general discovery/movement processing. During a live Free-Agent Draft it is not sufficient by itself to prove draft availability because a newly picked player may still be absent from `League.json`; `fa-board-readmodel.json` adds the current `Drafts.json` gate and capacity view.
 
 ## Kicker Streaming analysis workflow
 
