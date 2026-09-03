@@ -97,6 +97,9 @@ Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeas
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "Standalone transaction request does not invoke the coupled draft/transaction rebuild."
 $emptyManualLookup = New-ManualTransactionBindingLookup -ManualTransactions $null
 Assert-Equal -Actual $emptyManualLookup.Count -Expected 0 -Message "A season without manual transactions must produce an empty binding lookup."
+$emptySleeperWeekLookup = New-SleeperTransactionWeekLookup -Transactions $null -SourceLabel "empty Sleeper week regression"
+Assert-Equal -Actual $emptySleeperWeekLookup.Count -Expected 0 -Message "A Sleeper week without transactions must produce an empty provider lookup."
+Assert-True -Condition (Test-TransactionIdentityInvariants -Transactions $null -SourceLabel "empty generated transaction regression") -Message "An empty generated transaction collection must pass identity validation."
 
 $requestDrafts = Get-Content "$PSScriptRoot\RequestDrafts.ps1" -Raw
 Assert-True -Condition $requestDrafts.Contains("Invoke-DraftTransactionRebuild") -Message "Standalone draft request does not use the shared rebuild orchestration."
