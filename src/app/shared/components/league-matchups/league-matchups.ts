@@ -1,12 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import type { FantasyTeam, League, LeagueMatchupParticipant } from '../../../core/models/league.models';
+import type {
+  FantasyTeam,
+  League,
+  LeagueMatchupParticipant,
+  PlacementRegularSeason
+} from '../../../core/models/league.models';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
+
+type LeagueMatchupContextMode = 'current' | 'previous';
+
+interface LeagueMatchupTeamContextView {
+  mode: LeagueMatchupContextMode;
+  seasonLabel: string | null;
+  standing: number | null;
+  overallStanding: number | null;
+  regularStanding: number | null;
+  record: string | null;
+  streak: string | null;
+  pointsFor: number | null;
+  pointsForDisplay: string | null;
+}
 
 interface LeagueMatchupTeamView {
   team: FantasyTeam;
   points: number;
+  pointsDisplay: string;
+  context: LeagueMatchupTeamContextView | null;
 }
 
 interface LeagueMatchupView {
@@ -26,7 +47,18 @@ interface LeagueMatchupView {
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
 
-  readonly teamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+  readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
+  readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+
+  private readonly pointsForFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+
+  private readonly matchupScoreFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
 
   get week(): number | null {
     return this.league.Matchups?.Week ?? null;
@@ -65,9 +97,77 @@ export class LeagueMatchupsComponent {
     const team = teamByID.get(participant.TeamID);
     if (!team) return null;
 
+    const points = participant.Points ?? 0;
+
     return {
       team,
-      points: participant.Points ?? 0
+      points,
+      pointsDisplay: this.matchupScoreFormatter.format(points),
+      context: this.getTeamContext(team)
     };
+  }
+
+  private getTeamContext(team: FantasyTeam): LeagueMatchupTeamContextView | null {
+    if (this.league.FinalScoredWeek > 0) {
+      const placement = team.Placements?.Current?.Regular;
+      if (!placement) return null;
+
+      const standing = this.normalizeStanding(placement.Place);
+      const record = this.formatRecord(placement);
+      const streak = placement.Streak?.trim() || null;
+      const pointsFor = Number.isFinite(placement.Points) ? placement.Points : null;
+
+      if (standing === null && !record && !streak && pointsFor === null) return null;
+
+      return {
+        mode: 'current',
+        seasonLabel: null,
+        standing,
+        overallStanding: null,
+        regularStanding: standing,
+        record,
+        streak,
+        pointsFor,
+        pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
+      };
+    }
+
+    const regularPlacement = team.Placements?.Previous?.Regular;
+    const overallStanding = this.normalizeStanding(team.Placements?.Previous?.Playoffs?.Place);
+    const regularStanding = this.normalizeStanding(regularPlacement?.Place);
+    const record = regularPlacement ? this.formatRecord(regularPlacement) : null;
+    const pointsFor = regularPlacement && Number.isFinite(regularPlacement.Points)
+      ? regularPlacement.Points
+      : null;
+
+    if (overallStanding === null && regularStanding === null && !record && pointsFor === null) return null;
+
+    return {
+      mode: 'previous',
+      seasonLabel: this.previousSeasonLabel,
+      standing: null,
+      overallStanding,
+      regularStanding,
+      record,
+      streak: null,
+      pointsFor,
+      pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
+    };
+  }
+
+  private normalizeStanding(place: number | undefined): number | null {
+    return Number.isFinite(place) && (place ?? 0) > 0 ? place! : null;
+  }
+
+  private formatRecord(placement: PlacementRegularSeason): string | null {
+    if (![placement.Wins, placement.Losses, placement.Ties].every(Number.isFinite)) return null;
+
+    const baseRecord = `${placement.Wins}-${placement.Losses}`;
+    return placement.Ties > 0 ? `${baseRecord}-${placement.Ties}` : baseRecord;
+  }
+
+  private get previousSeasonLabel(): string {
+    const season = Number.parseInt(this.league.Season, 10);
+    return Number.isFinite(season) ? String(season - 1) : 'Previous';
   }
 }

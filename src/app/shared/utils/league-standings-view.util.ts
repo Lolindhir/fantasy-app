@@ -119,12 +119,24 @@ export function buildCurrentStandings(league: League, teams: FantasyTeam[]): Cur
     currentStanding?.RegularSeason.map(row => [String(row.TeamID), row.Place]) ?? []
   );
 
-  return teams
+  const rankedTeams = teams
     .map(team => ({
       team,
-      displayPlace: placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Regular.Place ?? 999
+      currentPlace: normalizeStandingPlace(
+        placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Regular.Place
+      ),
+      previousPlace: normalizeStandingPlace(team.Placements.Previous.Regular?.Place)
     }))
-    .sort((a, b) => a.displayPlace - b.displayPlace);
+    .sort((a, b) =>
+      a.currentPlace - b.currentPlace
+      || a.previousPlace - b.previousPlace
+      || a.team.TeamID - b.team.TeamID
+    );
+
+  return rankedTeams.map((row, index) => ({
+    team: row.team,
+    displayPlace: index + 1
+  }));
 }
 
 export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel {
@@ -414,6 +426,12 @@ function comparePodiums(a: AllTimeStandingRow, b: AllTimeStandingRow): number {
 
 function getOverallPlace(teamId: string, standings: AllTimeStandingRow[]): number {
   return standings.find(row => String(row.team.TeamID) === teamId)?.place ?? 999;
+}
+
+function normalizeStandingPlace(place: number | null | undefined): number {
+  return Number.isFinite(place) && Number(place) > 0
+    ? Number(place)
+    : Number.MAX_SAFE_INTEGER;
 }
 
 function formatAwardsDisplay(awards: Award | Award[] | null | undefined): string {

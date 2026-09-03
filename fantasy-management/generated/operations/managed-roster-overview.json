@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-03T09:42:00Z",
-  "input_fingerprint": "a091b4870bbd36c2dd34410062bcf0fda751d93a56299aa7bdd406d72323839f",
+  "generated_at": "2026-09-03T16:14:21Z",
+  "input_fingerprint": "aaa3e73cd92bc999b16da20afb7444ee0f60636875fb62982fd9839673181d76",
   "sources": [
     {
       "id": "league",
       "path": "public/data/League.json",
-      "content_sha256": "cf6633d4411667bc18c79289a797f7ea77eae88cdae8797a9c69542e58c81bcd"
+      "content_sha256": "462bd89af1687d3dfb5dfe41e08b6010ac54752abb89af998ee8513c12471ad3"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "9140c141c1e87d06be3e014491ddc1ae931d89626617eeeacc0ec6d376619668"
+      "content_sha256": "c76b3a982cc058b6c3d3b27b6c6fa08919d16b1ed335fd566367a3fa1ec4af0a"
     },
     {
       "id": "roster_evaluation_state",
@@ -42,24 +42,24 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 0,
+    "unclassified_count": 3,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
     "team_id": 1,
     "name": "Mighty Giants",
     "abbreviation": "MiG",
-    "held_player_count": 33
+    "held_player_count": 36
   },
   "structure": {
     "capacity": {
       "regular_active_capacity": 30,
-      "current_active_count": 31,
+      "current_active_count": 33,
       "taxi_slots": 2,
       "current_taxi_count": 2,
       "reserve_slots": 2,
-      "current_reserve_count": 0,
-      "hard_active_delta": -1
+      "current_reserve_count": 1,
+      "hard_active_delta": -3
     },
     "lineup": {
       "fixed_starters": {
@@ -73,20 +73,20 @@
       "bench_slots": 17
     },
     "taxi": {
-      "phase": "pre_lock",
+      "phase": "unknown",
       "binding": false,
       "current_technical_occupants": [
         {
-          "player_id": "13414",
-          "name": "Kaelon Black"
+          "player_id": "13311",
+          "name": "Chris Bell"
         },
         {
-          "player_id": "13417",
-          "name": "De'Zhaun Stribling"
+          "player_id": "13414",
+          "name": "Kaelon Black"
         }
       ],
-      "virtual_assignment_status": "not_automated_yet",
-      "interpretation": "Current preseason Taxi placement is technical only; final Taxi allocation must be optimized across eligible rookies before lock."
+      "virtual_assignment_status": "not_applicable",
+      "interpretation": "Actual Taxi occupants are binding after lock."
     },
     "coverage": {
       "K": {
@@ -113,8 +113,8 @@
       },
       "RB": {
         "fixed_starter_requirement": 2,
-        "held_count": 10,
-        "current_active_count": 9,
+        "held_count": 11,
+        "current_active_count": 10,
         "effective_prelock_or_locked_count": 10,
         "startable_count": 5,
         "backup_count": 1,
@@ -135,8 +135,8 @@
       },
       "WR": {
         "fixed_starter_requirement": 2,
-        "held_count": 14,
-        "current_active_count": 13,
+        "held_count": 16,
+        "current_active_count": 14,
         "effective_prelock_or_locked_count": 14,
         "startable_count": 7,
         "backup_count": 2,
@@ -234,10 +234,10 @@
     },
     "churn": {
       "target_general_slots": 2,
-      "assignment_status": "provisional_pre_lock",
-      "current_active_candidate_count": 3,
-      "candidate_pool_count": 4,
-      "guardrail_status": "provisional_requires_virtual_taxi_assignment",
+      "assignment_status": "current_locked_roster",
+      "current_active_candidate_count": 2,
+      "candidate_pool_count": 2,
+      "guardrail_status": "met",
       "candidate_pool": [
         {
           "player_id": "13405",
@@ -254,22 +254,6 @@
           "security": "conditional",
           "current_area": "active",
           "boundary_priority": 20
-        },
-        {
-          "player_id": "13311",
-          "name": "Chris Bell",
-          "position": "WR",
-          "security": "conditional",
-          "current_area": "active",
-          "boundary_priority": 30
-        },
-        {
-          "player_id": "13414",
-          "name": "Kaelon Black",
-          "position": "RB",
-          "security": "conditional",
-          "current_area": "taxi",
-          "boundary_priority": 40
         }
       ]
     }
@@ -804,7 +788,7 @@
       "coverage_role": "development",
       "coverage_protected": false,
       "churn_eligible": true,
-      "potential_churn_after_taxi_reassignment": true
+      "potential_churn_after_taxi_reassignment": false
     },
     {
       "player_id": "13287",
@@ -861,6 +845,65 @@
         "fantasycalc_value": 6534
       },
       "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11583",
+      "name": "Jonathon Brooks",
+      "position": "RB",
+      "nfl_team": "CAR",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.1,
+        "years_experience": 3,
+        "salary": 84399,
+        "salary_projected": 0,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "partial_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": "20240801",
+        "return_date": null,
+        "external_verification_priority": "high",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 122,
+        "fantasypros_position_rank": "RB29",
+        "fantasycalc_overall_rank": 119,
+        "fantasycalc_value": 2073
+      },
+      "coverage_role": "unclassified",
       "coverage_protected": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -923,7 +966,7 @@
       "coverage_role": "development",
       "coverage_protected": false,
       "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": true
+      "potential_churn_after_taxi_reassignment": false
     },
     {
       "player_id": "13405",
@@ -991,7 +1034,7 @@
       "coverage_role": "development",
       "coverage_protected": false,
       "churn_eligible": true,
-      "potential_churn_after_taxi_reassignment": true
+      "potential_churn_after_taxi_reassignment": false
     },
     {
       "player_id": "8151",
@@ -1529,12 +1572,13 @@
       "name": "Chris Bell",
       "position": "WR",
       "nfl_team": "MIA",
-      "roster_area": "active",
+      "roster_area": "taxi",
       "roster_sections": [
-        "roster"
+        "roster",
+        "taxi"
       ],
-      "is_current_active": true,
-      "is_current_taxi": false,
+      "is_current_active": false,
+      "is_current_taxi": true,
       "is_current_reserve": false,
       "roster_role": "prospect",
       "roster_security": "conditional",
@@ -1580,8 +1624,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
-      "churn_eligible": true,
-      "potential_churn_after_taxi_reassignment": true
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
     },
     {
       "player_id": "2133",
@@ -1647,13 +1691,12 @@
       "name": "De'Zhaun Stribling",
       "position": "WR",
       "nfl_team": "SF",
-      "roster_area": "taxi",
+      "roster_area": "active",
       "roster_sections": [
-        "roster",
-        "taxi"
+        "roster"
       ],
-      "is_current_active": false,
-      "is_current_taxi": true,
+      "is_current_active": true,
+      "is_current_taxi": false,
       "is_current_reserve": false,
       "roster_role": "prospect",
       "roster_security": "strong_hold",
@@ -2232,12 +2275,150 @@
       "coverage_protected": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11638",
+      "name": "Ricky Pearsall",
+      "position": "WR",
+      "nfl_team": "SF",
+      "roster_area": "reserve",
+      "roster_sections": [
+        "reserve",
+        "roster"
+      ],
+      "is_current_active": false,
+      "is_current_taxi": false,
+      "is_current_reserve": true,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Inactive",
+        "age": 26,
+        "years_experience": 3,
+        "salary": 4299778,
+        "salary_projected": 6384356,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 157,
+        "fantasypros_position_rank": "WR64",
+        "fantasycalc_overall_rank": 204,
+        "fantasycalc_value": 1336
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "12526",
+      "name": "Tetairoa McMillan",
+      "position": "WR",
+      "nfl_team": "CAR",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.4,
+        "years_experience": 2,
+        "salary": 8764089,
+        "salary_projected": 13693889,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 31,
+        "fantasypros_position_rank": "WR9",
+        "fantasycalc_overall_rank": 36,
+        "fantasycalc_value": 4593
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
     }
   ],
   "quality": {
-    "status": "ok",
-    "issue_count": 0,
-    "issues": [],
+    "status": "warning",
+    "issue_count": 3,
+    "issues": [
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "11583",
+        "name": "Jonathon Brooks"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "11638",
+        "name": "Ricky Pearsall"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "12526",
+        "name": "Tetairoa McMillan"
+      }
+    ],
     "limitations": [
       "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
       "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",

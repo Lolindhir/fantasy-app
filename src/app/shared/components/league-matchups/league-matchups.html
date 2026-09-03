@@ -5,34 +5,127 @@
         <div class="matchups-eyebrow">Next up</div>
         <h2>Week {{ week }} Matchups</h2>
       </div>
-      <span class="matchups-count">{{ matchupRows.length }} games</span>
     </div>
 
     <div class="matchups-grid">
       <article *ngFor="let matchup of matchupRows" class="matchup-card">
         <div class="matchup-team matchup-team--left">
           <app-team-identity
-            class="matchup-team-identity"
+            class="matchup-team-identity matchup-team-identity--mobile"
             [team]="matchup.left.team"
-            [elements]="teamIdentityElements"
-            size="medium"
+            [elements]="mobileTeamIdentityElements"
+            size="large"
           ></app-team-identity>
-          <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.left.points | number:'1.0-2' }}</strong>
+          <app-team-identity
+            class="matchup-team-identity matchup-team-identity--desktop"
+            [team]="matchup.left.team"
+            [elements]="desktopTeamIdentityElements"
+            size="large"
+          ></app-team-identity>
+
+          <ng-container
+            *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"
+          ></ng-container>
         </div>
 
-        <div class="matchup-vs">VS</div>
+        <div class="matchup-center">
+          <div class="matchup-vs" aria-label="versus">VS</div>
+          <div *ngIf="matchup.showScore" class="matchup-score" aria-label="Matchup score">
+            <strong>{{ matchup.left.pointsDisplay }}</strong>
+            <span class="matchup-score-divider" aria-hidden="true">–</span>
+            <strong>{{ matchup.right.pointsDisplay }}</strong>
+          </div>
+        </div>
 
         <div class="matchup-team matchup-team--right">
-          <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.right.points | number:'1.0-2' }}</strong>
           <app-team-identity
-            class="matchup-team-identity"
+            class="matchup-team-identity matchup-team-identity--mobile"
             [team]="matchup.right.team"
-            [elements]="teamIdentityElements"
-            size="medium"
+            [elements]="mobileTeamIdentityElements"
+            size="large"
             align="end"
           ></app-team-identity>
+          <app-team-identity
+            class="matchup-team-identity matchup-team-identity--desktop"
+            [team]="matchup.right.team"
+            [elements]="desktopTeamIdentityElements"
+            size="large"
+            align="end"
+          ></app-team-identity>
+
+          <ng-container
+            *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"
+          ></ng-container>
         </div>
       </article>
     </div>
   </ng-container>
 </section>
+
+<ng-template #teamContext let-context>
+  <div *ngIf="context" class="matchup-team-context">
+    <div class="matchup-team-context-mobile">
+      <ng-container *ngIf="context.mode === 'current'; else previousMobile">
+        <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
+        <span *ngIf="context.standing !== null && context.record" aria-hidden="true">·</span>
+        <span *ngIf="context.record">{{ context.record }}</span>
+        <ng-container *ngIf="context.streak">
+          <span aria-hidden="true">·</span>
+          <span>{{ context.streak }}</span>
+        </ng-container>
+      </ng-container>
+      <ng-template #previousMobile>
+        <span class="matchup-season-label">{{ context.seasonLabel }}:</span>
+        <span *ngIf="context.overallStanding !== null">#{{ context.overallStanding }} Overall</span>
+        <span *ngIf="context.overallStanding !== null && context.record" aria-hidden="true">·</span>
+        <span *ngIf="context.record">{{ context.record }}</span>
+      </ng-template>
+    </div>
+
+    <div class="matchup-team-context-desktop">
+      <ng-container *ngIf="context.mode === 'current'; else previousDesktop">
+        <div
+          *ngIf="context.standing !== null || context.record || context.streak"
+          class="matchup-stat"
+        >
+          <span class="matchup-context-label">Current Standing</span>
+          <strong class="matchup-context-value">
+            <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
+            <span *ngIf="context.standing !== null && context.record" aria-hidden="true"> · </span>
+            <span *ngIf="context.record">{{ context.record }}</span>
+            <ng-container *ngIf="context.streak">
+              <span aria-hidden="true"> · </span>
+              <span>{{ context.streak }}</span>
+            </ng-container>
+          </strong>
+        </div>
+        <div *ngIf="context.pointsForDisplay" class="matchup-stat">
+          <span class="matchup-context-label">PF</span>
+          <strong class="matchup-context-value">{{ context.pointsForDisplay }}</strong>
+        </div>
+      </ng-container>
+
+      <ng-template #previousDesktop>
+        <div *ngIf="context.overallStanding !== null" class="matchup-stat">
+          <span class="matchup-context-label">{{ context.seasonLabel }} Overall</span>
+          <strong class="matchup-context-value">#{{ context.overallStanding }}</strong>
+        </div>
+        <div
+          *ngIf="context.regularStanding !== null || context.record"
+          class="matchup-stat"
+        >
+          <span class="matchup-context-label">Regular Season</span>
+          <strong class="matchup-context-value">
+            <span *ngIf="context.regularStanding !== null">#{{ context.regularStanding }}</span>
+            <span *ngIf="context.regularStanding !== null && context.record" aria-hidden="true"> · </span>
+            <span *ngIf="context.record">{{ context.record }}</span>
+          </strong>
+        </div>
+        <div *ngIf="context.pointsForDisplay" class="matchup-stat">
+          <span class="matchup-context-label">PF</span>
+          <strong class="matchup-context-value">{{ context.pointsForDisplay }}</strong>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</ng-template>
