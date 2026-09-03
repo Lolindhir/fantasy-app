@@ -9,9 +9,14 @@ import type {
 } from '../../../core/models/league.models';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 
+type LeagueMatchupContextMode = 'current' | 'previous';
+
 interface LeagueMatchupTeamContextView {
+  mode: LeagueMatchupContextMode;
   seasonLabel: string | null;
   standing: number | null;
+  overallStanding: number | null;
+  regularStanding: number | null;
   record: string | null;
   streak: string | null;
   pointsFor: number | null;
@@ -88,39 +93,52 @@ export class LeagueMatchupsComponent {
 
   private getTeamContext(team: FantasyTeam): LeagueMatchupTeamContextView | null {
     if (this.league.FinalScoredWeek > 0) {
-      return this.mapPlacementContext(team.Placements?.Current?.Regular, null, true);
+      const placement = team.Placements?.Current?.Regular;
+      if (!placement) return null;
+
+      const standing = this.normalizeStanding(placement.Place);
+      const record = this.formatRecord(placement);
+      const streak = placement.Streak?.trim() || null;
+      const pointsFor = Number.isFinite(placement.Points) ? placement.Points : null;
+
+      if (standing === null && !record && !streak && pointsFor === null) return null;
+
+      return {
+        mode: 'current',
+        seasonLabel: null,
+        standing,
+        overallStanding: null,
+        regularStanding: standing,
+        record,
+        streak,
+        pointsFor
+      };
     }
 
-    return this.mapPlacementContext(
-      team.Placements?.Previous?.Regular,
-      this.previousSeasonLabel,
-      false
-    );
-  }
-
-  private mapPlacementContext(
-    placement: PlacementRegularSeason | undefined,
-    seasonLabel: string | null,
-    includeCurrentForm: boolean
-  ): LeagueMatchupTeamContextView | null {
-    if (!placement) return null;
-
-    const standing = Number.isFinite(placement.Place) && placement.Place > 0
-      ? placement.Place
+    const regularPlacement = team.Placements?.Previous?.Regular;
+    const overallStanding = this.normalizeStanding(team.Placements?.Previous?.Playoffs?.Place);
+    const regularStanding = this.normalizeStanding(regularPlacement?.Place);
+    const record = regularPlacement ? this.formatRecord(regularPlacement) : null;
+    const pointsFor = regularPlacement && Number.isFinite(regularPlacement.Points)
+      ? regularPlacement.Points
       : null;
-    const record = placement.Record?.trim() || this.formatRecord(placement);
 
-    if (standing === null && !record) return null;
+    if (overallStanding === null && regularStanding === null && !record && pointsFor === null) return null;
 
     return {
-      seasonLabel,
-      standing,
+      mode: 'previous',
+      seasonLabel: this.previousSeasonLabel,
+      standing: null,
+      overallStanding,
+      regularStanding,
       record,
-      streak: includeCurrentForm ? placement.Streak?.trim() || null : null,
-      pointsFor: includeCurrentForm && Number.isFinite(placement.Points)
-        ? placement.Points
-        : null
+      streak: null,
+      pointsFor
     };
+  }
+
+  private normalizeStanding(place: number | undefined): number | null {
+    return Number.isFinite(place) && (place ?? 0) > 0 ? place! : null;
   }
 
   private formatRecord(placement: PlacementRegularSeason): string | null {

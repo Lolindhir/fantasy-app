@@ -73,20 +73,16 @@
 }
 
 .matchup-team-context {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
   padding: 0 3px;
   color: #475569;
 }
 
 .matchup-team--right .matchup-team-context {
-  align-items: flex-end;
   text-align: right;
 }
 
-.matchup-team-context-line {
+.matchup-team-context-mobile {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -96,21 +92,21 @@
   line-height: 1.25;
 }
 
-.matchup-team--right .matchup-team-context-line {
+.matchup-team--right .matchup-team-context-mobile {
   justify-content: flex-end;
 }
 
-.matchup-team-context-line--previous {
-  color: #64748b;
+.matchup-team-context-desktop {
+  display: none;
 }
 
-.matchup-season-label {
+.matchup-season-label,
+.matchup-context-label {
   color: #6d28d9;
   font-weight: 850;
 }
 
 .matchup-season-points {
-  display: none;
   color: #64748b;
   font-size: 0.72rem;
   font-weight: 650;
@@ -152,25 +148,62 @@
 
   .matchup-card {
     grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
-    gap: 18px;
-    min-height: 104px;
-    padding: 16px 18px;
+    gap: 24px;
+    min-height: 126px;
+    padding: 18px 22px;
   }
 
   .matchup-team {
-    gap: 7px;
+    gap: 9px;
   }
 
   .matchup-team-context {
     padding: 0 5px;
   }
 
-  .matchup-team-context-line {
+  .matchup-team-context-mobile {
+    display: none;
+  }
+
+  .matchup-team-context-desktop {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .matchup-team--right .matchup-team-context-desktop {
+    align-items: flex-end;
+  }
+
+  .matchup-desktop-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 5px;
+  }
+
+  .matchup-team--right .matchup-desktop-line {
+    justify-content: flex-end;
+  }
+
+  .matchup-context-label {
+    min-width: 108px;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .matchup-team--right .matchup-context-label {
+    text-align: right;
   }
 
   .matchup-season-points {
-    display: block;
+    margin-top: 1px;
+    font-size: 0.78rem;
   }
 
   .matchup-vs {
