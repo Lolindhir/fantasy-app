@@ -89,7 +89,7 @@
       "id": "fftoday",
       "workflow": "update-fftoday-projections.yml",
       "path": ".github/workflows/update-fftoday-projections.yml",
-      "eventType": "scheduler-update-fftoday-projections",
+      "eventType": "scheduler-update-fftoday",
       "timezone": "Europe/Berlin",
       "cron": ["56 5 * * *"],
       "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
@@ -129,6 +129,15 @@
       "timezone": "Europe/Berlin",
       "cron": ["0 17 * * 3"],
       "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+    },
+    {
+      "id": "workflow-health",
+      "workflow": "workflow-health-snapshot.yml",
+      "path": ".github/workflows/workflow-health-snapshot.yml",
+      "eventType": "scheduler-workflow-health",
+      "timezone": "Etc/UTC",
+      "cron": ["7-59/30 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     }
   ]
 }
