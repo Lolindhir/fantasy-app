@@ -25,6 +25,7 @@ catch {
 function Test-TransactionIdentityInvariants {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowNull()]
         [AllowEmptyCollection()]
         [array]$Transactions,
 
@@ -32,7 +33,7 @@ function Test-TransactionIdentityInvariants {
     )
 
     New-UniqueObjectLookup `
-        -Items (ConvertTo-SafeArray -value $Transactions) `
+        -Items @(ConvertTo-SafeArray -value $Transactions) `
         -KeyProperty "TransactionID" `
         -SourceLabel $SourceLabel `
         -KeyLabel "TransactionID" `
@@ -58,6 +59,25 @@ function New-ManualTransactionBindingLookup {
         -KeyLabel "SleeperTransactionID" `
         -DescriptionProperties @("SleeperTransactionID", "Season", "Week", "Date") `
         -AllowMissingKey
+}
+
+function New-SleeperTransactionWeekLookup {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array]$Transactions,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SourceLabel
+    )
+
+    return New-UniqueObjectLookup `
+        -Items @(ConvertTo-SafeArray -value $Transactions) `
+        -KeyProperty "transaction_id" `
+        -SourceLabel $SourceLabel `
+        -KeyLabel "transaction_id" `
+        -DescriptionProperties @("transaction_id", "type", "status", "leg", "created")
 }
 
 # ===========================================================================
@@ -135,8 +155,8 @@ function Compare-Transactions {
         [array]$propertiesToCheck = (Get-TransactionProperties)
     )
 
-    $oldTransactions = ConvertTo-SafeArray -value $oldTransactions
-    $newTransactions = ConvertTo-SafeArray -value $newTransactions
+    $oldTransactions = @(ConvertTo-SafeArray -value $oldTransactions)
+    $newTransactions = @(ConvertTo-SafeArray -value $newTransactions)
 
     if ($oldTransactions.Count -eq 0 -and $newTransactions.Count -eq 0) {
         return $false
@@ -749,7 +769,7 @@ function Get-TransactionsRemoteForWeeks {
 
     Write-Host "Get Transactions for League $leagueID / Season $season from Sleeper API..." -ForegroundColor Yellow
 
-    $manualTransactions = ConvertTo-SafeArray -value (Get-ManualTransactions -season $season)
+    $manualTransactions = @(ConvertTo-SafeArray -value (Get-ManualTransactions -season $season))
     $manualBySleeperTransactionID = New-ManualTransactionBindingLookup `
         -ManualTransactions $manualTransactions `
         -SourceLabel "manual Sleeper transaction bindings for season $season"
@@ -757,13 +777,10 @@ function Get-TransactionsRemoteForWeeks {
     foreach ($week in $weeks) {
         Write-Host "Get Transactions for Week $week" -ForegroundColor Yellow
 
-        $weekTransactions = ConvertTo-SafeArray -value (Get-SleeperTransactions -leagueID $leagueID -week $week)
-        New-UniqueObjectLookup `
-            -Items $weekTransactions `
-            -KeyProperty "transaction_id" `
-            -SourceLabel "Sleeper transactions for league $leagueID season $season week $week" `
-            -KeyLabel "transaction_id" `
-            -DescriptionProperties @("transaction_id", "type", "status", "leg", "created") | Out-Null
+        $weekTransactions = @(ConvertTo-SafeArray -value (Get-SleeperTransactions -leagueID $leagueID -week $week))
+        New-SleeperTransactionWeekLookup `
+            -Transactions $weekTransactions `
+            -SourceLabel "Sleeper transactions for league $leagueID season $season week $week" | Out-Null
 
         foreach ($tx in $weekTransactions) {
             $transactionID = [string]$tx.transaction_id
@@ -786,7 +803,7 @@ function Get-TransactionsRemoteForWeeks {
         }
     }
 
-    $transactions = Get-SortedTransactions -transactions $transactions
+    $transactions = @(Get-SortedTransactions -transactions $transactions)
     Test-TransactionIdentityInvariants -Transactions $transactions -SourceLabel "retrieved transactions for league $leagueID season $season" | Out-Null
 
     Write-Host "Transactions retrieved." -ForegroundColor Yellow
