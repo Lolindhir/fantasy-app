@@ -183,7 +183,7 @@ Target sequence:
 8. For every potential Add, identify the player who would need to be dropped and evaluate that player's bench/upside/scarcity/injury-insurance/trade-value opportunity cost.
 9. Recommend a Waiver/Add/Drop only when the overall roster benefit is positive, not merely because one position has a small isolated score advantage.
 10. Recompute the final lineup after approved/recommended moves.
-11. Provide starters, bench, Waiver Adds und corresponding Drops, alternatives, confidence, bye/injury risks und time-critical actions.
+11. Provide starters, bench, Waiver Adds and corresponding Drops, alternatives, confidence, bye/injury risks and time-critical actions.
 
 ### Kicker special case inside Weekly Lineup + Waiver
 
@@ -286,7 +286,7 @@ python fantasy-management/_ai/scripts/validate_episode_coverage.py \
 
 ## League-context update workflow
 
-Use owner registry, owner profiles and negotiation history for durable league context. Promote tendencies only after repeated evidence.
+Use owner registry, owner profiles, negotiation history and league-format notes for durable league context. Promote tendencies only after repeated evidence.
 
 ## External ranking refresh workflow
 
