@@ -95,6 +95,8 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-Transact
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory") -Message "Standalone transaction history rebuild contract changed."
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "Standalone transaction request does not invoke the coupled draft/transaction rebuild."
+$emptyManualLookup = New-ManualTransactionBindingLookup -ManualTransactions $null
+Assert-Equal -Actual $emptyManualLookup.Count -Expected 0 -Message "A season without manual transactions must produce an empty binding lookup."
 
 $requestDrafts = Get-Content "$PSScriptRoot\RequestDrafts.ps1" -Raw
 Assert-True -Condition $requestDrafts.Contains("Invoke-DraftTransactionRebuild") -Message "Standalone draft request does not use the shared rebuild orchestration."

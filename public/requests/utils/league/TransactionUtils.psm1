@@ -44,6 +44,7 @@ function Test-TransactionIdentityInvariants {
 function New-ManualTransactionBindingLookup {
     param(
         [Parameter(Mandatory = $true)]
+        [AllowNull()]
         [AllowEmptyCollection()]
         [array]$ManualTransactions,
 
@@ -51,7 +52,7 @@ function New-ManualTransactionBindingLookup {
     )
 
     return New-UniqueObjectLookup `
-        -Items (ConvertTo-SafeArray -value $ManualTransactions) `
+        -Items @(ConvertTo-SafeArray -value $ManualTransactions) `
         -KeyProperty "SleeperTransactionID" `
         -SourceLabel $SourceLabel `
         -KeyLabel "SleeperTransactionID" `

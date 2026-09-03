@@ -143,6 +143,10 @@ Test-Throws -ExpectedMessagePart "Duplicate TransactionID 'tx1'" -Action {
         [PSCustomObject]@{ TransactionID = "tx1"; Source = "Sleeper"; Season = "2026"; Week = 2 }
     ) | Out-Null
 }
+$emptyManualLookup = New-ManualTransactionBindingLookup -ManualTransactions $null
+if ($emptyManualLookup.Count -ne 0) {
+    throw "A season without manual transactions should produce an empty manual binding lookup."
+}
 Test-Throws -ExpectedMessagePart "Duplicate SleeperTransactionID 'tx1'" -Action {
     New-ManualTransactionBindingLookup -ManualTransactions @(
         [PSCustomObject]@{ SleeperTransactionID = "tx1"; Season = "2026"; Week = 1; Date = "2026-09-01" },
