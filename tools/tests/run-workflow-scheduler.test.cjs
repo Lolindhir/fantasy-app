@@ -25,6 +25,7 @@ const EXPECTED = {
   'update-sleeper-trending.yml': { timezone: 'Europe/Berlin', cron: ['20 6 * * *'] },
   'materialize-fantasy-operations-inputs.yml': { timezone: 'Europe/Berlin', cron: ['45 6 * * *'] },
   'clean-backups.yml': { timezone: 'Europe/Berlin', cron: ['0 17 * * 3'] },
+  'workflow-health-snapshot.yml': { timezone: 'Etc/UTC', cron: ['7-59/30 * * * *'] },
 };
 
 function loadConfig() {
@@ -43,13 +44,20 @@ function target(overrides = {}) {
   };
 }
 
-test('central config preserves all 14 previous schedules', () => {
+test('central config preserves all 14 migrated schedules and adds workflow health', () => {
   const config = loadConfig();
   scheduler.validateConfig(config);
-  assert.equal(config.targets.length, 14);
+  assert.equal(config.targets.length, 15);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 14);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 15);
+});
+
+test('scheduler keeps GitHub cron during external-tick transition and accepts external dispatch', () => {
+  const content = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'scheduler.yml'), 'utf8');
+  assert.match(content, /\n  schedule:\s*\n/, 'scheduler lost its transition GitHub schedule');
+  assert.match(content, /\n  repository_dispatch:\s*\n/, 'scheduler is missing repository_dispatch');
+  assert.match(content, /external-scheduler-tick/, 'scheduler is missing the external tick event type');
 });
 
 test('migrated targets have repository_dispatch and no local schedule trigger', () => {
