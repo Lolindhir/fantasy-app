@@ -17,6 +17,7 @@ const EXPECTED = {
   'update-standings.yml': { timezone: 'America/New_York', cron: ['35 3 * * 3'] },
   'update-transactions.yml': { timezone: 'America/New_York', cron: ['5 4 * * 3'] },
   'update-teams.yml': { timezone: 'America/New_York', cron: ['35 4 * * 3'] },
+  'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
   'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'update-fantasycalc-rankings.yml': { timezone: 'Europe/Berlin', cron: ['32 5 * * *'] },
   'update-fantasy-football-calculator-adp.yml': { timezone: 'Europe/Berlin', cron: ['44 5 * * *'] },
@@ -44,13 +45,13 @@ function target(overrides = {}) {
   };
 }
 
-test('central config preserves all 14 migrated schedules and adds workflow health', () => {
+test('central config preserves all migrated schedules including League Source and workflow health', () => {
   const config = loadConfig();
   scheduler.validateConfig(config);
-  assert.equal(config.targets.length, 15);
+  assert.equal(config.targets.length, 16);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 15);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 16);
 });
 
 test('scheduler keeps GitHub cron during external-tick transition and accepts external dispatch', () => {
@@ -77,7 +78,12 @@ test('ten-minute cron resolves latest due slot', () => {
   assert.equal(due.toISOString(), '2026-09-01T16:20:00.000Z');
 });
 
-test('Berlin daily schedule preserves DST semantics', () => {
+test('Berlin daily schedules preserve DST semantics', () => {
+  const sourceSummer = scheduler.latestDueSlot(['30 4 * * *'], 'Europe/Berlin', new Date('2026-08-17T03:00:00Z'), 1440);
+  const sourceWinter = scheduler.latestDueSlot(['30 4 * * *'], 'Europe/Berlin', new Date('2026-12-17T04:00:00Z'), 1440);
+  assert.equal(sourceSummer.toISOString(), '2026-08-17T02:30:00.000Z');
+  assert.equal(sourceWinter.toISOString(), '2026-12-17T03:30:00.000Z');
+
   const summer = scheduler.latestDueSlot(['45 6 * * *'], 'Europe/Berlin', new Date('2026-08-17T05:50:00Z'), 1440);
   const winter = scheduler.latestDueSlot(['45 6 * * *'], 'Europe/Berlin', new Date('2026-12-17T07:00:00Z'), 1440);
   assert.equal(summer.toISOString(), '2026-08-17T04:45:00.000Z');
