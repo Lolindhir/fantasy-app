@@ -18,13 +18,27 @@ from league_source_data_lib.core import (
     persisted_sleeper_fetcher,
     sync_bootstrap,
 )
+from league_source_data_lib.materialize import (
+    PlayerMappingResolver,
+    persist_canonical_outputs,
+    plan_canonical_materialization,
+)
 from league_source_data_lib.registry import load_league_registry
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("sync", "validate"), nargs="?", default="sync")
-    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument(
+        "command",
+        choices=("sync", "materialize", "validate"),
+        nargs="?",
+        default="sync",
+    )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1],
+    )
     parser.add_argument(
         "--canonical-league-id",
         action="append",
@@ -53,8 +67,14 @@ def main() -> int:
     known = {item.canonical_league_id for item in bootstraps}
     unknown = requested - known
     if unknown:
-        raise ValueError(f"Unknown CanonicalLeagueID(s): {', '.join(sorted(unknown))}")
-    selected = [item for item in bootstraps if not requested or item.canonical_league_id in requested]
+        raise ValueError(
+            f"Unknown CanonicalLeagueID(s): {', '.join(sorted(unknown))}"
+        )
+    selected = [
+        item
+        for item in bootstraps
+        if not requested or item.canonical_league_id in requested
+    ]
     if not selected:
         raise ValueError("No league bootstrap files found or selected")
 
@@ -63,7 +83,9 @@ def main() -> int:
             json.dumps(
                 {
                     "BootstrapCount": len(selected),
-                    "CanonicalLeagueIDs": [b.canonical_league_id for b in selected],
+                    "CanonicalLeagueIDs": [
+                        b.canonical_league_id for b in selected
+                    ],
                     "DatasetCount": len(registry),
                     "DatasetIDs": [dataset.id for dataset in registry],
                 },
@@ -72,12 +94,45 @@ def main() -> int:
         )
         return 0
 
-    lineage_fetcher = persisted_sleeper_fetcher(repo_root) if args.offline else fetch_sleeper_league
+    if args.command == "materialize":
+        resolver = PlayerMappingResolver.load(repo_root)
+        results = []
+        for bootstrap in selected:
+            outputs = plan_canonical_materialization(
+                repo_root,
+                bootstrap.canonical_league_id,
+                registry,
+                resolver,
+            )
+            result = persist_canonical_outputs(outputs)
+            results.append(
+                {
+                    "CanonicalLeagueID": bootstrap.canonical_league_id,
+                    **result,
+                }
+            )
+        print(json.dumps({"Leagues": results}, indent=2))
+        return 0
+
+    lineage_fetcher = (
+        persisted_sleeper_fetcher(repo_root)
+        if args.offline
+        else fetch_sleeper_league
+    )
     results = []
     for bootstrap in selected:
-        lineage = discover_sleeper_lineage(bootstrap.current_provider_league_id, lineage_fetcher)
-        lineage_by_id = {item.provider_league_id: item.payload for item in lineage}
-        identity = sync_bootstrap(repo_root, bootstrap, lineage_by_id.__getitem__)
+        lineage = discover_sleeper_lineage(
+            bootstrap.current_provider_league_id,
+            lineage_fetcher,
+        )
+        lineage_by_id = {
+            item.provider_league_id: item.payload for item in lineage
+        }
+        identity = sync_bootstrap(
+            repo_root,
+            bootstrap,
+            lineage_by_id.__getitem__,
+        )
         plans = plan_raw_acquisition(
             repo_root,
             lineage,
