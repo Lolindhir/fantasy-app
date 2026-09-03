@@ -364,7 +364,7 @@ def _raw_metadata(instance: SleeperLeagueInstance) -> dict:
     return {
         "schemaVersion": 1,
         "Provider": "Sleeper",
-        "Dataset": "league",
+        "Dataset": "sleeper.league",
         "ProviderLeagueID": instance.provider_league_id,
         "Season": instance.season,
         "SourceUrl": f"https://api.sleeper.app/v1/league/{instance.provider_league_id}",
