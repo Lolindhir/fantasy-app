@@ -141,6 +141,14 @@ Folgende Kapazität erfüllt die Zwei-Slot-Guardrail **nicht**:
 - der verpflichtende Kicker-Platz, auch wenn der gehaltene Kicker selbst `specialist | churn` sein kann;
 - ein scheinbar austauschbarer Spieler, dessen Entfernung die Position unter den aktuellen `coverage_floor` drücken würde.
 
+Taxi- und Reserve-/IR-Slots können trotzdem **temporäre Stash Capacity** bereitstellen. Diese Stash Capacity ist strikt von allgemeiner Churn-Kapazität zu unterscheiden:
+
+- `stash_capacity_now` bezeichnet aktuell regelkonform nutzbare Taxi-/Reserve-Kapazität für einen konkret eligible Spieler;
+- sie kann die unmittelbare aktive Slot-Belastung eines Zugangs reduzieren oder auf null setzen;
+- sie erhöht **nicht** die Zahl der allgemeinen Churn-Slots und ersetzt keine Weekly-Streaming-Flexibilität;
+- sie darf nur angesetzt werden, wenn Eligibility und freier/repurposabler Sonderplatz **jetzt** nach den aktuellen Liga-/Spielerdaten tatsächlich bestehen;
+- fällt die Eligibility später weg oder wird ein Sonderplatz anderweitig benötigt, entsteht zu diesem späteren Zeitpunkt eine neue Retention-/Opportunity-Cost-Entscheidung.
+
 Vor dem Taxi-Lock ist die **aktuelle Zuordnung** eines Rookies zu Taxi oder aktiver Bank austauschbar und deshalb kein Bewertungsargument. Trotzdem ersetzt die Taxi-Kapazität keinen allgemeinen Churn-Slot: Nach der jeweils optimalen virtuellen Taxi-Zuweisung müssen weiterhin zwei **aktive, positionsoffene** Plätze realistisch repurposable bleiben.
 
 Der Kicker darf also ohne große Bindung ausgetauscht werden. Sein notwendiger Lineup-Platz ersetzt aber keinen der zwei allgemeinen, positionsoffenen Churn-Slots.
@@ -180,11 +188,26 @@ Die Prüfung ist **fail-closed**:
 - `unknown`-Spieler dürfen nicht als freie Optionen, Value-Falls oder Pick-Empfehlungen dargestellt werden, bis die Unsicherheit aufgelöst ist;
 - externe Ranking-, ADP-, Marktwert-, Depth-Chart- oder Monitoring-Daten dürfen Ownership niemals überschreiben oder implizieren;
 - ein Spieler, der in `League.json` rostered/taxi/reserve ist, bleibt unabhängig von externen Free-Agent-Listen **nicht verfügbar**;
-- ein Spieler, der noch nicht im League-Roster materialisiert ist, aber im laufenden `Drafts.json` bereits gepickt wurde, bleibt ebenfalls **nicht verfügbar**.
+- ein Spieler, der noch nicht im League-Roster materialisiert ist, aber im laufenden `Drafts.json` bereits gepickt wurde, bleibt ebenfalls **nicht verfügbar**;
+- ein `not found`/fehlender Treffer in einer trunkierten, paginierten, gekürzten, ausschnittsweisen oder anderweitig nicht vollständig ausgewerteten Tool-/Dateiausgabe ist **kein** positiver Nachweis für Abwesenheit und darf niemals `available` begründen;
+- die negative Ownership-Aussage „bei keinem Team vorhanden“ muss aus einem vollständig ausgewerteten strukturierten League-State, einem kanonischen vollständigen Ownership-Index oder einem gleichwertig vollständigen Readmodel stammen. Ist diese vollständige Negativprüfung nicht möglich, bleibt der Status `unknown`.
 
 Vor **jedem eigenen FA-Draft-Pick** und nach jedem materiellen gegnerischen Pick/Cut muss die relevante Shortlist erneut gegen beide kanonischen Quellen validiert werden. Bei dynamischen Drafts darf ein früher im Chat bestätigter Availability-Status nicht ungeprüft fortgeschrieben werden.
 
-Erst nach bestandener Availability-Prüfung wird die eigentliche Mighty-Giants-Opportunity-Cost gegen Rosterstruktur, Coverage, Taxi/Reserve, Churn-Slots und nächsten Cut bewertet.
+#### Mandatory Stash Sweep vor Pick oder PASS
+
+Vor jeder eigenen FA-Draft-Pick-Empfehlung und insbesondere vor jeder Empfehlung `PASS` muss die Discovery mindestens in getrennten Pools erfolgen:
+
+1. **Active BPA / normaler Optionswert:** validiert verfügbare aktive Spieler unabhängig von Position und Need, einschließlich klar gefallener Markt-/Dynasty-Assets;
+2. **Reserve-/IR-Stashes:** validiert verfügbare Spieler, die **jetzt** nach aktuellen Liga- und Player-Regeln Reserve-/IR-eligible sind;
+3. **Taxi-Stashes vor dem Lock:** solange Taxi noch frei befüllbar ist, validiert verfügbare aktuell Taxi-eligible Spieler als eigenen Entwicklungs-/Capacity-Pool;
+4. **sonstige aktuell erlaubte Sonder-Capacity:** nur wenn die Liga einen weiteren realen, aktuell nutzbaren Sonderplatz oder eine entsprechende Eligibility kennt.
+
+Die Pools werden erst **nach** bestandener Availability-Prüfung gemeinsam nach Mighty-Giants-Optionswert, `active_slot_cost_now`, Markt-/Trade-Wert, Injury-/Rollen-Upside, Informationsgewinn, Coverage, künftigem Aktivierungs-/Retention-Risiko und Opportunity Cost gerankt.
+
+Ein IR-/Reserve-/Taxi-Status erzeugt keinen automatischen Pick-Vorrang. Der Zweck des Mandatory Stash Sweep ist Discovery-Vollständigkeit: Ein kapazitätsneutral oder -schonend kontrollierbares Asset darf nicht allein deshalb unsichtbar bleiben, weil normale aktive BPA-Listen oder Need-Boards zuerst betrachtet wurden.
+
+Erst nach bestandener Availability-Prüfung und vollständigem Stash Sweep wird die eigentliche Mighty-Giants-Opportunity-Cost gegen Rosterstruktur, Coverage, Taxi/Reserve, Churn-Slots und nächsten Cut bewertet.
 
 ### 8.2 Materialisierte vs. effektiv kontrollierte Roster-Kapazität
 
@@ -196,6 +219,14 @@ Für Capacity-, Cut-, Churn- und Opportunity-Cost-Rechnungen werden deshalb mind
 - `pending_controlled_draft_count` = Anzahl unterschiedlicher PlayerIDs, die Mighty Giants im aktuellen Draft bereits mit `Status: Picked` kontrolliert, die aber noch in keinem eigenen `League.json`-Rosterbereich materialisiert sind;
 - `effective_controlled_roster_count` = Vereinigungsmenge aus materialisierten Mighty-Giants-Spielern und bereits gepickten, noch nicht materialisierten eigenen Draftzugängen; jede PlayerID wird genau einmal gezählt;
 - `effective_active_roster_count` = der nach gültiger Taxi-/Reserve-Behandlung tatsächlich aktive Teil dieser effektiven Kontrollmenge, der gegen das harte aktive Roster-Limit läuft.
+
+Für jeden betrachteten Zugang wird zusätzlich `active_slot_cost_now` ausgewiesen:
+
+- `0` = der Spieler kann **jetzt** regelkonform über vorhandene/repurposable Sonder-Capacity kontrolliert werden, ohne die aktive Roster-Belegung zu erhöhen, oder die konkrete Draft-/Liga-Mechanik materialisiert ihn noch nicht aktiv und erzwingt aktuell keinen aktiven Platz;
+- `1` = der Zugang erhöht die aktuell wirksame aktive Roster-Belegung um einen Platz;
+- `unknown` = aktuelle Eligibility, Sonderplatz-Kapazität, Materialisierungsmechanik oder relevante League-Daten sind nicht eindeutig genug für eine sichere Aussage.
+
+`active_slot_cost_now=0` bedeutet **nicht**, dass der Spieler dauerhaft kostenlos ist. Sobald Reserve-/Taxi-Eligibility endet, ein Sonderplatz anderweitig benötigt wird, Materialisierung einen aktiven Platz erzwingt oder ein Lock/Deadline greift, muss `retention_cost_later` neu bewertet werden.
 
 Dabei gilt:
 
@@ -231,6 +262,19 @@ Wenn ein FA-Draft-Pick **sonst verfällt**, nach Prüfung realistischer Trade-/A
 
 Ein so gepickter Spieler erhöht gemäß Abschnitt 8.2 sofort `pending_controlled_draft_count` bzw. `effective_controlled_roster_count`. Die spätere Rosterbelastung wird also nicht ignoriert; nur der Zeitpunkt der irreversiblen Cut-/Retention-Entscheidung wird korrekt aufgeschoben, wenn die Liga dies zulässt.
 
+#### PASS-last Gate im Free-Agent Draft
+
+Ein eigener FA-Draft-Pick darf erst als `PASS` empfohlen werden, wenn die folgenden Pfade in dieser Reihenfolge geprüft und dokumentiert wurden:
+
+1. **Trade-/Pick-Verwertung:** Gibt es einen realistischen unmittelbar verfügbaren Trade-, Swap- oder Future-Pick-Pfad mit positivem Wert?
+2. **Normaler positiver Optionswert:** Gibt es nach vollständigem Availability-Gate einen aktiven Spieler, dessen kontrollierbarer erwarteter Optionswert den Pick-Verfall übersteigt?
+3. **Kapazitätsschonender Stash:** Gibt es nach dem Mandatory Stash Sweep einen aktuell Reserve-/IR-/Taxi-eligible Spieler mit positivem erwarteten Optionswert und geringerem `active_slot_cost_now`?
+4. **Sonstige unmittelbare Alternative:** Gibt es eine andere regelkonforme Verwendung des Picks mit höherem erwarteten Wert?
+
+Nur wenn **kein** dieser Pfade positiv ist oder alle positiven Pfade durch höhere unmittelbare irreversible Kosten überkompensiert werden, ist `PASS` die bevorzugte Empfehlung.
+
+Roster-Clogging oder eine spätere Retention-Boundary allein rechtfertigen keinen PASS, solange ein positiver aktuell kontrollierbarer Stash-/Asset-Wert ohne entsprechende unmittelbare irreversible aktive Slot-Kosten verfügbar ist. Umgekehrt rechtfertigt ein leerer Reserve-/Taxi-Slot keinen Pick eines negativen oder praktisch wertlosen Assets.
+
 #### Retention Stage
 
 Sobald Materialisierung, Roster-Limit, Taxi-Lock, Deadline oder eine andere Liga-Restriktion das weitere Halten tatsächlich an einen gebundenen aktiven Platz, einen Cut oder einen anderen irreversiblen Preis koppelt, wird `retention_cost_later` fällig. Spätestens dann erfolgt die volle Roster-/Opportunity-Cost-Prüfung:
@@ -251,7 +295,7 @@ Wenn die Acquisition Stage bereits unmittelbar einen Cut oder eine andere Retent
 
 Für den Free-Agent Draft gilt deshalb differenziert:
 
-- ein später Pick **muss nicht genutzt werden**, wenn die Akquise selbst bereits negative unmittelbare Opportunity Cost erzeugt oder kein validiert verfügbarer Spieler positiven Optionswert gegenüber Pass/Trade/Alternativen besitzt;
+- ein später Pick **muss nicht genutzt werden**, wenn die Akquise selbst bereits negative unmittelbare Opportunity Cost erzeugt oder kein validiert verfügbarer Spieler nach vollständigem PASS-last Gate positiven Optionswert gegenüber Pass/Trade/Alternativen besitzt;
 - ein später Pick soll aber **nicht allein deshalb verfallen**, weil der beste Kandidat heute noch nicht die spätere permanente Cut-/Retention-Boundary schlägt, wenn diese Retention-Entscheidung regelkonform erst später anfällt und die heutige Akquise keinen entsprechenden irreversiblen Preis verursacht.
 
 ### 8.4 Folgejahres-Retention- und Salary-Guardrail
@@ -348,8 +392,12 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
 - ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
-- bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände;
+- bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände; `available` benötigt einen vollständigen positiven Availability-Nachweis und darf nicht aus einem fehlenden Treffer in einer trunkierten/unvollständigen Ausgabe abgeleitet werden;
+- bei Free-Agent-Draft-Boards: getrennt ausweisen, welche Kandidaten aus Active-BPA-, Reserve/IR-Stash- und – vor Lock – Taxi-Stash-Discovery stammen; kein Pick/PASS ohne Mandatory Stash Sweep;
+- bei relevanten Zugängen `active_slot_cost_now` (`0`, `1`, `unknown`) und die dafür verwendete aktuelle Reserve-/Taxi-/Materialisierungsannahme nennen;
+- aktuelle `stash_capacity_now` getrennt von allgemeinen Churn-Slots ausweisen, wenn Sonder-Capacity die Entscheidung materiell beeinflusst;
 - bei Free-Agent-Draft-Pick-Empfehlungen: getrennt `acquisition_cost_now` und – falls erst später bindend – den erwarteten `retention_cost_later` samt Trigger nennen; ein deferred Retention-Risiko darf nicht als heutiger sofortiger Cut ausgegeben werden;
+- bei einer Empfehlung `PASS`: dokumentieren, dass Trade-/Pick-Verwertung, normaler positiver Optionswert, kapazitätsschonende Reserve/IR-/Taxi-Stashes und sonstige unmittelbare Alternativen geprüft wurden und keinen positiven Pfad ergeben haben;
 - bei finalen Cut-/Keep- und FA-Draft-Opportunity-Cost-Entscheidungen für alle Grenzfälle: aktuelles `SalaryProjected`, erwartete Mighty-Giants-Lineup-/Coverage-Utility, Dynasty-/Trade-Asset-Wert, `retention_risk` und realistische Exit-Option;
 - bei Salary-relevanten Entscheidungen den aktuellen League-Cap-/`SalaryRelevantTeamSize`-Kontext ausweisen und Salary klar von Spielerqualität trennen;
 - welcher Spieler bei einem geplanten Zugang zum neuen Coverage-, Churn- oder Retention-Boundary-Spieler würde.
