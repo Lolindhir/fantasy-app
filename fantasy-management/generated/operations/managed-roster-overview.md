@@ -1,16 +1,16 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-03T09:42:00Z`  
+Generated: `2026-09-03T12:11:38Z`  
 Evaluation mode: `hybrid_manual_v1`  
-Taxi phase: `pre_lock`
+Taxi phase: `unknown`
 
 ## Roster status
 
-- Active: **31 / 30** (delta -1)
+- Active: **33 / 30** (delta -3)
 - Taxi: **2 / 2**; binding: **no**
-- Reserve: **0 / 2**
+- Reserve: **1 / 2**
 - Startable Skill Pool: **15 / 10** (margin +5)
-- General churn target: **2**; status: `provisional_requires_virtual_taxi_assignment`
+- General churn target: **2**; status: `met`
 
 ## Position coverage
 
@@ -18,9 +18,9 @@ Taxi phase: `pre_lock`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
-| RB | 10 | 9 | 2 | 5 | 1 | – | – | pool_managed |
+| RB | 11 | 10 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 14 | 13 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 16 | 14 | 2 | 7 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -36,6 +36,7 @@ Taxi phase: `pre_lock`
 | RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | RB | Dylan Sampson | active | prospect | conditional | development | development | yes |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no |
+| RB | Jonathon Brooks | active | unclassified | unclassified | unclassified | unclassified | no |
 | RB | Kaelon Black | taxi | prospect | conditional | development | development | no |
 | RB | Kaytron Allen | active | prospect | churn | development | development | yes |
 | RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
@@ -47,9 +48,9 @@ Taxi phase: `pre_lock`
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no |
 | WR | Antonio Williams | active | prospect | strong_hold | development | development | no |
-| WR | Chris Bell | active | prospect | conditional | development | development | yes |
+| WR | Chris Bell | taxi | prospect | conditional | development | development | no |
 | WR | Davante Adams | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | De'Zhaun Stribling | taxi | prospect | strong_hold | development | development | no |
+| WR | De'Zhaun Stribling | active | prospect | strong_hold | development | development | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no |
 | WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
@@ -59,13 +60,13 @@ Taxi phase: `pre_lock`
 | WR | Marvin Harrison | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Pat Bryant | active | prospect | hold | development | development | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no |
+| WR | Ricky Pearsall | reserve | unclassified | unclassified | unclassified | unclassified | no |
+| WR | Tetairoa McMillan | active | unclassified | unclassified | unclassified | unclassified | no |
 
 ## Churn boundary pool
 
 - Kaytron Allen (RB) — `churn` — area `active` — priority `10`
 - Dylan Sampson (RB) — `conditional` — area `active` — priority `20`
-- Chris Bell (WR) — `conditional` — area `active` — priority `30`
-- Kaelon Black (RB) — `conditional` — area `taxi` — priority `40`
 
 ## Interpretation
 
