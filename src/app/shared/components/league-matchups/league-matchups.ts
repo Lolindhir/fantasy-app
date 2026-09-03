@@ -20,11 +20,13 @@ interface LeagueMatchupTeamContextView {
   record: string | null;
   streak: string | null;
   pointsFor: number | null;
+  pointsForDisplay: string | null;
 }
 
 interface LeagueMatchupTeamView {
   team: FantasyTeam;
   points: number;
+  pointsDisplay: string;
   context: LeagueMatchupTeamContextView | null;
 }
 
@@ -45,7 +47,18 @@ interface LeagueMatchupView {
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
 
-  readonly teamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+  readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
+  readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+
+  private readonly pointsForFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+
+  private readonly matchupScoreFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
 
   get week(): number | null {
     return this.league.Matchups?.Week ?? null;
@@ -84,9 +97,12 @@ export class LeagueMatchupsComponent {
     const team = teamByID.get(participant.TeamID);
     if (!team) return null;
 
+    const points = participant.Points ?? 0;
+
     return {
       team,
-      points: participant.Points ?? 0,
+      points,
+      pointsDisplay: this.matchupScoreFormatter.format(points),
       context: this.getTeamContext(team)
     };
   }
@@ -111,7 +127,8 @@ export class LeagueMatchupsComponent {
         regularStanding: standing,
         record,
         streak,
-        pointsFor
+        pointsFor,
+        pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
       };
     }
 
@@ -133,7 +150,8 @@ export class LeagueMatchupsComponent {
       regularStanding,
       record,
       streak: null,
-      pointsFor
+      pointsFor,
+      pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
     };
   }
 
