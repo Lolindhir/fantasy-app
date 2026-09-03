@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lolindhir.github.io/fantasy-app/schemas/fa-board-readmodel.schema.json",
+  "title": "Fantasy Operations FA Board Readmodel",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "generated_at", "input_fingerprint", "managed_team", "sources", "current_fa_draft", "managed_team_capacity", "population", "players", "quality"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "dataset_id": {"const": "fa-board-readmodel"},
+    "generated_at": {"type": ["string", "null"]},
+    "input_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "managed_team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "name"],
+      "properties": {"team_id": {"type": "string"}, "name": {"type": ["string", "null"]}}
+    },
+    "sources": {
+      "type": "object",
+      "required": ["league", "drafts", "player_signals", "timestamps"],
+      "properties": {
+        "league": {"$ref": "#/$defs/source"},
+        "drafts": {"$ref": "#/$defs/source"},
+        "player_signals": {"$ref": "#/$defs/source"},
+        "timestamps": {"$ref": "#/$defs/source"}
+      },
+      "additionalProperties": false
+    },
+    "current_fa_draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolution_status", "draft_key", "season", "status", "materialization_mode", "picked_player_count"],
+      "properties": {
+        "resolution_status": {"enum": ["active", "none", "unknown"]},
+        "draft_key": {"type": ["string", "null"]},
+        "season": {"type": ["string", "null"]},
+        "status": {"type": ["string", "null"]},
+        "materialization_mode": {"enum": ["deferred", "materialized", "mixed", "not_observed", "not_applicable", "unknown"]},
+        "picked_player_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "managed_team_capacity": {"type": "object"},
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player_count", "positions", "availability"],
+      "properties": {
+        "player_count": {"type": "integer", "minimum": 0},
+        "positions": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "availability": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "players": {"type": "array", "items": {"$ref": "#/$defs/player"}},
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "issue_count", "issues", "availability_fail_closed"],
+      "properties": {
+        "status": {"enum": ["ok", "warning", "error"]},
+        "issue_count": {"type": "integer", "minimum": 0},
+        "issues": {"type": "array", "items": {"type": "object"}},
+        "availability_fail_closed": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["path", "content_sha256", "source_timestamp"],
+      "properties": {
+        "path": {"type": "string"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_timestamp": {"type": ["string", "null"]},
+        "complete_for_negative_ownership": {"type": "boolean"},
+        "resolution_status": {"enum": ["active", "none", "unknown"]},
+        "input_fingerprint": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "eligibility": {"oneOf": [{"type": "boolean"}, {"const": "unknown"}]},
+    "slot_cost": {"oneOf": [{"enum": [0, 1]}, {"const": "unknown"}]},
+    "player": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player_id", "player_name", "position", "nfl_team", "availability_status", "owner_team_id", "owner_team_name", "roster_bucket", "ownership_teams", "current_fa_draft_status", "current_fa_draft_pick", "player_status", "injury_status", "injury_designation", "reserve_eligible_now", "taxi_eligible_now", "taxi_prelock_eligible", "active_slot_cost_now", "active_slot_cost_on_materialization", "market", "source_freshness"],
+      "properties": {
+        "player_id": {"type": "string", "minLength": 1},
+        "player_name": {"type": ["string", "null"]},
+        "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
+        "nfl_team": {"type": ["string", "null"]},
+        "availability_status": {"enum": ["available", "rostered", "drafted", "unknown"]},
+        "owner_team_id": {"type": ["string", "null"]},
+        "owner_team_name": {"type": ["string", "null"]},
+        "roster_bucket": {"enum": ["Roster", "Taxi", "Reserve", null]},
+        "ownership_teams": {"type": "array"},
+        "current_fa_draft_status": {"enum": ["picked", "not_picked", "no_active_draft", "unknown"]},
+        "current_fa_draft_pick": {"type": ["object", "null"]},
+        "player_status": {"type": ["string", "null"]},
+        "injury_status": {"type": ["string", "null"]},
+        "injury_designation": {"type": ["string", "null"]},
+        "reserve_eligible_now": {"$ref": "#/$defs/eligibility"},
+        "taxi_eligible_now": {"$ref": "#/$defs/eligibility"},
+        "taxi_prelock_eligible": {"$ref": "#/$defs/eligibility"},
+        "active_slot_cost_now": {"$ref": "#/$defs/slot_cost"},
+        "active_slot_cost_on_materialization": {"$ref": "#/$defs/slot_cost"},
+        "market": {"type": "object"},
+        "source_freshness": {"type": "object"}
+      }
+    }
+  }
+}
