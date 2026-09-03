@@ -10,23 +10,74 @@
 
 .standing-row {
   display: grid;
-  grid-template-columns: 56px 1fr max-content max-content;
+  grid-template-columns: 28px minmax(0, 1fr) max-content max-content;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
+  gap: 6px;
+  padding: 6px 2px;
   border-radius: 8px;
 }
 
 .standing-header {
-  font-weight: bold;
-  opacity: 0.75;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.standing-header-label--desktop,
+.standing-team-identity--desktop {
+  display: none;
+}
+
+.standing-place,
+.standing-record,
+.standing-points {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .standing-place {
-  font-weight: bold;
+  font-weight: 800;
 }
 
 .standing-team-identity {
   width: 100%;
   min-width: 0;
+}
+
+.standing-record,
+.standing-points {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.standing-points {
+  text-align: right;
+}
+
+@media (min-width: 768px) {
+  .standing-row {
+    grid-template-columns: 56px minmax(0, 1fr) max-content max-content;
+    gap: 10px;
+    padding: 6px 8px;
+  }
+
+  .standing-header {
+    font-size: inherit;
+  }
+
+  .standing-header-label--mobile,
+  .standing-team-identity--mobile {
+    display: none;
+  }
+
+  .standing-header-label--desktop,
+  .standing-team-identity--desktop {
+    display: block;
+  }
+
+  .standing-record,
+  .standing-points {
+    font-size: inherit;
+    font-weight: inherit;
+  }
 }
