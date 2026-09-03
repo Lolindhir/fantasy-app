@@ -10,6 +10,13 @@ guidance:
     - Ground application-specific recommendations in the current repository structure, source-of-truth rules and existing implementation.
     - Avoid purely abstract guidance unless the user explicitly asks for general options.
 
+  standingsTerminology:
+    - For completed, previous or historical seasons, treat unqualified `Standings` as Overall/final season standings, represented by playoff/final placement, unless the user explicitly says Regular Season.
+    - Treat `Previous Season Standings` as `Placements.Previous.Playoffs` / the previous season's final overall placement by default. Do not substitute `Placements.Previous.Regular` unless Regular Season is explicitly requested.
+    - Treat `All-Time Standings` as overall/all-time playoff placement by default. Use all-time regular-season placement only when the user explicitly says `All-Time Regular Season Standings` or equivalent.
+    - Keep explicitly named `Regular Season Standings` separate from Overall standings in answers, implementation choices, comparisons and fallback/tiebreak logic.
+    - `Current Standings` during an active season may represent the live current-season table; this exception does not change the historical/default meaning of unqualified previous-season or all-time standings.
+
   userIntent:
     - Treat every user message phrased as a question as a question only and never as an instruction to perform an action, even when the wording could be understood as a polite request in German.
     - For question-form requests, answer what is possible or advisable and ask for explicit confirmation before performing any action.
