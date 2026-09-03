@@ -10,6 +10,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from league_source_data_lib.core import canonical_league_season_id  # noqa: E402
 from league_source_data_lib.materialize import (  # noqa: E402
     PlayerMappingResolver,
     persist_canonical_outputs,
@@ -24,8 +25,9 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
         root = Path(temporary.name)
         canonical_league_id = "cl-220306ac3f9b480fa865e124098d8f56"
         provider_league_id = "1257421353431080960"
+        season_id = canonical_league_season_id(canonical_league_id, 2025)
 
-        registry_source = Path(__file__).resolve().parents[2] / "source-data" / "league-registry.json"
+        registry_source = Path(__file__).resolve().parents[2] / "source-data/league-registry.json"
         registry_target = root / "source-data" / "league-registry.json"
         registry_target.parent.mkdir(parents=True, exist_ok=True)
         registry_target.write_text(registry_source.read_text(encoding="utf-8"), encoding="utf-8")
@@ -75,11 +77,11 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
                     "schemaVersion": 1,
                     "CanonicalLeagueID": canonical_league_id,
                     "Provider": "Sleeper",
-                    "CurrentCanonicalLeagueSeasonID": "cls-fixture",
+                    "CurrentCanonicalLeagueSeasonID": season_id,
                     "CurrentProviderLeagueID": provider_league_id,
                     "Seasons": [
                         {
-                            "CanonicalLeagueSeasonID": "cls-fixture",
+                            "CanonicalLeagueSeasonID": season_id,
                             "Season": 2025,
                             "PreviousCanonicalLeagueSeasonID": None,
                             "ProviderMappings": [
@@ -147,7 +149,15 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
         (raw / "transactions").mkdir(parents=True, exist_ok=True)
         for week in range(1, 19):
             matchup_payload = (
-                [{"matchup_id": 1, "roster_id": 1, "players": ["p1"], "starters": ["p1"], "points": 10.0}]
+                [
+                    {
+                        "matchup_id": 1,
+                        "roster_id": 1,
+                        "players": ["p1"],
+                        "starters": ["p1"],
+                        "points": 10.0,
+                    }
+                ]
                 if week <= 17
                 else []
             )
@@ -178,6 +188,74 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             second_outputs = plan_canonical_materialization(root, canonical_league_id, registry, resolver)
             second = persist_canonical_outputs(second_outputs)
             self.assertEqual(second["CanonicalFilesChanged"], 0)
+        finally:
+            temporary.cleanup()
+
+    def test_materializes_transaction_and_draft_refs(self) -> None:
+        temporary, root, canonical_league_id, provider_league_id = self._repo()
+        try:
+            raw = root / "source-data" / "providers" / "sleeper" / "leagues" / provider_league_id
+            (raw / "transactions" / "week-3.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "transaction_id": "tx1",
+                            "leg": 3,
+                            "type": "trade",
+                            "status": "complete",
+                            "creator": "u1",
+                            "roster_ids": [1],
+                            "adds": {"p1": 1},
+                            "drops": {},
+                            "draft_picks": [
+                                {
+                                    "season": "2026",
+                                    "round": 1,
+                                    "roster_id": 1,
+                                    "previous_owner_id": 1,
+                                    "owner_id": 1,
+                                }
+                            ],
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (raw / "drafts" / "index.json").write_text(json.dumps([{"draft_id": "d1"}]), encoding="utf-8")
+            draft = raw / "drafts" / "d1"
+            draft.mkdir(parents=True, exist_ok=True)
+            (draft / "draft.json").write_text(
+                json.dumps(
+                    {
+                        "draft_id": "d1",
+                        "season": "2025",
+                        "status": "complete",
+                        "type": "snake",
+                        "draft_order": {"u1": 1},
+                        "slot_to_roster_id": {"1": 1},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (draft / "picks.json").write_text(
+                json.dumps([{"pick_no": 1, "player_id": "p1", "roster_id": 1, "picked_by": "u1"}]),
+                encoding="utf-8",
+            )
+            (draft / "traded-picks.json").write_text(
+                json.dumps([{"season": "2026", "round": 1, "roster_id": 1, "previous_owner_id": 1, "owner_id": 1}]),
+                encoding="utf-8",
+            )
+
+            registry = load_league_registry(root)
+            resolver = PlayerMappingResolver.load(root)
+            persist_canonical_outputs(plan_canonical_materialization(root, canonical_league_id, registry, resolver))
+            season_root = root / "source-data" / "leagues" / canonical_league_id / "seasons" / "2025"
+            transaction = json.loads((season_root / "transactions" / "week-3.json").read_text(encoding="utf-8"))[0]
+            draft_result = json.loads((season_root / "drafts.json").read_text(encoding="utf-8"))[0]
+            self.assertTrue(transaction["CanonicalLeagueTransactionID"].startswith("clt-"))
+            self.assertEqual(transaction["Adds"][0]["Player"]["CanonicalPlayerID"], "cp-one")
+            self.assertTrue(draft_result["CanonicalLeagueDraftID"].startswith("cld-"))
+            self.assertEqual(draft_result["Picks"][0]["Player"]["CanonicalPlayerID"], "cp-one")
         finally:
             temporary.cleanup()
 
