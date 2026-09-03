@@ -745,7 +745,7 @@ decisions:
       state outside workflow YAML in tools/build_workflow_health_snapshot.py, and
       publishes workflow-health.json only to the isolated workflow-health-state
       branch. The snapshot producer never sends notifications or mutates Issues.
-      The external ChatGPT condition watch reads the policy from main and the
+      The external ChatGPT condition watch reads the policy from main plus the
       snapshot from workflow-health-state, treats an over-age or missing snapshot
       as monitoring-infrastructure failure, and remains the user notification layer.
       The snapshot workflow is non-paging in recursive run evaluation; its own
@@ -819,3 +819,59 @@ decisions:
         - The Actions run list contains many lightweight Scheduler runs.
         - A persistent target failure may create one new retry attempt per successful Scheduler tick until a run succeeds.
         - The Scheduler becomes critical shared infrastructure and therefore requires explicit monitoring and regression coverage.
+
+  - id: ADR-032
+    title: Shared source-data includes canonical fantasy-league facts
+    status: accepted
+    context: >
+      Phase 1A established persistent provider raw data and canonical NFL facts,
+      while productive App generators still fetch Sleeper league state directly
+      and Fantasy Management consumes much of that state indirectly through
+      public/data read models. Sleeper creates a new league_id for each league
+      season and links seasonal instances through previous_league_id, so a provider
+      league_id cannot serve as the durable identity of the logical multi-season
+      fantasy league. App and Fantasy Management need the same underlying league
+      facts without either consumer becoming the other's source of truth. Matchups
+      are now also a productive League.json input and therefore part of the shared
+      League-source fact scope.
+    decision: >
+      Treat source-data/** as the shared persistent facts substrate for both the
+      Fantasy App and Fantasy Management. Keep provider-independent NFL facts under
+      source-data/nfl/** and add canonical fantasy-league facts under
+      source-data/leagues/<CanonicalLeagueID>/**, backed by provider raw league data
+      under source-data/providers/sleeper/leagues/**. Use a fantasy-app-issued
+      CanonicalLeagueID for the logical league across seasons and providers and a
+      CanonicalLeagueSeasonID for each season. Sleeper league_id remains a provider
+      identifier; previous_league_id is retained and validated as provider lineage
+      evidence but does not replace canonical identity. Persist League, members,
+      rosters, playoff brackets, week-partitioned matchups and transactions, league
+      drafts, draft detail/picks and draft-specific traded-pick evidence required by
+      the consumers. Model multiple independent fantasy leagues by design. Keep
+      public/data/** as App-specific generated read models and keep Fantasy
+      Management rankings, signals, monitoring judgments, Knowledge, analyses and
+      decisions under fantasy-management/**. Complete and productively accept the
+      League Source Layer in Phase 1B before Phase 2 migrates either consumer to the
+      shared source contracts; existing public/data contracts remain unchanged
+      unless separately approved.
+    rationale: >
+      A shared canonical League layer removes the current indirect dependency where
+      Fantasy Management must consume App read models for facts that originate in
+      Sleeper, while preserving clear ownership between provider evidence,
+      normalized facts and consumer-specific derivations. Stable application-owned
+      league identity is required because Sleeper league IDs are season-scoped and
+      because the source model must remain valid for multiple leagues and possible
+      future provider changes. Persisting matchup facts alongside the other Sleeper
+      league facts keeps the Source Layer complete after the League.json matchup
+      feature was introduced.
+    consequences:
+      positive:
+        - App and Fantasy Management can derive from the same reproducible league facts without depending on each other's outputs.
+        - Historical Sleeper league instances can be retained under one stable logical league identity.
+        - Matchups are covered by the same provenance/no-op/lifecycle rules as other league facts.
+        - Multi-league support is part of the source contract instead of a later retrofit.
+        - Provider raw data, canonical facts, App read models and Fantasy Management derivations have explicit separate ownership.
+        - Phase 2 can migrate consumers while preserving existing App JSON contracts.
+      negative:
+        - Phase 1B must introduce league identity mappings, lineage validation, persistence and lifecycle rules before consumer migration.
+        - Existing direct Sleeper reads and Fantasy Management public/data dependencies remain temporarily during the staged migration.
+        - CanonicalLeagueID and CanonicalLeagueSeasonID require application-owned namespaces and mapping maintenance.

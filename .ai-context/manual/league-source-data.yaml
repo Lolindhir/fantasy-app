@@ -1,31 +1,28 @@
 schemaVersion: 1
 
 domain: league-source-data
-status: target-architecture-approved-phase1b-not-implemented
+status: phase1b-inventory-completed-implementation-in-progress
 
 purpose: >
-  Definiert die geplante persistente Source-Data-Schicht fuer fantasy-ligaspezifische
-  Daten. Sie ergaenzt die bereits produktive NFL-Source-Data-Schicht und bildet mit
-  ihr den gemeinsamen Fakten-Unterbau fuer Fantasy App und Fantasy Management.
-  App-Readmodels unter public/data und Fantasy-Management-Ableitungen bleiben
-  getrennte Consumer dieses gemeinsamen Source-Layers.
+  Definiert die persistente Source-Data-Schicht fuer fantasy-ligaspezifische Daten.
+  Sie ergaenzt die produktive NFL-Source-Data-Schicht und bildet mit ihr den
+  gemeinsamen Fakten-Unterbau fuer Fantasy App und Fantasy Management. App-
+  Readmodels unter public/data und Fantasy-Management-Ableitungen bleiben getrennte
+  Consumer dieses gemeinsamen Source-Layers.
 
 phasePlan:
   phase1A:
     name: NFL Source Layer
     status: completed-and-productively-accepted
     canonicalContract: .ai-context/manual/nfl-source-data.yaml
-    result: >
-      Persistente Provider-Rohdaten und providerunabhaengige NFL-Fakten unter
-      source-data/providers und source-data/nfl sind produktiv etabliert.
   phase1B:
     name: League Source Layer
-    status: next
+    status: implementation-in-progress
     goal: >
-      Sleeper-Liga-, Member-, Roster-, Transaction- und Draft-Daten persistent
-      erfassen, saisonuebergreifend einer stabilen kanonischen Liga zuordnen und
-      als gemeinsamen League-Fakten-Layer fuer App und Fantasy Management
-      materialisieren.
+      Sleeper-Liga-, Member-, Roster-, Bracket-, Matchup-, Transaction- und
+      Draft-Daten persistent erfassen, saisonuebergreifend einer stabilen
+      kanonischen Liga zuordnen und als gemeinsamen League-Fakten-Layer fuer App
+      und Fantasy Management materialisieren.
   phase2:
     name: Consumer Migration
     status: blocked-until-phase1B-accepted
@@ -44,7 +41,7 @@ targetFlow: |
                                           |
   Sleeper league APIs ---------> source-data/providers/sleeper/leagues/**
                                           |
-  manual league config -------->         |
+  League bootstrap/config ----->         |
                                           v
                                   source-data/leagues/**
                                           |
@@ -83,9 +80,9 @@ boundaries:
   canonicalLeague:
     pathPattern: source-data/leagues/<CanonicalLeagueID>/**
     owns:
-      - stabile logische Ligaidentitaet ueber mehrere Sleeper-Saisons hinweg
+      - stabile logische Ligaidentitaet ueber mehrere Provider-Saisons hinweg
       - validierte saisonale League-Instanzen und Provider-Mappings
-      - normalisierte Liga-, Member-, Roster-, Transaction- und Fantasy-Draft-Fakten
+      - normalisierte Liga-, Member-, Roster-, Bracket-, Matchup-, Transaction- und Fantasy-Draft-Fakten
       - saisonuebergreifende League-Lineage
     doesNotOwn:
       - NFL-weite Fakten, die unter source-data/nfl gehoeren
@@ -95,12 +92,13 @@ boundaries:
   appReadModels:
     path: public/data/**
     currentState: >
-      Aktuell werden League-/Player-/Draft-/Transaction-Daten noch direkt bzw.
-      indirekt aus Provider-Reads erzeugt und dienen zugleich als Basis fuer Teile
-      des Fantasy Managements.
+      App-Generatoren lesen League-Daten in Phase 1B weiterhin ueber ihre heutigen
+      Provider-Pfade und erzeugen public/data Readmodels. Der neue Source-Layer
+      laeuft parallel und verdrahtet die produktiven Generatoren noch nicht um.
     targetState: >
-      public/data bleibt App-Ausgabe. Die Generatoren lesen nach Phase 2 aus den
-      akzeptierten NFL- und League-Source-Vertraegen.
+      public/data bleibt App-Ausgabe. Die Generatoren lesen erst nach produktiver
+      Phase-1B-Abnahme in Phase 2 aus den akzeptierten NFL- und League-Source-
+      Vertraegen.
 
   fantasyManagement:
     path: fantasy-management/**
@@ -110,12 +108,37 @@ boundaries:
     targetState: >
       Basisfakten fuer Liga, Ownership, Drafts, Transactions und NFL-Zustand werden
       nach Consumer-Migration direkt aus source-data abgeleitet. Fantasy-Management-
-      eigene externe Rankings, Signale, Knowledge, Analysen und Decisions bleiben
-      in fantasy-management und werden nicht in source-data verschoben.
+      eigene Rankings, Signale, Knowledge, Analysen und Decisions bleiben unter
+      fantasy-management.
+
+bootstrapContract:
+  purpose: >
+    Minimaler manueller Einstiegspunkt pro logischer Liga. Der Bootstrap waehlt
+    die kanonische Liga und die aktuellste Provider-Instanz; historische Provider-
+    Instanzen werden aus Provider-Lineage entdeckt und duerfen nicht manuell als
+    vollstaendige Saisonliste gepflegt werden.
+  requiredFields:
+    - CanonicalLeagueID
+    - Provider
+    - CurrentProviderLeagueID
+  example: |
+    {
+      "CanonicalLeagueID": "<fantasy-app-issued-id>",
+      "Provider": "Sleeper",
+      "CurrentProviderLeagueID": "<current-sleeper-league-id>"
+    }
+  rules:
+    - CanonicalLeagueID wird von fantasy-app einmalig vergeben und bleibt saison- und provideruebergreifend stabil.
+    - CurrentProviderLeagueID ist der notwendige manuelle Einstiegspunkt fuer die aktuellste Provider-Saison.
+    - LeagueYear ist fuer den neuen Source-Layer kein Bootstrap-Feld; Season kommt aus dem Provider-League-Objekt.
+    - Historische Sleeper-Instanzen werden ueber previous_league_id rueckwaerts entdeckt und persistent gespeichert.
+    - Beim Saisonwechsel bleibt CanonicalLeagueID unveraendert und CurrentProviderLeagueID wird auf die neue Provider-Saison aktualisiert.
+    - Jede weitere unabhaengige Fantasy-Liga erhaelt einen eigenen Bootstrap und eine eigene CanonicalLeagueID.
+    - public/data/Metadata.json bleibt waehrend Phase 1B unveraendert produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
 
 leagueIdentity:
   principle: >
-    Eine Sleeper league_id identifiziert nur eine konkrete saisonale Sleeper-
+    Eine Sleeper league_id identifiziert eine konkrete saisonale Sleeper-
     League-Instanz. Die logische Fantasy-Liga ueber mehrere Jahre benoetigt eine
     eigene stabile, von fantasy-app vergebene Identitaet.
 
@@ -123,10 +146,6 @@ leagueIdentity:
     field: CanonicalLeagueID
     issuer: fantasy-app
     stability: cross-season-and-provider-independent
-    meaning: >
-      Stabile Identitaet der fortlaufenden Fantasy-Liga als Ganzes. Sie bleibt
-      gleich, wenn Sleeper fuer eine neue Saison eine neue league_id erzeugt oder
-      die Liga spaeter auf einen anderen Provider migriert.
     guards:
       - nicht aus League-Name ableiten
       - nicht mit einer saisonalen Sleeper league_id gleichsetzen
@@ -136,9 +155,10 @@ leagueIdentity:
     field: CanonicalLeagueSeasonID
     issuer: fantasy-app
     meaning: >
-      Stabile Identitaet einer konkreten saisonalen Instanz innerhalb einer
-      CanonicalLeagueID. Sie bindet Season und Provider-Instanz, ohne die
-      Provider-ID selbst zur kanonischen Identitaet zu machen.
+      Stabile providerunabhaengige Identitaet einer konkreten Saison innerhalb
+      einer CanonicalLeagueID. Eine oder mehrere Provider-Instanzen koennen als
+      Mapping/Evidenz an dieselbe kanonische Saison gebunden werden, wenn ein
+      Providerwechsel dies spaeter erfordert.
     relation:
       parent: CanonicalLeagueID
       previousField: PreviousCanonicalLeagueSeasonID
@@ -148,8 +168,9 @@ leagueIdentity:
       - Season
       - PreviousProviderLeagueID
     guards:
-      - ProviderLeagueID muss innerhalb des Providers eindeutig auf genau eine kanonische Saisoninstanz zeigen
+      - ProviderLeagueID muss innerhalb des Providers eindeutig auf genau eine kanonische Liga/Saison-Zuordnung zeigen
       - eine kanonische Saisoninstanz darf nicht gleichzeitig mehreren CanonicalLeagueID-Werten gehoeren
+      - dieselbe CanonicalLeagueID darf pro Season nur eine CanonicalLeagueSeasonID besitzen
       - Zyklen oder widerspruechliche Previous-Beziehungen brechen fail-closed ab
 
   sleeperLineage:
@@ -157,18 +178,23 @@ leagueIdentity:
     evidenceField: previous_league_id
     rule: >
       Sleeper previous_league_id wird als Provider-Evidenz fuer die historische
-      Kette erhalten und kann zur Discovery vorheriger Saisoninstanzen dienen.
-      Die Provider-Kette ersetzt jedoch nicht CanonicalLeagueID und darf eine
-      bestehende explizite kanonische Zuordnung bei Konflikt nicht still ueberschreiben.
-    expectedShape: >
-      Jede neue Sleeper-Saison kann eine neue league_id besitzen und auf die
-      vorherige Sleeper-Liga verweisen. Dadurch entsteht eine saisonale Provider-
-      Kette unter einer stabilen CanonicalLeagueID.
+      Kette erhalten und fuer Discovery vorheriger Saisoninstanzen genutzt. Die
+      Provider-Kette ersetzt nicht CanonicalLeagueID und darf eine bestehende
+      kanonische Zuordnung bei Konflikt nicht still ueberschreiben.
+
+  attachGuard:
+    onNewCurrentProviderLeagueID:
+      - neue Provider-League laden
+      - Season und previous_league_id pruefen
+      - Anschluss an die bekannte letzte Provider-Instanz derselben CanonicalLeagueID validieren
+      - bei Widerspruch, Zyklus, doppelter Provider-Zuordnung, Season-Ruecksprung oder Anschluss an eine andere CanonicalLeagueID fail-closed abbrechen
 
 multiLeagueModel:
   supportedByDesign: true
   exampleLayout: |
     source-data/leagues/
+      _bootstrap/
+        <CanonicalLeagueID>.json
       <CanonicalLeagueID-A>/
         manifest.json
         seasons/
@@ -178,33 +204,305 @@ multiLeagueModel:
         seasons/
           <season>/...
   rule: >
-    Consumer muessen eine CanonicalLeagueID explizit waehlen. Keine globale
-    Annahme, dass genau eine Fantasy-Liga existiert, soll in den Source-Data-
-    Vertrag eingebaut werden.
+    Source-Tools und Consumer muessen CanonicalLeagueID explizit behandeln. Keine
+    globale Annahme, dass genau eine Fantasy-Liga existiert, darf in den Vertrag
+    eingebaut werden.
 
-phase1BInitialInventory:
-  provider: Sleeper
-  datasetsToInventoryBeforeImplementation:
-    - league metadata and league settings
-    - users / members
-    - rosters including starters, reserve and taxi state where supplied
-    - completed league transactions by week
-    - fantasy draft metadata and status
-    - draft order / slot mappings
-    - completed draft picks
-    - traded draft picks
-  manualInputsToMap:
-    - public/data/Metadata.json league selection and league-specific rules
-    - existing owner/team mappings that are not authoritative Sleeper facts
-  implementationRule: >
-    Die exakten Registry-Dataset-IDs, Partitionierung und finalen Dateipfade werden
-    erst nach der Phase-1B-Inventur festgelegt. Die oben definierten Domain-,
-    Identity- und Consumer-Grenzen sind bereits die akzeptierte Zielarchitektur.
+phase1BInventory:
+  status: completed-and-refreshed-2026-09-03
+  scope: >
+    Inventur der heute produktiv oder als produktiver Helper vorhandenen Sleeper-
+    League-Reads, ihrer Generator-Call-Sites, der historischen League-Discovery und
+    der Daten, die App und Fantasy Management spaeter aus dem gemeinsamen
+    League-Source-Layer benoetigen. Matchups wurden nach ihrer Einfuehrung in
+    League.json nachinventarisiert.
+
+  centralProviderAdapter:
+    path: public/requests/utils/invoke/SleeperUtils.psm1
+    endpoints:
+      - dataset: league
+        function: Get-SleeperLeague
+        endpoint: /v1/league/<league_id>
+        productiveUse:
+          - current League metadata/settings
+          - current transaction season/week bounds
+          - historical season discovery through previous_league_id
+          - historical standings traversal
+      - dataset: members
+        function: Get-SleeperMembers
+        endpoint: /v1/league/<league_id>/users
+        productiveUse:
+          - owner/member identity and display metadata
+          - fantasy team name/avatar and commissioner flag
+      - dataset: rosters
+        function: Get-SleeperRosters
+        endpoint: /v1/league/<league_id>/rosters
+        productiveUse:
+          - roster ownership
+          - players/reserve/taxi/starters
+          - record, points, matchup and waiver state
+      - dataset: winners-bracket
+        function: Get-SleeperWinnersBracket
+        endpoint: /v1/league/<league_id>/winners_bracket
+        productiveUse:
+          - playoff placement and historical standings derivation
+      - dataset: losers-bracket
+        function: Get-SleeperLosersBracket
+        endpoint: /v1/league/<league_id>/losers_bracket
+        productiveUse:
+          - playoff placement and historical standings derivation
+      - dataset: matchups
+        function: Get-SleeperMatchups
+        endpoint: /v1/league/<league_id>/matchups/<week>
+        productiveUse:
+          - League.json current matchup snapshot through LeagueOverviewUtils.psm1
+          - matchup participants and scores for the relevant current/final week
+      - dataset: transactions
+        function: Get-SleeperTransactions
+        endpoint: /v1/league/<league_id>/transactions/<week>
+        productiveUse:
+          - current and historical completed transaction rebuild
+          - player adds/drops and draft-pick movement provenance
+      - dataset: league-drafts
+        function: Get-SleeperDrafts
+        endpoint: /v1/league/<league_id>/drafts
+        productiveUse:
+          - current/open draft mapping
+          - completed historical draft discovery
+          - draft identity resolution for transaction picks
+      - dataset: draft-detail
+        function: Get-SleeperDraft
+        endpoint: /v1/draft/<draft_id>
+        productiveUse:
+          - completed draft metadata/settings/order detail
+      - dataset: draft-picks
+        function: Get-SleeperDraftPicks
+        endpoint: /v1/draft/<draft_id>/picks
+        productiveUse:
+          - completed/live pick results
+          - selected player and final pick owner enrichment
+      - dataset: draft-traded-picks
+        function: Get-SleeperDraftTradedPicks
+        endpoint: /v1/draft/<draft_id>/traded_picks
+        productiveUse:
+          - resolve Sleeper transaction draft-pick movement to the exact configured DraftKey/DraftInstance
+      - dataset: league-traded-picks
+        function: Get-SleeperTradedPicks
+        endpoint: /v1/league/<league_id>/traded_picks
+        inventoryState: wrapper-present-no-productive-call-site-confirmed
+        phase1BRequirement: optional-until-unique-required-evidence-is-demonstrated
+
+  productiveCallSites:
+    currentLeague:
+      - public/requests/RequestLeague.ps1
+      - public/requests/utils/league/LeagueUtils.psm1
+      - public/requests/utils/league/TeamUtils.psm1
+      - public/requests/utils/league/PlayoffUtils.psm1
+      - public/requests/utils/league/LeagueOverviewUtils.psm1
+    standingsAndHistory:
+      - public/requests/RequestStandings.ps1
+      - public/requests/utils/league/StandingUtils.psm1
+      - public/requests/utils/league/LeagueUtils.psm1::Get-LeaguesRecursive
+    transactions:
+      - public/requests/RequestTransactions.ps1
+      - public/requests/utils/league/TransactionUtils.psm1
+      - public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1
+      - public/requests/utils/league/DraftTransactionPipelineUtils.psm1
+    drafts:
+      - public/requests/utils/league/DraftUtils.psm1
+      - public/requests/utils/league/DraftHistoryUtils.psm1
+      - public/requests/utils/league/DraftOrderAwareUtils.psm1
+      - public/requests/utils/league/DraftPickResultUtils.psm1
+
+  fieldFamiliesObserved:
+    league:
+      - league_id
+      - previous_league_id
+      - season
+      - season_type
+      - status
+      - name
+      - avatar
+      - settings including playoff_week_start, last_scored_leg, trade_deadline, trade_review_days and roster/scoring settings used by generated League state
+    members:
+      - user_id
+      - display_name
+      - avatar
+      - is_owner
+      - metadata.team_name
+      - metadata.avatar
+    rosters:
+      - roster_id
+      - owner_id
+      - players
+      - reserve
+      - taxi
+      - starters
+      - settings.fpts and fpts_decimal
+      - settings.fpts_against and fpts_against_decimal
+      - settings.wins, losses, ties, matchup_id, waiver_position and waiver_adjusted
+      - metadata.record and metadata.streak
+    matchups:
+      - matchup_id
+      - roster_id
+      - points
+      - custom_points
+      - starters
+      - players
+      - starters_points
+      - players_points
+    transactions:
+      - transaction_id
+      - type
+      - status
+      - leg
+      - created
+      - adds
+      - drops
+      - draft_picks
+      - metadata.notes
+    drafts:
+      - draft_id
+      - season
+      - status
+      - type
+      - start_time
+      - settings
+      - draft_order and slot_to_roster_id where supplied
+      - metadata used for configured draft-type classification
+    draftPicks:
+      - pick_no
+      - player_id
+      - roster_id
+      - picked_by
+      - metadata name fields
+    tradedDraftPicks:
+      - season
+      - round
+      - roster_id
+      - previous_owner_id
+      - owner_id
+
+  historicalLeagueDiscovery:
+    currentMechanism: >
+      Get-LeaguesRecursive loads the current Sleeper league object and follows
+      previous_league_id recursively until no previous league exists. RequestStandings
+      performs equivalent traversal while also loading members, rosters and brackets
+      for every season. Transactions and historical draft processing reuse the league
+      chain.
+    persistenceGap: >
+      Die Provider-League-Objekte und damit previous_league_id werden heute nur zur
+      Laufzeit gelesen. Es existiert noch kein persistenter Raw-/Canonical-League-
+      Lineage-Vertrag.
+    currentLogicalLeagueEvidence:
+      - season: 2024
+        Provider: Sleeper
+        ProviderLeagueID: "1133541805053714432"
+        evidence: public/data/past_seasons/Drafts/Drafts_2024.json
+      - season: 2025
+        Provider: Sleeper
+        ProviderLeagueID: "1257421353431080960"
+        evidence: public/data/past_seasons/Drafts/Drafts_2025.json
+      - season: 2026
+        Provider: Sleeper
+        ProviderLeagueID: "1354177383984267264"
+        evidence:
+          - public/data/Metadata.json
+          - public/data/League.json
+    rawPreviousEdgesPersistedToday: false
+    canonicalLeagueIDAssignedToday: false
+    canonicalLeagueSeasonIDsAssignedToday: false
+
+  currentConsumerDependencies:
+    app: >
+      Die App-Generatoren lesen die Sleeper-Domaenen heute direkt ueber SleeperUtils
+      und erzeugen public/data Readmodels.
+    fantasyManagement: >
+      Fantasy Management liest den aktuellen League-/Ownership-/Draft-/Transaction-
+      Zustand heute noch aus public/data. Phase 2 soll diese Basisfakten direkt aus
+      dem gemeinsamen Layer ableitbar machen.
+
+  sourceLayerDatasetCandidates:
+    status: implementation-scope
+    datasets:
+      - league-instances
+      - league-members
+      - league-rosters
+      - league-winners-bracket
+      - league-losers-bracket
+      - league-matchups-by-week
+      - league-transactions-by-week
+      - league-drafts
+      - draft-details
+      - draft-picks
+      - draft-traded-picks
+    lifecycleDirection:
+      dynamicCurrentSeason:
+        - league-instances
+        - league-members
+        - league-rosters
+        - league-winners-bracket
+        - league-losers-bracket
+        - league-drafts
+      weekPartitioned:
+        - league-matchups-by-week
+        - league-transactions-by-week
+      draftPartitioned:
+        - draft-details
+        - draft-picks
+        - draft-traded-picks
+      historicalPrinciple: >
+        Historische Saison-, Wochen- und Draft-Partitionen werden nach fachlicher
+        Finalisierung im normalen Sync stabil gehalten; explizite Repair-Pfade
+        duerfen Provider-Korrekturen weiterhin zulassen.
+
+  canonicalVsDerivedBoundary:
+    canonicalSourceFacts:
+      - provider league instance and settings
+      - member identity within the league provider
+      - roster ownership and player placement
+      - provider playoff brackets
+      - provider matchup facts by week
+      - provider transactions by week
+      - provider fantasy draft metadata/order/results/traded-pick state
+      - validated cross-season provider lineage and canonical league mappings
+    derivedNotRawSource:
+      - app League Status/Phase labels
+      - app current-matchup selection logic
+      - salary-cap calculations
+      - all-time standings and awards
+      - generated DraftKey/DisplayDraftKey and UI labels
+      - Fantasy Management Monitor/Grace/Watchlist/Buy/Sell or recommendation state
+    manualSourceKeptSeparate:
+      - public/data/Metadata.json league-specific rules and current legacy App league selection
+      - owner/team mappings that are application-owned rather than Sleeper facts
+
+  inventoryConclusions:
+    - >
+      Phase 1B umfasst neben League, Rosters, Transactions und Drafts auch Winner-/
+      Loser-Brackets und Matchups, weil diese produktive App-/History-Eingaben sind.
+    - >
+      Matchups werden providerseitig wochenweise geliefert. Der Source-Layer
+      persistiert die Provider-Fakten je Woche; welche Woche League.json anzeigt,
+      bleibt bis Phase 2 Generator-/App-Ableitung.
+    - >
+      Die historische Sleeper-Kette wird bereits produktiv ueber previous_league_id
+      traversiert, ist aber heute nicht persistent und daher kein reproduzierbarer
+      Source-Fakt.
+    - >
+      Draft-spezifische traded_picks sind produktiv fuer eindeutige DraftInstance-
+      Aufloesung erforderlich. Fuer League-level traded_picks ist bisher keine
+      zusaetzliche produktive Evidenz belegt; der Endpoint ist daher kein Pflicht-
+      Dataset, bis ein eigenstaendiger Bedarf nachgewiesen ist.
+    - >
+      Standings und Awards werden nicht als rohe Sleeper-Source-Datasets dupliziert:
+      ihre Provider-Eingaben sind Rosters und Playoff-Brackets; die Gesamt-/Award-
+      Logik bleibt eine Ableitung.
 
 consumerRules:
   sharedFacts:
     - NFL player identity and NFL facts come from source-data/nfl
-    - league membership, ownership, settings, transactions and fantasy drafts come from source-data/leagues
+    - league membership, ownership, settings, brackets, matchups, transactions and fantasy drafts come from source-data/leagues
   app:
     - public/data remains a generated app contract, not the shared source of truth
     - Phase 2 should preserve existing public/data shapes unless a contract change is separately approved
@@ -215,8 +513,8 @@ consumerRules:
 
 acceptanceOrder:
   - Phase 1A NFL source layer remains accepted and unchanged
-  - Phase 1B inventories all current Sleeper league acquisitions and historical lineage
-  - Phase 1B defines and validates CanonicalLeagueID plus CanonicalLeagueSeasonID mappings
+  - Phase 1B inventory of current Sleeper league acquisitions, including matchups, and historical lineage is complete
+  - Phase 1B persists a multi-league bootstrap and validates CanonicalLeagueID plus CanonicalLeagueSeasonID mappings
   - Phase 1B persists raw league provider data with provenance and no-op semantics
   - Phase 1B materializes normalized league facts and validates historical season linkage
   - unchanged Phase 1B sync/materialization proves semantic total no-op

@@ -134,7 +134,7 @@ workflows:
     - schedule
     - repository_dispatch
     staleAfterMinutes: 20
-    rationale: Central five-minute scheduling layer for all migrated time-driven productive workflows, including workflow health. During the external-cron transition both the existing GitHub schedule and future external-scheduler-tick repository_dispatch runs are production signals; a scheduler failure or roughly 20 minutes without a successful tick can prevent downstream refreshes and is immediately actionable.
+    rationale: Central five-minute scheduling layer for all migrated time-driven productive workflows, including workflow health. During the external-cron transition both the existing GitHub schedule and future external-scheduler-tick repository_dispatch runs are production signals; a scheduler failure or roughly 20 minutes without a successful scheduler tick can prevent downstream refreshes and is immediately actionable.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
@@ -143,6 +143,14 @@ workflows:
     consecutiveFailures: 1
     rationale: Source-data tooling failures on main/called production paths should surface promptly; manual repair runs stay
       non-paging.
+  .github/workflows/sync-league-source-data.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    consecutiveFailures: 1
+    staleAfterMinutes: 1800
+    rationale: Daily persistent League Source sync dispatched by the central scheduler; main-push runs verify source-layer changes immediately, while failures or a missed daily cycle should surface promptly. Pull-request and manual repair runs remain non-paging.
   .github/workflows/sync-project-fields.yml:
     category: important
     relevantEvents:

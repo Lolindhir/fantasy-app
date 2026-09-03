@@ -1,0 +1,287 @@
+name: Data • League Source Sync
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/sync-league-source-data.yml"
+      - "source-data/league-registry.json"
+      - "source-data/leagues/_bootstrap/**"
+      - "tools/league_source_data.py"
+      - "tools/league_source_data_lib/**"
+      - "tools/tests/test_league_source*.py"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-league-source-data.yml"
+      - "source-data/league-registry.json"
+      - "source-data/leagues/_bootstrap/**"
+      - "source-data/nfl/schedules/**"
+      - "tools/league_source_data.py"
+      - "tools/league_source_data_lib/**"
+      - "tools/tests/test_league_source*.py"
+  repository_dispatch:
+    types:
+      - scheduler-sync-league-source-data
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Explicitly refetch/repair historical Sleeper partitions"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: league-source-data-sync
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Test League source-data tooling
+        run: python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
+
+      - name: Validate League source-data registry and bootstrap
+        run: python tools/league_source_data.py validate
+
+  sync:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Sync, materialize and publish League source data
+        shell: bash
+        env:
+          FORCE: ${{ inputs.force }}
+          PAT_PUSH: ${{ secrets.PAT_PUSH }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${PAT_PUSH:-}" ]]; then
+            echo "PAT_PUSH is required for repository-consistent write semantics." >&2
+            exit 1
+          fi
+
+          sync_args=(sync)
+          if [[ "${FORCE:-false}" == "true" ]]; then
+            sync_args+=(--force)
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          push_url="https://x-access-token:${PAT_PUSH}@github.com/${GITHUB_REPOSITORY}.git"
+          max_attempts=3
+
+          reset_to_main() {
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd -- \
+              source-data/providers/sleeper/leagues \
+              source-data/leagues \
+              source-data/_sync
+          }
+
+          assert_league_source_only() {
+            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            unexpected=()
+            for path in "${changed[@]}"; do
+              case "$path" in
+                source-data/providers/sleeper/leagues/*|source-data/leagues/*|source-data/_sync/last-league-failure.json)
+                  ;;
+                *)
+                  unexpected+=("$path")
+                  ;;
+              esac
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Unexpected changes outside League Source paths:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
+          write_failure_diagnostic() {
+            local phase="$1"
+            local exit_code="$2"
+            local log_file="$3"
+
+            for diagnostic_attempt in $(seq 1 "$max_attempts"); do
+              reset_to_main
+              mkdir -p source-data/_sync
+
+              PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
+                python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          log_path = Path(os.environ["LOG_FILE"])
+          lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+          payload = {
+              "schemaVersion": 1,
+              "status": "failed",
+              "phase": os.environ["PHASE"],
+              "exitCode": int(os.environ["EXIT_CODE"]),
+              "recordedAtUtc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+              "workflow": "Data • League Source Sync",
+              "runId": os.environ.get("GITHUB_RUN_ID"),
+              "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
+              "errorTail": lines[-80:],
+          }
+          Path("source-data/_sync/last-league-failure.json").write_text(
+              json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+              assert_league_source_only
+              git add -- source-data/_sync/last-league-failure.json
+              if git diff --cached --quiet; then
+                echo "League failure diagnostic already matches main."
+                return 0
+              fi
+              git commit -m "data(league-source): record failed source sync"
+              if git push "$push_url" HEAD:main; then
+                return 0
+              fi
+              echo "main advanced while publishing League failure diagnostic; retrying."
+            done
+            echo "Could not publish League failure diagnostic after $max_attempts attempts." >&2
+            return 1
+          }
+
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "League source publish attempt $attempt/$max_attempts"
+            reset_to_main
+
+            raw_log="$(mktemp)"
+            set +e
+            python tools/league_source_data.py "${sync_args[@]}" 2>&1 | tee "$raw_log"
+            raw_status=${PIPESTATUS[0]}
+            set -e
+            if (( raw_status != 0 )); then
+              echo "League provider raw sync failed." >&2
+              write_failure_diagnostic "raw-sync" "$raw_status" "$raw_log"
+              exit "$raw_status"
+            fi
+
+            assert_league_source_only
+            git add -- source-data/providers/sleeper/leagues source-data/leagues
+            if ! git diff --cached --quiet; then
+              timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+              git commit -m "data(league-source): refresh Sleeper league raw sources • $timestamp"
+              if ! git push "$push_url" HEAD:main; then
+                if (( attempt == max_attempts )); then
+                  echo "main advanced during all League raw publish attempts; failing closed." >&2
+                  exit 1
+                fi
+                echo "main advanced during League raw publish; rebuilding from latest main."
+                continue
+              fi
+            fi
+
+            reset_to_main
+            materialize_log="$(mktemp)"
+            set +e
+            python tools/league_source_data.py materialize 2>&1 | tee "$materialize_log"
+            materialize_status=${PIPESTATUS[0]}
+            set -e
+            if (( materialize_status != 0 )); then
+              echo "League canonical materialization failed; persisted provider evidence remains preserved." >&2
+              write_failure_diagnostic "materialize" "$materialize_status" "$materialize_log"
+              exit "$materialize_status"
+            fi
+
+            noop_log="$(mktemp)"
+            set +e
+            python tools/league_source_data.py materialize 2>&1 | tee "$noop_log"
+            noop_status=${PIPESTATUS[0]}
+            if (( noop_status == 0 )); then
+              python - "$noop_log" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          leagues = result.get("Leagues")
+          if not isinstance(leagues, list) or not leagues:
+              raise SystemExit("Semantic no-op verification returned no leagues")
+          changed = {
+              item.get("CanonicalLeagueID"): item.get("CanonicalFilesChanged")
+              for item in leagues
+          }
+          if any(value != 0 for value in changed.values()):
+              raise SystemExit(
+                  "League canonical semantic no-op verification failed: "
+                  + json.dumps(changed, sort_keys=True)
+              )
+          PY
+              noop_status=$?
+            fi
+            set -e
+            if (( noop_status != 0 )); then
+              echo "League canonical materialization is not a semantic no-op on the second pass." >&2
+              write_failure_diagnostic "semantic-noop" "$noop_status" "$noop_log"
+              exit "$noop_status"
+            fi
+
+            mkdir -p source-data/_sync
+            rm -f source-data/_sync/last-league-failure.json
+            assert_league_source_only
+
+            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            if (( ${#changed[@]} == 0 )); then
+              echo "No canonical League source-data changes detected."
+              exit 0
+            fi
+
+            printf 'Validated canonical League source-data changes:\n'
+            printf ' - %s\n' "${changed[@]}"
+
+            git add -A -- source-data/leagues source-data/_sync
+            if git diff --cached --quiet; then
+              echo "No canonical League source-data changes to commit."
+              exit 0
+            fi
+
+            timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
+            git commit -m "data(league-source): materialize canonical league sources • $timestamp"
+            if git push "$push_url" HEAD:main; then
+              echo "League source-data publish succeeded."
+              exit 0
+            fi
+
+            if (( attempt == max_attempts )); then
+              echo "main advanced during all League canonical publish attempts; failing closed." >&2
+              exit 1
+            fi
+            echo "main advanced during League canonical publish; rebuilding from latest main."
+          done

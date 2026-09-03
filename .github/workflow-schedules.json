@@ -59,6 +59,15 @@
       "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
+      "id": "league-source",
+      "workflow": "sync-league-source-data.yml",
+      "path": ".github/workflows/sync-league-source-data.yml",
+      "eventType": "scheduler-sync-league-source-data",
+      "timezone": "Europe/Berlin",
+      "cron": ["30 4 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
+    },
+    {
       "id": "fantasypros",
       "workflow": "update-fantasypros-rankings.yml",
       "path": ".github/workflows/update-fantasypros-rankings.yml",
