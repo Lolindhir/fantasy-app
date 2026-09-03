@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,7 @@ if str(TOOLS) not in sys.path:
 from league_source_data_lib.acquire import persist_raw_plans, plan_raw_acquisition  # noqa: E402
 from league_source_data_lib.core import SleeperLeagueInstance  # noqa: E402
 from league_source_data_lib.registry import load_league_registry  # noqa: E402
+from league_source_data_lib.week_structure import resolve_nfl_regular_season_week_ceiling  # noqa: E402
 
 
 class LeagueSourceAcquisitionTests(unittest.TestCase):
@@ -21,34 +23,78 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
         target = root / "source-data"
         target.mkdir(parents=True)
         source = Path(__file__).resolve().parents[2] / "source-data/league-registry.json"
-        target.joinpath("league-registry.json").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        target.joinpath("league-registry.json").write_text(
+            source.read_text(encoding="utf-8"), encoding="utf-8"
+        )
         return temporary, root
 
-    def test_registry_includes_matchups_as_week_partitioned_required_scope(self) -> None:
+    @staticmethod
+    def _write_schedule(root: Path, season: int, last_week: int) -> None:
+        schedule_path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+        schedule_path.parent.mkdir(parents=True, exist_ok=True)
+        games = [
+            {"GameID": f"{season}_{week:02d}_A_B", "GameType": "REG", "Week": week}
+            for week in range(1, last_week + 1)
+        ]
+        games.append({"GameID": f"{season}_WC_A_B", "GameType": "WC", "Week": 1})
+        schedule_path.write_text(
+            json.dumps(
+                {"SchemaVersion": 2, "Season": season, "SourceDataset": "nflverse.schedules", "Games": games}
+            ),
+            encoding="utf-8",
+        )
+
+    def test_registry_uses_dynamic_schedule_bound_for_week_scopes(self) -> None:
         temporary, root = self._root_with_registry()
         try:
             datasets = {item.id: item for item in load_league_registry(root)}
             self.assertEqual(len(datasets), 11)
             matchups = datasets["sleeper.matchups"]
             self.assertEqual(matchups.scope, "week")
-            self.assertEqual((matchups.week_start, matchups.week_end), (1, 20))
+            self.assertEqual(matchups.week_start, 1)
+            self.assertEqual(matchups.week_end_source, "nfl-regular-season-schedule")
             self.assertIn("{week}", matchups.endpoint)
             self.assertEqual(matchups.lifecycle["class"], "seasonal-finalizable")
         finally:
             temporary.cleanup()
 
-    def test_plans_all_current_league_raw_partitions_including_matchups_and_drafts(self) -> None:
+    def test_week_ceiling_comes_from_canonical_schedule(self) -> None:
         temporary, root = self._root_with_registry()
         try:
+            self._write_schedule(root, 2026, 18)
+            self.assertEqual(resolve_nfl_regular_season_week_ceiling(root, 2026), 18)
+            self._write_schedule(root, 2027, 19)
+            self.assertEqual(resolve_nfl_regular_season_week_ceiling(root, 2027), 19)
+        finally:
+            temporary.cleanup()
+
+    def test_week_ceiling_fails_closed_without_complete_schedule_evidence(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            with self.assertRaises(FileNotFoundError):
+                resolve_nfl_regular_season_week_ceiling(root, 2026)
+
+            self._write_schedule(root, 2026, 18)
+            schedule_path = root / "source-data" / "nfl" / "schedules" / "2026.json"
+            payload = json.loads(schedule_path.read_text(encoding="utf-8"))
+            payload["Games"] = [g for g in payload["Games"] if g.get("Week") != 9]
+            schedule_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not contiguous"):
+                resolve_nfl_regular_season_week_ceiling(root, 2026)
+        finally:
+            temporary.cleanup()
+
+    def test_plans_all_current_raw_partitions_to_dynamic_schedule_ceiling(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            self._write_schedule(root, 2026, 18)
             registry = load_league_registry(root)
             league_payload = {
                 "league_id": "1354177383984267264",
                 "season": "2026",
                 "previous_league_id": None,
             }
-            lineage = [
-                SleeperLeagueInstance("1354177383984267264", 2026, None, league_payload)
-            ]
+            lineage = [SleeperLeagueInstance("1354177383984267264", 2026, None, league_payload)]
 
             def fetch(url: str) -> object:
                 if url.endswith("/users"):
@@ -62,19 +108,48 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
                 return []
 
             plans = plan_raw_acquisition(root, lineage, registry, fetch)
-            self.assertEqual(len(plans), 49)
-            matchup_paths = [plan.raw_path for plan in plans if plan.dataset_id == "sleeper.matchups"]
-            self.assertEqual(len(matchup_paths), 20)
-            self.assertTrue(any(path.name == "week-1.json" for path in matchup_paths))
-            self.assertTrue(any(path.name == "week-20.json" for path in matchup_paths))
-            draft_ids = {plan.partition.get("DraftID") for plan in plans if plan.dataset_id.startswith("sleeper.draft-")}
-            self.assertEqual(draft_ids, {"1354177383996866560"})
+            self.assertEqual(len(plans), 45)
+            matchup_paths = [p.raw_path for p in plans if p.dataset_id == "sleeper.matchups"]
+            transaction_paths = [p.raw_path for p in plans if p.dataset_id == "sleeper.transactions"]
+            self.assertEqual(len(matchup_paths), 18)
+            self.assertEqual(len(transaction_paths), 18)
+            self.assertTrue(any(path.name == "week-18.json" for path in matchup_paths))
+            self.assertFalse(any(path.name == "week-19.json" for path in matchup_paths))
+        finally:
+            temporary.cleanup()
+
+    def test_future_nfl_expansion_requires_no_registry_change(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            self._write_schedule(root, 2027, 19)
+            registry = load_league_registry(root)
+            lineage = [
+                SleeperLeagueInstance(
+                    "2000000000000000000",
+                    2027,
+                    None,
+                    {"league_id": "2000000000000000000", "season": "2027", "previous_league_id": None},
+                )
+            ]
+
+            def fetch(url: str) -> object:
+                if url.endswith("/users"):
+                    return [{"user_id": "u1"}]
+                if url.endswith("/rosters"):
+                    return [{"roster_id": 1}]
+                return []
+
+            plans = plan_raw_acquisition(root, lineage, registry, fetch)
+            matchups = [p for p in plans if p.dataset_id == "sleeper.matchups"]
+            self.assertEqual(len(matchups), 19)
+            self.assertEqual(max(int(p.partition["Week"]) for p in matchups), 19)
         finally:
             temporary.cleanup()
 
     def test_persisted_raw_partitions_are_semantic_noops(self) -> None:
         temporary, root = self._root_with_registry()
         try:
+            self._write_schedule(root, 2026, 18)
             registry = load_league_registry(root)
             league_payload = {
                 "league_id": "1354177383984267264",
@@ -104,6 +179,8 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
     def test_historical_existing_partition_is_frozen_without_fetch(self) -> None:
         temporary, root = self._root_with_registry()
         try:
+            self._write_schedule(root, 2025, 18)
+            self._write_schedule(root, 2026, 18)
             registry = load_league_registry(root)
             current = SleeperLeagueInstance(
                 "1354177383984267264", 2026, "1257421353431080960",
@@ -120,8 +197,7 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
                 if url.endswith("/rosters"):
                     return [{"roster_id": 1}]
                 return []
-            historical_plans = plan_raw_acquisition(root, [historical], registry, seed_fetch)
-            persist_raw_plans(historical_plans)
+            persist_raw_plans(plan_raw_acquisition(root, [historical], registry, seed_fetch))
 
             calls: list[str] = []
             def current_fetch(url: str) -> object:

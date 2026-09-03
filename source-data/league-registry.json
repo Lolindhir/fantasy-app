@@ -70,7 +70,7 @@
       "metadataPath": "providers/sleeper/leagues/{providerLeagueID}/matchups/week-{week}.metadata.json",
       "responseType": "array",
       "availabilityPolicy": "required-empty-allowed",
-      "weekRange": {"start": 1, "end": 20},
+      "weekRange": {"start": 1, "endSource": "nfl-regular-season-schedule"},
       "refreshPolicy": "current-season",
       "retentionPolicy": "permanent-by-season-week",
       "lifecycle": {"class": "seasonal-finalizable", "partitionKey": "season-week", "finalization": "freeze-prior-seasons", "repairPolicy": "explicit-force"}
@@ -83,7 +83,7 @@
       "metadataPath": "providers/sleeper/leagues/{providerLeagueID}/transactions/week-{week}.metadata.json",
       "responseType": "array",
       "availabilityPolicy": "required-empty-allowed",
-      "weekRange": {"start": 1, "end": 20},
+      "weekRange": {"start": 1, "endSource": "nfl-regular-season-schedule"},
       "refreshPolicy": "current-season",
       "retentionPolicy": "permanent-by-season-week",
       "lifecycle": {"class": "seasonal-finalizable", "partitionKey": "season-week", "finalization": "freeze-prior-seasons", "repairPolicy": "explicit-force"}

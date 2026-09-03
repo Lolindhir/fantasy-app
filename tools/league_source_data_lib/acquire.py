@@ -9,6 +9,7 @@ from typing import Callable
 
 from .core import SleeperLeagueInstance, write_json_if_changed
 from .registry import LeagueDataset
+from .week_structure import resolve_nfl_regular_season_week_ceiling
 
 API_ROOT = "https://api.sleeper.app"
 
@@ -143,6 +144,7 @@ def plan_raw_acquisition(
         raise ValueError("Draft datasets require sleeper.league-drafts discovery dataset")
 
     plans: list[PlannedRawWrite] = []
+    week_ceilings: dict[int, int] = {}
     for instance in lineage:
         by_id: dict[str, PlannedRawWrite] = {}
         for dataset in league_datasets:
@@ -160,21 +162,35 @@ def plan_raw_acquisition(
             plans.append(plan)
             by_id[dataset.id] = plan
 
-        for dataset in week_datasets:
-            assert dataset.week_start is not None and dataset.week_end is not None
-            for week in range(dataset.week_start, dataset.week_end + 1):
-                plans.append(
-                    _plan_one(
-                        repo_root,
-                        dataset,
-                        instance,
-                        fetcher,
-                        current_season,
-                        force,
-                        offline,
-                        week=week,
+        if week_datasets:
+            week_ceiling = week_ceilings.setdefault(
+                instance.season,
+                resolve_nfl_regular_season_week_ceiling(repo_root, instance.season),
+            )
+            for dataset in week_datasets:
+                assert dataset.week_start is not None
+                if dataset.week_end_source != "nfl-regular-season-schedule":
+                    raise ValueError(
+                        f"Unsupported week end source for {dataset.id}: {dataset.week_end_source!r}"
                     )
-                )
+                if dataset.week_start > week_ceiling:
+                    raise ValueError(
+                        f"Week start {dataset.week_start} exceeds NFL schedule ceiling "
+                        f"{week_ceiling} for {dataset.id} season {instance.season}"
+                    )
+                for week in range(dataset.week_start, week_ceiling + 1):
+                    plans.append(
+                        _plan_one(
+                            repo_root,
+                            dataset,
+                            instance,
+                            fetcher,
+                            current_season,
+                            force,
+                            offline,
+                            week=week,
+                        )
+                    )
 
         if draft_datasets:
             draft_index = by_id["sleeper.league-drafts"].payload

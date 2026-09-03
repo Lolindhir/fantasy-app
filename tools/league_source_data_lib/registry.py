@@ -8,6 +8,7 @@ VALID_SCOPES = {"league-instance", "week", "draft"}
 VALID_RESPONSE_TYPES = {"object", "array"}
 VALID_AVAILABILITY = {"required", "required-empty-allowed"}
 VALID_LIFECYCLE = {"seasonal-finalizable"}
+VALID_WEEK_END_SOURCES = {"nfl-regular-season-schedule"}
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,7 @@ class LeagueDataset:
     retention_policy: str
     lifecycle: dict
     week_start: int | None = None
-    week_end: int | None = None
+    week_end_source: str | None = None
     discover_from: str | None = None
     id_field: str | None = None
 
@@ -73,7 +74,8 @@ def load_league_registry(repo_root: Path) -> list[LeagueDataset]:
             if not template:
                 raise ValueError(f"Missing {field_name} for {dataset_id}")
 
-        week_start = week_end = None
+        week_start = None
+        week_end_source = None
         discover_from = id_field = None
         required_tokens = {"{providerLeagueID}"}
         if scope == "week":
@@ -81,9 +83,17 @@ def load_league_registry(repo_root: Path) -> list[LeagueDataset]:
             if not isinstance(week_range, dict):
                 raise ValueError(f"weekRange is required for {dataset_id}")
             week_start = int(week_range.get("start", 0))
-            week_end = int(week_range.get("end", 0))
-            if week_start < 1 or week_end < week_start or week_end > 30:
-                raise ValueError(f"Invalid weekRange for {dataset_id}: {week_start}-{week_end}")
+            week_end_source = str(week_range.get("endSource") or "")
+            if week_start < 1:
+                raise ValueError(f"Invalid weekRange start for {dataset_id}: {week_start}")
+            if week_end_source not in VALID_WEEK_END_SOURCES:
+                raise ValueError(
+                    f"Invalid weekRange endSource for {dataset_id}: {week_end_source!r}"
+                )
+            if "end" in week_range:
+                raise ValueError(
+                    f"Fixed weekRange end is prohibited for {dataset_id}; use endSource"
+                )
             required_tokens.add("{week}")
         elif scope == "draft":
             discover_from = str(item.get("discoverFrom") or "")
@@ -115,7 +125,7 @@ def load_league_registry(repo_root: Path) -> list[LeagueDataset]:
                 retention_policy=str(item.get("retentionPolicy") or ""),
                 lifecycle=dict(lifecycle),
                 week_start=week_start,
-                week_end=week_end,
+                week_end_source=week_end_source,
                 discover_from=discover_from,
                 id_field=id_field,
             )
