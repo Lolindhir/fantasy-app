@@ -10,14 +10,14 @@ The repository must not depend on a specific AI provider, AI SDK, hosted model, 
 
 ### 1. Source refresh
 
-Existing source workflows refresh league, roster, transaction, player, market, ranking, ADP, projection, schedule, game, usage and external activity inputs.
+Existing source workflows refresh league, roster, transaction, player, draft, market, ranking, ADP, projection, schedule, game, usage and external activity inputs.
 
 Source refreshers own acquisition and source-local normalization. They do not make roster recommendations.
 
 The productive morning refresh path uses independent source-triggered materialization around the 07:00 Europe/Berlin monitoring window:
 
 - every successful relevant external ranking, projection, activity or Success-Heartbeat push on `main` may materialize immediately, including pushes between 05:00 and 06:45 Europe/Berlin;
-- relevant `League.json`, `Players.json` and `Timestamps.json` input changes remain immediate materialization triggers;
+- relevant `League.json`, `Drafts.json`, `Players.json` and `Timestamps.json` input changes remain immediate materialization triggers;
 - materialization code, configuration, schema and workflow changes remain immediate triggers;
 - the DST-safe scheduled 06:45 Europe/Berlin materializer remains only as an additional catch-up and is never the sole normal morning consolidation path;
 - a manual `workflow_dispatch` of the materializer always runs immediately;
@@ -29,7 +29,7 @@ Correctness does not depend on GitHub Actions starting the scheduled 06:45 catch
 
 ### 2. Deterministic materialization
 
-Versioned scripts join refreshed inputs into provider-neutral datasets. Materialization may calculate identifiers, ownership, percentiles, deltas, tiers, quality flags, provenance and input fingerprints.
+Versioned scripts join refreshed inputs into provider-neutral datasets. Materialization may calculate identifiers, ownership, draft assignment, eligibility, slot-cost state, percentiles, deltas, tiers, quality flags, provenance and input fingerprints.
 
 Materialization must not:
 
@@ -46,6 +46,7 @@ fantasy-management/generated/operations/source-freshness.json
 fantasy-management/generated/operations/managed-roster-signals.json
 fantasy-management/generated/operations/external-signal-relevance.json
 fantasy-management/generated/operations/player-signals.json
+fantasy-management/generated/operations/fa-board-readmodel.json
 fantasy-management/generated/operations/free-agent-signals.json
 fantasy-management/generated/operations/free-agent-movement-signals.json
 fantasy-management/generated/operations/free-agent-movement-events.json
@@ -98,6 +99,30 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
+The compact FA-board decision-infrastructure contract is built from the freshly materialized `player-signals.json` plus complete current `League.json`, `Drafts.json` and `Timestamps.json`:
+
+```text
+fantasy-management/automation/fa-board-materialization.json
+fantasy-management/_ai/schemas/fa-board-readmodel.schema.json
+fantasy-management/_ai/scripts/build_fa_board_readmodel.py
+→ fantasy-management/generated/operations/fa-board-readmodel.json
+```
+
+Its purpose is to answer current/live FA-board availability and immediate roster-capacity questions without forcing an agent to manually join large league and draft files on every pick. The contract is intentionally compact and carries only decision-relevant identity, ownership, draft, eligibility, slot-cost and market metadata.
+
+Availability is fail-closed:
+
+- current league ownership is resolved from the complete union of every team's `Roster`, `Reserve` and `Taxi` lists;
+- the current relevant Free-Agent Draft is resolved from complete `Drafts.json`;
+- positive ownership or an already assigned current FA-draft pick always blocks availability;
+- a player is `available` only when both negative checks are complete and unambiguous;
+- incomplete or ambiguous mandatory inputs yield `availability_status = unknown`, never a silent `available`;
+- external market/ranking data can degrade independently and never overrides canonical ownership/draft status.
+
+Per-player capacity fields distinguish acquisition-time and later materialization effects. `active_slot_cost_now` describes the currently effective acquisition cost under the present draft/materialization mechanism and valid special capacity. `active_slot_cost_on_materialization` describes the active-slot effect once the player is materialized under the current Reserve-/Taxi rules. A zero current cost is not a permanent free-roster guarantee and must not bypass later Retention-Stage analysis from `ROSTER_ARCHITECTURE.md`.
+
+The readmodel also exposes the managed team's current materialized/pending control and special-capacity context so Reserve-/IR and pre-lock Taxi candidates can be surfaced as separate stash pools instead of disappearing behind an active-roster-only board.
+
 The complete Fantasy Free-Agent contract is derived from the same current `player-signals.json` without re-reading `Players.json -> IsFreeAgent` as league availability:
 
 ```text
@@ -108,6 +133,8 @@ fantasy-management/_ai/scripts/build_free_agent_dataset.py
 ```
 
 The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`, where ownership itself comes from the union of every league team’s Roster/Reserve/Taxi lists.
+
+`free-agent-signals.json` and `fa-board-readmodel.json` serve different purposes. The former is the complete ownership-derived free-agent population used by broad discovery/movement processing. The latter is the canonical compact live/current FA-board availability and capacity view because it adds the current Drafts gate. During a running Free-Agent Draft, `free-agent-signals.json` alone is not sufficient to prove availability for a newly selected player that has not yet been materialized into `League.json`.
 
 The position-inclusive Free-Agent Movement Discovery contract is built from the complete current free-agent population and the existing normalized ranking/projection snapshot histories:
 
@@ -173,6 +200,7 @@ The productive materialization dependency order is:
 source-freshness.json
 → external-signal-relevance.json
 → player-signals.json
+→ fa-board-readmodel.json
 → free-agent-signals.json
 → free-agent-movement-signals.json
 → free-agent-movement-events.json
@@ -186,6 +214,8 @@ Each step consumes the freshly rebuilt upstream output from the same retry/rebui
 An external analyst may read the current materialized datasets, perform fresh research and interpret qualitative signals such as injury context, practice participation, role, opportunity, coaching comments and depth-chart changes.
 
 Before interpreting deterministic events, scheduled monitoring must read `source-freshness.json`. A `block` decision stops normal monitoring; `proceed_degraded` restricts conclusions to fresh supported signal families; and `no_event_conclusion_allowed = false` forbids treating a zero-event contract as proof that nothing relevant changed. Monitoring must never infer readiness merely because the local clock is after 06:45.
+
+For a live or current Free-Agent Draft decision, `fa-board-readmodel.json` is the first deterministic availability/capacity gate. External research may rank, validate or qualitatively interpret only after the readmodel has established availability. `unknown` is fail-closed and must not enter an available shortlist.
 
 `free-agent-movement-events.json` is the primary deterministic daily Free-Agent research-trigger layer. If its `event_count` is zero, scheduled monitoring must not launch qualitative Free-Agent research merely because players remain present in the broader Movement state, but a zero-event conclusion is only reliable when the Freshness Gate permits it.
 
@@ -362,6 +392,7 @@ fantasy-management/generated/
     ├── managed-roster-signals.json
     ├── external-signal-relevance.json
     ├── player-signals.json
+    ├── fa-board-readmodel.json
     ├── free-agent-signals.json
     ├── free-agent-movement-signals.json
     ├── free-agent-movement-events.json
@@ -395,7 +426,7 @@ New generated subdirectories must follow the same reproducibility rule and shoul
 The intended daily order is:
 
 ```text
-league/source refreshes
+league/draft/source refreshes
 → external ranking/projection refreshes
 → external signal refreshes
 → immediate deterministic materialization after each successful relevant source/heartbeat publication
@@ -409,7 +440,7 @@ The scheduled 06:45 run is only a best-effort reconciliation/catch-up. Its timin
 
 A successful source refresh that leaves content unchanged is still fresh when its Success-Heartbeat is current. `public/data/Timestamps.json` remains provenance and must not be used as a substitute fetch-success proof.
 
-Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer after the Freshness Gate. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Kicker Streaming analyses remain downstream Weekly Decision modules.
+Downstream scheduled Free-Agent monitoring should read `free-agent-movement-events.json` as the primary daily deterministic trigger layer after the Freshness Gate. `free-agent-movement-signals.json` remains the detail/current-state source for those events. Monitoring must not reconstruct ranking, projection, ownership and activity joins or use Sleeper Trending as a discovery gate. Live/current Free-Agent-Draft decisions use `fa-board-readmodel.json` as the deterministic availability/capacity gate before qualitative ranking or pick recommendations. Kicker Streaming analyses remain downstream Weekly Decision modules.
 
 ## Legacy observation runner
 
