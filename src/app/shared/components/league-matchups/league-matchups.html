@@ -17,13 +17,36 @@
             [elements]="teamIdentityElements"
             size="medium"
           ></app-team-identity>
-          <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.left.points | number:'1.0-2' }}</strong>
+
+          <div *ngIf="matchup.left.context as context" class="matchup-team-context">
+            <div class="matchup-team-context-line" [class.matchup-team-context-line--previous]="context.seasonLabel">
+              <span *ngIf="context.seasonLabel" class="matchup-season-label">{{ context.seasonLabel }}:</span>
+              <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
+              <span *ngIf="context.standing !== null && context.record" aria-hidden="true">·</span>
+              <span *ngIf="context.record">{{ context.record }}</span>
+              <ng-container *ngIf="context.streak">
+                <span aria-hidden="true">·</span>
+                <span>{{ context.streak }}</span>
+              </ng-container>
+            </div>
+            <div *ngIf="context.pointsFor !== null" class="matchup-season-points">
+              {{ context.pointsFor | number:'1.0-1' }} PF
+            </div>
+          </div>
         </div>
 
-        <div class="matchup-vs">VS</div>
+        <div class="matchup-center">
+          <div *ngIf="matchup.showScore; else versus" class="matchup-score" aria-label="Matchup score">
+            <strong>{{ matchup.left.points | number:'1.0-2' }}</strong>
+            <span class="matchup-score-divider" aria-hidden="true">–</span>
+            <strong>{{ matchup.right.points | number:'1.0-2' }}</strong>
+          </div>
+          <ng-template #versus>
+            <div class="matchup-vs">VS</div>
+          </ng-template>
+        </div>
 
         <div class="matchup-team matchup-team--right">
-          <strong *ngIf="matchup.showScore" class="matchup-points">{{ matchup.right.points | number:'1.0-2' }}</strong>
           <app-team-identity
             class="matchup-team-identity"
             [team]="matchup.right.team"
@@ -31,6 +54,22 @@
             size="medium"
             align="end"
           ></app-team-identity>
+
+          <div *ngIf="matchup.right.context as context" class="matchup-team-context">
+            <div class="matchup-team-context-line" [class.matchup-team-context-line--previous]="context.seasonLabel">
+              <span *ngIf="context.seasonLabel" class="matchup-season-label">{{ context.seasonLabel }}:</span>
+              <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
+              <span *ngIf="context.standing !== null && context.record" aria-hidden="true">·</span>
+              <span *ngIf="context.record">{{ context.record }}</span>
+              <ng-container *ngIf="context.streak">
+                <span aria-hidden="true">·</span>
+                <span>{{ context.streak }}</span>
+              </ng-container>
+            </div>
+            <div *ngIf="context.pointsFor !== null" class="matchup-season-points">
+              {{ context.pointsFor | number:'1.0-1' }} PF
+            </div>
+          </div>
         </div>
       </article>
     </div>

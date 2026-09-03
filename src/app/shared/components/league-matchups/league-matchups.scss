@@ -42,11 +42,11 @@
 
 .matchup-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(76px, auto) minmax(0, 1fr);
   align-items: center;
-  gap: 6px;
-  min-height: 70px;
-  padding: 10px;
+  gap: 8px;
+  min-height: 88px;
+  padding: 12px;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 14px;
   background: #fff;
@@ -54,21 +54,72 @@
 }
 
 .matchup-team {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
   min-width: 0;
 }
 
 .matchup-team--right {
-  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-end;
 }
 
 .matchup-team-identity {
   --team-identity-avatar-radius: 50%;
 
   width: 100%;
+  min-width: 0;
+}
+
+.matchup-team-context {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 3px;
+  color: #475569;
+}
+
+.matchup-team--right .matchup-team-context {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.matchup-team-context-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 4px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.matchup-team--right .matchup-team-context-line {
+  justify-content: flex-end;
+}
+
+.matchup-team-context-line--previous {
+  color: #64748b;
+}
+
+.matchup-season-label {
+  color: #6d28d9;
+  font-weight: 850;
+}
+
+.matchup-season-points {
+  display: none;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.matchup-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
 }
 
@@ -79,18 +130,55 @@
   text-align: center;
 }
 
-.matchup-points {
+.matchup-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   color: #111827;
   font-size: 0.76rem;
   white-space: nowrap;
 }
 
+.matchup-score-divider {
+  color: #9ca3af;
+  font-weight: 700;
+}
+
 @media (min-width: 768px) {
   .matchups-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
-  .matchup-card:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
+  .matchup-card {
+    grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
+    gap: 18px;
+    min-height: 104px;
+    padding: 16px 18px;
+  }
+
+  .matchup-team {
+    gap: 7px;
+  }
+
+  .matchup-team-context {
+    padding: 0 5px;
+  }
+
+  .matchup-team-context-line {
+    font-size: 0.82rem;
+  }
+
+  .matchup-season-points {
+    display: block;
+  }
+
+  .matchup-vs {
+    font-size: 0.72rem;
+  }
+
+  .matchup-score {
+    gap: 6px;
+    font-size: 1.05rem;
   }
 }
