@@ -1,35 +1,9 @@
 name: REPO • Monitoring • Workflow Health Snapshot
 
 on:
-  schedule:
-    - cron: "7-59/30 * * * *"
-  workflow_run:
-    workflows:
-      - "APP • Deploy • GitHub Pages"
-      - "CI • Fantasy Management"
-      - "Data • NFL Source Sync"
-      - "REPO • Project • Fields Sync"
-      - "APP • Maintenance • Backups"
-      - "FM • Materialize • Operations Inputs"
-      - "FM • Projection • CBS Sports"
-      - "FM • Ranking • FFC ADP"
-      - "FM • Ranking • FantasyCalc Market"
-      - "FM • Ranking • FantasyPros ECR"
-      - "FM • Projection • FFToday"
-      - "FM • Signal • Sleeper Trending"
-      - "APP • Data • League"
-      - "APP • Data • Players"
-      - "APP • Data • Games"
-      - "APP • Data • Transactions"
-      - "APP • Data • Standings"
-      - "APP • Data • Teams"
+  repository_dispatch:
     types:
-      - completed
-    branches:
-      - main
-  push:
-    branches:
-      - main
+      - scheduler-workflow-health
   workflow_dispatch:
 
 permissions:
@@ -46,158 +20,21 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Decide whether snapshot build is needed
-        id: snapshot-gate
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          TRIGGERING_WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          TRIGGERING_WORKFLOW_EVENT: ${{ github.event.workflow_run.event }}
-          PUSH_BEFORE_SHA: ${{ github.event.before }}
-          FALLBACK_MIN_AGE_MINUTES: "40"
-        run: |
-          set -euo pipefail
-
-          fallback_label=""
-
-          case "${GITHUB_EVENT_NAME}" in
-            schedule|workflow_dispatch)
-              echo "should-run=true" >> "${GITHUB_OUTPUT}"
-              echo "Primary trigger (${GITHUB_EVENT_NAME}); building snapshot."
-              exit 0
-              ;;
-            push)
-              monitoring_change="$(python3 - <<'PY'
-          import json
-          import os
-          import sys
-          import urllib.request
-
-          immediate_paths = {
-              ".github/workflows/workflow-health-snapshot.yml",
-              ".ai-context/manual/workflow-monitoring.yaml",
-              "tools/build_workflow_health_snapshot.py",
-              "tools/tests/test_build_workflow_health_snapshot.py",
-          }
-
-          before = os.environ.get("PUSH_BEFORE_SHA", "")
-          after = os.environ["GITHUB_SHA"]
-          repository = os.environ["GITHUB_REPOSITORY"]
-          api_url = os.environ.get("GITHUB_API_URL", "https://api.github.com")
-          token = os.environ["GITHUB_TOKEN"]
-
-          if before and before != "0" * 40:
-              url = f"{api_url}/repos/{repository}/compare/{before}...{after}"
-          else:
-              url = f"{api_url}/repos/{repository}/commits/{after}"
-
-          request = urllib.request.Request(
-              url,
-              headers={
-                  "Authorization": f"Bearer {token}",
-                  "Accept": "application/vnd.github+json",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-          )
-
-          try:
-              with urllib.request.urlopen(request, timeout=20) as response:
-                  payload = json.load(response)
-          except Exception as exc:
-              print(f"Unable to inspect pushed files: {exc}", file=sys.stderr)
-              print("unknown")
-              raise SystemExit(0)
-
-          files = payload.get("files")
-          if not isinstance(files, list) or len(files) >= 300:
-              print("Push file list is missing or may be truncated; failing open to a refresh.", file=sys.stderr)
-              print("unknown")
-              raise SystemExit(0)
-
-          changed = {entry.get("filename") for entry in files if entry.get("filename")}
-          print("true" if changed & immediate_paths else "false")
-          PY
-              )"
-
-              if [[ "${monitoring_change}" == "true" ]]; then
-                echo "should-run=true" >> "${GITHUB_OUTPUT}"
-                echo "Monitoring implementation or policy changed on main; building snapshot immediately."
-                exit 0
-              fi
-
-              if [[ "${monitoring_change}" != "false" ]]; then
-                echo "should-run=true" >> "${GITHUB_OUTPUT}"
-                echo "Could not safely classify changed files on main push; building snapshot fail-open."
-                exit 0
-              fi
-
-              fallback_label="Main push fallback"
-              ;;
-            workflow_run)
-              fallback_label="Workflow completion fallback (${TRIGGERING_WORKFLOW_NAME:-unknown}, event=${TRIGGERING_WORKFLOW_EVENT:-unknown})"
-              ;;
-            *)
-              echo "should-run=true" >> "${GITHUB_OUTPUT}"
-              echo "Unrecognized trigger (${GITHUB_EVENT_NAME}); failing open to a fresh snapshot."
-              exit 0
-              ;;
-          esac
-
-          snapshot_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/workflow-health.json?ref=workflow-health-state"
-          if ! snapshot_json="$(curl -fsSL \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github.raw+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${snapshot_url}")"; then
-            echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is missing or unreadable; ${fallback_label} will rebuild it."
-            exit 0
-          fi
-
-          generated_at="$(printf '%s' "${snapshot_json}" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("generatedAt", ""))')"
-          if [[ -z "${generated_at}" ]]; then
-            echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot has no generatedAt; ${fallback_label} will rebuild it."
-            exit 0
-          fi
-
-          if ! generated_epoch="$(date -u -d "${generated_at}" +%s 2>/dev/null)"; then
-            echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot generatedAt is invalid; ${fallback_label} will rebuild it."
-            exit 0
-          fi
-
-          now_epoch="$(date -u +%s)"
-          age_seconds=$(( now_epoch - generated_epoch ))
-          threshold_seconds=$(( FALLBACK_MIN_AGE_MINUTES * 60 ))
-
-          if (( age_seconds >= threshold_seconds )); then
-            echo "should-run=true" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; ${fallback_label} will rebuild it."
-          else
-            echo "should-run=false" >> "${GITHUB_OUTPUT}"
-            echo "Existing snapshot is $(( age_seconds / 60 )) minutes old; ${fallback_label} is not needed."
-          fi
-
       - name: Checkout main
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
 
       - name: Set up Python
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Install monitoring dependency
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         run: python -m pip install "PyYAML>=6,<7"
 
       - name: Load previous health snapshot
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -208,11 +45,9 @@ jobs:
           fi
 
       - name: Test snapshot logic
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         run: python -m unittest discover -s tools/tests -p "test_build_workflow_health_snapshot.py" -v
 
       - name: Build workflow health snapshot
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -230,7 +65,6 @@ jobs:
           python tools/build_workflow_health_snapshot.py "${args[@]}"
 
       - name: Publish snapshot to isolated state branch
-        if: steps.snapshot-gate.outputs.should-run == 'true'
         shell: bash
         run: |
           set -euo pipefail
