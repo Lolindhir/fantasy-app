@@ -286,7 +286,7 @@ python fantasy-management/_ai/scripts/validate_episode_coverage.py \
 
 ## League-context update workflow
 
-Use owner registry, owner profiles and negotiation history for durable league context. Promote tendencies only after repeated evidence.
+Use owner registry, owner profiles, negotiation history and league-format notes for durable league context. Promote tendencies only after repeated evidence.
 
 ## External ranking refresh workflow
 
