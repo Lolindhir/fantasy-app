@@ -85,11 +85,23 @@ function latestDueSlot(expressions, timeZone, now, lookbackMinutes) {
   return null;
 }
 
-function runSatisfiesSlot(run, target, dueAt, ref) {
+function runMatchesSlot(run, target, dueAt, ref) {
   if (!(target.satisfyingEvents || []).includes(run.event)) return false;
   if (run.head_branch && run.head_branch !== ref) return false;
   const createdAt = Date.parse(run.created_at || '');
   return Number.isFinite(createdAt) && createdAt >= dueAt.getTime();
+}
+
+function runSatisfiesSlot(run, target, dueAt, ref) {
+  return runMatchesSlot(run, target, dueAt, ref)
+    && run.status === 'completed'
+    && run.conclusion === 'success';
+}
+
+function runIsInFlightForSlot(run, target, dueAt, ref) {
+  return runMatchesSlot(run, target, dueAt, ref)
+    && Boolean(run.status)
+    && run.status !== 'completed';
 }
 
 function validateConfig(config) {
@@ -135,6 +147,18 @@ function evaluateTarget(target, ref, now, lookbackMinutes, runs) {
       satisfyingEvent: satisfying.event,
       satisfyingStatus: satisfying.status,
       satisfyingConclusion: satisfying.conclusion,
+    };
+  }
+  const inFlight = runs.find((run) => runIsInFlightForSlot(run, target, dueAt, ref));
+  if (inFlight) {
+    return {
+      id: target.id,
+      workflow: target.workflow,
+      decision: 'in-flight',
+      dueAt: dueAt.toISOString(),
+      inFlightRunId: inFlight.id,
+      inFlightEvent: inFlight.event,
+      inFlightStatus: inFlight.status,
     };
   }
   return {
@@ -201,6 +225,8 @@ module.exports = {
   localParts,
   parseField,
   run,
+  runIsInFlightForSlot,
+  runMatchesSlot,
   runSatisfiesSlot,
   validateConfig,
 };

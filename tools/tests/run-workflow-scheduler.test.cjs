@@ -31,23 +31,35 @@ function loadConfig() {
   return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 }
 
+function target(overrides = {}) {
+  return {
+    id: 'league',
+    workflow: 'update-league.yml',
+    eventType: 'scheduler-update-league',
+    timezone: 'Etc/UTC',
+    cron: ['*/10 * * * *'],
+    satisfyingEvents: ['repository_dispatch', 'schedule', 'workflow_dispatch'],
+    ...overrides,
+  };
+}
+
 test('central config preserves all 14 previous schedules', () => {
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.targets.length, 14);
-  const actual = Object.fromEntries(config.targets.map((target) => [target.workflow, { timezone: target.timezone, cron: target.cron }]));
+  const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((target) => target.eventType)).size, 14);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 14);
 });
 
 test('migrated targets have repository_dispatch and no local schedule trigger', () => {
   const config = loadConfig();
-  for (const target of config.targets) {
-    const content = fs.readFileSync(path.join(ROOT, target.path), 'utf8');
-    assert.doesNotMatch(content, /\n  schedule:\s*\n/, `${target.path} still contains a local schedule trigger`);
-    assert.match(content, /\n  repository_dispatch:\s*\n/, `${target.path} is missing repository_dispatch`);
-    assert.match(content, new RegExp(target.eventType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    assert.match(content, /\n  workflow_dispatch:/, `${target.path} lost manual workflow_dispatch`);
+  for (const item of config.targets) {
+    const content = fs.readFileSync(path.join(ROOT, item.path), 'utf8');
+    assert.doesNotMatch(content, /\n  schedule:\s*\n/, `${item.path} still contains a local schedule trigger`);
+    assert.match(content, /\n  repository_dispatch:\s*\n/, `${item.path} is missing repository_dispatch`);
+    assert.match(content, new RegExp(item.eventType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(content, /\n  workflow_dispatch:/, `${item.path} lost manual workflow_dispatch`);
   }
 });
 
@@ -74,33 +86,65 @@ test('weekly cron finds previous Wednesday within lookback', () => {
   assert.equal(due.toISOString(), '2026-08-26T15:00:00.000Z');
 });
 
-test('a queued or failed run after the slot prevents five-minute retrigger loops', () => {
-  const target = {
-    satisfyingEvents: ['repository_dispatch', 'schedule', 'workflow_dispatch'],
-  };
+test('only a completed successful run satisfies a due slot', () => {
   const due = new Date('2026-09-01T16:20:00Z');
-  assert.equal(scheduler.runSatisfiesSlot({ event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'queued', conclusion: null }, target, due, 'main'), true);
-  assert.equal(scheduler.runSatisfiesSlot({ event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'completed', conclusion: 'failure' }, target, due, 'main'), true);
+  const common = { event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z' };
+
+  assert.equal(scheduler.runSatisfiesSlot({ ...common, status: 'completed', conclusion: 'success' }, target(), due, 'main'), true);
+  assert.equal(scheduler.runSatisfiesSlot({ ...common, status: 'queued', conclusion: null }, target(), due, 'main'), false);
+  assert.equal(scheduler.runSatisfiesSlot({ ...common, status: 'in_progress', conclusion: null }, target(), due, 'main'), false);
+  assert.equal(scheduler.runSatisfiesSlot({ ...common, status: 'completed', conclusion: 'failure' }, target(), due, 'main'), false);
+  assert.equal(scheduler.runSatisfiesSlot({ ...common, status: 'completed', conclusion: 'cancelled' }, target(), due, 'main'), false);
+});
+
+test('an in-flight run prevents a duplicate dispatch for the same slot', () => {
+  const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:27:00Z'), 180, [
+    { id: 101, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'in_progress', conclusion: null },
+  ]);
+
+  assert.equal(result.decision, 'in-flight');
+  assert.equal(result.dueAt, '2026-09-01T16:20:00.000Z');
+  assert.equal(result.inFlightRunId, 101);
+  assert.equal(result.inFlightStatus, 'in_progress');
+});
+
+test('a completed failed run leaves the slot dispatchable', () => {
+  const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:27:00Z'), 180, [
+    { id: 102, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'completed', conclusion: 'failure' },
+  ]);
+
+  assert.equal(result.decision, 'dispatch');
+  assert.equal(result.dueAt, '2026-09-01T16:20:00.000Z');
+});
+
+test('a successful run satisfies the slot even when an older attempt failed', () => {
+  const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:27:00Z'), 180, [
+    { id: 103, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:24:00Z', status: 'completed', conclusion: 'success' },
+    { id: 102, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'completed', conclusion: 'failure' },
+  ]);
+
+  assert.equal(result.decision, 'satisfied');
+  assert.equal(result.satisfyingRunId, 103);
+  assert.equal(result.satisfyingConclusion, 'success');
+});
+
+test('a newer in-flight retry blocks another dispatch after a failed attempt', () => {
+  const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:27:00Z'), 180, [
+    { id: 104, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:25:00Z', status: 'queued', conclusion: null },
+    { id: 102, event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:21:00Z', status: 'completed', conclusion: 'failure' },
+  ]);
+
+  assert.equal(result.decision, 'in-flight');
+  assert.equal(result.inFlightRunId, 104);
 });
 
 test('runs before the latest due slot do not satisfy catch-up', () => {
-  const target = {
-    satisfyingEvents: ['repository_dispatch', 'schedule', 'workflow_dispatch'],
-  };
   const due = new Date('2026-09-01T16:20:00Z');
-  assert.equal(scheduler.runSatisfiesSlot({ event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:19:59Z' }, target, due, 'main'), false);
+  assert.equal(scheduler.runSatisfiesSlot({ event: 'repository_dispatch', head_branch: 'main', created_at: '2026-09-01T16:19:59Z', status: 'completed', conclusion: 'success' }, target(), due, 'main'), false);
 });
 
 test('multiple missed slots coalesce to only the latest due slot', () => {
-  const target = {
-    id: 'league',
-    workflow: 'update-league.yml',
-    eventType: 'scheduler-update-league',
-    timezone: 'Etc/UTC',
-    cron: ['*/10 * * * *'],
-    satisfyingEvents: ['repository_dispatch', 'schedule', 'workflow_dispatch'],
-  };
-  const result = scheduler.evaluateTarget(target, 'main', new Date('2026-09-01T16:47:00Z'), 180, []);
+  const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:47:00Z'), 180, []);
   assert.equal(result.decision, 'dispatch');
   assert.equal(result.dueAt, '2026-09-01T16:40:00.000Z');
 });
