@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-02T22:52:07.595547Z",
+  "generated_at": "2026-09-03T05:10:25.520991Z",
   "berlin_date": "2026-09-03",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,43 +11,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 0,
-    "stale_count": 6,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
-    "no_event_conclusion_allowed": false,
-    "unfresh_source_ids": [
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
-      "fftoday",
-      "cbs-sports",
-      "sleeper-trending"
-    ],
+    "no_event_conclusion_allowed": true,
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [
-      "fantasypros",
-      "fantasycalc",
-      "fantasy-football-calculator",
-      "fftoday",
-      "cbs-sports",
-      "sleeper-trending"
-    ],
-    "affected_signal_families": [
-      "dynasty_market",
-      "dynasty_ranking",
-      "external_activity",
-      "redraft_adp",
-      "redraft_market",
-      "redraft_ranking",
-      "season_projection"
-    ]
+    "no_event_blocking_source_ids": [],
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -61,12 +39,12 @@
         "dynasty_ranking",
         "redraft_ranking"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:33:32.940632Z",
-      "age_minutes": 138.58,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:09.056997Z",
+      "age_minutes": 2.27,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "fantasycalc",
@@ -79,12 +57,12 @@
         "dynasty_market",
         "redraft_market"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:33:54.113756Z",
-      "age_minutes": 138.22,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:09.355366Z",
+      "age_minutes": 2.27,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "fantasy-football-calculator",
@@ -96,12 +74,12 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:34:10.458640Z",
-      "age_minutes": 137.95,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:10.193851Z",
+      "age_minutes": 2.26,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "fftoday",
@@ -113,12 +91,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:34:13.218162Z",
-      "age_minutes": 137.91,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:17.618207Z",
+      "age_minutes": 2.13,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "cbs-sports",
@@ -130,12 +108,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:34:17.330275Z",
-      "age_minutes": 137.84,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:25.923061Z",
+      "age_minutes": 1.99,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "sleeper-trending",
@@ -147,16 +125,16 @@
       "affected_signal_families": [
         "external_activity"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-02T20:34:08.039288Z",
-      "age_minutes": 137.99,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-03T05:08:11.671899Z",
+      "age_minutes": 2.23,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
