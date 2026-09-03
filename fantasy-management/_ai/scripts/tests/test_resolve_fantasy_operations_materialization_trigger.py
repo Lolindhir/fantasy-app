@@ -72,10 +72,11 @@ class MaterializationTriggerTests(unittest.TestCase):
         self.assertTrue(decision.run)
         self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
 
-    def test_league_players_and_timestamps_inputs_run_immediately(self) -> None:
+    def test_league_players_drafts_and_timestamps_inputs_run_immediately(self) -> None:
         for path in (
             "public/data/League.json",
             "public/data/Players.json",
+            "public/data/Drafts.json",
             "public/data/Timestamps.json",
         ):
             with self.subTest(path=path):
