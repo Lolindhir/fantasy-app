@@ -2,23 +2,39 @@
   <h2>{{ title }}</h2>
 
   <div class="standing-row standing-header">
-    <div>Place</div>
+    <div>
+      <span class="standing-header-label standing-header-label--mobile">#</span>
+      <span class="standing-header-label standing-header-label--desktop">Place</span>
+    </div>
     <div>Team</div>
-    <div>Record</div>
-    <div>Points</div>
+    <div>
+      <span class="standing-header-label standing-header-label--mobile">W-L</span>
+      <span class="standing-header-label standing-header-label--desktop">Record</span>
+    </div>
+    <div>
+      <span class="standing-header-label standing-header-label--mobile">PF</span>
+      <span class="standing-header-label standing-header-label--desktop">Points</span>
+    </div>
   </div>
 
   <div *ngFor="let row of rows" class="standing-row">
     <div class="standing-place">{{ row.displayPlace }}</div>
 
     <app-team-identity
-      class="standing-team-identity"
+      class="standing-team-identity standing-team-identity--mobile"
       [team]="row.team"
-      [elements]="teamIdentityElements"
+      [elements]="mobileTeamIdentityElements"
       size="small"
     ></app-team-identity>
 
-    <div>{{ row.team.Record }}</div>
-    <div>{{ row.team.Points | number:'1.0-2' }}</div>
+    <app-team-identity
+      class="standing-team-identity standing-team-identity--desktop"
+      [team]="row.team"
+      [elements]="desktopTeamIdentityElements"
+      size="small"
+    ></app-team-identity>
+
+    <div class="standing-record">{{ formatRecord(row) }}</div>
+    <div class="standing-points">{{ row.team.Points | number:'1.0-2' }}</div>
   </div>
 </section>

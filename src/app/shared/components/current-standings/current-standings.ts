@@ -15,5 +15,11 @@ export class CurrentStandingsComponent {
   @Input({ required: true }) standings: CurrentStandingRow[] | null | undefined;
   @Input() title = 'Current Standings';
 
-  readonly teamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+  readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
+  readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+
+  formatRecord(row: CurrentStandingRow): string {
+    const { Wins: wins, Losses: losses, Ties: ties } = row.team;
+    return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
+  }
 }

@@ -3,34 +3,42 @@
 }
 
 .matchups-shell {
-  margin: 12px 5px;
+  margin: 0 5px 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 .matchups-heading {
   display: flex;
-  align-items: end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .matchups-heading h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.08rem;
+  font-weight: 800;
 }
 
 .matchups-eyebrow {
-  margin-bottom: 2px;
-  color: #6d28d9;
-  font-size: 0.7rem;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .matchups-grid {
   display: grid;
-  gap: 8px;
+  gap: 0;
+  margin-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .matchup-card {
@@ -40,11 +48,16 @@
   align-items: center;
   gap: 6px;
   min-height: 104px;
-  padding: 10px 8px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.matchup-card:last-child {
+  border-bottom: 0;
 }
 
 .matchup-team {
@@ -153,15 +166,11 @@
 }
 
 @media (min-width: 768px) {
-  .matchups-grid {
-    gap: 12px;
-  }
-
   .matchup-card {
     grid-template-columns: minmax(0, 1fr) minmax(96px, 120px) minmax(0, 1fr);
     gap: 28px;
     min-height: 172px;
-    padding: 18px 28px;
+    padding: 18px 14px;
   }
 
   .matchup-team {
