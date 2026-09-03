@@ -125,7 +125,7 @@ export function buildCurrentStandings(league: League, teams: FantasyTeam[]): Cur
       currentPlace: normalizeStandingPlace(
         placeByTeamId.get(String(team.TeamID)) ?? team.Placements.Current.Regular.Place
       ),
-      previousPlace: normalizeStandingPlace(team.Placements.Previous.Regular?.Place)
+      previousPlace: normalizeStandingPlace(team.Placements.Previous.Playoffs?.Place)
     }))
     .sort((a, b) =>
       a.currentPlace - b.currentPlace
