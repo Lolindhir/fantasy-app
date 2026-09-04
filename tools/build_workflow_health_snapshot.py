@@ -125,6 +125,26 @@ def relevant_completed_runs(runs: list[JsonDict], entry: JsonDict, evaluation: J
     return filtered, unknown
 
 
+def relevant_inflight_runs(runs: list[JsonDict], entry: JsonDict, evaluation: JsonDict) -> list[JsonDict]:
+    relevant_events = set(entry.get("relevantEvents") or [])
+    default_branch = evaluation.get("defaultBranch", "main")
+    filtered: list[JsonDict] = []
+
+    for run in runs:
+        if run.get("event") not in relevant_events:
+            continue
+        head_branch = run.get("head_branch")
+        if head_branch and head_branch != default_branch:
+            continue
+        status = run.get("status")
+        if not status or status == "completed":
+            continue
+        filtered.append(run)
+
+    filtered.sort(key=lambda item: item.get("created_at") or "", reverse=True)
+    return filtered
+
+
 def evaluate_workflow(
     path: str,
     entry: JsonDict,
@@ -148,6 +168,7 @@ def evaluate_workflow(
         "status": "disabled" if api_state != "active" else "healthy",
         "failureStreak": 0,
         "latestRelevantRun": None,
+        "latestRelevantInFlightRun": None,
         "lastSuccess": None,
         "incidentKeys": [],
     }
@@ -157,6 +178,7 @@ def evaluate_workflow(
         return result, incidents
 
     filtered, unknown = relevant_completed_runs(runs, entry, evaluation)
+    inflight = relevant_inflight_runs(runs, entry, evaluation)
     healthy = set(evaluation.get("healthyConclusions") or ["success"])
     unhealthy = set(evaluation.get("unhealthyConclusions") or ["failure"])
 
@@ -175,6 +197,8 @@ def evaluate_workflow(
 
     if filtered:
         result["latestRelevantRun"] = run_summary(filtered[0])
+    if inflight:
+        result["latestRelevantInFlightRun"] = run_summary(inflight[0])
 
     failure_runs: list[JsonDict] = []
     last_success: JsonDict | None = None

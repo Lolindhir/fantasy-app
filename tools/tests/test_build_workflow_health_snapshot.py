@@ -85,6 +85,18 @@ class WorkflowEvaluationTests(unittest.TestCase):
         self.assertEqual(result["latestRelevantRun"]["event"], "repository_dispatch")
         self.assertEqual(incidents, [])
 
+    def test_inflight_run_is_exposed_without_affecting_completed_health_evaluation(self):
+        runs = [
+            run(2, None, "2026-08-29T23:55:00Z", status="in_progress"),
+            run(1, "success", "2026-08-29T23:40:00Z"),
+        ]
+        result, incidents = module.evaluate_workflow("w.yml", ENTRY, CATEGORY, API_WORKFLOW, runs, EVALUATION, NOW)
+        self.assertEqual(result["latestRelevantInFlightRun"]["id"], 2)
+        self.assertEqual(result["latestRelevantInFlightRun"]["status"], "in_progress")
+        self.assertEqual(result["latestRelevantRun"]["id"], 1)
+        self.assertEqual(result["failureStreak"], 0)
+        self.assertEqual(incidents, [])
+
 
 class SnapshotTests(unittest.TestCase):
     def test_configuration_drift_is_fail_closed(self):
