@@ -89,6 +89,7 @@
               <mat-option value="ranking" [disabled]="!combinedRankingAvailable">
                 {{ combinedRankingAvailable ? 'Combined Ranking' : 'Combined Ranking · after Week 3' }}
               </mat-option>
+              <mat-option value="depth">Depth Chart</mat-option>
               <mat-option value="ageAsc">Age ⬆</mat-option>
               <mat-option value="ageDesc">Age ⬇</mat-option>
               <mat-option value="name">Name</mat-option>
@@ -105,6 +106,7 @@
                 [columns]="playerColumns"
                 [compact]="isMobile"
                 [team]="team"
+                [showDepth]="rosterSort === 'depth'"
                 [dynamicColumnHeader]="rosterDynamicColumnHeader"
                 [dynamicColumnValueFn]="getRosterDynamicColumnValue"
               />

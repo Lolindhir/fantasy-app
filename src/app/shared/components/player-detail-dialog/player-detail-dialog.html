@@ -6,7 +6,7 @@
       <span class="dialog-player-name">{{ player.Name }}</span>
       <div *ngIf="rankingCombined != undefined" class="dialog-rankings">
         <span>#{{ rankingCombined }} <small>Overall</small></span>
-        <span>#{{ rankingCombinedPosition }} <small>Pos</small></span>
+        <span>#{{ rankingCombinedPosition }} <small>Pos Rank</small></span>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
                 class="dialog-position-chip"
                 [ngStyle]="player.Position | positionStyle"
               >
-                {{ player.Position }}
+                {{ positionDepthLabel }}
               </span>
               <span>👕{{ player.Number }}</span>
             </span>

@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { getPlayerDepthChartLabel } from '../../utils/player-sort.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -13,6 +14,7 @@ export type PlayerListColumn =
   | 'name'
   | 'position'
   | 'team'
+  | 'depth'
   | 'salary'
   | 'salaryProjected'
   | 'fantasyTeam'
@@ -57,6 +59,7 @@ export class PlayerListComponent {
 
   @Input() projectedAbr = 'Proj.';
   @Input() showProjectedMarket = false;
+  @Input() showDepth = false;
 
   // Optional für TeamList-Exclude-Use-Case
   @Input() isExcludedFn?: (teamId: string, playerId: string) => boolean;
@@ -64,6 +67,31 @@ export class PlayerListComponent {
   @Input() toggleExcludeFn?: (teamId: string, playerId: string) => void;
 
   constructor(private dialog: MatDialog) {}
+
+  get displayedColumns(): PlayerListColumn[] {
+    if (!this.showDepth || this.columns.includes('depth')) {
+      return this.columns;
+    }
+
+    const firstMetricIndex = this.columns.findIndex(column =>
+      column === 'salary'
+      || column === 'salaryProjected'
+      || column === 'dynamicStat'
+      || column === 'fantasyTeam'
+      || column === 'marketStatus'
+      || column === 'exclude'
+    );
+
+    if (firstMetricIndex === -1) {
+      return [...this.columns, 'depth'];
+    }
+
+    return [
+      ...this.columns.slice(0, firstMetricIndex),
+      'depth',
+      ...this.columns.slice(firstMetricIndex)
+    ];
+  }
 
   trackByPlayerId(index: number, player: Player): string {
     return player.ID;
@@ -100,6 +128,10 @@ export class PlayerListComponent {
     }
 
     return this.isPlayerExcludableFn(player, this.team);
+  }
+
+  getDepthChartLabel(player: Player): string {
+    return getPlayerDepthChartLabel(player) ?? '—';
   }
 
   getMarketText(player: Player): string {
