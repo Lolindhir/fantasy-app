@@ -875,3 +875,63 @@ decisions:
         - Phase 1B must introduce league identity mappings, lineage validation, persistence and lifecycle rules before consumer migration.
         - Existing direct Sleeper reads and Fantasy Management public/data dependencies remain temporarily during the staged migration.
         - CanonicalLeagueID and CanonicalLeagueSeasonID require application-owned namespaces and mapping maintenance.
+
+  - id: ADR-033
+    title: Central scheduler uses profiles, bounded retries and isolated runtime state
+    status: accepted
+    context: >
+      ADR-031 centralized workflow timing, but the initial catch-up semantics could
+      retry a persistently failing target on every Scheduler tick. The first Health
+      observation barrier also applied one age limit equally to a productive target
+      being dispatched in the current Scheduler pass and to a target that had
+      already been running for a long time. Productive observation showed that a
+      fresh Players retry could therefore start in the same tick as Workflow Health
+      once the original Health slot was older than the blanket deferral limit. The
+      raw JSON Scheduler output was also too difficult to assess directly from a run.
+    decision: >
+      Extend the central schedule contract in .github/workflow-schedules.json with
+      named Scheduler profiles. Targets reference one profile: `productive`,
+      `maintenance` or `observer`. Productive targets participate in the Workflow
+      Health observation barrier; maintenance and observer targets do not. Profiles
+      also own bounded retry policy. Productive targets use at most three attempts
+      for one anchored due slot, with 5- and 10-minute backoff before attempts two
+      and three and a 60-minute circuit-breaker cooldown after exhaustion. The
+      Scheduler persists only coordination state on the isolated
+      workflow-scheduler-state branch in scheduler-state.json and reconciles that
+      state against actual GitHub Actions run history on every evaluation; GitHub
+      run metadata remains authoritative for what actually ran and how it ended.
+      An unresolved retry cycle keeps its original due slot even when newer regular
+      slots become due, and a deferred Health slot is anchored the same way. A
+      productive dispatch selected in the current Scheduler tick is a hard Health
+      blocker for that tick regardless of Health age. An already in-flight
+      productive target may stop blocking Health after the configured 20-minute
+      anti-starvation window measured from the original Health due slot. Retry
+      backoff, retry-exhausted and circuit-breaker cooldown states do not block
+      Health, so persistent productive failures remain observable by the Health
+      snapshot. Scheduler runs retain structured JSON decision logs and additionally
+      write a human-readable GitHub Job Summary with target profile, decision,
+      action, due slot, attempt and explanation.
+    rationale: >
+      Persistent failures must self-limit rather than consume Actions indefinitely,
+      while transient failures still deserve automatic recovery attempts. A fresh
+      productive dispatch is known to be about to change the observable state and
+      should therefore finish before Health snapshots it; a genuinely long-running
+      workflow needs a bounded escape hatch so monitoring cannot starve forever.
+      Keeping runtime coordination state outside main avoids product/deploy churn,
+      and reconciling it against GitHub run history prevents a stale counter from
+      becoming a second execution truth. The Job Summary makes normal Scheduler
+      operation understandable without decoding machine-oriented JSON logs.
+    consequences:
+      positive:
+        - Persistent target failures no longer create one retry on every Scheduler tick.
+        - Retry attempts stay associated with one stable due slot across later cron slots.
+        - Fresh productive retries cannot race Workflow Health in the same Scheduler pass.
+        - Long-running workflows cannot suppress Health forever.
+        - Retry exhaustion and cooldown deliberately allow Health to expose the unresolved failure.
+        - New Scheduler targets inherit barrier and retry semantics by selecting a central profile.
+        - Operators can understand dispatch, retry and deferral decisions directly in the GitHub run summary.
+        - Scheduler runtime writes remain isolated from main and do not trigger product deployment.
+      negative:
+        - The Scheduler now depends on an additional isolated runtime-state branch.
+        - Profile, state reconciliation and retry-cycle behavior increase Scheduler implementation complexity.
+        - A failed target may remain unretried during its configured cooldown even if the underlying cause is fixed immediately.
