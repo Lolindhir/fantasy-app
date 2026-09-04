@@ -26,8 +26,8 @@ export function comparePlayersByDepthChart(a: Player, b: Player): number {
     if (depthA !== depthB) return depthA - depthB;
   }
 
-  return comparePlayerPositions(a.Position, b.Position)
-    || (b.Salary ?? 0) - (a.Salary ?? 0)
+  return (b.Salary ?? 0) - (a.Salary ?? 0)
+    || comparePlayerPositions(a.Position, b.Position)
     || comparePlayerNames(a, b)
     || a.ID.localeCompare(b.ID);
 }
