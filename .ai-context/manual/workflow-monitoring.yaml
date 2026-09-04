@@ -29,11 +29,14 @@ snapshot:
       blockingProfile: productive
       sameTickProductiveDispatch: hard-defer-current-tick
       inFlightMaxDeferralMinutes: 20
+      awaitingObservationMaxDeferralMinutes: 20
       deadlineAnchor: persisted-original-health-due-slot
       nonBlockingSchedulerStates:
       - retry-wait
       - retry-exhausted
       - cooldown
+      - observation-timeout
+      - observation-cooldown
     transition:
       externalCronStatus: not-yet-cut-over
       currentSchedulerCron: "*/5 * * * *"
@@ -45,9 +48,9 @@ snapshot:
   - The central scheduler owns the `:07` and `:37` Health due slots according to `.github/workflow-schedules.json`.
   - Only scheduler targets whose configured profile has `healthBarrier: true` can delay Workflow Health. The current `productive` profile is blocking; `maintenance` and `observer` are not.
   - A productive target that will be dispatched in the same scheduler tick is a hard barrier for that tick. Health must wait even when the original Health due slot is already older than the in-flight deferral limit.
-  - A productive target that is already in-flight may delay Health for at most 20 minutes from the persisted original Health due slot. After that limit the next scheduler evaluation may dispatch Health despite the still-running target.
+  - A productive target that is already in-flight or whose requested dispatch is temporarily awaiting GitHub run observation may delay Health for at most 20 minutes from the persisted original Health due slot. After that limit the next scheduler evaluation may dispatch Health despite the unresolved observation.
   - A deferred Health due slot is persisted in scheduler runtime state, so crossing a later `:07` or `:37` schedule boundary cannot silently reset the observation deadline.
-  - `retry-wait`, `retry-exhausted` and `cooldown` are not Health blockers. Once a productive workflow has exhausted its bounded retry cycle, Health must be allowed to materialize the persistent failure instead of being starved by it.
+  - `retry-wait`, `retry-exhausted`, retry `cooldown`, `observation-timeout` and `observation-cooldown` are not Health blockers. Once retry or dispatch observation can no longer productively settle in the current window, Health must be allowed to materialize the observable state instead of being starved.
   - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
@@ -58,23 +61,40 @@ snapshot:
   - The snapshot producer is classified for inventory completeness but its own run health is not used for paging; snapshot freshness is its independent health signal.
 scheduler:
   config: .github/workflow-schedules.json
-  implementation: tools/run-workflow-scheduler.cjs
+  implementation: tools/run-workflow-scheduler-runtime.cjs
+  corePrimitives: tools/run-workflow-scheduler.cjs
   runtimeState:
     schemaVersion: 1
     branch: workflow-scheduler-state
     path: workflow-scheduler-state.json
     publication: isolated-root-commit-ref
-    sourceOfTruthRule: GitHub Actions run history is authoritative for actual execution status; runtime state only anchors retry/deferral cycles and circuit timing.
+    sourceOfTruthRule: >
+      GitHub Actions run history is positive evidence for actual execution status and failure conclusions. Scheduler runtime
+      state is authoritative only for the fact that a dispatch request was issued and for anchoring retry, observation,
+      deferral and circuit timing. Absence from one workflow-run list response is unknown state, never failure evidence.
   profiles:
     productive:
       healthBarrier: true
-      purpose: Productive data/source/materialization work whose same-tick dispatch or bounded in-flight execution should precede a Health snapshot.
+      purpose: Productive data/source/materialization work whose same-tick dispatch or bounded in-flight/awaiting-observation execution should precede a Health snapshot.
     maintenance:
       healthBarrier: false
       purpose: Repository maintenance that must not delay Workflow Health.
     observer:
       healthBarrier: false
       purpose: Observation/monitoring work that must not block itself or productive work.
+  dispatchObservation:
+    policyOwner: .github/workflow-schedules.json
+    timeoutMinutes: 15
+    primaryRunRead: workflow-specific listWorkflowRuns with branch=main and per_page=100
+    fallbackRunRead: >
+      When a persisted dispatch is expected but the primary query does not expose it, issue one additional workflow-specific
+      listWorkflowRuns query filtered to event=repository_dispatch without the branch parameter, merge/dedupe both result sets,
+      then apply the local main/event/due-slot matcher again.
+    missingRunRule: A persisted dispatch that is not visible in the merged run reads is `awaiting-observation`; it must not increment attempts or trigger a retry.
+    timeoutRule: After 15 minutes without observing the requested run, open an observation circuit instead of issuing a blind retry.
+    cooldownMinutes: 60
+    cooldownRule: While the observation circuit is open, do not dispatch the target. After expiry a later scheduler tick may start one fresh cycle for the then-current due slot.
+    recoveryRule: Any subsequently visible successful relevant run heals the observation state/circuit immediately.
   retry:
     policyOwner: .github/workflow-schedules.json
     defaultPolicy: standard
@@ -84,12 +104,13 @@ scheduler:
     - 10
     cooldownMinutes: 60
     slotAnchor: original-due-slot-until-success-or-circuit-resolution
+    failureEvidenceRule: A retry may be scheduled only after an actually observed repository_dispatch run for the active cycle is completed with a non-success conclusion. Missing run observation is not a failed attempt.
     successRule: Any newer relevant successful run that satisfies the active cycle heals it and clears scheduler runtime state.
-    exhaustionRule: After the configured attempts are exhausted, open the circuit for the configured cooldown instead of dispatching again on every scheduler tick.
-    cooldownRule: While the circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
+    exhaustionRule: After the configured observed failed attempts are exhausted, open the retry circuit for the configured cooldown instead of dispatching again on every scheduler tick.
+    cooldownRule: While the retry circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
   output:
-    machineReadable: Keep one JSON decision per target in the Actions log.
-    humanReadable: Write a GitHub Job Summary with target, profile, status, action, due slot, attempt and reason, plus explicit Health-deferral and circuit-breaker notes.
+    machineReadable: Keep one JSON decision per target in the Actions log, including observation/fallback evidence where applicable.
+    humanReadable: Write a GitHub Job Summary with target, profile, status, action, due slot, attempt and reason, plus explicit Health-deferral, dispatch-observation and circuit-breaker notes.
 principles:
 - Monitoring configuration is versioned in the repository; alert logic must not be duplicated across individual workflow YAML
   files.
@@ -185,7 +206,7 @@ workflows:
     - schedule
     - repository_dispatch
     staleAfterMinutes: 20
-    rationale: Central five-minute scheduling layer for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, isolated runtime coordination and Health observation-barrier decisions; a scheduler failure or roughly 20 minutes without a successful tick can prevent downstream refreshes and is immediately actionable.
+    rationale: Central five-minute scheduling layer for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination and Health observation-barrier decisions; a scheduler failure or roughly 20 minutes without a successful tick can prevent downstream refreshes and is immediately actionable.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
@@ -309,7 +330,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Scheduler-dispatched 30-minute snapshot producer. Productive same-tick dispatches hard-defer Health; already in-flight productive work can delay it for at most 20 minutes from the persisted original Health due slot. Retry-wait/exhausted/cooldown and non-productive profiles do not block it. It has no independent schedule, push or workflow_run trigger; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Scheduler-dispatched 30-minute snapshot producer. Productive same-tick dispatches hard-defer Health; already in-flight or awaiting-observation productive work can delay it for at most 20 minutes from the persisted original Health due slot. Retry-wait/exhausted/cooldown and observation-timeout/cooldown states do not block it. It has no independent schedule, push or workflow_run trigger; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later
