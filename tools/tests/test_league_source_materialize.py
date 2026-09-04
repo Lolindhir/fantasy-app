@@ -113,6 +113,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
                         "playoff_teams": 4,
                         "playoff_round_type": 2,
                         "last_scored_leg": 17,
+                        "trade_deadline": 99,
                     },
                     "scoring_settings": {},
                     "roster_positions": ["QB"],
@@ -182,12 +183,50 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             rosters = json.loads((season_root / "rosters.json").read_text(encoding="utf-8"))
             self.assertEqual(league["WeekStructure"]["ObservedPlayoffFormat"], "two-week-rounds")
             self.assertEqual(league["WeekStructure"]["FinalLeagueWeek"], 17)
+            self.assertEqual(league["Settings"]["trade_deadline"], 99)
+            self.assertIsNone(league["TradeDeadlineWeek"])
             self.assertEqual(rosters[0]["Players"][0]["CanonicalPlayerID"], "cp-one")
             self.assertIsNone(rosters[0]["Players"][1]["CanonicalPlayerID"])
 
             second_outputs = plan_canonical_materialization(root, canonical_league_id, registry, resolver)
             second = persist_canonical_outputs(second_outputs)
             self.assertEqual(second["CanonicalFilesChanged"], 0)
+        finally:
+            temporary.cleanup()
+
+    def test_preserves_real_positive_trade_deadline_week(self) -> None:
+        temporary, root, canonical_league_id, provider_league_id = self._repo()
+        try:
+            raw_league_path = (
+                root
+                / "source-data"
+                / "providers"
+                / "sleeper"
+                / "leagues"
+                / provider_league_id
+                / "league.json"
+            )
+            raw_league = json.loads(raw_league_path.read_text(encoding="utf-8"))
+            raw_league["settings"]["trade_deadline"] = 11
+            raw_league_path.write_text(json.dumps(raw_league), encoding="utf-8")
+
+            registry = load_league_registry(root)
+            resolver = PlayerMappingResolver.load(root)
+            persist_canonical_outputs(
+                plan_canonical_materialization(root, canonical_league_id, registry, resolver)
+            )
+            league_path = (
+                root
+                / "source-data"
+                / "leagues"
+                / canonical_league_id
+                / "seasons"
+                / "2025"
+                / "league.json"
+            )
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            self.assertEqual(league["Settings"]["trade_deadline"], 11)
+            self.assertEqual(league["TradeDeadlineWeek"], 11)
         finally:
             temporary.cleanup()
 

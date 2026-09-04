@@ -64,6 +64,23 @@ def _read_json(path: Path) -> object:
         return json.load(handle)
 
 
+def _canonical_trade_deadline_week(settings: object) -> int | None:
+    if not isinstance(settings, dict):
+        raise ValueError("Sleeper league settings must be an object")
+    raw = settings.get("trade_deadline")
+    if raw is None or str(raw).strip() == "":
+        return None
+    if isinstance(raw, bool):
+        return None
+    try:
+        deadline_week = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+    if deadline_week <= 0 or deadline_week == 99:
+        return None
+    return deadline_week
+
+
 @dataclass(frozen=True)
 class CanonicalOutput:
     path: Path
@@ -677,6 +694,7 @@ def plan_canonical_materialization(
         drafts = _canonicalize_drafts(
             context["RawBase"], context["DraftIndexRaw"], season_id, member_by_provider, roster_by_provider, resolver, season
         )
+        league_settings = league_raw.get("settings") or {}
 
         league = {
             "schemaVersion": SCHEMA_VERSION,
@@ -688,7 +706,8 @@ def plan_canonical_materialization(
             "Status": league_raw.get("status"),
             "SeasonType": league_raw.get("season_type"),
             "Avatar": league_raw.get("avatar"),
-            "Settings": league_raw.get("settings") or {},
+            "Settings": league_settings,
+            "TradeDeadlineWeek": _canonical_trade_deadline_week(league_settings),
             "ScoringSettings": league_raw.get("scoring_settings") or {},
             "RosterPositions": league_raw.get("roster_positions") or [],
             "WeekStructure": structure_by_season[season],
