@@ -43,7 +43,7 @@ jobs:
           cache: npm
 
       - name: Run central scheduler regression tests
-        run: node --test tools/tests/run-workflow-scheduler.test.cjs
+        run: node --test tools/tests/run-workflow-scheduler*.test.cjs
 
       - name: Install dependencies
         run: npm ci

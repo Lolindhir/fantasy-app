@@ -29,5 +29,5 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const scheduler = require('./tools/run-workflow-scheduler.cjs');
+            const scheduler = require('./tools/run-workflow-scheduler-runtime.cjs');
             await scheduler.run({ github, context, core });
