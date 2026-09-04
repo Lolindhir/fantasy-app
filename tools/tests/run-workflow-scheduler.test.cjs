@@ -52,6 +52,8 @@ test('central config preserves all migrated schedules including League Source an
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
   assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 16);
+  const health = config.targets.find((item) => item.id === 'workflow-health');
+  assert.deepEqual(health.deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
 test('scheduler keeps GitHub cron during external-tick transition and accepts external dispatch', () => {
@@ -120,6 +122,7 @@ test('an in-flight run prevents a duplicate dispatch for the same slot', () => {
   assert.equal(result.dueAt, '2026-09-01T16:20:00.000Z');
   assert.equal(result.inFlightRunId, 101);
   assert.equal(result.inFlightStatus, 'in_progress');
+  assert.equal(result.inFlightCreatedAt, '2026-09-01T16:21:00Z');
 });
 
 test('a completed failed run leaves the slot dispatchable', () => {
@@ -161,4 +164,84 @@ test('multiple missed slots coalesce to only the latest due slot', () => {
   const result = scheduler.evaluateTarget(target(), 'main', new Date('2026-09-01T16:47:00Z'), 180, []);
   assert.equal(result.decision, 'dispatch');
   assert.equal(result.dueAt, '2026-09-01T16:40:00.000Z');
+});
+
+test('health deferral waits for in-flight and same-tick dispatch blockers', () => {
+  const healthTarget = target({
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    eventType: 'scheduler-workflow-health',
+    deferUntilOtherTargetsSettled: { maxMinutes: 20 },
+  });
+  const healthResult = {
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    decision: 'dispatch',
+    dueAt: '2026-09-01T16:07:00.000Z',
+  };
+  const result = scheduler.applyTargetDeferral(healthTarget, healthResult, [
+    healthResult,
+    { id: 'league', workflow: 'update-league.yml', decision: 'in-flight', dueAt: '2026-09-01T16:10:00.000Z', inFlightRunId: 201 },
+    { id: 'transactions', workflow: 'update-transactions.yml', decision: 'dispatch', dueAt: '2026-09-01T16:05:00.000Z' },
+  ], new Date('2026-09-01T16:15:00Z'));
+
+  assert.equal(result.decision, 'deferred');
+  assert.equal(result.deferralAgeMinutes, 8);
+  assert.equal(result.maxDeferralMinutes, 20);
+  assert.deepEqual(result.blockingTargets.map((item) => [item.id, item.decision]), [
+    ['league', 'in-flight'],
+    ['transactions', 'dispatch'],
+  ]);
+});
+
+test('health deferral expires from the original health due slot', () => {
+  const healthTarget = target({
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    eventType: 'scheduler-workflow-health',
+    deferUntilOtherTargetsSettled: { maxMinutes: 20 },
+  });
+  const healthResult = {
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    decision: 'dispatch',
+    dueAt: '2026-09-01T16:07:00.000Z',
+  };
+  const result = scheduler.applyTargetDeferral(healthTarget, healthResult, [
+    healthResult,
+    { id: 'league', workflow: 'update-league.yml', decision: 'in-flight', dueAt: '2026-09-01T16:20:00.000Z', inFlightRunId: 202 },
+  ], new Date('2026-09-01T16:27:00Z'));
+
+  assert.equal(result.decision, 'dispatch');
+  assert.equal(result.deferralExpired, true);
+  assert.equal(result.deferralAgeMinutes, 20);
+  assert.equal(result.blockingTargets[0].id, 'league');
+});
+
+test('deferred target dispatches immediately when peers are settled', () => {
+  const healthTarget = target({
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    eventType: 'scheduler-workflow-health',
+    deferUntilOtherTargetsSettled: { maxMinutes: 20 },
+  });
+  const healthResult = {
+    id: 'workflow-health',
+    workflow: 'workflow-health-snapshot.yml',
+    decision: 'dispatch',
+    dueAt: '2026-09-01T16:07:00.000Z',
+  };
+  const result = scheduler.applyTargetDeferral(healthTarget, healthResult, [
+    healthResult,
+    { id: 'league', workflow: 'update-league.yml', decision: 'satisfied', dueAt: '2026-09-01T16:10:00.000Z' },
+  ], new Date('2026-09-01T16:15:00Z'));
+
+  assert.deepEqual(result, healthResult);
+});
+
+test('scheduler config rejects a non-positive deferral limit', () => {
+  const config = loadConfig();
+  const invalid = JSON.parse(JSON.stringify(config));
+  invalid.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled.maxMinutes = 0;
+  assert.throws(() => scheduler.validateConfig(invalid), /Invalid deferral maxMinutes/);
 });

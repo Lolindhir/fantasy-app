@@ -128,6 +128,15 @@ function validateConfig(config) {
     events.add(target.eventType);
     if (!target.path.startsWith('.github/workflows/')) throw new Error(`Invalid workflow path: ${target.path}`);
     if (target.eventType.length > 100) throw new Error(`repository_dispatch eventType is too long: ${target.eventType}`);
+    if (target.deferUntilOtherTargetsSettled !== undefined) {
+      const deferral = target.deferUntilOtherTargetsSettled;
+      if (!deferral || typeof deferral !== 'object' || Array.isArray(deferral)) {
+        throw new Error(`Invalid deferUntilOtherTargetsSettled for ${target.id}`);
+      }
+      if (!Number.isInteger(deferral.maxMinutes) || deferral.maxMinutes <= 0) {
+        throw new Error(`Invalid deferral maxMinutes for ${target.id}`);
+      }
+    }
     localParts(new Date('2026-01-05T00:00:00Z'), target.timezone);
     for (const expression of target.cron) cronMatches(expression, new Date('2026-01-05T00:00:00Z'), target.timezone);
   }
@@ -159,6 +168,7 @@ function evaluateTarget(target, ref, now, lookbackMinutes, runs) {
       inFlightRunId: inFlight.id,
       inFlightEvent: inFlight.event,
       inFlightStatus: inFlight.status,
+      inFlightCreatedAt: inFlight.created_at || null,
     };
   }
   return {
@@ -170,6 +180,38 @@ function evaluateTarget(target, ref, now, lookbackMinutes, runs) {
   };
 }
 
+function applyTargetDeferral(target, result, peerResults, now) {
+  const deferral = target.deferUntilOtherTargetsSettled;
+  if (!deferral || result.decision !== 'dispatch') return result;
+
+  const blockers = peerResults
+    .filter((peer) => peer.id !== target.id && (peer.decision === 'dispatch' || peer.decision === 'in-flight'))
+    .map((peer) => ({
+      id: peer.id,
+      workflow: peer.workflow,
+      decision: peer.decision,
+      dueAt: peer.dueAt || null,
+      inFlightRunId: peer.inFlightRunId || null,
+    }));
+  if (blockers.length === 0) return result;
+
+  const dueAtMs = Date.parse(result.dueAt || '');
+  if (!Number.isFinite(dueAtMs)) throw new Error(`Deferred target ${target.id} has invalid dueAt`);
+  const ageMs = Math.max(0, now.getTime() - dueAtMs);
+  const ageMinutes = Math.floor(ageMs / 60000);
+  const annotated = {
+    ...result,
+    blockingTargets: blockers,
+    deferralAgeMinutes: ageMinutes,
+    maxDeferralMinutes: deferral.maxMinutes,
+  };
+
+  if (ageMs < deferral.maxMinutes * 60000) {
+    return { ...annotated, decision: 'deferred' };
+  }
+  return { ...annotated, deferralExpired: true };
+}
+
 async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date() }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
@@ -178,7 +220,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
   }
   const ref = config.ref || 'main';
   const failures = [];
-  const results = [];
+  const evaluated = [];
 
   for (const target of config.targets) {
     try {
@@ -189,7 +231,31 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         branch: ref,
         per_page: 100,
       });
-      const result = evaluateTarget(target, ref, now, config.lookbackMinutes, response.data.workflow_runs || []);
+      evaluated.push({
+        target,
+        result: evaluateTarget(target, ref, now, config.lookbackMinutes, response.data.workflow_runs || []),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      core.error(`${target.id}: ${message}`);
+      failures.push(`${target.id}: ${message}`);
+    }
+  }
+
+  const peerResults = evaluated.map((item) => item.result);
+  for (const item of evaluated) {
+    item.result = applyTargetDeferral(item.target, item.result, peerResults, now);
+  }
+
+  const dispatchOrder = [...evaluated].sort((left, right) => {
+    const leftDeferred = left.target.deferUntilOtherTargetsSettled ? 1 : 0;
+    const rightDeferred = right.target.deferUntilOtherTargetsSettled ? 1 : 0;
+    return leftDeferred - rightDeferred;
+  });
+  const results = [];
+
+  for (const { target, result } of dispatchOrder) {
+    try {
       if (result.decision === 'dispatch') {
         await github.rest.repos.createDispatchEvent({
           owner: context.repo.owner,
@@ -219,6 +285,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
 }
 
 module.exports = {
+  applyTargetDeferral,
   cronMatches,
   evaluateTarget,
   latestDueSlot,
