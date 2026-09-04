@@ -24,6 +24,13 @@ snapshot:
     eventType: scheduler-workflow-health
     timezone: Etc/UTC
     cron: "7-59/30 * * * *"
+    observationBarrier:
+      configKey: deferUntilOtherTargetsSettled
+      maxDeferralMinutes: 20
+      deadlineAnchor: original-health-due-slot
+      blockers:
+      - another scheduler target is in-flight for its current due slot
+      - another scheduler target is dispatchable in the same scheduler evaluation pass
     transition:
       externalCronStatus: not-yet-cut-over
       currentSchedulerCron: "*/5 * * * *"
@@ -32,9 +39,11 @@ snapshot:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
   - The snapshotter writes only the isolated workflow-health-state branch; it must never publish health snapshots to main.
   - If the state branch does not yet exist, the snapshot producer initializes it as an orphan branch containing only monitoring state.
-  - The central scheduler dispatches the snapshot producer at `:07` and `:37` each hour according to `.github/workflow-schedules.json`.
+  - The central scheduler owns the `:07` and `:37` Health due slots according to `.github/workflow-schedules.json`; the actual Health dispatch may be deferred by the observation barrier when another scheduler target is still in-flight or is being dispatched in the same evaluation pass.
+  - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
+  - Health deferral is bounded from the original Health due slot. After 20 minutes the next scheduler evaluation may dispatch Health even when blockers remain, so a long-running or stuck workflow cannot starve monitoring indefinitely.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
-  - Each scheduler dispatch materializes a snapshot directly. There is no snapshot freshness gate because the central scheduler already owns due-slot deduplication.
+  - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler already owns due-slot deduplication and observation-barrier timing.
   - During the external-cron transition the central scheduler retains its GitHub `*/5` schedule and additionally accepts `external-scheduler-tick` repository_dispatch events. The internal schedule must remain until the external tick path is configured and productively verified.
   - After a verified external-cron cutover, remove the scheduler's GitHub schedule in a separate change and re-evaluate snapshot.maxAgeMinutes; 150 minutes is intentionally retained during the transition.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
@@ -73,6 +82,7 @@ runEvaluation:
   - skipped
   - neutral
   incompleteRuns: ignore-until-completed
+  incompleteRunMetadata: Expose the newest relevant incomplete run as latestRelevantInFlightRun for observation context, but do not count it toward failure, recovery or staleness conclusions before completion.
   unknownCompletedConclusion: fail-closed
   branchRule: Require main when the run exposes a meaningful head branch. Repository-level events such as issues or repository_dispatch may not expose
     a normal branch and are evaluated by event.
@@ -258,7 +268,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Scheduler-dispatched 30-minute snapshot producer. It has no independent schedule, push or workflow_run trigger, so repository activity does not create monitoring noise; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Scheduler-dispatched 30-minute snapshot producer. The scheduler may defer its dispatch for up to 20 minutes while other scheduled targets settle, without serializing those targets. It has no independent schedule, push or workflow_run trigger; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later
