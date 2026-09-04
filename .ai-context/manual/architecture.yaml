@@ -46,17 +46,17 @@ layers:
     path: source-data/**
     responsibility: >
       Persists validated provider raw inputs under source-data/providers,
-      provider-independent NFL facts under source-data/nfl and, in Phase 1B,
-      canonical fantasy-league facts under source-data/leagues. The target is one
-      shared facts substrate consumed independently by the App generators and
-      Fantasy Management instead of making either consumer depend on the other's
-      derived read models.
+      provider-independent NFL facts under source-data/nfl and canonical
+      fantasy-league facts under source-data/leagues. Phase 1B is productively
+      accepted; this shared facts substrate is now available independently to the
+      App generators and Fantasy Management without making either consumer depend
+      on the other's derived read models.
     owns:
       - validated provider raw data and provenance
       - provider-independent CanonicalPlayerID identities and historical mappings; CanonicalPlayerID is application-defined by fantasy-app, not NFL-issued
-      - stable CanonicalLeagueID and CanonicalLeagueSeasonID identities for fantasy-league lineage once Phase 1B is implemented
+      - stable CanonicalLeagueID and CanonicalLeagueSeasonID identities for fantasy-league lineage
       - canonical season-partitioned NFL facts such as Draft, Combine, schedules, rosters, stats and snaps
-      - canonical fantasy-league facts such as league instances, members, rosters, transactions and fantasy drafts once Phase 1B is implemented
+      - canonical fantasy-league facts such as league instances, members, rosters, transactions and fantasy drafts
       - dataset acquisition/lifecycle contracts and source-data audit output
     doesNotOwn:
       - manually authored league-specific rules that remain owned by Metadata
@@ -66,7 +66,7 @@ layers:
     lifecycleRule: >
       NFL acquisition and lifecycle semantics follow
       .ai-context/manual/nfl-source-data.yaml. League-source identity, multi-league,
-      provider-lineage and Phase-1B target semantics follow
+      provider-lineage and accepted Phase-1B semantics follow
       .ai-context/manual/league-source-data.yaml. Provider/raw and canonical facts
       remain distinct from consumer-specific derived outputs.
 
@@ -75,9 +75,10 @@ layers:
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
       consumed by the Angular app. During the transition some generators still
-      read providers directly. After Phase 1B acceptance, Phase 2 migrates them to
-      the stable canonical NFL and League source-data contracts while preserving
-      existing public/data contracts unless separately approved.
+      read providers directly. Phase 1B is accepted; Phase 2 is the next migration
+      step and moves them to the stable canonical NFL and League source-data
+      contracts while preserving existing public/data contracts unless separately
+      approved.
     owns:
       - fetching external/source data not yet migrated into source-data
       - data transformation
@@ -104,7 +105,7 @@ layers:
       - architectural decisions
       - manually authored source-of-truth documentation
       - persistent provider raw data
-      - the future shared canonical League facts layer
+      - the shared canonical League facts layer
 
   - name: fantasy-management-derived-data
     path: fantasy-management/**
@@ -149,11 +150,11 @@ sourceDataTarget:
       contract: .ai-context/manual/nfl-source-data.yaml
     phase1B:
       name: League Source Layer
-      status: next
+      status: completed-and-productively-accepted
       contract: .ai-context/manual/league-source-data.yaml
     phase2:
       name: Consumer Migration
-      status: after-phase1B-acceptance
+      status: next
 
   targetFlow: |
     nflverse / Sleeper NFL ------> source-data/providers/** ----> source-data/nfl/**
