@@ -12,6 +12,7 @@ import type { ChartConfiguration, ChartOptions } from 'chart.js';
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
+import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 
 // Registrierung
 Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarController, BarElement, Title, Tooltip, Legend);
@@ -103,6 +104,10 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   get rankingCombinedPosition(): number | undefined {
     return this.player.Stats?.Ranking.find(r => r.Type === 'Combined_Pos')?.Value;
+  }
+
+  get positionDepthLabel(): string {
+    return formatPlayerPositionDepth(this.player);
   }
 
   get teamLogo(): string {

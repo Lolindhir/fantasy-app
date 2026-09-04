@@ -6,6 +6,7 @@ import { DataService } from '../../../core/services/data.service';
 import type { Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
 import { PlayerListColumn, PlayerListComponent } from '../../../shared/components/player-list/player-list';
+import { comparePlayersByDepthChart } from '../../../shared/utils/player-sort.util';
 
 type PlayerMarketFilter =
   | 'all'
@@ -21,6 +22,7 @@ type PlayerSortOption =
   | 'lastYearPointsDesc'
   | 'avgPointsDesc'
   | 'lastYearAvgPointsDesc'
+  | 'depthAsc'
   | 'ageAsc'
   | 'ageDesc'
   | 'nameAsc'
@@ -306,6 +308,9 @@ export class PlayersPageComponent implements OnInit {
 
         case 'lastYearAvgPointsDesc':
           return this.getLastYearAvgPoints(b) - this.getLastYearAvgPoints(a);
+
+        case 'depthAsc':
+          return comparePlayersByDepthChart(a, b);
 
         case 'ageAsc':
           return this.compareAge(a, b);

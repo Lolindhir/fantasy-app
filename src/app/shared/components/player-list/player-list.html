@@ -65,6 +65,14 @@
     </td>
   </ng-container>
 
+  <!-- Sleeper Depth Chart -->
+  <ng-container matColumnDef="depth">
+    <th mat-header-cell *matHeaderCellDef class="table-text">Depth</th>
+    <td mat-cell *matCellDef="let player" class="table-text">
+      {{ getDepthChartLabel(player) }}
+    </td>
+  </ng-container>
+
   <!-- Salary -->
   <ng-container matColumnDef="salary">
     <th mat-header-cell *matHeaderCellDef class="table-text">Salary</th>
@@ -163,11 +171,11 @@
     </td>
   </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="columns" class="table-row"></tr>
+  <tr mat-header-row *matHeaderRowDef="displayedColumns" class="table-row"></tr>
 
   <tr
     mat-row
-    *matRowDef="let row; let i = index; columns: columns;"
+    *matRowDef="let row; let i = index; columns: displayedColumns;"
     class="table-row"
     [ngClass]="{
       'cut-line': lineNumber !== null && i + 1 === lineNumber,

@@ -1,7 +1,8 @@
 import type { Player } from '../../core/models/player.models';
+import { comparePlayersByDepthChart } from './player-sort.util';
 
 export type RosterGroupMode = 'rosterStatus' | 'position' | 'rankingStatus' | 'none';
-export type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'ageAsc' | 'ageDesc' | 'name';
+export type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'depth' | 'ageAsc' | 'ageDesc' | 'name';
 
 export interface RosterPlayerGroup {
   key: string;
@@ -91,6 +92,8 @@ export function sortRosterPlayers(players: Player[], sortMode: RosterSortMode): 
         return b.SalaryProjected - a.SalaryProjected || nameCompare || a.ID.localeCompare(b.ID);
       case 'ranking':
         return compareCombinedRanking(a, b) || nameCompare || a.ID.localeCompare(b.ID);
+      case 'depth':
+        return comparePlayersByDepthChart(a, b);
       case 'ageAsc':
         return a.Age - b.Age || nameCompare || a.ID.localeCompare(b.ID);
       case 'ageDesc':
