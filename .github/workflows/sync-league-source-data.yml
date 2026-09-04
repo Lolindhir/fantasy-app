@@ -108,7 +108,7 @@ jobs:
           }
 
           assert_league_source_only() {
-            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
@@ -257,7 +257,7 @@ jobs:
             rm -f source-data/_sync/last-league-failure.json
             assert_league_source_only
 
-            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
             if (( ${#changed[@]} == 0 )); then
               echo "No canonical League source-data changes detected."
               exit 0
