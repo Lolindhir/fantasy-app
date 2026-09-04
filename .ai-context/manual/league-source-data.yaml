@@ -1,7 +1,7 @@
 schemaVersion: 1
 
 domain: league-source-data
-status: phase1b-inventory-completed-implementation-in-progress
+status: phase1b-completed-and-productively-accepted
 
 purpose: >
   Definiert die persistente Source-Data-Schicht fuer fantasy-ligaspezifische Daten.
@@ -17,7 +17,7 @@ phasePlan:
     canonicalContract: .ai-context/manual/nfl-source-data.yaml
   phase1B:
     name: League Source Layer
-    status: implementation-in-progress
+    status: completed-and-productively-accepted
     goal: >
       Sleeper-Liga-, Member-, Roster-, Bracket-, Matchup-, Transaction- und
       Draft-Daten persistent erfassen, saisonuebergreifend einer stabilen
@@ -25,7 +25,7 @@ phasePlan:
       und Fantasy Management materialisieren.
   phase2:
     name: Consumer Migration
-    status: blocked-until-phase1B-accepted
+    status: next
     goal: >
       App-Generatoren und Fantasy-Management-Basisableitungen auf source-data
       umstellen, ohne bestehende public/data-Contracts unbeabsichtigt zu aendern.
@@ -92,13 +92,14 @@ boundaries:
   appReadModels:
     path: public/data/**
     currentState: >
-      App-Generatoren lesen League-Daten in Phase 1B weiterhin ueber ihre heutigen
-      Provider-Pfade und erzeugen public/data Readmodels. Der neue Source-Layer
-      laeuft parallel und verdrahtet die produktiven Generatoren noch nicht um.
+      Auch nach produktiver Phase-1B-Abnahme lesen die bestehenden App-Generatoren
+      League-Daten bis zur Phase-2-Migration weiterhin ueber ihre heutigen
+      Provider-Pfade und erzeugen public/data Readmodels. Der akzeptierte Source-
+      Layer laeuft parallel und verdrahtet die produktiven Generatoren noch nicht um.
     targetState: >
-      public/data bleibt App-Ausgabe. Die Generatoren lesen erst nach produktiver
-      Phase-1B-Abnahme in Phase 2 aus den akzeptierten NFL- und League-Source-
-      Vertraegen.
+      public/data bleibt App-Ausgabe. Phase 2 migriert die Generatoren auf die
+      akzeptierten NFL- und League-Source-Vertraege, ohne die bestehenden
+      public/data-Contracts unbeabsichtigt zu aendern.
 
   fantasyManagement:
     path: fantasy-management/**
@@ -134,7 +135,7 @@ bootstrapContract:
     - Historische Sleeper-Instanzen werden ueber previous_league_id rueckwaerts entdeckt und persistent gespeichert.
     - Beim Saisonwechsel bleibt CanonicalLeagueID unveraendert und CurrentProviderLeagueID wird auf die neue Provider-Saison aktualisiert.
     - Jede weitere unabhaengige Fantasy-Liga erhaelt einen eigenen Bootstrap und eine eigene CanonicalLeagueID.
-    - public/data/Metadata.json bleibt waehrend Phase 1B unveraendert produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
+    - public/data/Metadata.json bleibt bis zur Phase-2-Consumer-Migration produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
 
 leagueIdentity:
   principle: >
@@ -191,6 +192,8 @@ leagueIdentity:
 
 multiLeagueModel:
   supportedByDesign: true
+  productiveSecondLeagueRequiredForPhase1BAcceptance: false
+  testEvidence: multi-bootstrap-regression-test
   exampleLayout: |
     source-data/leagues/
       _bootstrap/
@@ -206,7 +209,86 @@ multiLeagueModel:
   rule: >
     Source-Tools und Consumer muessen CanonicalLeagueID explizit behandeln. Keine
     globale Annahme, dass genau eine Fantasy-Liga existiert, darf in den Vertrag
-    eingebaut werden.
+    eingebaut werden. Das praktische Onboarding einer zweiten realen Liga kann
+    spaeter erfolgen, sobald eine weitere Provider-Liga verfuegbar ist.
+
+weekStructure:
+  acquisitionBoundary: >
+    Die hoechste zusammenhaengende kanonische NFL-Regular-Season-Woche ist nur die
+    dynamische aeussere Abrufgrenze fuer week-partitioned Sleeper Matchups und
+    Transactions. Sie ist nicht die Fantasy-Liga-Laenge.
+  seasonScope: CanonicalLeagueSeasonID
+  completedSeasonEvidence:
+    - Sleeper league settings including playoff_week_start and last_scored_leg
+    - Winners-bracket round structure
+    - Wochen mit mindestens einem zugeordneten Fantasy-Matchup where matchup_id is not null
+  trailingRosterScoring: >
+    Ein nichtleerer Sleeper-Matchup-Response nach dem Fantasy-Saisonende verlaengert
+    die Liga nicht automatisch. Sleeper kann weiter Roster-/Player-Scoring liefern,
+    obwohl alle matchup_id null sind. HighestNonEmptyMatchupWeek dokumentiert diese
+    Provider-Scoring-Evidenz; HighestAssignedMatchupWeek ist die relevante
+    Fantasy-Matchup-Evidenz.
+  failClosedRule: >
+    Ein echtes zugeordnetes Matchup nach last_scored_leg oder widerspruechliche
+    Saison-/Bracket-Evidenz bricht die Materialisierung fail-closed ab.
+  currentSeasonProjection: >
+    Ein laufendes Jahr darf sein Playoff-Format nur aus unzweideutiger historischer
+    Evidenz derselben raw playoff_round_type-Konfiguration projizieren. Unbekannte
+    oder widerspruechliche Provider-Werte werden nicht geraten.
+
+canonicalProviderNormalization:
+  tradeDeadline:
+    rawEvidenceField: settings.trade_deadline
+    canonicalField: TradeDeadlineWeek
+    noDeadlineValues:
+      - null
+      - empty
+      - non-numeric
+      - less-than-or-equal-zero
+      - 99
+    rule: >
+      Raw Provider Evidence bleibt unveraendert erhalten. Sleeper 99 bedeutet keine
+      Trade Deadline und wird kanonisch als null materialisiert; andere positive
+      numerische Wochen bleiben erhalten.
+
+productiveAcceptance:
+  acceptedAt: 2026-09-04
+  canonicalLeagueID: cl-220306ac3f9b480fa865e124098d8f56
+  productiveProviderLineage:
+    - season: 2026
+      ProviderLeagueID: "1354177383984267264"
+    - season: 2025
+      ProviderLeagueID: "1257421353431080960"
+    - season: 2024
+      ProviderLeagueID: "1133541805053714432"
+  datasetPartitions: 138
+  observedWeekStructure:
+    2024:
+      FinalLeagueWeek: 17
+      HighestAssignedMatchupWeek: 17
+      HighestNonEmptyMatchupWeek: 18
+      PlayoffFormat: one-week-rounds
+    2025:
+      FinalLeagueWeek: 17
+      HighestAssignedMatchupWeek: 17
+      HighestNonEmptyMatchupWeek: 18
+      PlayoffFormat: two-week-rounds
+    2026:
+      ExpectedLastLeagueWeek: 17
+      ProjectedPlayoffFormat: two-week-rounds
+  tradeDeadlineEvidence:
+    2024:
+      RawTradeDeadline: 11
+      TradeDeadlineWeek: 11
+    2025:
+      RawTradeDeadline: 11
+      TradeDeadlineWeek: 11
+    2026:
+      RawTradeDeadline: 99
+      TradeDeadlineWeek: null
+  totalNoOpVerified: true
+  productiveWorkflow: .github/workflows/sync-league-source-data.yml
+  consumerMigrationState: deferred-to-phase2
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
@@ -385,45 +467,52 @@ phase1BInventory:
 
   historicalLeagueDiscovery:
     currentMechanism: >
-      Get-LeaguesRecursive loads the current Sleeper league object and follows
-      previous_league_id recursively until no previous league exists. RequestStandings
-      performs equivalent traversal while also loading members, rosters and brackets
-      for every season. Transactions and historical draft processing reuse the league
-      chain.
-    persistenceGap: >
-      Die Provider-League-Objekte und damit previous_league_id werden heute nur zur
-      Laufzeit gelesen. Es existiert noch kein persistenter Raw-/Canonical-League-
-      Lineage-Vertrag.
+      Der Legacy-App-Pfad Get-LeaguesRecursive laedt weiterhin das aktuelle Sleeper-
+      League-Objekt und folgt previous_league_id rekursiv. Der akzeptierte Source-
+      Layer nutzt dieselbe Provider-Evidenz unabhaengig davon fuer persistente
+      Lineage-Discovery und Canonical-Mappings.
+    persistenceState: >
+      Provider-League-Objekte und previous_league_id-Evidenz werden unter
+      source-data/providers/sleeper/leagues/** persistent gehalten. Der kanonische
+      Manifest-/Season-Layer unter source-data/leagues/<CanonicalLeagueID>/** bindet
+      diese Provider-Instanzen fail-closed an stabile CanonicalLeagueID- und
+      CanonicalLeagueSeasonID-Werte. Die produktive 2026→2025→2024-Lineage ist
+      materialisiert und bestaetigt.
     currentLogicalLeagueEvidence:
       - season: 2024
         Provider: Sleeper
         ProviderLeagueID: "1133541805053714432"
-        evidence: public/data/past_seasons/Drafts/Drafts_2024.json
+        evidence:
+          - source-data/providers/sleeper/leagues/1133541805053714432/league.json
+          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2024/league.json
       - season: 2025
         Provider: Sleeper
         ProviderLeagueID: "1257421353431080960"
-        evidence: public/data/past_seasons/Drafts/Drafts_2025.json
+        evidence:
+          - source-data/providers/sleeper/leagues/1257421353431080960/league.json
+          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2025/league.json
       - season: 2026
         Provider: Sleeper
         ProviderLeagueID: "1354177383984267264"
         evidence:
-          - public/data/Metadata.json
-          - public/data/League.json
-    rawPreviousEdgesPersistedToday: false
-    canonicalLeagueIDAssignedToday: false
-    canonicalLeagueSeasonIDsAssignedToday: false
+          - source-data/providers/sleeper/leagues/1354177383984267264/league.json
+          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2026/league.json
+    rawPreviousEdgesPersistedToday: true
+    canonicalLeagueIDAssignedToday: true
+    canonicalLeagueSeasonIDsAssignedToday: true
 
   currentConsumerDependencies:
     app: >
       Die App-Generatoren lesen die Sleeper-Domaenen heute direkt ueber SleeperUtils
-      und erzeugen public/data Readmodels.
+      und erzeugen public/data Readmodels. Phase 1B aendert diesen produktiven Pfad
+      nicht; die Consumer-Migration ist Phase 2.
     fantasyManagement: >
       Fantasy Management liest den aktuellen League-/Ownership-/Draft-/Transaction-
       Zustand heute noch aus public/data. Phase 2 soll diese Basisfakten direkt aus
       dem gemeinsamen Layer ableitbar machen.
 
   sourceLayerDatasetCandidates:
-    status: implementation-scope
+    status: implemented-and-productive
     datasets:
       - league-instances
       - league-members
@@ -486,9 +575,9 @@ phase1BInventory:
       persistiert die Provider-Fakten je Woche; welche Woche League.json anzeigt,
       bleibt bis Phase 2 Generator-/App-Ableitung.
     - >
-      Die historische Sleeper-Kette wird bereits produktiv ueber previous_league_id
-      traversiert, ist aber heute nicht persistent und daher kein reproduzierbarer
-      Source-Fakt.
+      Die historische Sleeper-Kette wird ueber previous_league_id entdeckt und ist
+      inzwischen als Provider-Raw-Evidenz sowie kanonische League-/Season-Lineage
+      persistent und reproduzierbar materialisiert.
     - >
       Draft-spezifische traded_picks sind produktiv fuer eindeutige DraftInstance-
       Aufloesung erforderlich. Fuer League-level traded_picks ist bisher keine
@@ -517,5 +606,5 @@ acceptanceOrder:
   - Phase 1B persists a multi-league bootstrap and validates CanonicalLeagueID plus CanonicalLeagueSeasonID mappings
   - Phase 1B persists raw league provider data with provenance and no-op semantics
   - Phase 1B materializes normalized league facts and validates historical season linkage
-  - unchanged Phase 1B sync/materialization proves semantic total no-op
-  - only then may Phase 2 migrate App and Fantasy Management consumers
+  - unchanged Phase 1B sync/materialization has proven semantic total no-op productively
+  - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration has not started
