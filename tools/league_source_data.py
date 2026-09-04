@@ -26,6 +26,14 @@ from league_source_data_lib.materialize import (
 from league_source_data_lib.registry import load_league_registry
 
 
+def combine_sync_results(identity: dict, raw: dict) -> dict:
+    result = {**identity, **raw}
+    result["RawFilesChanged"] = int(identity.get("RawFilesChanged", 0)) + int(
+        raw.get("RawFilesChanged", 0)
+    )
+    return result
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -142,7 +150,7 @@ def main() -> int:
             offline=args.offline,
         )
         raw = persist_raw_plans(plans)
-        results.append({**identity, **raw})
+        results.append(combine_sync_results(identity, raw))
 
     print(json.dumps({"Leagues": results}, indent=2))
     return 0
