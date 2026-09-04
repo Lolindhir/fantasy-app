@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-03T21:29:15.222947Z",
-  "berlin_date": "2026-09-03",
+  "generated_at": "2026-09-04T03:54:56.820887Z",
+  "berlin_date": "2026-09-04",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
     "refresh_window_start": "05:00",
@@ -11,21 +11,32 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 6,
-    "stale_count": 0,
+    "fresh_count": 3,
+    "stale_count": 3,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "ok",
+  "overall_status": "degraded",
   "monitoring": {
-    "decision": "proceed",
+    "decision": "proceed_degraded",
     "allowed": true,
-    "no_event_conclusion_allowed": true,
-    "unfresh_source_ids": [],
+    "no_event_conclusion_allowed": false,
+    "unfresh_source_ids": [
+      "fftoday",
+      "cbs-sports",
+      "sleeper-trending"
+    ],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [],
-    "affected_signal_families": []
+    "no_event_blocking_source_ids": [
+      "fftoday",
+      "cbs-sports",
+      "sleeper-trending"
+    ],
+    "affected_signal_families": [
+      "external_activity",
+      "season_projection"
+    ]
   },
   "sources": [
     {
@@ -41,8 +52,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-09-03T05:08:09.056997Z",
-      "age_minutes": 981.1,
+      "checked_at": "2026-09-04T03:52:41.249436Z",
+      "age_minutes": 2.26,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -59,8 +70,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-09-03T05:08:09.355366Z",
-      "age_minutes": 981.1,
+      "checked_at": "2026-09-04T03:52:38.814184Z",
+      "age_minutes": 2.3,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -76,8 +87,8 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-09-03T05:08:10.193851Z",
-      "age_minutes": 981.08,
+      "checked_at": "2026-09-04T03:52:48.165921Z",
+      "age_minutes": 2.14,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -91,10 +102,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "fresh",
-      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "status": "stale",
+      "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-03T05:08:17.618207Z",
-      "age_minutes": 980.96,
+      "age_minutes": 1366.65,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -108,10 +119,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "fresh",
-      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "status": "stale",
+      "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-03T05:08:25.923061Z",
-      "age_minutes": 980.82,
+      "age_minutes": 1366.51,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -125,16 +136,16 @@
       "affected_signal_families": [
         "external_activity"
       ],
-      "status": "fresh",
-      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "status": "stale",
+      "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-03T05:08:11.671899Z",
-      "age_minutes": 981.06,
+      "age_minutes": 1366.75,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
   ],
   "quality": {
-    "status": "ok",
+    "status": "degraded",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
