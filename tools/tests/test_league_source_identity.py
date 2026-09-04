@@ -11,6 +11,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from league_source_data import combine_sync_results  # noqa: E402
 from league_source_data_lib.core import (  # noqa: E402
     LeagueBootstrap,
     build_manifest,
@@ -163,6 +164,24 @@ class LeagueSourceIdentityTests(unittest.TestCase):
             self.assertTrue(first["ManifestChanged"])
             self.assertEqual(second["RawFilesChanged"], 0)
             self.assertFalse(second["ManifestChanged"])
+
+    def test_reporting_preserves_bootstrap_raw_changes(self) -> None:
+        identity = {
+            "CanonicalLeagueID": CANONICAL_ID,
+            "SeasonCount": 3,
+            "RawFilesChanged": 2,
+            "ManifestChanged": False,
+        }
+        raw = {
+            "DatasetPartitions": 138,
+            "RawFilesChanged": 0,
+            "MetadataFilesChanged": 0,
+        }
+        combined = combine_sync_results(identity, raw)
+        self.assertEqual(combined["RawFilesChanged"], 2)
+        self.assertEqual(combined["DatasetPartitions"], 138)
+        self.assertEqual(combined["MetadataFilesChanged"], 0)
+        self.assertFalse(combined["ManifestChanged"])
 
     def test_multiple_bootstraps_are_supported_without_single_league_assumption(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
