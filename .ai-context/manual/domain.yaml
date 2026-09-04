@@ -46,6 +46,33 @@ coreConcepts:
       A positive Sleeper trade_review_days value means trades are under
       commissioner review and therefore not freely open. TradeReviewDays exposes
       that Sleeper setting in the generated League.json contract.
+    waiverRules:
+      availabilityMeaning: >
+        WaiversOpen answers whether managers may currently submit waiver claims.
+        It does not mean that Sleeper is actively processing waivers at that
+        moment. A submitted claim may remain pending until the next configured
+        waiver processing run.
+      nextRunTarget: >
+        The planned public League read model extension tracked in Issue #328 is one
+        app-ready absolute next waiver-processing timestamp derived in the
+        generation layer from the league's Sleeper settings. Angular must render
+        that result and must not decode raw Sleeper waiver schedule fields or
+        hard-code the league's current weekdays, local clock time or a fixed
+        timezone offset.
+      publicUiBoundary: >
+        Waiver order type and Team.WaiverPosition are not part of the public UI
+        target for Issue #328. Waiver priority is strategically sensitive and may
+        remain available to private Fantasy Management consumers without being
+        surfaced to every app user.
+      movesBoundary: >
+        Pending waiver claims do not belong in Moves. Moves remains completed
+        chronological transaction history.
+      playerMarketBoundary: >
+        The existing FreeAgentMarket terminology and player UI remain unchanged
+        for this scope. If the league later enables classic Free Agency or mixed
+        acquisition modes, acquisition-state presentation should be generalized
+        from the league-wide configuration in a separate intentional change rather
+        than speculatively modeling waiver candidates now.
 
   Team:
     description: >
