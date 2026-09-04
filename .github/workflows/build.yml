@@ -22,6 +22,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install workflow-health test dependency
+        run: python -m pip install "PyYAML>=6,<7"
+
       - name: Run workflow-health regression tests
         run: python -m unittest tools/tests/test_build_workflow_health_snapshot.py -v
 

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).parents[1] / "build_workflow_health_snapshot.py"
+REPOSITORY_ROOT = Path(__file__).parents[2]
 spec = importlib.util.spec_from_file_location("workflow_health", MODULE_PATH)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -99,6 +100,11 @@ class WorkflowEvaluationTests(unittest.TestCase):
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_canonical_monitoring_policy_parses(self):
+        policy = module.load_policy(REPOSITORY_ROOT / ".ai-context/manual/workflow-monitoring.yaml")
+        self.assertEqual(policy["ownership"]["canonicalFile"], ".ai-context/manual/workflow-monitoring.yaml")
+        self.assertEqual(policy["snapshot"]["cadence"]["observationBarrier"]["deadlineAnchor"], "productive-blocker-start-or-dispatch-time")
+
     def test_configuration_drift_is_fail_closed(self):
         policy = {
             "ownership": {"canonicalFile": ".ai-context/manual/workflow-monitoring.yaml"},

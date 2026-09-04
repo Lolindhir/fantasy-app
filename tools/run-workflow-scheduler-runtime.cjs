@@ -333,6 +333,12 @@ async function evaluateTargetFromGithub({ github, context, target, profile, retr
   return evaluation;
 }
 
+function blockerStartTime(peer) {
+  if (peer.decision === 'in-flight') return peer.inFlightCreatedAt || peer.dueAt || null;
+  if (peer.decision === 'awaiting-observation') return peer.lastDispatchAt || peer.dueAt || null;
+  return peer.dueAt || null;
+}
+
 function applyTargetDeferral(target, result, peerResults, now) {
   const deferral = target.deferUntilOtherTargetsSettled;
   if (!deferral || result.decision !== 'dispatch') return result;
@@ -340,31 +346,51 @@ function applyTargetDeferral(target, result, peerResults, now) {
   const blockerDecisions = new Set(['dispatch', 'in-flight', 'awaiting-observation']);
   const blockers = peerResults
     .filter((peer) => peer.id !== target.id && peer.healthBarrier === true && blockerDecisions.has(peer.decision))
-    .map((peer) => ({
-      id: peer.id,
-      workflow: peer.workflow,
-      profile: peer.profile || null,
-      decision: peer.decision,
-      dueAt: peer.dueAt || null,
-      inFlightRunId: peer.inFlightRunId || null,
-    }));
+    .map((peer) => {
+      const startedAt = blockerStartTime(peer);
+      const startedAtMs = Date.parse(startedAt || '');
+      const ageMs = Number.isFinite(startedAtMs) ? Math.max(0, now.getTime() - startedAtMs) : null;
+      return {
+        id: peer.id,
+        workflow: peer.workflow,
+        profile: peer.profile || null,
+        decision: peer.decision,
+        dueAt: peer.dueAt || null,
+        inFlightRunId: peer.inFlightRunId || null,
+        blockerStartedAt: startedAt,
+        blockerAgeMinutes: ageMs === null ? null : Math.floor(ageMs / 60000),
+      };
+    });
   if (blockers.length === 0) return result;
 
-  const dueAtMs = Date.parse(result.dueAt || '');
-  if (!Number.isFinite(dueAtMs)) throw new Error(`Deferred target ${target.id} has invalid dueAt`);
-  const ageMs = Math.max(0, now.getTime() - dueAtMs);
+  const finiteAges = blockers
+    .map((blocker) => blocker.blockerAgeMinutes)
+    .filter((value) => Number.isFinite(value));
   const annotated = {
     ...result,
     blockingTargets: blockers,
-    deferralAgeMinutes: Math.floor(ageMs / 60000),
+    deferralAgeAnchor: 'productive-blocker-start',
+    deferralAgeMinutes: finiteAges.length ? Math.min(...finiteAges) : null,
     maxDeferralMinutes: deferral.maxMinutes,
   };
 
   if (blockers.some((blocker) => blocker.decision === 'dispatch')) {
     return { ...annotated, decision: 'deferred', deferralReason: 'productive-dispatch-this-tick', hardDispatchBarrier: true };
   }
-  if (ageMs < deferral.maxMinutes * 60000) {
-    return { ...annotated, decision: 'deferred', deferralReason: 'productive-in-flight-or-unobserved' };
+
+  const maxDeferralMs = deferral.maxMinutes * 60000;
+  const activeBlockers = blockers.filter((blocker) => {
+    const startedAtMs = Date.parse(blocker.blockerStartedAt || '');
+    if (!Number.isFinite(startedAtMs)) return true;
+    return Math.max(0, now.getTime() - startedAtMs) < maxDeferralMs;
+  });
+  if (activeBlockers.length > 0) {
+    return {
+      ...annotated,
+      decision: 'deferred',
+      blockingTargets: activeBlockers,
+      deferralReason: 'productive-in-flight-or-unobserved',
+    };
   }
   return { ...annotated, deferralExpired: true, deferralReason: 'in-flight-or-observation-deferral-expired' };
 }
@@ -433,7 +459,7 @@ function reasonForResult(result, timeZone) {
     case 'dispatch':
       if (result.deferralExpired) {
         const blockers = (result.blockingTargets || []).map((item) => `${item.id} (${item.decision})`).join(', ');
-        text = `Health starts because the ${result.maxDeferralMinutes}-minute observation deferral limit expired${blockers ? `; still unresolved: ${blockers}` : ''}.`;
+        text = `Health starts because every productive blocker exceeded its ${result.maxDeferralMinutes}-minute observation window${blockers ? `; still unresolved: ${blockers}` : ''}.`;
       } else if ((result.retryAttempt || 1) > 1) {
         text = `Retry ${result.retryAttempt}/${result.maxAttempts} after observed run #${result.previousRunId} ended ${result.previousConclusion}.`;
       } else {

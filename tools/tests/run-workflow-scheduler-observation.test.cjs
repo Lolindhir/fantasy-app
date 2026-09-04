@@ -151,7 +151,7 @@ test('fallback workflow-run query recovers a success omitted by the branch-filte
   assert.equal(calls[1].event, 'repository_dispatch');
 });
 
-test('awaiting observation delays Health before the anti-starvation limit but not after it', () => {
+test('awaiting observation uses its own dispatch time for the Health anti-starvation window', () => {
   const healthTarget = target({
     id: 'workflow-health',
     workflow: 'workflow-health-snapshot.yml',
@@ -161,19 +161,70 @@ test('awaiting observation delays Health before the anti-starvation limit but no
   });
   const healthResult = {
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', profile: 'observer', healthBarrier: false,
-    decision: 'dispatch', dueAt: '2026-09-04T13:37:00.000Z',
+    decision: 'dispatch', dueAt: '2026-09-04T10:37:00.000Z',
   };
   const peer = {
     id: 'league', workflow: 'update-league.yml', profile: 'productive', healthBarrier: true,
-    decision: 'awaiting-observation', dueAt: '2026-09-04T13:30:00.000Z',
+    decision: 'awaiting-observation', dueAt: '2026-09-04T13:30:00.000Z', lastDispatchAt: '2026-09-04T17:22:00.000Z',
   };
-  const before = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T13:50:00Z'));
+  const before = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:25:00Z'));
   assert.equal(before.decision, 'deferred');
   assert.equal(before.deferralReason, 'productive-in-flight-or-unobserved');
+  assert.equal(before.deferralAgeAnchor, 'productive-blocker-start');
+  assert.equal(before.deferralAgeMinutes, 3);
 
-  const after = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T13:58:00Z'));
+  const after = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:43:00Z'));
   assert.equal(after.decision, 'dispatch');
   assert.equal(after.deferralExpired, true);
+});
+
+test('stale Health slot still waits for a freshly started productive in-flight run', () => {
+  const healthTarget = target({
+    id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', eventType: 'scheduler-workflow-health', profile: 'observer',
+    deferUntilOtherTargetsSettled: { maxMinutes: 20 },
+  });
+  const healthResult = {
+    id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', profile: 'observer', healthBarrier: false,
+    decision: 'dispatch', dueAt: '2026-09-04T10:37:00.000Z', latestDueAt: '2026-09-04T17:07:00.000Z',
+  };
+  const peers = [
+    healthResult,
+    {
+      id: 'league', workflow: 'update-league.yml', profile: 'productive', healthBarrier: true,
+      decision: 'in-flight', dueAt: '2026-09-04T17:20:00.000Z', inFlightRunId: 33900269935,
+      inFlightCreatedAt: '2026-09-04T17:22:57.000Z',
+    },
+    {
+      id: 'games', workflow: 'update-games.yml', profile: 'productive', healthBarrier: true,
+      decision: 'in-flight', dueAt: '2026-09-04T17:00:00.000Z', inFlightRunId: 33900270434,
+      inFlightCreatedAt: '2026-09-04T17:22:57.000Z',
+    },
+  ];
+  const result = scheduler.applyTargetDeferral(healthTarget, healthResult, peers, new Date('2026-09-04T17:25:01.000Z'));
+  assert.equal(result.decision, 'deferred');
+  assert.equal(result.deferralAgeMinutes, 2);
+  assert.equal(result.blockingTargets.length, 2);
+  assert.equal(result.blockingTargets[0].blockerStartedAt, '2026-09-04T17:22:57.000Z');
+});
+
+test('productive in-flight work older than the blocker window no longer starves Health', () => {
+  const healthTarget = target({
+    id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', eventType: 'scheduler-workflow-health', profile: 'observer',
+    deferUntilOtherTargetsSettled: { maxMinutes: 20 },
+  });
+  const healthResult = {
+    id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', profile: 'observer', healthBarrier: false,
+    decision: 'dispatch', dueAt: '2026-09-04T17:07:00.000Z',
+  };
+  const peer = {
+    id: 'league', workflow: 'update-league.yml', profile: 'productive', healthBarrier: true,
+    decision: 'in-flight', dueAt: '2026-09-04T17:00:00.000Z', inFlightRunId: 10,
+    inFlightCreatedAt: '2026-09-04T17:00:00.000Z',
+  };
+  const result = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:21:00Z'));
+  assert.equal(result.decision, 'dispatch');
+  assert.equal(result.deferralExpired, true);
+  assert.equal(result.deferralAgeMinutes, 21);
 });
 
 test('observation timeout and observation cooldown do not block Health', () => {

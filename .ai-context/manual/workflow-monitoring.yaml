@@ -30,7 +30,8 @@ snapshot:
       sameTickProductiveDispatch: hard-defer-current-tick
       inFlightMaxDeferralMinutes: 20
       awaitingObservationMaxDeferralMinutes: 20
-      deadlineAnchor: persisted-original-health-due-slot
+      deadlineAnchor: productive-blocker-start-or-dispatch-time
+      healthDueSlotPersistence: retained-for-slot-dedupe-only
       nonBlockingSchedulerStates:
       - retry-wait
       - retry-exhausted
@@ -47,10 +48,10 @@ snapshot:
   - If the state branch does not yet exist, the snapshot producer initializes it as an orphan branch containing only monitoring state.
   - The central scheduler owns the `:07` and `:37` Health due slots according to `.github/workflow-schedules.json`.
   - Only scheduler targets whose configured profile has `healthBarrier: true` can delay Workflow Health. The current `productive` profile is blocking; `maintenance` and `observer` are not.
-  - A productive target that will be dispatched in the same scheduler tick is a hard barrier for that tick. Health must wait even when the original Health due slot is already older than the in-flight deferral limit.
-  - A productive target that is already in-flight or whose requested dispatch is temporarily awaiting GitHub run observation may delay Health for at most 20 minutes from the persisted original Health due slot. After that limit the next scheduler evaluation may dispatch Health despite the unresolved observation.
-  - A deferred Health due slot is persisted in scheduler runtime state, so crossing a later `:07` or `:37` schedule boundary cannot silently reset the observation deadline.
-  - `retry-wait`, `retry-exhausted`, retry `cooldown`, `observation-timeout` and `observation-cooldown` are not Health blockers. Once retry or dispatch observation can no longer productively settle in the current window, Health must be allowed to materialize the observable state instead of being starved.
+  - A productive target that will be dispatched in the same scheduler tick is a hard barrier for that tick. Health must wait even when the persisted Health due slot is already old.
+  - A productive target that is already in-flight may delay Health for at most 20 minutes from that run's own creation/start time. A productive target awaiting GitHub run observation may delay Health for at most 20 minutes from the persisted dispatch-request time. Health remains deferred while at least one productive blocker is still inside its own window.
+  - A deferred Health due slot remains persisted for slot deduplication, but its age does not consume the deferral budget of productive work that started later. Crossing a later `:07` or `:37` boundary also does not silently replace that Health slot while it remains unresolved.
+  - Retry-wait, retry-exhausted, retry cooldown, observation-timeout and observation-cooldown are not Health blockers. Once retry or dispatch observation can no longer productively settle in the current window, Health must be allowed to materialize the observable state instead of being starved.
   - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
@@ -330,7 +331,7 @@ workflows:
   .github/workflows/workflow-health-snapshot.yml:
     category: non-paging
     relevantEvents: []
-    rationale: Scheduler-dispatched 30-minute snapshot producer. Productive same-tick dispatches hard-defer Health; already in-flight or awaiting-observation productive work can delay it for at most 20 minutes from the persisted original Health due slot. Retry-wait/exhausted/cooldown and observation-timeout/cooldown states do not block it. It has no independent schedule, push or workflow_run trigger; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
+    rationale: Scheduler-dispatched 30-minute snapshot producer. Productive same-tick dispatches hard-defer Health; already in-flight or awaiting-observation productive work can delay it for at most 20 minutes from each blocker's own run/dispatch start. Retry-wait/exhausted/cooldown and observation-timeout/cooldown states do not block it. It has no independent schedule, push or workflow_run trigger; its availability is monitored through workflow-health.json freshness rather than recursive run-health evaluation.
 future:
   dailyDigest:
     status: planned-later
