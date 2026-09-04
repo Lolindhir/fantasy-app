@@ -78,11 +78,26 @@ class LeagueSourceWeekStructureTests(unittest.TestCase):
         return [{"r": round_number, "m": round_number} for round_number in range(1, rounds + 1)]
 
     @staticmethod
-    def _matchups(last_week: int, ceiling: int = 18) -> dict[int, object]:
-        return {
+    def _matchups(
+        last_week: int,
+        ceiling: int = 18,
+        *,
+        trailing_unassigned_scoring_week: int | None = None,
+    ) -> dict[int, object]:
+        result = {
             week: ([{"roster_id": 1, "matchup_id": 1}] if week <= last_week else [])
             for week in range(1, ceiling + 1)
         }
+        if trailing_unassigned_scoring_week is not None:
+            result[trailing_unassigned_scoring_week] = [
+                {
+                    "roster_id": 1,
+                    "matchup_id": None,
+                    "points": 123.45,
+                    "players_points": {"player-1": 12.3},
+                }
+            ]
+        return result
 
     def test_playoff_format_is_season_specific_and_projects_only_from_history(self) -> None:
         structures = derive_season_week_structures(
@@ -139,6 +154,50 @@ class LeagueSourceWeekStructureTests(unittest.TestCase):
             by_season[2026]["ProjectionEvidence"],
             {"Source": "historical-same-playoff-round-type", "EvidenceSeasons": [2025]},
         )
+
+    def test_completed_season_ignores_unassigned_postseason_roster_scoring(self) -> None:
+        structures = derive_season_week_structures(
+            [
+                (
+                    self._league(
+                        2024,
+                        status="complete",
+                        playoff_start=16,
+                        playoff_teams=4,
+                        playoff_round_type=1,
+                        last_scored_leg=17,
+                    ),
+                    self._bracket(2),
+                    self._matchups(17, trailing_unassigned_scoring_week=18),
+                    18,
+                )
+            ]
+        )
+        structure = structures[0]
+        self.assertEqual(structure["HighestNonEmptyMatchupWeek"], 18)
+        self.assertEqual(structure["HighestAssignedMatchupWeek"], 17)
+        self.assertEqual(structure["FinalLeagueWeek"], 17)
+        self.assertEqual(structure["ObservedPlayoffFormat"], "one-week-rounds")
+
+    def test_completed_season_still_fails_on_assigned_matchup_after_last_scored_leg(self) -> None:
+        with self.assertRaisesRegex(ValueError, "assigned matchup week 18 beyond last_scored_leg 17"):
+            derive_season_week_structures(
+                [
+                    (
+                        self._league(
+                            2024,
+                            status="complete",
+                            playoff_start=16,
+                            playoff_teams=4,
+                            playoff_round_type=1,
+                            last_scored_leg=17,
+                        ),
+                        self._bracket(2),
+                        self._matchups(18),
+                        18,
+                    )
+                ]
+            )
 
     def test_same_provider_round_type_with_conflicting_history_fails_closed(self) -> None:
         inputs = [
