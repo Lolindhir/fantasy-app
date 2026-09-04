@@ -905,12 +905,11 @@ decisions:
       productive dispatch selected in the current Scheduler tick is a hard Health
       blocker for that tick regardless of Health age. An already in-flight
       productive target may stop blocking Health after the configured 20-minute
-      anti-starvation window measured from the original Health due slot. Retry
-      backoff, retry-exhausted and circuit-breaker cooldown states do not block
-      Health, so persistent productive failures remain observable by the Health
-      snapshot. Scheduler runs retain structured JSON decision logs and additionally
-      write a human-readable GitHub Job Summary with target profile, decision,
-      action, due slot, attempt and explanation.
+      anti-starvation window. Retry backoff, retry-exhausted and circuit-breaker
+      cooldown states do not block Health, so persistent productive failures remain
+      observable by the Health snapshot. Scheduler runs retain structured JSON
+      decision logs and additionally write a human-readable GitHub Job Summary with
+      target profile, decision, action, due slot, attempt and explanation.
     rationale: >
       Persistent failures must self-limit rather than consume Actions indefinitely,
       while transient failures still deserve automatic recovery attempts. A fresh
@@ -983,3 +982,46 @@ decisions:
         - Scheduler evaluation may issue a second Actions API read for targets with unresolved dispatch observation.
         - A genuinely lost repository_dispatch can wait through the observation timeout and cooldown before a fresh probe cycle.
         - Scheduler runtime semantics now distinguish retry circuits from dispatch-observation circuits.
+
+  - id: ADR-035
+    title: Health anti-starvation is measured from productive blocker age
+    status: accepted
+    context: >
+      Productive validation after ADR-034 exposed a second Health-barrier defect.
+      Scheduler #25 correctly recognized freshly started League and Games runs as
+      in-flight, but Workflow Health still dispatched because its persisted Health
+      due slot was several hours old. The previous anti-starvation calculation used
+      that Health-slot age, so a fresh productive run could inherit an already
+      expired observation window. The dispatched Health run then also exposed that
+      the canonical workflow-monitoring.yaml itself was not being parse-validated
+      in CI and contained invalid YAML syntax.
+    decision: >
+      Keep the persisted Health due slot for slot identity and deduplication, but do
+      not use its age to consume the observation window of productive work that
+      started later. A same-tick productive dispatch remains a hard Health blocker.
+      For an already in-flight productive target, measure the bounded Health
+      deferral from that run's own created/start timestamp. For
+      `awaiting-observation`, measure it from the persisted scheduler dispatch time.
+      Health remains deferred while at least one productive blocker is inside its
+      own configured window; only when every non-hard blocker has exceeded that
+      window may Health proceed. Persisting an old Health slot therefore cannot make
+      newly started productive work immediately non-blocking. CI must load and parse
+      the real canonical workflow-monitoring.yaml in addition to testing synthetic
+      snapshot policies.
+    rationale: >
+      The anti-starvation limit is intended to bound how long monitoring waits for
+      one unresolved productive operation, not how old the monitoring request is.
+      Anchoring the limit to each blocker preserves fresh-state observation while
+      still guaranteeing that a genuinely hung productive run cannot suppress
+      Health forever. Parsing the actual policy in CI closes the gap that allowed a
+      syntactically invalid canonical monitoring contract to merge successfully.
+    consequences:
+      positive:
+        - Fresh in-flight productive work is observed before Health even after a long Scheduler outage or stale Health slot.
+        - Truly long-running productive work still stops blocking after the configured limit.
+        - Mixed blocker sets defer Health while any fresh blocker remains active.
+        - Machine-readable Scheduler output exposes blocker start time and blocker age.
+        - Invalid canonical monitoring YAML fails in CI before reaching the Health workflow.
+      negative:
+        - Health deferral semantics now depend on trustworthy run-created or dispatch-request timestamps for blockers.
+        - A missing blocker timestamp is treated conservatively as still blocking until another state transition resolves it.
