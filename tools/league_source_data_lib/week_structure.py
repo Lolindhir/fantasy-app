@@ -194,6 +194,7 @@ def derive_observed_week_structure(
     )
 
     highest_nonempty_matchup_week: int | None = None
+    highest_assigned_matchup_week: int | None = None
     for week, raw in matchup_by_week.items():
         if not isinstance(week, int) or week < 1 or week > nfl_week_ceiling:
             raise ValueError(f"Matchup evidence contains invalid week {week!r}")
@@ -201,21 +202,36 @@ def derive_observed_week_structure(
             raise ValueError(f"Sleeper matchup week {week} must be an array")
         if raw:
             highest_nonempty_matchup_week = max(highest_nonempty_matchup_week or week, week)
+        for item in raw:
+            if not isinstance(item, dict):
+                raise ValueError(f"Sleeper matchup week {week} contains a non-object entry")
+            matchup_id = item.get("matchup_id")
+            if matchup_id is None:
+                continue
+            assigned_matchup_id = _optional_positive_int(
+                matchup_id,
+                f"matchups.week-{week}.matchup_id",
+            )
+            if assigned_matchup_id is None:
+                raise ValueError(
+                    f"Sleeper matchup week {week} contains a non-positive matchup_id"
+                )
+            highest_assigned_matchup_week = max(highest_assigned_matchup_week or week, week)
 
     last_scored_leg = _optional_positive_int(
         settings.get("last_scored_leg"), "settings.last_scored_leg"
     )
     final_week: int | None = None
     if completed:
-        final_week = last_scored_leg or highest_nonempty_matchup_week
+        final_week = last_scored_leg or highest_assigned_matchup_week
         if final_week is None:
             raise ValueError(
                 f"Completed Sleeper season {season} has no final-week evidence"
             )
-        if highest_nonempty_matchup_week is not None and highest_nonempty_matchup_week > final_week:
+        if highest_assigned_matchup_week is not None and highest_assigned_matchup_week > final_week:
             raise ValueError(
-                f"Completed Sleeper season {season} has non-empty matchup week "
-                f"{highest_nonempty_matchup_week} beyond last_scored_leg {final_week}"
+                f"Completed Sleeper season {season} has assigned matchup week "
+                f"{highest_assigned_matchup_week} beyond last_scored_leg {final_week}"
             )
         if final_week > nfl_week_ceiling:
             raise ValueError(
@@ -233,6 +249,7 @@ def derive_observed_week_structure(
         "PlayoffRoundType": provider_round_type,
         "PlayoffRoundCount": round_count,
         "HighestNonEmptyMatchupWeek": highest_nonempty_matchup_week,
+        "HighestAssignedMatchupWeek": highest_assigned_matchup_week,
         "LastScoredLeg": last_scored_leg,
         "ObservedPlayoffFormat": observed_format,
         "ProjectedPlayoffFormat": observed_format if observed_format in STANDARD_PLAYOFF_FORMATS else None,
