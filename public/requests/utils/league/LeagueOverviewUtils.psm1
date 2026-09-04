@@ -27,7 +27,9 @@ function Resolve-LeagueTradeDeadlineWeek {
         return $null
     }
 
-    if ($deadlineWeek -le 0) {
+    # Sleeper publishes 99 when the league trade deadline is disabled. Keep the
+    # raw provider value in League.Settings, but expose no app-facing deadline.
+    if ($deadlineWeek -le 0 -or $deadlineWeek -eq 99) {
         return $null
     }
 

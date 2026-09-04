@@ -1,0 +1,50 @@
+id: league-overview-utils
+title: League Overview Utils
+layer: generator-scripts
+
+responsibility: >
+  Normalizes provider-backed league overview inputs into app-facing League.json
+  facts such as TradeDeadlineWeek, SeasonKickoff and the current matchup snapshot.
+
+tradeDeadlineContract:
+  source: Sleeper league settings.trade_deadline
+  normalizedField: public/data/League.json::TradeDeadlineWeek
+  rawProviderField: public/data/League.json::Settings.trade_deadline
+  noDeadlineSentinel:
+    providerValue: 99
+    meaning: >
+      Sleeper uses 99 when the league trade deadline is disabled. This is a
+      provider sentinel, not an actual NFL/fantasy league week.
+    appValue: null
+    rationale: >
+      The app-facing field is nullable and represents an actual configured trade
+      deadline week only. Exposing 99 would incorrectly make the frontend render
+      a fictional "Week 99" deadline.
+  otherNullCases:
+    - missing or null provider value
+    - blank provider value
+    - non-numeric provider value
+    - numeric value less than or equal to 0
+  validConfiguredWeeks: >
+    Positive numeric trade-deadline weeks other than the Sleeper sentinel 99 are
+    passed through unchanged.
+  boundaries:
+    - Keep the raw Sleeper value unchanged under League.Settings for provider provenance.
+    - Normalize only the app-facing TradeDeadlineWeek field.
+    - Angular consumers must use TradeDeadlineWeek and must not special-case Sleeper value 99.
+
+regressionCoverage:
+  script: public/requests/LeagueTransactionPipelineRegressionTest.ps1
+  assertions:
+    - Sleeper sentinel 99 normalizes to null.
+    - normal positive configured weeks remain unchanged.
+    - existing null, non-positive and non-numeric cases remain null.
+
+relatedManualDocs:
+  - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/domain.yaml
+  - .ai-context/manual/data-sources.yaml
+
+aiWarnings:
+  - Never interpret raw Sleeper trade_deadline 99 as an actual trade deadline week.
+  - Do not move this provider normalization into Angular presentation code.
