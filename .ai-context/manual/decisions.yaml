@@ -935,3 +935,51 @@ decisions:
         - The Scheduler now depends on an additional isolated runtime-state branch.
         - Profile, state reconciliation and retry-cycle behavior increase Scheduler implementation complexity.
         - A failed target may remain unretried during its configured cooldown even if the underlying cause is fixed immediately.
+
+  - id: ADR-034
+    title: Scheduler retries require positive run evidence
+    status: accepted
+    context: >
+      Productive validation of ADR-033 exposed a reconciliation gap: Scheduler #21
+      dispatched League for a due slot and the resulting League run completed
+      successfully, but a later Scheduler run did not receive that run in its
+      branch-filtered workflow-run list response. The persisted scheduler state
+      still proved that a dispatch request had been issued. Treating the missing
+      list observation as if the prior attempt had failed caused duplicate League
+      dispatches and advanced the retry counter without any observed failure run.
+    decision: >
+      Treat GitHub Actions run history as positive evidence for execution state and
+      conclusions, not as a strongly consistent negative oracle. Scheduler runtime
+      state is authoritative for the fact that a dispatch request was issued and
+      for its timing. If a persisted dispatch is not visible in the primary
+      workflow-run query, perform one workflow-specific repository_dispatch fallback
+      query without the branch parameter and re-apply local main/event/due-slot
+      matching after merging and deduplicating the responses. If the dispatch is
+      still not visible, classify the target as `awaiting-observation`; absence is
+      unknown state and must never increment attempts or authorize a retry. A retry
+      is allowed only after an actually observed repository_dispatch run for the
+      active cycle has completed with a non-success conclusion. Awaiting observation
+      may block Workflow Health only within the same 20-minute anti-starvation
+      window used for in-flight work. If a dispatch remains unobserved for 15
+      minutes, open an observation circuit instead of issuing a blind retry; while
+      that circuit is open the target does not block Health, and after the 60-minute
+      cooldown a later Scheduler tick may start one fresh cycle for the then-current
+      due slot.
+    rationale: >
+      GitHub's workflow-run list is suitable evidence when it returns a run, but the
+      scheduler must remain correct if one read is temporarily incomplete. Separating
+      dispatch-request evidence from run-outcome evidence makes reconciliation
+      monotonic: uncertainty can delay a decision, but it cannot fabricate a failure
+      or duplicate productive work. The bounded observation circuit also prevents an
+      indefinitely invisible run from creating Actions spam or starving monitoring.
+    consequences:
+      positive:
+        - A successful productive run cannot be retried solely because one list read omitted it.
+        - Retry counters advance only from observed scheduler-triggered runs.
+        - A second run-list path can recover branch-filter anomalies without weakening local main filtering.
+        - Unknown observation is explicit in JSON logs and the Job Summary.
+        - Missing observation cannot create unbounded Actions retries or suppress Health forever.
+      negative:
+        - Scheduler evaluation may issue a second Actions API read for targets with unresolved dispatch observation.
+        - A genuinely lost repository_dispatch can wait through the observation timeout and cooldown before a fresh probe cycle.
+        - Scheduler runtime semantics now distinguish retry circuits from dispatch-observation circuits.
