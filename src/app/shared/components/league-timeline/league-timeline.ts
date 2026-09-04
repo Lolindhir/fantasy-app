@@ -36,13 +36,18 @@ export class LeagueTimelineComponent {
     const now = new Date();
     const kickoff = this.parseDate(this.league.SeasonKickoff);
     const capDeadline = this.parseDate(this.league.CapDeadline);
+    const nextWaiverRun = this.parseDate(this.league.NextWaiverRun);
     const currentWeek = this.getCurrentWeek();
     const playoffItem = this.league.PlayoffStartWeek > 0
       ? this.buildWeekItem('Playoffs start', this.league.PlayoffStartWeek, '🏆')
       : null;
     const tradeDeadlineItem = this.league.TradeDeadlineWeek !== null
+      && this.league.TradeDeadlineWeek <= this.league.LastLeagueWeek
       && this.league.TradeDeadlineWeek > currentWeek
       ? this.buildWeekItem('Trade deadline', this.league.TradeDeadlineWeek, '🤝')
+      : null;
+    const waiverItem = nextWaiverRun && nextWaiverRun.getTime() > now.getTime()
+      ? this.buildDateItem('Next waiver run', nextWaiverRun, '🔄', now, true)
       : null;
 
     if (this.league.Status === 'Off-Season') {
@@ -83,6 +88,10 @@ export class LeagueTimelineComponent {
     }
 
     if (this.league.Status === 'In-Season') {
+      if (waiverItem) {
+        return { primary: waiverItem, secondary: tradeDeadlineItem ?? playoffItem };
+      }
+
       if (tradeDeadlineItem) {
         return { primary: tradeDeadlineItem, secondary: playoffItem };
       }
@@ -138,12 +147,18 @@ export class LeagueTimelineComponent {
     return this.buildDateItem('Season kickoff', kickoff, '🏈', now);
   }
 
-  private buildDateItem(label: string, date: Date, icon: string, now: Date): LeagueTimelineItem {
+  private buildDateItem(
+    label: string,
+    date: Date,
+    icon: string,
+    now: Date,
+    includeLocalTime = false
+  ): LeagueTimelineItem {
     return {
       icon,
       label,
       value: this.formatCountdown(date.getTime() - now.getTime()),
-      detail: this.formatDate(date)
+      detail: includeLocalTime ? this.formatLocalDateTime(date) : this.formatDate(date)
     };
   }
 
@@ -183,6 +198,17 @@ export class LeagueTimelineComponent {
         timeZone: 'UTC'
       }).format(date);
     }
+  }
+
+  private formatLocalDateTime(date: Date): string {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    }).format(date);
   }
 
   private formatCountdown(msLeft: number): string {

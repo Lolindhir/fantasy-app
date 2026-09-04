@@ -13,6 +13,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\WaiverUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
@@ -80,7 +81,7 @@ function Get-Compare {
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
             'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SeasonKickoff', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
-            'WaiversOpen', 'WaiversMetaText', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
+            'WaiversOpen', 'WaiversMetaText', 'NextWaiverRun', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
 
         foreach ($prop in $propsToCheck) {
@@ -177,7 +178,6 @@ try {
         Write-Warning "Update-LeagueDraftsOrderAwareFromTransactions returned no drafts. Falling back to local Drafts.json."
         $drafts = Get-LeagueDraftsLocal
     }
-
     # Fertige Draftdaten liefern Pickpositionen/Spieler in-memory zurück an die Transactions.
     $transactionsCurrentSeason = Add-LeagueTransactionDraftPickDetailsInMemory `
         -transactions $transactionsCurrentSeason `
@@ -468,11 +468,16 @@ try {
         $tradesOpen = $false
     }
 
-    Write-Host "League is in status '$status' with phase '$phase'." -ForegroundColor Yellow
-    Write-Host "Waivers open: $waiversOpen | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
-    
+    $nextWaiverRun = $null
+    if ($status -ne "Completed") {
+        $nextWaiverRunUtc = Resolve-LeagueNextWaiverRunUtc -League $league
+        if ($null -ne $nextWaiverRunUtc) {
+            $nextWaiverRun = $nextWaiverRunUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
+        }
+    }
 
-    # Ermitteln, wann die Waivers sind
+    Write-Host "League is in status '$status' with phase '$phase'." -ForegroundColor Yellow
+    Write-Host "Waivers open: $waiversOpen | Next waiver run: $nextWaiverRun | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
 
     # Waiver Wire Reihenfolge ermitteln
 
@@ -499,6 +504,7 @@ try {
         CutsMetaText            = $cutsMetaText
         WaiversOpen             = $waiversOpen
         WaiversMetaText         = $waiversMetaText
+        NextWaiverRun           = $nextWaiverRun
         TradesOpen              = $tradesOpen
         TradesMetaText          = $tradesMetaText
         TotalTeams              = $league.total_rosters

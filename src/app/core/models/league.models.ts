@@ -125,6 +125,7 @@ export interface RawLeague {
   CutsMetaText: string;
   WaiversOpen: boolean;
   WaiversMetaText: string;
+  NextWaiverRun?: string | null;
   TradesOpen: boolean;
   TradesMetaText: string;
   TotalTeams?: number;
