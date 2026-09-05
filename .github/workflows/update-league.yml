@@ -15,6 +15,12 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Fire drill - intentional Workflow Health failure
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          echo "::error::Intentional production failure for Workflow Health fire drill (#248)."
+          exit 1
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
