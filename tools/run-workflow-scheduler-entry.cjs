@@ -107,7 +107,7 @@ async function run({
     sleepFn,
   });
   const results = await runtime.run({ github: retryingGithub, context, core, configPath, now });
-  await projectFieldSync.run({ github, context, core, configPath, now });
+  await projectFieldSync.run({ github: retryingGithub, context, core, configPath, now });
   return results;
 }
 

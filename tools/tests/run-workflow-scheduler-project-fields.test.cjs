@@ -19,6 +19,18 @@ function issue(number, updatedAt, extra = {}) {
   return { number, updated_at: updatedAt, ...extra };
 }
 
+function evaluate(overrides = {}) {
+  return scheduler.evaluateProjectFieldSync({
+    now: new Date('2026-09-05T06:00:00Z'),
+    since: '2026-09-05T05:30:00Z',
+    issues: [],
+    inFlight: null,
+    config,
+    pendingState: null,
+    ...overrides,
+  });
+}
+
 test('central scheduler config owns the Project field sync debounce contract', () => {
   const fullConfig = JSON.parse(fs.readFileSync(path.join(ROOT, '.github', 'workflow-schedules.json'), 'utf8'));
   assert.deepEqual(fullConfig.projectFieldSync, config);
@@ -38,67 +50,78 @@ test('scheduler entry invokes the Project field sync detector after normal sched
   const content = fs.readFileSync(path.join(ROOT, 'tools', 'run-workflow-scheduler-entry.cjs'), 'utf8');
   assert.match(content, /run-project-field-sync-scheduler\.cjs/);
   assert.match(content, /await projectFieldSync\.run/);
+  assert.match(content, /projectFieldSync\.run\(\{ github: retryingGithub/);
 });
 
 test('idle ticks do not dispatch when no Issue changed after the watermark', () => {
-  const result = scheduler.evaluateProjectFieldSync({
-    now: new Date('2026-09-05T06:00:00Z'),
-    since: '2026-09-05T05:30:00Z',
-    issues: [issue(10, '2026-09-05T05:30:00Z')],
-    inFlight: null,
-    config,
-  });
-  assert.equal(result.decision, 'idle');
-  assert.deepEqual(result.issueNumbers, []);
+  const evaluation = evaluate({ issues: [issue(10, '2026-09-05T05:30:00Z')] });
+  assert.equal(evaluation.result.decision, 'idle');
+  assert.deepEqual(evaluation.result.issueNumbers, []);
+  assert.equal(evaluation.nextState, null);
 });
 
-test('recent Issue changes are debounced during the five-minute quiet window', () => {
-  const result = scheduler.evaluateProjectFieldSync({
-    now: new Date('2026-09-05T06:00:00Z'),
-    since: '2026-09-05T05:30:00Z',
+test('recent Issue changes are debounced and persist the start of the pending window', () => {
+  const evaluation = evaluate({
     issues: [issue(11, '2026-09-05T05:58:00Z'), issue(12, '2026-09-05T05:59:00Z')],
-    inFlight: null,
-    config,
   });
-  assert.equal(result.decision, 'debounce');
-  assert.deepEqual(result.issueNumbers, [11, 12]);
+  assert.equal(evaluation.result.decision, 'debounce');
+  assert.deepEqual(evaluation.result.issueNumbers, [11, 12]);
+  assert.equal(evaluation.result.pendingSince, '2026-09-05T05:58:00.000Z');
+  assert.deepEqual(evaluation.nextState, { pendingSince: '2026-09-05T05:58:00.000Z' });
 });
 
 test('a quiet burst dispatches once all changed Issues have been quiet for five minutes', () => {
-  const result = scheduler.evaluateProjectFieldSync({
+  const evaluation = evaluate({
     now: new Date('2026-09-05T06:05:00Z'),
-    since: '2026-09-05T05:30:00Z',
     issues: [issue(11, '2026-09-05T05:56:00Z'), issue(12, '2026-09-05T06:00:00Z')],
-    inFlight: null,
-    config,
   });
-  assert.equal(result.decision, 'dispatch');
-  assert.equal(result.dispatchReason, 'quiet-period-met');
-  assert.deepEqual(result.issueNumbers, [11, 12]);
+  assert.equal(evaluation.result.decision, 'dispatch');
+  assert.equal(evaluation.result.dispatchReason, 'quiet-period-met');
+  assert.deepEqual(evaluation.result.issueNumbers, [11, 12]);
+  assert.equal(evaluation.nextState, null);
 });
 
 test('continuous Issue activity is forced through after thirty minutes', () => {
-  const result = scheduler.evaluateProjectFieldSync({
+  const evaluation = evaluate({
     now: new Date('2026-09-05T06:01:00Z'),
     since: '2026-09-05T05:20:00Z',
     issues: [issue(11, '2026-09-05T05:30:00Z'), issue(12, '2026-09-05T06:00:00Z')],
-    inFlight: null,
-    config,
   });
-  assert.equal(result.decision, 'dispatch');
-  assert.equal(result.dispatchReason, 'max-wait-reached');
+  assert.equal(evaluation.result.decision, 'dispatch');
+  assert.equal(evaluation.result.dispatchReason, 'max-wait-reached');
 });
 
-test('an in-flight batch suppresses a second dispatch', () => {
-  const result = scheduler.evaluateProjectFieldSync({
+test('repeated edits to the same Issue cannot slide the thirty-minute maximum wait forward', () => {
+  const first = evaluate({
+    now: new Date('2026-09-05T05:31:00Z'),
+    since: '2026-09-05T05:20:00Z',
+    issues: [issue(11, '2026-09-05T05:30:00Z')],
+  });
+  assert.equal(first.result.decision, 'debounce');
+  assert.deepEqual(first.nextState, { pendingSince: '2026-09-05T05:30:00.000Z' });
+
+  const later = evaluate({
+    now: new Date('2026-09-05T06:01:00Z'),
+    since: '2026-09-05T05:20:00Z',
+    issues: [issue(11, '2026-09-05T06:00:00Z')],
+    pendingState: first.nextState,
+  });
+  assert.equal(later.result.pendingSince, '2026-09-05T05:30:00.000Z');
+  assert.equal(later.result.latestUpdateAt, '2026-09-05T06:00:00Z');
+  assert.equal(later.result.decision, 'dispatch');
+  assert.equal(later.result.dispatchReason, 'max-wait-reached');
+});
+
+test('an in-flight batch suppresses a second dispatch and clears stale pending state', () => {
+  const evaluation = evaluate({
     now: new Date('2026-09-05T06:30:00Z'),
-    since: '2026-09-05T05:30:00Z',
     issues: [issue(11, '2026-09-05T05:45:00Z')],
     inFlight: { id: 123, created_at: '2026-09-05T06:29:00Z' },
-    config,
+    pendingState: { pendingSince: '2026-09-05T05:45:00Z' },
   });
-  assert.equal(result.decision, 'in-flight');
-  assert.equal(result.inFlightRunId, 123);
+  assert.equal(evaluation.result.decision, 'in-flight');
+  assert.equal(evaluation.result.inFlightRunId, 123);
+  assert.equal(evaluation.nextState, null);
 });
 
 test('successful scheduler batches replace legacy issue-event runs as the watermark', () => {

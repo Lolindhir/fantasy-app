@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const schedulerState = require('./run-workflow-scheduler.cjs');
 
 function validateProjectFieldSyncConfig(config) {
   const sync = config?.projectFieldSync;
@@ -38,18 +39,32 @@ function selectInFlightBatchRun(runs) {
   return newestRun((runs || []).filter((run) => run.event === 'repository_dispatch' && run.status && run.status !== 'completed'));
 }
 
-function evaluateProjectFieldSync({ now, since, issues, inFlight, config }) {
+function parsePendingState(pendingState) {
+  if (pendingState === null || pendingState === undefined) return null;
+  if (!pendingState || typeof pendingState !== 'object' || Array.isArray(pendingState)) {
+    throw new Error('Invalid Project field sync pending state');
+  }
+  const pendingSinceMs = Date.parse(pendingState.pendingSince || '');
+  if (!Number.isFinite(pendingSinceMs)) throw new Error('Invalid Project field sync pendingSince');
+  return { pendingSince: new Date(pendingSinceMs).toISOString(), pendingSinceMs };
+}
+
+function evaluateProjectFieldSync({ now, since, issues, inFlight, config, pendingState = null }) {
   const sync = validateProjectFieldSyncConfig({ projectFieldSync: config });
   const sinceMs = Date.parse(since || '');
   if (!Number.isFinite(sinceMs)) throw new Error(`Invalid Project field sync watermark: ${since}`);
+  const persistedPending = parsePendingState(pendingState);
 
   if (inFlight) {
     return {
-      decision: 'in-flight',
-      since,
-      inFlightRunId: inFlight.id,
-      inFlightCreatedAt: inFlight.created_at || null,
-      issueNumbers: [],
+      result: {
+        decision: 'in-flight',
+        since,
+        inFlightRunId: inFlight.id,
+        inFlightCreatedAt: inFlight.created_at || null,
+        issueNumbers: [],
+      },
+      nextState: null,
     };
   }
 
@@ -63,7 +78,7 @@ function evaluateProjectFieldSync({ now, since, issues, inFlight, config }) {
     .filter((issue) => Number.isInteger(issue.number) && issue.number > 0 && Number.isFinite(issue.updatedAtMs) && issue.updatedAtMs > sinceMs);
 
   if (changed.length === 0) {
-    return { decision: 'idle', since, issueNumbers: [] };
+    return { result: { decision: 'idle', since, issueNumbers: [] }, nextState: null };
   }
 
   const byNumber = new Map();
@@ -72,16 +87,18 @@ function evaluateProjectFieldSync({ now, since, issues, inFlight, config }) {
     if (!current || issue.updatedAtMs > current.updatedAtMs) byNumber.set(issue.number, issue);
   }
   const unique = [...byNumber.values()];
-  const firstPending = unique.reduce((left, right) => (left.updatedAtMs <= right.updatedAtMs ? left : right));
+  const earliestCurrent = unique.reduce((left, right) => (left.updatedAtMs <= right.updatedAtMs ? left : right));
   const latestPending = unique.reduce((left, right) => (left.updatedAtMs >= right.updatedAtMs ? left : right));
+  const pendingSinceMs = persistedPending?.pendingSinceMs ?? earliestCurrent.updatedAtMs;
+  const pendingSince = new Date(pendingSinceMs).toISOString();
   const quietAgeMinutes = Math.max(0, Math.floor((now.getTime() - latestPending.updatedAtMs) / 60000));
-  const pendingAgeMinutes = Math.max(0, Math.floor((now.getTime() - firstPending.updatedAtMs) / 60000));
+  const pendingAgeMinutes = Math.max(0, Math.floor((now.getTime() - pendingSinceMs) / 60000));
   const quietReached = now.getTime() - latestPending.updatedAtMs >= sync.quietMinutes * 60000;
-  const maxWaitReached = now.getTime() - firstPending.updatedAtMs >= sync.maxWaitMinutes * 60000;
+  const maxWaitReached = now.getTime() - pendingSinceMs >= sync.maxWaitMinutes * 60000;
   const issueNumbers = unique.map((issue) => issue.number).sort((left, right) => left - right);
   const common = {
     since,
-    firstPendingAt: firstPending.updatedAt,
+    pendingSince,
     latestUpdateAt: latestPending.updatedAt,
     quietAgeMinutes,
     pendingAgeMinutes,
@@ -89,12 +106,18 @@ function evaluateProjectFieldSync({ now, since, issues, inFlight, config }) {
   };
 
   if (!quietReached && !maxWaitReached) {
-    return { ...common, decision: 'debounce' };
+    return {
+      result: { ...common, decision: 'debounce' },
+      nextState: { pendingSince },
+    };
   }
   return {
-    ...common,
-    decision: 'dispatch',
-    dispatchReason: maxWaitReached ? 'max-wait-reached' : 'quiet-period-met',
+    result: {
+      ...common,
+      decision: 'dispatch',
+      dispatchReason: maxWaitReached ? 'max-wait-reached' : 'quiet-period-met',
+    },
+    nextState: null,
   };
 }
 
@@ -104,6 +127,9 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Project field sync repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
+
+  const loadedState = await schedulerState.loadSchedulerState({ github, context, config, core });
+  const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
 
   const runsResponse = await github.rest.actions.listWorkflowRuns({
     owner: context.repo.owner,
@@ -130,7 +156,15 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
     ? await github.paginate(github.rest.issues.listForRepo, issueArgs)
     : (await github.rest.issues.listForRepo(issueArgs)).data;
 
-  const result = evaluateProjectFieldSync({ now, since, issues, inFlight, config: sync });
+  const evaluation = evaluateProjectFieldSync({
+    now,
+    since,
+    issues,
+    inFlight,
+    config: sync,
+    pendingState: runtimeState.projectFieldSync || null,
+  });
+  const result = evaluation.result;
   const logged = { id: 'project-fields', workflow: sync.workflow, ...result };
 
   if (result.decision === 'dispatch') {
@@ -143,7 +177,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         workflow: sync.workflow,
         requested_at: now.toISOString(),
         since: result.since,
-        first_pending_at: result.firstPendingAt,
+        pending_since: result.pendingSince,
         latest_update_at: result.latestUpdateAt,
         reason: result.dispatchReason,
         issue_numbers: result.issueNumbers,
@@ -152,12 +186,26 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
     logged.dispatched = true;
   }
 
+  if (evaluation.nextState) runtimeState.projectFieldSync = evaluation.nextState;
+  else delete runtimeState.projectFieldSync;
+
+  await schedulerState.persistSchedulerState({
+    github,
+    context,
+    config,
+    core,
+    state: runtimeState,
+    previousSerialized: loadedState.serialized,
+    existed: loadedState.exists,
+  });
+
   core.info(JSON.stringify(logged));
   return logged;
 }
 
 module.exports = {
   evaluateProjectFieldSync,
+  parsePendingState,
   run,
   selectInFlightBatchRun,
   selectWatermarkRun,
