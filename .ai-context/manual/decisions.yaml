@@ -257,7 +257,7 @@ decisions:
         - Moves can focus on transaction modeling and chronological activity.
         - Existing /league-activity links remain usable through a redirect.
       negative:
-        - Shared pick detail and compact trigger mechanics are centralized, but visual card-style triggers such as the Overview tile can remain separate when their layout needs differ.
+        - Shared pick detail and compact trigger mechanics are centralized, but visual card-style triggers such as the Overview tile can remain separate when their layout needs differ materially.
         - LeagueActivityComponent has a legacy name until the Moves area is renamed or rebuilt later.
 
   - id: ADR-017
@@ -1025,3 +1025,57 @@ decisions:
       negative:
         - Health deferral semantics now depend on trustworthy run-created or dispatch-request timestamps for blockers.
         - A missing blocker timestamp is treated conservatively as still blocking until another state transition resolves it.
+
+  - id: ADR-036
+    title: Decision Windows are exact-kickoff derived read-model primitives
+    status: accepted
+    context: >
+      Lineup-lock timing, team-specific upcoming locks and later NFL-game fantasy
+      relevance need one shared relationship between NFL schedule facts and fantasy
+      roster/lineup facts. Feature-local joins would duplicate provider handling,
+      make exact kickoff semantics inconsistent and make historical analysis depend
+      on whether the app happened to observe a game live.
+    decision: >
+      Define one Decision Window as one absolute NFL kickoff instant plus every NFL
+      game that starts at exactly that instant. Nearby but unequal kickoff times are
+      separate Decision Windows, and a rescheduled game moves to the window for its
+      new kickoff. Lineup-lock progression happens at kickoff and never waits for a
+      game to become Final. Decision Windows are derived App read-model facts, not a
+      new source of truth and not a Viewing Slot; a later viewing feature may group
+      nearby windows without changing lineup-lock semantics. The generation layer
+      owns NFL-game/team/player/fantasy-team/starter association, lineup structural
+      evaluation and provider normalization. Angular owns local time formatting,
+      countdowns, display filtering/sorting and derives future-versus-locked
+      presentation from StartsAtUtc and the current clock rather than requiring
+      clock-dependent state to be persisted. The first implementation publishes a
+      small provider-neutral public/data/DecisionWindows.json from the existing
+      League refresh path using transitional current Schedule/Sleeper adapters; #347
+      may later replace those adapters with canonical source-data inputs without a
+      frontend contract redesign. Historical Decision Window/relevance facts must be
+      rebuildable from persisted schedule, week-specific NFL membership and fantasy
+      matchup players/starters facts. No process must run at kickoff, and no
+      mandatory lock snapshot is historical source truth. Historical relevance uses
+      rostered plus starter as the durable roles; transaction replay is optional only
+      for a future requirement that truly needs exact intra-week ownership at a
+      timestamp. Freshness for the current read model uses the existing semantic
+      change timestamp infrastructure; a no-op source check must not be mislabeled as
+      a data update or require a parallel checked-at field.
+    rationale: >
+      Exact kickoff is the real lock boundary and remains stable across unusual NFL
+      schedule days without hard-coded Thursday/Sunday/Monday taxonomy. Keeping the
+      cross-domain join in generation gives League Overview, Team Detail, matchup
+      analysis and later My Page consumers one explainable provider-neutral contract.
+      Rebuildable historical semantics preserve the repository's source-data
+      philosophy and allow onboarding a league after past games were already played.
+    consequences:
+      positive:
+        - One shared exact-kickoff contract serves all lineup-lock and later relevance consumers.
+        - Simultaneous games group naturally while 16:05 and 16:25-style kickoffs stay distinct.
+        - UI rollover is independent of game Final status and generator cadence.
+        - Historical relevance can be regenerated without live snapshots or current-roster leakage.
+        - Phase-2 canonical migration can replace adapters without redesigning Angular consumers.
+        - Provider aliases and cross-domain joins stay out of Angular.
+      negative:
+        - The initial current implementation temporarily depends on transitional generated/live inputs until #347 migrates the consumer.
+        - Historical player-to-game association must fail closed when week-specific team evidence cannot be proven.
+        - Consumers must distinguish Decision Windows from any later broader viewing-slot grouping.
