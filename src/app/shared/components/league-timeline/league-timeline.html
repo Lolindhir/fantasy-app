@@ -14,8 +14,8 @@
               type="button"
               class="league-timeline-operational-item league-timeline-operational-item--interactive"
               [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
-              [matMenuTriggerFor]="decisionWindowMenu"
               [attr.aria-label]="item.label + ': ' + item.value + '. Open Decision Window details'"
+              (click)="openDecisionWindow(decisionWindowDialog)"
             >
               <span class="league-timeline-operational-heading">
                 <span aria-hidden="true">{{ item.icon }}</span>
@@ -30,8 +30,8 @@
                     [ngClass]="'league-timeline-status--' + badge.state"
                     [attr.title]="badge.label"
                   >
-                    <span aria-hidden="true">{{ badge.compactLabel }}</span>
                     <span *ngIf="badge.showCount">{{ badge.count }}</span>
+                    <span>{{ badge.compactLabel }}</span>
                   </span>
                 </span>
               </span>
@@ -39,7 +39,7 @@
               <span class="league-timeline-affordance" aria-hidden="true">›</span>
             </button>
 
-            <mat-menu #decisionWindowMenu="matMenu" class="decision-window-menu">
+            <ng-template #decisionWindowDialog>
               <app-decision-window-context-popover
                 [model]="decisionWindowModel"
                 [window]="decisionWindow"
@@ -47,7 +47,7 @@
                 [updatedAt]="decisionWindowsUpdatedAt"
                 [now]="now"
               />
-            </mat-menu>
+            </ng-template>
           </ng-container>
         </ng-container>
 

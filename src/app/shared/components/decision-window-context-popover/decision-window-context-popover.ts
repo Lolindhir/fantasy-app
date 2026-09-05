@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
 
 import type {
   DecisionWindow,
@@ -21,7 +20,7 @@ import {
 @Component({
   selector: 'app-decision-window-context-popover',
   standalone: true,
-  imports: [CommonModule, MatMenuModule],
+  imports: [CommonModule],
   templateUrl: './decision-window-context-popover.html',
   styleUrl: './decision-window-context-popover.scss'
 })

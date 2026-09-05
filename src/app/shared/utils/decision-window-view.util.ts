@@ -289,11 +289,11 @@ function createStatusBadge(
   showCount: boolean
 ): DecisionWindowStatusBadge {
   const compactLabels: Record<DecisionWindowEvaluationState, string> = {
-    'action-required': '●',
-    review: '●',
-    unknown: '?',
-    pending: '…',
-    ready: '✓'
+    'action-required': 'Action',
+    review: 'Review',
+    unknown: 'Unknown',
+    pending: 'Pending',
+    ready: 'Ready'
   };
 
   return {

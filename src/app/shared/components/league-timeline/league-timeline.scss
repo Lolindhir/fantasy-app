@@ -81,13 +81,13 @@
 }
 
 .league-timeline--active {
-  padding: 9px 10px 8px;
+  padding: 8px 9px 7px;
 }
 
 .league-timeline-operational {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 6px;
 }
 
 .league-timeline-operational-item {
@@ -96,9 +96,9 @@
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
-  min-height: 84px;
+  min-height: 74px;
   box-sizing: border-box;
-  padding: 8px 9px;
+  padding: 7px 8px;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.8);
@@ -111,7 +111,7 @@ button.league-timeline-operational-item {
 }
 
 .league-timeline-operational-item--interactive {
-  padding-right: 22px;
+  padding-right: 21px;
   cursor: pointer;
 }
 
@@ -125,12 +125,12 @@ button.league-timeline-operational-item {
 .league-timeline-operational-heading {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   color: #7c2d12;
-  font-size: 0.67rem;
+  font-size: 0.64rem;
   font-weight: 800;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.01em;
   line-height: 1.15;
 }
 
@@ -138,54 +138,62 @@ button.league-timeline-operational-item {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 7px;
-  margin-top: 5px;
+  gap: 4px 6px;
+  margin-top: 4px;
 }
 
 .league-timeline-operational-value {
-  font-size: 0.96rem;
-  line-height: 1.1;
+  font-size: 0.92rem;
+  line-height: 1.08;
 }
 
 .league-timeline-operational-detail {
-  margin-top: 5px;
+  margin-top: 4px;
   color: #64748b;
-  font-size: 0.67rem;
-  line-height: 1.25;
+  font-size: 0.64rem;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .league-timeline-status-summary {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 
 .league-timeline-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  min-width: 15px;
+  gap: 3px;
+  min-width: 0;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.72);
   color: #64748b;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .league-timeline-status--action-required {
+  background: rgba(254, 226, 226, 0.9);
   color: #b91c1c;
 }
 
 .league-timeline-status--review {
+  background: rgba(254, 243, 199, 0.9);
   color: #a16207;
 }
 
 .league-timeline-status--unknown,
 .league-timeline-status--pending {
+  background: rgba(226, 232, 240, 0.82);
   color: #64748b;
 }
 
 .league-timeline-status--ready {
+  background: rgba(236, 252, 203, 0.9);
   color: #4d7c0f;
 }
 
@@ -214,22 +222,22 @@ button.league-timeline-operational-item {
 .league-timeline-affordance {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 7px;
   transform: translateY(-50%);
   color: #9a3412;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 900;
 }
 
 .league-timeline-milestones {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px 12px;
-  margin-top: 8px;
-  padding-top: 7px;
+  gap: 4px 10px;
+  margin-top: 7px;
+  padding-top: 6px;
   border-top: 1px solid rgba(148, 163, 184, 0.22);
   color: #4b5563;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
 }
 
 .league-timeline-milestone {
@@ -244,28 +252,10 @@ button.league-timeline-operational-item {
   white-space: nowrap;
 }
 
-::ng-deep .decision-window-menu.mat-mdc-menu-panel,
-::ng-deep .mat-mdc-menu-panel.decision-window-menu {
-  width: min(500px, calc(100vw - 24px));
-  min-width: min(500px, calc(100vw - 24px));
-  max-width: min(500px, calc(100vw - 24px));
-  overflow: hidden;
-}
-
-::ng-deep .decision-window-menu .mat-mdc-menu-content {
-  padding: 0;
-}
-
 @media (min-width: 768px) {
   :host {
     flex: 1 1 300px;
     width: min(100%, 330px);
     max-width: 330px;
-  }
-}
-
-@media (max-width: 420px) {
-  .league-timeline-operational {
-    grid-template-columns: 1fr;
   }
 }

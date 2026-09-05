@@ -33,6 +33,11 @@ nextLineupLock:
 
 popover:
   component: src/app/shared/components/decision-window-context-popover/decision-window-context-popover.ts
+  presentationSurface: viewport-bounded Angular Material dialog opened explicitly from the lineup tile
+  rationale: >
+    The commissioner detail is a complex scrollable surface, so it does not rely on
+    MatMenu positioning/semantics. The dialog keeps the same popover content contract
+    while providing reliable narrow-viewport interaction and focus restoration.
   content: exact-window games plus every current League team
   mergeKey: FantasyTeamID to TeamID only
   ordering: action-required, review, unknown, pending, ready, then stable League team order
@@ -45,9 +50,10 @@ failureBehavior:
   fallbackInference: none
 
 responsive:
-  - operational cards use two columns where space permits and stack on narrow screens
+  - operational cards use two columns whenever the available width can fit them and naturally collapse only when it cannot
+  - compact status badges use readable state words rather than symbol-only output
   - season milestones remain below operational cards
-  - popover width is viewport constrained with internal vertical scrolling
+  - Decision Window detail width and height are constrained to the dynamic viewport with internal vertical team scrolling
   - names, issue copy and game chips may wrap without horizontal overflow
 
 boundaries:
