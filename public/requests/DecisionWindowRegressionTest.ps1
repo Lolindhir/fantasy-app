@@ -24,6 +24,21 @@ function Assert-True {
     if (-not $Condition) { throw $Message }
 }
 
+function ConvertTo-TestUtcString {
+    param(
+        [Parameter(Mandatory = $true)][object]$Value
+    )
+
+    if ($Value -is [datetime]) {
+        return $Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    }
+    if ($Value -is [DateTimeOffset]) {
+        return $Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    }
+
+    return [DateTimeOffset]::Parse([string]$Value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+}
+
 function New-TestGame {
     param(
         [string]$GameID,
@@ -295,14 +310,14 @@ try {
 
     Save-JsonFile -TargetFile $tempDataFile -Type "DecisionWindows" -Data $readModel -CompareScript $compare -UpdateTimestamp
     $unchangedTimestamp = (Get-Content $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
-    Assert-Equal -Actual $unchangedTimestamp -Expected "2000-01-01T00:00:00Z" -Message "No semantic change should preserve DecisionWindows timestamp."
+    Assert-Equal -Actual (ConvertTo-TestUtcString -Value $unchangedTimestamp) -Expected "2000-01-01T00:00:00Z" -Message "No semantic change should preserve DecisionWindows timestamp."
     Assert-Equal -Actual (Get-Content $tempDataFile -Raw) -Expected $beforeData -Message "No semantic change should skip DecisionWindows rewrite."
 
     $changedModel = $readModel | ConvertTo-Json -Depth 10 | ConvertFrom-Json
     $changedModel.SchemaVersion = 2
     Save-JsonFile -TargetFile $tempDataFile -Type "DecisionWindows" -Data $changedModel -CompareScript $compare -UpdateTimestamp
     $changedTimestamp = (Get-Content $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
-    Assert-True -Condition ($changedTimestamp -ne "2000-01-01T00:00:00Z") -Message "Semantic change should update Timestamps.json.DecisionWindows."
+    Assert-True -Condition ((ConvertTo-TestUtcString -Value $changedTimestamp) -ne "2000-01-01T00:00:00Z") -Message "Semantic change should update Timestamps.json.DecisionWindows."
     Assert-Equal -Actual (Get-Content $tempDataFile -Raw | ConvertFrom-Json).SchemaVersion -Expected 2 -Message "Semantic change should update DecisionWindows output."
 }
 finally {
