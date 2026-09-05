@@ -1,10 +1,11 @@
 name: REPO • Project • Fields Sync
 
-run-name: 'REPO • Project • Fields Sync • #${{ github.event.issue.number || inputs.issue_number }}'
+run-name: "REPO • Project • Fields Sync • ${{ github.event_name == 'repository_dispatch' && 'batch' || format('#{0}', inputs.issue_number) }}"
 
 on:
-  issues:
-    types: [opened, labeled, unlabeled, reopened, closed]
+  repository_dispatch:
+    types:
+      - scheduler-sync-project-fields
   workflow_dispatch:
     inputs:
       issue_number:
@@ -16,18 +17,62 @@ permissions:
   contents: read
 
 concurrency:
-  group: project-fields-${{ github.event.issue.number || inputs.issue_number }}
-  cancel-in-progress: true
+  group: project-fields-sync
+  cancel-in-progress: false
 
 jobs:
+  prepare:
+    name: Prepare Issue batch
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      issue_numbers: ${{ steps.issues.outputs.issue_numbers }}
+    steps:
+      - id: issues
+        name: Resolve Issue numbers
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_ISSUES: ${{ toJSON(github.event.client_payload.issue_numbers) }}
+          MANUAL_ISSUE: ${{ inputs.issue_number }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "repository_dispatch" ]]; then
+            issue_numbers="$(
+              jq -ce '
+                if type == "array" and length > 0 and all(.[]; type == "number" and . > 0)
+                then unique | sort
+                else error("repository_dispatch requires a non-empty numeric issue_numbers array")
+                end
+              ' <<< "${DISPATCH_ISSUES}"
+            )"
+          else
+            issue_numbers="$(
+              jq -cn --arg issue "${MANUAL_ISSUE}" '
+                ($issue | tonumber) as $number
+                | if $number > 0 then [$number] else error("issue_number must be positive") end
+              '
+            )"
+          fi
+
+          echo "issue_numbers=${issue_numbers}" >> "${GITHUB_OUTPUT}"
+          echo "Synchronizing Issues: ${issue_numbers}"
+
   sync_fields:
-    name: Sync Project fields
+    name: Sync Project fields • #${{ matrix.issue_number }}
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        issue_number: ${{ fromJSON(needs.prepare.outputs.issue_numbers) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
       PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
-      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      ISSUE_NUMBER: ${{ matrix.issue_number }}
 
     steps:
       - name: Synchronize Status, Priority and Blocked

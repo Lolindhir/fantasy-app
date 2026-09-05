@@ -109,6 +109,20 @@ scheduler:
     successRule: Any newer relevant successful run that satisfies the active cycle heals it and clears scheduler runtime state.
     exhaustionRule: After the configured observed failed attempts are exhausted, open the retry circuit for the configured cooldown instead of dispatching again on every scheduler tick.
     cooldownRule: While the retry circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
+  projectFieldSync:
+    policyOwner: .github/workflow-schedules.json
+    implementation: tools/run-project-field-sync-scheduler.cjs
+    workflow: .github/workflows/sync-project-fields.yml
+    eventType: scheduler-sync-project-fields
+    wakeup: each central external-scheduler-tick
+    quietMinutes: 5
+    maxWaitMinutes: 30
+    bootstrapLookbackMinutes: 30
+    watermarkRule: Use the newest successful scheduler-dispatched Project batch run; before the first batch after cutover, the newest successful legacy Issue-event sync may seed the watermark.
+    changeDetectionRule: Inspect repository Issues updated after the watermark; pull requests are excluded. Issue state and labels remain canonical even though unrelated Issue metadata updates may conservatively enter a batch.
+    idleRule: If no Issue changed after the watermark, or a batch is already in flight, do not start another Project sync workflow run.
+    debounceRule: Dispatch one batch after five minutes without another pending Issue update; continuous activity may delay that batch for at most 30 minutes from the oldest pending Issue update.
+    failureIsolation: Project field mutations execute in the separate sync-project-fields workflow. Project/API mutation failures therefore fail that workflow, not the central scheduler run that detected the batch.
   output:
     machineReadable: Keep one JSON decision per target in the Actions log, including observation/fallback evidence where applicable.
     humanReadable: Write a GitHub Job Summary with target, profile, status, action, due slot, attempt and reason, plus explicit Health-deferral, dispatch-observation and circuit-breaker notes.
@@ -206,7 +220,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 20
-    rationale: Central five-minute scheduling layer woken automatically by the external Cloudflare cron for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination and Health observation-barrier decisions; a scheduler failure or roughly 20 minutes without a successful external tick can prevent downstream refreshes and is immediately actionable.
+    rationale: Central five-minute scheduling layer woken automatically by the external Cloudflare cron for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination, Health observation-barrier decisions and debounced Project-field change detection; a scheduler failure or roughly 20 minutes without a successful external tick can prevent downstream refreshes and Project mirroring and is immediately actionable.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
@@ -226,8 +240,8 @@ workflows:
   .github/workflows/sync-project-fields.yml:
     category: important
     relevantEvents:
-    - issues
-    rationale: Repeated issue-event failures can desynchronize the GitHub Project from canonical Issue metadata.
+    - repository_dispatch
+    rationale: Scheduler-dispatched batches mirror canonical Issue state and labels after a five-minute quiet period, with a 30-minute maximum wait during continuous activity. Repeated batch failures can desynchronize the GitHub Project; manual workflow_dispatch repair runs remain non-paging.
   .github/workflows/clean-backups.yml:
     category: routine
     relevantEvents:
