@@ -35,6 +35,7 @@ dataSources:
       - mapping Metadata.json into generator config
     exposes:
       - PlayersFile
+      - DecisionWindowsFile
       - PastSeasonsDir
       - PastSeasonsIndexFile
       - PastSeasonResources
@@ -138,6 +139,44 @@ dataSources:
         generator behavior.
     timestamped: true
     backup: true
+
+  decisionWindows:
+    path: public/data/DecisionWindows.json
+    generator: public/requests/RequestLeague.ps1
+    helpers:
+      - public/requests/utils/league/DecisionWindowUtils.psm1
+    localDocumentation: public/data/DecisionWindows.ai-doc.yaml
+    architectureDecision: ADR-036
+    category: generated-output
+    role: Current exact-kickoff Decision Window and objective lineup read model
+    description: >
+      Small current App read model generated in the existing League refresh from
+      provider-neutral season/week-addressable Decision Window derivation. One
+      Decision Window is one exact absolute kickoff instant; simultaneous games
+      share a window while nearby unequal kickoffs remain separate. The current
+      file contains the active fantasy lineup week, only the first next-week
+      lookahead window when another lineup-relevant week exists, current player
+      lock facts and objective team lineup evaluations. It is not a historical
+      store and never persists wall-clock-only upcoming/locked labels.
+    currentAdapter:
+      lineupWeekSource: Sleeper settings.leg from already-fetched League state
+      scheduleJoin: Player.TeamID -> Schedule.teamIDHome / teamIDAway
+      providerRequests: none added specifically for DecisionWindows
+      migrationBoundary: '#347 may replace transitional current adapters with canonical source-data inputs without changing the provider-neutral derivation semantics.'
+    historicalRule: >
+      Historical relevance remains rebuildable from persisted season/week schedule,
+      fantasy players/starters and week-appropriate player-to-NFL-team assignments
+      through the same rostered-plus-starter semantics. No live kickoff snapshot is
+      required and no historical DecisionWindows file is authoritative source data.
+    clockRule: >
+      StartsAtUtc is persisted; Angular may derive upcoming/locked and the next
+      future current-week window by comparing StartsAtUtc to now. Kickoff, not game
+      Final status, advances the actionable deadline.
+    timestamped: true
+    timestampKey: DecisionWindows
+    timestampMeaning: last semantic generated-data update, not last check or fetch
+    noOpRule: semantic no-op skips DecisionWindows.json rewrite and preserves Timestamps.json.DecisionWindows
+    backup: false
 
   transactions:
     path: public/data/Transactions.json
@@ -300,6 +339,13 @@ dataFlow:
     to: public/data/League.json
     purpose: Provide disable_adds, disable_trades, trade_review_days, trade_deadline and playoff settings for generated move openness, Status and Phase rules.
 
+  - from: already-loaded League, Team, Player and Schedule facts in RequestLeague.ps1
+    to: public/data/DecisionWindows.json
+    purpose: >
+      Build the current exact-kickoff Decision Window read model without duplicate
+      provider requests. Sleeper settings.leg owns current lineup-week evidence;
+      stable current TeamID fields join players to Schedule games.
+
   - from: Sleeper transactions endpoint
     to: public/data/Transactions.json
     purpose: Fetch completed current-season transaction data.
@@ -390,6 +436,11 @@ dataFlow:
 
 notesForAIAgents:
   - Generated JSON should generally be changed through generation logic, not manually.
+  - DecisionWindows.json is a small current derived read model, not a historical store or source of truth; exact kickoff defines a window and lineup lock advances at kickoff rather than Final.
+  - Do not persist Decision Window upcoming/locked state or NextDecisionWindow; frontend time comparison against StartsAtUtc owns those clock-dependent presentation facts.
+  - Decision Window historical relevance uses rebuildable rostered + starter semantics from persisted weekly facts; do not introduce a mandatory live kickoff snapshot.
+  - Timestamps.json.DecisionWindows means last semantic generated-data update, not last check/fetch; an unchanged regeneration must preserve the older timestamp.
+  - The #343 current Decision Window adapter is transitional and reuses current League/Team/Player/Schedule facts; #347 owns migration to canonical source-data without changing the provider-neutral derivation contract.
   - Historical Transactions and Drafts are disposable generated outputs; a full rebuild must not treat an older generated historical Draft file as an authoritative enrichment source.
   - The scheduled historical rebuild order is Transactions base -> draft identity -> fresh current/historical Drafts -> transaction pick-result enrichment -> PastSeasonsIndex.
   - Legacy generated DraftKeys such as 2024_D1_Free_Agent are replaced by canonical current-contract keys during regeneration; do not add compatibility mappings merely to preserve an old generated schema.
