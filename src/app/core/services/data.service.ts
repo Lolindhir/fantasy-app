@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { mapRawLeagueData } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
+import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
 import type {
@@ -75,10 +76,16 @@ export class DataService {
     );
   }
 
+  getDecisionWindowsTimestamp(): Observable<string | undefined> {
+    return this.dataApiService.getTimestamps().pipe(
+      map(ts => ts.DecisionWindows)
+    );
+  }
+
   getLatestTimestamp(): Observable<string | undefined> {
     return this.dataApiService.getTimestamps().pipe(
       map(ts => {
-        return [ts.League, ts.Players, ts.Teams, ts.Drafts, ts.Transactions]
+        return [ts.League, ts.Players, ts.Teams, ts.Drafts, ts.Transactions, ts.DecisionWindows]
           .reduce<string | undefined>((a, b) => {
             if (a === undefined) return b;
             if (b === undefined) return a;
@@ -110,6 +117,10 @@ export class DataService {
     return this.getLeagueWithPlayersAndTransactions(sortFields).pipe(
       map(res => res.transactions)
     );
+  }
+
+  getDecisionWindows(): Observable<DecisionWindowsReadModel> {
+    return this.dataApiService.getDecisionWindowsRaw();
   }
 
   getTransactionsForSources(

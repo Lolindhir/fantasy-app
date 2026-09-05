@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
@@ -73,6 +74,10 @@ export class DataApiService {
 
   getTransactionsRaw(): Observable<RawTransaction[]> {
     return this.http.get<RawTransaction[]>('data/Transactions.json');
+  }
+
+  getDecisionWindowsRaw(): Observable<DecisionWindowsReadModel> {
+    return this.http.get<DecisionWindowsReadModel>('data/DecisionWindows.json');
   }
 
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {
