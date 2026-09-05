@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const runtime = require('./run-workflow-scheduler-runtime.cjs');
+const projectFieldSync = require('./run-project-field-sync-scheduler.cjs');
 
 const DEFAULT_STATE_READ_RETRY_DELAYS_MS = Object.freeze([1000, 2000]);
 const TRANSIENT_HTTP_STATUSES = new Set([500, 502, 503, 504]);
@@ -105,7 +106,9 @@ async function run({
     retryDelaysMs,
     sleepFn,
   });
-  return runtime.run({ github: retryingGithub, context, core, configPath, now });
+  const results = await runtime.run({ github: retryingGithub, context, core, configPath, now });
+  await projectFieldSync.run({ github: retryingGithub, context, core, configPath, now });
+  return results;
 }
 
 module.exports = {
