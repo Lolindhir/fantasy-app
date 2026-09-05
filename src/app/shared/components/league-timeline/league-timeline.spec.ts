@@ -1,3 +1,5 @@
+import type { TemplateRef } from '@angular/core';
+import type { MatDialog } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 
 import type { DecisionWindow, DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
@@ -25,7 +27,7 @@ describe('LeagueTimelineComponent', () => {
     component = new LeagueTimelineComponent({
       getDecisionWindows,
       getDecisionWindowsTimestamp
-    } as unknown as DataService);
+    } as unknown as DataService, createDialog());
     component.league = createLeague({ Status: 'Pre-Season', SeasonKickoff: '2026-09-10T00:20:00Z' });
 
     component.ngOnInit();
@@ -38,7 +40,7 @@ describe('LeagueTimelineComponent', () => {
   it('advances to the next Decision Window on the minute-aligned kickoff tick', () => {
     const first = createWindow('2026-09-04T10:01:00Z');
     const second = createWindow('2026-09-04T10:02:00Z');
-    component = new LeagueTimelineComponent(createDataService(createModel([first, second])));
+    component = new LeagueTimelineComponent(createDataService(createModel([first, second])), createDialog());
     component.league = createLeague({ NextWaiverRun: null });
 
     component.ngOnInit();
@@ -55,7 +57,7 @@ describe('LeagueTimelineComponent', () => {
       getDecisionWindows: () => throwError(() => new Error('DecisionWindows unavailable')),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamps unavailable'))
     } as unknown as DataService;
-    component = new LeagueTimelineComponent(dataService);
+    component = new LeagueTimelineComponent(dataService, createDialog());
     component.league = createLeague({
       NextWaiverRun: '2026-09-06T10:00:00Z',
       TradeDeadlineWeek: 8
@@ -80,7 +82,7 @@ describe('LeagueTimelineComponent', () => {
       getDecisionWindows: () => of(createModel([createWindow('2026-09-04T12:00:00Z')])),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamp unavailable'))
     } as unknown as DataService;
-    component = new LeagueTimelineComponent(dataService);
+    component = new LeagueTimelineComponent(dataService, createDialog());
     component.league = createLeague();
 
     component.ngOnInit();
@@ -89,7 +91,30 @@ describe('LeagueTimelineComponent', () => {
     expect(component.decisionWindowsUpdatedAt).toBeUndefined();
     expect(component.timeline?.operational[0].kind).toBe('lineup');
   });
+
+  it('opens Decision Window details through a viewport-bounded dialog', () => {
+    const open = jasmine.createSpy('open');
+    component = new LeagueTimelineComponent(
+      createDataService(createModel([])),
+      { open } as unknown as MatDialog
+    );
+    const template = {} as TemplateRef<unknown>;
+
+    component.openDecisionWindow(template);
+
+    expect(open).toHaveBeenCalledWith(template, jasmine.objectContaining({
+      width: '500px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      panelClass: 'decision-window-dialog-panel',
+      ariaLabel: 'Decision Window details'
+    }));
+  });
 });
+
+function createDialog(): MatDialog {
+  return { open: jasmine.createSpy('open') } as unknown as MatDialog;
+}
 
 function createDataService(model: DecisionWindowsReadModel): DataService {
   return {

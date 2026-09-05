@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
+import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription, timer } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
@@ -16,7 +16,7 @@ import {
 @Component({
   selector: 'app-league-timeline',
   standalone: true,
-  imports: [CommonModule, MatMenuModule, DecisionWindowContextPopoverComponent],
+  imports: [CommonModule, MatDialogModule, DecisionWindowContextPopoverComponent],
   templateUrl: './league-timeline.html',
   styleUrl: './league-timeline.scss'
 })
@@ -31,7 +31,10 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
 
   private subscriptions = new Subscription();
 
-  constructor(private dataService: DataService) {}
+  constructor(
+    private dataService: DataService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.startMinuteAlignedClock();
@@ -73,6 +76,18 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
       decisionWindows: this.decisionWindows,
       decisionWindowsUnavailable: this.decisionWindowsUnavailable,
       now: this.now
+    });
+  }
+
+  openDecisionWindow(template: TemplateRef<unknown>): void {
+    this.dialog.open(template, {
+      width: '500px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      panelClass: 'decision-window-dialog-panel',
+      ariaLabel: 'Decision Window details',
+      autoFocus: false,
+      restoreFocus: true
     });
   }
 
