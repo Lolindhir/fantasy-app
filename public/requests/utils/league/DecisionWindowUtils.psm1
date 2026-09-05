@@ -602,6 +602,17 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         throw "Current Decision Window adapter requires league season."
     }
 
+    $requiredScheduleWeeks = @{}
+    if ($lineupWeek -lt 1) {
+        $requiredScheduleWeeks[1] = $true
+    }
+    elseif ($lineupWeek -le $LastLineupWeek) {
+        $requiredScheduleWeeks[$lineupWeek] = $true
+        if ($lineupWeek -lt $LastLineupWeek) {
+            $requiredScheduleWeeks[$lineupWeek + 1] = $true
+        }
+    }
+
     $scheduleGames = @()
     foreach ($game in @($Schedule)) {
         if ($null -eq $game) { continue }
@@ -619,8 +630,13 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         if ([string]::IsNullOrWhiteSpace([string]$game.teamIDHome) -or [string]::IsNullOrWhiteSpace([string]$game.teamIDAway)) {
             throw "Current Decision Window schedule adapter found game '$($game.gameID)' without stable team IDs."
         }
+
+        $isRequiredScheduleWeek = $requiredScheduleWeeks.ContainsKey($gameWeek)
         if ([string]::IsNullOrWhiteSpace([string]$game.gameTime_epoch)) {
-            throw "Current Decision Window schedule adapter found game '$($game.gameID)' without gameTime_epoch."
+            if ($isRequiredScheduleWeek) {
+                throw "Current Decision Window schedule adapter found game '$($game.gameID)' without gameTime_epoch."
+            }
+            continue
         }
 
         try {
@@ -628,7 +644,10 @@ function New-CurrentLeagueDecisionWindowsReadModel {
             $startsAtUtc = [DateTimeOffset]::FromUnixTimeSeconds([int64][Math]::Floor($epoch)).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
         }
         catch {
-            throw "Current Decision Window schedule adapter could not parse gameTime_epoch for '$($game.gameID)'."
+            if ($isRequiredScheduleWeek) {
+                throw "Current Decision Window schedule adapter could not parse gameTime_epoch for '$($game.gameID)'."
+            }
+            continue
         }
 
         $scheduleGames += [PSCustomObject][ordered]@{

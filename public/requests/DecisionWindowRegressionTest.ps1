@@ -241,22 +241,90 @@ $currentPlayers = @(
     [PSCustomObject]@{ ID = "cur1"; TeamID = "31" },
     [PSCustomObject]@{ ID = "cur2"; TeamID = "32" }
 )
-$currentSchedule = @([PSCustomObject]@{
-    gameID = "current-game"
-    season = "2026"
-    gameWeek = "Week 2"
-    gameTime_epoch = [string]$currentKickoff
-    teamIDAway = "31"
-    teamIDHome = "32"
-    away = "ALIAS-A"
-    home = "ALIAS-B"
-})
+$currentSchedule = @(
+    [PSCustomObject]@{
+        gameID = "current-game"
+        season = "2026"
+        gameWeek = "Week 2"
+        gameTime_epoch = [string]$currentKickoff
+        teamIDAway = "31"
+        teamIDHome = "32"
+        away = "ALIAS-A"
+        home = "ALIAS-B"
+    }
+    [PSCustomObject]@{
+        gameID = "future-tbd"
+        season = "2026"
+        gameWeek = "Week 16"
+        gameTime = "TBD"
+        gameTime_epoch = ""
+        teamIDAway = "5"
+        teamIDHome = "26"
+        away = "CAR"
+        home = "PIT"
+    }
+)
 $currentModel = New-CurrentLeagueDecisionWindowsReadModel `
     -League $currentLeague -Teams $currentTeams -Players $currentPlayers -Schedule $currentSchedule -LastLineupWeek 17
 Assert-Equal -Actual $currentModel.LineupWeek -Expected 2 -Message "Current adapter must use platform settings.leg rather than League.CurrentWeek/finality."
 Assert-Equal -Actual $currentModel.TeamLineupEvaluations[0].ExpectedStarterCount -Expected 2 -Message "Expected starter count must derive from league roster_positions, excluding bench slots."
 Assert-Equal -Actual $currentModel.TeamLineupEvaluations[0].State -Expected "ready" -Message "Current adapter should preserve a structurally complete lineup."
 Assert-Equal -Actual ($currentModel.PlayerLockFacts | Where-Object PlayerID -eq "cur1").GameID -Expected "current-game" -Message "Current player TeamID must join stable schedule team IDs without abbreviation guessing."
+Assert-Equal -Actual @($currentModel.DecisionWindows | Where-Object { $_.Week -eq 16 }).Count -Expected 0 -Message "Unrelated later-season TBD kickoff rows must not leak into the current read model."
+
+$missingCurrentKickoffSchedule = @([PSCustomObject]@{
+    gameID = "missing-current-kickoff"
+    season = "2026"
+    gameWeek = "Week 2"
+    gameTime = "TBD"
+    gameTime_epoch = ""
+    teamIDAway = "31"
+    teamIDHome = "32"
+    away = "AAA"
+    home = "BBB"
+})
+$missingCurrentKickoffRejected = $false
+try {
+    New-CurrentLeagueDecisionWindowsReadModel `
+        -League $currentLeague -Teams $currentTeams -Players $currentPlayers -Schedule $missingCurrentKickoffSchedule -LastLineupWeek 17 | Out-Null
+}
+catch {
+    if ($_.Exception.Message -match "without gameTime_epoch") {
+        $missingCurrentKickoffRejected = $true
+    }
+    else {
+        throw
+    }
+}
+Assert-True -Condition $missingCurrentKickoffRejected -Message "Missing kickoff in the active lineup week must remain fail-closed."
+
+$invalidLookaheadSchedule = @(
+    $currentSchedule
+    [PSCustomObject]@{
+        gameID = "invalid-lookahead-kickoff"
+        season = "2026"
+        gameWeek = "Week 3"
+        gameTime_epoch = "not-an-epoch"
+        teamIDAway = "5"
+        teamIDHome = "7"
+        away = "CCC"
+        home = "DDD"
+    }
+)
+$invalidLookaheadRejected = $false
+try {
+    New-CurrentLeagueDecisionWindowsReadModel `
+        -League $currentLeague -Teams $currentTeams -Players $currentPlayers -Schedule $invalidLookaheadSchedule -LastLineupWeek 17 | Out-Null
+}
+catch {
+    if ($_.Exception.Message -match "could not parse gameTime_epoch") {
+        $invalidLookaheadRejected = $true
+    }
+    else {
+        throw
+    }
+}
+Assert-True -Condition $invalidLookaheadRejected -Message "Invalid kickoff in the required next-week lookahead must remain fail-closed."
 
 # Dynamic fantasy-team count: derivation uses provided rosters, never a six-team assumption.
 $dynamicFacts = Get-DecisionWindowFacts `
