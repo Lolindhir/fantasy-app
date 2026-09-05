@@ -1,0 +1,238 @@
+:host {
+  display: block;
+  width: min(500px, calc(100vw - 24px));
+  max-width: 100%;
+}
+
+.decision-window-popover {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: min(78vh, 680px);
+  overflow: hidden;
+  color: #1f2937;
+}
+
+.decision-window-header {
+  flex: 0 0 auto;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.decision-window-eyebrow {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.decision-window-lock-time {
+  margin-top: 3px;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.decision-window-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 10px;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.decision-window-meta strong {
+  color: #334155;
+}
+
+.decision-window-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.decision-window-game {
+  max-width: 100%;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.decision-window-team-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+button.decision-window-team-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  height: auto;
+  padding: 9px 14px;
+  border-bottom: 1px solid #eef2f7;
+  white-space: normal;
+}
+
+button.decision-window-team-row:last-child {
+  border-bottom: 0;
+}
+
+.decision-window-team-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.decision-window-team-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.decision-window-team-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.decision-window-team-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  min-width: 0;
+}
+
+.decision-window-team-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+}
+
+.decision-window-team-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.decision-window-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.decision-window-state--action-required .decision-window-team-status,
+.decision-window-state--action-required .decision-window-team-issue {
+  color: #b91c1c;
+}
+
+.decision-window-state--action-required .decision-window-status-dot {
+  background: #dc2626;
+}
+
+.decision-window-state--review .decision-window-team-status,
+.decision-window-state--review .decision-window-team-issue {
+  color: #a16207;
+}
+
+.decision-window-state--review .decision-window-status-dot {
+  background: #d97706;
+}
+
+.decision-window-state--unknown .decision-window-team-status,
+.decision-window-state--pending .decision-window-team-status {
+  color: #64748b;
+}
+
+.decision-window-state--unknown .decision-window-status-dot,
+.decision-window-state--pending .decision-window-status-dot {
+  background: #94a3b8;
+}
+
+.decision-window-state--unknown .decision-window-team-issue {
+  color: #475569;
+}
+
+.decision-window-state--ready .decision-window-team-status {
+  color: #4d7c0f;
+}
+
+.decision-window-state--ready .decision-window-status-dot {
+  background: #84cc16;
+}
+
+.decision-window-team-context {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.73rem;
+  overflow-wrap: anywhere;
+}
+
+.decision-window-team-issue {
+  margin-top: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.decision-window-team-chevron {
+  justify-self: end;
+  color: #94a3b8;
+  font-size: 1.25rem;
+}
+
+.decision-window-updated {
+  flex: 0 0 auto;
+  padding: 9px 16px 11px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 420px) {
+  .decision-window-header {
+    padding: 13px 12px 10px;
+  }
+
+  button.decision-window-team-row {
+    grid-template-columns: 34px minmax(0, 1fr) 14px;
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .decision-window-team-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .decision-window-updated {
+    padding-inline: 12px;
+  }
+}
