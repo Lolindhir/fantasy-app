@@ -129,7 +129,7 @@ $byeFacts = Get-DecisionWindowFacts `
     -ExpectedStarterCount 1
 Assert-Equal -Actual $byeFacts.PlayerLockFacts[0].Kind -Expected "bye" -Message "Known team without a current-week game should produce bye."
 Assert-Equal -Actual $byeFacts.TeamLineupEvaluations[0].State -Expected "action-required" -Message "Starter on bye should require action."
-Assert-Equal -Actual ($byeFacts.TeamLineupEvaluations[0].Issues | Where-Object Code -eq "STARTER_ON_BYE").Count -Expected 1 -Message "Starter on bye should expose stable issue code."
+Assert-Equal -Actual @($byeFacts.TeamLineupEvaluations[0].Issues | Where-Object Code -eq "STARTER_ON_BYE").Count -Expected 1 -Message "Starter on bye should expose stable issue code."
 
 $noTeamFacts = Get-DecisionWindowFacts `
     -Season "2026" -Week 1 -ScheduleGames $schedule `
