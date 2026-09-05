@@ -1,0 +1,64 @@
+schemaVersion: 1
+
+file:
+  path: src/app/shared/components/league-timeline/league-timeline.ts
+  kind: angular-shared-component
+
+consumerContract:
+  source: public/data/DecisionWindows.json
+  freshness: Timestamps.json.DecisionWindows
+  architectureDecision: ADR-036
+  responsibility: >
+    League Overview timeline presentation for generated Decision Windows.
+
+activeTimeline:
+  operationalDeadlines:
+    - Next Lineup Lock
+    - Next Waiver Run
+  seasonMilestones:
+    - Trade Deadline
+    - Playoffs Start
+    - League Final
+  rule: >
+    In-Season and Playoffs show operational deadlines independently from season
+    milestones. Off-Season, Draft-Season and Pre-Season retain the legacy
+    next-milestone presentation.
+
+nextLineupLock:
+  clock: minute-aligned frontend clock
+  selection: earliest generated current/lookahead window with StartsAtUtc greater than now
+  rollover: exact kickoff; game Final is not consulted
+  pending: generated pending lookahead is shown without reusing current-week evaluation or affected counts
+  status: generated team evaluation states are displayed and compact counts count teams, not issues
+
+popover:
+  component: src/app/shared/components/decision-window-context-popover/decision-window-context-popover.ts
+  content: exact-window games plus every current League team
+  mergeKey: FantasyTeamID to TeamID only
+  ordering: action-required, review, unknown, pending, ready, then stable League team order
+  drilldown: existing shared Team Detail service
+  freshnessLabel: Updated
+
+failureBehavior:
+  decisionWindows: show neutral Lineup data unavailable while retaining waiver and season milestones
+  timestamp: omit freshness text only
+  fallbackInference: none
+
+responsive:
+  - operational cards use two columns where space permits and stack on narrow screens
+  - season milestones remain below operational cards
+  - popover width is viewport constrained with internal vertical scrolling
+  - names, issue copy and game chips may wrap without horizontal overflow
+
+boundaries:
+  owns:
+    - frontend clock/countdown
+    - future-window selection
+    - local formatting
+    - status display and attention sorting
+    - interaction and responsive layout
+  doesNotOwn:
+    - Decision Window derivation/grouping
+    - schedule/roster/starter joins
+    - lineup evaluation rules
+    - viewing-slot taxonomy
