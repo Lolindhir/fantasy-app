@@ -119,7 +119,7 @@ Assert-Equal -Actual $openFacts.TeamLineupEvaluations[0].State -Expected "action
 Assert-Equal -Actual ($openFacts.TeamLineupEvaluations[0].Issues | Where-Object Code -eq "OPEN_STARTER_SLOT" | Select-Object -First 1).Count -Expected 2 -Message "OPEN_STARTER_SLOT should report the number of missing starters."
 
 $byeSchedule = @(
-    New-TestGame -GameID "w1" -Week 1 -StartsAtUtc "2026-09-13T17:00:00Z" -AwayTeamID "1" -HomeTeamID "2",
+    New-TestGame -GameID "w1" -Week 1 -StartsAtUtc "2026-09-13T17:00:00Z" -AwayTeamID "1" -HomeTeamID "2"
     New-TestGame -GameID "w2" -Week 2 -StartsAtUtc "2026-09-20T17:00:00Z" -AwayTeamID "3" -HomeTeamID "4"
 )
 $byeFacts = Get-DecisionWindowFacts `
@@ -261,7 +261,7 @@ Assert-Equal -Actual @($dynamicFacts.TeamLineupEvaluations).Count -Expected 3 -M
 
 # Historical fixture uses exactly the same normalized semantics, without live snapshots.
 $historicalSchedule = @(
-    New-TestGame -GameID "hist1" -Week 7 -StartsAtUtc "2025-10-19T17:00:00Z" -AwayTeamID "20" -HomeTeamID "21",
+    New-TestGame -GameID "hist1" -Week 7 -StartsAtUtc "2025-10-19T17:00:00Z" -AwayTeamID "20" -HomeTeamID "21"
     New-TestGame -GameID "hist2" -Week 8 -StartsAtUtc "2025-10-26T17:00:00Z" -AwayTeamID "22" -HomeTeamID "23"
 )
 $historicalFacts = Get-DecisionWindowFacts `
