@@ -53,6 +53,12 @@ guidance:
     - Do not create separate todo lists in .ai-context or elsewhere; operative repository work belongs in GitHub Issues.
     - Use .ai-context/manual/work-tracking.yaml as the canonical contract for Issue lifecycle, label semantics, priority rules, handoff and work-tracking drift governance.
 
+  workflowObservability:
+    - When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.
+    - A scheduler-integrated decision path that executes outside the normal configured scheduler targets must be explicitly composed into the final operator summary and machine-readable decision set, or its intentional exclusion must be documented. Execution order must never silently make a working decision path invisible to operators.
+    - Prefer the final Job Summary to be materialized only after all scheduler-integrated decisions for the tick are known. If an existing layer writes an intermediate summary earlier, the orchestrator may deliberately replace it with one final combined view after late decision paths have completed.
+    - Add or update regression coverage whenever summary composition changes so a new workflow or decision path cannot be introduced successfully while remaining absent from the expected operator-facing summary.
+
   workTracking:
     - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.

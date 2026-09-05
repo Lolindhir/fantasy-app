@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const runtime = require('./run-workflow-scheduler-runtime.cjs');
 const projectFieldSync = require('./run-project-field-sync-scheduler.cjs');
+const schedulerSummary = require('./run-workflow-scheduler-summary.cjs');
 
 const DEFAULT_STATE_READ_RETRY_DELAYS_MS = Object.freeze([1000, 2000]);
 const TRANSIENT_HTTP_STATUSES = new Set([500, 502, 503, 504]);
@@ -89,6 +90,14 @@ function createStateReadRetryClient({
   return wrappedGithub;
 }
 
+async function writeCombinedSummarySafely({ core, results, projectFieldResult, now, config }) {
+  try {
+    await schedulerSummary.writeCombinedSummary(core, results, projectFieldResult, now, config);
+  } catch (error) {
+    core.warning(`Could not write combined scheduler summary: ${describeError(error)}`);
+  }
+}
+
 async function run({
   github,
   context,
@@ -107,8 +116,27 @@ async function run({
     sleepFn,
   });
   const results = await runtime.run({ github: retryingGithub, context, core, configPath, now });
-  await projectFieldSync.run({ github: retryingGithub, context, core, configPath, now });
-  return results;
+
+  let projectFieldResult;
+  try {
+    projectFieldResult = await projectFieldSync.run({ github: retryingGithub, context, core, configPath, now });
+  } catch (error) {
+    projectFieldResult = {
+      id: 'project-fields',
+      workflow: config.projectFieldSync?.workflow || null,
+      decision: 'error',
+      error: describeError(error),
+      issueNumbers: [],
+    };
+    await writeCombinedSummarySafely({ core, results, projectFieldResult, now, config });
+    throw error;
+  }
+
+  // runtime.run() writes the normal target summary before Project-field evaluation.
+  // Overwrite that intermediate view only after every scheduler-integrated decision is known,
+  // otherwise late decision paths can work correctly while remaining invisible to operators.
+  await writeCombinedSummarySafely({ core, results, projectFieldResult, now, config });
+  return [...results, projectFieldResult];
 }
 
 module.exports = {
@@ -119,4 +147,5 @@ module.exports = {
   errorStatus,
   isTransientStateReadError,
   run,
+  writeCombinedSummarySafely,
 };
