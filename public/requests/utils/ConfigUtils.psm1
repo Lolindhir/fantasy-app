@@ -19,6 +19,7 @@ function Get-Config {
     $BackupDir = Join-Path $DataDir "backup"
     $PlayersFile = Join-Path $DataDir "Players.json"
     $LeagueFile = Join-Path $DataDir "League.json"
+    $DecisionWindowsFile = Join-Path $DataDir "DecisionWindows.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
     $GamesFile = Join-Path $DataDir "Games.json"
@@ -138,6 +139,7 @@ function Get-Config {
         DataDir                          = $DataDir
         BackupDir                        = $BackupDir
         LeagueFile                       = $LeagueFile
+        DecisionWindowsFile              = $DecisionWindowsFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
         GamesFile                        = $GamesFile

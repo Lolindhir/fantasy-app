@@ -1,0 +1,138 @@
+schemaVersion: 1
+
+file:
+  path: public/data/DecisionWindows.json
+  kind: generated-json-read-model
+  generator: public/requests/RequestLeague.ps1
+  derivation: public/requests/utils/league/DecisionWindowUtils.psm1
+  architectureDecision: .ai-context/manual/decisions.yaml#ADR-036
+
+contract:
+  purpose: >
+    Small current App read model for exact NFL kickoff Decision Windows, current
+    fantasy-team/player lock associations and objective lineup integrity. It is
+    disposable generated output, not historical source of truth.
+  topLevel:
+    - SchemaVersion
+    - LeagueID
+    - Season
+    - LineupWeek
+    - LastLineupWeek
+    - DecisionWindows
+    - LookaheadDecisionWindow
+    - PlayerLockFacts
+    - TeamLineupEvaluations
+  decisionWindow:
+    fields:
+      - DecisionWindowID
+      - Week
+      - StartsAtUtc
+      - Games
+      - ParticipatingNFLTeamIDs
+      - FantasyContextState
+      - AffectedFantasyTeams
+    semantics:
+      - DecisionWindowID is the normalized absolute kickoff instant.
+      - Only games with exactly equal StartsAtUtc share one Decision Window.
+      - Nearby unequal kickoffs remain separate windows.
+      - A rescheduled stable GameID moves to the window for its new kickoff.
+      - Decision Window is not a Viewing Slot.
+  game:
+    fields:
+      - GameID
+      - Week
+      - AwayTeamID
+      - AwayTeamAbbr
+      - HomeTeamID
+      - HomeTeamAbbr
+  affectedFantasyTeam:
+    fields:
+      - FantasyTeamID
+      - AffectedRosteredPlayerCount
+      - AffectedStarterCount
+      - Players
+    playerFields:
+      - PlayerID
+      - NFLTeamID
+      - GameID
+      - IsStarter
+  playerLockFact:
+    kinds:
+      scheduled: Player has one resolvable active-week NFL game and includes GameID, DecisionWindowID and StartsAtUtc.
+      bye: Player has a known NFL team but that team has no active-week game.
+      no-team: Player has no usable current NFL-team association.
+      unknown: Required identity or join evidence is missing, conflicting or ambiguous.
+    clockRule: >
+      Upcoming versus locked is intentionally not persisted. Angular may compare
+      StartsAtUtc with now at presentation time.
+  lineupEvaluation:
+    states:
+      - ready
+      - review
+      - action-required
+      - pending
+      - unknown
+    issueCodes:
+      - OPEN_STARTER_SLOT
+      - STARTER_ON_BYE
+      - STARTER_WITHOUT_NFL_TEAM
+      - STARTER_LOCK_UNKNOWN
+      - UNRESOLVED_ROSTER_PLAYER
+      - MALFORMED_ROSTER_STRUCTURE
+      - MALFORMED_STARTER_STRUCTURE
+      - MALFORMED_ROSTER_PLAYER
+      - MALFORMED_STARTER_PLAYER
+      - DUPLICATE_ROSTER_PLAYER
+      - DUPLICATE_STARTER
+      - STARTER_NOT_IN_ROSTER
+      - STARTER_COUNT_OVERFLOW
+    rules:
+      - ExpectedStarterCount is derived from league roster configuration and is not hard-coded.
+      - Affected players alone are context and do not create warnings.
+      - Integrity ambiguity fails to unknown instead of silently producing ready.
+      - Starter on bye is action-required; starter without a usable NFL team is review.
+  lookahead:
+    rule: >
+      Include only the first Decision Window of the next fantasy lineup week and
+      only while another lineup-relevant week exists.
+    fantasyContextState: pending
+    staleStarterRule: Current-week starters are never evaluated against lookahead.
+
+ownership:
+  lineupWeek: >
+    Current runtime adapter uses fantasy-platform lineup-week evidence
+    (Sleeper settings.leg), not generated League.CurrentWeek/finality.
+  currentJoin: >
+    Transitional #343 adapter joins Player.TeamID to Schedule.teamIDHome/teamIDAway
+    using inputs already present in the League refresh. It adds no duplicate
+    provider request. #347 may replace this adapter with canonical source-data.
+  historical: >
+    Historical Decision Window relevance is rebuilt from persisted season/week
+    schedule, fantasy players/starters and week-appropriate player-to-NFL-team
+    assignments through the same provider-neutral derivation semantics. No live
+    kickoff snapshot is required.
+
+freshness:
+  writer: public/requests/utils/general/FileUtils.psm1::Save-JsonFile
+  timestampKey: DecisionWindows
+  timestampFile: public/data/Timestamps.json
+  meaning: >
+    Timestamps.json.DecisionWindows is the last semantic generated-data update.
+    It does not mean last checked or last fetched.
+  noOpRule: >
+    Repeated derivation with no semantic DecisionWindows change skips the file
+    rewrite and preserves the existing DecisionWindows timestamp.
+
+failureBehavior:
+  - Invalid required derivation input must not overwrite the prior valid generated file.
+  - Duplicate/conflicting provider-neutral evidence must never use first/last-wins behavior.
+  - Safe per-player ambiguity becomes unknown; unrecoverable derivation failures fail closed.
+
+nonGoals:
+  - Overview UI
+  - Team Detail UI
+  - historical DecisionWindows store
+  - FantasyMatchupID integration
+  - subjective start/sit optimization
+  - injury severity recommendations
+  - viewing-slot grouping
