@@ -83,11 +83,12 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
-test('scheduler keeps GitHub cron during external-tick transition and accepts external dispatch', () => {
+test('scheduler relies on external dispatch after cutover and keeps manual fallback', () => {
   const content = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'scheduler.yml'), 'utf8');
-  assert.match(content, /\n  schedule:\s*\n/, 'scheduler lost its transition GitHub schedule');
+  assert.doesNotMatch(content, /\n  schedule:\s*\n/, 'scheduler still contains GitHub schedule after external cutover');
   assert.match(content, /\n  repository_dispatch:\s*\n/, 'scheduler is missing repository_dispatch');
   assert.match(content, /external-scheduler-tick/, 'scheduler is missing the external tick event type');
+  assert.match(content, /\n  workflow_dispatch:/, 'scheduler lost manual workflow_dispatch');
 });
 
 test('migrated targets have repository_dispatch and no local schedule trigger', () => {

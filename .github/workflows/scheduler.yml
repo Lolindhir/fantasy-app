@@ -2,8 +2,6 @@ name: REPO • Scheduler
 run-name: "REPO • Scheduler • ${{ github.event_name }}"
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   repository_dispatch:
     types:
       - external-scheduler-tick

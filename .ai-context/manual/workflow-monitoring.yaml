@@ -39,8 +39,8 @@ snapshot:
       - observation-timeout
       - observation-cooldown
     transition:
-      externalCronStatus: not-yet-cut-over
-      currentSchedulerCron: "*/5 * * * *"
+      externalCronStatus: cut-over
+      currentSchedulerCron: null
       externalSchedulerEventType: external-scheduler-tick
   principles:
   - The snapshotter reads this policy and GitHub Actions run metadata but does not send notifications or mutate Issues.
@@ -55,8 +55,8 @@ snapshot:
   - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
-  - During the external-cron transition the central scheduler retains its GitHub `*/5` schedule and additionally accepts `external-scheduler-tick` repository_dispatch events. The internal schedule must remain until the external tick path is configured and productively verified.
-  - After a verified external-cron cutover, remove the scheduler's GitHub schedule in a separate change and re-evaluate snapshot.maxAgeMinutes; 150 minutes is intentionally retained during the transition.
+  - The verified external Cloudflare cron is the sole automatic wake-up source for the central scheduler through `external-scheduler-tick` repository_dispatch; workflow_dispatch remains available for manual recovery and testing.
+  - The former GitHub `*/5` schedule was removed after productive verification. Restoring GitHub cron later is a separate workflow/policy change; snapshot.maxAgeMinutes remains 150 until post-cutover observation justifies a new value.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
   - If the snapshot is older than maxAgeMinutes or cannot be read, the external watcher must treat monitoring infrastructure as unhealthy. This freshness signal is also the backstop when the central scheduler or snapshot dispatch path stops running.
   - The snapshot producer is classified for inventory completeness but its own run health is not used for paging; snapshot freshness is its independent health signal.
@@ -204,10 +204,9 @@ workflows:
   .github/workflows/scheduler.yml:
     category: critical
     relevantEvents:
-    - schedule
     - repository_dispatch
     staleAfterMinutes: 20
-    rationale: Central five-minute scheduling layer for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination and Health observation-barrier decisions; a scheduler failure or roughly 20 minutes without a successful tick can prevent downstream refreshes and is immediately actionable.
+    rationale: Central five-minute scheduling layer woken automatically by the external Cloudflare cron for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination and Health observation-barrier decisions; a scheduler failure or roughly 20 minutes without a successful external tick can prevent downstream refreshes and is immediately actionable.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
