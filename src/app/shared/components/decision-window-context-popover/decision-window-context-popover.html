@@ -1,0 +1,52 @@
+<section class="decision-window-popover" aria-label="Decision Window details">
+  <header class="decision-window-header">
+    <div class="decision-window-eyebrow">Decision Window</div>
+    <div class="decision-window-lock-time">{{ localDateTime }}</div>
+    <div class="decision-window-meta">
+      <span>Week {{ window.Week }}</span>
+      <span *ngIf="showGameCount">{{ window.Games.length }} games</span>
+      <strong>{{ countdown }}</strong>
+    </div>
+
+    <div class="decision-window-games" aria-label="NFL games in this Decision Window">
+      <span
+        *ngFor="let game of window.Games; trackBy: trackGame"
+        class="decision-window-game"
+      >{{ gameLabel(game) }}</span>
+    </div>
+  </header>
+
+  <div class="decision-window-team-list" aria-label="Fantasy team lineup status">
+    <button
+      mat-menu-item
+      *ngFor="let row of teamRows; trackBy: trackTeam"
+      type="button"
+      class="decision-window-team-row"
+      [ngClass]="'decision-window-state--' + row.state"
+      [attr.aria-label]="'Open ' + row.displayName + ' team details'"
+      (click)="openTeam(row.teamId)"
+    >
+      <span class="decision-window-team-avatar" aria-hidden="true">
+        <img *ngIf="row.avatar; else avatarFallback" [src]="row.avatar" alt="" />
+        <ng-template #avatarFallback>{{ row.fallback }}</ng-template>
+      </span>
+
+      <span class="decision-window-team-copy">
+        <span class="decision-window-team-heading">
+          <strong class="decision-window-team-name">{{ row.displayName }}</strong>
+          <span class="decision-window-team-status">
+            <span class="decision-window-status-dot" aria-hidden="true"></span>
+            {{ row.statusLabel }}
+          </span>
+        </span>
+
+        <span class="decision-window-team-context">{{ row.contextText }}</span>
+        <span *ngFor="let issue of row.issueTexts" class="decision-window-team-issue">{{ issue }}</span>
+      </span>
+
+      <span class="decision-window-team-chevron" aria-hidden="true">›</span>
+    </button>
+  </div>
+
+  <footer *ngIf="updatedLabel" class="decision-window-updated">{{ updatedLabel }}</footer>
+</section>

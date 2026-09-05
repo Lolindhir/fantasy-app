@@ -115,6 +115,7 @@ shortContext:
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
   public/data/League.json: Generiertes League-Home-Read-Model; enthält neben Lifecycle/Teams auch SeasonKickoff, nullable TradeDeadlineWeek und den aktuellen Sleeper-Matchup-Snapshot für die relevante Woche
+  public/data/DecisionWindows.json: Generiertes providerneutrales App-Read-Model für exakte Kickoff-Decision-Windows, Player-Lock-Fakten und objektive TeamLineupEvaluations; Angular nutzt StartsAtUtc nur für aktuelle Countdown-/Rollover-Darstellung und leitet keine Schedule-, Roster- oder Lineup-Domainlogik neu ab
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
@@ -125,8 +126,8 @@ shortContext:
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/interceptors/json-data-cache-busting.interceptor.ts: Fügt lokalen GET-Requests für JSON unter data/ den aktuellen Build-Commit als Queryparameter hinzu; data/past_seasons/** bleibt für langfristiges historisches Caching ausgenommen
-  src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt League-Daten, Transactions.json für Moves und historische Draft-Ressourcen
-  src/app/core/services/data.service.ts: Öffentliche App-Datenfassade; reicht gemappte League-, Player-, Draft- und Transaction-Daten an Feature-Consumer durch
+  src/app/core/services/data-api.service.ts: HTTP-Lader für generierte JSON-Dateien; lädt League-Daten, Transactions.json für Moves, DecisionWindows.json für den optionalen Overview-Lineup-Consumer und historische Draft-Ressourcen
+  src/app/core/services/data.service.ts: Öffentliche App-Datenfassade; reicht gemappte League-, Player-, Draft- und Transaction-Daten sowie das providerneutrale DecisionWindows-Read-Model und dessen semantischen Updated-Timestamp an Consumer durch, ohne DecisionWindows in das allgemeine League-Bundle zu zwingen
   src/app/core/models/transaction.models.ts: Explizite Raw- und Frontend-Modelle für abgeschlossene Transaktionen, Teilnehmer, Spieler-Assets und Draft-Pick-Bewegungen; unresolved Sleeper-Picks dürfen bis zur eindeutigen Instanzauflösung null DraftType/DraftKey tragen
   src/app/core/mappers/transaction.mapper.ts: Reiner Mapper für Transactions.json; löst Teams und Spieler auf und ordnet Assets je Teilnehmer als acquired/sent zu
   src/app/features/**: Geroutete Angular-Feature-Seiten
@@ -137,7 +138,8 @@ shortContext:
   src/app/features/drafts/tabs/current-drafts/**: Wiederverwendete current-style Draft-Cards für Current und Past mit Overview, Teams und List; nutzen zentrale Draft-ViewModels und gemeinsame Draft-UI-Komponenten
   src/app/features/drafts/tabs/future-drafts/**: Future-Drafts-UI mit teambezogenen Pick-Zusammenfassungen, DraftShell-Header, gemeinsamem DraftPickTrigger und gemeinsamem DraftPickPopover
   src/app/shared/components/league-legacy-summary/league-legacy-summary.ts: Wiederverwendbare Hall-of-Fame-Kachelkomponente für Legacy-Highlights
-  src/app/shared/components/league-timeline/league-timeline.ts: Wiederverwendbare Hero-Timeline; priorisiert pro League-Phase genau den nächsten relevanten Meilenstein und höchstens einen sekundären Termin
+  src/app/shared/components/league-timeline/league-timeline.ts: Wiederverwendbare Hero-Timeline; In-Season/Playoffs trennen recurring Operational Deadlines (Next Lineup Lock + Next Waiver Run) von unabhängigen Season Milestones (Trade Deadline/Playoffs Start/League Final), nutzen einen minute-aligned Frontend-Clock für StartsAtUtc-Rollover und isolieren DecisionWindows-Ladefehler; Pre-/Draft-/Off-Season behalten die Legacy-Milestone-Darstellung
+  src/app/shared/components/decision-window-context-popover/decision-window-context-popover.ts: Responsive Commissioner-Popover für ein exaktes Decision Window; listet die generierten Games und alle aktuellen League-Teams per FantasyTeamID/TeamID, zeigt objektive Status-/Affected-Kontexte und Updated-Freshness und öffnet den bestehenden TeamDetailDialogService
   src/app/shared/components/league-matchups/league-matchups.ts: Wiederverwendbare Matchup-Darstellung; löst TeamIDs des generated League.Matchups-Snapshots gegen gemappte Teams auf und blendet sich ohne valide Paarungen aus
   src/app/shared/components/all-time-overview/all-time-overview.ts: Wiederverwendbare All-Time-Übersicht mit Reitern für Overall und Regular Season
   src/app/shared/components/current-standings/current-standings.ts: Wiederverwendbare Current-Standings-Komponente für aktuelle Tabellenzeilen
@@ -146,6 +148,8 @@ shortContext:
   src/app/shared/components/all-time-standings/all-time-standings.ts: Wiederverwendbare All-Time-Standings-Komponente für Overall-Standings
   src/app/shared/components/all-time-regular-season-standings/all-time-regular-season-standings.ts: Wrapper für die All-Time-Regular-Season-Ansicht über die gemeinsame Regular-Season-Standings-Liste
   src/app/shared/components/regular-season-standings-list/regular-season-standings-list.ts: Gemeinsame kompakte Regular-Season-Zeilenkomponente für All-Time Regular Season und archivierte Season-Regular-Standings
+  src/app/shared/utils/decision-window-view.util.ts: Reine Frontend-View-Utility für earliest-future StartsAtUtc-Auswahl, lokale Window-/Countdown-Formatierung, TeamID-basierte Statusprojektion, Team-Counts und Commissioner-Sortierung; keine Schedule-/Roster-/Lineup-Ableitung
+  src/app/shared/utils/league-timeline-view.util.ts: Reine Timeline-ViewModel-Utility; modelliert in aktiven Phasen Operational Deadlines getrennt von Season Milestones und bewahrt die Legacy-Timeline für Pre-/Draft-/Off-Season
   src/app/shared/utils/league-standings-view.util.ts: Gemeinsame Frontend-ViewModel-Utility für Current Standings, Season Results, Hall of Fame und Season Archive
   src/app/shared/utils/draft-ui.util.ts: Gemeinsame Frontend-Utility für Draft-Round-Farben und Draft-Status-Klassen
   src/app/shared/utils/draft-capital.util.ts: Gemeinsame Frontend-Utility für Draft-Pick-Reihenfolge, Pick-Strength-Sortierung, RoundCounts und BestPick; aktuell display-/ranking-orientiert, bis generierte Draft-Capital-Werte existieren

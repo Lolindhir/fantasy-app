@@ -1,19 +1,99 @@
-<section *ngIf="timeline as view" class="league-timeline">
-  <div class="league-timeline-eyebrow">Next milestone</div>
+<section
+  *ngIf="timeline as view"
+  class="league-timeline"
+  [class.league-timeline--active]="view.activeMode"
+>
+  <ng-container *ngIf="view.activeMode; else legacyTimeline">
+    <div class="league-timeline-eyebrow">League timeline</div>
 
-  <div class="league-timeline-primary">
-    <span class="league-timeline-icon" aria-hidden="true">{{ view.primary.icon }}</span>
-    <div class="league-timeline-primary-copy">
-      <div class="league-timeline-label">{{ view.primary.label }}</div>
-      <div class="league-timeline-value">{{ view.primary.value }}</div>
-      <div *ngIf="view.primary.detail" class="league-timeline-detail">{{ view.primary.detail }}</div>
+    <div *ngIf="view.operational.length > 0" class="league-timeline-operational">
+      <ng-container *ngFor="let item of view.operational">
+        <ng-container *ngIf="item.window as decisionWindow; else passiveOperational">
+          <ng-container *ngIf="decisionWindows as decisionWindowModel">
+            <button
+              type="button"
+              class="league-timeline-operational-item league-timeline-operational-item--interactive"
+              [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
+              [matMenuTriggerFor]="decisionWindowMenu"
+              [attr.aria-label]="item.label + ': ' + item.value + '. Open Decision Window details'"
+            >
+              <span class="league-timeline-operational-heading">
+                <span aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </span>
+              <span class="league-timeline-operational-value-row">
+                <strong class="league-timeline-operational-value">{{ item.value }}</strong>
+                <span class="league-timeline-status-summary" aria-label="Lineup status summary">
+                  <span
+                    *ngFor="let badge of item.statusBadges"
+                    class="league-timeline-status-badge"
+                    [ngClass]="'league-timeline-status--' + badge.state"
+                    [attr.title]="badge.label"
+                  >
+                    <span aria-hidden="true">{{ badge.compactLabel }}</span>
+                    <span *ngIf="badge.showCount">{{ badge.count }}</span>
+                  </span>
+                </span>
+              </span>
+              <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
+              <span class="league-timeline-affordance" aria-hidden="true">›</span>
+            </button>
+
+            <mat-menu #decisionWindowMenu="matMenu" class="decision-window-menu">
+              <app-decision-window-context-popover
+                [model]="decisionWindowModel"
+                [window]="decisionWindow"
+                [teams]="league.Teams"
+                [updatedAt]="decisionWindowsUpdatedAt"
+                [now]="now"
+              />
+            </mat-menu>
+          </ng-container>
+        </ng-container>
+
+        <ng-template #passiveOperational>
+          <div
+            class="league-timeline-operational-item"
+            [class.league-timeline-operational-item--unavailable]="item.kind === 'lineup-unavailable'"
+            [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
+          >
+            <span class="league-timeline-operational-heading">
+              <span aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </span>
+            <strong class="league-timeline-operational-value">{{ item.value }}</strong>
+            <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
+          </div>
+        </ng-template>
+      </ng-container>
     </div>
-  </div>
 
-  <div *ngIf="view.secondary as secondary" class="league-timeline-secondary">
-    <span aria-hidden="true">{{ secondary.icon }}</span>
-    <span class="league-timeline-secondary-label">{{ secondary.label }}</span>
-    <strong>{{ secondary.value }}</strong>
-    <span *ngIf="secondary.detail" class="league-timeline-secondary-detail">· {{ secondary.detail }}</span>
-  </div>
+    <div *ngIf="view.milestones.length > 0" class="league-timeline-milestones">
+      <span *ngFor="let milestone of view.milestones" class="league-timeline-milestone">
+        <span aria-hidden="true">{{ milestone.icon }}</span>
+        <span>{{ milestone.label }}</span>
+        <strong>· {{ milestone.value }}</strong>
+      </span>
+    </div>
+  </ng-container>
+
+  <ng-template #legacyTimeline>
+    <div class="league-timeline-eyebrow">Next milestone</div>
+
+    <div *ngIf="view.primary as primary" class="league-timeline-primary">
+      <span class="league-timeline-icon" aria-hidden="true">{{ primary.icon }}</span>
+      <div class="league-timeline-primary-copy">
+        <div class="league-timeline-label">{{ primary.label }}</div>
+        <div class="league-timeline-value">{{ primary.value }}</div>
+        <div *ngIf="primary.detail" class="league-timeline-detail">{{ primary.detail }}</div>
+      </div>
+    </div>
+
+    <div *ngIf="view.secondary as secondary" class="league-timeline-secondary">
+      <span aria-hidden="true">{{ secondary.icon }}</span>
+      <span class="league-timeline-secondary-label">{{ secondary.label }}</span>
+      <strong>{{ secondary.value }}</strong>
+      <span *ngIf="secondary.detail" class="league-timeline-secondary-detail">· {{ secondary.detail }}</span>
+    </div>
+  </ng-template>
 </section>

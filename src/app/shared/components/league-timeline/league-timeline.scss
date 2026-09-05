@@ -80,8 +80,192 @@
   color: #6b7280;
 }
 
+.league-timeline--active {
+  padding: 9px 10px 8px;
+}
+
+.league-timeline-operational {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.league-timeline-operational-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  min-height: 84px;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1f2937;
+  text-align: left;
+}
+
+button.league-timeline-operational-item {
+  font: inherit;
+}
+
+.league-timeline-operational-item--interactive {
+  padding-right: 22px;
+  cursor: pointer;
+}
+
+.league-timeline-operational-item--interactive:hover,
+.league-timeline-operational-item--interactive:focus-visible {
+  border-color: rgba(194, 65, 12, 0.5);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.14);
+}
+
+.league-timeline-operational-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #7c2d12;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  line-height: 1.15;
+}
+
+.league-timeline-operational-value-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+  margin-top: 5px;
+}
+
+.league-timeline-operational-value {
+  font-size: 0.96rem;
+  line-height: 1.1;
+}
+
+.league-timeline-operational-detail {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 0.67rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.league-timeline-status-summary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.league-timeline-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 15px;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.league-timeline-status--action-required {
+  color: #b91c1c;
+}
+
+.league-timeline-status--review {
+  color: #a16207;
+}
+
+.league-timeline-status--unknown,
+.league-timeline-status--pending {
+  color: #64748b;
+}
+
+.league-timeline-status--ready {
+  color: #4d7c0f;
+}
+
+.league-timeline-tone--action-required {
+  border-color: rgba(220, 38, 38, 0.34);
+  background: rgba(254, 242, 242, 0.82);
+}
+
+.league-timeline-tone--review {
+  border-color: rgba(217, 119, 6, 0.34);
+  background: rgba(255, 251, 235, 0.86);
+}
+
+.league-timeline-tone--unknown,
+.league-timeline-tone--pending,
+.league-timeline-operational-item--unavailable {
+  border-color: rgba(100, 116, 139, 0.3);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.league-timeline-tone--ready {
+  border-color: rgba(101, 163, 13, 0.24);
+  background: rgba(247, 254, 231, 0.72);
+}
+
+.league-timeline-affordance {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  color: #9a3412;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.league-timeline-milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  color: #4b5563;
+  font-size: 0.68rem;
+}
+
+.league-timeline-milestone {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+}
+
+.league-timeline-milestone strong {
+  color: #334155;
+  white-space: nowrap;
+}
+
+::ng-deep .decision-window-menu.mat-mdc-menu-panel,
+::ng-deep .mat-mdc-menu-panel.decision-window-menu {
+  width: min(500px, calc(100vw - 24px));
+  min-width: min(500px, calc(100vw - 24px));
+  max-width: min(500px, calc(100vw - 24px));
+  overflow: hidden;
+}
+
+::ng-deep .decision-window-menu .mat-mdc-menu-content {
+  padding: 0;
+}
+
 @media (min-width: 768px) {
   :host {
-    max-width: 245px;
+    flex: 1 1 300px;
+    width: min(100%, 330px);
+    max-width: 330px;
+  }
+}
+
+@media (max-width: 420px) {
+  .league-timeline-operational {
+    grid-template-columns: 1fr;
   }
 }

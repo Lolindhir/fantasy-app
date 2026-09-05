@@ -10,6 +10,7 @@ export interface DataTimestamps {
   Standings?: string;
   Games?: string;
   Schedule?: string;
+  DecisionWindows?: string;
 }
 
 export interface PlayoffTeam {
