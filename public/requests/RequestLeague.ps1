@@ -15,6 +15,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\WaiverUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
@@ -334,6 +335,20 @@ try {
             $schedule = $null
         }
     }
+
+    # Decision Windows use the fantasy platform's lineup week and already-loaded refresh facts.
+    # This transitional current adapter intentionally stays separate from the provider-neutral derivation core;
+    # canonical NFL/team/player normalization moves behind the adapter in #347.
+    if (-not $schedule) {
+        throw "Decision Windows require Schedule.json in the League refresh."
+    }
+    $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
+        -League $league `
+        -Teams $teamData `
+        -Players $playersData `
+        -Schedule $schedule `
+        -LastLineupWeek ([int]$lastWeek)
+
     if ($schedule) {
         # Sortiere Spiele chronologisch nach Datum (gameID beginnt mit YYYYMMDD)
         $sortedGames = $schedule | Sort-Object { $_.gameID }
@@ -525,6 +540,12 @@ try {
     }
 
     # --- JSON schreiben ---
+    $decisionCompare = {
+        param($oldDecisionWindows, $newDecisionWindows)
+        Test-DecisionWindowReadModelChanged -OldData $oldDecisionWindows -NewData $newDecisionWindows
+    }
+    Save-JsonFile -Type "DecisionWindows" -Data $decisionWindowsAsJson -CompareScript $decisionCompare -UpdateTimestamp
+
     $compare = & Get-Compare
     Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
 
