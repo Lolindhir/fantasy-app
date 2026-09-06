@@ -224,11 +224,12 @@ workflows:
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
+    - repository_dispatch
     - push
     - workflow_call
     consecutiveFailures: 1
-    rationale: Source-data tooling failures on main/called production paths should surface promptly; manual repair runs stay
-      non-paging.
+    staleAfterMinutes: 1800
+    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
   .github/workflows/sync-league-source-data.yml:
     category: important
     relevantEvents:
@@ -237,6 +238,13 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent League Source sync dispatched by the central scheduler; main-push runs verify source-layer changes immediately, while failures or a missed daily cycle should surface promptly. Pull-request and manual repair runs remain non-paging.
+  .github/workflows/source-data-readiness.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    staleAfterMinutes: 1800
+    rationale: Daily post-source observer materializes persisted NFL, League and storage readiness evidence after the source sync windows; failures or a missed daily audit should surface, while manual repair runs remain non-paging.
   .github/workflows/sync-project-fields.yml:
     category: important
     relevantEvents:
