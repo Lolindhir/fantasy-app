@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "external-signal-relevance",
   "generated_at": "2026-09-06T04:22:50.549508Z",
-  "input_fingerprint": "dca16bcaa0f2a62f720b23acba8a5639be5611f43e1e07dd629cee33d0d02c7b",
+  "input_fingerprint": "b47d31ca3a4e99585eec14fda4cae8d209fb4a7809ef146997bc482b36ea52ea",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -18,7 +18,7 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "b6395dc67bc81e9e29aa5f846f7ca62557cd2cbdcadcaf64d05355e563a339e5",
+      "content_sha256": "ba558625d18e1ac03cb3bf1b60452e4ea6070cd14dd2bbfac00a39639deba7f6",
       "source_timestamp": null
     },
     {
@@ -66,8 +66,8 @@
         "material_event_eligible": true,
         "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
       },
-      "resolved_players": 142,
-      "unresolved_players": 2,
+      "resolved_players": 143,
+      "unresolved_players": 1,
       "ownership": {
         "fantasy_free_agent": 84,
         "mighty_giants": 9,
@@ -77,8 +77,8 @@
   ],
   "summary": {
     "players": 144,
-    "resolved_players": 142,
-    "unresolved_players": 2,
+    "resolved_players": 143,
+    "unresolved_players": 1,
     "excluded_non_player_entities": 7,
     "excluded_non_player_entities_by_type": {
       "team_defense": 7
@@ -1534,9 +1534,9 @@
         {
           "rank": 7,
           "player_id": "12530",
-          "name": null,
-          "position": null,
-          "nfl_team": null,
+          "name": "Travis Hunter",
+          "position": "WR",
+          "nfl_team": "JAX",
           "count": 17004,
           "ownership_status": "opponent_rostered",
           "owner_teams": [
@@ -10096,6 +10096,66 @@
       }
     },
     {
+      "player_id": "12530",
+      "name": "Travis Hunter",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "identity_status": "resolved",
+      "ownership": {
+        "status": "opponent_rostered",
+        "teams": [
+          {
+            "team_id": 2,
+            "team_name": "Ruhr Valley Packers",
+            "team_abbreviation": "RVP",
+            "roster_sections": [
+              "roster"
+            ]
+          }
+        ]
+      },
+      "source_signals": {
+        "sleeper-trending": {
+          "provider": "sleeper",
+          "dataset_id": "nfl-roster-activity-24h-top100",
+          "source_timestamp": "2026-09-06T04:22:50.549508Z",
+          "listed_in_current_source_union": true,
+          "signals": {
+            "add_status": "not_listed",
+            "add_rank": null,
+            "add_count": null,
+            "drop_status": "listed",
+            "drop_rank": 7,
+            "drop_count": 17004
+          },
+          "changes": {
+            "drop": {
+              "rank_changed": {
+                "sleeper_player_id": "12530",
+                "old_rank": 12,
+                "new_rank": 7,
+                "rank_delta": 5
+              },
+              "count_changed": {
+                "sleeper_player_id": "12530",
+                "old_count": 13194,
+                "new_count": 17004,
+                "count_delta": 3810
+              }
+            }
+          },
+          "comparison": {
+            "baseline": false,
+            "comparable": true,
+            "reason": "same_configuration_previous_snapshot_available",
+            "previous_generated_at": "2026-09-05T04:22:51.760431+00:00",
+            "material_event_eligible": true,
+            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+          }
+        }
+      }
+    },
+    {
       "player_id": "10213",
       "name": "Tre Tucker",
       "position": "WR",
@@ -11054,66 +11114,6 @@
       }
     },
     {
-      "player_id": "12530",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "opponent_rostered",
-        "teams": [
-          {
-            "team_id": 2,
-            "team_name": "Ruhr Valley Packers",
-            "team_abbreviation": "RVP",
-            "roster_sections": [
-              "roster"
-            ]
-          }
-        ]
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-09-06T04:22:50.549508Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "not_listed",
-            "add_rank": null,
-            "add_count": null,
-            "drop_status": "listed",
-            "drop_rank": 7,
-            "drop_count": 17004
-          },
-          "changes": {
-            "drop": {
-              "rank_changed": {
-                "sleeper_player_id": "12530",
-                "old_rank": 12,
-                "new_rank": 7,
-                "rank_delta": 5
-              },
-              "count_changed": {
-                "sleeper_player_id": "12530",
-                "old_count": 13194,
-                "new_count": 17004,
-                "count_delta": 3810
-              }
-            }
-          },
-          "comparison": {
-            "baseline": false,
-            "comparable": true,
-            "reason": "same_configuration_previous_snapshot_available",
-            "previous_generated_at": "2026-09-05T04:22:51.760431+00:00",
-            "material_event_eligible": true,
-            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-          }
-        }
-      }
-    },
-    {
       "player_id": "13403",
       "name": null,
       "position": null,
@@ -11167,15 +11167,8 @@
   ],
   "quality": {
     "status": "ok",
-    "issue_count": 2,
+    "issue_count": 1,
     "issues": [
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "12530"
-      },
       {
         "domain": "external_signal_materialization",
         "severity": "info",
