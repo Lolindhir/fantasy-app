@@ -8,6 +8,7 @@ import type { League } from '../../../core/models/league.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
+import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
 import {
   buildLeagueTimelineView,
   type LeagueTimelineDraft,
@@ -17,7 +18,12 @@ import {
 @Component({
   selector: 'app-league-timeline',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, DecisionWindowContextPopoverComponent],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    DecisionWindowContextPopoverComponent,
+    DecisionWindowMatchupContextComponent
+  ],
   templateUrl: './league-timeline.html',
   styleUrl: './league-timeline.scss'
 })

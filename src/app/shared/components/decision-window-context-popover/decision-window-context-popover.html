@@ -9,43 +9,75 @@
     </div>
 
     <div class="decision-window-games" aria-label="NFL games in this Decision Window">
-      <span
-        *ngFor="let game of window.Games; trackBy: trackGame"
-        class="decision-window-game"
-      >{{ gameLabel(game) }}</span>
+      <app-decision-window-matchup-context
+        *ngIf="matchupContext as matchup"
+        [context]="matchup"
+        [showWeek]="false"
+      />
+      <ng-container *ngIf="showGameCount">
+        <span
+          *ngFor="let game of window.Games; trackBy: trackGame"
+          class="decision-window-game"
+        >{{ gameLabel(game) }}</span>
+      </ng-container>
     </div>
   </header>
 
-  <div class="decision-window-team-list" aria-label="Fantasy team Decision Window context">
-    <button
-      *ngFor="let row of teamRows; trackBy: trackTeam"
-      type="button"
-      class="decision-window-team-row"
-      [ngClass]="'decision-window-state--' + row.state"
-      [attr.aria-label]="'Open ' + row.displayName + ' team details'"
-      (click)="openTeam(row.teamId)"
-    >
-      <span class="decision-window-team-avatar" aria-hidden="true">
-        <img *ngIf="row.avatar; else avatarFallback" [src]="row.avatar" alt="" />
-        <ng-template #avatarFallback>{{ row.fallback }}</ng-template>
-      </span>
+  <ng-container *ngIf="isTeamScope; else commissionerTeamScope">
+    <div class="decision-window-player-scope" aria-label="Affected players for this fantasy team">
+      <div class="decision-window-player-summary">{{ teamScopeSummary }}</div>
 
-      <span class="decision-window-team-copy">
-        <span class="decision-window-team-heading">
-          <strong class="decision-window-team-name">{{ row.displayName }}</strong>
-          <span *ngIf="row.statusLabel" class="decision-window-team-status">
-            <span class="decision-window-status-dot" aria-hidden="true"></span>
-            {{ row.statusLabel }}
-          </span>
+      <app-player-list
+        *ngIf="teamAffectedPlayers.length > 0"
+        [players]="teamAffectedPlayers"
+        [columns]="teamPlayerColumns"
+        [compact]="true"
+        dynamicColumnHeader="Role"
+        [dynamicColumnValueFn]="getTeamPlayerRole"
+      />
+
+      <p *ngIf="teamAffectedPlayers.length === 0" class="decision-window-player-empty">
+        No affected players for this team.
+      </p>
+      <p *ngIf="unresolvedTeamPlayerCount > 0" class="decision-window-player-warning">
+        {{ unresolvedTeamPlayerCount }} affected
+        {{ unresolvedTeamPlayerCount === 1 ? 'player could' : 'players could' }} not be matched to player data.
+      </p>
+    </div>
+  </ng-container>
+
+  <ng-template #commissionerTeamScope>
+    <div class="decision-window-team-list" aria-label="Fantasy team Decision Window context">
+      <button
+        *ngFor="let row of teamRows; trackBy: trackTeam"
+        type="button"
+        class="decision-window-team-row"
+        [ngClass]="'decision-window-state--' + row.state"
+        [attr.aria-label]="'Open ' + row.displayName + ' team details'"
+        (click)="openTeam(row.teamId)"
+      >
+        <span class="decision-window-team-avatar" aria-hidden="true">
+          <img *ngIf="row.avatar; else avatarFallback" [src]="row.avatar" alt="" />
+          <ng-template #avatarFallback>{{ row.fallback }}</ng-template>
         </span>
 
-        <span class="decision-window-team-context">{{ row.contextText }}</span>
-        <span *ngFor="let issue of row.issueTexts" class="decision-window-team-issue">{{ issue }}</span>
-      </span>
+        <span class="decision-window-team-copy">
+          <span class="decision-window-team-heading">
+            <strong class="decision-window-team-name">{{ row.displayName }}</strong>
+            <span *ngIf="row.statusLabel" class="decision-window-team-status">
+              <span class="decision-window-status-dot" aria-hidden="true"></span>
+              {{ row.statusLabel }}
+            </span>
+          </span>
 
-      <span class="decision-window-team-chevron" aria-hidden="true">›</span>
-    </button>
-  </div>
+          <span class="decision-window-team-context">{{ row.contextText }}</span>
+          <span *ngFor="let issue of row.issueTexts" class="decision-window-team-issue">{{ issue }}</span>
+        </span>
+
+        <span class="decision-window-team-chevron" aria-hidden="true">›</span>
+      </button>
+    </div>
+  </ng-template>
 
   <footer *ngIf="updatedLabel" class="decision-window-updated">{{ updatedLabel }}</footer>
 </section>
