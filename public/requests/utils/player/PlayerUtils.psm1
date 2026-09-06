@@ -56,6 +56,30 @@ function New-PlayerProviderLookups {
     }
 }
 
+function Get-AppFantasyPosition {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $SleeperPlayer
+    )
+
+    $allowedPositions = @("TE", "QB", "RB", "WR", "K")
+    $primaryPosition = ([string]$SleeperPlayer.position).Trim().ToUpperInvariant()
+
+    if ($primaryPosition -in $allowedPositions) {
+        return $primaryPosition
+    }
+
+    foreach ($fantasyPosition in @($SleeperPlayer.fantasy_positions)) {
+        $candidate = ([string]$fantasyPosition).Trim().ToUpperInvariant()
+        if ($candidate -in $allowedPositions) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
 function New-HistoricalPlayerTankLookup {
     param(
         [Parameter(Mandatory = $true)]
