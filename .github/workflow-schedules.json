@@ -103,13 +103,13 @@
     },
     {
       "id": "nfl-source",
-      "workflow": "sync-nfl-source-data-scheduled.yml",
-      "path": ".github/workflows/sync-nfl-source-data-scheduled.yml",
+      "workflow": "sync-nfl-source-data.yml",
+      "path": ".github/workflows/sync-nfl-source-data.yml",
       "eventType": "scheduler-sync-nfl-source-data",
       "profile": "productive",
       "timezone": "Europe/Berlin",
       "cron": ["0 4 * * *"],
-      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
       "id": "league-source",
