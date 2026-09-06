@@ -23,7 +23,14 @@
               </span>
               <span class="league-timeline-operational-value-row">
                 <strong class="league-timeline-operational-value">{{ item.value }}</strong>
-                <span class="league-timeline-status-summary" aria-label="Lineup status summary">
+                <span *ngIf="item.affectedSummary" class="league-timeline-affected-summary">
+                  {{ item.affectedSummary }}
+                </span>
+                <span
+                  *ngIf="item.statusBadges.length > 0"
+                  class="league-timeline-status-summary"
+                  aria-label="Lineup plausibility status summary"
+                >
                   <span
                     *ngFor="let badge of item.statusBadges"
                     class="league-timeline-status-badge"

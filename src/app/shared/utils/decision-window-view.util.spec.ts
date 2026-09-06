@@ -7,6 +7,7 @@ import type { FantasyTeam } from '../../core/models/league.models';
 import {
   buildDecisionWindowStatusBadges,
   buildDecisionWindowTeamRows,
+  formatDecisionWindowAffectedSummary,
   formatDecisionWindowContext,
   formatDecisionWindowIssue,
   formatDecisionWindowsUpdatedAt,
@@ -75,7 +76,7 @@ describe('decision-window-view util', () => {
     expect(label).not.toContain('Sunday Early');
   });
 
-  it('renders every League team and gives zero-affected teams explicit context', () => {
+  it('renders every League team with explicit affected or not-affected context', () => {
     const window = createWindow('2026-09-06T17:00:00Z', 1, {
       AffectedFantasyTeams: [{
         FantasyTeamID: 1,
@@ -89,8 +90,10 @@ describe('decision-window-view util', () => {
     const rows = buildDecisionWindowTeamRows(model, window, teams);
 
     expect(rows.length).toBe(teams.length);
-    expect(rows.find(row => row.teamId === 1)?.contextText).toBe('3 players · 2 starters');
-    expect(rows.find(row => row.teamId === 2)?.contextText).toBe('No players in this window');
+    expect(rows.find(row => row.teamId === 1)?.contextText)
+      .toBe('Affected · 3 players · 2 starters');
+    expect(rows.find(row => row.teamId === 2)?.contextText)
+      .toBe('Not affected · No players in this window');
   });
 
   it('sorts commissioner rows by semantic attention before relevance', () => {
@@ -129,8 +132,10 @@ describe('decision-window-view util', () => {
     const rows = buildDecisionWindowTeamRows(model, window, teams);
 
     expect(rows.map(row => row.teamId)).toEqual([4, 3, 2, 1, 5]);
-    expect(rows.find(row => row.teamId === 2)?.contextText).toBe('5 players · 0 starters');
-    expect(rows.find(row => row.teamId === 1)?.contextText).toBe('No players in this window');
+    expect(rows.find(row => row.teamId === 2)?.contextText)
+      .toBe('Affected · 5 players · 0 starters');
+    expect(rows.find(row => row.teamId === 1)?.contextText)
+      .toBe('Not affected · No players in this window');
   });
 
   it('marks every team pending for lookahead without fabricated counts or relevance reordering', () => {
@@ -146,10 +151,11 @@ describe('decision-window-view util', () => {
     expect(rows.every(row => row.affectedRosteredPlayerCount === null)).toBeTrue();
     expect(rows.every(row => row.affectedStarterCount === null)).toBeTrue();
     expect(rows.every(row => row.contextText === 'Week 2 lineup not available yet')).toBeTrue();
+    expect(formatDecisionWindowAffectedSummary(rows)).toBeNull();
     expect(rows.map(row => row.teamId)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('counts fantasy teams rather than issue objects in compact status', () => {
+  it('counts fantasy teams rather than issue objects in compact problem status', () => {
     const window = createWindow('2026-09-06T17:00:00Z', 1);
     const evaluations = [
       createEvaluation(1, 'action-required', [
@@ -168,9 +174,10 @@ describe('decision-window-view util', () => {
     expect(badges.find(badge => badge.state === 'review')?.count).toBe(1);
     expect(badges.find(badge => badge.state === 'unknown')?.count).toBe(1);
     expect(badges.find(badge => badge.state === 'unknown')?.compactLabel).toBe('Data unclear');
+    expect(badges.some(badge => badge.state === 'ready')).toBeFalse();
   });
 
-  it('keeps affected players as context when generated evaluation is ready', () => {
+  it('uses exposure as context without presenting generated ready as a visible status', () => {
     const window = createWindow('2026-09-06T17:00:00Z', 1, {
       AffectedFantasyTeams: [{
         FantasyTeamID: 1,
@@ -184,15 +191,31 @@ describe('decision-window-view util', () => {
     const badges = buildDecisionWindowStatusBadges(rows);
 
     expect(rows.find(row => row.teamId === 1)?.state).toBe('ready');
-    expect(badges).toEqual([jasmine.objectContaining({ state: 'ready', showCount: false })]);
+    expect(rows.find(row => row.teamId === 1)?.statusLabel).toBeNull();
+    expect(rows.find(row => row.teamId === 1)?.contextText)
+      .toBe('Affected · 4 players · 0 starters');
+    expect(badges).toEqual([]);
   });
 
-  it('presents generated unknown state as user-facing Data unclear', () => {
+  it('summarizes affected teams and teams with starters independently of ready state', () => {
+    const window = createWindow('2026-09-06T17:00:00Z', 1, {
+      AffectedFantasyTeams: [
+        createAffectedTeam(1, 7, 3),
+        createAffectedTeam(2, 1, 0),
+        createAffectedTeam(3, 5, 0)
+      ]
+    });
+    const model = createModel([window], teams.map(team => createEvaluation(team.TeamID, 'ready')));
+    const rows = buildDecisionWindowTeamRows(model, window, teams);
+
+    expect(formatDecisionWindowAffectedSummary(rows)).toBe('3 affected · 1 with starters');
+  });
+
+  it('presents generated non-ready states with user-facing labels', () => {
     expect(getDecisionWindowStatusLabel('action-required')).toBe('Action required');
     expect(getDecisionWindowStatusLabel('review')).toBe('Review');
     expect(getDecisionWindowStatusLabel('unknown')).toBe('Data unclear');
     expect(getDecisionWindowStatusLabel('pending')).toBe('Pending');
-    expect(getDecisionWindowStatusLabel('ready')).toBe('Ready');
   });
 
   it('explains unresolved roster-player data without blaming the lineup', () => {

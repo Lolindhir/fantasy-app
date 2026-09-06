@@ -7,6 +7,7 @@ import type { League } from '../../core/models/league.models';
 import {
   buildDecisionWindowStatusBadges,
   buildDecisionWindowTeamRows,
+  formatDecisionWindowAffectedSummary,
   formatDecisionWindowContext,
   formatDecisionWindowCountdown,
   getDecisionWindowAttentionState,
@@ -30,6 +31,7 @@ export interface LeagueTimelineItem {
 export interface LeagueTimelineOperationalItem extends LeagueTimelineItem {
   kind: 'lineup' | 'waiver' | 'lineup-unavailable';
   window: DecisionWindow | null;
+  affectedSummary: string | null;
   statusBadges: DecisionWindowStatusBadge[];
   tone: DecisionWindowEvaluationState | null;
 }
@@ -148,6 +150,7 @@ function buildLineupOperationalItem(
       value: 'Unavailable',
       detail: 'Lineup data unavailable',
       window: null,
+      affectedSummary: null,
       statusBadges: [],
       tone: 'unknown'
     };
@@ -158,6 +161,7 @@ function buildLineupOperationalItem(
   if (!window) return null;
 
   const rows = buildDecisionWindowTeamRows(decisionWindows, window, league.Teams);
+  const attentionState = getDecisionWindowAttentionState(rows);
   return {
     kind: 'lineup',
     icon: '🏈',
@@ -165,8 +169,9 @@ function buildLineupOperationalItem(
     value: formatDecisionWindowCountdown(window, now),
     detail: formatDecisionWindowContext(window),
     window,
+    affectedSummary: formatDecisionWindowAffectedSummary(rows),
     statusBadges: buildDecisionWindowStatusBadges(rows),
-    tone: getDecisionWindowAttentionState(rows)
+    tone: attentionState === 'ready' ? null : attentionState
   };
 }
 
@@ -183,6 +188,7 @@ function buildOperationalDateItem(
     value: formatCountdown(date.getTime() - now.getTime()),
     detail: formatLocalDateTime(date),
     window: null,
+    affectedSummary: null,
     statusBadges: [],
     tone: null
   };
