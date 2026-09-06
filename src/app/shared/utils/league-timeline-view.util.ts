@@ -4,6 +4,7 @@ import type {
   DecisionWindowsReadModel
 } from '../../core/models/decision-window.models';
 import type { League } from '../../core/models/league.models';
+import type { NFLTeam } from '../../core/models/player.models';
 import {
   buildDecisionWindowStatusBadges,
   buildDecisionWindowTeamRows,
@@ -28,12 +29,27 @@ export interface LeagueTimelineItem {
   detail: string | null;
 }
 
+export interface LeagueTimelineNflTeamBrand {
+  id: string;
+  abbr: string;
+  logo: string | null;
+}
+
+export interface LeagueTimelineMatchupContext {
+  kind: 'single-game' | 'multi-game';
+  week: number;
+  gameCount: number;
+  away: LeagueTimelineNflTeamBrand | null;
+  home: LeagueTimelineNflTeamBrand | null;
+}
+
 export interface LeagueTimelineOperationalItem extends LeagueTimelineItem {
   kind: 'lineup' | 'waiver' | 'lineup-unavailable';
   window: DecisionWindow | null;
   affectedSummary: string | null;
   statusBadges: DecisionWindowStatusBadge[];
   tone: DecisionWindowEvaluationState | null;
+  matchup: LeagueTimelineMatchupContext | null;
 }
 
 export interface LeagueTimelineView {
@@ -50,10 +66,18 @@ export interface LeagueTimelineBuildInput {
   decisionWindows: DecisionWindowsReadModel | null;
   decisionWindowsUnavailable: boolean;
   now: Date;
+  nflTeams?: NFLTeam[];
 }
 
 export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): LeagueTimelineView | null {
-  const { league, drafts, decisionWindows, decisionWindowsUnavailable, now } = input;
+  const {
+    league,
+    drafts,
+    decisionWindows,
+    decisionWindowsUnavailable,
+    now,
+    nflTeams = []
+  } = input;
   const kickoff = parseDate(league.SeasonKickoff);
   const capDeadline = parseDate(league.CapDeadline);
   const nextWaiverRun = parseDate(league.NextWaiverRun);
@@ -76,6 +100,7 @@ export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): League
       league,
       decisionWindows,
       decisionWindowsUnavailable,
+      nflTeams,
       now
     );
     const operational = [lineupItem, waiverItem].filter(
@@ -136,10 +161,37 @@ export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): League
   return null;
 }
 
+export function buildLeagueTimelineMatchupContext(
+  window: DecisionWindow,
+  nflTeams: NFLTeam[]
+): LeagueTimelineMatchupContext | null {
+  if (window.Games.length === 0) return null;
+
+  if (window.Games.length > 1) {
+    return {
+      kind: 'multi-game',
+      week: window.Week,
+      gameCount: window.Games.length,
+      away: null,
+      home: null
+    };
+  }
+
+  const game = window.Games[0];
+  return {
+    kind: 'single-game',
+    week: window.Week,
+    gameCount: 1,
+    away: resolveNflTeamBrand(game.AwayTeamID, game.AwayTeamAbbr, nflTeams),
+    home: resolveNflTeamBrand(game.HomeTeamID, game.HomeTeamAbbr, nflTeams)
+  };
+}
+
 function buildLineupOperationalItem(
   league: League,
   decisionWindows: DecisionWindowsReadModel | null,
   unavailable: boolean,
+  nflTeams: NFLTeam[],
   now: Date
 ): LeagueTimelineOperationalItem | null {
   if (unavailable) {
@@ -152,7 +204,8 @@ function buildLineupOperationalItem(
       window: null,
       affectedSummary: null,
       statusBadges: [],
-      tone: 'unknown'
+      tone: 'unknown',
+      matchup: null
     };
   }
 
@@ -171,7 +224,8 @@ function buildLineupOperationalItem(
     window,
     affectedSummary: formatDecisionWindowAffectedSummary(rows),
     statusBadges: buildDecisionWindowStatusBadges(rows),
-    tone: attentionState === 'ready' ? null : attentionState
+    tone: attentionState === 'ready' ? null : attentionState,
+    matchup: buildLeagueTimelineMatchupContext(window, nflTeams)
   };
 }
 
@@ -190,7 +244,8 @@ function buildOperationalDateItem(
     window: null,
     affectedSummary: null,
     statusBadges: [],
-    tone: null
+    tone: null,
+    matchup: null
   };
 }
 
@@ -204,6 +259,22 @@ function buildLegacyView(
     secondary,
     operational: [],
     milestones: []
+  };
+}
+
+function resolveNflTeamBrand(
+  teamId: string,
+  teamAbbr: string | null,
+  nflTeams: NFLTeam[]
+): LeagueTimelineNflTeamBrand {
+  const normalizedAbbr = teamAbbr?.trim().toUpperCase() ?? '';
+  const team = nflTeams.find(candidate => candidate.ID === teamId)
+    ?? nflTeams.find(candidate => candidate.Abv.trim().toUpperCase() === normalizedAbbr);
+
+  return {
+    id: team?.ID ?? teamId,
+    abbr: team?.Abv || teamAbbr || teamId,
+    logo: team?.Logo || null
   };
 }
 
