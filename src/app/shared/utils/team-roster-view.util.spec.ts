@@ -1,8 +1,11 @@
+import type { DecisionWindowPlayerLockFact } from '../../core/models/decision-window.models';
 import type { Player, RankingEntry } from '../../core/models/player.models';
 import {
   buildRosterPlayerGroups,
+  formatRosterNextLockValue,
   isCombinedRankingAvailable,
-  sortRosterPlayers
+  sortRosterPlayers,
+  type RosterNextLockContext
 } from './team-roster-view.util';
 
 describe('team roster view utilities', () => {
@@ -97,6 +100,101 @@ describe('team roster view utilities', () => {
     expect(sortRosterPlayers([middle, older, younger], 'ageDesc').map(player => player.ID))
       .toEqual(['older', 'middle', 'younger']);
   });
+
+  it('sorts Next Lock by actionability with already locked players intentionally last', () => {
+    const players = [
+      makePlayer('locked-late'),
+      makePlayer('bye'),
+      makePlayer('future-late'),
+      makePlayer('no-team'),
+      makePlayer('unknown-z'),
+      makePlayer('future-early'),
+      makePlayer('locked-early'),
+      makePlayer('missing-a')
+    ];
+    const context = lockContext('2026-09-06T16:00:00Z', [
+      lockFact('future-early', 'scheduled', '2026-09-06T17:00:00Z'),
+      lockFact('future-late', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('unknown-z', 'unknown'),
+      lockFact('no-team', 'no-team'),
+      lockFact('bye', 'bye'),
+      lockFact('locked-early', 'scheduled', '2026-09-06T13:00:00Z'),
+      lockFact('locked-late', 'scheduled', '2026-09-06T15:00:00Z')
+    ]);
+
+    expect(sortRosterPlayers(players, 'nextLock', context).map(player => player.ID)).toEqual([
+      'future-early',
+      'future-late',
+      'missing-a',
+      'unknown-z',
+      'no-team',
+      'bye',
+      'locked-early',
+      'locked-late'
+    ]);
+  });
+
+  it('recomputes future vs Locked from StartsAtUtc at kickoff without new lock facts', () => {
+    const scheduled = makePlayer('scheduled');
+    const bye = makePlayer('bye');
+    const facts = [
+      lockFact('scheduled', 'scheduled', '2026-09-06T18:00:00Z'),
+      lockFact('bye', 'bye')
+    ];
+
+    const before = lockContext('2026-09-06T17:59:00Z', facts);
+    expect(sortRosterPlayers([bye, scheduled], 'nextLock', before).map(player => player.ID))
+      .toEqual(['scheduled', 'bye']);
+    expect(formatRosterNextLockValue(scheduled, before)).not.toBe('Locked');
+
+    const atKickoff = lockContext('2026-09-06T18:00:00Z', facts);
+    expect(sortRosterPlayers([scheduled, bye], 'nextLock', atKickoff).map(player => player.ID))
+      .toEqual(['bye', 'scheduled']);
+    expect(formatRosterNextLockValue(scheduled, atKickoff)).toBe('Locked');
+  });
+
+  it('uses explicit deterministic dynamic values for non-scheduled lock states', () => {
+    const players = [makePlayer('unknown'), makePlayer('no-team'), makePlayer('bye'), makePlayer('missing')];
+    const context = lockContext('2026-09-06T16:00:00Z', [
+      lockFact('unknown', 'unknown'),
+      lockFact('no-team', 'no-team'),
+      lockFact('bye', 'bye')
+    ]);
+
+    expect(formatRosterNextLockValue(players[0], context)).toBe('Unknown');
+    expect(formatRosterNextLockValue(players[1], context)).toBe('No team');
+    expect(formatRosterNextLockValue(players[2], context)).toBe('Bye');
+    expect(formatRosterNextLockValue(players[3], context)).toBe('Unknown');
+  });
+
+  it('keeps Next Lock composable with existing roster-status and position grouping', () => {
+    const rosterLate = makePlayer('roster-late', { position: 'WR' });
+    const rosterEarly = makePlayer('roster-early', { position: 'WR' });
+    const taxi = makePlayer('taxi', { position: 'QB' });
+    const ir = makePlayer('ir', { position: 'RB' });
+    const players = [rosterLate, taxi, rosterEarly, ir];
+    const context = lockContext('2026-09-06T16:00:00Z', [
+      lockFact('roster-late', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('roster-early', 'scheduled', '2026-09-06T17:00:00Z'),
+      lockFact('taxi', 'unknown'),
+      lockFact('ir', 'bye')
+    ]);
+
+    const statusGroups = buildRosterPlayerGroups(
+      players,
+      'rosterStatus',
+      'nextLock',
+      { roster: [rosterLate, rosterEarly], taxi: [taxi], ir: [ir] },
+      context
+    );
+    expect(statusGroups[0].players.map(player => player.ID)).toEqual(['roster-early', 'roster-late']);
+    expect(statusGroups[1].players.map(player => player.ID)).toEqual(['taxi']);
+    expect(statusGroups[2].players.map(player => player.ID)).toEqual(['ir']);
+
+    const positionGroups = buildRosterPlayerGroups(players, 'position', 'nextLock', undefined, context);
+    expect(positionGroups.map(group => group.label)).toEqual(['Quarterbacks', 'Running Backs', 'Wide Receivers']);
+    expect(positionGroups[2].players.map(player => player.ID)).toEqual(['roster-early', 'roster-late']);
+  });
 });
 
 interface PlayerOptions {
@@ -122,4 +220,29 @@ function makePlayer(id: string, options: PlayerOptions = {}): Player {
     Age: options.age ?? 25,
     Stats: { Ranking: ranking }
   } as unknown as Player;
+}
+
+function lockContext(now: string, facts: DecisionWindowPlayerLockFact[]): RosterNextLockContext {
+  return {
+    fantasyTeamId: 42,
+    playerLockFacts: facts,
+    now: new Date(now)
+  };
+}
+
+function lockFact(
+  playerId: string,
+  kind: DecisionWindowPlayerLockFact['Kind'],
+  startsAtUtc: string | null = null
+): DecisionWindowPlayerLockFact {
+  return {
+    FantasyTeamID: 42,
+    PlayerID: playerId,
+    NFLTeamID: kind === 'no-team' ? null : 'NE',
+    Kind: kind,
+    GameID: kind === 'scheduled' ? `${playerId}-game` : null,
+    DecisionWindowID: kind === 'scheduled' ? `${playerId}-window` : null,
+    StartsAtUtc: startsAtUtc,
+    IsStarter: false
+  };
 }
