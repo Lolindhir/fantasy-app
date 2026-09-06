@@ -30,6 +30,12 @@ nextLineupLock:
   rollover: exact kickoff; game Final is not consulted
   pending: generated pending lookahead is shown without reusing current-week evaluation or affected counts
   status: generated team evaluation states are displayed and compact counts count teams, not issues
+  statusPresentation:
+    unknown: Data unclear
+    rule: >
+      Internal generated state names remain unchanged. User-facing copy may explain
+      uncertainty in plain English without implying that the manager's lineup is
+      necessarily wrong.
 
 popover:
   component: src/app/shared/components/decision-window-context-popover/decision-window-context-popover.ts
@@ -40,7 +46,20 @@ popover:
     while providing reliable narrow-viewport interaction and focus restoration.
   content: exact-window games plus every current League team
   mergeKey: FantasyTeamID to TeamID only
-  ordering: action-required, review, unknown, pending, ready, then stable League team order
+  ordering:
+    primary: action-required, review, unknown, pending, ready
+    sameState:
+      - affected starter count descending
+      - affected rostered-player count descending
+      - stable League team order
+      - display name
+    pending: >
+      Pending rows have no fabricated affected counts and therefore retain stable
+      League order inside the pending state.
+  issuePresentation: >
+    Objective generated issue codes are translated into concise English UI copy.
+    UNRESOLVED_ROSTER_PLAYER is presented as a player-data matching problem rather
+    than a lineup-quality judgment.
   drilldown: existing shared Team Detail service
   freshnessLabel: Updated
 
@@ -61,7 +80,7 @@ boundaries:
     - frontend clock/countdown
     - future-window selection
     - local formatting
-    - status display and attention sorting
+    - status display, relevance tie-breaks and attention sorting
     - interaction and responsive layout
   doesNotOwn:
     - Decision Window derivation/grouping

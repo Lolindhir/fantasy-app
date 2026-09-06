@@ -93,8 +93,16 @@ describe('decision-window-view util', () => {
     expect(rows.find(row => row.teamId === 2)?.contextText).toBe('No players in this window');
   });
 
-  it('sorts commissioner rows by semantic attention and stable team order', () => {
-    const window = createWindow('2026-09-06T17:00:00Z', 1);
+  it('sorts commissioner rows by semantic attention before relevance', () => {
+    const window = createWindow('2026-09-06T17:00:00Z', 1, {
+      AffectedFantasyTeams: [
+        createAffectedTeam(1, 5, 3),
+        createAffectedTeam(2, 1, 0),
+        createAffectedTeam(3, 1, 0),
+        createAffectedTeam(4, 0, 0),
+        createAffectedTeam(5, 5, 3)
+      ]
+    });
     const model = createModel([window], [
       createEvaluation(1, 'ready'),
       createEvaluation(2, 'unknown'),
@@ -108,7 +116,24 @@ describe('decision-window-view util', () => {
     expect(rows.map(row => row.teamId)).toEqual([4, 3, 2, 1, 5]);
   });
 
-  it('marks every team pending for lookahead without fabricated counts', () => {
+  it('sorts same-state rows by affected starters, then rostered players, then stable order', () => {
+    const window = createWindow('2026-09-06T17:00:00Z', 1, {
+      AffectedFantasyTeams: [
+        createAffectedTeam(2, 5, 0),
+        createAffectedTeam(3, 2, 1),
+        createAffectedTeam(4, 4, 1)
+      ]
+    });
+    const model = createModel([window], teams.map(team => createEvaluation(team.TeamID, 'ready')));
+
+    const rows = buildDecisionWindowTeamRows(model, window, teams);
+
+    expect(rows.map(row => row.teamId)).toEqual([4, 3, 2, 1, 5]);
+    expect(rows.find(row => row.teamId === 2)?.contextText).toBe('5 players · 0 starters');
+    expect(rows.find(row => row.teamId === 1)?.contextText).toBe('No players in this window');
+  });
+
+  it('marks every team pending for lookahead without fabricated counts or relevance reordering', () => {
     const lookahead = createWindow('2026-09-11T00:15:00Z', 2, {
       FantasyContextState: 'pending',
       AffectedFantasyTeams: []
@@ -121,6 +146,7 @@ describe('decision-window-view util', () => {
     expect(rows.every(row => row.affectedRosteredPlayerCount === null)).toBeTrue();
     expect(rows.every(row => row.affectedStarterCount === null)).toBeTrue();
     expect(rows.every(row => row.contextText === 'Week 2 lineup not available yet')).toBeTrue();
+    expect(rows.map(row => row.teamId)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it('counts fantasy teams rather than issue objects in compact status', () => {
@@ -141,6 +167,7 @@ describe('decision-window-view util', () => {
     expect(badges.find(badge => badge.state === 'action-required')?.count).toBe(1);
     expect(badges.find(badge => badge.state === 'review')?.count).toBe(1);
     expect(badges.find(badge => badge.state === 'unknown')?.count).toBe(1);
+    expect(badges.find(badge => badge.state === 'unknown')?.compactLabel).toBe('Data unclear');
   });
 
   it('keeps affected players as context when generated evaluation is ready', () => {
@@ -160,12 +187,34 @@ describe('decision-window-view util', () => {
     expect(badges).toEqual([jasmine.objectContaining({ state: 'ready', showCount: false })]);
   });
 
-  it('projects all semantic status labels without turning uncertainty into ready', () => {
+  it('presents generated unknown state as user-facing Data unclear', () => {
     expect(getDecisionWindowStatusLabel('action-required')).toBe('Action required');
     expect(getDecisionWindowStatusLabel('review')).toBe('Review');
-    expect(getDecisionWindowStatusLabel('unknown')).toBe('Unknown');
+    expect(getDecisionWindowStatusLabel('unknown')).toBe('Data unclear');
     expect(getDecisionWindowStatusLabel('pending')).toBe('Pending');
     expect(getDecisionWindowStatusLabel('ready')).toBe('Ready');
+  });
+
+  it('explains unresolved roster-player data without blaming the lineup', () => {
+    const window = createWindow('2026-09-06T17:00:00Z', 1);
+    const model = createModel([window], [
+      createEvaluation(1, 'unknown', [
+        { Code: 'UNRESOLVED_ROSTER_PLAYER', State: 'unknown', PlayerID: 'p1', Count: null },
+        { Code: 'UNRESOLVED_ROSTER_PLAYER', State: 'unknown', PlayerID: 'p2', Count: null }
+      ]),
+      ...teams.slice(1).map(team => createEvaluation(team.TeamID, 'ready'))
+    ]);
+
+    const row = buildDecisionWindowTeamRows(model, window, teams).find(item => item.teamId === 1);
+
+    expect(row?.statusLabel).toBe('Data unclear');
+    expect(row?.issueTexts).toEqual(['2 roster players could not be matched to player data']);
+    expect(formatDecisionWindowIssue({
+      Code: 'UNRESOLVED_ROSTER_PLAYER',
+      State: 'unknown',
+      PlayerID: 'p1',
+      Count: null
+    })).toBe('Roster player could not be matched to player data');
   });
 
   it('formats objective issue text and semantic Updated freshness', () => {
@@ -227,6 +276,19 @@ function createGame(gameId: string, away: string, home: string): DecisionWindow[
     AwayTeamAbbr: away,
     HomeTeamID: home,
     HomeTeamAbbr: home
+  };
+}
+
+function createAffectedTeam(
+  teamId: number,
+  rosteredCount: number,
+  starterCount: number
+): DecisionWindow['AffectedFantasyTeams'][number] {
+  return {
+    FantasyTeamID: teamId,
+    AffectedRosteredPlayerCount: rosteredCount,
+    AffectedStarterCount: starterCount,
+    Players: []
   };
 }
 

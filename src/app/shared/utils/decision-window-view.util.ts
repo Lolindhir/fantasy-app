@@ -80,8 +80,8 @@ export function buildDecisionWindowTeamRows(
       const issueTexts = pending
         ? []
         : evaluation
-          ? Array.from(new Set(evaluation.Issues.map(formatDecisionWindowIssue)))
-          : ['Lineup status unavailable'];
+          ? formatDecisionWindowIssues(evaluation.Issues)
+          : ['Lineup data unavailable'];
 
       return {
         teamId: team.TeamID,
@@ -105,6 +105,15 @@ export function buildDecisionWindowTeamRows(
     .sort((a, b) => {
       const byAttention = ATTENTION_ORDER[a.state] - ATTENTION_ORDER[b.state];
       if (byAttention !== 0) return byAttention;
+
+      const byAffectedStarters =
+        (b.affectedStarterCount ?? -1) - (a.affectedStarterCount ?? -1);
+      if (byAffectedStarters !== 0) return byAffectedStarters;
+
+      const byAffectedRostered =
+        (b.affectedRosteredPlayerCount ?? -1) - (a.affectedRosteredPlayerCount ?? -1);
+      if (byAffectedRostered !== 0) return byAffectedRostered;
+
       const byStableOrder = a.stableOrder - b.stableOrder;
       if (byStableOrder !== 0) return byStableOrder;
       return a.displayName.localeCompare(b.displayName);
@@ -240,7 +249,7 @@ export function getDecisionWindowStatusLabel(state: DecisionWindowEvaluationStat
     case 'review':
       return 'Review';
     case 'unknown':
-      return 'Unknown';
+      return 'Data unclear';
     case 'pending':
       return 'Pending';
     case 'ready':
@@ -259,9 +268,9 @@ export function formatDecisionWindowIssue(issue: DecisionWindowIssue): string {
     case 'STARTER_WITHOUT_NFL_TEAM':
       return 'Starter without NFL team';
     case 'STARTER_LOCK_UNKNOWN':
-      return 'Starter lock status unknown';
+      return 'Starter lock data could not be resolved';
     case 'UNRESOLVED_ROSTER_PLAYER':
-      return 'Roster player lock status unknown';
+      return 'Roster player could not be matched to player data';
     case 'MALFORMED_ROSTER_STRUCTURE':
       return 'Roster data unavailable';
     case 'MALFORMED_STARTER_STRUCTURE':
@@ -291,7 +300,7 @@ function createStatusBadge(
   const compactLabels: Record<DecisionWindowEvaluationState, string> = {
     'action-required': 'Action',
     review: 'Review',
-    unknown: 'Unknown',
+    unknown: 'Data unclear',
     pending: 'Pending',
     ready: 'Ready'
   };
@@ -303,6 +312,27 @@ function createStatusBadge(
     compactLabel: compactLabels[state],
     showCount
   };
+}
+
+function formatDecisionWindowIssues(issues: DecisionWindowIssue[]): string[] {
+  const unresolvedRosterPlayerCount = issues.filter(
+    issue => issue.Code === 'UNRESOLVED_ROSTER_PLAYER'
+  ).length;
+  const issueTexts: string[] = [];
+
+  if (unresolvedRosterPlayerCount > 0) {
+    issueTexts.push(
+      `${unresolvedRosterPlayerCount} roster ${unresolvedRosterPlayerCount === 1 ? 'player' : 'players'} could not be matched to player data`
+    );
+  }
+
+  issueTexts.push(
+    ...issues
+      .filter(issue => issue.Code !== 'UNRESOLVED_ROSTER_PLAYER')
+      .map(formatDecisionWindowIssue)
+  );
+
+  return Array.from(new Set(issueTexts));
 }
 
 function formatAffectedContext(rosteredCount: number, starterCount: number): string {
