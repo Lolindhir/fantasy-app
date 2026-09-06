@@ -282,31 +282,293 @@ app-overview .pick-overview-owner-name {
   }
 }
 
+/* Overview hero: one compact dashboard card instead of stacked/nested widgets. */
+app-overview .header {
+  position: relative;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+app-overview .header .header-main {
+  position: relative;
+  display: block;
+}
+
+app-overview .header .header-content {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+app-overview .header .league-title {
+  padding-right: 78px;
+  margin-bottom: 3px;
+  font-size: clamp(1.5rem, 6.4vw, 1.8rem);
+  line-height: 1.05;
+}
+
+app-overview .header .header-season {
+  padding-right: 78px;
+  margin-bottom: 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+app-overview .header .league-logo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 64px;
+  height: 64px;
+  min-height: 0;
+  border-radius: 18px;
+  object-fit: contain;
+  object-position: center;
+}
+
+app-overview .header .header-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+app-overview .header .header-info:first-child {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  grid-auto-flow: column;
+  align-items: center;
+  row-gap: 2px;
+  column-gap: 0;
+  margin: 0;
+  padding: 8px 0 7px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+app-overview .header .header-info:first-child > * {
+  min-width: 0;
+  padding-inline: 5px;
+}
+
+app-overview .header .header-info:first-child > :nth-child(1),
+app-overview .header .header-info:first-child > :nth-child(2),
+app-overview .header .header-info:first-child > :nth-child(3),
+app-overview .header .header-info:first-child > :nth-child(4) {
+  border-right: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+app-overview .header .header-info:first-child .label {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+app-overview .header .header-info:first-child .status {
+  margin-top: 1px;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+app-overview .header .header-info:nth-child(2) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    'current-label projected-label'
+    'current-value projected-value'
+    '. diff';
+  align-items: center;
+  gap: 2px 0;
+  margin: 0;
+  padding: 8px 11px 7px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fffdf8, #f8fafc);
+  font-size: 0.8rem;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(1) {
+  grid-area: current-label;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(2) {
+  grid-area: current-value;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
+  grid-area: projected-label;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
+  grid-area: projected-value;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(5) {
+  display: none;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
+  grid-area: diff;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(1),
+app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(2),
+app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
+  margin-top: 2px;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(3),
+app-overview .header .header-info:nth-child(2) > div:nth-child(4),
+app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
+  padding-left: 12px;
+  border-left: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
+  min-height: 1em;
+  line-height: 1;
+}
+
+app-overview .header .header-info:nth-child(2) .meta {
+  margin-left: 0;
+  font-size: 0.66rem;
+  font-weight: 750;
+}
+
+app-overview .header .header-columns app-league-timeline {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  flex: none;
+}
+
+app-overview .header app-league-timeline .league-timeline,
+app-overview .header app-league-timeline .league-timeline--active {
+  padding: 9px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0;
+  background: transparent;
+}
+
+app-overview .header app-league-timeline .league-timeline-eyebrow {
+  margin-bottom: 5px;
+  color: #64748b;
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational {
+  gap: 6px;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item {
+  min-height: 74px;
+  padding: 6px 7px;
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(248, 250, 252, 0.78);
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item--interactive {
+  padding-right: 18px;
+}
+
+app-overview .header app-league-timeline .league-timeline-milestones {
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+app-overview .header .champion {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+app-overview .header .champion img {
+  width: 20px;
+  height: 20px;
+}
+
 @media (min-width: 768px) {
+  app-overview .header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 120px;
+    column-gap: 18px;
+    align-items: start;
+    padding: 16px 18px;
+  }
+
+  app-overview .header .header-main {
+    display: contents;
+  }
+
   app-overview .header .header-content {
-    max-width: none;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  app-overview .header .league-title,
+  app-overview .header .header-season {
+    padding-right: 0;
   }
 
   app-overview .header .header-columns {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    align-items: start;
-    justify-content: stretch;
-    gap: 6px 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 10px 14px;
+    margin-top: 13px;
   }
 
   app-overview .header .header-columns app-league-timeline {
     grid-column: 1 / -1;
-    min-width: 0;
-    max-width: none;
-    width: 100%;
   }
 
   app-overview .header .league-logo {
+    position: static;
+    grid-column: 2;
+    grid-row: 1 / 3;
     align-self: start;
-    width: 180px;
-    height: 180px;
+    justify-self: end;
+    width: 120px;
+    height: 120px;
     min-height: 0;
+    border-radius: 24px;
+  }
+
+  app-overview .header .champion {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
   }
 }
 
