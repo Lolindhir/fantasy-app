@@ -15,7 +15,7 @@ snapshot:
   statePath: workflow-health.json
   stateBranchInitialization: producer-created-orphan-branch
   schemaVersion: 1
-  maxAgeMinutes: 150
+  maxAgeMinutes: 90
   cadence:
     schedulerConfig: .github/workflow-schedules.json
     schedulerWorkflow: .github/workflows/scheduler.yml
@@ -56,7 +56,7 @@ snapshot:
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
   - The verified external Cloudflare cron is the sole automatic wake-up source for the central scheduler through `external-scheduler-tick` repository_dispatch; workflow_dispatch remains available for manual recovery and testing.
-  - The former GitHub `*/5` schedule was removed after productive verification. Restoring GitHub cron later is a separate workflow/policy change; snapshot.maxAgeMinutes remains 150 until post-cutover observation justifies a new value.
+  - The former GitHub `*/5` schedule was removed after productive verification. Restoring GitHub cron later is a separate workflow/policy change; snapshot.maxAgeMinutes is 90 after post-cutover production observation showed the 30-minute snapshot cadence remained comfortably inside that bound, with observed gaps around 40 minutes.
   - The external watcher reads this policy from main plus the snapshot from workflow-health-state.
   - If the snapshot is older than maxAgeMinutes or cannot be read, the external watcher must treat monitoring infrastructure as unhealthy. This freshness signal is also the backstop when the central scheduler or snapshot dispatch path stops running.
   - The snapshot producer is classified for inventory completeness but its own run health is not used for paging; snapshot freshness is its independent health signal.
