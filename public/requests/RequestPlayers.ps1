@@ -869,14 +869,13 @@ foreach ($tankEntry in $tankPlayers) {
     if (-not $tankEntry.sleeperBotID) { continue }
     $sleeperEntry = $sleeperLookup[$tankEntry.sleeperBotID]
     if (-not $sleeperEntry) { continue }
-    if ($sleeperEntry.position -notin @("TE","QB","RB","WR","K")) { continue }
+    $position = Get-AppFantasyPosition -SleeperPlayer $sleeperEntry
+    if (-not $position) { continue }
 
     # --- PlayerID ---
     $playerID = $sleeperEntry.player_id
     # --- Year berechnen ---
     $year = $sleeperEntry.years_exp + 1
-    # --- Position ---
-    $position = $sleeperEntry.position
     # --- Team ---
     $team = $tankEntry.team
 
