@@ -20,7 +20,7 @@ export interface DecisionWindowTeamRowView {
   avatar: string | null;
   fallback: string;
   state: DecisionWindowEvaluationState;
-  statusLabel: string;
+  statusLabel: string | null;
   affectedRosteredPlayerCount: number | null;
   affectedStarterCount: number | null;
   contextText: string;
@@ -89,7 +89,7 @@ export function buildDecisionWindowTeamRows(
         avatar: team.Avatar || team.OwnerAvatar || null,
         fallback: getTeamFallback(displayName),
         state,
-        statusLabel: getDecisionWindowStatusLabel(state),
+        statusLabel: state === 'ready' ? null : getDecisionWindowStatusLabel(state),
         affectedRosteredPlayerCount: pending ? null : affected?.AffectedRosteredPlayerCount ?? 0,
         affectedStarterCount: pending ? null : affected?.AffectedStarterCount ?? 0,
         contextText: pending
@@ -128,22 +128,34 @@ export function buildDecisionWindowStatusBadges(
     counts.set(row.state, (counts.get(row.state) ?? 0) + 1);
   }
 
-  const nonReadyStates: DecisionWindowEvaluationState[] = [
+  const visibleStates: DecisionWindowEvaluationState[] = [
     'action-required',
     'review',
     'unknown',
     'pending'
   ];
-  const nonReady = nonReadyStates
+
+  return visibleStates
     .map(state => createStatusBadge(state, counts.get(state) ?? 0, true))
     .filter(badge => badge.count > 0);
+}
 
-  if (nonReady.length > 0) return nonReady;
+export function formatDecisionWindowAffectedSummary(
+  rows: DecisionWindowTeamRowView[]
+): string | null {
+  const rowsWithExposureData = rows.filter(
+    row => row.affectedRosteredPlayerCount !== null && row.affectedStarterCount !== null
+  );
+  if (rowsWithExposureData.length === 0) return null;
 
-  const readyCount = counts.get('ready') ?? 0;
-  if (readyCount > 0) return [createStatusBadge('ready', readyCount, false)];
+  const affectedTeamCount = rowsWithExposureData.filter(
+    row => (row.affectedRosteredPlayerCount ?? 0) > 0
+  ).length;
+  const teamsWithStartersCount = rowsWithExposureData.filter(
+    row => (row.affectedStarterCount ?? 0) > 0
+  ).length;
 
-  return [createStatusBadge('unknown', 0, false)];
+  return `${affectedTeamCount} affected · ${teamsWithStartersCount} with starters`;
 }
 
 export function getDecisionWindowAttentionState(
@@ -336,9 +348,9 @@ function formatDecisionWindowIssues(issues: DecisionWindowIssue[]): string[] {
 }
 
 function formatAffectedContext(rosteredCount: number, starterCount: number): string {
-  if (rosteredCount === 0) return 'No players in this window';
+  if (rosteredCount === 0) return 'Not affected · No players in this window';
 
-  return `${rosteredCount} ${rosteredCount === 1 ? 'player' : 'players'} · ${starterCount} ${starterCount === 1 ? 'starter' : 'starters'}`;
+  return `Affected · ${rosteredCount} ${rosteredCount === 1 ? 'player' : 'players'} · ${starterCount} ${starterCount === 1 ? 'starter' : 'starters'}`;
 }
 
 function getTeamDisplayName(team: FantasyTeam): string {

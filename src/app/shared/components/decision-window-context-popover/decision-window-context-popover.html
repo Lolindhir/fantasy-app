@@ -16,7 +16,7 @@
     </div>
   </header>
 
-  <div class="decision-window-team-list" aria-label="Fantasy team lineup status">
+  <div class="decision-window-team-list" aria-label="Fantasy team Decision Window context">
     <button
       *ngFor="let row of teamRows; trackBy: trackTeam"
       type="button"
@@ -33,7 +33,7 @@
       <span class="decision-window-team-copy">
         <span class="decision-window-team-heading">
           <strong class="decision-window-team-name">{{ row.displayName }}</strong>
-          <span class="decision-window-team-status">
+          <span *ngIf="row.statusLabel" class="decision-window-team-status">
             <span class="decision-window-status-dot" aria-hidden="true"></span>
             {{ row.statusLabel }}
           </span>
