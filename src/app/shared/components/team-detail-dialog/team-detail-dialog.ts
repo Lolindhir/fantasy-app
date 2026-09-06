@@ -1,31 +1,42 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { Component, OnDestroy, OnInit, TemplateRef, ViewEncapsulation, inject } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
-import { forkJoin } from 'rxjs';
+import { Subscription, forkJoin, timer } from 'rxjs';
 
+import type { DecisionWindow, DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
+import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
+import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
 import {
+  buildLeagueTimelineMatchupContext,
+  type LeagueTimelineMatchupContext
+} from '../../utils/league-timeline-view.util';
+import {
+  buildTeamLineupHealthView,
+  buildTeamUpcomingLockViews,
+  formatTeamAffectedCounts,
+  getPendingTeamLookaheadMessage,
+  isTeamDecisionWindowActiveStatus,
+  type TeamLineupHealthView,
+  type TeamUpcomingLockView
+} from '../../utils/team-decision-window-view.util';
+import {
   buildRosterPlayerGroups,
+  formatRosterNextLockValue,
   getCombinedRanking,
   getPreviousCombinedRanking,
   isCombinedRankingAvailable,
   type RosterGroupMode,
+  type RosterNextLockContext,
   type RosterPlayerGroup,
   type RosterSortMode
 } from '../../utils/team-roster-view.util';
-import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
-import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
-import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
-import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
-import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
-import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
-import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
 import {
   buildTeamSalarySummary,
   getEarliestOpenPicks,
@@ -36,6 +47,15 @@ import {
   type SalaryLens,
   type TeamSalaryLensSummary
 } from '../../utils/team-salary.util';
+import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
+import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
+import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
+import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
+import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
+import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
+import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
+import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
+import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
 
 export interface TeamDetailDialogData {
   team: FantasyTeam;
@@ -81,6 +101,8 @@ interface TeamHistoryRow {
     PositionStylePipe,
     PlayerListComponent,
     CapUsageBarComponent,
+    DecisionWindowContextPopoverComponent,
+    DecisionWindowMatchupContextComponent,
     DraftPickContextTriggerComponent,
     SalaryAssetLeaderboardComponent,
     SalaryHealthIndicatorComponent,
@@ -89,9 +111,10 @@ interface TeamHistoryRow {
   templateUrl: './team-detail-dialog.html',
   styleUrl: './team-detail-dialog.scss'
 })
-export class TeamDetailDialogComponent implements OnInit {
+export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   readonly data = inject<TeamDetailDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<TeamDetailDialogComponent>);
+  private readonly dialog = inject(MatDialog);
   private readonly dataService = inject(DataService);
 
   readonly team = this.data.team;
@@ -103,6 +126,7 @@ export class TeamDetailDialogComponent implements OnInit {
   readonly earliestOpenPicks = getEarliestOpenPicks(this.data.team, this.data.league.SeasonAsNumber);
   readonly positionCounts = getPositionCounts(this.data.team.Roster);
   readonly combinedRankingAvailable = isCombinedRankingAvailable(this.data.league.FinalScoredWeek);
+  readonly decisionWindowPhaseActive = isTeamDecisionWindowActiveStatus(this.data.league.Status);
 
   salaryLens: SalaryLens = 'current';
   rosterGroup: RosterGroupMode = 'none';
@@ -111,8 +135,26 @@ export class TeamDetailDialogComponent implements OnInit {
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;
 
+  now = new Date();
+  decisionWindows: DecisionWindowsReadModel | null = null;
+  decisionWindowsLoading = false;
+  decisionWindowsUnavailable = false;
+  decisionWindowsUpdatedAt: string | undefined;
+  nflTeams: NFLTeam[] = [];
+  selectedDecisionWindow: DecisionWindow | null = null;
+
+  private readonly subscriptions = new Subscription();
+
   ngOnInit(): void {
     this.loadDraftHistory();
+    if (!this.decisionWindowPhaseActive) return;
+
+    this.startMinuteAlignedClock();
+    this.loadDecisionWindowEnrichment();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   get playerColumns(): PlayerListColumn[] {
@@ -130,6 +172,8 @@ export class TeamDetailDialogComponent implements OnInit {
         return 'Age';
       case 'ranking':
         return 'Rank';
+      case 'nextLock':
+        return 'Next Lock';
       default:
         return '';
     }
@@ -139,11 +183,53 @@ export class TeamDetailDialogComponent implements OnInit {
     const groupMode = this.rosterGroup === 'rankingStatus' && !this.combinedRankingAvailable
       ? 'none'
       : this.rosterGroup;
-    const sortMode = this.rosterSort === 'ranking' && !this.combinedRankingAvailable
+    let sortMode = this.rosterSort === 'ranking' && !this.combinedRankingAvailable
       ? 'salary'
       : this.rosterSort;
 
-    return buildRosterPlayerGroups(this.team.Roster, groupMode, sortMode, this.roster);
+    if (sortMode === 'nextLock' && !this.decisionWindowsAvailable) {
+      sortMode = 'salary';
+    }
+
+    return buildRosterPlayerGroups(
+      this.team.Roster,
+      groupMode,
+      sortMode,
+      this.roster,
+      sortMode === 'nextLock' ? this.rosterNextLockContext : undefined
+    );
+  }
+
+  get decisionWindowsAvailable(): boolean {
+    return this.decisionWindowPhaseActive && !!this.decisionWindows && !this.decisionWindowsUnavailable;
+  }
+
+  get upcomingLocks(): TeamUpcomingLockView[] {
+    if (!this.decisionWindows) return [];
+    return buildTeamUpcomingLockViews(this.decisionWindows, this.team.TeamID, this.now);
+  }
+
+  get lineupHealth(): TeamLineupHealthView | null {
+    if (!this.decisionWindows) return null;
+    return buildTeamLineupHealthView(this.decisionWindows, this.team.TeamID);
+  }
+
+  get pendingLookaheadMessage(): string | null {
+    if (!this.decisionWindows) return null;
+    return getPendingTeamLookaheadMessage(this.decisionWindows, this.upcomingLocks, this.now);
+  }
+
+  get decisionWindowsUpdatedLabel(): string | null {
+    return formatDecisionWindowsUpdatedAt(this.decisionWindowsUpdatedAt, this.now);
+  }
+
+  get rosterNextLockContext(): RosterNextLockContext | undefined {
+    if (!this.decisionWindows) return undefined;
+    return {
+      fantasyTeamId: this.team.TeamID,
+      playerLockFacts: this.decisionWindows.PlayerLockFacts,
+      now: this.now
+    };
   }
 
   get selectedSalary(): TeamSalaryLensSummary {
@@ -272,10 +358,38 @@ export class TeamDetailDialogComponent implements OnInit {
         const previousRank = getPreviousCombinedRanking(player);
         return previousRank !== undefined ? `Prev #${previousRank}` : '—';
       }
+      case 'nextLock':
+        return this.rosterNextLockContext
+          ? formatRosterNextLockValue(player, this.rosterNextLockContext)
+          : 'Unknown';
       default:
         return '';
     }
   };
+
+  matchupContext(window: DecisionWindow): LeagueTimelineMatchupContext | null {
+    return buildLeagueTimelineMatchupContext(window, this.nflTeams);
+  }
+
+  affectedCounts(lock: TeamUpcomingLockView): string {
+    return formatTeamAffectedCounts(lock);
+  }
+
+  openTeamDecisionWindow(window: DecisionWindow, template: TemplateRef<unknown>): void {
+    this.selectedDecisionWindow = window;
+    const ref = this.dialog.open(template, {
+      width: '500px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      panelClass: 'decision-window-dialog-panel',
+      ariaLabel: 'Team Decision Window details',
+      autoFocus: false,
+      restoreFocus: true
+    });
+    this.subscriptions.add(ref.afterClosed().subscribe(() => {
+      this.selectedDecisionWindow = null;
+    }));
+  }
 
   formatMoney(value: number): string {
     const absolute = Math.abs(value);
@@ -322,7 +436,62 @@ export class TeamDetailDialogComponent implements OnInit {
   }
 
   private get showsRosterSortColumn(): boolean {
-    return this.rosterSort === 'ranking' || this.rosterSort === 'ageAsc' || this.rosterSort === 'ageDesc';
+    return this.rosterSort === 'ranking'
+      || this.rosterSort === 'ageAsc'
+      || this.rosterSort === 'ageDesc'
+      || this.rosterSort === 'nextLock';
+  }
+
+  private loadDecisionWindowEnrichment(): void {
+    this.decisionWindowsLoading = true;
+
+    this.subscriptions.add(
+      this.dataService.getDecisionWindows().subscribe({
+        next: model => {
+          this.decisionWindows = model;
+          this.decisionWindowsUnavailable = false;
+          this.decisionWindowsLoading = false;
+        },
+        error: () => {
+          this.decisionWindows = null;
+          this.decisionWindowsUnavailable = true;
+          this.decisionWindowsLoading = false;
+          if (this.rosterSort === 'nextLock') this.rosterSort = 'salary';
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.dataService.getDecisionWindowsTimestamp().subscribe({
+        next: timestamp => {
+          this.decisionWindowsUpdatedAt = timestamp;
+        },
+        error: () => {
+          this.decisionWindowsUpdatedAt = undefined;
+        }
+      })
+    );
+
+    this.subscriptions.add(
+      this.dataService.getNflTeams().subscribe({
+        next: teams => {
+          this.nflTeams = teams;
+        },
+        error: () => {
+          this.nflTeams = [];
+        }
+      })
+    );
+  }
+
+  private startMinuteAlignedClock(): void {
+    const minuteMs = 60_000;
+    const firstTickDelay = minuteMs - (Date.now() % minuteMs);
+    this.subscriptions.add(
+      timer(firstTickDelay, minuteMs).subscribe(() => {
+        this.now = new Date();
+      })
+    );
   }
 
   private loadDraftHistory(): void {
