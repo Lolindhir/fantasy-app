@@ -27,6 +27,31 @@
 .franchise-card dl div:last-child { border-bottom: 0; padding-bottom: 0; }
 .franchise-card dt { color: #6b7280; }
 .franchise-card dd { margin: 0; font-weight: 600; text-align: right; }
+
+.upcoming-locks-heading { align-items: center; }
+.lineup-health-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.lineup-health--action-required { background: #fef2f2; color: #b91c1c; }
+.lineup-health--review { background: #fffbeb; color: #a16207; }
+.lineup-health--unknown, .lineup-health--pending { background: #f1f5f9; color: #64748b; }
+.lineup-health--ready { background: #f7fee7; color: #4d7c0f; }
+.lineup-health-issues { display: flex; flex-wrap: wrap; gap: 6px; margin: -3px 0 10px; }
+.lineup-health-issues span { padding: 4px 7px; border-radius: 999px; background: #f8fafc; color: #475569; font-size: 11px; font-weight: 700; }
+.lineup-health-issues--action-required span { background: #fef2f2; color: #b91c1c; }
+.lineup-health-issues--review span { background: #fffbeb; color: #a16207; }
+.upcoming-lock-list { display: grid; gap: 7px; }
+button.upcoming-lock-row { display: grid; grid-template-columns: 88px minmax(110px, 1fr) minmax(110px, auto) 14px; gap: 10px; align-items: center; width: 100%; min-width: 0; min-height: 48px; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 9px; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+button.upcoming-lock-row:hover, button.upcoming-lock-row:focus-visible { background: #f8fafc; border-color: #cbd5e1; outline: none; }
+button.upcoming-lock-row:focus-visible { box-shadow: 0 0 0 2px rgba(59, 130, 246, .18); }
+.upcoming-lock-time { font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.upcoming-lock-matchup { min-width: 0; display: block; }
+.upcoming-lock-matchup app-decision-window-matchup-context { max-width: 240px; }
+.upcoming-lock-counts { color: #64748b; font-size: 11px; font-weight: 650; text-align: right; overflow-wrap: anywhere; }
+.upcoming-lock-chevron { color: #94a3b8; font-size: 20px; text-align: right; }
+.decision-window-freshness, .roster-lock-freshness { margin-top: 9px; color: #64748b; font-size: 10px; }
+.roster-lock-freshness { margin-top: -5px; padding-left: 2px; }
+.pending-lookahead { background: #f8fafc; color: #475569; }
+.decision-window-unavailable { background: #f8fafc; }
+
 .roster-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 150px)); gap: 8px; align-items: center; justify-content: start; }
 .roster-control { width: 150px; font-size: 12px; --mat-form-field-container-height: 40px; --mat-form-field-container-vertical-padding: 8px; }
 .roster-control .mat-mdc-form-field-infix { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
@@ -73,6 +98,11 @@
   .team-tabs .mat-mdc-tab-label-container { overflow: visible; }
   .tab-content { padding: 12px 10px 22px; }
   .two-column-bars, .overview-grid, .salary-grid, .movement-grid { grid-template-columns: 1fr; }
+  button.upcoming-lock-row { grid-template-columns: 68px minmax(0, 1fr) 12px; gap: 7px; padding: 8px; }
+  .upcoming-lock-time { font-size: 11px; }
+  .upcoming-lock-counts { grid-column: 2; text-align: left; }
+  .upcoming-lock-chevron { grid-column: 3; grid-row: 1 / span 2; }
+  .upcoming-lock-matchup app-decision-window-matchup-context { max-width: 190px; }
   .roster-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 7px; }
   .roster-control { width: 100%; min-width: 0; }
   .legacy-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

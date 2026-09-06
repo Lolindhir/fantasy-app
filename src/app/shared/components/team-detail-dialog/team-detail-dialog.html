@@ -14,6 +14,74 @@
   <mat-tab-group class="team-tabs" animationDuration="150ms" mat-stretch-tabs="false">
     <mat-tab label="Overview">
       <div class="tab-content overview-tab">
+        @if (decisionWindowPhaseActive) {
+          <section class="section-card upcoming-locks-card">
+            <div class="section-heading upcoming-locks-heading">
+              <div>
+                <span class="eyebrow">Upcoming Locks</span>
+                <h3>Current lineup week</h3>
+              </div>
+              @if (lineupHealth; as health) {
+                <span
+                  class="lineup-health-badge"
+                  [ngClass]="'lineup-health--' + health.state"
+                >{{ health.statusLabel }}</span>
+              }
+            </div>
+
+            @if (decisionWindowsLoading) {
+              <p class="empty-state">Loading lineup locks…</p>
+            } @else if (decisionWindowsUnavailable) {
+              <p class="empty-state decision-window-unavailable">
+                Lineup lock data is currently unavailable. Team details remain usable.
+              </p>
+            } @else if (decisionWindows) {
+              @if (lineupHealth; as health) {
+                @if (health.issueTexts.length) {
+                  <div class="lineup-health-issues" [ngClass]="'lineup-health-issues--' + health.state">
+                    @for (issue of health.issueTexts; track issue) {
+                      <span>{{ issue }}</span>
+                    }
+                  </div>
+                }
+              }
+
+              @if (upcomingLocks.length) {
+                <div class="upcoming-lock-list" aria-label="Upcoming lineup locks for this team">
+                  @for (lock of upcomingLocks; track lock.window.DecisionWindowID) {
+                    <button
+                      type="button"
+                      class="upcoming-lock-row"
+                      [attr.aria-label]="lock.timeLabel + '. ' + affectedCounts(lock) + '. Open Decision Window details'"
+                      (click)="openTeamDecisionWindow(lock.window, teamDecisionWindowDialog)"
+                    >
+                      <strong class="upcoming-lock-time">{{ lock.timeLabel }}</strong>
+                      <span class="upcoming-lock-matchup">
+                        @if (matchupContext(lock.window); as matchup) {
+                          <app-decision-window-matchup-context
+                            [context]="matchup"
+                            [showWeek]="false"
+                          />
+                        }
+                      </span>
+                      <span class="upcoming-lock-counts">{{ affectedCounts(lock) }}</span>
+                      <span class="upcoming-lock-chevron" aria-hidden="true">›</span>
+                    </button>
+                  }
+                </div>
+              } @else if (pendingLookaheadMessage) {
+                <p class="empty-state pending-lookahead">{{ pendingLookaheadMessage }}</p>
+              } @else {
+                <p class="empty-state">No remaining player locks this week.</p>
+              }
+            }
+
+            @if (decisionWindowsUpdatedLabel) {
+              <div class="decision-window-freshness">{{ decisionWindowsUpdatedLabel }}</div>
+            }
+          </section>
+        }
+
         <section class="section-card salary-health-card">
           <div class="section-heading">
             <div>
@@ -86,6 +154,9 @@
             <mat-select [(value)]="rosterSort">
               <mat-option value="salary">Current Salary</mat-option>
               <mat-option value="projected">Projected Salary</mat-option>
+              @if (decisionWindowsAvailable) {
+                <mat-option value="nextLock">Next Lock</mat-option>
+              }
               <mat-option value="ranking" [disabled]="!combinedRankingAvailable">
                 {{ combinedRankingAvailable ? 'Combined Ranking' : 'Combined Ranking · after Week 3' }}
               </mat-option>
@@ -96,6 +167,10 @@
             </mat-select>
           </mat-form-field>
         </div>
+
+        @if (rosterSort === 'nextLock' && decisionWindowsUpdatedLabel) {
+          <div class="roster-lock-freshness">{{ decisionWindowsUpdatedLabel }}</div>
+        }
 
         @for (group of rosterGroups; track group.key) {
           <section class="roster-section">
@@ -231,4 +306,18 @@
       </div>
     </mat-tab>
   </mat-tab-group>
+
+  <ng-template #teamDecisionWindowDialog>
+    @if (selectedDecisionWindow && decisionWindows) {
+      <app-decision-window-context-popover
+        [model]="decisionWindows"
+        [window]="selectedDecisionWindow"
+        [teamId]="team.TeamID"
+        [players]="data.players"
+        [nflTeams]="nflTeams"
+        [updatedAt]="decisionWindowsUpdatedAt"
+        [now]="now"
+      />
+    }
+  </ng-template>
 </div>

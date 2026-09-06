@@ -43,41 +43,12 @@
                 </span>
               </span>
 
-              <span *ngIf="item.matchup as matchup" class="league-timeline-game-context">
-                <ng-container *ngIf="matchup.kind === 'single-game'; else multiGameContext">
-                  <span class="league-timeline-single-game">
-                    <span class="league-timeline-nfl-team">
-                      <span class="league-timeline-nfl-team-logo">
-                        <img
-                          *ngIf="matchup.away?.logo as awayLogo"
-                          [src]="awayLogo"
-                          alt=""
-                        />
-                      </span>
-                      <strong>{{ matchup.away?.abbr }}</strong>
-                    </span>
-                    <span class="league-timeline-at" aria-hidden="true">@</span>
-                    <span class="league-timeline-nfl-team league-timeline-nfl-team--home">
-                      <strong>{{ matchup.home?.abbr }}</strong>
-                      <span class="league-timeline-nfl-team-logo">
-                        <img
-                          *ngIf="matchup.home?.logo as homeLogo"
-                          [src]="homeLogo"
-                          alt=""
-                        />
-                      </span>
-                    </span>
-                    <span class="league-timeline-game-week">Week {{ matchup.week }}</span>
-                  </span>
-                </ng-container>
-
-                <ng-template #multiGameContext>
-                  <span class="league-timeline-multi-game">
-                    <img class="league-timeline-nfl-shield" src="assets/logo_nfl.png" alt="" />
-                    <span class="league-timeline-multi-game-copy">{{ item.detail }}</span>
-                  </span>
-                </ng-template>
-              </span>
+              <app-decision-window-matchup-context
+                *ngIf="item.matchup as matchup"
+                class="league-timeline-game-context"
+                [context]="matchup"
+                [multiGameDetail]="item.detail"
+              />
 
               <span
                 *ngIf="item.detail && !item.matchup"
@@ -91,6 +62,7 @@
                 [model]="decisionWindowModel"
                 [window]="decisionWindow"
                 [teams]="league.Teams"
+                [nflTeams]="nflTeams"
                 [updatedAt]="decisionWindowsUpdatedAt"
                 [now]="now"
               />
