@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-07T07:23:09Z",
-  "input_fingerprint": "68b69f2295a5dbc9bce1989cf74a734182ef3d4f89ff517f63dda47ac41468e6",
+  "generated_at": "2026-09-07T08:33:21Z",
+  "input_fingerprint": "33c89d07df0b1b1727cfb7a6cd1a91be3d1b6d86a38b4471c2374dae3044d6cf",
   "sources": [
     {
       "id": "league",
       "path": "public/data/League.json",
-      "content_sha256": "c29c8c3436a5b8bbe5d33d02d91e5d891e0b00c4ad0ad157e46f4eb0222d0706"
+      "content_sha256": "1dbd5fc0bc9621c082243627e1fe6f2f6d1434e4e85030dd474711745c445cbd"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "ab85627a326deec7f31ab2fd3e2b1151d846536057515b0ba1bcdbfc67074c83"
+      "content_sha256": "1ac024bd49240fbf9ee4e032debcf4ed96735c774356f20ed3ead155eb90d679"
     },
     {
       "id": "roster_evaluation_state",
@@ -49,17 +49,17 @@
     "team_id": 1,
     "name": "Mighty Giants",
     "abbreviation": "MiG",
-    "held_player_count": 36
+    "held_player_count": 35
   },
   "structure": {
     "capacity": {
       "regular_active_capacity": 30,
-      "current_active_count": 33,
+      "current_active_count": 32,
       "taxi_slots": 2,
       "current_taxi_count": 2,
       "reserve_slots": 5,
       "current_reserve_count": 1,
-      "hard_active_delta": -3
+      "hard_active_delta": -2
     },
     "lineup": {
       "fixed_starters": {
@@ -113,9 +113,9 @@
       },
       "RB": {
         "fixed_starter_requirement": 2,
-        "held_count": 11,
-        "current_active_count": 10,
-        "effective_prelock_or_locked_count": 10,
+        "held_count": 10,
+        "current_active_count": 9,
+        "effective_prelock_or_locked_count": 9,
         "startable_count": 5,
         "backup_count": 1,
         "coverage_floor": null,
@@ -235,18 +235,10 @@
     "churn": {
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
-      "current_active_candidate_count": 2,
-      "candidate_pool_count": 2,
-      "guardrail_status": "met",
+      "current_active_candidate_count": 1,
+      "candidate_pool_count": 1,
+      "guardrail_status": "below_target",
       "candidate_pool": [
-        {
-          "player_id": "13405",
-          "name": "Kaytron Allen",
-          "position": "RB",
-          "security": "churn",
-          "current_area": "active",
-          "boundary_priority": 10
-        },
         {
           "player_id": "12469",
           "name": "Dylan Sampson",
@@ -966,74 +958,6 @@
       "coverage_role": "development",
       "coverage_protected": false,
       "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
-      "player_id": "13405",
-      "name": "Kaytron Allen",
-      "position": "RB",
-      "nfl_team": "WSH",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "prospect",
-      "roster_security": "churn",
-      "structural_function": "development",
-      "classification": {
-        "roster_role": "prospect",
-        "roster_security": "churn",
-        "boundary_priority": 10,
-        "confidence": "low",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
-        "user_override": false,
-        "notes": [
-          "Current churn classification must be rechecked before a final cut because positive source-level sleeper context exists."
-        ],
-        "evidence": [
-          {
-            "type": "source_take",
-            "source": "Adrian Franke",
-            "claim": "described Kaytron Allen as a possible fantasy sleeper in Washington",
-            "url": "https://www.kicker.de/draft-grades-bucs-glaenzen-rams-und-jaguars-hoechst-fragwuerdig-1213835/artikel"
-          }
-        ],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 23.7,
-        "years_experience": 1,
-        "salary": 0,
-        "salary_projected": 0,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 194,
-        "fantasypros_position_rank": "RB53",
-        "fantasycalc_overall_rank": 254,
-        "fantasycalc_value": 706
-      },
-      "coverage_role": "development",
-      "coverage_protected": false,
-      "churn_eligible": true,
       "potential_churn_after_taxi_reassignment": false
     },
     {
