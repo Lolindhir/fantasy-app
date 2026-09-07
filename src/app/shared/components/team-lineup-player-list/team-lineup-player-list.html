@@ -1,12 +1,4 @@
 <div class="team-lineup-player-list" aria-label="Affected lineup players">
-  <div class="team-lineup-player-list__header" aria-hidden="true">
-    <span>NFL</span>
-    <span></span>
-    <span>Player</span>
-    <span>Pos</span>
-    <span>Role</span>
-  </div>
-
   @for (row of rows; track row.player.ID) {
     <button
       type="button"
@@ -35,11 +27,18 @@
         {{ row.player.Position }}
       </span>
 
-      <span
-        class="team-lineup-player-role"
-        [class.team-lineup-player-role--starter]="row.role === 'Starter'"
-      >
-        {{ row.role }}
+      <span class="team-lineup-player-statuses">
+        @for (status of row.statuses; track status) {
+          <span
+            class="team-lineup-player-status"
+            [class.team-lineup-player-status--starter]="status === 'Starter'"
+            [class.team-lineup-player-status--roster]="status === 'Roster'"
+            [class.team-lineup-player-status--taxi]="status === 'Taxi'"
+            [class.team-lineup-player-status--ir]="status === 'IR'"
+          >
+            {{ status }}
+          </span>
+        }
       </span>
     </button>
   }

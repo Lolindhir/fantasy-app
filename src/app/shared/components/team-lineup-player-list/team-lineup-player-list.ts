@@ -6,11 +6,28 @@ import type { Player } from '../../../core/models/player.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
-export type TeamLineupPlayerRole = 'Starter' | 'Roster';
+export type TeamLineupPlayerStatus = 'Starter' | 'Roster' | 'Taxi' | 'IR';
 
 export interface TeamLineupPlayerRow {
   player: Player;
-  role: TeamLineupPlayerRole;
+  statuses: TeamLineupPlayerStatus[];
+}
+
+export function getTeamLineupPlayerStatuses(
+  player: Player,
+  isStarter: boolean
+): TeamLineupPlayerStatus[] {
+  const fantasyTeam = player.TeamFantasy;
+  const isTaxi = fantasyTeam?.Taxi.some(candidate => candidate.ID === player.ID) ?? false;
+  const isIr = fantasyTeam?.Reserve.some(candidate => candidate.ID === player.ID) ?? false;
+  const statuses: TeamLineupPlayerStatus[] = [];
+
+  if (isStarter) statuses.push('Starter');
+  if (isTaxi) statuses.push('Taxi');
+  if (isIr) statuses.push('IR');
+  if (!isStarter && !isTaxi && !isIr) statuses.push('Roster');
+
+  return statuses;
 }
 
 @Component({
