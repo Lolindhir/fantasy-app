@@ -24,6 +24,7 @@ import {
 } from '../../utils/team-decision-window-view.util';
 import { TeamLineupMatchupComponent } from '../team-lineup-matchup/team-lineup-matchup';
 import {
+  getTeamLineupPlayerStatuses,
   TeamLineupPlayerListComponent,
   type TeamLineupPlayerRow
 } from '../team-lineup-player-list/team-lineup-player-list';
@@ -112,10 +113,13 @@ export class TeamLineupTabComponent {
           if (starterOrder !== 0) return starterOrder;
           return a.Name.localeCompare(b.Name, 'en', { sensitivity: 'base' }) || a.ID.localeCompare(b.ID);
         })
-        .map<TeamLineupPlayerRow>(player => ({
-          player,
-          role: affectedById.get(player.ID)?.IsStarter ? 'Starter' : 'Roster'
-        }));
+        .map<TeamLineupPlayerRow>(player => {
+          const isStarter = affectedById.get(player.ID)?.IsStarter ?? false;
+          return {
+            player,
+            statuses: getTeamLineupPlayerStatuses(player, isStarter)
+          };
+        });
     });
   }
 

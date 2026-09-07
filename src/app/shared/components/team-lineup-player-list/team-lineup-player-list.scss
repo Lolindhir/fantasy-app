@@ -11,31 +11,14 @@
   background: #fffafd;
 }
 
-.team-lineup-player-list__header,
 .team-lineup-player-row {
   display: grid;
-  grid-template-columns: 26px 52px minmax(0, 1fr) max-content 62px;
+  grid-template-columns: 20px 46px minmax(0, 1fr) max-content max-content;
   align-items: center;
-  gap: 5px;
-}
-
-.team-lineup-player-list__header {
-  min-height: 30px;
-  padding: 4px 8px;
-  border-bottom: 1px solid rgba(107, 114, 128, .5);
-  color: #475569;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.team-lineup-player-list__header span:last-child {
-  text-align: right;
-}
-
-.team-lineup-player-row {
   width: 100%;
-  min-height: 58px;
-  padding: 3px 8px;
+  min-height: 50px;
+  gap: 5px;
+  padding: 1px 8px;
   border: 0;
   border-bottom: 1px solid rgba(107, 114, 128, .42);
   background: transparent;
@@ -68,8 +51,8 @@
 }
 
 .team-lineup-player-team-logo {
-  width: 23px;
-  height: 23px;
+  width: 20px;
+  height: 20px;
 }
 
 .team-lineup-player-team-logo img {
@@ -79,23 +62,23 @@
 }
 
 .team-lineup-player-picture {
-  width: 50px;
-  height: 54px;
-  align-self: end;
+  width: 46px;
+  height: 48px;
+  align-self: center;
 }
 
 .team-lineup-player-picture img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center;
 }
 
 .team-lineup-player-name {
   min-width: 0;
   font-size: 13px;
   font-weight: 850;
-  line-height: 1.15;
+  line-height: 1.1;
   overflow-wrap: anywhere;
 }
 
@@ -111,44 +94,64 @@
   white-space: nowrap;
 }
 
-.team-lineup-player-role {
-  color: #374151;
-  font-size: 12px;
-  font-weight: 650;
-  text-align: right;
+.team-lineup-player-statuses {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-width: 0;
   white-space: nowrap;
 }
 
-.team-lineup-player-role--starter {
-  color: #1f2937;
-  font-weight: 850;
+.team-lineup-player-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.team-lineup-player-status--starter {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.team-lineup-player-status--roster {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.team-lineup-player-status--taxi {
+  background: #fffbeb;
+  color: #a16207;
+}
+
+.team-lineup-player-status--ir {
+  background: #fff1f2;
+  color: #be123c;
 }
 
 @media (max-width: 420px) {
-  .team-lineup-player-list__header,
   .team-lineup-player-row {
-    grid-template-columns: 22px 48px minmax(0, 1fr) max-content 54px;
+    grid-template-columns: 18px 42px minmax(0, 1fr) max-content max-content;
+    min-height: 48px;
     gap: 4px;
-  }
-
-  .team-lineup-player-list__header {
-    padding-inline: 5px;
-    font-size: 9px;
-  }
-
-  .team-lineup-player-row {
-    min-height: 56px;
-    padding: 2px 5px;
+    padding: 1px 5px;
   }
 
   .team-lineup-player-team-logo {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
   .team-lineup-player-picture {
-    width: 46px;
-    height: 52px;
+    width: 42px;
+    height: 46px;
   }
 
   .team-lineup-player-name {
@@ -161,7 +164,9 @@
     font-size: 10px;
   }
 
-  .team-lineup-player-role {
-    font-size: 11px;
+  .team-lineup-player-status {
+    min-height: 19px;
+    padding-inline: 5px;
+    font-size: 9px;
   }
 }
