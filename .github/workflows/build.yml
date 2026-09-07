@@ -29,7 +29,9 @@ jobs:
         run: python -m unittest tools/tests/test_build_workflow_health_snapshot.py -v
 
       - name: Run NFL source-data regression tests
-        run: python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
+        run: |
+          python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
+          python -m unittest tools.tests.test_historical_fantasy_scoring -v
 
       - name: Run PowerShell data regression tests
         shell: pwsh

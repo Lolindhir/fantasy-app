@@ -46,7 +46,10 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "fgm_yds": ("fg_made_distance",),
 }
 
-OFFENSE_PREFIXES = ("pass_", "rush_", "rec_", "fum")
+OFFENSE_PREFIXES = ("pass_", "rush_", "rec_", "fum_")
+OFFENSE_EXACT_KEYS = {"rec", "fum"}
+OFFENSE_BONUS_PREFIXES = ("bonus_pass_", "bonus_rush_", "bonus_rec_")
+POSITIONAL_RECEPTION_BONUS_KEYS = {"bonus_rec_rb", "bonus_rec_wr", "bonus_rec_te"}
 KICKER_KEYS = {
     "xpm",
     "xpmiss",
@@ -91,12 +94,22 @@ def stat_value(stats: dict[str, Any], fields: tuple[str, ...]) -> float:
     return total
 
 
+def is_applicable_offense_key(position: str, key: str) -> bool:
+    if key in OFFENSE_EXACT_KEYS or key.startswith(OFFENSE_PREFIXES):
+        return True
+    if key in POSITIONAL_RECEPTION_BONUS_KEYS:
+        return key == f"bonus_rec_{position.lower()}"
+    if key.startswith(OFFENSE_BONUS_PREFIXES):
+        return True
+    return key == f"bonus_fd_{position.lower()}"
+
+
 def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> set[str]:
     pos = (position or "").upper()
     if pos == "K":
         return {key for key in scoring if key in KICKER_KEYS}
     if pos in {"QB", "RB", "WR", "TE", "FB"}:
-        return {key for key in scoring if key.startswith(OFFENSE_PREFIXES)}
+        return {key for key in scoring if is_applicable_offense_key(pos, key)}
     return set()
 
 
