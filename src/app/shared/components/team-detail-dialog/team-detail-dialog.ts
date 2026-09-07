@@ -170,23 +170,28 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   get rosterGroups(): RosterPlayerGroup[] {
-    const groupMode = this.rosterGroup === 'rankingStatus' && !this.combinedRankingAvailable
+    let groupMode = this.rosterGroup === 'rankingStatus' && !this.combinedRankingAvailable
       ? 'none'
       : this.rosterGroup;
     let sortMode = this.rosterSort === 'ranking' && !this.combinedRankingAvailable
       ? 'salary'
       : this.rosterSort;
 
+    if (groupMode === 'lockStatus' && !this.decisionWindowsAvailable) {
+      groupMode = 'none';
+    }
     if (sortMode === 'nextLock' && !this.decisionWindowsAvailable) {
       sortMode = 'salary';
     }
+
+    const lockContextRequired = groupMode === 'lockStatus' || sortMode === 'nextLock';
 
     return buildRosterPlayerGroups(
       this.team.Roster,
       groupMode,
       sortMode,
       this.roster,
-      sortMode === 'nextLock' ? this.rosterNextLockContext : undefined
+      lockContextRequired ? this.rosterNextLockContext : undefined
     );
   }
 
@@ -423,6 +428,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
           this.decisionWindows = null;
           this.decisionWindowsUnavailable = true;
           this.decisionWindowsLoading = false;
+          if (this.rosterGroup === 'lockStatus') this.rosterGroup = 'none';
           if (this.rosterSort === 'nextLock') this.rosterSort = 'salary';
         }
       })
