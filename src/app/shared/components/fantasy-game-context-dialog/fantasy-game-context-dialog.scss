@@ -1,0 +1,98 @@
+.fgc-dialog {
+  width: min(760px, 88vw);
+  max-width: 100%;
+  padding: 18px;
+  color: #0f172a;
+}
+
+.fgc-dialog-header,
+.fgc-meta,
+.fgc-matchup-title,
+.fgc-matchup-game > div:first-child {
+  display: flex;
+  align-items: center;
+}
+
+.fgc-dialog-header {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fgc-dialog-header h2 {
+  margin: 2px 0 0;
+}
+
+.fgc-eyebrow {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fgc-meta {
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.fgc-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.fgc-stat-grid > div {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.fgc-stat-grid strong { font-size: 1.2rem; }
+.fgc-stat-grid span,
+.fgc-muted { color: #64748b; }
+
+.fgc-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.fgc-section h3 { margin: 0 0 8px; }
+.fgc-team-section > span { margin-left: 6px; color: #64748b; }
+
+.fgc-player-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.fgc-player-list button span { margin-left: 5px; color: #64748b; }
+.fgc-warning, .fgc-swing { color: #b45309; font-weight: 700; }
+
+.fgc-matchup-title {
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.fgc-matchup-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.fgc-matchup-game > div:first-child { gap: 8px; }
+.fgc-swing { grid-column: 1 / -1; font-size: 0.78rem; }
+
+@media (min-width: 640px) {
+  .fgc-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

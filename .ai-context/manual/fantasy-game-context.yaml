@@ -1,0 +1,112 @@
+version: 1
+updated: 2026-09-07
+
+purpose: >-
+  Defines the generator-owned FantasyGameContext read model introduced by Issue #346.
+  The model explains which NFL games matter to the league and how completed NFL games
+  contributed league-scored starter points to fantasy matchups without moving joins or
+  counterfactual logic into Angular.
+
+contract:
+  current_output: public/data/FantasyGameContext.json
+  historical_output: public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
+  historical_index: public/data/PastSeasonsIndex.json
+  schema_version: 1
+  ownership: generator-owned
+  angular_role: presentation-only
+
+semantic_chain:
+  - NFL Game
+  - Decision Window
+  - Player
+  - Fantasy Team
+  - Starter role
+  - Fantasy Matchup
+
+identity:
+  nfl_game: stable GameID from the schedule/DecisionWindow facts
+  decision_window: generator-owned DecisionWindowID
+  player_current: Sleeper PlayerID, matching current Players.json and DecisionWindows.json
+  player_historical: canonical identity when persisted for the week; otherwise exact historical Player.Games evidence
+  fantasy_team_current: current League.json TeamID / Sleeper roster ID
+  fantasy_matchup: >-
+    Opaque deterministic app-owned ID derived from season, week and the actual two-team pairing.
+    Provider matchup IDs and nullable Team.MatchupID are adapter evidence only and are not frontend identity.
+
+relevance_v1:
+  definition: count-based only; no weighted composite score
+  fields:
+    - StarterCount
+    - FantasyMatchupCount
+    - FantasyTeamCount
+    - RosteredPlayerCount
+    - UnknownAssociationCount
+  ordering:
+    - StarterCount descending
+    - FantasyMatchupCount descending
+    - FantasyTeamCount descending
+    - RosteredPlayerCount descending
+    - StartsAtUtc ascending
+    - GameID ascending
+
+impact:
+  source_of_truth: >-
+    League-scored matchup player facts only. Current data uses the Sleeper matchup response
+    already needed for League.Matchups. Historical data uses persisted canonical league
+    PlayerPoints/StarterPoints. Generic NFL/Tank fantasy points are not accepted for this model.
+  states:
+    unavailable: no league-scored player facts are available yet
+    partial: league-scored facts exist but the NFL game is not final
+    final: league-scored facts exist and the NFL game is final
+  ordering: StarterPoints descending, then relevance ordering
+
+counterfactual:
+  statement: >-
+    For a completed, unambiguous fantasy matchup, subtract only the selected NFL game's
+    starter points from the official final fantasy scores and compare the resulting winner/tie.
+  interpretation: descriptive counterfactual, never a causal claim that the NFL game caused the result
+  disabled_when:
+    - fantasy week is not final
+    - official final scores are missing
+    - custom_points / commissioner-adjusted scoring evidence is present
+
+historical_evidence_ladder:
+  - canonical week-specific player/team membership when identity is available
+  - exact historical Players_<season>.json Games[] game/team evidence
+  - explicit unknown/no-association when neither rung resolves exactly one game
+  forbidden:
+    - current roster/team membership as historical evidence
+    - nearest-date or abbreviation guessing
+
+failure_policy:
+  malformed_pairing: exclude the malformed matchup with a diagnostic
+  player_on_multiple_fantasy_teams: fail closed
+  missing_or_ambiguous_player_game: keep explicit NonGameAssociations / unknown evidence
+  missing_current_refresh: preserve previous generated FantasyGameContext instead of overwriting with guesses
+  decision_window_week_mismatch: preserve previous generated FantasyGameContext
+
+ui:
+  overview:
+    location: immediately after league matchup cards
+    upcoming_lens: Upcoming Relevance
+    completed_lens: Completed Impact
+  matchup_cards: compact next-NFL-window context with detail trigger
+  details:
+    - NFL matchup, kickoff, status and DecisionWindowID
+    - affected fantasy teams and players
+    - starter/rostered counts
+    - league-scored points and impact state
+    - matchup counterfactual only when available
+    - drill-through to existing team/player dialogs
+  safe_state: missing or stale FantasyGameContext must not break existing matchup rendering
+
+boundaries:
+  decision_windows: >-
+    DecisionWindows.json remains the sole Decision Window read model. FantasyGameContext consumes
+    its generated facts in the same RequestLeague run; Angular never reconstructs NFL/fantasy joins.
+  league_matchups: >-
+    League.json retains the compact scoreboard snapshot. FantasyGameContext owns richer roster,
+    starter, game relevance and impact facts.
+  source_snapshots: >-
+    source-data remains provider/canonical evidence. Generated FantasyGameContext files are disposable
+    presentation read models and can be rebuilt from those sources.

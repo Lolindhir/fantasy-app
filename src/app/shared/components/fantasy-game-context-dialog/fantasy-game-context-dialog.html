@@ -1,0 +1,88 @@
+<div class="fgc-dialog">
+  <header class="fgc-dialog-header">
+    <div>
+      <div class="fgc-eyebrow">NFL Fantasy Context · Week {{ data.context.Week }}</div>
+      <h2 *ngIf="game">{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</h2>
+      <h2 *ngIf="matchup">Fantasy Matchup Impact</h2>
+    </div>
+    <button mat-icon-button mat-dialog-close aria-label="Close"><mat-icon>close</mat-icon></button>
+  </header>
+
+  <ng-container *ngIf="game as selectedGame">
+    <div class="fgc-meta">
+      <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
+      <span>{{ selectedGame.Status || 'Status unavailable' }}</span>
+      <span>Window {{ selectedGame.DecisionWindowID }}</span>
+    </div>
+
+    <section class="fgc-stat-grid">
+      <div><strong>{{ selectedGame.Relevance.StarterCount }}</strong><span>Starters</span></div>
+      <div><strong>{{ selectedGame.Relevance.RosteredPlayerCount }}</strong><span>Rostered</span></div>
+      <div><strong>{{ selectedGame.Relevance.FantasyMatchupCount }}</strong><span>Matchups</span></div>
+      <div><strong>{{ selectedGame.Relevance.FantasyTeamCount }}</strong><span>Teams</span></div>
+    </section>
+
+    <section class="fgc-section">
+      <h3>League impact</h3>
+      <p *ngIf="selectedGame.Impact.State === 'unavailable'" class="fgc-muted">League-scored player points are not available yet.</p>
+      <div *ngIf="selectedGame.Impact.State !== 'unavailable'" class="fgc-impact-line">
+        <strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }}</strong> starter pts ·
+        {{ selectedGame.Impact.RosteredPoints | number:'1.0-2' }} rostered pts ·
+        {{ selectedGame.Impact.OutcomeSwingMatchupCount }} outcome swing{{ selectedGame.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
+      </div>
+      <p *ngIf="selectedGame.Relevance.UnknownAssociationCount > 0" class="fgc-warning">
+        {{ selectedGame.Relevance.UnknownAssociationCount }} association{{ selectedGame.Relevance.UnknownAssociationCount === 1 ? '' : 's' }} could not be assigned safely.
+      </p>
+    </section>
+
+    <section *ngFor="let fantasyTeam of selectedGame.FantasyTeams" class="fgc-section fgc-team-section">
+      <button mat-button type="button" (click)="openTeam(fantasyTeam.FantasyTeamID)">
+        {{ teamName(fantasyTeam.FantasyTeamID) }}
+      </button>
+      <span>{{ fantasyTeam.StarterCount }} starters · {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts</span>
+      <div class="fgc-player-list">
+        <button
+          *ngFor="let player of fantasyTeam.Players"
+          mat-stroked-button
+          type="button"
+          (click)="openPlayer(player.PlayerID)"
+        >
+          {{ playerName(player.PlayerID) }}
+          <span>{{ player.IsStarter ? 'S' : 'B' }} · {{ player.Points === null ? '—' : (player.Points | number:'1.0-2') }}</span>
+        </button>
+      </div>
+    </section>
+  </ng-container>
+
+  <ng-container *ngIf="matchup as selectedMatchup">
+    <div class="fgc-matchup-title">
+      <button mat-button type="button" (click)="openTeam(selectedMatchup.TeamIDs[0])">{{ teamName(selectedMatchup.TeamIDs[0]) }}</button>
+      <span>vs</span>
+      <button mat-button type="button" (click)="openTeam(selectedMatchup.TeamIDs[1])">{{ teamName(selectedMatchup.TeamIDs[1]) }}</button>
+    </div>
+
+    <section class="fgc-section">
+      <h3>NFL game windows</h3>
+      <div *ngFor="let row of selectedMatchup.Games" class="fgc-matchup-game">
+        <div>
+          <strong>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</strong>
+          <span>{{ row.LeftStarterCount }}–{{ row.RightStarterCount }} starters</span>
+        </div>
+        <div>{{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} pts</div>
+        <div *ngIf="row.OutcomeChangedWithoutGame === true" class="fgc-swing">Outcome differs without this NFL game</div>
+      </div>
+    </section>
+
+    <section class="fgc-section">
+      <h3>Counterfactual</h3>
+      <p *ngIf="selectedMatchup.CounterfactualState === 'available'">
+        Uses official final fantasy scores and subtracts only starters' league-scored points from the selected NFL game. It is a descriptive counterfactual, not a causation claim.
+      </p>
+      <p *ngIf="selectedMatchup.CounterfactualState !== 'available'" class="fgc-muted">
+        Final counterfactual unavailable ({{ selectedMatchup.CounterfactualState }}).
+      </p>
+    </section>
+  </ng-container>
+
+  <p *ngIf="!game && !matchup" class="fgc-muted">Fantasy game context is unavailable for this selection.</p>
+</div>

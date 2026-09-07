@@ -15,7 +15,6 @@ catch {
 # 2. Konfiguration
 # ===========================================================================
 
-# Konfiguration holen
 try {
     $config = Get-Config
 }
@@ -30,30 +29,19 @@ catch {
 
 function Save-JsonFile {
     param(
-        # Entweder direkt File angeben
         [string]$TargetFile,
 
-        # Oder Typ angeben, damit Pfad aus Config gezogen wird
-        [ValidateSet("League","DecisionWindows","Players","Teams","Schedule","Games","Standings","Transactions", "Drafts")]
+        [ValidateSet("League","DecisionWindows","FantasyGameContext","Players","Teams","Schedule","Games","Standings","Transactions", "Drafts")]
         [string]$Type,
 
-        # Array oder Objekt, das gespeichert werden soll
         [Parameter(Mandatory=$true)]
         [object]$Data,
 
-        # ScriptBlock für Vergleich altes <-> neues Objekt
         [ScriptBlock]$CompareScript,
-
-        # Backup erstellen?
         [switch]$CreateBackup,
-
-        # Timestamp aktualisieren?
         [switch]$UpdateTimestamp
     )
 
-    # ------------------------------
-    # 1️⃣ TargetFile auflösen
-    # ------------------------------
     if (-not $TargetFile) {
         if (-not $Type) {
             throw "Either TargetFile or Type must be provided."
@@ -80,20 +68,12 @@ function Save-JsonFile {
         }
     }
 
-    # ------------------------------
-    # 2️⃣ Alte Daten laden
-    # ------------------------------
     $oldData = $null
     if (Test-Path $TargetFile) {
         $raw = Get-Content $TargetFile -Raw
         if ($raw) { $oldData = $raw | ConvertFrom-Json }
     }
 
-    # ------------------------------
-    # 3️⃣ Änderungen prüfen
-    # ------------------------------
-    
-    # Wenn kein CompareScript angegeben, immer speichern
     if (-not $CompareScript) {
         Write-Host "No CompareScript provided - skipping change detection and saving file." -ForegroundColor Green
     }
@@ -112,17 +92,11 @@ function Save-JsonFile {
         } else {
             Write-Host "Changes detected - updating file." -ForegroundColor Green
         }
-    }    
+    }
 
-    # ------------------------------
-    # 4️⃣ Timestamp vorbereiten
-    # ------------------------------
     $TimeSnapshot = Get-Date
     $Now = $TimeSnapshot.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-    # ------------------------------
-    # 5️⃣ Backup falls gewünscht
-    # ------------------------------
     if ($CreateBackup) {
         if (-not $BackupDir) { $BackupDir = $config.BackupDir }
         if (-not $BackupDir) {
@@ -140,9 +114,6 @@ function Save-JsonFile {
         }
     }
 
-    # ------------------------------
-    # 6️⃣ JSON schreiben
-    # ------------------------------
     try {
         $Data | ConvertTo-Json -Depth 10 | Out-File $TargetFile -Encoding UTF8
         Write-Host "$TargetFile saved!" -ForegroundColor Green
@@ -150,9 +121,6 @@ function Save-JsonFile {
         throw "Error writing $($TargetFile): $_"
     }
 
-    # ------------------------------
-    # 7️⃣ Timestamp aktualisieren
-    # ------------------------------
     if ($UpdateTimestamp) {
         if (-not $TimestampFile) { $TimestampFile = $config.TimestampsFile }
         if (-not $TimestampFile) { Write-Warning "No TimestampFile provided; skipping timestamp update." ; return }

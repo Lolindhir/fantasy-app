@@ -2,7 +2,8 @@
   display: block;
 }
 
-.matchups-shell {
+.matchups-shell,
+.fantasy-pulse-shell {
   margin: 0 5px 12px;
   padding: 14px;
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -11,7 +12,8 @@
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
-.matchups-heading {
+.matchups-heading,
+.fantasy-pulse-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -19,7 +21,8 @@
   margin-bottom: 0;
 }
 
-.matchups-heading h2 {
+.matchups-heading h2,
+.fantasy-pulse-heading h2 {
   margin: 0;
   font-size: 1.08rem;
   font-weight: 800;
@@ -56,9 +59,7 @@
   box-shadow: none;
 }
 
-.matchup-card:last-child {
-  border-bottom: 0;
-}
+.matchup-card:last-child { border-bottom: 0; }
 
 .matchup-team {
   display: flex;
@@ -68,13 +69,10 @@
   min-width: 0;
 }
 
-.matchup-team--right {
-  align-items: flex-end;
-}
+.matchup-team--right { align-items: flex-end; }
 
 .matchup-team-identity {
   --team-identity-avatar-radius: 50%;
-
   width: 100%;
   min-width: 0;
 }
@@ -86,9 +84,7 @@
   --team-identity-owner-font-size: 0.72rem;
 }
 
-.matchup-team-identity--desktop {
-  display: none;
-}
+.matchup-team-identity--desktop { display: none; }
 
 .matchup-team-context {
   min-width: 0;
@@ -97,9 +93,7 @@
   color: #475569;
 }
 
-.matchup-team--right .matchup-team-context {
-  text-align: right;
-}
+.matchup-team--right .matchup-team-context { text-align: right; }
 
 .matchup-team-context-mobile {
   display: flex;
@@ -114,18 +108,9 @@
   white-space: nowrap;
 }
 
-.matchup-team--right .matchup-team-context-mobile {
-  justify-content: flex-end;
-}
-
-.matchup-team-context-desktop {
-  display: none;
-}
-
-.matchup-season-label {
-  color: #6d28d9;
-  font-weight: 850;
-}
+.matchup-team--right .matchup-team-context-mobile { justify-content: flex-end; }
+.matchup-team-context-desktop { display: none; }
+.matchup-season-label { color: #6d28d9; font-weight: 850; }
 
 .matchup-center {
   display: flex;
@@ -160,10 +145,58 @@
   white-space: nowrap;
 }
 
-.matchup-score-divider {
-  color: #9ca3af;
-  font-weight: 700;
+.matchup-score-divider { color: #9ca3af; font-weight: 700; }
+
+.matchup-nfl-context {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  min-height: 34px;
+  margin: 3px 4px 0;
+  border-radius: 9px;
+  color: #475569;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
+
+.matchup-nfl-context mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+.fantasy-pulse-shell { margin-top: -2px; }
+.fantasy-pulse-state {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fantasy-pulse-grid { display: grid; gap: 16px; margin-top: 12px; }
+.fantasy-pulse-lens h3 { margin: 0 0 4px; font-size: 0.9rem; }
+.fantasy-pulse-lens { min-width: 0; }
+
+.fantasy-pulse-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 5px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+
+.fantasy-pulse-game {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fantasy-pulse-game strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fantasy-pulse-game small { color: #64748b; }
+.fantasy-pulse-metrics { color: #475569; font-size: 0.72rem; white-space: nowrap; }
+.fantasy-pulse-unknown { color: #b45309; font-weight: 800; }
+.fantasy-pulse-empty { padding: 9px 4px; color: #94a3b8; font-size: 0.78rem; }
 
 @media (min-width: 768px) {
   .matchup-card {
@@ -173,31 +206,19 @@
     padding: 18px 14px;
   }
 
-  .matchup-team {
-    gap: 12px;
-  }
-
-  .matchup-team-identity--mobile {
-    display: none;
-  }
+  .matchup-team { gap: 12px; }
+  .matchup-team-identity--mobile { display: none; }
 
   .matchup-team-identity--desktop {
     --team-identity-gap: 14px;
     --team-identity-avatar-size: 76px;
     --team-identity-title-font-size: 1.2rem;
     --team-identity-owner-font-size: 0.84rem;
-
     display: inline-block;
   }
 
-  .matchup-team-context {
-    width: 100%;
-    padding: 0 4px;
-  }
-
-  .matchup-team-context-mobile {
-    display: none;
-  }
+  .matchup-team-context { width: 100%; padding: 0 4px; }
+  .matchup-team-context-mobile { display: none; }
 
   .matchup-team-context-desktop {
     display: grid;
@@ -208,9 +229,7 @@
     width: 100%;
   }
 
-  .matchup-team--right .matchup-team-context-desktop {
-    justify-content: end;
-  }
+  .matchup-team--right .matchup-team-context-desktop { justify-content: end; }
 
   .matchup-stat {
     display: flex;
@@ -219,9 +238,7 @@
     min-width: 0;
   }
 
-  .matchup-team--right .matchup-stat {
-    align-items: flex-end;
-  }
+  .matchup-team--right .matchup-stat { align-items: flex-end; }
 
   .matchup-context-label {
     color: #94a3b8;
@@ -241,14 +258,13 @@
     white-space: nowrap;
   }
 
-  .matchup-vs {
-    width: 36px;
-    height: 36px;
-    font-size: 0.66rem;
-  }
+  .matchup-vs { width: 36px; height: 36px; font-size: 0.66rem; }
+  .matchup-score { gap: 6px; font-size: 1.05rem; }
+  .matchup-nfl-context { justify-self: center; min-width: 420px; }
+  .fantasy-pulse-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
-  .matchup-score {
-    gap: 6px;
-    font-size: 1.05rem;
-  }
+@media (max-width: 520px) {
+  .fantasy-pulse-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .fantasy-pulse-metrics { grid-column: 1 / -1; padding-left: 8px; }
 }
