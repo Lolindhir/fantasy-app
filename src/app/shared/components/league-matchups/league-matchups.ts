@@ -63,6 +63,12 @@ interface FantasyContextState {
   context: FantasyGameContextReadModel | null;
 }
 
+interface FantasyMatchupPreviewView {
+  game: FantasyGameContextMatchupGame;
+  leftStarterCount: number;
+  rightStarterCount: number;
+}
+
 @Component({
   selector: 'app-league-matchups',
   standalone: true,
@@ -141,9 +147,34 @@ export class LeagueMatchupsComponent {
   matchupPreview(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): FantasyGameContextMatchupGame | null {
+  ): FantasyMatchupPreviewView | null {
     const resolved = this.matchupContext(matchup, context);
-    return resolved ? getNextFantasyMatchupGame(resolved) : null;
+    if (!resolved) return null;
+
+    const game = getNextFantasyMatchupGame(resolved);
+    if (!game) return null;
+
+    const firstTeamID = String(resolved.TeamIDs[0] ?? '');
+    const secondTeamID = String(resolved.TeamIDs[1] ?? '');
+    const cardLeftTeamID = String(matchup.left.team.TeamID);
+
+    if (cardLeftTeamID === secondTeamID && cardLeftTeamID !== firstTeamID) {
+      return {
+        game,
+        leftStarterCount: game.RightStarterCount,
+        rightStarterCount: game.LeftStarterCount
+      };
+    }
+
+    return {
+      game,
+      leftStarterCount: game.LeftStarterCount,
+      rightStarterCount: game.RightStarterCount
+    };
+  }
+
+  teamShortName(team: FantasyTeam): string {
+    return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
   }
 
   upcomingGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {

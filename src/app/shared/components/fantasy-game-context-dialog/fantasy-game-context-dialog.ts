@@ -7,10 +7,13 @@ import { MatIconModule } from '@angular/material/icon';
 import type {
   FantasyGameContextGame,
   FantasyGameContextMatchup,
+  FantasyGameContextMatchupGame,
+  FantasyGameContextPlayer,
   FantasyGameContextReadModel,
   FantasyGameContextTeam
 } from '../../../core/models/fantasy-game-context.models';
 import type { League, Player } from '../../../core/models/fantasy.models';
+import { isFantasyGameImpactVisible } from '../../utils/fantasy-game-context.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
@@ -50,8 +53,43 @@ export class FantasyGameContextDialogComponent {
     return team?.Team || team?.Owner || `Team ${teamID}`;
   }
 
+  teamShortName(teamID: string | number): string {
+    const team = this.data.league.Teams.find(candidate => String(candidate.TeamID) === String(teamID));
+    return team?.TeamAbbr?.trim() || team?.Team?.trim() || team?.Owner || `Team ${teamID}`;
+  }
+
   playerName(playerID: string): string {
     return this.findPlayer(playerID)?.Name ?? playerID;
+  }
+
+  gameLabel(gameID: string): string {
+    const game = this.gameForID(gameID);
+    if (!game) return gameID;
+    return `${game.AwayTeamAbbr || game.AwayTeamID} @ ${game.HomeTeamAbbr || game.HomeTeamID}`;
+  }
+
+  gameForMatchupRow(row: FantasyGameContextMatchupGame): FantasyGameContextGame | null {
+    return this.gameForID(row.GameID);
+  }
+
+  hasGameScoring(game: FantasyGameContextGame): boolean {
+    return isFantasyGameImpactVisible(game);
+  }
+
+  hasMatchupGameScoring(row: FantasyGameContextMatchupGame): boolean {
+    const game = this.gameForMatchupRow(row);
+    return !!game && isFantasyGameImpactVisible(game);
+  }
+
+  showCounterfactual(matchup: FantasyGameContextMatchup): boolean {
+    return matchup.CounterfactualState === 'available' || this.data.context.ScoringState === 'final';
+  }
+
+  playersForTeam(team: FantasyGameContextTeam): FantasyGameContextPlayer[] {
+    return [...team.Players].sort((left, right) =>
+      Number(right.IsStarter) - Number(left.IsStarter)
+      || this.playerName(left.PlayerID).localeCompare(this.playerName(right.PlayerID))
+    );
   }
 
   openTeam(teamID: string | number): void {
@@ -70,16 +108,8 @@ export class FantasyGameContextDialogComponent {
     });
   }
 
-  teamsForMatchup(): FantasyGameContextTeam[] {
-    if (!this.matchup) return [];
-    const IDs = new Set(this.matchup.TeamIDs.map(String));
-    return this.data.context.Games
-      .flatMap(game => game.FantasyTeams)
-      .filter(team => IDs.has(String(team.FantasyTeamID)))
-      .filter((team, index, all) => all.findIndex(candidate =>
-        String(candidate.FantasyTeamID) === String(team.FantasyTeamID)
-        && candidate.FantasyMatchupID === team.FantasyMatchupID
-      ) === index);
+  private gameForID(gameID: string): FantasyGameContextGame | null {
+    return this.data.context.Games.find(game => game.GameID === gameID) ?? null;
   }
 
   private findPlayer(playerID: string): Player | null {

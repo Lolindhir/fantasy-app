@@ -1,6 +1,6 @@
 <div class="fgc-dialog">
   <header class="fgc-dialog-header">
-    <div>
+    <div class="fgc-dialog-heading-copy">
       <div class="fgc-eyebrow">NFL Fantasy Context · Week {{ data.context.Week }}</div>
       <h2 *ngIf="game">{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</h2>
       <h2 *ngIf="matchup">Fantasy Matchup Impact</h2>
@@ -11,24 +11,28 @@
   <ng-container *ngIf="game as selectedGame">
     <div class="fgc-meta">
       <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
-      <span>{{ selectedGame.Status || 'Status unavailable' }}</span>
-      <span>Window {{ selectedGame.DecisionWindowID }}</span>
+      <span class="fgc-status">{{ selectedGame.Status || 'Status unavailable' }}</span>
     </div>
 
-    <section class="fgc-stat-grid">
-      <div><strong>{{ selectedGame.Relevance.StarterCount }}</strong><span>Starters</span></div>
-      <div><strong>{{ selectedGame.Relevance.RosteredPlayerCount }}</strong><span>Rostered</span></div>
-      <div><strong>{{ selectedGame.Relevance.FantasyMatchupCount }}</strong><span>Matchups</span></div>
-      <div><strong>{{ selectedGame.Relevance.FantasyTeamCount }}</strong><span>Teams</span></div>
+    <section class="fgc-relevance-summary" aria-label="Fantasy relevance summary">
+      <span><strong>{{ selectedGame.Relevance.StarterCount }}</strong> starter{{ selectedGame.Relevance.StarterCount === 1 ? '' : 's' }}</span>
+      <span><strong>{{ selectedGame.Relevance.RosteredPlayerCount }}</strong> rostered</span>
+      <span><strong>{{ selectedGame.Relevance.FantasyTeamCount }}</strong> team{{ selectedGame.Relevance.FantasyTeamCount === 1 ? '' : 's' }}</span>
+      <span><strong>{{ selectedGame.Relevance.FantasyMatchupCount }}</strong> matchup{{ selectedGame.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
     </section>
 
-    <section class="fgc-section">
+    <section class="fgc-section fgc-impact-section">
       <h3>League impact</h3>
-      <p *ngIf="selectedGame.Impact.State === 'unavailable'" class="fgc-muted">League-scored player points are not available yet.</p>
-      <div *ngIf="selectedGame.Impact.State !== 'unavailable'" class="fgc-impact-line">
-        <strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }}</strong> starter pts ·
-        {{ selectedGame.Impact.RosteredPoints | number:'1.0-2' }} rostered pts ·
-        {{ selectedGame.Impact.OutcomeSwingMatchupCount }} outcome swing{{ selectedGame.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
+      <div *ngIf="!hasGameScoring(selectedGame)" class="fgc-impact-pending">
+        <mat-icon>schedule</mat-icon>
+        <span>Impact becomes available once league scoring starts for this game.</span>
+      </div>
+      <div *ngIf="hasGameScoring(selectedGame)" class="fgc-impact-summary">
+        <span><strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }}</strong> starter pts</span>
+        <span>{{ selectedGame.Impact.RosteredPoints | number:'1.0-2' }} rostered pts</span>
+        <span *ngIf="selectedGame.Impact.OutcomeSwingMatchupCount > 0" class="fgc-swing">
+          {{ selectedGame.Impact.OutcomeSwingMatchupCount }} outcome swing{{ selectedGame.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
+        </span>
       </div>
       <p *ngIf="selectedGame.Relevance.UnknownAssociationCount > 0" class="fgc-warning">
         {{ selectedGame.Relevance.UnknownAssociationCount }} association{{ selectedGame.Relevance.UnknownAssociationCount === 1 ? '' : 's' }} could not be assigned safely.
@@ -36,19 +40,33 @@
     </section>
 
     <section *ngFor="let fantasyTeam of selectedGame.FantasyTeams" class="fgc-section fgc-team-section">
-      <button mat-button type="button" (click)="openTeam(fantasyTeam.FantasyTeamID)">
-        {{ teamName(fantasyTeam.FantasyTeamID) }}
-      </button>
-      <span>{{ fantasyTeam.StarterCount }} starters · {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts</span>
+      <div class="fgc-team-header">
+        <button mat-button type="button" class="fgc-team-link" (click)="openTeam(fantasyTeam.FantasyTeamID)">
+          {{ teamName(fantasyTeam.FantasyTeamID) }}
+        </button>
+        <span class="fgc-team-summary">
+          {{ fantasyTeam.StarterCount }} starter{{ fantasyTeam.StarterCount === 1 ? '' : 's' }}
+          <ng-container *ngIf="hasGameScoring(selectedGame)"> · {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts</ng-container>
+        </span>
+      </div>
+
       <div class="fgc-player-list">
         <button
-          *ngFor="let player of fantasyTeam.Players"
-          mat-stroked-button
+          *ngFor="let player of playersForTeam(fantasyTeam)"
+          mat-button
           type="button"
+          class="fgc-player-row"
+          [class.fgc-player-row--starter]="player.IsStarter"
           (click)="openPlayer(player.PlayerID)"
         >
-          {{ playerName(player.PlayerID) }}
-          <span>{{ player.IsStarter ? 'S' : 'B' }} · {{ player.Points === null ? '—' : (player.Points | number:'1.0-2') }}</span>
+          <span class="fgc-player-main">
+            <mat-icon *ngIf="player.IsStarter" aria-hidden="true">star</mat-icon>
+            <span>{{ playerName(player.PlayerID) }}</span>
+          </span>
+          <span *ngIf="player.IsStarter" class="fgc-player-role">Starter</span>
+          <span *ngIf="hasGameScoring(selectedGame) && player.Points !== null" class="fgc-player-points">
+            {{ player.Points | number:'1.0-2' }} pts
+          </span>
         </button>
       </div>
     </section>
@@ -61,19 +79,30 @@
       <button mat-button type="button" (click)="openTeam(selectedMatchup.TeamIDs[1])">{{ teamName(selectedMatchup.TeamIDs[1]) }}</button>
     </div>
 
-    <section class="fgc-section">
+    <section class="fgc-section fgc-matchup-games-section">
       <h3>NFL game windows</h3>
       <div *ngFor="let row of selectedMatchup.Games" class="fgc-matchup-game">
-        <div>
-          <strong>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</strong>
-          <span>{{ row.LeftStarterCount }}–{{ row.RightStarterCount }} starters</span>
+        <div class="fgc-matchup-game-header">
+          <div class="fgc-matchup-game-identity">
+            <strong>{{ gameLabel(row.GameID) }}</strong>
+            <small>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</small>
+          </div>
+          <span *ngIf="gameForMatchupRow(row) as linkedGame" class="fgc-matchup-game-status">{{ linkedGame.Status }}</span>
         </div>
-        <div>{{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} pts</div>
+
+        <div class="fgc-matchup-exposure">
+          <span><strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong> {{ row.LeftStarterCount }} starter{{ row.LeftStarterCount === 1 ? '' : 's' }}</span>
+          <span><strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong> {{ row.RightStarterCount }} starter{{ row.RightStarterCount === 1 ? '' : 's' }}</span>
+        </div>
+
+        <div *ngIf="hasMatchupGameScoring(row)" class="fgc-matchup-points">
+          {{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} starter pts
+        </div>
         <div *ngIf="row.OutcomeChangedWithoutGame === true" class="fgc-swing">Outcome differs without this NFL game</div>
       </div>
     </section>
 
-    <section class="fgc-section">
+    <section *ngIf="showCounterfactual(selectedMatchup)" class="fgc-section fgc-counterfactual-section">
       <h3>Counterfactual</h3>
       <p *ngIf="selectedMatchup.CounterfactualState === 'available'">
         Uses official final fantasy scores and subtracts only starters' league-scored points from the selected NFL game. It is a descriptive counterfactual, not a causation claim.

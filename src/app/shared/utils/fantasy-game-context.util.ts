@@ -34,6 +34,17 @@ export function isFantasyGameContextForLeagueWeek(
   return !!context && week !== null && context.Season === season && context.Week === week;
 }
 
+export function isFantasyGameImpactVisible(
+  game: FantasyGameContextGame,
+  now: Date = new Date()
+): boolean {
+  if (game.Impact.State === 'unavailable') return false;
+  if (/^Final/i.test(game.Status ?? '')) return true;
+
+  const kickoffMs = Date.parse(game.StartsAtUtc);
+  return Number.isFinite(kickoffMs) && kickoffMs <= now.getTime();
+}
+
 export function getUpcomingRelevantGames(
   context: FantasyGameContextReadModel,
   now: Date = new Date()
@@ -71,6 +82,7 @@ export function getNextFantasyMatchupGame(
   const nowMs = now.getTime();
   return [...matchup.Games]
     .filter(game => Date.parse(game.StartsAtUtc) > nowMs)
+    .filter(game => game.LeftStarterCount + game.RightStarterCount > 0)
     .sort((left, right) => Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc) || left.GameID.localeCompare(right.GameID))[0]
     ?? null;
 }
