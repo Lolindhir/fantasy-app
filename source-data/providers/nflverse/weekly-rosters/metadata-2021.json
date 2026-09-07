@@ -1,30 +1,30 @@
 {
   "schemaVersion": 1,
   "registrySchemaVersion": 3,
-  "dataset": "nflverse.rosters",
+  "dataset": "nflverse.weekly-rosters",
   "provider": "nflverse",
   "upstream": "nflverse/nflverse-data",
-  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_2021.csv",
   "sourceFormat": "csv",
   "sourceMode": "season-partitioned",
   "availabilityStatus": "available",
-  "kind": "seasonal-roster",
+  "kind": "weekly-roster",
   "refreshPolicy": "current-season",
   "retentionPolicy": "permanent-by-season",
   "lifecycle": {
     "class": "seasonal-finalizable",
-    "partitionKey": "season",
+    "partitionKey": "season-week",
     "finalization": "freeze-prior-seasons",
     "repairPolicy": "explicit-force"
   },
   "license": "CC BY 4.0",
-  "attribution": "nflverse roster data",
+  "attribution": "nflverse weekly roster data",
   "partition": {
-    "season": 2026
+    "season": 2021
   },
-  "retrievedAtUtc": "2026-09-07T14:58:41Z",
-  "contentHashSha256": "e157129706145664d55c361fb3d4496d86eaed8c7d32a247d3e25a2a0f674437",
-  "rowCount": 2954,
+  "retrievedAtUtc": "2026-09-07T14:58:44Z",
+  "contentHashSha256": "88adfe0fba5cbedd260d7928ad373476d4fb168d0213cb52ef1163ed5d3056b7",
+  "rowCount": 46696,
   "columns": [
     "season",
     "team",
