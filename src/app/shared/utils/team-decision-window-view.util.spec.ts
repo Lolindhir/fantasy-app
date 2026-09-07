@@ -111,6 +111,36 @@ describe('team Decision Window view utilities', () => {
     expect(row.unmatchedAffectedPlayerCount).toBe(1);
   });
 
+  it('sorts games inside a window by affected-player count descending and preserves generated order on ties', () => {
+    const window = makeWindow('relevance', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
+    window.Games = [
+      makeGame('g1', 1, 'NE', 'SEA'),
+      makeGame('g2', 1, 'KC', 'LAC'),
+      makeGame('g3', 1, 'DAL', 'PHI')
+    ];
+    window.ParticipatingNFLTeamIDs = ['NE', 'SEA', 'KC', 'LAC', 'DAL', 'PHI'];
+    window.AffectedFantasyTeams = [{
+      FantasyTeamID: 42,
+      AffectedRosteredPlayerCount: 8,
+      AffectedStarterCount: 4,
+      Players: [
+        { PlayerID: 'g1-a', NFLTeamID: 'NE', GameID: 'g1', IsStarter: true },
+        { PlayerID: 'g1-b', NFLTeamID: 'SEA', GameID: 'g1', IsStarter: false },
+        { PlayerID: 'g2-a', NFLTeamID: 'KC', GameID: 'g2', IsStarter: false },
+        { PlayerID: 'g2-b', NFLTeamID: 'KC', GameID: 'g2', IsStarter: false },
+        { PlayerID: 'g2-c', NFLTeamID: 'LAC', GameID: 'g2', IsStarter: false },
+        { PlayerID: 'g3-a', NFLTeamID: 'DAL', GameID: 'g3', IsStarter: true },
+        { PlayerID: 'g3-b', NFLTeamID: 'DAL', GameID: 'g3', IsStarter: true },
+        { PlayerID: 'g3-c', NFLTeamID: 'PHI', GameID: 'g3', IsStarter: true }
+      ]
+    }];
+
+    const [row] = buildTeamUpcomingLockViews(makeModel([window]), 42, now);
+
+    expect(row.games.map(game => game.game.GameID)).toEqual(['g2', 'g3', 'g1']);
+    expect(row.games.map(game => game.affectedPlayers.length)).toEqual([3, 3, 2]);
+  });
+
   it('does not include a global window when this team has zero affected players', () => {
     const zero = makeWindow('zero', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
     expect(buildTeamUpcomingLockViews(makeModel([zero]), 42, now)).toEqual([]);
