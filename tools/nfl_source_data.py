@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import defaultdict
 from pathlib import Path
 
 from nfl_source_data_lib.common import current_source_season, load_json, load_registry, sync_dataset
+from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
@@ -24,6 +26,15 @@ def parse_args() -> argparse.Namespace:
         dest="seasons",
         type=int,
         help="Restrict season-partitioned sync to a season; may be repeated. Defaults to the current source season.",
+    )
+    parser.add_argument(
+        "--historical-backfill-limit",
+        type=int,
+        default=0,
+        help=(
+            "For an unfiltered sync without --dataset/--season, additionally acquire up to N missing "
+            "supported historical raw partitions, newest seasons first. Defaults to 0 (disabled)."
+        ),
     )
     parser.add_argument(
         "--force",
@@ -58,6 +69,10 @@ def main() -> int:
         raise ValueError("--raw-only is only valid with the sync command")
     if args.seasons and args.command != "sync":
         raise ValueError("--season is only valid with the sync command")
+    if args.historical_backfill_limit < 0:
+        raise ValueError("--historical-backfill-limit must be >= 0")
+    if args.historical_backfill_limit and args.command != "sync":
+        raise ValueError("--historical-backfill-limit is only valid with the sync command")
 
     if args.command == "sync":
         requested = set(args.datasets or [])
@@ -67,10 +82,34 @@ def main() -> int:
         selected = [dataset for dataset in registry if not requested or dataset.id in requested]
         if args.seasons and not any(dataset.is_season_partitioned for dataset in selected):
             raise ValueError("--season requires at least one selected season-partitioned dataset")
+        if args.historical_backfill_limit and (requested or args.seasons):
+            raise ValueError(
+                "--historical-backfill-limit requires an unfiltered sync without --dataset or --season"
+            )
 
         source_season = current_source_season(repo_root)
+        historical_by_dataset: dict[str, list[int]] = defaultdict(list)
+        if args.historical_backfill_limit:
+            historical_batch = select_missing_historical_partitions(
+                repo_root,
+                selected,
+                current_season=source_season,
+                limit=args.historical_backfill_limit,
+            )
+            for dataset_id, season in historical_batch:
+                historical_by_dataset[dataset_id].append(season)
+            if historical_batch:
+                rendered = ", ".join(f"{dataset_id}={season}" for dataset_id, season in historical_batch)
+                print(f"historical backfill batch: {rendered}")
+            else:
+                print("historical backfill batch: none")
+
         for dataset in selected:
-            partitions = (args.seasons or [source_season]) if dataset.is_season_partitioned else [None]
+            if dataset.is_season_partitioned:
+                partitions = list(args.seasons or [source_season])
+                partitions.extend(historical_by_dataset.get(dataset.id, []))
+            else:
+                partitions = [None]
             for season in partitions:
                 result = sync_dataset(
                     dataset,
