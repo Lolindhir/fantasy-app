@@ -65,6 +65,40 @@ function Get-LeagueSeasonKickoffUtc {
     }
 }
 
+function Get-LeaguePlayoffStartUtc {
+    param(
+        [AllowNull()][array]$Schedule,
+        [Parameter(Mandatory = $true)][int]$PlayoffStartWeek
+    )
+
+    if (-not $Schedule -or @($Schedule).Count -eq 0 -or $PlayoffStartWeek -le 0) {
+        return $null
+    }
+
+    $weekLabel = "Week $PlayoffStartWeek"
+    $playoffWeekGames = @($Schedule | Where-Object {
+        $_.seasonType -eq "Regular Season" -and
+        [string]$_.gameWeek -eq $weekLabel -and
+        -not [string]::IsNullOrWhiteSpace([string]$_.gameTime_epoch)
+    })
+
+    if ($playoffWeekGames.Count -eq 0) {
+        return $null
+    }
+
+    $firstGame = $playoffWeekGames |
+        Sort-Object { [double]$_.gameTime_epoch } |
+        Select-Object -First 1
+
+    try {
+        return [DateTimeOffset]::FromUnixTimeSeconds([int64][double]$firstGame.gameTime_epoch).UtcDateTime
+    }
+    catch {
+        Write-Warning "Could not parse first kickoff for fantasy playoff Week $PlayoffStartWeek from schedule. $_"
+        return $null
+    }
+}
+
 function ConvertTo-LeagueMatchupSnapshot {
     param(
         [AllowNull()][array]$Matchups,

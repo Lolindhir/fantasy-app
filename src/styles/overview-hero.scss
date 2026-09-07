@@ -3,26 +3,25 @@
  * without changing generated data or league-timeline semantics.
  */
 
-app-overview .header .header-main {
-  display: block;
-}
-
-app-overview .header .header-content {
-  display: block;
-  width: 100%;
-  min-width: 0;
-}
-
-app-overview .header .header-identity {
-  position: relative;
+app-overview .header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px;
-  align-items: start;
-  min-height: 72px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
   column-gap: 12px;
+  row-gap: 5px;
+}
+
+/* Flatten the old wrapper stack into the hero grid. This lets the champion stay
+ * in normal document flow while the logo spans the complete identity height. */
+app-overview .header .header-main,
+app-overview .header .header-content,
+app-overview .header .header-identity {
+  display: contents;
 }
 
 app-overview .header .header-identity-copy {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -44,19 +43,27 @@ app-overview .header .header-season {
 
 app-overview .header .league-logo {
   position: static;
-  width: 72px;
-  height: 72px;
-  min-height: 0;
-  align-self: start;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
   justify-self: end;
+  width: auto;
+  height: 100%;
+  max-width: 96px;
+  max-height: 96px;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
   border-radius: 18px;
   object-fit: contain;
   object-position: center;
 }
 
 app-overview .header .header-columns {
+  grid-column: 1 / -1;
+  grid-row: 3;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 1px;
   gap: 7px;
 }
 
@@ -65,7 +72,7 @@ app-overview .header .header-columns {
  */
 app-overview .header .header-columns > .header-info.salary-cap-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(112px, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(108px, auto) minmax(0, 1fr);
   grid-template-areas:
     'title title title'
     'current change projected';
@@ -140,7 +147,7 @@ app-overview .header .header-columns > .header-info.salary-cap-card > .salary-ca
   gap: 7px;
   min-width: 0;
   color: inherit;
-  font-size: clamp(0.96rem, 4vw, 1.1rem);
+  font-size: clamp(0.88rem, 3.6vw, 1.02rem);
   font-weight: 950;
   line-height: 1;
   white-space: nowrap;
@@ -151,7 +158,7 @@ app-overview .header .salary-cap-trend-icon {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  font-size: clamp(1.2rem, 5vw, 1.42rem);
+  font-size: clamp(1.08rem, 4.5vw, 1.28rem);
   line-height: 1;
 }
 
@@ -173,7 +180,7 @@ app-overview .header .salary-cap-change--flat {
 }
 
 /* Keep the passive Waiver Run deliberately centered, but let both operational
- * cards shrink now that Week N no longer consumes a separate matchup row.
+ * cards stay compact now that Week N shares the matchup row.
  */
 app-overview .header app-league-timeline .league-timeline-operational-item {
   min-height: 68px;
@@ -228,34 +235,40 @@ app-overview .header app-league-timeline .league-timeline-operational {
 }
 
 app-overview .header app-league-timeline .league-timeline-milestones {
-  margin-top: 4px;
+  margin-top: 5px;
   padding-top: 3px;
   border-top: 0;
+  font-size: 0.68rem;
 }
 
 app-overview .header app-league-timeline .league-timeline-milestone {
-  padding: 3px 7px;
-  border: 1px solid rgba(217, 119, 6, 0.18);
+  padding: 4px 9px;
+  border: 1px solid rgba(217, 119, 6, 0.2);
   border-radius: 999px;
-  background: rgba(255, 251, 235, 0.76);
+  background: rgba(255, 251, 235, 0.82);
   line-height: 1;
 }
 
-/* Reuse the existing champion element, but place it inside the identity-height
- * visually so the old bottom row no longer consumes hero height.
- */
+app-overview .header app-league-timeline .league-timeline-milestone-detail {
+  color: #9a3412;
+  font-weight: 900;
+}
+
+/* Defending Champion now participates in normal flow. It occupies the second
+ * identity row instead of floating over the status card. */
 app-overview .header .champion {
-  position: absolute;
-  top: 64px;
-  left: 14px;
-  z-index: 1;
+  position: static;
+  grid-column: 1;
+  grid-row: 2;
+  z-index: auto;
   display: inline-flex;
   align-items: center;
+  align-self: start;
   gap: 5px;
   width: fit-content;
-  max-width: calc(100% - 100px);
+  max-width: 100%;
   margin: 0;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border: 1px solid rgba(217, 119, 6, 0.26);
   border-radius: 999px;
   background: linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(255, 247, 237, 0.94));
@@ -283,34 +296,33 @@ app-overview .header .champion img {
 }
 
 @media (max-width: 380px) {
-  app-overview .header .header-identity {
-    grid-template-columns: minmax(0, 1fr) 64px;
+  app-overview .header {
     column-gap: 9px;
+    row-gap: 4px;
   }
 
   app-overview .header .league-logo {
-    width: 64px;
-    height: 64px;
+    max-width: 88px;
+    max-height: 88px;
+    border-radius: 17px;
   }
 
   app-overview .header .header-columns > .header-info.salary-cap-card {
-    grid-template-columns: minmax(0, 1fr) minmax(104px, auto) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(100px, auto) minmax(0, 1fr);
     column-gap: 5px;
     padding-inline: 7px;
   }
 
   app-overview .header .header-columns > .header-info.salary-cap-card > .salary-cap-change {
     gap: 5px;
-    font-size: 0.92rem;
+    font-size: 0.86rem;
   }
 
   app-overview .header .salary-cap-trend-icon {
-    font-size: 1.16rem;
+    font-size: 1.04rem;
   }
 
   app-overview .header .champion {
-    top: 63px;
-    max-width: calc(100% - 88px);
     gap: 4px;
     padding-inline: 5px;
     font-size: 0.66rem;
@@ -328,35 +340,23 @@ app-overview .header .champion img {
 
 @media (min-width: 768px) {
   app-overview .header {
-    display: block;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 18px;
+    row-gap: 6px;
     padding: 14px 16px;
   }
 
-  app-overview .header .header-main {
-    display: block;
-  }
-
-  app-overview .header .header-content {
-    display: block;
-  }
-
-  app-overview .header .header-identity {
-    grid-template-columns: minmax(0, 1fr) 92px;
-    min-height: 92px;
-    column-gap: 18px;
-  }
-
   app-overview .header .league-logo {
-    width: 92px;
-    height: 92px;
-    border-radius: 21px;
+    max-width: 112px;
+    max-height: 112px;
+    border-radius: 22px;
   }
 
   app-overview .header .header-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
     gap: 9px 14px;
-    margin-top: 6px;
+    margin-top: 1px;
   }
 
   app-overview .header .header-columns app-league-timeline {
@@ -372,16 +372,10 @@ app-overview .header .champion img {
   }
 
   app-overview .header .header-columns > .header-info.salary-cap-card > .salary-cap-change {
-    font-size: 1.1rem;
+    font-size: 1.02rem;
   }
 
   app-overview .header .salary-cap-trend-icon {
-    font-size: 1.34rem;
-  }
-
-  app-overview .header .champion {
-    top: 66px;
-    left: 16px;
-    max-width: calc(100% - 132px);
+    font-size: 1.24rem;
   }
 }
