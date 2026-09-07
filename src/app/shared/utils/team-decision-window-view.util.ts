@@ -222,7 +222,7 @@ function buildTeamGameGroups(
     byTeam.set(key, players);
   });
 
-  const primaryTeamIds = [game.AwayTeamID, game.HomeTeamID];
+  const primaryTeamIds = [game.HomeTeamID, game.AwayTeamID];
   const extraTeamIds = [...byTeam.keys()]
     .filter(teamId => !primaryTeamIds.includes(teamId))
     .sort((a, b) => a.localeCompare(b));
@@ -231,10 +231,10 @@ function buildTeamGameGroups(
     .filter((teamId, index, all) => all.indexOf(teamId) === index)
     .map(teamId => {
       const players = sortAffectedPlayers(byTeam.get(teamId) ?? []);
-      const teamAbbr = teamId === game.AwayTeamID
-        ? game.AwayTeamAbbr || game.AwayTeamID
-        : teamId === game.HomeTeamID
-          ? game.HomeTeamAbbr || game.HomeTeamID
+      const teamAbbr = teamId === game.HomeTeamID
+        ? game.HomeTeamAbbr || game.HomeTeamID
+        : teamId === game.AwayTeamID
+          ? game.AwayTeamAbbr || game.AwayTeamID
           : teamId || 'Unknown';
 
       return {

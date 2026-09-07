@@ -23,7 +23,6 @@ import {
   formatTeamAffectedCounts,
   getPendingTeamLookaheadMessage,
   type TeamDecisionWindowGameView,
-  type TeamDecisionWindowNflTeamGroupView,
   type TeamLineupHealthView,
   type TeamLineupWeekSummaryView,
   type TeamUpcomingLockView
@@ -49,7 +48,7 @@ export class TeamLineupTabComponent {
   @Input() unavailable = false;
   @Output() openWindow = new EventEmitter<DecisionWindow>();
 
-  readonly playerColumns: PlayerListColumn[] = ['name', 'dynamicStat'];
+  readonly playerColumns: PlayerListColumn[] = ['team', 'name', 'dynamicStat'];
 
   get upcomingWindows(): TeamUpcomingLockView[] {
     if (!this.model) return [];
@@ -100,39 +99,28 @@ export class TeamLineupTabComponent {
     return formatDecisionWindowCompactLocalDateTime(window);
   }
 
-  teamPlayers(group: TeamDecisionWindowNflTeamGroupView): Player[] {
+  gamePlayers(game: TeamDecisionWindowGameView): Player[] {
     const playerById = new Map(this.players.map(player => [player.ID, player]));
-    const starterById = new Map(group.affectedPlayers.map(player => [player.PlayerID, player.IsStarter]));
 
-    return group.affectedPlayers
-      .map(player => playerById.get(player.PlayerID))
-      .filter((player): player is Player => !!player)
-      .sort((a, b) => {
-        const starterOrder = Number(starterById.get(b.ID) ?? false) - Number(starterById.get(a.ID) ?? false);
-        if (starterOrder !== 0) return starterOrder;
-        return a.Name.localeCompare(b.Name, 'en', { sensitivity: 'base' }) || a.ID.localeCompare(b.ID);
-      });
+    return game.teamGroups.flatMap(group => {
+      const starterById = new Map(
+        group.affectedPlayers.map(player => [player.PlayerID, player.IsStarter])
+      );
+
+      return group.affectedPlayers
+        .map(player => playerById.get(player.PlayerID))
+        .filter((player): player is Player => !!player)
+        .sort((a, b) => {
+          const starterOrder = Number(starterById.get(b.ID) ?? false) - Number(starterById.get(a.ID) ?? false);
+          if (starterOrder !== 0) return starterOrder;
+          return a.Name.localeCompare(b.Name, 'en', { sensitivity: 'base' }) || a.ID.localeCompare(b.ID);
+        });
+    });
   }
 
-  unresolvedTeamPlayerCount(group: TeamDecisionWindowNflTeamGroupView): number {
+  unresolvedGamePlayerCount(game: TeamDecisionWindowGameView): number {
     const knownIds = new Set(this.players.map(player => player.ID));
-    return group.affectedPlayers.filter(player => !knownIds.has(player.PlayerID)).length;
-  }
-
-  teamLogo(group: TeamDecisionWindowNflTeamGroupView): string | null {
-    if (!group.nflTeamId) return null;
-    return this.nflTeams.find(team => team.ID === group.nflTeamId)?.Logo ?? null;
-  }
-
-  teamName(group: TeamDecisionWindowNflTeamGroupView): string {
-    if (!group.nflTeamId) return group.teamAbbr;
-    return this.nflTeams.find(team => team.ID === group.nflTeamId)?.Name || group.teamAbbr;
-  }
-
-  teamCounts(group: TeamDecisionWindowNflTeamGroupView): string {
-    const players = `${group.affectedPlayers.length} ${group.affectedPlayers.length === 1 ? 'player' : 'players'}`;
-    const starters = `${group.affectedStarterCount} ${group.affectedStarterCount === 1 ? 'starter' : 'starters'}`;
-    return `${players} · ${starters}`;
+    return game.affectedPlayers.filter(player => !knownIds.has(player.PlayerID)).length;
   }
 
   getPlayerRole = (player: Player): string => {
