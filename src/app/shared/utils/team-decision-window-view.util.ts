@@ -90,17 +90,25 @@ export function buildTeamUpcomingLockViews(
 
       const windowGameIds = new Set(candidate.window.Games.map(game => game.GameID));
       const games = candidate.window.Games
-        .map(game => {
+        .map((game, sourceIndex) => {
           const affectedPlayers = sortAffectedPlayers(affectedPlayersByGameId.get(game.GameID) ?? []);
 
           return {
-            game,
-            affectedPlayers,
-            affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length,
-            teamGroups: buildTeamGameGroups(game, affectedPlayers)
-          } satisfies TeamDecisionWindowGameView;
+            sourceIndex,
+            view: {
+              game,
+              affectedPlayers,
+              affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length,
+              teamGroups: buildTeamGameGroups(game, affectedPlayers)
+            } satisfies TeamDecisionWindowGameView
+          };
         })
-        .filter(game => game.affectedPlayers.length > 0);
+        .filter(candidateGame => candidateGame.view.affectedPlayers.length > 0)
+        .sort((a, b) =>
+          b.view.affectedPlayers.length - a.view.affectedPlayers.length
+          || a.sourceIndex - b.sourceIndex
+        )
+        .map(candidateGame => candidateGame.view);
 
       return {
         window: candidate.window,

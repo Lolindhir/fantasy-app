@@ -42,9 +42,16 @@
           </div>
         }
 
-        <div class="lineup-window-schedule" aria-label="Relevant Decision Window times this week">
-          @for (windowLabel of weekSummary.windowDateLabels; track windowLabel) {
-            <span>{{ windowLabel }}</span>
+        <div class="lineup-window-timeline" aria-label="Relevant Decision Windows this week">
+          @for (windowView of upcomingWindows; track windowView.window.DecisionWindowID; let isNext = $first) {
+            <div
+              class="lineup-window-timeline-step"
+              [class.lineup-window-timeline-step--next]="isNext"
+              [attr.aria-current]="isNext ? 'step' : null"
+            >
+              <span class="lineup-window-timeline-node" aria-hidden="true"></span>
+              <span class="lineup-window-timeline-label">{{ windowDateTimeLabel(windowView.window) }}</span>
+            </div>
           }
         </div>
       } @else if (pendingLookaheadMessage) {
@@ -64,14 +71,18 @@
       @for (windowView of upcomingWindows; track windowView.window.DecisionWindowID) {
         <section class="lineup-window-section">
           <header class="lineup-window-divider">
-            <strong>{{ windowView.timeLabel }}</strong>
-            <span>{{ windowGameCount(windowView) }} · {{ affectedCounts(windowView) }}</span>
+            <div class="lineup-window-chapter">
+              <span class="eyebrow">Decision Window</span>
+              <strong>{{ windowDateTimeLabel(windowView.window) }}</strong>
+              <span class="lineup-window-meta">{{ windowGameCount(windowView) }} · {{ affectedCounts(windowView) }}</span>
+            </div>
+            <img class="lineup-window-nfl-shield" src="assets/logo_nfl.png" alt="" />
           </header>
 
           <div class="lineup-game-list">
             @for (gameView of windowView.games; track gameView.game.GameID) {
               <article class="lineup-game-group">
-                <div class="lineup-game-heading">
+                <div class="lineup-game-heading" aria-label="NFL matchup">
                   @if (gameMatchupContext(windowView.window, gameView.game); as matchup) {
                     <app-decision-window-matchup-context
                       [context]="matchup"
@@ -86,11 +97,11 @@
                       <header class="lineup-team-heading">
                         <span class="lineup-team-identity">
                           @if (teamLogo(teamGroup); as logo) {
-                            <img [src]="logo" [alt]="teamGroup.teamAbbr + ' logo'" />
+                            <img [src]="logo" [alt]="teamName(teamGroup) + ' logo'" />
                           }
-                          <strong>{{ teamGroup.teamAbbr }}</strong>
+                          <strong>{{ teamName(teamGroup) }}</strong>
                         </span>
-                        <span>{{ teamCounts(teamGroup) }}</span>
+                        <span class="lineup-team-counts">{{ teamCounts(teamGroup) }}</span>
                       </header>
 
                       @if (teamPlayers(teamGroup); as resolvedPlayers) {
