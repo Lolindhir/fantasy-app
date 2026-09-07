@@ -12,11 +12,11 @@
 
 .decision-window-single-game {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr) max-content;
   align-items: center;
   width: 100%;
   min-width: 0;
-  gap: 4px;
+  gap: 3px;
 }
 
 .decision-window-nfl-team {
@@ -37,9 +37,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
 }
 
 .decision-window-nfl-team-logo img {
@@ -50,17 +50,21 @@
 
 .decision-window-at {
   color: #64748b;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 800;
 }
 
 .decision-window-game-week {
-  grid-column: 1 / -1;
+  grid-column: 4;
+  align-self: center;
+  padding-left: 4px;
+  border-left: 1px solid rgba(148, 163, 184, 0.24);
   color: #64748b;
-  font-size: 0.57rem;
-  font-weight: 700;
-  line-height: 1.1;
-  text-align: center;
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .decision-window-multi-game {
@@ -90,4 +94,29 @@
 
 .decision-window-multi-game .decision-window-game-week {
   grid-column: 1 / -1;
+  padding-left: 0;
+  border-left: 0;
+  text-align: center;
+}
+
+@media (max-width: 380px) {
+  .decision-window-single-game {
+    gap: 2px;
+  }
+
+  .decision-window-nfl-team {
+    gap: 2px;
+    font-size: 0.65rem;
+  }
+
+  .decision-window-nfl-team-logo {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+  }
+
+  .decision-window-game-week {
+    padding-left: 3px;
+    font-size: 0.5rem;
+  }
 }
