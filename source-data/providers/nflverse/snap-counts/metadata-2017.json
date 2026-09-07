@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.snap-counts",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-data",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_2017.csv",
+  "sourceFormat": "csv",
+  "sourceMode": "season-partitioned",
+  "availabilityStatus": "available",
+  "kind": "weekly-snap-counts",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season-week",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse snap-count data via Pro Football Reference",
+  "partition": {
+    "season": 2017
+  },
+  "retrievedAtUtc": "2026-09-07T15:06:51Z",
+  "contentHashSha256": "eab2fad2df99249d4061ed9c5c34d312cdba07cf3159d027d255bdc9b6526917",
+  "rowCount": 23862,
+  "columns": [
+    "game_id",
+    "pfr_game_id",
+    "season",
+    "game_type",
+    "week",
+    "player",
+    "pfr_player_id",
+    "position",
+    "team",
+    "opponent",
+    "offense_snaps",
+    "offense_pct",
+    "defense_snaps",
+    "defense_pct",
+    "st_snaps",
+    "st_pct"
+  ]
+}
