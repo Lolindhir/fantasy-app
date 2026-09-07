@@ -69,6 +69,10 @@ export interface LeagueTimelineBuildInput {
   nflTeams?: NFLTeam[];
 }
 
+type LeagueWithPlayoffStart = League & {
+  PlayoffStart?: string | null;
+};
+
 export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): LeagueTimelineView | null {
   const {
     league,
@@ -81,11 +85,9 @@ export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): League
   const kickoff = parseDate(league.SeasonKickoff);
   const capDeadline = parseDate(league.CapDeadline);
   const nextWaiverRun = parseDate(league.NextWaiverRun);
+  const playoffStart = parseDate((league as LeagueWithPlayoffStart).PlayoffStart);
   const currentWeek = getCurrentWeek(league);
-  const playoffItem = league.PlayoffStartWeek > currentWeek
-    && league.PlayoffStartWeek <= league.LastLeagueWeek
-    ? buildWeekItem('Playoffs', league.PlayoffStartWeek, '🏆')
-    : null;
+  const playoffItem = buildPlayoffMilestone(league, playoffStart, currentWeek, now);
   const tradeDeadlineItem = league.TradeDeadlineWeek !== null
     && league.TradeDeadlineWeek <= league.LastLeagueWeek
     && league.TradeDeadlineWeek > currentWeek
@@ -107,7 +109,9 @@ export function buildLeagueTimelineView(input: LeagueTimelineBuildInput): League
       (item): item is LeagueTimelineOperationalItem => item !== null
     );
     const milestones = league.Status === 'Playoffs'
-      ? [buildWeekItem('League final', league.LastLeagueWeek, '🏆')]
+      ? [playoffItem, buildWeekItem('League final', league.LastLeagueWeek, '🏆')].filter(
+          (item): item is LeagueTimelineItem => item !== null
+        )
       : [tradeDeadlineItem, playoffItem].filter(
           (item): item is LeagueTimelineItem => item !== null
         );
@@ -247,6 +251,29 @@ function buildOperationalDateItem(
     tone: null,
     matchup: null
   };
+}
+
+function buildPlayoffMilestone(
+  league: League,
+  playoffStart: Date | null,
+  currentWeek: number,
+  now: Date
+): LeagueTimelineItem | null {
+  const validWeek = league.PlayoffStartWeek > 0 && league.PlayoffStartWeek <= league.LastLeagueWeek;
+  if (!validWeek) return null;
+
+  if (playoffStart && playoffStart.getTime() > now.getTime()) {
+    return {
+      icon: '🏆',
+      label: 'Playoffs',
+      value: `Week ${league.PlayoffStartWeek}`,
+      detail: formatCountdown(playoffStart.getTime() - now.getTime())
+    };
+  }
+
+  return league.PlayoffStartWeek > currentWeek
+    ? buildWeekItem('Playoffs', league.PlayoffStartWeek, '🏆')
+    : null;
 }
 
 function buildLegacyView(

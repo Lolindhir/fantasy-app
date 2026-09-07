@@ -80,7 +80,7 @@ function Get-Compare {
         # Top-Level
         $propsToCheck = @(
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
-            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
+            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek','PlayoffStart', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SeasonKickoff', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
             'WaiversOpen', 'WaiversMetaText', 'NextWaiverRun', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
         )
@@ -390,10 +390,17 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
-    # Season kickoff and current matchup snapshot
+    # Season kickoff, playoff kickoff and current matchup snapshot
     $seasonKickoffUtc = Get-LeagueSeasonKickoffUtc -Schedule $schedule
     $seasonKickoff = if ($null -ne $seasonKickoffUtc) {
         $seasonKickoffUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
+    } else {
+        $null
+    }
+
+    $playoffStartUtc = Get-LeaguePlayoffStartUtc -Schedule $schedule -PlayoffStartWeek ([int]$playoffStart)
+    $playoffStartAt = if ($null -ne $playoffStartUtc) {
+        $playoffStartUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
     } else {
         $null
     }
@@ -513,6 +520,7 @@ try {
         FinalScoredWeek         = $finalWeek
         LastLeagueWeek          = $lastWeek
         PlayoffStartWeek        = $playoffStart
+        PlayoffStart            = $playoffStartAt
         TradeDeadlineWeek       = $tradeDeadlineWeek
         TradeReviewDays         = $tradeReviewDays
         CutsAllowed             = $cutsAllowed
