@@ -1,6 +1,8 @@
 import type {
   DecisionWindow,
+  DecisionWindowAffectedPlayer,
   DecisionWindowEvaluationState,
+  DecisionWindowGame,
   DecisionWindowsReadModel
 } from '../../core/models/decision-window.models';
 import {
@@ -8,11 +10,19 @@ import {
   getDecisionWindowStatusLabel
 } from './decision-window-view.util';
 
+export interface TeamDecisionWindowGameView {
+  game: DecisionWindowGame;
+  affectedPlayers: DecisionWindowAffectedPlayer[];
+  affectedStarterCount: number;
+}
+
 export interface TeamUpcomingLockView {
   window: DecisionWindow;
   affectedRosteredPlayerCount: number;
   affectedStarterCount: number;
   timeLabel: string;
+  games: TeamDecisionWindowGameView[];
+  unmatchedAffectedPlayerCount: number;
 }
 
 export interface TeamLineupHealthView {
@@ -51,12 +61,42 @@ export function buildTeamUpcomingLockViews(
       a.startsAt!.getTime() - b.startsAt!.getTime()
       || a.window.DecisionWindowID.localeCompare(b.window.DecisionWindowID)
     )
-    .map(candidate => ({
-      window: candidate.window,
-      affectedRosteredPlayerCount: candidate.affected!.AffectedRosteredPlayerCount,
-      affectedStarterCount: candidate.affected!.AffectedStarterCount,
-      timeLabel: formatDecisionWindowShortLocalTime(candidate.window)
-    }));
+    .map(candidate => {
+      const affected = candidate.affected!;
+      const affectedPlayersByGameId = new Map<string, DecisionWindowAffectedPlayer[]>();
+
+      affected.Players.forEach(player => {
+        const players = affectedPlayersByGameId.get(player.GameID) ?? [];
+        players.push(player);
+        affectedPlayersByGameId.set(player.GameID, players);
+      });
+
+      const windowGameIds = new Set(candidate.window.Games.map(game => game.GameID));
+      const games = candidate.window.Games
+        .map(game => {
+          const affectedPlayers = [...(affectedPlayersByGameId.get(game.GameID) ?? [])]
+            .sort((a, b) =>
+              Number(b.IsStarter) - Number(a.IsStarter)
+              || a.PlayerID.localeCompare(b.PlayerID)
+            );
+
+          return {
+            game,
+            affectedPlayers,
+            affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length
+          } satisfies TeamDecisionWindowGameView;
+        })
+        .filter(game => game.affectedPlayers.length > 0);
+
+      return {
+        window: candidate.window,
+        affectedRosteredPlayerCount: affected.AffectedRosteredPlayerCount,
+        affectedStarterCount: affected.AffectedStarterCount,
+        timeLabel: formatDecisionWindowShortLocalTime(candidate.window),
+        games,
+        unmatchedAffectedPlayerCount: affected.Players.filter(player => !windowGameIds.has(player.GameID)).length
+      } satisfies TeamUpcomingLockView;
+    });
 }
 
 export function buildTeamLineupHealthView(
