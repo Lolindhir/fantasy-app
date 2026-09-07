@@ -4,12 +4,11 @@ import hashlib
 import json
 import re
 import urllib.request
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
 
-CANONICAL_LEAGUE_ID_PATTERN = re.compile(r"^cl-[0-9a-f]{32}$")
+CANONICAL_LEAGUE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SUPPORTED_PROVIDERS = {"Sleeper"}
 
 
@@ -30,11 +29,11 @@ class SleeperLeagueInstance:
 
 
 def canonical_league_season_id(canonical_league_id: str, season: int) -> str:
-    value = uuid.uuid5(
-        uuid.NAMESPACE_URL,
-        f"https://github.com/Lolindhir/fantasy-app/league/{canonical_league_id}/season/{season}",
-    )
-    return f"cls-{value.hex}"
+    if not CANONICAL_LEAGUE_ID_PATTERN.fullmatch(canonical_league_id):
+        raise ValueError(f"Invalid CanonicalLeagueID: {canonical_league_id}")
+    if season < 2000 or season > 2200:
+        raise ValueError(f"Implausible league season: {season}")
+    return f"{canonical_league_id}-{season}"
 
 
 def _read_json(path: Path) -> object:

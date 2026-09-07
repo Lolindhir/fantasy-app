@@ -9,6 +9,9 @@ on:
       - "tools/nfl_source_data.py"
       - "tools/nfl_source_data_lib/**"
       - "tools/tests/test_nfl_source*.py"
+  repository_dispatch:
+    types:
+      - scheduler-sync-nfl-source-data
   workflow_dispatch:
     inputs:
       dataset:
@@ -57,7 +60,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
       - name: Checkout main
