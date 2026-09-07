@@ -67,20 +67,17 @@ app-overview .header .header-columns {
   gap: 7px;
 }
 
-/* Salary Cap: explicitly win over the legacy nth-child layout in styles.scss.
- * The dedicated card remains current | prominent change | projected.
- */
+/* Salary Cap: keep the card self-explanatory through inline labels and use one
+ * compact row: current | prominent change | projected. */
 app-overview .header .header-columns > .header-info.salary-cap-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(108px, auto) minmax(0, 1fr);
-  grid-template-areas:
-    'title title title'
-    'current change projected';
+  grid-template-areas: 'current change projected';
   align-items: center;
   column-gap: 8px;
-  row-gap: 4px;
+  row-gap: 0;
   margin: 0;
-  padding: 6px 10px 7px;
+  padding: 7px 10px;
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: 12px;
   background: #f8fafc;
@@ -94,13 +91,7 @@ app-overview .header .header-columns > .header-info.salary-cap-card > * {
 }
 
 app-overview .header .header-columns > .header-info.salary-cap-card > .salary-cap-title {
-  grid-area: title;
-  color: #64748b;
-  font-size: 0.64rem;
-  font-weight: 850;
-  letter-spacing: 0.07em;
-  line-height: 1;
-  text-transform: uppercase;
+  display: none;
 }
 
 app-overview .header .header-columns > .header-info.salary-cap-card > .salary-cap-current {
@@ -128,6 +119,14 @@ app-overview .header .salary-cap-label {
   font-weight: 850;
   line-height: 1.05;
   white-space: nowrap;
+}
+
+app-overview .header .salary-cap-current .salary-cap-label::after {
+  content: ' Cap';
+}
+
+app-overview .header .salary-cap-projected .salary-cap-label::after {
+  content: ' Projected';
 }
 
 app-overview .header .salary-cap-value {
@@ -226,14 +225,14 @@ app-overview .header app-league-timeline .league-timeline-operational-item--inte
   padding-top: 2px;
 }
 
-/* Recover vertical density around the timeline while preserving card readability. */
+/* Recover vertical density around the in-season operational cards. */
 app-overview .header app-league-timeline .league-timeline,
 app-overview .header app-league-timeline .league-timeline--active {
-  padding-top: 7px;
+  padding-top: 2px;
 }
 
-app-overview .header app-league-timeline .league-timeline-eyebrow {
-  margin-bottom: 4px;
+app-overview .header app-league-timeline .league-timeline--active .league-timeline-eyebrow {
+  display: none;
 }
 
 app-overview .header app-league-timeline .league-timeline-operational {
