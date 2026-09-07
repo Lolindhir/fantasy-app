@@ -12,6 +12,7 @@ on:
       - "tools/source_data_readiness.py"
       - "tools/historical_fantasy_scoring.py"
       - "tools/tests/test_historical_fantasy_scoring.py"
+      - "tools/tests/test_nfl_source_readiness.py"
       - ".github/workflows/source-data-readiness.yml"
 
 permissions:
@@ -38,8 +39,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate historical scoring harness
-        run: python -m unittest tools.tests.test_historical_fantasy_scoring -v
+      - name: Validate historical scoring and readiness contracts
+        run: python -m unittest tools.tests.test_historical_fantasy_scoring tools.tests.test_nfl_source_readiness -v
 
       - name: Build and publish source-data readiness audits
         shell: bash
