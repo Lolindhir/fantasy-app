@@ -29,12 +29,28 @@
         }
       }
 
-      @if (!upcomingWindows.length) {
-        @if (pendingLookaheadMessage) {
-          <p class="empty-state pending-lookahead">{{ pendingLookaheadMessage }}</p>
-        } @else {
-          <p class="empty-state">No remaining lineup decisions this week.</p>
+      @if (upcomingWindows.length) {
+        <div class="lineup-week-stats">{{ weekSummaryCounts }}</div>
+
+        @if (weekSummary.nextWindow; as nextWindow) {
+          <div class="next-decision" aria-label="Countdown to the next relevant Decision Window">
+            <span class="next-decision-label">Next decision</span>
+            <strong>{{ nextWindow.timeLabel }}</strong>
+            @if (nextDecisionCountdown) {
+              <span class="next-decision-countdown">in {{ nextDecisionCountdown }}</span>
+            }
+          </div>
         }
+
+        <div class="lineup-window-schedule" aria-label="Relevant Decision Window times this week">
+          @for (windowLabel of weekSummary.windowDateLabels; track windowLabel) {
+            <span>{{ windowLabel }}</span>
+          }
+        </div>
+      } @else if (pendingLookaheadMessage) {
+        <p class="empty-state pending-lookahead">{{ pendingLookaheadMessage }}</p>
+      } @else {
+        <p class="empty-state">No remaining lineup decisions this week.</p>
       }
     }
 
@@ -46,23 +62,15 @@
   @if (!loading && !unavailable && model && upcomingWindows.length) {
     <div class="lineup-window-list" aria-label="Upcoming lineup windows for this team">
       @for (windowView of upcomingWindows; track windowView.window.DecisionWindowID) {
-        <section class="lineup-window-card">
-          <header class="lineup-window-header">
-            <div>
-              <span class="lineup-window-time">{{ windowView.timeLabel }}</span>
-              <h3>{{ affectedCounts(windowView) }}</h3>
-            </div>
-            <button
-              type="button"
-              class="lineup-window-details"
-              [attr.aria-label]="'Open Decision Window details for ' + windowView.timeLabel"
-              (click)="openWindow.emit(windowView.window)"
-            >Details</button>
+        <section class="lineup-window-section">
+          <header class="lineup-window-divider">
+            <strong>{{ windowView.timeLabel }}</strong>
+            <span>{{ windowGameCount(windowView) }} · {{ affectedCounts(windowView) }}</span>
           </header>
 
           <div class="lineup-game-list">
             @for (gameView of windowView.games; track gameView.game.GameID) {
-              <div class="lineup-game-group">
+              <article class="lineup-game-group">
                 <div class="lineup-game-heading">
                   @if (gameMatchupContext(windowView.window, gameView.game); as matchup) {
                     <app-decision-window-matchup-context
@@ -70,30 +78,42 @@
                       [showWeek]="false"
                     />
                   }
-                  <span class="lineup-game-counts">
-                    {{ gameView.affectedPlayers.length }} {{ gameView.affectedPlayers.length === 1 ? 'player' : 'players' }}
-                    · {{ gameView.affectedStarterCount }} {{ gameView.affectedStarterCount === 1 ? 'starter' : 'starters' }}
-                  </span>
                 </div>
 
-                @if (gamePlayers(gameView); as resolvedPlayers) {
-                  @if (resolvedPlayers.length) {
-                    <app-player-list
-                      [players]="resolvedPlayers"
-                      [columns]="playerColumns"
-                      [compact]="true"
-                      dynamicColumnHeader="Role"
-                      [dynamicColumnValueFn]="getPlayerRole"
-                    />
-                  }
-                }
+                <div class="lineup-team-list">
+                  @for (teamGroup of gameView.teamGroups; track teamGroup.nflTeamId) {
+                    <section class="lineup-team-group">
+                      <header class="lineup-team-heading">
+                        <span class="lineup-team-identity">
+                          @if (teamLogo(teamGroup); as logo) {
+                            <img [src]="logo" [alt]="teamGroup.teamAbbr + ' logo'" />
+                          }
+                          <strong>{{ teamGroup.teamAbbr }}</strong>
+                        </span>
+                        <span>{{ teamCounts(teamGroup) }}</span>
+                      </header>
 
-                @if (unresolvedGamePlayerCount(gameView); as unresolvedCount) {
-                  <p class="lineup-resolution-note">
-                    {{ unresolvedCount }} affected {{ unresolvedCount === 1 ? 'player is' : 'players are' }} unavailable in the current player view.
-                  </p>
-                }
-              </div>
+                      @if (teamPlayers(teamGroup); as resolvedPlayers) {
+                        @if (resolvedPlayers.length) {
+                          <app-player-list
+                            [players]="resolvedPlayers"
+                            [columns]="playerColumns"
+                            [compact]="true"
+                            dynamicColumnHeader="Role"
+                            [dynamicColumnValueFn]="getPlayerRole"
+                          />
+                        }
+                      }
+
+                      @if (unresolvedTeamPlayerCount(teamGroup); as unresolvedCount) {
+                        <p class="lineup-resolution-note">
+                          {{ unresolvedCount }} affected {{ unresolvedCount === 1 ? 'player is' : 'players are' }} unavailable in the current player view.
+                        </p>
+                      }
+                    </section>
+                  }
+                </div>
+              </article>
             }
           </div>
 

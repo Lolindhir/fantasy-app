@@ -120,7 +120,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   salaryLens: SalaryLens = 'current';
   rosterGroup: RosterGroupMode = 'none';
   rosterSort: RosterSortMode = 'salary';
-  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 2 : 0;
+  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 1 : 0;
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;

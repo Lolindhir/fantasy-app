@@ -71,6 +71,24 @@
       </div>
     </mat-tab>
 
+    @if (decisionWindowPhaseActive) {
+      <mat-tab label="Lineup">
+        <div class="tab-content lineup-tab">
+          <app-team-lineup-tab
+            [model]="decisionWindows"
+            [fantasyTeamId]="team.TeamID"
+            [players]="data.players"
+            [nflTeams]="nflTeams"
+            [updatedAt]="decisionWindowsUpdatedAt"
+            [now]="now"
+            [loading]="decisionWindowsLoading"
+            [unavailable]="decisionWindowsUnavailable"
+            (openWindow)="openTeamDecisionWindow($event, teamDecisionWindowDialog)"
+          />
+        </div>
+      </mat-tab>
+    }
+
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
         <div class="roster-controls" aria-label="Roster grouping and sorting">
@@ -129,24 +147,6 @@
         }
       </div>
     </mat-tab>
-
-    @if (decisionWindowPhaseActive) {
-      <mat-tab label="Lineup">
-        <div class="tab-content lineup-tab">
-          <app-team-lineup-tab
-            [model]="decisionWindows"
-            [fantasyTeamId]="team.TeamID"
-            [players]="data.players"
-            [nflTeams]="nflTeams"
-            [updatedAt]="decisionWindowsUpdatedAt"
-            [now]="now"
-            [loading]="decisionWindowsLoading"
-            [unavailable]="decisionWindowsUnavailable"
-            (openWindow)="openTeamDecisionWindow($event, teamDecisionWindowDialog)"
-          />
-        </div>
-      </mat-tab>
-    }
 
     <mat-tab label="Salary">
       <div class="tab-content salary-tab">
