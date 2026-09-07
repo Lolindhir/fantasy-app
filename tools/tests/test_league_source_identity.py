@@ -22,7 +22,7 @@ from league_source_data_lib.core import (  # noqa: E402
 )
 
 
-CANONICAL_ID = "cl-220306ac3f9b480fa865e124098d8f56"
+CANONICAL_ID = "nfl-reise"
 IDS = {
     2026: "1354177383984267264",
     2025: "1257421353431080960",
@@ -41,14 +41,46 @@ def league(season: int, previous: str | None) -> dict:
 
 
 class LeagueSourceIdentityTests(unittest.TestCase):
-    def test_canonical_season_id_is_stable_and_provider_independent(self) -> None:
+    def test_canonical_season_id_is_stable_human_readable_and_provider_independent(self) -> None:
         first = canonical_league_season_id(CANONICAL_ID, 2026)
         second = canonical_league_season_id(CANONICAL_ID, 2026)
         other = canonical_league_season_id(CANONICAL_ID, 2025)
         self.assertEqual(first, second)
-        self.assertTrue(first.startswith("cls-"))
+        self.assertEqual(first, "nfl-reise-2026")
         self.assertNotEqual(first, other)
         self.assertNotIn(IDS[2026], first)
+
+    def test_bootstrap_accepts_manual_slug_and_rejects_display_name_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "source-data/leagues/_bootstrap"
+            directory.mkdir(parents=True)
+            (directory / "nfl-reise.json").write_text(
+                json.dumps(
+                    {
+                        "CanonicalLeagueID": "nfl-reise",
+                        "Provider": "Sleeper",
+                        "CurrentProviderLeagueID": IDS[2026],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            loaded = load_bootstraps(root)
+            self.assertEqual(loaded[0].canonical_league_id, "nfl-reise")
+
+            (directory / "nfl-reise.json").unlink()
+            (directory / "NFL Reise.json").write_text(
+                json.dumps(
+                    {
+                        "CanonicalLeagueID": "NFL Reise",
+                        "Provider": "Sleeper",
+                        "CurrentProviderLeagueID": IDS[2026],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Invalid CanonicalLeagueID"):
+                load_bootstraps(root)
 
     def test_discovers_current_to_historical_lineage(self) -> None:
         fixtures = {
@@ -106,7 +138,7 @@ class LeagueSourceIdentityTests(unittest.TestCase):
             IDS[2024]: league(2024, None),
         }
         lineage = discover_sleeper_lineage(IDS[2026], fixtures.__getitem__)
-        other_id = "cl-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        other_id = "other-league"
         conflicting = {
             "schemaVersion": 1,
             "CanonicalLeagueID": other_id,
@@ -190,7 +222,7 @@ class LeagueSourceIdentityTests(unittest.TestCase):
             directory.mkdir(parents=True)
             values = [
                 (CANONICAL_ID, IDS[2026]),
-                ("cl-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "9999999999999999999"),
+                ("second-league", "9999999999999999999"),
             ]
             for canonical_id, provider_id in values:
                 (directory / f"{canonical_id}.json").write_text(

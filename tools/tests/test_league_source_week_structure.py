@@ -155,6 +155,47 @@ class LeagueSourceWeekStructureTests(unittest.TestCase):
             {"Source": "historical-same-playoff-round-type", "EvidenceSeasons": [2025]},
         )
 
+    def test_current_projection_keeps_week_17_despite_trailing_week_18_provider_matchup_evidence(self) -> None:
+        structures = derive_season_week_structures(
+            [
+                (
+                    self._league(
+                        2025,
+                        status="complete",
+                        playoff_start=14,
+                        playoff_teams=4,
+                        playoff_round_type=2,
+                        last_scored_leg=17,
+                    ),
+                    self._bracket(2),
+                    self._matchups(17),
+                    18,
+                ),
+                (
+                    self._league(
+                        2026,
+                        status="in_season",
+                        playoff_start=14,
+                        playoff_teams=4,
+                        playoff_round_type=2,
+                        last_scored_leg=None,
+                    ),
+                    [],
+                    self._matchups(18),
+                    18,
+                ),
+            ]
+        )
+        current = {item["Season"]: item for item in structures}[2026]
+        self.assertEqual(current["HighestAssignedMatchupWeek"], 18)
+        self.assertEqual(current["ProjectedPlayoffFormat"], "two-week-rounds")
+        self.assertEqual(current["ExpectedLastLeagueWeek"], 17)
+        self.assertIsNone(current["FinalLeagueWeek"])
+        self.assertEqual(
+            current["ProjectionEvidence"],
+            {"Source": "historical-same-playoff-round-type", "EvidenceSeasons": [2025]},
+        )
+
     def test_completed_season_ignores_unassigned_postseason_roster_scoring(self) -> None:
         structures = derive_season_week_structures(
             [
