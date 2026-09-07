@@ -1,0 +1,61 @@
+:host { display: block; min-width: 0; }
+.team-lineup-tab { display: grid; gap: 12px; min-width: 0; }
+.lineup-summary-card,
+.lineup-window-section { background: #fff; border: 1px solid rgba(148, 163, 184, .32); border-radius: 12px; box-shadow: 0 1px 4px rgba(15, 23, 42, .04); min-width: 0; }
+.lineup-summary-card { padding: 13px 14px; }
+.lineup-summary-heading,
+.lineup-window-divider,
+.lineup-team-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lineup-summary-heading { margin-bottom: 8px; }
+.eyebrow { color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .055em; }
+h3 { margin: 2px 0 0; font-size: 17px; font-weight: 650; }
+.lineup-health-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 9px; border-radius: 999px; background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.lineup-health--action-required { background: #fef2f2; color: #b91c1c; }
+.lineup-health--review { background: #fffbeb; color: #a16207; }
+.lineup-health--unknown,
+.lineup-health--pending { background: #f1f5f9; color: #64748b; }
+.lineup-health--ready { background: #f7fee7; color: #4d7c0f; }
+.lineup-health-issues { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.lineup-health-issues span { padding: 4px 7px; border-radius: 999px; background: #f8fafc; color: #475569; font-size: 11px; font-weight: 700; }
+.lineup-health-issues--action-required span { background: #fef2f2; color: #b91c1c; }
+.lineup-health-issues--review span { background: #fffbeb; color: #a16207; }
+.lineup-week-stats { color: #475569; font-size: 11px; font-weight: 700; line-height: 1.35; }
+.next-decision { display: grid; grid-template-columns: auto auto 1fr; gap: 7px; align-items: baseline; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eef0f3; font-size: 12px; }
+.next-decision-label { color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .045em; }
+.next-decision strong { color: #1f2937; font-variant-numeric: tabular-nums; }
+.next-decision-countdown { justify-self: end; color: #334155; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lineup-window-schedule { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.lineup-window-schedule span { padding: 3px 6px; border-radius: 999px; background: #f8fafc; color: #64748b; font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.empty-state { margin: 8px 0 0; padding: 10px; border-radius: 8px; background: #f8fafc; color: #6b7280; font-size: 12px; }
+.pending-lookahead { color: #475569; }
+.decision-window-freshness { margin-top: 8px; color: #64748b; font-size: 10px; }
+.lineup-window-list { display: grid; gap: 10px; min-width: 0; }
+.lineup-window-section { overflow: hidden; }
+.lineup-window-divider { padding: 9px 12px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
+.lineup-window-divider strong { color: #1f2937; font-size: 12px; font-variant-numeric: tabular-nums; }
+.lineup-window-divider span { color: #64748b; font-size: 10px; font-weight: 650; text-align: right; }
+.lineup-game-list { display: grid; }
+.lineup-game-group { min-width: 0; padding: 12px; border-bottom: 1px solid #eef0f3; }
+.lineup-game-group:last-child { border-bottom: 0; }
+.lineup-game-heading { display: flex; align-items: center; min-width: 0; margin-bottom: 9px; }
+.lineup-game-heading app-decision-window-matchup-context { min-width: 0; max-width: 320px; }
+.lineup-team-list { display: grid; gap: 9px; }
+.lineup-team-group { min-width: 0; }
+.lineup-team-group + .lineup-team-group { padding-top: 9px; border-top: 1px solid #f1f5f9; }
+.lineup-team-heading { margin-bottom: 5px; color: #64748b; font-size: 10px; font-weight: 650; }
+.lineup-team-identity { display: inline-flex; align-items: center; gap: 6px; color: #334155; font-size: 11px; }
+.lineup-team-identity img { width: 22px; height: 22px; object-fit: contain; }
+.lineup-resolution-note { margin: 6px 0 0; color: #64748b; font-size: 10px; }
+.lineup-resolution-note--warning { margin: 0 12px 12px; padding-top: 9px; border-top: 1px solid #eef0f3; color: #a16207; }
+
+@media (max-width: 700px) {
+  .team-lineup-tab { gap: 10px; }
+  .lineup-summary-card { padding: 12px; }
+  .next-decision { grid-template-columns: 1fr auto; gap: 3px 8px; }
+  .next-decision-label { grid-column: 1 / -1; }
+  .next-decision-countdown { justify-self: end; }
+  .lineup-window-divider { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .lineup-window-divider span { text-align: left; }
+  .lineup-game-group { padding: 11px 10px; }
+  .lineup-game-heading app-decision-window-matchup-context { max-width: 100%; }
+}

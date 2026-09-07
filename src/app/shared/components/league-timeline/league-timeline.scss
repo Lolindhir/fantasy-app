@@ -1,6 +1,8 @@
 :host {
   display: block;
-  min-width: min(100%, 230px);
+  box-sizing: border-box;
+  min-width: 0;
+  width: calc(100% + 12px + clamp(88px, 24vw, 125px));
 }
 
 .league-timeline {
@@ -81,12 +83,12 @@
 }
 
 .league-timeline--active {
-  padding: 8px 9px 7px;
+  padding: 7px 8px 6px;
 }
 
 .league-timeline-operational {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -96,9 +98,9 @@
   flex-direction: column;
   align-items: stretch;
   min-width: 0;
-  min-height: 74px;
+  min-height: 82px;
   box-sizing: border-box;
-  padding: 7px 8px;
+  padding: 7px 7px;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.8);
@@ -106,12 +108,16 @@
   text-align: left;
 }
 
+.league-timeline-operational-item:only-child {
+  grid-column: 1 / -1;
+}
+
 button.league-timeline-operational-item {
   font: inherit;
 }
 
 .league-timeline-operational-item--interactive {
-  padding-right: 21px;
+  padding-right: 18px;
   cursor: pointer;
 }
 
@@ -128,7 +134,7 @@ button.league-timeline-operational-item {
   gap: 4px;
   min-width: 0;
   color: #7c2d12;
-  font-size: 0.64rem;
+  font-size: 0.61rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   line-height: 1.15;
@@ -138,27 +144,26 @@ button.league-timeline-operational-item {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 6px;
+  gap: 3px 5px;
   margin-top: 4px;
 }
 
 .league-timeline-operational-value {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   line-height: 1.08;
 }
 
 .league-timeline-affected-summary {
   color: #475569;
-  font-size: 0.6rem;
+  font-size: 0.57rem;
   font-weight: 800;
   line-height: 1.1;
-  white-space: nowrap;
 }
 
 .league-timeline-operational-detail {
   margin-top: 4px;
   color: #64748b;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
@@ -178,10 +183,92 @@ button.league-timeline-operational-item {
   border-radius: 999px;
   background: rgba(226, 232, 240, 0.72);
   color: #64748b;
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 900;
   line-height: 1.05;
   white-space: nowrap;
+}
+
+.league-timeline-game-context {
+  display: flex;
+  min-width: 0;
+  margin-top: 6px;
+}
+
+.league-timeline-single-game {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 4px;
+}
+
+.league-timeline-nfl-team {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: 3px;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.league-timeline-nfl-team--home {
+  justify-content: flex-end;
+}
+
+.league-timeline-nfl-team-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.league-timeline-nfl-team-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.league-timeline-at {
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.league-timeline-game-week {
+  grid-column: 1 / -1;
+  color: #64748b;
+  font-size: 0.57rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.league-timeline-multi-game {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.league-timeline-nfl-shield {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
+}
+
+.league-timeline-multi-game-copy {
+  min-width: 0;
+  color: #64748b;
+  font-size: 0.61rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .league-timeline-status--action-required {
@@ -220,10 +307,10 @@ button.league-timeline-operational-item {
 .league-timeline-affordance {
   position: absolute;
   top: 50%;
-  right: 7px;
+  right: 6px;
   transform: translateY(-50%);
   color: #9a3412;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 900;
 }
 
@@ -231,11 +318,11 @@ button.league-timeline-operational-item {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
-  margin-top: 7px;
-  padding-top: 6px;
+  margin-top: 6px;
+  padding-top: 5px;
   border-top: 1px solid rgba(148, 163, 184, 0.22);
   color: #4b5563;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
 }
 
 .league-timeline-milestone {

@@ -11,7 +11,12 @@
     </button>
   </header>
 
-  <mat-tab-group class="team-tabs" animationDuration="150ms" mat-stretch-tabs="false">
+  <mat-tab-group
+    class="team-tabs"
+    animationDuration="150ms"
+    mat-stretch-tabs="false"
+    [(selectedIndex)]="selectedTabIndex"
+  >
     <mat-tab label="Overview">
       <div class="tab-content overview-tab">
         <section class="section-card salary-health-card">
@@ -66,6 +71,24 @@
       </div>
     </mat-tab>
 
+    @if (decisionWindowPhaseActive) {
+      <mat-tab label="Lineup">
+        <div class="tab-content lineup-tab">
+          <app-team-lineup-tab
+            [model]="decisionWindows"
+            [fantasyTeamId]="team.TeamID"
+            [players]="data.players"
+            [nflTeams]="nflTeams"
+            [updatedAt]="decisionWindowsUpdatedAt"
+            [now]="now"
+            [loading]="decisionWindowsLoading"
+            [unavailable]="decisionWindowsUnavailable"
+            (openWindow)="openTeamDecisionWindow($event, teamDecisionWindowDialog)"
+          />
+        </div>
+      </mat-tab>
+    }
+
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
         <div class="roster-controls" aria-label="Roster grouping and sorting">
@@ -86,6 +109,9 @@
             <mat-select [(value)]="rosterSort">
               <mat-option value="salary">Current Salary</mat-option>
               <mat-option value="projected">Projected Salary</mat-option>
+              @if (decisionWindowsAvailable) {
+                <mat-option value="nextLock">Next Lock</mat-option>
+              }
               <mat-option value="ranking" [disabled]="!combinedRankingAvailable">
                 {{ combinedRankingAvailable ? 'Combined Ranking' : 'Combined Ranking · after Week 3' }}
               </mat-option>
@@ -96,6 +122,10 @@
             </mat-select>
           </mat-form-field>
         </div>
+
+        @if (rosterSort === 'nextLock' && decisionWindowsUpdatedLabel) {
+          <div class="roster-lock-freshness">{{ decisionWindowsUpdatedLabel }}</div>
+        }
 
         @for (group of rosterGroups; track group.key) {
           <section class="roster-section">
@@ -231,4 +261,18 @@
       </div>
     </mat-tab>
   </mat-tab-group>
+
+  <ng-template #teamDecisionWindowDialog>
+    @if (selectedDecisionWindow && decisionWindows) {
+      <app-decision-window-context-popover
+        [model]="decisionWindows"
+        [window]="selectedDecisionWindow"
+        [teamId]="team.TeamID"
+        [players]="data.players"
+        [nflTeams]="nflTeams"
+        [updatedAt]="decisionWindowsUpdatedAt"
+        [now]="now"
+      />
+    }
+  </ng-template>
 </div>

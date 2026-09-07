@@ -4,6 +4,7 @@ import type {
   DecisionWindowsReadModel
 } from '../../core/models/decision-window.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
+import type { NFLTeam } from '../../core/models/player.models';
 import { buildLeagueTimelineView } from './league-timeline-view.util';
 
 describe('league-timeline-view util', () => {
@@ -32,6 +33,64 @@ describe('league-timeline-view util', () => {
     });
 
     expect(view?.operational.map(item => item.label)).toEqual(['Next Lineup Lock', 'Next Waiver Run']);
+  });
+
+  it('resolves existing NFL team branding for a single-game lineup lock', () => {
+    const view = buildLeagueTimelineView({
+      league: createLeague(),
+      drafts: [],
+      decisionWindows: createModel([createWindow('2026-09-05T17:00:00Z')]),
+      decisionWindowsUnavailable: false,
+      now,
+      nflTeams: [
+        createNflTeam('22', 'NE', 'https://example.test/ne.png'),
+        createNflTeam('29', 'SEA', 'https://example.test/sea.png')
+      ]
+    });
+
+    expect(view?.operational[0].matchup).toEqual({
+      kind: 'single-game',
+      week: 1,
+      gameCount: 1,
+      away: {
+        id: '22',
+        abbr: 'NE',
+        logo: 'https://example.test/ne.png'
+      },
+      home: {
+        id: '29',
+        abbr: 'SEA',
+        logo: 'https://example.test/sea.png'
+      }
+    });
+  });
+
+  it('marks multi-game lineup locks for generic NFL branding', () => {
+    const window = createWindow('2026-09-05T17:00:00Z');
+    window.Games.push({
+      GameID: 'game-two',
+      Week: 1,
+      AwayTeamID: '28',
+      AwayTeamAbbr: 'SF',
+      HomeTeamID: '19',
+      HomeTeamAbbr: 'LAR'
+    });
+
+    const view = buildLeagueTimelineView({
+      league: createLeague(),
+      drafts: [],
+      decisionWindows: createModel([window]),
+      decisionWindowsUnavailable: false,
+      now
+    });
+
+    expect(view?.operational[0].matchup).toEqual({
+      kind: 'multi-game',
+      week: 1,
+      gameCount: 2,
+      away: null,
+      home: null
+    });
   });
 
   it('renders lineup cleanly when waiver is missing', () => {
@@ -261,12 +320,12 @@ function createWindow(
     Games: [{
       GameID: `game-${startsAtUtc}`,
       Week: week,
-      AwayTeamID: 'NE',
+      AwayTeamID: '22',
       AwayTeamAbbr: 'NE',
-      HomeTeamID: 'SEA',
+      HomeTeamID: '29',
       HomeTeamAbbr: 'SEA'
     }],
-    ParticipatingNFLTeamIDs: ['NE', 'SEA'],
+    ParticipatingNFLTeamIDs: ['22', '29'],
     FantasyContextState: 'available',
     AffectedFantasyTeams: affectedFantasyTeams
   };
@@ -308,4 +367,13 @@ function createTeam(teamId: number, name: string): FantasyTeam {
     OwnerAvatar: '',
     Avatar: ''
   } as FantasyTeam;
+}
+
+function createNflTeam(id: string, abbr: string, logo: string): NFLTeam {
+  return {
+    ID: id,
+    Name: abbr,
+    Abv: abbr,
+    Logo: logo
+  };
 }

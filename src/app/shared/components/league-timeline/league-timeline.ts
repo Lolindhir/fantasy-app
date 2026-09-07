@@ -5,8 +5,10 @@ import { Subscription, timer } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type { League } from '../../../core/models/league.models';
+import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
+import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
 import {
   buildLeagueTimelineView,
   type LeagueTimelineDraft,
@@ -16,7 +18,12 @@ import {
 @Component({
   selector: 'app-league-timeline',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, DecisionWindowContextPopoverComponent],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    DecisionWindowContextPopoverComponent,
+    DecisionWindowMatchupContextComponent
+  ],
   templateUrl: './league-timeline.html',
   styleUrl: './league-timeline.scss'
 })
@@ -28,6 +35,7 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
   decisionWindows: DecisionWindowsReadModel | null = null;
   decisionWindowsUnavailable = false;
   decisionWindowsUpdatedAt: string | undefined;
+  nflTeams: NFLTeam[] = [];
 
   private subscriptions = new Subscription();
 
@@ -39,6 +47,17 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.startMinuteAlignedClock();
     if (!this.isActiveLeagueStatus()) return;
+
+    this.subscriptions.add(
+      this.dataService.getNflTeams().subscribe({
+        next: teams => {
+          this.nflTeams = teams;
+        },
+        error: () => {
+          this.nflTeams = [];
+        }
+      })
+    );
 
     this.subscriptions.add(
       this.dataService.getDecisionWindows().subscribe({
@@ -75,7 +94,8 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
       drafts: this.drafts,
       decisionWindows: this.decisionWindows,
       decisionWindowsUnavailable: this.decisionWindowsUnavailable,
-      now: this.now
+      now: this.now,
+      nflTeams: this.nflTeams
     });
   }
 

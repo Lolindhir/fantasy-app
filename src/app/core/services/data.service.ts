@@ -9,6 +9,7 @@ import type { DecisionWindowsReadModel } from '../models/decision-window.models'
 import type { RawDraft } from '../models/draft.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
 import type {
+  NFLTeam,
   Player,
   SortField,
   TopPlayersSalaryResult
@@ -99,6 +100,10 @@ export class DataService {
     return this.getLeagueWithPlayers(sortFields).pipe(
       map(res => res.teams)
     );
+  }
+
+  getNflTeams(): Observable<NFLTeam[]> {
+    return this.dataApiService.getNflTeamsRaw();
   }
 
   getAllPlayers(sortFields: SortField[] = ['NameLast']): Observable<Player[]> {

@@ -1,0 +1,30 @@
+<span class="decision-window-matchup-context">
+  <ng-container *ngIf="context.kind === 'single-game'; else multiGameContext">
+    <span class="decision-window-single-game">
+      <span class="decision-window-nfl-team">
+        <span class="decision-window-nfl-team-logo">
+          <img *ngIf="context.away?.logo as awayLogo" [src]="awayLogo" alt="" />
+        </span>
+        <strong>{{ context.away?.abbr }}</strong>
+      </span>
+      <span class="decision-window-at" aria-hidden="true">@</span>
+      <span class="decision-window-nfl-team decision-window-nfl-team--home">
+        <strong>{{ context.home?.abbr }}</strong>
+        <span class="decision-window-nfl-team-logo">
+          <img *ngIf="context.home?.logo as homeLogo" [src]="homeLogo" alt="" />
+        </span>
+      </span>
+      <span *ngIf="showWeek" class="decision-window-game-week">Week {{ context.week }}</span>
+    </span>
+  </ng-container>
+
+  <ng-template #multiGameContext>
+    <span class="decision-window-multi-game">
+      <img class="decision-window-nfl-shield" src="assets/logo_nfl.png" alt="" />
+      <span class="decision-window-multi-game-copy">{{ multiGameLabel }}</span>
+      <span *ngIf="showWeek && !multiGameDetail" class="decision-window-game-week">
+        Week {{ context.week }}
+      </span>
+    </span>
+  </ng-template>
+</span>

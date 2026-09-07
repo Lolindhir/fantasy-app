@@ -1,0 +1,323 @@
+/* Overview Hero review polish.
+ * Loaded after src/styles.scss so these narrowly scoped rules can refine the
+ * deployed first-pass hero without changing generated data or timeline logic.
+ */
+
+app-overview .header .header-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  grid-template-rows: auto auto auto;
+  column-gap: 12px;
+  align-items: start;
+}
+
+app-overview .header .header-content {
+  display: contents;
+}
+
+app-overview .header .league-title {
+  grid-column: 1;
+  grid-row: 1;
+  padding-right: 0;
+}
+
+app-overview .header .header-season {
+  grid-column: 1;
+  grid-row: 2;
+  padding-right: 0;
+}
+
+app-overview .header .league-logo {
+  position: static;
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: start;
+  justify-self: end;
+  width: 72px;
+  height: 72px;
+  min-height: 0;
+  border-radius: 18px;
+  object-fit: contain;
+  object-position: center;
+}
+
+app-overview .header .header-columns {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* Salary Cap: supporting absolute values left/right, change as the focal point. */
+app-overview .header .header-info:nth-child(2) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    'title title title'
+    'current-label trend projected-label'
+    'current-value trend projected-value';
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 1px;
+  margin: 0;
+  padding: 7px 10px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+app-overview .header .header-info:nth-child(2)::before {
+  content: 'Salary Cap';
+  grid-area: title;
+  justify-self: start;
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 0.64rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(1) {
+  grid-area: current-label;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(2) {
+  grid-area: current-value;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
+  grid-area: projected-label;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
+  grid-area: projected-value;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(5) {
+  display: none;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
+  grid-area: trend;
+  align-self: center;
+  min-width: 92px;
+  padding: 0 8px;
+  border: 0;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(1),
+app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
+  padding: 0;
+  border: 0;
+  color: #64748b;
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+app-overview .header .header-info:nth-child(2) > div:nth-child(2),
+app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
+  position: relative;
+  min-width: 0;
+  margin: 1px 0 0;
+  padding: 0 1.15em 0 0;
+  border: 0;
+  color: #334155;
+  font-size: clamp(0.68rem, 2.9vw, 0.78rem);
+  font-weight: 800;
+  line-height: 1.08;
+  white-space: nowrap;
+}
+
+/* The source template still carries legacy trailing emojis on the absolute values.
+ * Mask those glyphs visually; the direction emoji now belongs to the central delta.
+ */
+app-overview .header .header-info:nth-child(2) > div:nth-child(2)::after,
+app-overview .header .header-info:nth-child(2) > div:nth-child(4)::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: 0;
+  width: 1.15em;
+  height: calc(100% + 2px);
+  background: #f8fafc;
+  pointer-events: none;
+}
+
+app-overview .header .header-info:nth-child(2) .meta {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  margin: 0;
+  opacity: 1;
+  font-size: clamp(0.88rem, 3.8vw, 1.05rem);
+  font-weight: 950;
+  line-height: 1.02;
+  white-space: nowrap;
+}
+
+app-overview .header .header-info:nth-child(2) .meta::before {
+  content: '➖';
+  display: block;
+  font-size: clamp(1.15rem, 5vw, 1.4rem);
+  line-height: 1;
+}
+
+app-overview .header .header-info:nth-child(2) .meta.negative-diff::before {
+  content: '📈';
+}
+
+app-overview .header .header-info:nth-child(2) .meta.positive-diff::before {
+  content: '📉';
+}
+
+app-overview .header .header-info:nth-child(2) .meta.negative-diff {
+  color: #15803d;
+}
+
+app-overview .header .header-info:nth-child(2) .meta.positive-diff {
+  color: #b91c1c;
+}
+
+/* Keep the information-rich Decision Window as-is, but make the passive waiver
+ * deadline use its equal-height card deliberately instead of clinging to the top.
+ */
+app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-heading {
+  justify-content: center;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-value {
+  margin-top: 4px;
+  font-size: 1rem;
+  line-height: 1.05;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-detail {
+  margin-top: 5px;
+  text-align: center;
+}
+
+/* The previous champion is context, but should read as an intentional accolade. */
+app-overview .header .champion {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.96), rgba(255, 247, 237, 0.9));
+  color: #78350f;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+app-overview .header .champion::before {
+  content: 'Defending Champion';
+  color: #a16207;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+app-overview .header .champion img {
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(217, 119, 6, 0.2);
+  border-radius: 50%;
+}
+
+@media (max-width: 380px) {
+  app-overview .header .header-main {
+    grid-template-columns: minmax(0, 1fr) 64px;
+    column-gap: 9px;
+  }
+
+  app-overview .header .league-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  app-overview .header .header-info:nth-child(2) {
+    column-gap: 5px;
+    padding-inline: 7px;
+  }
+
+  app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
+    min-width: 82px;
+    padding-inline: 4px;
+  }
+
+  app-overview .header .champion {
+    gap: 5px;
+    padding-inline: 8px;
+  }
+
+  app-overview .header .champion::before {
+    font-size: 0.56rem;
+  }
+}
+
+@media (min-width: 768px) {
+  app-overview .header {
+    display: block;
+  }
+
+  app-overview .header .header-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-rows: auto auto auto;
+    column-gap: 18px;
+  }
+
+  app-overview .header .league-logo {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    width: 104px;
+    height: 104px;
+    border-radius: 22px;
+  }
+
+  app-overview .header .header-columns {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  app-overview .header .header-columns app-league-timeline {
+    grid-column: 1 / -1;
+  }
+
+  app-overview .header .header-info:nth-child(2) > div:nth-child(2),
+  app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
+    font-size: 0.82rem;
+  }
+
+  app-overview .header .header-info:nth-child(2) .meta {
+    font-size: 1.08rem;
+  }
+
+  app-overview .header .champion {
+    margin-top: 10px;
+  }
+}

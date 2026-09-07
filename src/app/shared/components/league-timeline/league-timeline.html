@@ -42,7 +42,18 @@
                   </span>
                 </span>
               </span>
-              <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
+
+              <app-decision-window-matchup-context
+                *ngIf="item.matchup as matchup"
+                class="league-timeline-game-context"
+                [context]="matchup"
+                [multiGameDetail]="item.detail"
+              />
+
+              <span
+                *ngIf="item.detail && !item.matchup"
+                class="league-timeline-operational-detail"
+              >{{ item.detail }}</span>
               <span class="league-timeline-affordance" aria-hidden="true">›</span>
             </button>
 
@@ -51,6 +62,7 @@
                 [model]="decisionWindowModel"
                 [window]="decisionWindow"
                 [teams]="league.Teams"
+                [nflTeams]="nflTeams"
                 [updatedAt]="decisionWindowsUpdatedAt"
                 [now]="now"
               />
