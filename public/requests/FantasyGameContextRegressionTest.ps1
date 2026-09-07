@@ -52,7 +52,7 @@ Assert-Equal 30.0 $game.Impact.RosteredPoints 'impact must use supplied league m
 Assert-Equal 23.0 $game.Impact.StarterPoints 'starter impact must use supplied league matchup starter points'
 Assert-Equal 'final' $game.Impact.State 'final scoring state'
 Assert-Equal 1 $game.Impact.OutcomeSwingMatchupCount 'removing selected NFL-game starter points changes the final outcome'
-Assert-True ($context.NonGameAssociations | Where-Object { $_.PlayerID -eq 'p4' -and $_.Kind -eq 'unknown' }) 'unknown association must remain explicit'
+Assert-True (@($context.NonGameAssociations | Where-Object { $_.PlayerID -eq 'p4' -and $_.Kind -eq 'unknown' }).Count -eq 1) 'unknown association must remain explicit'
 
 $customRaw = @(
     [PSCustomObject]@{ matchup_id=9; roster_id=1; players=@('p1'); starters=@('p1'); players_points=[PSCustomObject]@{ p1=18.0 }; points=30.0; custom_points=31.0 },
