@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
+import type { FantasyGameContextReadModel, HistoricalFantasyGameContextSeason } from '../models/fantasy-game-context.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { RawTransaction } from '../models/transaction.models';
@@ -38,6 +39,7 @@ export interface PastSeasonIndexEntry {
     Schedule?: PastSeasonResourceIndex;
     Standings?: PastSeasonResourceIndex;
     Teams?: PastSeasonResourceIndex;
+    FantasyGameContext?: PastSeasonResourceIndex;
   };
 }
 
@@ -80,6 +82,10 @@ export class DataApiService {
     return this.http.get<DecisionWindowsReadModel>('data/DecisionWindows.json');
   }
 
+  getFantasyGameContextRaw(): Observable<FantasyGameContextReadModel> {
+    return this.http.get<FantasyGameContextReadModel>('data/FantasyGameContext.json');
+  }
+
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {
     return this.http.get<PastSeasonsIndex>('data/PastSeasonsIndex.json');
   }
@@ -94,6 +100,10 @@ export class DataApiService {
     return this.http.get<RawTransaction[] | RawTransaction>(this.normalizeDataPath(path)).pipe(
       map(transactions => Array.isArray(transactions) ? transactions : [transactions])
     );
+  }
+
+  getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {
+    return this.http.get<HistoricalFantasyGameContextSeason>(this.normalizeDataPath(path));
   }
 
   getLeagueData(): Observable<LeagueDataLoadResult> {

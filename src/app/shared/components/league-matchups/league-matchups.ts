@@ -1,12 +1,34 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, inject, Input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { catchError, map, of, shareReplay } from 'rxjs';
 
+import type {
+  FantasyGameContextGame,
+  FantasyGameContextMatchup,
+  FantasyGameContextMatchupGame,
+  FantasyGameContextReadModel
+} from '../../../core/models/fantasy-game-context.models';
 import type {
   FantasyTeam,
   League,
   LeagueMatchupParticipant,
   PlacementRegularSeason
 } from '../../../core/models/league.models';
+import { DataService } from '../../../core/services/data.service';
+import {
+  getCompletedImpactGames,
+  getFantasyMatchupContext,
+  getNextFantasyMatchupGame,
+  getUpcomingRelevantGames,
+  isFantasyGameContextForLeagueWeek
+} from '../../utils/fantasy-game-context.util';
+import {
+  FantasyGameContextDialogComponent,
+  type FantasyGameContextDialogData
+} from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
@@ -37,18 +59,31 @@ interface LeagueMatchupView {
   showScore: boolean;
 }
 
+interface FantasyContextState {
+  context: FantasyGameContextReadModel | null;
+}
+
 @Component({
   selector: 'app-league-matchups',
   standalone: true,
-  imports: [CommonModule, TeamIdentityComponent],
+  imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule, TeamIdentityComponent],
   templateUrl: './league-matchups.html',
   styleUrl: './league-matchups.scss'
 })
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
 
+  private readonly dataService = inject(DataService);
+  private readonly dialog = inject(MatDialog);
+
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+
+  readonly fantasyContextState$ = this.dataService.getFantasyGameContext().pipe(
+    map(context => ({ context }) satisfies FantasyContextState),
+    catchError(() => of({ context: null } satisfies FantasyContextState)),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
 
   private readonly pointsForFormatter = new Intl.NumberFormat('de-DE', {
     minimumFractionDigits: 1,
@@ -88,6 +123,66 @@ export class LeagueMatchupsComponent {
       })
       .filter((matchup): matchup is LeagueMatchupView => !!matchup)
       .sort((left, right) => left.matchupID - right.matchupID);
+  }
+
+  currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
+    return isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
+  }
+
+  matchupContext(
+    matchup: LeagueMatchupView,
+    context: FantasyGameContextReadModel | null
+  ): FantasyGameContextMatchup | null {
+    const current = this.currentContext(context);
+    if (!current) return null;
+    return getFantasyMatchupContext(current, [matchup.left.team.TeamID, matchup.right.team.TeamID]);
+  }
+
+  matchupPreview(
+    matchup: LeagueMatchupView,
+    context: FantasyGameContextReadModel | null
+  ): FantasyGameContextMatchupGame | null {
+    const resolved = this.matchupContext(matchup, context);
+    return resolved ? getNextFantasyMatchupGame(resolved) : null;
+  }
+
+  upcomingGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
+    const current = this.currentContext(context);
+    return current ? getUpcomingRelevantGames(current).slice(0, 5) : [];
+  }
+
+  completedGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
+    const current = this.currentContext(context);
+    return current ? getCompletedImpactGames(current).slice(0, 5) : [];
+  }
+
+  openGameDetail(game: FantasyGameContextGame, context: FantasyGameContextReadModel | null): void {
+    const current = this.currentContext(context);
+    if (!current) return;
+    this.openContextDialog({ mode: 'game', context: current, league: this.league, gameId: game.GameID });
+  }
+
+  openMatchupDetail(matchup: LeagueMatchupView, context: FantasyGameContextReadModel | null): void {
+    const current = this.currentContext(context);
+    if (!current) return;
+    const resolved = this.matchupContext(matchup, current);
+    if (!resolved) return;
+    this.openContextDialog({
+      mode: 'matchup',
+      context: current,
+      league: this.league,
+      fantasyMatchupId: resolved.FantasyMatchupID
+    });
+  }
+
+  private openContextDialog(data: FantasyGameContextDialogData): void {
+    this.dialog.open(FantasyGameContextDialogComponent, {
+      data,
+      width: '95vw',
+      maxWidth: '800px',
+      maxHeight: '90vh',
+      autoFocus: false
+    });
   }
 
   private mapParticipant(

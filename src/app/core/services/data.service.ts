@@ -7,6 +7,7 @@ import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
+import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
 import type {
   NFLTeam,
@@ -48,45 +49,37 @@ export class DataService {
   private freeAgentMarketService = inject(FreeAgentMarketService);
 
   getLeagueTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.League)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.League));
   }
 
   getPlayersTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.Players)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.Players));
   }
 
   getTeamsTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.Teams)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.Teams));
   }
 
   getDraftsTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.Drafts)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.Drafts));
   }
 
   getTransactionsTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.Transactions)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.Transactions));
   }
 
   getDecisionWindowsTimestamp(): Observable<string | undefined> {
-    return this.dataApiService.getTimestamps().pipe(
-      map(ts => ts.DecisionWindows)
-    );
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.DecisionWindows));
+  }
+
+  getFantasyGameContextTimestamp(): Observable<string | undefined> {
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.FantasyGameContext));
   }
 
   getLatestTimestamp(): Observable<string | undefined> {
     return this.dataApiService.getTimestamps().pipe(
       map(ts => {
-        return [ts.League, ts.Players, ts.Teams, ts.Drafts, ts.Transactions, ts.DecisionWindows]
+        return [ts.League, ts.Players, ts.Teams, ts.Drafts, ts.Transactions, ts.DecisionWindows, ts.FantasyGameContext]
           .reduce<string | undefined>((a, b) => {
             if (a === undefined) return b;
             if (b === undefined) return a;
@@ -97,9 +90,7 @@ export class DataService {
   }
 
   getFantasyTeams(sortFields: SortField[] = ['NameLast']): Observable<FantasyTeam[]> {
-    return this.getLeagueWithPlayers(sortFields).pipe(
-      map(res => res.teams)
-    );
+    return this.getLeagueWithPlayers(sortFields).pipe(map(res => res.teams));
   }
 
   getNflTeams(): Observable<NFLTeam[]> {
@@ -107,25 +98,23 @@ export class DataService {
   }
 
   getAllPlayers(sortFields: SortField[] = ['NameLast']): Observable<Player[]> {
-    return this.getLeagueWithPlayers(sortFields).pipe(
-      map(res => res.players)
-    );
+    return this.getLeagueWithPlayers(sortFields).pipe(map(res => res.players));
   }
 
   getLeague(sortFields: SortField[] = ['NameLast']): Observable<League> {
-    return this.getLeagueWithPlayers(sortFields).pipe(
-      map(res => res.league)
-    );
+    return this.getLeagueWithPlayers(sortFields).pipe(map(res => res.league));
   }
 
   getTransactions(sortFields: SortField[] = ['NameLast']): Observable<Transaction[]> {
-    return this.getLeagueWithPlayersAndTransactions(sortFields).pipe(
-      map(res => res.transactions)
-    );
+    return this.getLeagueWithPlayersAndTransactions(sortFields).pipe(map(res => res.transactions));
   }
 
   getDecisionWindows(): Observable<DecisionWindowsReadModel> {
     return this.dataApiService.getDecisionWindowsRaw();
+  }
+
+  getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
+    return this.dataApiService.getFantasyGameContextRaw();
   }
 
   getTransactionsForSources(

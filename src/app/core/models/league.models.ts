@@ -11,6 +11,7 @@ export interface DataTimestamps {
   Games?: string;
   Schedule?: string;
   DecisionWindows?: string;
+  FantasyGameContext?: string;
 }
 
 export interface PlayoffTeam {
