@@ -20,10 +20,15 @@ on:
         type: string
         default: ""
       season:
-        description: "Optional comma-separated season(s) for partitioned datasets; leave blank for current season"
+        description: "Optional comma-separated season(s); leave blank for current season plus bounded missing-history healing on a full sync"
         required: false
         type: string
         default: ""
+      historical_backfill_limit:
+        description: "Max missing historical partitions to heal on an unfiltered full sync; 0 disables"
+        required: false
+        type: number
+        default: 12
       force:
         description: "Force replacement even when the downloaded content hash is unchanged"
         required: false
@@ -37,10 +42,15 @@ on:
         type: string
         default: ""
       season:
-        description: "Optional comma-separated season(s) for partitioned datasets; leave blank for current season"
+        description: "Optional comma-separated season(s); leave blank for current season plus bounded missing-history healing on a full sync"
         required: false
         type: string
         default: ""
+      historical_backfill_limit:
+        description: "Max missing historical partitions to heal on an unfiltered full sync; 0 disables"
+        required: false
+        type: number
+        default: 12
       force:
         description: "Force replacement even when the downloaded content hash is unchanged"
         required: false
@@ -83,6 +93,7 @@ jobs:
         env:
           DATASET: ${{ inputs.dataset }}
           SEASON: ${{ inputs.season }}
+          HISTORICAL_BACKFILL_LIMIT: ${{ inputs.historical_backfill_limit }}
           FORCE: ${{ inputs.force }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
         run: |
@@ -101,9 +112,25 @@ jobs:
               fi
             done
           fi
+          effective_backfill_limit="${HISTORICAL_BACKFILL_LIMIT:-12}"
+          if [[ -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
+            raw_sync_args+=(--historical-backfill-limit "$effective_backfill_limit")
+          fi
           if [[ "${FORCE:-false}" == "true" ]]; then
             raw_sync_args+=(--force)
           fi
+
+          {
+            echo "## NFL Source Sync"
+            echo "- Dataset input: ${DATASET:-all}"
+            echo "- Season input: ${SEASON:-current}"
+            if [[ -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
+              echo "- Historical backfill limit: $effective_backfill_limit"
+            else
+              echo "- Historical backfill: disabled for targeted dataset/season runs"
+            fi
+            echo "- Force: ${FORCE:-false}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -z "${PAT_PUSH:-}" ]]; then
             echo "PAT_PUSH is required for repository-consistent write semantics." >&2
@@ -165,6 +192,7 @@ jobs:
               "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
               "datasetInput": os.environ.get("DATASET") or None,
               "seasonInput": os.environ.get("SEASON") or None,
+              "historicalBackfillLimitInput": os.environ.get("HISTORICAL_BACKFILL_LIMIT") or None,
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
@@ -199,6 +227,10 @@ jobs:
             python tools/nfl_source_data.py "${raw_sync_args[@]}" 2>&1 | tee "$raw_log"
             raw_status=${PIPESTATUS[0]}
             set -e
+            backfill_line="$(grep -m1 '^historical backfill batch:' "$raw_log" || true)"
+            if [[ -n "$backfill_line" ]]; then
+              echo "- $backfill_line" >> "$GITHUB_STEP_SUMMARY"
+            fi
             if (( raw_status != 0 )); then
               echo "NFL provider raw sync failed." >&2
               write_failure_diagnostic "raw-sync" "$raw_status" "$raw_log"

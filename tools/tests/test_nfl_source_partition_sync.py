@@ -10,16 +10,23 @@ import sys
 sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib.common import Dataset, REGISTRY_SCHEMA_VERSION, load_registry, sync_dataset
+from nfl_source_data_lib.history import select_missing_historical_partitions
 
 
-def partitioned_dataset(root: Path, *, availability: str = "current-season-may-be-unavailable") -> Dataset:
+def partitioned_dataset(
+    root: Path,
+    *,
+    dataset_id: str = "x.stats",
+    availability: str = "current-season-may-be-unavailable",
+) -> Dataset:
+    path_id = dataset_id.replace(".", "-")
     return Dataset(
-        id="x.stats",
+        id=dataset_id,
         provider="x",
         upstream="x",
-        source_url="https://example.invalid/stats_{season}.csv",
-        raw_path=root / "source-data/providers/x/stats/{season}.csv",
-        metadata_path=root / "source-data/providers/x/stats/{season}.metadata.json",
+        source_url=f"https://example.invalid/{path_id}_{{season}}.csv",
+        raw_path=root / f"source-data/providers/x/{path_id}/{{season}}.csv",
+        metadata_path=root / f"source-data/providers/x/{path_id}/{{season}}.metadata.json",
         required_columns=("season", "player_id"),
         minimum_rows=1,
         kind="stats",
@@ -81,6 +88,62 @@ class NflSourcePartitionSyncTests(unittest.TestCase):
 
             self.assertEqual("frozen-existing", result["status"])
             downloader.assert_not_called()
+
+    def test_bounded_historical_backfill_is_newest_first_and_skips_existing_raw(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = [
+                partitioned_dataset(root, dataset_id="nflverse.rosters"),
+                partitioned_dataset(root, dataset_id="nflverse.weekly-rosters"),
+                partitioned_dataset(root, dataset_id="nflverse.player-stats"),
+                partitioned_dataset(root, dataset_id="nflverse.snap-counts"),
+            ]
+            existing = datasets[0].raw_path_for(2025)
+            existing.parent.mkdir(parents=True, exist_ok=True)
+            existing.write_text("season,player_id\n2025,A\n", encoding="utf-8")
+
+            selected = select_missing_historical_partitions(
+                root,
+                datasets,
+                current_season=2026,
+                limit=5,
+            )
+
+            self.assertEqual(
+                [
+                    ("nflverse.weekly-rosters", 2025),
+                    ("nflverse.player-stats", 2025),
+                    ("nflverse.snap-counts", 2025),
+                    ("nflverse.rosters", 2024),
+                    ("nflverse.weekly-rosters", 2024),
+                ],
+                selected,
+            )
+
+    def test_bounded_historical_backfill_respects_support_bands_and_zero_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = [
+                partitioned_dataset(root, dataset_id="nflverse.rosters"),
+                partitioned_dataset(root, dataset_id="nflverse.weekly-rosters"),
+                partitioned_dataset(root, dataset_id="nflverse.player-stats"),
+                partitioned_dataset(root, dataset_id="nflverse.snap-counts"),
+            ]
+            self.assertEqual(
+                [],
+                select_missing_historical_partitions(root, datasets, current_season=2026, limit=0),
+            )
+            all_selected = select_missing_historical_partitions(
+                root,
+                datasets,
+                current_season=2012,
+                limit=100,
+            )
+            self.assertNotIn(("nflverse.snap-counts", 2011), all_selected)
+            self.assertIn(("nflverse.weekly-rosters", 2002), all_selected)
+            self.assertNotIn(("nflverse.weekly-rosters", 2001), all_selected)
+            self.assertIn(("nflverse.rosters", 1999), all_selected)
+            self.assertIn(("nflverse.player-stats", 1999), all_selected)
 
     def test_registry_v3_requires_season_templates_for_partitioned_source(self):
         with tempfile.TemporaryDirectory() as tmp:

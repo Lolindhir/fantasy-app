@@ -100,6 +100,7 @@ scoringContract:
 
 readinessContract:
   implementation: tools/source_data_readiness.py
+  historicalBandOwner: tools/nfl_source_data_lib/history.py
   persistedAudits:
     - source-data/audits/nfl-source-data-readiness.json
     - source-data/audits/league-source-data-audit.json
@@ -116,9 +117,17 @@ operations:
   nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml
   leagueSyncWorkflow: .github/workflows/sync-league-source-data.yml
   readinessWorkflow: .github/workflows/source-data-readiness.yml
+  backfillSelection: tools/nfl_source_data_lib/history.py
   backfillRule: >
-    Historical partitions are acquired through the normal reusable NFL Source Sync with
-    explicit dataset/season inputs. Do not create a second historical-data implementation.
+    Historical partitions are acquired through the normal reusable NFL Source Sync, never a
+    second historical-data implementation. Explicit dataset/season inputs remain the targeted
+    repair/backfill path. An unfiltered full workflow run may additionally heal a bounded batch
+    of missing supported historical raw partitions when historical_backfill_limit is greater
+    than zero; the productive workflow default is 12 partitions per run, newest seasons first.
+    Existing prior-season raw partitions remain frozen and are skipped without network access.
+  backfillDisableRule: >
+    historical_backfill_limit=0 disables automatic missing-history healing. Targeted dataset
+    or season runs do not consume the automatic historical backlog.
   postBackfillValidation:
     - refresh persisted readiness audits
     - require ReadyForHistoricalScoring=true before declaring historical coverage complete

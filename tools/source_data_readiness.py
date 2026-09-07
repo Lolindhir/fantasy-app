@@ -8,12 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-HISTORICAL_BANDS = {
-    "nflverse.rosters": {"start": 1999, "canonical": "rosters"},
-    "nflverse.weekly-rosters": {"start": 2002, "canonical": "weekly-rosters"},
-    "nflverse.player-stats": {"start": 1999, "canonical": "player-stats"},
-    "nflverse.snap-counts": {"start": 2012, "canonical": "snap-counts"},
-}
+from nfl_source_data_lib.history import HISTORICAL_BANDS
+
 LARGE_FILE_BYTES = 5 * 1024 * 1024
 
 
@@ -86,13 +82,13 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
         dataset = registry_dataset(repo_root, dataset_id)
         rows = []
         missing_historical = []
-        for season in range(policy["start"], season_now + 1):
+        for season in range(int(policy["start"]), season_now + 1):
             raw_rel = "source-data/" + render_path(dataset["rawPath"], season)
             metadata_rel = "source-data/" + render_path(dataset["metadataPath"], season)
             raw_exists = (repo_root / raw_rel).exists()
             metadata = read_json(repo_root / metadata_rel, {}) or {}
             availability = metadata.get("availabilityStatus") or metadata.get("AvailabilityStatus")
-            partitions = canonical_partition_count(repo_root, policy["canonical"], season)
+            partitions = canonical_partition_count(repo_root, str(policy["canonical"]), season)
             historical = season < season_now
             ready = raw_exists and partitions > 0
             if historical and not ready:
@@ -112,7 +108,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
         datasets[dataset_id] = {
             "HistoryStart": policy["start"],
             "ExpectedThroughSeason": season_now,
-            "HistoricalSeasonCountExpected": max(0, season_now - policy["start"]),
+            "HistoricalSeasonCountExpected": max(0, season_now - int(policy["start"])),
             "MissingHistoricalSeasons": missing_historical,
             "CurrentSeasonMayBeUnavailable": dataset.get("availabilityPolicy") == "current-season-may-be-unavailable",
             "Seasons": rows,
