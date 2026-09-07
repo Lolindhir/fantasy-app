@@ -1,79 +1,78 @@
-/* Overview Hero review polish.
- * Loaded after src/styles.scss so these narrowly scoped rules can refine the
- * deployed first-pass hero without changing generated data or timeline logic.
+/* Overview Hero density/polish pass.
+ * Loaded after src/styles.scss so these scoped rules refine the overview hero
+ * without changing generated data or league-timeline semantics.
  */
 
 app-overview .header .header-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px;
-  grid-template-rows: auto auto auto;
-  column-gap: 12px;
-  align-items: start;
+  display: block;
 }
 
 app-overview .header .header-content {
-  display: contents;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+app-overview .header .header-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  align-items: center;
+  column-gap: 12px;
+}
+
+app-overview .header .header-identity-copy {
+  min-width: 0;
+}
+
+app-overview .header .league-title,
+app-overview .header .header-season {
+  padding-right: 0;
 }
 
 app-overview .header .league-title {
-  grid-column: 1;
-  grid-row: 1;
-  padding-right: 0;
+  margin-bottom: 4px;
 }
 
 app-overview .header .header-season {
-  grid-column: 1;
-  grid-row: 2;
-  padding-right: 0;
+  margin-bottom: 0;
 }
 
 app-overview .header .league-logo {
   position: static;
-  grid-column: 2;
-  grid-row: 1 / 3;
-  align-self: start;
-  justify-self: end;
   width: 72px;
   height: 72px;
   min-height: 0;
+  justify-self: end;
   border-radius: 18px;
   object-fit: contain;
   object-position: center;
 }
 
 app-overview .header .header-columns {
-  grid-column: 1 / -1;
-  grid-row: 3;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 9px;
+  gap: 7px;
 }
 
-/* Salary Cap: supporting absolute values left/right, change as the focal point. */
-app-overview .header .header-info:nth-child(2) {
-  position: relative;
+/* Salary Cap: explicit current | change | projected structure, no glyph masking. */
+app-overview .header .salary-cap-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
-  grid-template-rows: auto auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(104px, auto) minmax(0, 1fr);
   grid-template-areas:
     'title title title'
-    'current-label trend projected-label'
-    'current-value trend projected-value';
+    'current change projected';
   align-items: center;
   column-gap: 8px;
-  row-gap: 1px;
+  row-gap: 5px;
   margin: 0;
   padding: 7px 10px 8px;
   border: 1px solid rgba(148, 163, 184, 0.26);
   border-radius: 12px;
   background: #f8fafc;
-  text-align: center;
 }
 
-app-overview .header .header-info:nth-child(2)::before {
-  content: 'Salary Cap';
+app-overview .header .salary-cap-title {
   grid-area: title;
-  justify-self: start;
-  margin-bottom: 3px;
   color: #64748b;
   font-size: 0.64rem;
   font-weight: 850;
@@ -82,38 +81,24 @@ app-overview .header .header-info:nth-child(2)::before {
   text-transform: uppercase;
 }
 
-app-overview .header .header-info:nth-child(2) > div:nth-child(1) {
-  grid-area: current-label;
+app-overview .header .salary-cap-current {
+  grid-area: current;
 }
 
-app-overview .header .header-info:nth-child(2) > div:nth-child(2) {
-  grid-area: current-value;
+app-overview .header .salary-cap-projected {
+  grid-area: projected;
 }
 
-app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
-  grid-area: projected-label;
+app-overview .header .salary-cap-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  gap: 3px;
+  text-align: center;
 }
 
-app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
-  grid-area: projected-value;
-}
-
-app-overview .header .header-info:nth-child(2) > div:nth-child(5) {
-  display: none;
-}
-
-app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
-  grid-area: trend;
-  align-self: center;
-  min-width: 92px;
-  padding: 0 8px;
-  border: 0;
-}
-
-app-overview .header .header-info:nth-child(2) > div:nth-child(1),
-app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
-  padding: 0;
-  border: 0;
+app-overview .header .salary-cap-label {
   color: #64748b;
   font-size: 0.62rem;
   font-weight: 850;
@@ -121,75 +106,56 @@ app-overview .header .header-info:nth-child(2) > div:nth-child(3) {
   white-space: nowrap;
 }
 
-app-overview .header .header-info:nth-child(2) > div:nth-child(2),
-app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
-  position: relative;
-  min-width: 0;
-  margin: 1px 0 0;
-  padding: 0 1.15em 0 0;
-  border: 0;
+app-overview .header .salary-cap-value {
   color: #334155;
-  font-size: clamp(0.68rem, 2.9vw, 0.78rem);
-  font-weight: 800;
-  line-height: 1.08;
+  font-size: clamp(0.7rem, 2.8vw, 0.78rem);
+  font-weight: 850;
+  line-height: 1.05;
   white-space: nowrap;
 }
 
-/* The source template still carries legacy trailing emojis on the absolute values.
- * Mask those glyphs visually; the direction emoji now belongs to the central delta.
- */
-app-overview .header .header-info:nth-child(2) > div:nth-child(2)::after,
-app-overview .header .header-info:nth-child(2) > div:nth-child(4)::after {
-  content: '';
-  position: absolute;
-  top: -1px;
-  right: 0;
-  width: 1.15em;
-  height: calc(100% + 2px);
-  background: #f8fafc;
-  pointer-events: none;
-}
-
-app-overview .header .header-info:nth-child(2) .meta {
+app-overview .header .salary-cap-change {
+  grid-area: change;
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  margin: 0;
-  opacity: 1;
-  font-size: clamp(0.88rem, 3.8vw, 1.05rem);
+  align-self: center;
+  gap: 7px;
+  min-width: 0;
+  margin-top: -1px;
+  font-size: clamp(0.9rem, 3.8vw, 1.05rem);
   font-weight: 950;
-  line-height: 1.02;
+  line-height: 1;
   white-space: nowrap;
 }
 
-app-overview .header .header-info:nth-child(2) .meta::before {
-  content: '➖';
-  display: block;
-  font-size: clamp(1.15rem, 5vw, 1.4rem);
+app-overview .header .salary-cap-trend-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: clamp(1.15rem, 4.8vw, 1.35rem);
   line-height: 1;
 }
 
-app-overview .header .header-info:nth-child(2) .meta.negative-diff::before {
-  content: '📈';
+app-overview .header .salary-cap-delta {
+  display: inline-block;
+  line-height: 1;
 }
 
-app-overview .header .header-info:nth-child(2) .meta.positive-diff::before {
-  content: '📉';
-}
-
-app-overview .header .header-info:nth-child(2) .meta.negative-diff {
+app-overview .header .salary-cap-change--up {
   color: #15803d;
 }
 
-app-overview .header .header-info:nth-child(2) .meta.positive-diff {
+app-overview .header .salary-cap-change--down {
   color: #b91c1c;
 }
 
-/* Keep the information-rich Decision Window as-is, but make the passive waiver
- * deadline use its equal-height card deliberately instead of clinging to the top.
- */
+app-overview .header .salary-cap-change--flat {
+  color: #64748b;
+}
+
+/* Keep the passive Waiver Run deliberately centered. */
 app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) {
   justify-content: center;
   align-items: center;
@@ -211,6 +177,39 @@ app-overview .header app-league-timeline .league-timeline-operational-item:not(.
   text-align: center;
 }
 
+/* Give the information-rich lineup-lock card a little air without centering it. */
+app-overview .header app-league-timeline .league-timeline-operational-item--interactive {
+  padding: 9px 20px 8px 10px;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item--interactive .league-timeline-operational-value-row {
+  margin-top: 5px;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational-item--interactive .league-timeline-game-context {
+  margin-top: auto;
+  padding-top: 7px;
+}
+
+/* Recover vertical density around the timeline while preserving card readability. */
+app-overview .header app-league-timeline .league-timeline,
+app-overview .header app-league-timeline .league-timeline--active {
+  padding-top: 7px;
+}
+
+app-overview .header app-league-timeline .league-timeline-eyebrow {
+  margin-bottom: 4px;
+}
+
+app-overview .header app-league-timeline .league-timeline-operational {
+  gap: 7px;
+}
+
+app-overview .header app-league-timeline .league-timeline-milestones {
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
 /* The previous champion is context, but should read as an intentional accolade. */
 app-overview .header .champion {
   display: grid;
@@ -219,7 +218,7 @@ app-overview .header .champion {
   gap: 7px;
   width: fit-content;
   max-width: 100%;
-  margin-top: 8px;
+  margin-top: 6px;
   padding: 6px 9px;
   border: 1px solid rgba(217, 119, 6, 0.28);
   border-radius: 999px;
@@ -248,7 +247,7 @@ app-overview .header .champion img {
 }
 
 @media (max-width: 380px) {
-  app-overview .header .header-main {
+  app-overview .header .header-identity {
     grid-template-columns: minmax(0, 1fr) 64px;
     column-gap: 9px;
   }
@@ -258,14 +257,19 @@ app-overview .header .champion img {
     height: 64px;
   }
 
-  app-overview .header .header-info:nth-child(2) {
+  app-overview .header .salary-cap-card {
+    grid-template-columns: minmax(0, 1fr) minmax(92px, auto) minmax(0, 1fr);
     column-gap: 5px;
     padding-inline: 7px;
   }
 
-  app-overview .header .header-info:nth-child(2) > div:nth-child(6) {
-    min-width: 82px;
-    padding-inline: 4px;
+  app-overview .header .salary-cap-change {
+    gap: 5px;
+    font-size: 0.86rem;
+  }
+
+  app-overview .header .salary-cap-trend-icon {
+    font-size: 1.08rem;
   }
 
   app-overview .header .champion {
@@ -281,43 +285,56 @@ app-overview .header .champion img {
 @media (min-width: 768px) {
   app-overview .header {
     display: block;
+    padding: 14px 16px;
   }
 
   app-overview .header .header-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 104px;
-    grid-template-rows: auto auto auto;
+    display: block;
+  }
+
+  app-overview .header .header-content {
+    display: block;
+  }
+
+  app-overview .header .header-identity {
+    grid-template-columns: minmax(0, 1fr) 92px;
     column-gap: 18px;
   }
 
   app-overview .header .league-logo {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    width: 104px;
-    height: 104px;
-    border-radius: 22px;
+    width: 92px;
+    height: 92px;
+    border-radius: 21px;
   }
 
   app-overview .header .header-columns {
-    grid-column: 1 / -1;
-    grid-row: 3;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 9px 14px;
+    margin-top: 9px;
   }
 
   app-overview .header .header-columns app-league-timeline {
     grid-column: 1 / -1;
   }
 
-  app-overview .header .header-info:nth-child(2) > div:nth-child(2),
-  app-overview .header .header-info:nth-child(2) > div:nth-child(4) {
-    font-size: 0.82rem;
+  app-overview .header .salary-cap-card {
+    column-gap: 10px;
   }
 
-  app-overview .header .header-info:nth-child(2) .meta {
+  app-overview .header .salary-cap-value {
+    font-size: 0.8rem;
+  }
+
+  app-overview .header .salary-cap-change {
     font-size: 1.08rem;
   }
 
+  app-overview .header .salary-cap-trend-icon {
+    font-size: 1.3rem;
+  }
+
   app-overview .header .champion {
-    margin-top: 10px;
+    margin-top: 7px;
   }
 }

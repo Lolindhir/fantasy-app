@@ -4,8 +4,19 @@
   <section class="header">
     <div class="header-main">
       <div class="header-content">
-        <div class="league-title">{{ vm.league.Name }}</div>
-        <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
+        <div class="header-identity">
+          <div class="header-identity-copy">
+            <div class="league-title">{{ vm.league.Name }}</div>
+            <div class="header-season"><span class="season-description">Season {{ vm.league.Season }}</span> - <span class="season-description">{{ vm.league.Status }}</span></div>
+          </div>
+
+          <img
+            *ngIf="vm.league.Avatar"
+            class="league-logo"
+            [src]="vm.league.Avatar"
+            alt="League logo"
+          />
+        </div>
 
         <div class="header-columns">
 
@@ -60,25 +71,30 @@
 
           </div>
 
-          <div class="header-info">
-            <div>{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}:</div>
-            <div class="status">{{ vm.league.SalaryCapDisplay }} 💰</div>
+          <div class="header-info salary-cap-card">
+            <div class="salary-cap-title">Salary Cap</div>
 
-            <div>{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}:</div>
-            <div class="status">
-              {{ vm.league.SalaryCapProjectedDisplay }} {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : "📉" }}
+            <div class="salary-cap-metric salary-cap-current">
+              <div class="salary-cap-label">{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }}</div>
+              <div class="salary-cap-value">{{ vm.league.SalaryCapDisplay }}</div>
             </div>
 
-            <div></div>
-            <div>
-              <span class="meta" [ngClass]="{
-                  'positive-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap < 0,
-                  'negative-diff': vm.league.SalaryCapProjected - vm.league.SalaryCap > 0
-                }">
-                  ({{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }})
+            <div
+              class="salary-cap-change"
+              [class.salary-cap-change--up]="vm.league.SalaryCapProjected - vm.league.SalaryCap > 0"
+              [class.salary-cap-change--down]="vm.league.SalaryCapProjected - vm.league.SalaryCap < 0"
+              [class.salary-cap-change--flat]="vm.league.SalaryCapProjected - vm.league.SalaryCap === 0"
+            >
+              <span class="salary-cap-trend-icon" aria-hidden="true">
+                {{ vm.league.SalaryCapProjected - vm.league.SalaryCap > 0 ? "📈" : vm.league.SalaryCapProjected - vm.league.SalaryCap < 0 ? "📉" : "➖" }}
               </span>
+              <span class="salary-cap-delta">{{ formatSalaryDollars(vm.league.SalaryCapProjected - vm.league.SalaryCap, true, 1) }}</span>
             </div>
 
+            <div class="salary-cap-metric salary-cap-projected">
+              <div class="salary-cap-label">{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }}</div>
+              <div class="salary-cap-value">{{ vm.league.SalaryCapProjectedDisplay }}</div>
+            </div>
           </div>
 
           <app-league-timeline
@@ -88,13 +104,6 @@
 
         </div>
       </div>
-
-      <img
-        *ngIf="vm.league.Avatar"
-        class="league-logo"
-        [src]="vm.league.Avatar"
-        alt="League logo"
-      />
     </div>
 
     <div *ngIf="vm.champion" class="champion">
