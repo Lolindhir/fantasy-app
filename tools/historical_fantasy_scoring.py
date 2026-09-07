@@ -14,7 +14,7 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "pass_cmp": ("completions",),
     "pass_yd": ("passing_yards",),
     "pass_td": ("passing_tds",),
-    "pass_int": ("interceptions",),
+    "pass_int": ("passing_interceptions",),
     "pass_2pt": ("passing_2pt_conversions",),
     "rush_att": ("carries",),
     "rush_yd": ("rushing_yards",),
@@ -24,16 +24,51 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "rec_yd": ("receiving_yards",),
     "rec_td": ("receiving_tds",),
     "rec_2pt": ("receiving_2pt_conversions",),
-    "fum": ("rushing_fumbles", "receiving_fumbles", "sack_fumbles"),
-    "fum_lost": ("rushing_fumbles_lost", "receiving_fumbles_lost", "sack_fumbles_lost"),
-    "xpm": ("extra_points_made",),
-    "xpmiss": ("extra_point_attempts", "__subtract__:extra_points_made"),
-    "fgm": ("field_goals_made",),
-    "fgmiss": ("field_goal_attempts", "__subtract__:field_goals_made"),
+    # nflverse exposes aggregate fumble counters specifically to retain edge-case fumbles
+    # that are not safely reconstructed from only rushing/receiving/sack categories.
+    "fum": ("fumbles_total",),
+    "fum_lost": ("fumbles_lost_total",),
+    "fum_rec": ("fumble_recovery_own", "fumble_recovery_opp"),
+    "fum_rec_td": ("fumble_recovery_tds",),
+    "xpm": ("pat_made",),
+    # Sleeper counts blocked kicks as misses. Attempts minus made therefore intentionally
+    # includes both explicit misses and blocked attempts.
+    "xpmiss": ("pat_att", "__subtract__:pat_made"),
+    "fgm": ("fg_made",),
+    "fgmiss": ("fg_att", "__subtract__:fg_made"),
+    "fgm_0_19": ("fg_made_0_19",),
+    "fgm_20_29": ("fg_made_20_29",),
+    "fgm_30_39": ("fg_made_30_39",),
+    "fgm_40_49": ("fg_made_40_49",),
+    "fgm_50_59": ("fg_made_50_59",),
+    "fgm_50p": ("fg_made_50_59", "fg_made_60_"),
+    "fgm_60p": ("fg_made_60_",),
+    "fgm_yds": ("fg_made_distance",),
 }
 
 OFFENSE_PREFIXES = ("pass_", "rush_", "rec_", "fum")
-KICKER_KEYS = {"xpm", "xpmiss", "fgm", "fgmiss", "fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50_59", "fgm_60p"}
+KICKER_KEYS = {
+    "xpm",
+    "xpmiss",
+    "fgm",
+    "fgmiss",
+    "fgm_0_19",
+    "fgm_20_29",
+    "fgm_30_39",
+    "fgm_40_49",
+    "fgm_50_59",
+    "fgm_50p",
+    "fgm_60p",
+    "fgm_yds",
+    "fgm_yds_over_30",
+    "fgmiss_0_19",
+    "fgmiss_20_29",
+    "fgmiss_30_39",
+    "fgmiss_40_49",
+    "fgmiss_50_59",
+    "fgmiss_50p",
+    "fgmiss_60p",
+}
 
 
 def read_json(path: Path) -> Any:
