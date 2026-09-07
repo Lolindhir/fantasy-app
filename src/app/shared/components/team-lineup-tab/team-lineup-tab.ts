@@ -19,6 +19,7 @@ import {
   buildTeamLineupHealthView,
   buildTeamLineupWeekSummary,
   buildTeamUpcomingLockViews,
+  formatDecisionWindowCompactLocalDateTime,
   formatTeamAffectedCounts,
   getPendingTeamLookaheadMessage,
   type TeamDecisionWindowGameView,
@@ -95,6 +96,10 @@ export class TeamLineupTabComponent {
     return `${window.games.length} ${window.games.length === 1 ? 'game' : 'games'}`;
   }
 
+  windowDateTimeLabel(window: DecisionWindow): string {
+    return formatDecisionWindowCompactLocalDateTime(window);
+  }
+
   teamPlayers(group: TeamDecisionWindowNflTeamGroupView): Player[] {
     const playerById = new Map(this.players.map(player => [player.ID, player]));
     const starterById = new Map(group.affectedPlayers.map(player => [player.PlayerID, player.IsStarter]));
@@ -117,6 +122,11 @@ export class TeamLineupTabComponent {
   teamLogo(group: TeamDecisionWindowNflTeamGroupView): string | null {
     if (!group.nflTeamId) return null;
     return this.nflTeams.find(team => team.ID === group.nflTeamId)?.Logo ?? null;
+  }
+
+  teamName(group: TeamDecisionWindowNflTeamGroupView): string {
+    if (!group.nflTeamId) return group.teamAbbr;
+    return this.nflTeams.find(team => team.ID === group.nflTeamId)?.Name || group.teamAbbr;
   }
 
   teamCounts(group: TeamDecisionWindowNflTeamGroupView): string {
