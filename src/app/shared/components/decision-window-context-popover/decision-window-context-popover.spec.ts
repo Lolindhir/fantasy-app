@@ -5,13 +5,13 @@ import { TeamDetailDialogService } from '../../services/team-detail-dialog.servi
 import { DecisionWindowContextPopoverComponent } from './decision-window-context-popover';
 
 describe('DecisionWindowContextPopoverComponent', () => {
-  it('drills into the existing Team Detail service with the stable TeamID', () => {
+  it('drills into Team Detail on the Lineup tab with the stable TeamID', () => {
     const service = { open: jasmine.createSpy('open') } as unknown as TeamDetailDialogService;
     const component = new DecisionWindowContextPopoverComponent(service);
 
     component.openTeam(42);
 
-    expect(service.open).toHaveBeenCalledOnceWith(42);
+    expect(service.open).toHaveBeenCalledOnceWith(42, { initialTab: 'lineup' });
   });
 
   it('uses Updated freshness semantics and tolerates a missing timestamp', () => {

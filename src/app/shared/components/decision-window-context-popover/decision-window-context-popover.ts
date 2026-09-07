@@ -121,7 +121,7 @@ export class DecisionWindowContextPopoverComponent {
   }
 
   openTeam(teamId: number): void {
-    this.teamDetailDialogService.open(teamId);
+    this.teamDetailDialogService.open(teamId, { initialTab: 'lineup' });
   }
 
   trackTeam(_index: number, row: DecisionWindowTeamRowView): number {

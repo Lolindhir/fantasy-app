@@ -11,77 +11,14 @@
     </button>
   </header>
 
-  <mat-tab-group class="team-tabs" animationDuration="150ms" mat-stretch-tabs="false">
+  <mat-tab-group
+    class="team-tabs"
+    animationDuration="150ms"
+    mat-stretch-tabs="false"
+    [(selectedIndex)]="selectedTabIndex"
+  >
     <mat-tab label="Overview">
       <div class="tab-content overview-tab">
-        @if (decisionWindowPhaseActive) {
-          <section class="section-card upcoming-locks-card">
-            <div class="section-heading upcoming-locks-heading">
-              <div>
-                <span class="eyebrow">Upcoming Locks</span>
-                <h3>Current lineup week</h3>
-              </div>
-              @if (lineupHealth; as health) {
-                <span
-                  class="lineup-health-badge"
-                  [ngClass]="'lineup-health--' + health.state"
-                >{{ health.statusLabel }}</span>
-              }
-            </div>
-
-            @if (decisionWindowsLoading) {
-              <p class="empty-state">Loading lineup locks…</p>
-            } @else if (decisionWindowsUnavailable) {
-              <p class="empty-state decision-window-unavailable">
-                Lineup lock data is currently unavailable. Team details remain usable.
-              </p>
-            } @else if (decisionWindows) {
-              @if (lineupHealth; as health) {
-                @if (health.issueTexts.length) {
-                  <div class="lineup-health-issues" [ngClass]="'lineup-health-issues--' + health.state">
-                    @for (issue of health.issueTexts; track issue) {
-                      <span>{{ issue }}</span>
-                    }
-                  </div>
-                }
-              }
-
-              @if (upcomingLocks.length) {
-                <div class="upcoming-lock-list" aria-label="Upcoming lineup locks for this team">
-                  @for (lock of upcomingLocks; track lock.window.DecisionWindowID) {
-                    <button
-                      type="button"
-                      class="upcoming-lock-row"
-                      [attr.aria-label]="lock.timeLabel + '. ' + affectedCounts(lock) + '. Open Decision Window details'"
-                      (click)="openTeamDecisionWindow(lock.window, teamDecisionWindowDialog)"
-                    >
-                      <strong class="upcoming-lock-time">{{ lock.timeLabel }}</strong>
-                      <span class="upcoming-lock-matchup">
-                        @if (matchupContext(lock.window); as matchup) {
-                          <app-decision-window-matchup-context
-                            [context]="matchup"
-                            [showWeek]="false"
-                          />
-                        }
-                      </span>
-                      <span class="upcoming-lock-counts">{{ affectedCounts(lock) }}</span>
-                      <span class="upcoming-lock-chevron" aria-hidden="true">›</span>
-                    </button>
-                  }
-                </div>
-              } @else if (pendingLookaheadMessage) {
-                <p class="empty-state pending-lookahead">{{ pendingLookaheadMessage }}</p>
-              } @else {
-                <p class="empty-state">No remaining player locks this week.</p>
-              }
-            }
-
-            @if (decisionWindowsUpdatedLabel) {
-              <div class="decision-window-freshness">{{ decisionWindowsUpdatedLabel }}</div>
-            }
-          </section>
-        }
-
         <section class="section-card salary-health-card">
           <div class="section-heading">
             <div>
@@ -192,6 +129,24 @@
         }
       </div>
     </mat-tab>
+
+    @if (decisionWindowPhaseActive) {
+      <mat-tab label="Lineup">
+        <div class="tab-content lineup-tab">
+          <app-team-lineup-tab
+            [model]="decisionWindows"
+            [fantasyTeamId]="team.TeamID"
+            [players]="data.players"
+            [nflTeams]="nflTeams"
+            [updatedAt]="decisionWindowsUpdatedAt"
+            [now]="now"
+            [loading]="decisionWindowsLoading"
+            [unavailable]="decisionWindowsUnavailable"
+            (openWindow)="openTeamDecisionWindow($event, teamDecisionWindowDialog)"
+          />
+        </div>
+      </mat-tab>
+    }
 
     <mat-tab label="Salary">
       <div class="tab-content salary-tab">
