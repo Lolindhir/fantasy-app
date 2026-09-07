@@ -1,0 +1,135 @@
+schemaVersion: 1
+
+domain: historical-fantasy-scoring
+status: accepted-phase1-hardening
+
+decision:
+  id: ADR-033
+  acceptedAt: 2026-09-07
+  title: Historical fantasy scoring is derived from persisted NFL facts plus an explicit League scoring profile
+  context: >
+    Phase 1 must preserve enough historical NFL evidence to recompute fantasy points
+    deterministically under the scoring rules of a selected League season. Provider
+    fantasy-point totals are useful for validation, but they are not canonical facts.
+  decision: >
+    Persist raw/statistical NFL facts in source-data, persist League scoring settings
+    with the canonical League season, and derive historical/what-if fantasy points at
+    evaluation time. Historical source gaps fail closed and are never interpreted as zero.
+  consequences:
+    - NFL fact storage remains independent from any one fantasy platform scoring model.
+    - The same historical NFL facts can be re-scored under different explicit League profiles.
+    - Missing historical partitions block readiness instead of silently changing player scores.
+    - Provider-computed fantasy totals may be compared as secondary validation evidence only.
+
+canonicalLeague:
+  currentCanonicalLeagueID: nfl-reise
+  identityRule: >
+    CanonicalLeagueID is manually issued by fantasy-app and remains stable across seasons;
+    it is not derived from the display name or from a seasonal Sleeper league_id.
+  migration:
+    retiredCanonicalNamespace: cl-220306ac3f9b480fa865e124098d8f56
+    replacementCanonicalNamespace: nfl-reise
+    providerLineagePreserved: true
+    providerEvidenceRule: >
+      Sleeper league_id and previous_league_id remain preserved as provider evidence and
+      discovery lineage. They do not become canonical IDs.
+    legacyAcceptanceSnapshotRule: >
+      league-source-data.yaml productiveAcceptance acceptedAt 2026-09-04 records the
+      pre-hardening Phase-1B acceptance snapshot. Its old cl-* canonical ID is historical
+      evidence, not the current canonical League identity after ADR-033/#373.
+
+factOwnership:
+  nflFacts:
+    owner: source-data/nfl/**
+    relevantDatasets:
+      - source-data/nfl/player-stats/**
+      - source-data/nfl/rosters/**
+      - source-data/nfl/weekly-rosters/**
+      - source-data/nfl/snap-counts/**
+    rule: >
+      Store provider-independent facts and evidence required for later derivation. Do not
+      bake League scoring settings or provider fantasy-point totals into canonical NFL facts.
+  leagueScoringProfile:
+    ownerPattern: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
+    field: ScoringSettings
+    rule: >
+      ScoringSettings is an explicit input profile for a scoring calculation. It is League
+      configuration evidence, not NFL fact storage.
+
+historicalCoverage:
+  rosters:
+    startSeason: 1999
+  weeklyRosters:
+    startSeason: 2002
+  playerStats:
+    startSeason: 1999
+  snapCounts:
+    startSeason: 2012
+  currentSeasonAvailabilityRule: >
+    A dataset whose registry contract says current-season-may-be-unavailable may persist an
+    explicit not-yet-available state only for the current season.
+  historicalAvailabilityRule: >
+    A missing or unavailable season inside a supported historical band is a hard readiness
+    failure. Historical 404/unavailable/missing never means zero.
+
+scoringContract:
+  implementation: tools/historical_fantasy_scoring.py
+  defaultLeague: nfl-reise
+  providerFantasyTotals: validation-only
+  rawFieldRules:
+    passingInterceptions: passing_interceptions
+    fumbles: fumbles_total
+    fumblesLost: fumbles_lost_total
+    ownFumbleRecoveries: fumble_recovery_own
+    opponentFumbleRecoveries: fumble_recovery_opp
+    fumbleRecoveryTouchdowns: fumble_recovery_tds
+    patMade: pat_made
+    patAttempts: pat_att
+    fieldGoalsMade: fg_made
+    fieldGoalAttempts: fg_att
+    fieldGoalMadeDistance: fg_made_distance
+  derivedRules:
+    - PAT misses are pat_att minus pat_made so blocked attempts remain represented as misses.
+    - Aggregate field-goal misses are fg_att minus fg_made.
+    - Made field goals use nflverse distance buckets through 60+; fgm_50p combines 50-59 and 60+.
+  failClosedUnsupported:
+    - >
+      Non-zero distance-specific missed-field-goal scoring remains unsupported until reliable
+      raw miss-distance evidence is available. The scorer must reject such a profile rather
+      than fabricate a result.
+
+readinessContract:
+  implementation: tools/source_data_readiness.py
+  persistedAudits:
+    - source-data/audits/nfl-source-data-readiness.json
+    - source-data/audits/league-source-data-audit.json
+    - source-data/audits/source-data-storage-audit.json
+  readyForHistoricalScoringRule: >
+    Every historical season in every declared support band must have both persisted raw
+    evidence and canonical materialization. Current-season not-yet-available evidence does
+    not satisfy a historical partition and does not create a historical failure by itself.
+  leagueRule: >
+    Every configured CanonicalLeagueID must have a manifest and the required per-season core
+    files. The productive hardening target is the nfl-reise namespace.
+
+operations:
+  nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml
+  leagueSyncWorkflow: .github/workflows/sync-league-source-data.yml
+  readinessWorkflow: .github/workflows/source-data-readiness.yml
+  backfillRule: >
+    Historical partitions are acquired through the normal reusable NFL Source Sync with
+    explicit dataset/season inputs. Do not create a second historical-data implementation.
+  postBackfillValidation:
+    - refresh persisted readiness audits
+    - require ReadyForHistoricalScoring=true before declaring historical coverage complete
+    - validate historical scoring against persisted nflverse raw fields and an explicit nfl-reise scoring profile
+
+validationEvidence:
+  namespaceAndWeekStructure: cd4f935cffe53692300cca4936a8eee576adc3e4
+  monitoringPolicy: 48143c0042a7c32d58046f98800f4088ffc6bd0e
+  scoringMappings: a596cdd066fe0a2b44d5156bec8dc564e8e5b33c
+  schedulerContract: a60c7cd689f0c0dfb4a77c36982f7c0d1862ced1
+  readinessRegressions: 6a74902078c245909ee875d47c583c0d718c5785
+  trackingIssue: 373
+  phase2Issue: 347
+  phase2State: paused-until-phase1-hardening-complete
