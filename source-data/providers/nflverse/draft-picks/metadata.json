@@ -1,12 +1,26 @@
 {
   "schemaVersion": 1,
+  "registrySchemaVersion": 3,
   "dataset": "nflverse.draft-picks",
   "provider": "nflverse",
   "upstream": "nflverse/nflverse-data",
   "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/draft_picks/draft_picks.csv",
   "sourceFormat": "csv",
-  "retrievedAtUtc": "2026-08-21T21:26:20Z",
-  "contentHashSha256": "91f1ead0d531aec7e219e3f19756b3084d8ef6d8dbf37c8b4ec147dd3985c215",
+  "sourceMode": "fixed",
+  "availabilityStatus": "available",
+  "kind": "historical-event",
+  "refreshPolicy": "discover-new-partitions",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "immutable-history",
+    "partitionKey": "season",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse; draft data via Pro Football Reference",
+  "retrievedAtUtc": "2026-09-07T06:04:31Z",
+  "contentHashSha256": "a493a186504471c197f5e61879552b904da1287dacc0b62274efad4b1f854560",
   "rowCount": 12927,
   "columns": [
     "season",
@@ -45,10 +59,5 @@
     "def_solo_tackles",
     "def_ints",
     "def_sacks"
-  ],
-  "kind": "historical-event",
-  "refreshPolicy": "missing-or-current-year",
-  "retentionPolicy": "permanent-by-season",
-  "license": "CC BY 4.0",
-  "attribution": "nflverse; draft data via Pro Football Reference"
+  ]
 }
