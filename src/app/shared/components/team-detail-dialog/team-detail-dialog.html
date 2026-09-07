@@ -99,15 +99,12 @@
               <mat-option value="rosterStatus">Roster Status</mat-option>
               <mat-option value="position">Position</mat-option>
               @if (decisionWindowsAvailable) {
-                <mat-option value="lockStatus">Lock Status</mat-option>
+                <mat-option value="lockStatus">Next Lock</mat-option>
               }
               <mat-option value="rankingStatus" [disabled]="!combinedRankingAvailable">
                 {{ combinedRankingAvailable ? 'Ranking Status' : 'Ranking Status · after Week 3' }}
               </mat-option>
             </mat-select>
-            @if (rosterGroup === 'lockStatus' && rosterSort !== 'nextLock' && decisionWindowsUpdatedLabel) {
-              <mat-hint>{{ decisionWindowsUpdatedLabel }}</mat-hint>
-            }
           </mat-form-field>
 
           <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
@@ -126,9 +123,6 @@
               <mat-option value="ageDesc">Age ⬇</mat-option>
               <mat-option value="name">Name</mat-option>
             </mat-select>
-            @if (rosterSort === 'nextLock' && decisionWindowsUpdatedLabel) {
-              <mat-hint>{{ decisionWindowsUpdatedLabel }}</mat-hint>
-            }
           </mat-form-field>
         </div>
 

@@ -35,14 +35,13 @@ const POSITION_LABELS: Record<string, string> = {
   DEF: 'Defense',
   DST: 'Defense'
 };
-const LOCK_GROUPS = [
-  { key: 'upcoming', label: 'Upcoming' },
+const LOCK_FALLBACK_GROUPS = [
   { key: 'locked', label: 'Locked' },
   { key: 'bye', label: 'Bye' },
   { key: 'no-team', label: 'No Team' },
   { key: 'unknown', label: 'Unknown' }
 ] as const;
-type LockGroupKey = typeof LOCK_GROUPS[number]['key'];
+type LockFallbackGroupKey = typeof LOCK_FALLBACK_GROUPS[number]['key'];
 
 export function isCombinedRankingAvailable(finalScoredWeek: number | undefined): boolean {
   return (finalScoredWeek ?? 0) >= COMBINED_RANKING_MIN_FINAL_WEEK;
@@ -107,24 +106,47 @@ export function buildRosterPlayerGroups(
     case 'lockStatus': {
       const factByPlayer = buildTeamLockFactMap(nextLockContext);
       const now = nextLockContext?.now ?? new Date(0);
-      const playersByGroup = new Map<LockGroupKey, Player[]>();
+      const futurePlayersByStartsAt = new Map<number, Player[]>();
+      const fallbackPlayersByGroup = new Map<LockFallbackGroupKey, Player[]>();
 
       for (const player of players) {
-        const key = getRosterLockGroupKey(factByPlayer.get(player.ID), now);
-        const groupedPlayers = playersByGroup.get(key) ?? [];
+        const grouping = getRosterLockGrouping(factByPlayer.get(player.ID), now);
+        if (grouping.kind === 'future') {
+          const groupedPlayers = futurePlayersByStartsAt.get(grouping.startsAtMs) ?? [];
+          groupedPlayers.push(player);
+          futurePlayersByStartsAt.set(grouping.startsAtMs, groupedPlayers);
+          continue;
+        }
+
+        const groupedPlayers = fallbackPlayersByGroup.get(grouping.key) ?? [];
         groupedPlayers.push(player);
-        playersByGroup.set(key, groupedPlayers);
+        fallbackPlayersByGroup.set(grouping.key, groupedPlayers);
       }
 
-      return LOCK_GROUPS
+      const futureGroups = [...futurePlayersByStartsAt.entries()]
+        .sort(([startsAtA], [startsAtB]) => startsAtA - startsAtB)
+        .map(([startsAtMs, groupedPlayers]) => {
+          const startsAt = new Date(startsAtMs);
+          return buildGroup(
+            `next-lock-${startsAt.toISOString()}`,
+            `Next Lock · ${formatRosterLockDateTime(startsAt)}`,
+            groupedPlayers,
+            sortMode,
+            nextLockContext
+          );
+        });
+
+      const fallbackGroups = LOCK_FALLBACK_GROUPS
         .map(group => buildGroup(
           group.key,
           group.label,
-          playersByGroup.get(group.key) ?? [],
+          fallbackPlayersByGroup.get(group.key) ?? [],
           sortMode,
           nextLockContext
         ))
         .filter(group => group.players.length > 0);
+
+      return [...futureGroups, ...fallbackGroups];
     }
 
     case 'none':
@@ -190,11 +212,7 @@ export function formatRosterNextLockValue(
       const startsAt = parseTimestamp(fact.StartsAtUtc);
       if (!startsAt) return 'Unknown';
       if (startsAt.getTime() <= context.now.getTime()) return 'Locked';
-      return new Intl.DateTimeFormat(undefined, {
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(startsAt).replace(',', '');
+      return formatRosterLockDateTime(startsAt);
     }
   }
 }
@@ -231,17 +249,18 @@ function compareNextLockPlayers(
   return comparePlayerIdentity(a, b);
 }
 
-function getRosterLockGroupKey(
+function getRosterLockGrouping(
   fact: DecisionWindowPlayerLockFact | undefined,
   now: Date
-): LockGroupKey {
-  if (!fact || fact.Kind === 'unknown') return 'unknown';
-  if (fact.Kind === 'no-team') return 'no-team';
-  if (fact.Kind === 'bye') return 'bye';
+): { kind: 'future'; startsAtMs: number } | { kind: 'fallback'; key: LockFallbackGroupKey } {
+  if (!fact || fact.Kind === 'unknown') return { kind: 'fallback', key: 'unknown' };
+  if (fact.Kind === 'no-team') return { kind: 'fallback', key: 'no-team' };
+  if (fact.Kind === 'bye') return { kind: 'fallback', key: 'bye' };
 
   const startsAt = parseTimestamp(fact.StartsAtUtc);
-  if (!startsAt) return 'unknown';
-  return startsAt.getTime() <= now.getTime() ? 'locked' : 'upcoming';
+  if (!startsAt) return { kind: 'fallback', key: 'unknown' };
+  if (startsAt.getTime() <= now.getTime()) return { kind: 'fallback', key: 'locked' };
+  return { kind: 'future', startsAtMs: startsAt.getTime() };
 }
 
 function getNextLockSortState(
@@ -267,6 +286,14 @@ function buildTeamLockFactMap(
       .filter(fact => fact.FantasyTeamID === context.fantasyTeamId)
       .map(fact => [fact.PlayerID, fact])
   );
+}
+
+function formatRosterLockDateTime(startsAt: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(startsAt).replace(',', '');
 }
 
 function comparePlayerIdentity(a: Player, b: Player): number {
