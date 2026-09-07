@@ -17,28 +17,30 @@
               [attr.aria-label]="item.label + ': ' + item.value + '. Open Decision Window details'"
               (click)="openDecisionWindow(decisionWindowDialog)"
             >
-              <span class="league-timeline-operational-heading">
-                <span aria-hidden="true">{{ item.icon }}</span>
-                <span>{{ item.label }}</span>
-              </span>
-              <span class="league-timeline-operational-value-row">
-                <strong class="league-timeline-operational-value">{{ item.value }}</strong>
-                <span *ngIf="item.affectedSummary" class="league-timeline-affected-summary">
-                  {{ item.affectedSummary }}
+              <span class="league-timeline-operational-core">
+                <span class="league-timeline-operational-heading">
+                  <span aria-hidden="true">{{ item.icon }}</span>
+                  <span>{{ item.label }}</span>
                 </span>
-                <span
-                  *ngIf="item.statusBadges.length > 0"
-                  class="league-timeline-status-summary"
-                  aria-label="Lineup plausibility status summary"
-                >
+                <span class="league-timeline-operational-value-row">
+                  <strong class="league-timeline-operational-value">{{ item.value }}</strong>
+                  <span *ngIf="item.affectedSummary" class="league-timeline-affected-summary">
+                    {{ item.affectedSummary }}
+                  </span>
                   <span
-                    *ngFor="let badge of item.statusBadges"
-                    class="league-timeline-status-badge"
-                    [ngClass]="'league-timeline-status--' + badge.state"
-                    [attr.title]="badge.label"
+                    *ngIf="item.statusBadges.length > 0"
+                    class="league-timeline-status-summary"
+                    aria-label="Lineup plausibility status summary"
                   >
-                    <span *ngIf="badge.showCount">{{ badge.count }}</span>
-                    <span>{{ badge.compactLabel }}</span>
+                    <span
+                      *ngFor="let badge of item.statusBadges"
+                      class="league-timeline-status-badge"
+                      [ngClass]="'league-timeline-status--' + badge.state"
+                      [attr.title]="badge.label"
+                    >
+                      <span *ngIf="badge.showCount">{{ badge.count }}</span>
+                      <span>{{ badge.compactLabel }}</span>
+                    </span>
                   </span>
                 </span>
               </span>
