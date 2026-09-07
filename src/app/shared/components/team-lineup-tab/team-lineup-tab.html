@@ -83,24 +83,15 @@
             @for (gameView of windowView.games; track gameView.game.GameID) {
               <article class="lineup-game-group">
                 <div class="lineup-game-heading" aria-label="NFL matchup">
-                  @if (gameMatchupContext(windowView.window, gameView.game); as matchup) {
-                    <app-decision-window-matchup-context
-                      [context]="matchup"
-                      [showWeek]="false"
-                    />
-                  }
+                  <app-team-lineup-matchup
+                    [game]="gameView.game"
+                    [nflTeams]="nflTeams"
+                  />
                 </div>
 
-                @if (gamePlayers(gameView); as resolvedPlayers) {
-                  @if (resolvedPlayers.length) {
-                    <app-player-list
-                      [players]="resolvedPlayers"
-                      [columns]="playerColumns"
-                      [compact]="true"
-                      teamColumnDisplay="abbr"
-                      dynamicColumnHeader="Role"
-                      [dynamicColumnValueFn]="getPlayerRole"
-                    />
+                @if (gamePlayerRows(gameView); as rows) {
+                  @if (rows.length) {
+                    <app-team-lineup-player-list [rows]="rows" />
                   }
                 }
 

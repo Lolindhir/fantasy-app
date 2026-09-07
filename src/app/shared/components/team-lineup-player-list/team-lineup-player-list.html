@@ -1,0 +1,46 @@
+<div class="team-lineup-player-list" aria-label="Affected lineup players">
+  <div class="team-lineup-player-list__header" aria-hidden="true">
+    <span>NFL</span>
+    <span></span>
+    <span>Player</span>
+    <span>Pos</span>
+    <span>Role</span>
+  </div>
+
+  @for (row of rows; track row.player.ID) {
+    <button
+      type="button"
+      class="team-lineup-player-row"
+      [attr.aria-label]="'Open ' + row.player.Name + ' player details'"
+      (click)="openPlayerDetail(row.player)"
+    >
+      <span class="team-lineup-player-team-logo">
+        @if (row.player.TeamNFL?.Logo) {
+          <img [src]="row.player.TeamNFL.Logo" [alt]="row.player.TeamNFL.Name + ' logo'" />
+        }
+      </span>
+
+      <span class="team-lineup-player-picture">
+        @if (row.player.Picture) {
+          <img [src]="row.player.Picture" [alt]="row.player.Name" />
+        }
+      </span>
+
+      <strong class="team-lineup-player-name">{{ row.player.Name }}</strong>
+
+      <span
+        class="team-lineup-player-position"
+        [ngStyle]="row.player.Position | positionStyle"
+      >
+        {{ row.player.Position }}
+      </span>
+
+      <span
+        class="team-lineup-player-role"
+        [class.team-lineup-player-role--starter]="row.role === 'Starter'"
+      >
+        {{ row.role }}
+      </span>
+    </button>
+  }
+</div>
