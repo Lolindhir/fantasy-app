@@ -1,6 +1,7 @@
 import type { DecisionWindow, DecisionWindowsReadModel } from '../../core/models/decision-window.models';
 import {
   buildTeamLineupHealthView,
+  buildTeamLineupWeekSummary,
   buildTeamUpcomingLockViews,
   getPendingTeamLookaheadMessage,
   isTeamDecisionWindowActiveStatus
@@ -34,7 +35,47 @@ describe('team Decision Window view utilities', () => {
     expect(rows[1].affectedStarterCount).toBe(4);
   });
 
-  it('groups selected-team affected players under only their generated games', () => {
+  it('builds a team-specific week summary whose next window ignores irrelevant global windows', () => {
+    const irrelevantSooner = makeWindow('other-team', 1, '2026-09-06T17:00:00Z', 3, 2, 7);
+    const firstRelevant = makeWindow('first-relevant', 1, '2026-09-06T18:00:00Z', 2, 1, 42);
+    const secondRelevant = makeWindow('second-relevant', 1, '2026-09-06T20:00:00Z', 3, 2, 42);
+    secondRelevant.Games.push(makeGame('second-relevant-extra', 1, 'KC', 'LAC'));
+    secondRelevant.AffectedFantasyTeams[0].Players.push({
+      PlayerID: 'extra',
+      NFLTeamID: 'KC',
+      GameID: 'second-relevant-extra',
+      IsStarter: false
+    });
+    secondRelevant.AffectedFantasyTeams[0].AffectedRosteredPlayerCount = 4;
+
+    const windows = buildTeamUpcomingLockViews(
+      makeModel([irrelevantSooner, firstRelevant, secondRelevant]),
+      42,
+      now
+    );
+    const summary = buildTeamLineupWeekSummary(windows);
+
+    expect(summary.nextWindow?.window.DecisionWindowID).toBe('first-relevant');
+    expect(summary.windowCount).toBe(2);
+    expect(summary.gameCount).toBe(3);
+    expect(summary.affectedRosteredPlayerCount).toBe(6);
+    expect(summary.affectedStarterCount).toBe(3);
+    expect(summary.windowDateLabels.length).toBe(2);
+  });
+
+  it('moves the team-specific next window forward when the prior relevant window has locked', () => {
+    const first = makeWindow('first', 1, '2026-09-06T18:00:00Z', 2, 1, 42);
+    const second = makeWindow('second', 1, '2026-09-06T20:00:00Z', 3, 2, 42);
+    const afterFirst = new Date('2026-09-06T18:01:00Z');
+
+    const summary = buildTeamLineupWeekSummary(
+      buildTeamUpcomingLockViews(makeModel([first, second]), 42, afterFirst)
+    );
+
+    expect(summary.nextWindow?.window.DecisionWindowID).toBe('second');
+  });
+
+  it('groups selected-team affected players by generated NFL team first and starter status second', () => {
     const window = makeWindow('multi', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
     window.Games = [
       makeGame('g1', 1, 'NE', 'SEA'),
@@ -44,22 +85,29 @@ describe('team Decision Window view utilities', () => {
     window.ParticipatingNFLTeamIDs = ['NE', 'SEA', 'KC', 'LAC', 'DAL', 'PHI'];
     window.AffectedFantasyTeams = [{
       FantasyTeamID: 42,
-      AffectedRosteredPlayerCount: 4,
-      AffectedStarterCount: 2,
+      AffectedRosteredPlayerCount: 6,
+      AffectedStarterCount: 3,
       Players: [
-        { PlayerID: 'bench-g2', NFLTeamID: 'KC', GameID: 'g2', IsStarter: false },
-        { PlayerID: 'starter-g1', NFLTeamID: 'NE', GameID: 'g1', IsStarter: true },
-        { PlayerID: 'starter-g2', NFLTeamID: 'LAC', GameID: 'g2', IsStarter: true },
-        { PlayerID: 'unmatched', NFLTeamID: 'BUF', GameID: 'missing-game', IsStarter: false }
+        { PlayerID: 'ne-bench', NFLTeamID: 'NE', GameID: 'g1', IsStarter: false },
+        { PlayerID: 'sea-bench', NFLTeamID: 'SEA', GameID: 'g1', IsStarter: false },
+        { PlayerID: 'ne-starter', NFLTeamID: 'NE', GameID: 'g1', IsStarter: true },
+        { PlayerID: 'kc-bench', NFLTeamID: 'KC', GameID: 'g2', IsStarter: false },
+        { PlayerID: 'lac-starter', NFLTeamID: 'LAC', GameID: 'g2', IsStarter: true },
+        { PlayerID: 'unmatched', NFLTeamID: 'BUF', GameID: 'missing-game', IsStarter: true }
       ]
     }];
 
     const [row] = buildTeamUpcomingLockViews(makeModel([window]), 42, now);
 
     expect(row.games.map(game => game.game.GameID)).toEqual(['g1', 'g2']);
-    expect(row.games[0].affectedPlayers.map(player => player.PlayerID)).toEqual(['starter-g1']);
-    expect(row.games[1].affectedPlayers.map(player => player.PlayerID)).toEqual(['starter-g2', 'bench-g2']);
-    expect(row.games[1].affectedStarterCount).toBe(1);
+    expect(row.games[0].teamGroups.map(group => group.nflTeamId)).toEqual(['NE', 'SEA']);
+    expect(row.games[0].teamGroups[0].affectedPlayers.map(player => player.PlayerID)).toEqual([
+      'ne-starter',
+      'ne-bench'
+    ]);
+    expect(row.games[0].teamGroups[0].affectedStarterCount).toBe(1);
+    expect(row.games[1].teamGroups.map(group => group.nflTeamId)).toEqual(['KC', 'LAC']);
+    expect(row.games[1].teamGroups[1].affectedStarterCount).toBe(1);
     expect(row.unmatchedAffectedPlayerCount).toBe(1);
   });
 

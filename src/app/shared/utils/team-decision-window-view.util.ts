@@ -10,10 +10,18 @@ import {
   getDecisionWindowStatusLabel
 } from './decision-window-view.util';
 
+export interface TeamDecisionWindowNflTeamGroupView {
+  nflTeamId: string | null;
+  teamAbbr: string;
+  affectedPlayers: DecisionWindowAffectedPlayer[];
+  affectedStarterCount: number;
+}
+
 export interface TeamDecisionWindowGameView {
   game: DecisionWindowGame;
   affectedPlayers: DecisionWindowAffectedPlayer[];
   affectedStarterCount: number;
+  teamGroups: TeamDecisionWindowNflTeamGroupView[];
 }
 
 export interface TeamUpcomingLockView {
@@ -23,6 +31,15 @@ export interface TeamUpcomingLockView {
   timeLabel: string;
   games: TeamDecisionWindowGameView[];
   unmatchedAffectedPlayerCount: number;
+}
+
+export interface TeamLineupWeekSummaryView {
+  windowCount: number;
+  gameCount: number;
+  affectedRosteredPlayerCount: number;
+  affectedStarterCount: number;
+  nextWindow: TeamUpcomingLockView | null;
+  windowDateLabels: string[];
 }
 
 export interface TeamLineupHealthView {
@@ -74,16 +91,13 @@ export function buildTeamUpcomingLockViews(
       const windowGameIds = new Set(candidate.window.Games.map(game => game.GameID));
       const games = candidate.window.Games
         .map(game => {
-          const affectedPlayers = [...(affectedPlayersByGameId.get(game.GameID) ?? [])]
-            .sort((a, b) =>
-              Number(b.IsStarter) - Number(a.IsStarter)
-              || a.PlayerID.localeCompare(b.PlayerID)
-            );
+          const affectedPlayers = sortAffectedPlayers(affectedPlayersByGameId.get(game.GameID) ?? []);
 
           return {
             game,
             affectedPlayers,
-            affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length
+            affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length,
+            teamGroups: buildTeamGameGroups(game, affectedPlayers)
           } satisfies TeamDecisionWindowGameView;
         })
         .filter(game => game.affectedPlayers.length > 0);
@@ -97,6 +111,25 @@ export function buildTeamUpcomingLockViews(
         unmatchedAffectedPlayerCount: affected.Players.filter(player => !windowGameIds.has(player.GameID)).length
       } satisfies TeamUpcomingLockView;
     });
+}
+
+export function buildTeamLineupWeekSummary(
+  windows: TeamUpcomingLockView[]
+): TeamLineupWeekSummaryView {
+  return {
+    windowCount: windows.length,
+    gameCount: windows.reduce((sum, window) => sum + window.games.length, 0),
+    affectedRosteredPlayerCount: windows.reduce(
+      (sum, window) => sum + window.affectedRosteredPlayerCount,
+      0
+    ),
+    affectedStarterCount: windows.reduce(
+      (sum, window) => sum + window.affectedStarterCount,
+      0
+    ),
+    nextWindow: windows[0] ?? null,
+    windowDateLabels: windows.map(window => formatDecisionWindowCompactLocalDateTime(window.window))
+  };
 }
 
 export function buildTeamLineupHealthView(
@@ -150,10 +183,67 @@ export function formatDecisionWindowShortLocalTime(window: DecisionWindow): stri
   }).format(startsAt).replace(',', '');
 }
 
+export function formatDecisionWindowCompactLocalDateTime(window: DecisionWindow): string {
+  const startsAt = parseTimestamp(window.StartsAtUtc);
+  if (!startsAt) return 'Unknown';
+
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(startsAt).replace(',', '');
+}
+
 export function formatTeamAffectedCounts(lock: TeamUpcomingLockView): string {
   const players = `${lock.affectedRosteredPlayerCount} ${lock.affectedRosteredPlayerCount === 1 ? 'player' : 'players'}`;
   const starters = `${lock.affectedStarterCount} ${lock.affectedStarterCount === 1 ? 'starter' : 'starters'}`;
   return `${players} · ${starters}`;
+}
+
+function buildTeamGameGroups(
+  game: DecisionWindowGame,
+  affectedPlayers: DecisionWindowAffectedPlayer[]
+): TeamDecisionWindowNflTeamGroupView[] {
+  const byTeam = new Map<string, DecisionWindowAffectedPlayer[]>();
+  affectedPlayers.forEach(player => {
+    const key = player.NFLTeamID ?? '';
+    const players = byTeam.get(key) ?? [];
+    players.push(player);
+    byTeam.set(key, players);
+  });
+
+  const primaryTeamIds = [game.AwayTeamID, game.HomeTeamID];
+  const extraTeamIds = [...byTeam.keys()]
+    .filter(teamId => !primaryTeamIds.includes(teamId))
+    .sort((a, b) => a.localeCompare(b));
+
+  return [...primaryTeamIds, ...extraTeamIds]
+    .filter((teamId, index, all) => all.indexOf(teamId) === index)
+    .map(teamId => {
+      const players = sortAffectedPlayers(byTeam.get(teamId) ?? []);
+      const teamAbbr = teamId === game.AwayTeamID
+        ? game.AwayTeamAbbr || game.AwayTeamID
+        : teamId === game.HomeTeamID
+          ? game.HomeTeamAbbr || game.HomeTeamID
+          : teamId || 'Unknown';
+
+      return {
+        nflTeamId: teamId || null,
+        teamAbbr,
+        affectedPlayers: players,
+        affectedStarterCount: players.filter(player => player.IsStarter).length
+      } satisfies TeamDecisionWindowNflTeamGroupView;
+    })
+    .filter(group => group.affectedPlayers.length > 0);
+}
+
+function sortAffectedPlayers(players: DecisionWindowAffectedPlayer[]): DecisionWindowAffectedPlayer[] {
+  return [...players].sort((a, b) =>
+    Number(b.IsStarter) - Number(a.IsStarter)
+    || a.PlayerID.localeCompare(b.PlayerID)
+  );
 }
 
 function parseTimestamp(value: string | null | undefined): Date | null {
