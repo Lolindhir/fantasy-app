@@ -2,7 +2,7 @@ import type { DecisionWindowPlayerLockFact } from '../../core/models/decision-wi
 import type { Player } from '../../core/models/player.models';
 import { comparePlayersByDepthChart } from './player-sort.util';
 
-export type RosterGroupMode = 'rosterStatus' | 'position' | 'rankingStatus' | 'none';
+export type RosterGroupMode = 'rosterStatus' | 'position' | 'rankingStatus' | 'lockStatus' | 'none';
 export type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'depth' | 'ageAsc' | 'ageDesc' | 'name' | 'nextLock';
 
 export interface RosterPlayerGroup {
@@ -35,6 +35,14 @@ const POSITION_LABELS: Record<string, string> = {
   DEF: 'Defense',
   DST: 'Defense'
 };
+const LOCK_GROUPS = [
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'locked', label: 'Locked' },
+  { key: 'bye', label: 'Bye' },
+  { key: 'no-team', label: 'No Team' },
+  { key: 'unknown', label: 'Unknown' }
+] as const;
+type LockGroupKey = typeof LOCK_GROUPS[number]['key'];
 
 export function isCombinedRankingAvailable(finalScoredWeek: number | undefined): boolean {
   return (finalScoredWeek ?? 0) >= COMBINED_RANKING_MIN_FINAL_WEEK;
@@ -95,6 +103,29 @@ export function buildRosterPlayerGroups(
           nextLockContext
         )
       ];
+
+    case 'lockStatus': {
+      const factByPlayer = buildTeamLockFactMap(nextLockContext);
+      const now = nextLockContext?.now ?? new Date(0);
+      const playersByGroup = new Map<LockGroupKey, Player[]>();
+
+      for (const player of players) {
+        const key = getRosterLockGroupKey(factByPlayer.get(player.ID), now);
+        const groupedPlayers = playersByGroup.get(key) ?? [];
+        groupedPlayers.push(player);
+        playersByGroup.set(key, groupedPlayers);
+      }
+
+      return LOCK_GROUPS
+        .map(group => buildGroup(
+          group.key,
+          group.label,
+          playersByGroup.get(group.key) ?? [],
+          sortMode,
+          nextLockContext
+        ))
+        .filter(group => group.players.length > 0);
+    }
 
     case 'none':
     default:
@@ -198,6 +229,19 @@ function compareNextLockPlayers(
   }
 
   return comparePlayerIdentity(a, b);
+}
+
+function getRosterLockGroupKey(
+  fact: DecisionWindowPlayerLockFact | undefined,
+  now: Date
+): LockGroupKey {
+  if (!fact || fact.Kind === 'unknown') return 'unknown';
+  if (fact.Kind === 'no-team') return 'no-team';
+  if (fact.Kind === 'bye') return 'bye';
+
+  const startsAt = parseTimestamp(fact.StartsAtUtc);
+  if (!startsAt) return 'unknown';
+  return startsAt.getTime() <= now.getTime() ? 'locked' : 'upcoming';
 }
 
 function getNextLockSortState(

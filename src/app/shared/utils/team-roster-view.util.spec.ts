@@ -101,6 +101,48 @@ describe('team roster view utilities', () => {
       .toEqual(['older', 'middle', 'younger']);
   });
 
+  it('groups lock status explicitly and keeps the selected sort inside each group', () => {
+    const upcomingLow = makePlayer('upcoming-low', { salary: 10 });
+    const upcomingHigh = makePlayer('upcoming-high', { salary: 20 });
+    const locked = makePlayer('locked', { salary: 30 });
+    const bye = makePlayer('bye');
+    const noTeam = makePlayer('no-team');
+    const unknown = makePlayer('unknown');
+    const missing = makePlayer('missing');
+    const context = lockContext('2026-09-06T16:00:00Z', [
+      lockFact('upcoming-low', 'scheduled', '2026-09-06T17:00:00Z'),
+      lockFact('upcoming-high', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('locked', 'scheduled', '2026-09-06T15:00:00Z'),
+      lockFact('bye', 'bye'),
+      lockFact('no-team', 'no-team'),
+      lockFact('unknown', 'unknown')
+    ]);
+
+    const groups = buildRosterPlayerGroups(
+      [upcomingLow, locked, unknown, upcomingHigh, noTeam, bye, missing],
+      'lockStatus',
+      'salary',
+      undefined,
+      context
+    );
+
+    expect(groups.map(group => group.key)).toEqual(['upcoming', 'locked', 'bye', 'no-team', 'unknown']);
+    expect(groups.map(group => group.label)).toEqual(['Upcoming', 'Locked', 'Bye', 'No Team', 'Unknown']);
+    expect(groups[0].players.map(player => player.ID)).toEqual(['upcoming-high', 'upcoming-low']);
+    expect(groups[4].players.map(player => player.ID)).toEqual(['missing', 'unknown']);
+
+    const atKickoff = lockContext('2026-09-06T17:00:00Z', context.playerLockFacts);
+    const rolledGroups = buildRosterPlayerGroups(
+      [upcomingLow, locked],
+      'lockStatus',
+      'name',
+      undefined,
+      atKickoff
+    );
+    expect(rolledGroups.map(group => group.key)).toEqual(['locked']);
+    expect(rolledGroups[0].players.map(player => player.ID)).toEqual(['locked', 'upcoming-low']);
+  });
+
   it('sorts Next Lock by actionability with already locked players intentionally last', () => {
     const players = [
       makePlayer('locked-late'),
