@@ -101,17 +101,19 @@ describe('team roster view utilities', () => {
       .toEqual(['older', 'middle', 'younger']);
   });
 
-  it('groups lock status explicitly and keeps the selected sort inside each group', () => {
-    const upcomingLow = makePlayer('upcoming-low', { salary: 10 });
-    const upcomingHigh = makePlayer('upcoming-high', { salary: 20 });
+  it('groups future players by exact next lock window and keeps the selected sort inside each group', () => {
+    const early = makePlayer('early', { salary: 10 });
+    const lateLow = makePlayer('late-low', { salary: 10 });
+    const lateHigh = makePlayer('late-high', { salary: 20 });
     const locked = makePlayer('locked', { salary: 30 });
     const bye = makePlayer('bye');
     const noTeam = makePlayer('no-team');
     const unknown = makePlayer('unknown');
     const missing = makePlayer('missing');
     const context = lockContext('2026-09-06T16:00:00Z', [
-      lockFact('upcoming-low', 'scheduled', '2026-09-06T17:00:00Z'),
-      lockFact('upcoming-high', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('early', 'scheduled', '2026-09-06T17:00:00Z'),
+      lockFact('late-low', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('late-high', 'scheduled', '2026-09-06T20:00:00Z'),
       lockFact('locked', 'scheduled', '2026-09-06T15:00:00Z'),
       lockFact('bye', 'bye'),
       lockFact('no-team', 'no-team'),
@@ -119,28 +121,41 @@ describe('team roster view utilities', () => {
     ]);
 
     const groups = buildRosterPlayerGroups(
-      [upcomingLow, locked, unknown, upcomingHigh, noTeam, bye, missing],
+      [lateLow, locked, unknown, lateHigh, noTeam, early, bye, missing],
       'lockStatus',
       'salary',
       undefined,
       context
     );
 
-    expect(groups.map(group => group.key)).toEqual(['upcoming', 'locked', 'bye', 'no-team', 'unknown']);
-    expect(groups.map(group => group.label)).toEqual(['Upcoming', 'Locked', 'Bye', 'No Team', 'Unknown']);
-    expect(groups[0].players.map(player => player.ID)).toEqual(['upcoming-high', 'upcoming-low']);
-    expect(groups[4].players.map(player => player.ID)).toEqual(['missing', 'unknown']);
+    expect(groups.map(group => group.key)).toEqual([
+      'next-lock-2026-09-06T17:00:00.000Z',
+      'next-lock-2026-09-06T20:00:00.000Z',
+      'locked',
+      'bye',
+      'no-team',
+      'unknown'
+    ]);
+    expect(groups[0].label.startsWith('Next Lock · ')).toBeTrue();
+    expect(groups[1].label.startsWith('Next Lock · ')).toBeTrue();
+    expect(groups[0].players.map(player => player.ID)).toEqual(['early']);
+    expect(groups[1].players.map(player => player.ID)).toEqual(['late-high', 'late-low']);
+    expect(groups[2].players.map(player => player.ID)).toEqual(['locked']);
+    expect(groups[5].players.map(player => player.ID)).toEqual(['missing', 'unknown']);
 
     const atKickoff = lockContext('2026-09-06T17:00:00Z', context.playerLockFacts);
     const rolledGroups = buildRosterPlayerGroups(
-      [upcomingLow, locked],
+      [lateLow, early, locked],
       'lockStatus',
       'name',
       undefined,
       atKickoff
     );
-    expect(rolledGroups.map(group => group.key)).toEqual(['locked']);
-    expect(rolledGroups[0].players.map(player => player.ID)).toEqual(['locked', 'upcoming-low']);
+    expect(rolledGroups.map(group => group.key)).toEqual([
+      'next-lock-2026-09-06T20:00:00.000Z',
+      'locked'
+    ]);
+    expect(rolledGroups[1].players.map(player => player.ID)).toEqual(['early', 'locked']);
   });
 
   it('sorts Next Lock by actionability with already locked players intentionally last', () => {
