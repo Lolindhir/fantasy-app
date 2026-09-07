@@ -59,24 +59,24 @@
         </div>
 
         <ng-container *ngIf="fantasyContextState$ | async as contextState">
-          <ng-container *ngIf="matchupContext(matchup, contextState.context) as nflMatchup">
-            <button
-              mat-button
-              type="button"
-              class="matchup-nfl-context"
-              (click)="openMatchupDetail(matchup, contextState.context)"
-            >
-              <mat-icon>sports_football</mat-icon>
-              <ng-container *ngIf="matchupPreview(matchup, contextState.context) as preview; else matchupContextFallback">
-                Next NFL window {{ preview.StartsAtUtc | date:'EEE HH:mm' }} ·
-                {{ preview.LeftStarterCount }}–{{ preview.RightStarterCount }} starters
-              </ng-container>
-              <ng-template #matchupContextFallback>
-                NFL context · {{ nflMatchup.Games.length }} linked game{{ nflMatchup.Games.length === 1 ? '' : 's' }}
-              </ng-template>
-              <mat-icon>chevron_right</mat-icon>
-            </button>
-          </ng-container>
+          <button
+            *ngIf="matchupPreview(matchup, contextState.context) as preview"
+            mat-button
+            type="button"
+            class="matchup-nfl-context"
+            (click)="openMatchupDetail(matchup, contextState.context)"
+          >
+            <mat-icon class="matchup-nfl-context-icon">sports_football</mat-icon>
+            <span class="matchup-nfl-context-copy">
+              <span class="matchup-nfl-context-title">Next up · {{ preview.game.StartsAtUtc | date:'EEE HH:mm' }}</span>
+              <span class="matchup-nfl-context-exposure">
+                <span>{{ teamShortName(matchup.left.team) }} <strong>{{ preview.leftStarterCount }}</strong> starter{{ preview.leftStarterCount === 1 ? '' : 's' }}</span>
+                <span aria-hidden="true">·</span>
+                <span>{{ teamShortName(matchup.right.team) }} <strong>{{ preview.rightStarterCount }}</strong> starter{{ preview.rightStarterCount === 1 ? '' : 's' }}</span>
+              </span>
+            </span>
+            <mat-icon class="matchup-nfl-context-chevron">chevron_right</mat-icon>
+          </button>
         </ng-container>
       </article>
     </div>
@@ -95,50 +95,63 @@
 
     <div class="fantasy-pulse-grid">
       <div class="fantasy-pulse-lens">
-        <h3>Upcoming Relevance</h3>
-        <button
-          *ngFor="let game of upcomingGames(fantasyContext)"
-          mat-button
-          type="button"
-          class="fantasy-pulse-row"
-          (click)="openGameDetail(game, fantasyContext)"
-        >
-          <span class="fantasy-pulse-game">
-            <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
-            <small>{{ game.StartsAtUtc | date:'EEE HH:mm' }}</small>
-          </span>
-          <span class="fantasy-pulse-metrics">
-            {{ game.Relevance.StarterCount }} S · {{ game.Relevance.FantasyMatchupCount }} M · {{ game.Relevance.RosteredPlayerCount }} R
-            <span *ngIf="game.Relevance.UnknownAssociationCount > 0" class="fantasy-pulse-unknown">+{{ game.Relevance.UnknownAssociationCount }} ?</span>
-          </span>
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-        <div *ngIf="upcomingGames(fantasyContext).length === 0" class="fantasy-pulse-empty">No future linked NFL games.</div>
+        <h3>Upcoming relevance</h3>
+        <ng-container *ngIf="upcomingGames(fantasyContext) as upcoming">
+          <div class="fantasy-pulse-list">
+            <button
+              *ngFor="let game of upcoming"
+              type="button"
+              class="fantasy-pulse-card"
+              (click)="openGameDetail(game, fantasyContext)"
+            >
+              <span class="fantasy-pulse-game">
+                <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
+                <small>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</small>
+              </span>
+              <span class="fantasy-pulse-metrics">
+                <strong>{{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}</strong>
+                <span>{{ game.Relevance.RosteredPlayerCount }} rostered</span>
+                <span>{{ game.Relevance.FantasyMatchupCount }} fantasy matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
+                <span *ngIf="game.Relevance.UnknownAssociationCount > 0" class="fantasy-pulse-unknown">
+                  {{ game.Relevance.UnknownAssociationCount }} unresolved
+                </span>
+              </span>
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+          <div *ngIf="upcoming.length === 0" class="fantasy-pulse-empty">No future linked NFL games.</div>
+        </ng-container>
       </div>
 
       <div class="fantasy-pulse-lens">
-        <h3>Completed Impact</h3>
-        <button
-          *ngFor="let game of completedGames(fantasyContext)"
-          mat-button
-          type="button"
-          class="fantasy-pulse-row"
-          (click)="openGameDetail(game, fantasyContext)"
-        >
-          <span class="fantasy-pulse-game">
-            <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
-            <small>{{ game.Status || 'Final' }}</small>
-          </span>
-          <span class="fantasy-pulse-metrics">
-            <ng-container *ngIf="game.Impact.StarterPoints !== null; else impactUnavailable">
-              {{ game.Impact.StarterPoints | number:'1.0-2' }} starter pts
-              <span *ngIf="game.Impact.OutcomeSwingMatchupCount > 0">· {{ game.Impact.OutcomeSwingMatchupCount }} swing</span>
-            </ng-container>
-            <ng-template #impactUnavailable>impact unavailable</ng-template>
-          </span>
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-        <div *ngIf="completedGames(fantasyContext).length === 0" class="fantasy-pulse-empty">No completed impact yet.</div>
+        <h3>Completed impact</h3>
+        <ng-container *ngIf="completedGames(fantasyContext) as completed">
+          <div class="fantasy-pulse-list">
+            <button
+              *ngFor="let game of completed"
+              type="button"
+              class="fantasy-pulse-card fantasy-pulse-card--impact"
+              (click)="openGameDetail(game, fantasyContext)"
+            >
+              <span class="fantasy-pulse-game">
+                <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
+                <small>{{ game.Status || 'Final' }}</small>
+              </span>
+              <span class="fantasy-pulse-metrics">
+                <ng-container *ngIf="game.Impact.StarterPoints !== null; else impactUnavailable">
+                  <strong>{{ game.Impact.StarterPoints | number:'1.0-2' }} starter pts</strong>
+                  <span>{{ game.Impact.RosteredPoints | number:'1.0-2' }} rostered pts</span>
+                  <span *ngIf="game.Impact.OutcomeSwingMatchupCount > 0">
+                    {{ game.Impact.OutcomeSwingMatchupCount }} outcome swing{{ game.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
+                  </span>
+                </ng-container>
+                <ng-template #impactUnavailable><span>Impact unavailable</span></ng-template>
+              </span>
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+          <div *ngIf="completed.length === 0" class="fantasy-pulse-empty">No completed impact yet.</div>
+        </ng-container>
       </div>
     </div>
   </section>

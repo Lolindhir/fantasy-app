@@ -1,98 +1,287 @@
 .fgc-dialog {
-  width: min(760px, 88vw);
+  box-sizing: border-box;
+  width: min(720px, 88vw);
   max-width: 100%;
-  padding: 18px;
+  padding: 16px;
   color: #0f172a;
 }
 
-.fgc-dialog-header,
-.fgc-meta,
-.fgc-matchup-title,
-.fgc-matchup-game > div:first-child {
+.fgc-dialog-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.fgc-dialog-header {
-  justify-content: space-between;
-  gap: 16px;
-}
+.fgc-dialog-heading-copy { min-width: 0; }
 
 .fgc-dialog-header h2 {
   margin: 2px 0 0;
+  font-size: 1.3rem;
+  font-weight: 850;
+  line-height: 1.15;
 }
 
 .fgc-eyebrow {
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .fgc-meta {
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-top: 8px;
-  color: #64748b;
-  font-size: 0.8rem;
-}
-
-.fgc-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 16px 0;
-}
-
-.fgc-stat-grid > div {
   display: flex;
-  flex-direction: column;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f8fafc;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 0.76rem;
 }
 
-.fgc-stat-grid strong { font-size: 1.2rem; }
-.fgc-stat-grid span,
-.fgc-muted { color: #64748b; }
+.fgc-status,
+.fgc-matchup-game-status {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.fgc-relevance-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 14px 0 2px;
+  padding: 9px 10px;
+  border: 1px solid #e8e3ef;
+  border-radius: 10px;
+  background: #faf7ff;
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.fgc-relevance-summary strong { color: #334155; }
 
 .fgc-section {
-  margin-top: 14px;
+  margin-top: 13px;
   padding-top: 12px;
   border-top: 1px solid #e2e8f0;
 }
 
-.fgc-section h3 { margin: 0 0 8px; }
-.fgc-team-section > span { margin-left: 6px; color: #64748b; }
+.fgc-section h3 {
+  margin: 0 0 8px;
+  color: #1e293b;
+  font-size: 0.94rem;
+  font-weight: 850;
+}
 
-.fgc-player-list {
+.fgc-muted { color: #64748b; }
+
+.fgc-impact-pending {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.fgc-impact-pending mat-icon {
+  color: #7c3aed;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.fgc-impact-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px 10px;
+  color: #64748b;
+  font-size: 0.76rem;
 }
 
-.fgc-player-list button span { margin-left: 5px; color: #64748b; }
-.fgc-warning, .fgc-swing { color: #b45309; font-weight: 700; }
+.fgc-impact-summary strong { color: #334155; }
+.fgc-warning,
+.fgc-swing { color: #b45309; font-weight: 750; }
+.fgc-warning { margin: 8px 0 0; font-size: 0.72rem; }
+
+.fgc-team-section { padding-top: 10px; }
+
+.fgc-team-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.fgc-team-link {
+  min-width: 0;
+  padding: 0 4px;
+  color: #6d28d9;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.fgc-team-summary {
+  color: #64748b;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.fgc-player-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.fgc-player-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  justify-content: stretch;
+  min-height: 34px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 0.74rem;
+  text-align: left;
+}
+
+.fgc-player-row--starter { background: #faf7ff; }
+
+.fgc-player-main {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fgc-player-main mat-icon {
+  flex: 0 0 auto;
+  color: #7c3aed;
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.fgc-player-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fgc-player-role {
+  color: #7c3aed;
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fgc-player-points {
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
 
 .fgc-matchup-title {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 12px 0;
+  gap: 5px;
+  margin: 10px 0 2px;
+  color: #64748b;
 }
+
+.fgc-matchup-title button {
+  min-width: 0;
+  padding: 0 4px;
+  color: #6d28d9;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.fgc-matchup-games-section { margin-top: 8px; }
 
 .fgc-matchup-game {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 12px;
+  gap: 5px;
   padding: 9px 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
-.fgc-matchup-game > div:first-child { gap: 8px; }
-.fgc-swing { grid-column: 1 / -1; font-size: 0.78rem; }
+.fgc-matchup-game:last-child { border-bottom: 0; }
 
-@media (min-width: 640px) {
-  .fgc-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.fgc-matchup-game-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fgc-matchup-game-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fgc-matchup-game-identity strong {
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.fgc-matchup-game-identity small {
+  margin-top: 1px;
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.fgc-matchup-exposure {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.fgc-matchup-exposure strong { color: #334155; }
+
+.fgc-matchup-points {
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.fgc-swing { font-size: 0.7rem; }
+
+.fgc-counterfactual-section p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .fgc-dialog {
+    width: 92vw;
+    padding: 14px;
+  }
+
+  .fgc-dialog-header h2 { font-size: 1.18rem; }
+
+  .fgc-player-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fgc-player-points { grid-column: 2; }
 }

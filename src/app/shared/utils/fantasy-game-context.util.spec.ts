@@ -6,7 +6,8 @@ import {
   getFantasyMatchupContext,
   getNextFantasyMatchupGame,
   getUpcomingRelevantGames,
-  isFantasyGameContextForLeagueWeek
+  isFantasyGameContextForLeagueWeek,
+  isFantasyGameImpactVisible
 } from './fantasy-game-context.util';
 
 function game(overrides: Partial<FantasyGameContextGame> = {}): FantasyGameContextGame {
@@ -93,5 +94,39 @@ describe('fantasy game context utilities', () => {
     expect(isFantasyGameContextForLeagueWeek(baseContext, '2025', 1)).toBeFalse();
     expect(getFantasyMatchupContext(baseContext, [9, 10])).toBeNull();
     expect(getNextFantasyMatchupGame(baseContext.FantasyMatchups[0], new Date('2026-09-09T00:00:00Z'))?.GameID).toBe('g1');
+  });
+
+  it('skips future matchup games where neither fantasy side starts a player', () => {
+    const matchup = {
+      ...baseContext.FantasyMatchups[0],
+      Games: [
+        {
+          ...baseContext.FantasyMatchups[0].Games[0],
+          GameID: 'zero',
+          StartsAtUtc: '2026-09-09T12:00:00Z',
+          LeftStarterCount: 0,
+          RightStarterCount: 0
+        },
+        {
+          ...baseContext.FantasyMatchups[0].Games[0],
+          GameID: 'relevant',
+          StartsAtUtc: '2026-09-09T18:00:00Z',
+          LeftStarterCount: 0,
+          RightStarterCount: 2
+        }
+      ]
+    };
+
+    expect(getNextFantasyMatchupGame(matchup, new Date('2026-09-09T00:00:00Z'))?.GameID).toBe('relevant');
+  });
+
+  it('hides non-unavailable impact values until the NFL game has actually started', () => {
+    const scheduledWithPartialWeekImpact = game({
+      StartsAtUtc: '2026-09-10T18:00:00Z',
+      Impact: { State: 'partial', RosteredPoints: 0, StarterPoints: 0, OutcomeSwingMatchupCount: 0 }
+    });
+
+    expect(isFantasyGameImpactVisible(scheduledWithPartialWeekImpact, new Date('2026-09-10T12:00:00Z'))).toBeFalse();
+    expect(isFantasyGameImpactVisible(scheduledWithPartialWeekImpact, new Date('2026-09-10T19:00:00Z'))).toBeTrue();
   });
 });
