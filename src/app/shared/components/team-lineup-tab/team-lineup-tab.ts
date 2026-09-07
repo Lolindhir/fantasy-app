@@ -7,18 +7,24 @@ import type {
   DecisionWindowsReadModel
 } from '../../../core/models/decision-window.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
-import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
+import {
+  formatDecisionWindowCountdown,
+  formatDecisionWindowsUpdatedAt
+} from '../../utils/decision-window-view.util';
 import {
   buildLeagueTimelineMatchupContext,
   type LeagueTimelineMatchupContext
 } from '../../utils/league-timeline-view.util';
 import {
   buildTeamLineupHealthView,
+  buildTeamLineupWeekSummary,
   buildTeamUpcomingLockViews,
   formatTeamAffectedCounts,
   getPendingTeamLookaheadMessage,
   type TeamDecisionWindowGameView,
+  type TeamDecisionWindowNflTeamGroupView,
   type TeamLineupHealthView,
+  type TeamLineupWeekSummaryView,
   type TeamUpcomingLockView
 } from '../../utils/team-decision-window-view.util';
 import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
@@ -49,6 +55,10 @@ export class TeamLineupTabComponent {
     return buildTeamUpcomingLockViews(this.model, this.fantasyTeamId, this.now);
   }
 
+  get weekSummary(): TeamLineupWeekSummaryView {
+    return buildTeamLineupWeekSummary(this.upcomingWindows);
+  }
+
   get lineupHealth(): TeamLineupHealthView | null {
     if (!this.model) return null;
     return buildTeamLineupHealthView(this.model, this.fantasyTeamId);
@@ -63,15 +73,33 @@ export class TeamLineupTabComponent {
     return formatDecisionWindowsUpdatedAt(this.updatedAt, this.now);
   }
 
+  get nextDecisionCountdown(): string | null {
+    const nextWindow = this.weekSummary.nextWindow;
+    return nextWindow ? formatDecisionWindowCountdown(nextWindow.window, this.now) : null;
+  }
+
+  get weekSummaryCounts(): string {
+    const summary = this.weekSummary;
+    const windows = `${summary.windowCount} ${summary.windowCount === 1 ? 'window' : 'windows'}`;
+    const games = `${summary.gameCount} ${summary.gameCount === 1 ? 'game' : 'games'}`;
+    const players = `${summary.affectedRosteredPlayerCount} ${summary.affectedRosteredPlayerCount === 1 ? 'player' : 'players'}`;
+    const starters = `${summary.affectedStarterCount} ${summary.affectedStarterCount === 1 ? 'starter' : 'starters'}`;
+    return `${windows} · ${games} · ${players} · ${starters}`;
+  }
+
   affectedCounts(window: TeamUpcomingLockView): string {
     return formatTeamAffectedCounts(window);
   }
 
-  gamePlayers(game: TeamDecisionWindowGameView): Player[] {
-    const playerById = new Map(this.players.map(player => [player.ID, player]));
-    const starterById = new Map(game.affectedPlayers.map(player => [player.PlayerID, player.IsStarter]));
+  windowGameCount(window: TeamUpcomingLockView): string {
+    return `${window.games.length} ${window.games.length === 1 ? 'game' : 'games'}`;
+  }
 
-    return game.affectedPlayers
+  teamPlayers(group: TeamDecisionWindowNflTeamGroupView): Player[] {
+    const playerById = new Map(this.players.map(player => [player.ID, player]));
+    const starterById = new Map(group.affectedPlayers.map(player => [player.PlayerID, player.IsStarter]));
+
+    return group.affectedPlayers
       .map(player => playerById.get(player.PlayerID))
       .filter((player): player is Player => !!player)
       .sort((a, b) => {
@@ -81,9 +109,20 @@ export class TeamLineupTabComponent {
       });
   }
 
-  unresolvedGamePlayerCount(game: TeamDecisionWindowGameView): number {
+  unresolvedTeamPlayerCount(group: TeamDecisionWindowNflTeamGroupView): number {
     const knownIds = new Set(this.players.map(player => player.ID));
-    return game.affectedPlayers.filter(player => !knownIds.has(player.PlayerID)).length;
+    return group.affectedPlayers.filter(player => !knownIds.has(player.PlayerID)).length;
+  }
+
+  teamLogo(group: TeamDecisionWindowNflTeamGroupView): string | null {
+    if (!group.nflTeamId) return null;
+    return this.nflTeams.find(team => team.ID === group.nflTeamId)?.Logo ?? null;
+  }
+
+  teamCounts(group: TeamDecisionWindowNflTeamGroupView): string {
+    const players = `${group.affectedPlayers.length} ${group.affectedPlayers.length === 1 ? 'player' : 'players'}`;
+    const starters = `${group.affectedStarterCount} ${group.affectedStarterCount === 1 ? 'starter' : 'starters'}`;
+    return `${players} · ${starters}`;
   }
 
   getPlayerRole = (player: Player): string => {
