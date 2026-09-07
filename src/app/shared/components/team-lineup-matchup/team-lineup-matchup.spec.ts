@@ -15,7 +15,7 @@ describe('TeamLineupMatchupComponent', () => {
     fixture = TestBed.createComponent(TeamLineupMatchupComponent);
   });
 
-  it('renders full generated NFL team names with both logos around a centered at-sign', () => {
+  it('renders NFL abbreviations with both logos around a centered at-sign', () => {
     const game = {
       GameID: 'chi-car',
       Week: 1,
@@ -25,18 +25,20 @@ describe('TeamLineupMatchupComponent', () => {
       HomeTeamAbbr: 'CAR'
     } satisfies DecisionWindowGame;
     const teams = [
-      { ID: '6', Name: 'Bears', Abv: 'CHI', City: 'Chicago', Logo: 'chi-logo' },
-      { ID: '5', Name: 'Panthers', Abv: 'CAR', City: 'Carolina', Logo: 'car-logo' }
-    ] as Array<NFLTeam & { City: string }>;
+      { ID: '6', Name: 'Bears', Abv: 'CHI', Logo: 'chi-logo' },
+      { ID: '5', Name: 'Panthers', Abv: 'CAR', Logo: 'car-logo' }
+    ] as NFLTeam[];
 
     fixture.componentRef.setInput('game', game);
     fixture.componentRef.setInput('nflTeams', teams);
     fixture.detectChanges();
 
     const element: HTMLElement = fixture.nativeElement;
-    expect(element.textContent).toContain('Chicago Bears');
+    expect(element.textContent).toContain('CHI');
     expect(element.textContent).toContain('@');
-    expect(element.textContent).toContain('Carolina Panthers');
+    expect(element.textContent).toContain('CAR');
+    expect(element.textContent).not.toContain('Chicago Bears');
+    expect(element.textContent).not.toContain('Carolina Panthers');
     expect(element.querySelectorAll('.team-lineup-matchup-logo img').length).toBe(2);
   });
 });
