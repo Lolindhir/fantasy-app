@@ -91,39 +91,24 @@
                   }
                 </div>
 
-                <div class="lineup-team-list">
-                  @for (teamGroup of gameView.teamGroups; track teamGroup.nflTeamId) {
-                    <section class="lineup-team-group">
-                      <header class="lineup-team-heading">
-                        <span class="lineup-team-identity">
-                          @if (teamLogo(teamGroup); as logo) {
-                            <img [src]="logo" [alt]="teamName(teamGroup) + ' logo'" />
-                          }
-                          <strong>{{ teamName(teamGroup) }}</strong>
-                        </span>
-                        <span class="lineup-team-counts">{{ teamCounts(teamGroup) }}</span>
-                      </header>
-
-                      @if (teamPlayers(teamGroup); as resolvedPlayers) {
-                        @if (resolvedPlayers.length) {
-                          <app-player-list
-                            [players]="resolvedPlayers"
-                            [columns]="playerColumns"
-                            [compact]="true"
-                            dynamicColumnHeader="Role"
-                            [dynamicColumnValueFn]="getPlayerRole"
-                          />
-                        }
-                      }
-
-                      @if (unresolvedTeamPlayerCount(teamGroup); as unresolvedCount) {
-                        <p class="lineup-resolution-note">
-                          {{ unresolvedCount }} affected {{ unresolvedCount === 1 ? 'player is' : 'players are' }} unavailable in the current player view.
-                        </p>
-                      }
-                    </section>
+                @if (gamePlayers(gameView); as resolvedPlayers) {
+                  @if (resolvedPlayers.length) {
+                    <app-player-list
+                      [players]="resolvedPlayers"
+                      [columns]="playerColumns"
+                      [compact]="true"
+                      teamColumnDisplay="abbr"
+                      dynamicColumnHeader="Role"
+                      [dynamicColumnValueFn]="getPlayerRole"
+                    />
                   }
-                </div>
+                }
+
+                @if (unresolvedGamePlayerCount(gameView); as unresolvedCount) {
+                  <p class="lineup-resolution-note">
+                    {{ unresolvedCount }} affected {{ unresolvedCount === 1 ? 'player is' : 'players are' }} unavailable in the current player view.
+                  </p>
+                }
               </article>
             }
           </div>

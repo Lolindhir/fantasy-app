@@ -22,6 +22,8 @@ export type PlayerListColumn =
   | 'dynamicStat'
   | 'exclude';
 
+export type PlayerListTeamColumnDisplay = 'logo' | 'abbr';
+
 @Component({
   selector: 'app-player-list',
   standalone: true,
@@ -52,6 +54,7 @@ export class PlayerListComponent {
 
   @Input() dynamicColumnHeader = '';
   @Input() dynamicColumnValueFn?: (player: Player) => string;
+  @Input() teamColumnDisplay: PlayerListTeamColumnDisplay = 'logo';
 
   @Input() compact = false;
   @Input() lineNumber: number | null = null;

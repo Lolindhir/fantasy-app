@@ -75,7 +75,7 @@ describe('team Decision Window view utilities', () => {
     expect(summary.nextWindow?.window.DecisionWindowID).toBe('second');
   });
 
-  it('groups selected-team affected players by generated NFL team first and starter status second', () => {
+  it('orders selected-team affected players by home team first and starter status second', () => {
     const window = makeWindow('multi', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
     window.Games = [
       makeGame('g1', 1, 'NE', 'SEA'),
@@ -100,14 +100,17 @@ describe('team Decision Window view utilities', () => {
     const [row] = buildTeamUpcomingLockViews(makeModel([window]), 42, now);
 
     expect(row.games.map(game => game.game.GameID)).toEqual(['g1', 'g2']);
-    expect(row.games[0].teamGroups.map(group => group.nflTeamId)).toEqual(['NE', 'SEA']);
+    expect(row.games[0].teamGroups.map(group => group.nflTeamId)).toEqual(['SEA', 'NE']);
     expect(row.games[0].teamGroups[0].affectedPlayers.map(player => player.PlayerID)).toEqual([
+      'sea-bench'
+    ]);
+    expect(row.games[0].teamGroups[1].affectedPlayers.map(player => player.PlayerID)).toEqual([
       'ne-starter',
       'ne-bench'
     ]);
-    expect(row.games[0].teamGroups[0].affectedStarterCount).toBe(1);
-    expect(row.games[1].teamGroups.map(group => group.nflTeamId)).toEqual(['KC', 'LAC']);
-    expect(row.games[1].teamGroups[1].affectedStarterCount).toBe(1);
+    expect(row.games[0].teamGroups[1].affectedStarterCount).toBe(1);
+    expect(row.games[1].teamGroups.map(group => group.nflTeamId)).toEqual(['LAC', 'KC']);
+    expect(row.games[1].teamGroups[0].affectedStarterCount).toBe(1);
     expect(row.unmatchedAffectedPlayerCount).toBe(1);
   });
 
