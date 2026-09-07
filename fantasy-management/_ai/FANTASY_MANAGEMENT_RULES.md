@@ -47,6 +47,19 @@ Internal league data is the current league source of truth by default, but it ca
 
 Assumptions based on league data require a plausibility check against current external sources when they affect a recommendation. External claims require the reverse check against current league data before applying them to Mighty Giants.
 
+### Roster-board stability and framing-invariance guardrail
+
+For roster-limit, cut/drop, keep/hold, Taxi-allocation and other comparative roster decisions, build one current comparison set and one ordered board from a shared data snapshot and shared criteria before interpreting player-specific follow-up questions.
+
+- A follow-up about one player may explain that player's placement, strengths, weaknesses or uncertainty, but must not move that player up or down merely because the user has made him the focus of the question or framed an argument in his favor or against him.
+- Preserve the existing board and cut line when no material decision input has changed.
+- Reorder the board only when there is a material new fact, a corrected factual or analytical error, a changed roster/league state, or an explicit change to the evaluation criteria or weighting.
+- When the board changes, state the delta explicitly: prior placement, the fact or criterion that changed, resulting placement, and whether the cut line changed.
+- If a follow-up exposes a factor that should already have been included, such as age, career phase, NFL draft capital, role, injury, market value or replacement level, treat that as a correction to the analysis. Re-evaluate the complete relevant comparison set with that factor applied consistently; do not adjust only the focal player.
+- Do not produce contradictory Hold/Cut conclusions from the same snapshot merely by switching from a whole-roster view to a single-player view.
+
+The purpose is decision stability, not artificial rigidity: genuinely new information should change the board, while conversational framing alone should not.
+
 ## 4. Off-season starter rule
 
 In the off-season, `League.json -> Teams[].Starter` is not a reliable quality or role signal.
