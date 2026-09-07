@@ -1,0 +1,110 @@
+<div class="team-lineup-tab">
+  <section class="lineup-summary-card">
+    <div class="lineup-summary-heading">
+      <div>
+        <span class="eyebrow">Lineup</span>
+        <h3>@if (model) { Week {{ model.LineupWeek }} } @else { Current week }</h3>
+      </div>
+      @if (lineupHealth; as health) {
+        <span class="lineup-health-badge" [ngClass]="'lineup-health--' + health.state">
+          {{ health.statusLabel }}
+        </span>
+      }
+    </div>
+
+    @if (loading) {
+      <p class="empty-state">Loading lineup context…</p>
+    } @else if (unavailable) {
+      <p class="empty-state">
+        Lineup context is currently unavailable. The rest of Team Detail remains usable.
+      </p>
+    } @else if (model) {
+      @if (lineupHealth; as health) {
+        @if (health.issueTexts.length) {
+          <div class="lineup-health-issues" [ngClass]="'lineup-health-issues--' + health.state">
+            @for (issue of health.issueTexts; track issue) {
+              <span>{{ issue }}</span>
+            }
+          </div>
+        }
+      }
+
+      @if (!upcomingWindows.length) {
+        @if (pendingLookaheadMessage) {
+          <p class="empty-state pending-lookahead">{{ pendingLookaheadMessage }}</p>
+        } @else {
+          <p class="empty-state">No remaining lineup decisions this week.</p>
+        }
+      }
+    }
+
+    @if (updatedLabel) {
+      <div class="decision-window-freshness">{{ updatedLabel }}</div>
+    }
+  </section>
+
+  @if (!loading && !unavailable && model && upcomingWindows.length) {
+    <div class="lineup-window-list" aria-label="Upcoming lineup windows for this team">
+      @for (windowView of upcomingWindows; track windowView.window.DecisionWindowID) {
+        <section class="lineup-window-card">
+          <header class="lineup-window-header">
+            <div>
+              <span class="lineup-window-time">{{ windowView.timeLabel }}</span>
+              <h3>{{ affectedCounts(windowView) }}</h3>
+            </div>
+            <button
+              type="button"
+              class="lineup-window-details"
+              [attr.aria-label]="'Open Decision Window details for ' + windowView.timeLabel"
+              (click)="openWindow.emit(windowView.window)"
+            >Details</button>
+          </header>
+
+          <div class="lineup-game-list">
+            @for (gameView of windowView.games; track gameView.game.GameID) {
+              <div class="lineup-game-group">
+                <div class="lineup-game-heading">
+                  @if (gameMatchupContext(windowView.window, gameView.game); as matchup) {
+                    <app-decision-window-matchup-context
+                      [context]="matchup"
+                      [showWeek]="false"
+                    />
+                  }
+                  <span class="lineup-game-counts">
+                    {{ gameView.affectedPlayers.length }} {{ gameView.affectedPlayers.length === 1 ? 'player' : 'players' }}
+                    · {{ gameView.affectedStarterCount }} {{ gameView.affectedStarterCount === 1 ? 'starter' : 'starters' }}
+                  </span>
+                </div>
+
+                @if (gamePlayers(gameView); as resolvedPlayers) {
+                  @if (resolvedPlayers.length) {
+                    <app-player-list
+                      [players]="resolvedPlayers"
+                      [columns]="playerColumns"
+                      [compact]="true"
+                      dynamicColumnHeader="Role"
+                      [dynamicColumnValueFn]="getPlayerRole"
+                    />
+                  }
+                }
+
+                @if (unresolvedGamePlayerCount(gameView); as unresolvedCount) {
+                  <p class="lineup-resolution-note">
+                    {{ unresolvedCount }} affected {{ unresolvedCount === 1 ? 'player is' : 'players are' }} unavailable in the current player view.
+                  </p>
+                }
+              </div>
+            }
+          </div>
+
+          @if (windowView.unmatchedAffectedPlayerCount) {
+            <p class="lineup-resolution-note lineup-resolution-note--warning">
+              {{ windowView.unmatchedAffectedPlayerCount }} affected
+              {{ windowView.unmatchedAffectedPlayerCount === 1 ? 'player has' : 'players have' }} no matching generated game in this window.
+            </p>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>

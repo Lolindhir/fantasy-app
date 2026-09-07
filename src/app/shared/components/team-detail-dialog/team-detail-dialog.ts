@@ -13,19 +13,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
-import {
-  buildLeagueTimelineMatchupContext,
-  type LeagueTimelineMatchupContext
-} from '../../utils/league-timeline-view.util';
-import {
-  buildTeamLineupHealthView,
-  buildTeamUpcomingLockViews,
-  formatTeamAffectedCounts,
-  getPendingTeamLookaheadMessage,
-  isTeamDecisionWindowActiveStatus,
-  type TeamLineupHealthView,
-  type TeamUpcomingLockView
-} from '../../utils/team-decision-window-view.util';
+import { isTeamDecisionWindowActiveStatus } from '../../utils/team-decision-window-view.util';
 import {
   buildRosterPlayerGroups,
   formatRosterNextLockValue,
@@ -49,19 +37,20 @@ import {
 } from '../../utils/team-salary.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
-import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
 import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
 import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
 import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
 import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
+import { TeamLineupTabComponent } from '../team-lineup-tab/team-lineup-tab';
 
 export interface TeamDetailDialogData {
   team: FantasyTeam;
   league: League;
   players: Player[];
   drafts: RawDraft[];
+  initialTab?: 'overview' | 'lineup';
 }
 
 interface TeamDraftGroup {
@@ -102,11 +91,11 @@ interface TeamHistoryRow {
     PlayerListComponent,
     CapUsageBarComponent,
     DecisionWindowContextPopoverComponent,
-    DecisionWindowMatchupContextComponent,
     DraftPickContextTriggerComponent,
     SalaryAssetLeaderboardComponent,
     SalaryHealthIndicatorComponent,
-    SalaryPositionDonutComponent
+    SalaryPositionDonutComponent,
+    TeamLineupTabComponent
   ],
   templateUrl: './team-detail-dialog.html',
   styleUrl: './team-detail-dialog.scss'
@@ -131,6 +120,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   salaryLens: SalaryLens = 'current';
   rosterGroup: RosterGroupMode = 'none';
   rosterSort: RosterSortMode = 'salary';
+  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 2 : 0;
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;
@@ -202,21 +192,6 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
 
   get decisionWindowsAvailable(): boolean {
     return this.decisionWindowPhaseActive && !!this.decisionWindows && !this.decisionWindowsUnavailable;
-  }
-
-  get upcomingLocks(): TeamUpcomingLockView[] {
-    if (!this.decisionWindows) return [];
-    return buildTeamUpcomingLockViews(this.decisionWindows, this.team.TeamID, this.now);
-  }
-
-  get lineupHealth(): TeamLineupHealthView | null {
-    if (!this.decisionWindows) return null;
-    return buildTeamLineupHealthView(this.decisionWindows, this.team.TeamID);
-  }
-
-  get pendingLookaheadMessage(): string | null {
-    if (!this.decisionWindows) return null;
-    return getPendingTeamLookaheadMessage(this.decisionWindows, this.upcomingLocks, this.now);
   }
 
   get decisionWindowsUpdatedLabel(): string | null {
@@ -366,14 +341,6 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
         return '';
     }
   };
-
-  matchupContext(window: DecisionWindow): LeagueTimelineMatchupContext | null {
-    return buildLeagueTimelineMatchupContext(window, this.nflTeams);
-  }
-
-  affectedCounts(lock: TeamUpcomingLockView): string {
-    return formatTeamAffectedCounts(lock);
-  }
 
   openTeamDecisionWindow(window: DecisionWindow, template: TemplateRef<unknown>): void {
     this.selectedDecisionWindow = window;

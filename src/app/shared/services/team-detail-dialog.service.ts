@@ -4,6 +4,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { DataService } from '../../core/services/data.service';
 import { TeamDetailDialogComponent } from '../components/team-detail-dialog/team-detail-dialog';
 
+export interface TeamDetailDialogOpenOptions {
+  initialTab?: 'overview' | 'lineup';
+}
+
 @Injectable({ providedIn: 'root' })
 export class TeamDetailDialogService {
   constructor(
@@ -11,13 +15,13 @@ export class TeamDetailDialogService {
     private dialog: MatDialog
   ) {}
 
-  open(teamId: number): void {
+  open(teamId: number, options: TeamDetailDialogOpenOptions = {}): void {
     this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ league, players, teams, drafts }) => {
       const team = teams.find(candidate => candidate.TeamID === teamId);
       if (!team) return;
 
       this.dialog.open(TeamDetailDialogComponent, {
-        data: { team, league, players, drafts },
+        data: { team, league, players, drafts, initialTab: options.initialTab },
         width: '95vw',
         maxWidth: '1000px',
         maxHeight: '90vh',

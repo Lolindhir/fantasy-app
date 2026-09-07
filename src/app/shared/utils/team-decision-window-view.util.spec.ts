@@ -9,7 +9,7 @@ import {
 describe('team Decision Window view utilities', () => {
   const now = new Date('2026-09-06T16:00:00Z');
 
-  it('enables Team Detail locks only for active lineup phases', () => {
+  it('enables Team Detail lineup context only for active lineup phases', () => {
     expect(isTeamDecisionWindowActiveStatus('In-Season')).toBeTrue();
     expect(isTeamDecisionWindowActiveStatus('Playoffs')).toBeTrue();
     expect(isTeamDecisionWindowActiveStatus('Off-Season')).toBeFalse();
@@ -32,6 +32,35 @@ describe('team Decision Window view utilities', () => {
     expect(rows[0].affectedStarterCount).toBe(1);
     expect(rows[1].affectedRosteredPlayerCount).toBe(7);
     expect(rows[1].affectedStarterCount).toBe(4);
+  });
+
+  it('groups selected-team affected players under only their generated games', () => {
+    const window = makeWindow('multi', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
+    window.Games = [
+      makeGame('g1', 1, 'NE', 'SEA'),
+      makeGame('g2', 1, 'KC', 'LAC'),
+      makeGame('g3', 1, 'DAL', 'PHI')
+    ];
+    window.ParticipatingNFLTeamIDs = ['NE', 'SEA', 'KC', 'LAC', 'DAL', 'PHI'];
+    window.AffectedFantasyTeams = [{
+      FantasyTeamID: 42,
+      AffectedRosteredPlayerCount: 4,
+      AffectedStarterCount: 2,
+      Players: [
+        { PlayerID: 'bench-g2', NFLTeamID: 'KC', GameID: 'g2', IsStarter: false },
+        { PlayerID: 'starter-g1', NFLTeamID: 'NE', GameID: 'g1', IsStarter: true },
+        { PlayerID: 'starter-g2', NFLTeamID: 'LAC', GameID: 'g2', IsStarter: true },
+        { PlayerID: 'unmatched', NFLTeamID: 'BUF', GameID: 'missing-game', IsStarter: false }
+      ]
+    }];
+
+    const [row] = buildTeamUpcomingLockViews(makeModel([window]), 42, now);
+
+    expect(row.games.map(game => game.game.GameID)).toEqual(['g1', 'g2']);
+    expect(row.games[0].affectedPlayers.map(player => player.PlayerID)).toEqual(['starter-g1']);
+    expect(row.games[1].affectedPlayers.map(player => player.PlayerID)).toEqual(['starter-g2', 'bench-g2']);
+    expect(row.games[1].affectedStarterCount).toBe(1);
+    expect(row.unmatchedAffectedPlayerCount).toBe(1);
   });
 
   it('does not include a global window when this team has zero affected players', () => {
@@ -63,7 +92,7 @@ describe('team Decision Window view utilities', () => {
     expect(health.issueTexts).toEqual(['Lineup data unavailable']);
   });
 
-  it('shows pending next-week copy only after current-week team locks are exhausted', () => {
+  it('shows pending next-week copy only after current-week team windows are exhausted', () => {
     const model = makeModel([]);
     model.LookaheadDecisionWindow = {
       ...makeWindow('lookahead', 2, '2026-09-13T17:00:00Z', 99, 99, 7),
@@ -118,14 +147,7 @@ function makeWindow(
     DecisionWindowID: id,
     Week: week,
     StartsAtUtc: startsAtUtc,
-    Games: [{
-      GameID: `${id}-game`,
-      Week: week,
-      AwayTeamID: 'NE',
-      AwayTeamAbbr: 'NE',
-      HomeTeamID: 'SEA',
-      HomeTeamAbbr: 'SEA'
-    }],
+    Games: [makeGame(`${id}-game`, week, 'NE', 'SEA')],
     ParticipatingNFLTeamIDs: ['NE', 'SEA'],
     FantasyContextState: 'available',
     AffectedFantasyTeams: [{
@@ -139,5 +161,16 @@ function makeWindow(
         IsStarter: index < starters
       }))
     }]
+  };
+}
+
+function makeGame(id: string, week: number, away: string, home: string) {
+  return {
+    GameID: id,
+    Week: week,
+    AwayTeamID: away,
+    AwayTeamAbbr: away,
+    HomeTeamID: home,
+    HomeTeamAbbr: home
   };
 }
