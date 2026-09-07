@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-07T04:15:12.748423Z",
+  "generated_at": "2026-09-07T04:24:42.331157Z",
   "berlin_date": "2026-09-07",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,27 +11,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 5,
-    "stale_count": 1,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
-    "no_event_conclusion_allowed": false,
-    "unfresh_source_ids": [
-      "sleeper-trending"
-    ],
+    "no_event_conclusion_allowed": true,
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [
-      "sleeper-trending"
-    ],
-    "affected_signal_families": [
-      "external_activity"
-    ]
+    "no_event_blocking_source_ids": [],
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -48,7 +42,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-07T03:22:52.071958Z",
-      "age_minutes": 52.34,
+      "age_minutes": 61.84,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -66,7 +60,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-07T03:38:13.291638Z",
-      "age_minutes": 36.99,
+      "age_minutes": 46.48,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -83,7 +77,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-07T03:47:58.503191Z",
-      "age_minutes": 27.24,
+      "age_minutes": 36.73,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -100,7 +94,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-07T04:02:54.536645Z",
-      "age_minutes": 12.3,
+      "age_minutes": 21.8,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -117,7 +111,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-07T04:13:04.291491Z",
-      "age_minutes": 2.14,
+      "age_minutes": 11.63,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -131,16 +125,16 @@
       "affected_signal_families": [
         "external_activity"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-06T04:22:52.457350Z",
-      "age_minutes": 1432.34,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-07T04:22:52.348639Z",
+      "age_minutes": 1.83,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
