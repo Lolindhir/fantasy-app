@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.team-lineup-player-list {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .26);
+  border-radius: 8px;
+  background: #fffafd;
+}
+
+.team-lineup-player-list__header,
+.team-lineup-player-row {
+  display: grid;
+  grid-template-columns: 34px 42px minmax(0, 1fr) max-content 66px;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-lineup-player-list__header {
+  min-height: 30px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(107, 114, 128, .5);
+  color: #475569;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.team-lineup-player-list__header span:last-child {
+  text-align: right;
+}
+
+.team-lineup-player-row {
+  width: 100%;
+  min-height: 52px;
+  padding: 4px 8px;
+  border: 0;
+  border-bottom: 1px solid rgba(107, 114, 128, .42);
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.team-lineup-player-row:last-child {
+  border-bottom: 0;
+}
+
+.team-lineup-player-row:hover,
+.team-lineup-player-row:focus-visible {
+  background: rgba(248, 250, 252, .92);
+}
+
+.team-lineup-player-row:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, .5);
+  outline-offset: -2px;
+}
+
+.team-lineup-player-team-logo,
+.team-lineup-player-picture {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.team-lineup-player-team-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.team-lineup-player-team-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.team-lineup-player-picture {
+  width: 40px;
+  height: 44px;
+  align-self: end;
+}
+
+.team-lineup-player-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.team-lineup-player-name {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.team-lineup-player-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 5px;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.team-lineup-player-role {
+  color: #374151;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.team-lineup-player-role--starter {
+  color: #1f2937;
+  font-weight: 850;
+}
+
+@media (max-width: 420px) {
+  .team-lineup-player-list__header,
+  .team-lineup-player-row {
+    grid-template-columns: 30px 36px minmax(0, 1fr) max-content 58px;
+    gap: 4px;
+  }
+
+  .team-lineup-player-list__header {
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+
+  .team-lineup-player-row {
+    min-height: 48px;
+    padding-inline: 5px;
+  }
+
+  .team-lineup-player-team-logo {
+    width: 27px;
+    height: 27px;
+  }
+
+  .team-lineup-player-picture {
+    width: 34px;
+    height: 40px;
+  }
+
+  .team-lineup-player-name {
+    font-size: 12px;
+  }
+
+  .team-lineup-player-position {
+    min-width: 25px;
+    padding-inline: 4px;
+    font-size: 10px;
+  }
+
+  .team-lineup-player-role {
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,21 @@
+<div class="team-lineup-matchup" [attr.aria-label]="awayName + ' at ' + homeName">
+  <div class="team-lineup-matchup-side team-lineup-matchup-side--away">
+    <span class="team-lineup-matchup-logo">
+      @if (awayLogo) {
+        <img [src]="awayLogo" [alt]="awayName + ' logo'" />
+      }
+    </span>
+    <strong>{{ awayName }}</strong>
+  </div>
+
+  <span class="team-lineup-matchup-at" aria-hidden="true">@</span>
+
+  <div class="team-lineup-matchup-side team-lineup-matchup-side--home">
+    <strong>{{ homeName }}</strong>
+    <span class="team-lineup-matchup-logo">
+      @if (homeLogo) {
+        <img [src]="homeLogo" [alt]="homeName + ' logo'" />
+      }
+    </span>
+  </div>
+</div>

@@ -3,7 +3,6 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import type {
   DecisionWindow,
-  DecisionWindowGame,
   DecisionWindowsReadModel
 } from '../../../core/models/decision-window.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
@@ -11,10 +10,6 @@ import {
   formatDecisionWindowCountdown,
   formatDecisionWindowsUpdatedAt
 } from '../../utils/decision-window-view.util';
-import {
-  buildLeagueTimelineMatchupContext,
-  type LeagueTimelineMatchupContext
-} from '../../utils/league-timeline-view.util';
 import {
   buildTeamLineupHealthView,
   buildTeamLineupWeekSummary,
@@ -27,13 +22,16 @@ import {
   type TeamLineupWeekSummaryView,
   type TeamUpcomingLockView
 } from '../../utils/team-decision-window-view.util';
-import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
-import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
+import { TeamLineupMatchupComponent } from '../team-lineup-matchup/team-lineup-matchup';
+import {
+  TeamLineupPlayerListComponent,
+  type TeamLineupPlayerRow
+} from '../team-lineup-player-list/team-lineup-player-list';
 
 @Component({
   selector: 'app-team-lineup-tab',
   standalone: true,
-  imports: [CommonModule, DecisionWindowMatchupContextComponent, PlayerListComponent],
+  imports: [CommonModule, TeamLineupMatchupComponent, TeamLineupPlayerListComponent],
   templateUrl: './team-lineup-tab.html',
   styleUrl: './team-lineup-tab.scss'
 })
@@ -47,8 +45,6 @@ export class TeamLineupTabComponent {
   @Input() loading = false;
   @Input() unavailable = false;
   @Output() openWindow = new EventEmitter<DecisionWindow>();
-
-  readonly playerColumns: PlayerListColumn[] = ['team', 'name', 'dynamicStat'];
 
   get upcomingWindows(): TeamUpcomingLockView[] {
     if (!this.model) return [];
@@ -99,45 +95,32 @@ export class TeamLineupTabComponent {
     return formatDecisionWindowCompactLocalDateTime(window);
   }
 
-  gamePlayers(game: TeamDecisionWindowGameView): Player[] {
+  gamePlayerRows(game: TeamDecisionWindowGameView): TeamLineupPlayerRow[] {
     const playerById = new Map(this.players.map(player => [player.ID, player]));
 
     return game.teamGroups.flatMap(group => {
-      const starterById = new Map(
-        group.affectedPlayers.map(player => [player.PlayerID, player.IsStarter])
+      const affectedById = new Map(
+        group.affectedPlayers.map(player => [player.PlayerID, player])
       );
 
       return group.affectedPlayers
         .map(player => playerById.get(player.PlayerID))
         .filter((player): player is Player => !!player)
         .sort((a, b) => {
-          const starterOrder = Number(starterById.get(b.ID) ?? false) - Number(starterById.get(a.ID) ?? false);
+          const starterOrder = Number(affectedById.get(b.ID)?.IsStarter ?? false)
+            - Number(affectedById.get(a.ID)?.IsStarter ?? false);
           if (starterOrder !== 0) return starterOrder;
           return a.Name.localeCompare(b.Name, 'en', { sensitivity: 'base' }) || a.ID.localeCompare(b.ID);
-        });
+        })
+        .map<TeamLineupPlayerRow>(player => ({
+          player,
+          role: affectedById.get(player.ID)?.IsStarter ? 'Starter' : 'Roster'
+        }));
     });
   }
 
   unresolvedGamePlayerCount(game: TeamDecisionWindowGameView): number {
     const knownIds = new Set(this.players.map(player => player.ID));
     return game.affectedPlayers.filter(player => !knownIds.has(player.PlayerID)).length;
-  }
-
-  getPlayerRole = (player: Player): string => {
-    for (const window of this.upcomingWindows) {
-      for (const game of window.games) {
-        const affected = game.affectedPlayers.find(candidate => candidate.PlayerID === player.ID);
-        if (affected) return affected.IsStarter ? 'Starter' : 'Roster';
-      }
-    }
-    return 'Roster';
-  };
-
-  gameMatchupContext(window: DecisionWindow, game: DecisionWindowGame): LeagueTimelineMatchupContext | null {
-    return buildLeagueTimelineMatchupContext({
-      ...window,
-      Games: [game],
-      ParticipatingNFLTeamIDs: [game.AwayTeamID, game.HomeTeamID]
-    }, this.nflTeams);
   }
 }
