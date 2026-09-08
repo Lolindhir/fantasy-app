@@ -304,6 +304,20 @@ operationalDatasetEvaluation:
       - offensive, defensive und Special-Teams-Snaps pro Spiel
       - historische Snap-Anteile und Snap-Counts
     historyStart: 2012
+    knownUnavailableHistorical:
+      - season: 2012
+        upstreamEvidence: >
+          Der aktuelle nflverse Release enthaelt snap_counts_2012.csv zwar als
+          Asset, aber nur als ca. 154-Byte-Schema ohne Datenzeilen; 2013 ist
+          dagegen als regulaere befuellte Partition vorhanden. Verifiziert am
+          2026-09-08 gegen den nflverse-data Release snap_counts.
+        rule: >
+          2012 bleibt als nomineller Provider-Historienstart dokumentiert, ist
+          aber fuer den produktiven Backfill und die Readiness-Anforderung als
+          explizit known-unavailable ausgenommen. Es wird keine leere Raw-Datei
+          persistiert und kein Snap-Wert als 0 erfunden. Wird die Upstream-
+          Partition spaeter wieder mit Fakten befuellt, muss die Ausnahme bewusst
+          neu bewertet werden.
     identity:
       authoritativeProviderKey: PFR
       canonicalTarget: CanonicalPlayerID
@@ -361,8 +375,10 @@ historicalBackfill:
     materialisierte Saisons 2022 bis 2025.
   bands:
     - seasons: 2012-2021
-      coverage: schedules + player-stats + weekly-rosters + snap-counts
-      recommendation: strongest-backfill-band
+      coverage: schedules + player-stats + weekly-rosters + snap-counts (2013-2021)
+      knownUnavailable:
+        - nflverse.snap-counts/2012
+      recommendation: strongest-backfill-band-with-explicit-2012-snap-exception
     - seasons: 2002-2011
       coverage: schedules + player-stats + weekly-rosters
       missing: snap-counts
@@ -377,7 +393,9 @@ historicalBackfill:
   rule: >
     Historische App-Dateien sollen spaeter aus kanonischen source-data-Vertraegen
     neu erzeugt werden. Fehlende Felder muessen als nicht verfuegbar modelliert
-    werden.
+    werden. Exakte known-unavailable Partitionen bleiben im Audit sichtbar und
+    sind keine Ready-/Zero-Fakten; nur sie duerfen aus der harten historischen
+    Backfill-Anforderung ausgenommen werden.
 
 combine:
   providerDataset: nflverse.combine
@@ -423,6 +441,7 @@ validation:
   - Current 404 -> not-yet-available ist nur unter der expliziten Policy erlaubt; historical 404 bleibt Fehler.
   - Vorhandene prior-season Raw-Partitionen werden normal ohne Netzabruf erhalten.
   - Unerwartet kleine/leere oder schema-inkompatible Inputs koennen keinen letzten guten Stand ersetzen.
+  - Exakte known-unavailable historische Partitionen werden separat auditiert, vom bounded Backfill ausgelassen und nie als Ready oder 0-Fakten ausgegeben; benachbarte unterstuetzte Seasons bleiben Pflicht.
   - PR-CI fuehrt die komplette test_nfl_source*.py-Suite vor den bestehenden PowerShell-/Angular-Checks aus.
   - Schedules und released-games game_id muessen eindeutig sein; unbekannte released game_id bricht fail-closed ab.
   - BUF-CIN Week 17/2022 bleibt ohne released-Evidenz nicht final, auch wenn Scores vorliegen.
