@@ -4,10 +4,12 @@ import {
   compareFantasyGameRelevance,
   getCompletedImpactGames,
   getFantasyMatchupContext,
+  getMustWatchGames,
   getNextFantasyMatchupGame,
   getUpcomingRelevantGames,
   isFantasyGameContextForLeagueWeek,
-  isFantasyGameImpactVisible
+  isFantasyGameImpactVisible,
+  isFantasyMatchupFinalWindowGame
 } from './fantasy-game-context.util';
 
 function game(overrides: Partial<FantasyGameContextGame> = {}): FantasyGameContextGame {
@@ -70,7 +72,7 @@ const baseContext: FantasyGameContextReadModel = {
 };
 
 describe('fantasy game context utilities', () => {
-  it('orders relevance lexicographically by starters, matchups, teams, rostered players, kickoff and GameID', () => {
+  it('orders legacy relevance lexicographically by starters before broad roster coverage', () => {
     const low = game({ GameID: 'low', Relevance: { RosteredPlayerCount: 20, StarterCount: 1, FantasyTeamCount: 6, FantasyMatchupCount: 3, UnknownAssociationCount: 0 } });
     const high = game({ GameID: 'high', Relevance: { RosteredPlayerCount: 2, StarterCount: 2, FantasyTeamCount: 1, FantasyMatchupCount: 1, UnknownAssociationCount: 0 } });
     expect([low, high].sort(compareFantasyGameRelevance).map(item => item.GameID)).toEqual(['high', 'low']);
@@ -96,7 +98,7 @@ describe('fantasy game context utilities', () => {
     expect(getNextFantasyMatchupGame(baseContext.FantasyMatchups[0], new Date('2026-09-09T00:00:00Z'))?.GameID).toBe('g1');
   });
 
-  it('skips future matchup games where neither fantasy side starts a player', () => {
+  it('skips future matchup games where neither fantasy side starts a player in the legacy fallback', () => {
     const matchup = {
       ...baseContext.FantasyMatchups[0],
       Games: [
@@ -118,6 +120,54 @@ describe('fantasy game context utilities', () => {
     };
 
     expect(getNextFantasyMatchupGame(matchup, new Date('2026-09-09T00:00:00Z'))?.GameID).toBe('relevant');
+  });
+
+  it('uses generated v2 must-watch rank instead of recalculating broad roster relevance', () => {
+    const first = game({ GameID: 'first', Relevance: { RosteredPlayerCount: 1, StarterCount: 1, FantasyTeamCount: 1, FantasyMatchupCount: 1, UnknownAssociationCount: 0 } });
+    const second = game({ GameID: 'second', Relevance: { RosteredPlayerCount: 30, StarterCount: 10, FantasyTeamCount: 6, FantasyMatchupCount: 3, UnknownAssociationCount: 0 } });
+    const context: FantasyGameContextReadModel = {
+      ...baseContext,
+      SchemaVersion: 2,
+      Games: [second, first],
+      MustWatchGames: [
+        { Rank: 1, GameID: 'first', DecisionWindowID: 'dw1', StartsAtUtc: first.StartsAtUtc, CommittedFinalWindowMatchupCount: 1, LockedActiveStarterCount: 1, TwoSidedFantasyMatchupCount: 0, FantasyMatchupCount: 1, UnlockedStarterCount: 0, FinalWindowFantasyMatchupCount: 1, EligibleBenchCandidateCount: 0 },
+        { Rank: 2, GameID: 'second', DecisionWindowID: 'dw2', StartsAtUtc: second.StartsAtUtc, CommittedFinalWindowMatchupCount: 0, LockedActiveStarterCount: 0, TwoSidedFantasyMatchupCount: 1, FantasyMatchupCount: 3, UnlockedStarterCount: 10, FinalWindowFantasyMatchupCount: 0, EligibleBenchCandidateCount: 5 }
+      ]
+    };
+
+    expect(getMustWatchGames(context).map(item => item.GameID)).toEqual(['first', 'second']);
+  });
+
+  it('uses generated next/final scoring windows even when a relevant window has zero current starters', () => {
+    const zeroStarterRow = {
+      ...baseContext.FantasyMatchups[0].Games[0],
+      GameID: 'bench-path',
+      DecisionWindowID: 'dw-bench',
+      StartsAtUtc: '2026-09-11T00:00:00Z',
+      LeftStarterCount: 0,
+      RightStarterCount: 0
+    };
+    const matchup = {
+      ...baseContext.FantasyMatchups[0],
+      Games: [baseContext.FantasyMatchups[0].Games[0], zeroStarterRow],
+      RemainingRelevance: {
+        State: 'both-sides' as const,
+        HasRemainingScoringPaths: true,
+        LeftRemainingPathCount: 2,
+        RightRemainingPathCount: 1,
+        LockedActiveStarterCount: 0,
+        UnlockedStarterCount: 2,
+        EligibleBenchCandidateCount: 1,
+        NextScoringWindowID: 'dw-bench',
+        NextScoringGameIDs: ['bench-path'],
+        FinalScoringWindowID: 'dw-bench',
+        FinalScoringGameIDs: ['bench-path'],
+        IsFinalScoringWindowCommitted: false
+      }
+    };
+
+    expect(getNextFantasyMatchupGame(matchup, new Date('2026-09-09T00:00:00Z'))?.GameID).toBe('bench-path');
+    expect(isFantasyMatchupFinalWindowGame(matchup, 'bench-path')).toBeTrue();
   });
 
   it('hides non-unavailable impact values until the NFL game has actually started', () => {
