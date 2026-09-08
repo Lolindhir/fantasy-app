@@ -6,7 +6,7 @@ import type { Player } from '../../../core/models/player.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
-export type TeamLineupPlayerStatus = 'Starter' | 'Roster' | 'Taxi' | 'IR';
+export type TeamLineupPlayerStatus = 'Starter' | 'Bench' | 'Taxi' | 'IR';
 
 export interface TeamLineupPlayerRow {
   player: Player;
@@ -25,7 +25,7 @@ export function getTeamLineupPlayerStatuses(
   if (isStarter) statuses.push('Starter');
   if (isTaxi) statuses.push('Taxi');
   if (isIr) statuses.push('IR');
-  if (!isStarter && !isTaxi && !isIr) statuses.push('Roster');
+  if (!isStarter && !isTaxi && !isIr) statuses.push('Bench');
 
   return statuses;
 }

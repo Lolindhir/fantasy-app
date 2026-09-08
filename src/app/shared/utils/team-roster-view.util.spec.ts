@@ -17,19 +17,20 @@ describe('team roster view utilities', () => {
   });
 
   it('groups the resolved roster status buckets independently', () => {
-    const roster = makePlayer('roster', { salary: 10 });
+    const activeRoster = makePlayer('active-roster', { salary: 10 });
     const taxi = makePlayer('taxi', { salary: 8 });
     const ir = makePlayer('ir', { salary: 7 });
 
     const groups = buildRosterPlayerGroups(
-      [roster, taxi, ir],
+      [activeRoster, taxi, ir],
       'rosterStatus',
       'salary',
-      { roster: [roster], taxi: [taxi], ir: [ir] }
+      { activeRoster: [activeRoster], taxi: [taxi], ir: [ir] }
     );
 
     expect(groups.map(group => group.key)).toEqual(['roster', 'taxi', 'ir']);
-    expect(groups[0].players.map(player => player.ID)).toEqual(['roster']);
+    expect(groups.map(group => group.label)).toEqual(['Active Roster', 'Taxi', 'IR']);
+    expect(groups[0].players.map(player => player.ID)).toEqual(['active-roster']);
     expect(groups[1].players.map(player => player.ID)).toEqual(['taxi']);
     expect(groups[2].players.map(player => player.ID)).toEqual(['ir']);
   });
@@ -225,14 +226,14 @@ describe('team roster view utilities', () => {
   });
 
   it('keeps Next Lock composable with existing roster-status and position grouping', () => {
-    const rosterLate = makePlayer('roster-late', { position: 'WR' });
-    const rosterEarly = makePlayer('roster-early', { position: 'WR' });
+    const activeRosterLate = makePlayer('active-roster-late', { position: 'WR' });
+    const activeRosterEarly = makePlayer('active-roster-early', { position: 'WR' });
     const taxi = makePlayer('taxi', { position: 'QB' });
     const ir = makePlayer('ir', { position: 'RB' });
-    const players = [rosterLate, taxi, rosterEarly, ir];
+    const players = [activeRosterLate, taxi, activeRosterEarly, ir];
     const context = lockContext('2026-09-06T16:00:00Z', [
-      lockFact('roster-late', 'scheduled', '2026-09-06T20:00:00Z'),
-      lockFact('roster-early', 'scheduled', '2026-09-06T17:00:00Z'),
+      lockFact('active-roster-late', 'scheduled', '2026-09-06T20:00:00Z'),
+      lockFact('active-roster-early', 'scheduled', '2026-09-06T17:00:00Z'),
       lockFact('taxi', 'unknown'),
       lockFact('ir', 'bye')
     ]);
@@ -241,16 +242,16 @@ describe('team roster view utilities', () => {
       players,
       'rosterStatus',
       'nextLock',
-      { roster: [rosterLate, rosterEarly], taxi: [taxi], ir: [ir] },
+      { activeRoster: [activeRosterLate, activeRosterEarly], taxi: [taxi], ir: [ir] },
       context
     );
-    expect(statusGroups[0].players.map(player => player.ID)).toEqual(['roster-early', 'roster-late']);
+    expect(statusGroups[0].players.map(player => player.ID)).toEqual(['active-roster-early', 'active-roster-late']);
     expect(statusGroups[1].players.map(player => player.ID)).toEqual(['taxi']);
     expect(statusGroups[2].players.map(player => player.ID)).toEqual(['ir']);
 
     const positionGroups = buildRosterPlayerGroups(players, 'position', 'nextLock', undefined, context);
     expect(positionGroups.map(group => group.label)).toEqual(['Quarterbacks', 'Running Backs', 'Wide Receivers']);
-    expect(positionGroups[2].players.map(player => player.ID)).toEqual(['roster-early', 'roster-late']);
+    expect(positionGroups[2].players.map(player => player.ID)).toEqual(['active-roster-early', 'active-roster-late']);
   });
 });
 
