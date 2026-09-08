@@ -100,6 +100,36 @@ joinAudit:
       - current and archived copies of the same DraftKey/PickKey may collapse only when all transaction-enrichment facts are semantically identical; conflicting copies fail closed.
       - historical player aggregation uses Tank01 playerID as the provider identity and rejects duplicate claims inside one game.
 
+  nflverseWeeklyRosters:
+    canonicalIdentity: season + week + team + GSIS
+    equivalentDuplicateRule: >
+      Multiple provider rows for one canonical weekly-roster identity may collapse
+      only when every canonical field is identical after the explicitly documented
+      legacy-status normalization below. Any remaining canonical disagreement is
+      ambiguous provider evidence and must fail closed; first-wins and last-wins
+      selection are prohibited.
+    legacyStatusNormalization:
+      seasons: 2002-2015
+      upstreamContext: >
+        nflverse builds these weekly rosters from NFL Data Exchange, where the
+        weekly status field is explicitly unset, and later enriches Shield status
+        and body data by GSIS. Multiple Shield status rows can therefore multiply
+        one Data-Exchange weekly identity and produce values such as ACT and TRT
+        that are not independent week-specific status evidence.
+      canonicalRule: >
+        Preserve every provider row unchanged in source-data/providers, but do not
+        promote the later Shield status enrichment into canonical weekly Status for
+        seasons 2002-2015; canonical Status is null for those weekly records.
+        status_description_abbr remains week-specific Data-Exchange evidence and is
+        retained as canonical StatusDescription.
+      boundary: >
+        The normalization ends after 2015. From 2016 onward Status remains a
+        canonical field, so conflicting status values for one weekly identity fail
+        closed unless the complete canonical records are otherwise exactly equal.
+      observability: >
+        Canonical materialization reports equivalentDuplicateRowCount and
+        legacyWeeklyStatusSuppressedRowCount in the weekly-roster audit.
+
 regressionCoverage:
   entryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
   ciEntryPoint: public/requests/DraftIdentityRegressionTest.ps1
@@ -113,6 +143,7 @@ regressionCoverage:
     - duplicate generated TransactionIDs and manual SleeperTransactionID bindings
     - missing completed historical Sleeper draft IDs
     - identical versus conflicting current/history draft-pick copies
+    - legacy nflverse weekly-roster status variants collapse only after documented normalization while remaining canonical conflicts fail closed
 
 futureSourceDataImplication: >
   New nflverse schedules, stats, rosters and snap-count materializers must apply

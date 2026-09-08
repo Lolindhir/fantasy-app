@@ -271,14 +271,16 @@ def _build_rosters(
     resolved_count = 0
     unresolved_count = 0
     missing_provider_id_count = 0
+    equivalent_duplicate_count = 0
+    legacy_weekly_status_suppressed_count = 0
 
     for season, raw_path in _persisted_season_paths(dataset):
         if weekly:
             grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
-            seen: set[tuple[int, str, str]] = set()
+            seen_weekly: dict[tuple[int, str, str], dict[str, Any]] = {}
         else:
             records: list[dict[str, Any]] = []
-            seen = set()
+            seen: set[tuple[int, str, str]] = set()
 
         for row in _iter_csv_path(raw_path):
             row_season = as_int(row.get("season"))
@@ -295,12 +297,18 @@ def _build_rosters(
             if weekly and week is None:
                 raise ValueError(f"{dataset.id} row {gsis} is missing week")
             key = (week or 0, team, gsis)
-            if key in seen:
-                raise ValueError(f"Duplicate {dataset.id} roster identity: season={season} week={week} team={team} gsis={gsis}")
-            seen.add(key)
+            if not weekly:
+                if key in seen:
+                    raise ValueError(
+                        f"Duplicate {dataset.id} roster identity: season={season} week={week} team={team} gsis={gsis}"
+                    )
+                seen.add(key)
+
             canonical_player_id = lookup.get(("GSIS", gsis))
-            resolved_count += int(canonical_player_id is not None)
-            unresolved_count += int(canonical_player_id is None)
+            raw_status = clean(row.get("status"))
+            suppress_legacy_weekly_status = weekly and 2002 <= season < 2016
+            if suppress_legacy_weekly_status and raw_status is not None:
+                legacy_weekly_status_suppressed_count += 1
             record = {
                 "CanonicalPlayerID": canonical_player_id,
                 "SourceIDs": {"GSIS": gsis},
@@ -308,7 +316,7 @@ def _build_rosters(
                 "Position": clean(row.get("position")),
                 "DepthChartPosition": clean(row.get("depth_chart_position")),
                 "JerseyNumber": as_int(row.get("jersey_number")),
-                "Status": clean(row.get("status")),
+                "Status": None if suppress_legacy_weekly_status else raw_status,
                 "StatusDescription": clean(row.get("status_description_abbr")),
                 "PlayerName": clean(row.get("full_name")),
                 "BirthDate": clean(row.get("birth_date")),
@@ -327,13 +335,26 @@ def _build_rosters(
                 "Rotowire": clean(row.get("rotowire_id")),
                 "FantasyData": clean(row.get("fantasy_data_id")),
             }
-            record["SourceIDs"].update({key: value for key, value in extra_ids.items() if value})
+            record["SourceIDs"].update({source: value for source, value in extra_ids.items() if value})
             if weekly:
                 record["Week"] = week
                 record["GameType"] = clean(row.get("game_type"))
+                existing = seen_weekly.get(key)
+                if existing is not None:
+                    if existing != record:
+                        raise ValueError(
+                            f"Conflicting duplicate {dataset.id} roster identity: "
+                            f"season={season} week={week} team={team} gsis={gsis}"
+                        )
+                    equivalent_duplicate_count += 1
+                    continue
+                seen_weekly[key] = record
                 grouped[week].append(record)
             else:
                 records.append(record)
+
+            resolved_count += int(canonical_player_id is not None)
+            unresolved_count += int(canonical_player_id is None)
             record_count += 1
 
         if weekly:
@@ -385,6 +406,8 @@ def _build_rosters(
         "resolvedIdentityCount": resolved_count,
         "unresolvedIdentityCount": unresolved_count,
         "missingProviderIDRowCount": missing_provider_id_count,
+        "equivalentDuplicateRowCount": equivalent_duplicate_count,
+        "legacyWeeklyStatusSuppressedRowCount": legacy_weekly_status_suppressed_count,
     }
     return outputs, audit, preserved
 
