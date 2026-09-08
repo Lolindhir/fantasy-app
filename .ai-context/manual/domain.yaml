@@ -78,6 +78,21 @@ coreConcepts:
     description: >
       A fantasy team in the league. Teams are identified by generated TeamID and
       can be mapped from league metadata and generated league data.
+    rosterTerminology:
+      roster: >
+        Roster is the complete fantasy-team roster and remains the umbrella/source
+        contract term. A player being rostered describes team ownership and does
+        not imply a specific game-week lineup placement.
+      activeRoster: >
+        Active Roster is the non-Taxi, non-IR portion of the roster and consists
+        of Starter plus Bench players. General roster grouping uses Active Roster,
+        Taxi and IR and must not split Active Roster into Starter and Bench.
+      gameWeekLineup: >
+        Starter and Bench are game-week lineup placements. In lineup-specific UI,
+        a non-starting player on the Active Roster is Bench. Taxi and IR remain
+        visible as their own placement/status chips, including contradictory source
+        states such as Starter plus Taxi or Starter plus IR rather than silently
+        normalizing them away.
     draftPickRelation: >
       Team DraftPicks are stored as PickKey references in generated League.json
       and resolved to DraftPick objects by Angular DataService. Drafts.json is the
