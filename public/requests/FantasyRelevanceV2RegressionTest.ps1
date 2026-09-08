@@ -71,14 +71,14 @@ $players = @(
     [PSCustomObject]@{ ID='r2'; Position='RB'; TeamID='17' }
 )
 $schedule = @(
-    New-FrvGame -GameID 'g-q1' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '1' -HomeTeamID '2' -Status 'Final',
-    New-FrvGame -GameID 'g-t1' -StartsAtUtc '2026-09-13T20:00:00Z' -AwayTeamID '3' -HomeTeamID '4',
-    New-FrvGame -GameID 'g-rb1' -StartsAtUtc '2026-09-13T20:25:00Z' -AwayTeamID '5' -HomeTeamID '6',
-    New-FrvGame -GameID 'g-wr1' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '7' -HomeTeamID '8',
-    New-FrvGame -GameID 'g-ir1' -StartsAtUtc '2026-09-14T00:20:00Z' -AwayTeamID '9' -HomeTeamID '10',
-    New-FrvGame -GameID 'g-taxi1' -StartsAtUtc '2026-09-14T00:20:00Z' -AwayTeamID '11' -HomeTeamID '12',
-    New-FrvGame -GameID 'g-q2' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '13' -HomeTeamID '14' -Status 'Final',
-    New-FrvGame -GameID 'g-t2' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '15' -HomeTeamID '16' -Status 'Final',
+    New-FrvGame -GameID 'g-q1' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '1' -HomeTeamID '2' -Status 'Final'
+    New-FrvGame -GameID 'g-t1' -StartsAtUtc '2026-09-13T20:00:00Z' -AwayTeamID '3' -HomeTeamID '4'
+    New-FrvGame -GameID 'g-rb1' -StartsAtUtc '2026-09-13T20:25:00Z' -AwayTeamID '5' -HomeTeamID '6'
+    New-FrvGame -GameID 'g-wr1' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '7' -HomeTeamID '8'
+    New-FrvGame -GameID 'g-ir1' -StartsAtUtc '2026-09-14T00:20:00Z' -AwayTeamID '9' -HomeTeamID '10'
+    New-FrvGame -GameID 'g-taxi1' -StartsAtUtc '2026-09-14T00:20:00Z' -AwayTeamID '11' -HomeTeamID '12'
+    New-FrvGame -GameID 'g-q2' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '13' -HomeTeamID '14' -Status 'Final'
+    New-FrvGame -GameID 'g-t2' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '15' -HomeTeamID '16' -Status 'Final'
     New-FrvGame -GameID 'g-r2' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '17' -HomeTeamID '18' -Status 'Final'
 )
 
