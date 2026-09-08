@@ -11,11 +11,18 @@ from nfl_source_data_lib.common import Dataset
 from nfl_source_data_lib.phase1 import build_phase1_outputs
 
 
-CANONICAL = [{
-    "CanonicalPlayerID": "NFLP-shaun-phillips",
-    "IDs": {"GSIS": "00-0022723"},
-    "IDAliases": {},
-}]
+CANONICAL = [
+    {
+        "CanonicalPlayerID": "NFLP-shaun-phillips",
+        "IDs": {"GSIS": "00-0022723"},
+        "IDAliases": {},
+    },
+    {
+        "CanonicalPlayerID": "NFLP-fred-taylor",
+        "IDs": {"GSIS": "00-0016098"},
+        "IDAliases": {},
+    },
+]
 
 
 def weekly_dataset(root: Path) -> Dataset:
@@ -59,6 +66,15 @@ def write_rows(path: Path, rows: list[dict[str, object]]) -> None:
         "weight",
         "college",
         "gsis_id",
+        "espn_id",
+        "sportradar_id",
+        "yahoo_id",
+        "rotowire_id",
+        "pff_id",
+        "pfr_id",
+        "fantasy_data_id",
+        "sleeper_id",
+        "esb_id",
         "week",
         "game_type",
     ]
@@ -85,6 +101,38 @@ def shaun_row(*, season: int, status: str, jersey_number: int = 58) -> dict[str,
         "college": "",
         "gsis_id": "00-0022723",
         "week": 4,
+        "game_type": "REG",
+    }
+
+
+def fred_row(
+    *,
+    season: int = 2006,
+    week: int = 10,
+    espn_id: str = "",
+    rotowire_id: str = "",
+    pff_id: str = "333",
+    pfr_id: str = "",
+) -> dict[str, object]:
+    return {
+        "season": season,
+        "team": "JAX",
+        "position": "RB",
+        "depth_chart_position": "",
+        "jersey_number": 28,
+        "status": "ACT",
+        "status_description_abbr": "A01",
+        "full_name": "Fred Taylor",
+        "birth_date": "1976-01-27",
+        "height": 73,
+        "weight": 226,
+        "college": "",
+        "gsis_id": "00-0016098",
+        "espn_id": espn_id,
+        "rotowire_id": rotowire_id,
+        "pff_id": pff_id,
+        "pfr_id": pfr_id,
+        "week": week,
         "game_type": "REG",
     }
 
@@ -119,6 +167,47 @@ class WeeklyRosterDuplicateNormalizationTests(unittest.TestCase):
             self.assertEqual(2, audit["weeklyRosters"]["legacyWeeklyStatusSuppressedRowCount"])
             self.assertEqual(1, audit["weeklyRosters"]["recordCount"])
 
+    def test_real_2006_fred_taylor_duplicate_merges_compatible_optional_source_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = weekly_dataset(root / "raw")
+            write_rows(
+                dataset.raw_path_for(2006),
+                [
+                    fred_row(),
+                    fred_row(espn_id="1430", rotowire_id="906", pfr_id="TaylFr00"),
+                ],
+            )
+
+            outputs, audit, _ = build_phase1_outputs(
+                root,
+                {dataset.id: dataset},
+                CANONICAL,
+                2026,
+            )
+
+            payload = next(payload for path, payload in outputs if path.name == "10.json")
+            self.assertEqual(1, len(payload["Records"]))
+            record = payload["Records"][0]
+            self.assertEqual("NFLP-fred-taylor", record["CanonicalPlayerID"])
+            self.assertIsNone(record["Status"])
+            self.assertEqual("A01", record["StatusDescription"])
+            self.assertEqual(10, record["Week"])
+            self.assertEqual("REG", record["GameType"])
+            self.assertEqual(
+                {
+                    "GSIS": "00-0016098",
+                    "ESPN": "1430",
+                    "PFR": "TaylFr00",
+                    "PFF": "333",
+                    "Rotowire": "906",
+                },
+                record["SourceIDs"],
+            )
+            self.assertEqual(1, audit["weeklyRosters"]["equivalentDuplicateRowCount"])
+            self.assertEqual(2, audit["weeklyRosters"]["legacyWeeklyStatusSuppressedRowCount"])
+            self.assertEqual(1, audit["weeklyRosters"]["recordCount"])
+
     def test_legacy_duplicate_with_remaining_canonical_conflict_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -132,6 +221,21 @@ class WeeklyRosterDuplicateNormalizationTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "Conflicting duplicate nflverse.weekly-rosters roster identity"):
+                build_phase1_outputs(root, {dataset.id: dataset}, CANONICAL, 2026)
+
+    def test_weekly_duplicate_with_conflicting_nonempty_source_id_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = weekly_dataset(root / "raw")
+            write_rows(
+                dataset.raw_path_for(2006),
+                [
+                    fred_row(pfr_id="TaylFr00"),
+                    fred_row(pfr_id="OtherFr00"),
+                ],
+            )
+
+            with self.assertRaisesRegex(ValueError, "Conflicting duplicate nflverse.weekly-rosters SourceID PFR"):
                 build_phase1_outputs(root, {dataset.id: dataset}, CANONICAL, 2026)
 
     def test_post_legacy_status_conflict_remains_fail_closed(self):
