@@ -40,11 +40,11 @@ describe('TeamLineupPlayerListComponent', () => {
     expect(element.querySelector('.team-lineup-player-picture img')).not.toBeNull();
   });
 
-  it('resolves roster placement into Starter, Roster, Taxi and IR chips without hiding contradictory starter state', () => {
-    const rosterPlayer = buildPlayer('roster', 'Roster Player', 'WR');
-    assignFantasyPlacement(rosterPlayer, 'roster');
-    expect(getTeamLineupPlayerStatuses(rosterPlayer, false)).toEqual(['Roster']);
-    expect(getTeamLineupPlayerStatuses(rosterPlayer, true)).toEqual(['Starter']);
+  it('resolves game-week lineup placement into Starter, Bench, Taxi and IR chips without hiding contradictory starter state', () => {
+    const benchPlayer = buildPlayer('bench', 'Bench Player', 'WR');
+    assignFantasyPlacement(benchPlayer, 'activeRoster');
+    expect(getTeamLineupPlayerStatuses(benchPlayer, false)).toEqual(['Bench']);
+    expect(getTeamLineupPlayerStatuses(benchPlayer, true)).toEqual(['Starter']);
 
     const taxiPlayer = buildPlayer('taxi', 'Taxi Player', 'RB');
     assignFantasyPlacement(taxiPlayer, 'taxi');
@@ -60,7 +60,7 @@ describe('TeamLineupPlayerListComponent', () => {
   it('keeps Player Detail interaction on the dedicated lineup row', () => {
     const player = buildPlayer('brooks', 'Jonathon Brooks', 'RB');
 
-    fixture.componentRef.setInput('rows', [{ player, statuses: ['Roster'] }]);
+    fixture.componentRef.setInput('rows', [{ player, statuses: ['Bench'] }]);
     fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('.team-lineup-player-row') as HTMLButtonElement).click();
@@ -88,7 +88,7 @@ function buildPlayer(id: string, name: string, position: string): Player {
   } as Player;
 }
 
-function assignFantasyPlacement(player: Player, placement: 'roster' | 'taxi' | 'ir'): void {
+function assignFantasyPlacement(player: Player, placement: 'activeRoster' | 'taxi' | 'ir'): void {
   const team = {
     TeamID: 1,
     Roster: [player],

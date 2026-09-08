@@ -12,7 +12,7 @@ export type SalaryLens = 'current' | 'projected';
 export type SalaryHealthStatus = 'healthy' | 'watch' | 'over';
 
 export interface TeamRosterSplit {
-  roster: Player[];
+  activeRoster: Player[];
   taxi: Player[];
   ir: Player[];
 }
@@ -77,7 +77,7 @@ export function splitTeamRoster(team: FantasyTeam): TeamRosterSplit {
   const irIds = new Set(team.Reserve.map(player => player.ID));
 
   return {
-    roster: team.Roster.filter(player => !taxiIds.has(player.ID) && !irIds.has(player.ID)),
+    activeRoster: team.Roster.filter(player => !taxiIds.has(player.ID) && !irIds.has(player.ID)),
     taxi: [...team.Taxi],
     ir: [...team.Reserve]
   };

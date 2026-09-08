@@ -13,7 +13,7 @@ describe('team salary utilities', () => {
     expect(getSalaryHealth(101, 100, 80, 100)).toBe('over');
   });
 
-  it('removes Taxi and IR players from the normal roster count', () => {
+  it('removes Taxi and IR players from the Active Roster count', () => {
     const active = makePlayer('active', 10, 11, 'WR');
     const taxi = makePlayer('taxi', 8, 9, 'RB');
     const ir = makePlayer('ir', 7, 7, 'TE');
@@ -23,7 +23,7 @@ describe('team salary utilities', () => {
       Reserve: [ir]
     }));
 
-    expect(split.roster.map(player => player.ID)).toEqual(['active']);
+    expect(split.activeRoster.map(player => player.ID)).toEqual(['active']);
     expect(split.taxi.map(player => player.ID)).toEqual(['taxi']);
     expect(split.ir.map(player => player.ID)).toEqual(['ir']);
   });
