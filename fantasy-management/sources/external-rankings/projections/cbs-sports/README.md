@@ -4,17 +4,37 @@ Dieser Bereich speichert normalisierte CBS-Sports-Projections als `ranking_kind:
 
 ## Aktiver Scope
 
-Aktuell wird ausschließlich das Kicker-Ranking materialisiert:
+Aktiv materialisiert werden QB, RB, WR, TE und K als **Rest-of-Season-Projections** für die laufende NFL-Saison.
 
-| Ranking-ID | Position | Horizont | Reihenfolge |
+| Compatibility-Ranking-ID | Position | Aktiver Horizont | Reihenfolge |
 |---|---|---|---|
-| `redraft-kicker-preseason` | K | vollständige 2026 Regular Season, Preseason-Projections | projizierte CBS-Fantasy-Punkte absteigend |
+| `redraft-qb-preseason` | QB | Rest of Season | projizierte CBS-Fantasy-Punkte absteigend |
+| `redraft-rb-preseason` | RB | Rest of Season | projizierte CBS-Fantasy-Punkte absteigend |
+| `redraft-wr-preseason` | WR | Rest of Season | projizierte CBS-Fantasy-Punkte absteigend |
+| `redraft-te-preseason` | TE | Rest of Season | projizierte CBS-Fantasy-Punkte absteigend |
+| `redraft-kicker-preseason` | K | Rest of Season | projizierte CBS-Fantasy-Punkte absteigend |
 
-Der Source-Audit vom 8. August 2026 bestätigt, dass derselbe öffentliche CBS-Projections-Bereich auch QB, RB, WR, TE, kombinierte RB-WR-TE-Ansichten und DST anbietet. Diese Positionen sind noch nicht aktiv materialisiert.
+Die `*-preseason`-Namen bleiben derzeit als stabile Compatibility-IDs und Repository-Pfade erhalten. Sie beschreiben **nicht** mehr den aktiven Source-Horizont. Der aktive Horizont wird in `latest.json` und Snapshot-Metadaten explizit als `rest_of_season` ausgewiesen.
+
+DST ist auf der öffentlichen CBS-Oberfläche verfügbar, wird aktuell aber nicht materialisiert.
+
+## CBS-Lifecycle und Source-Route
+
+Seit dem Saisonstart 2026 ist die zuvor verwendete Route
+
+`/fantasy/football/stats/<POSITION>/<season>/season/projections/nonppr/`
+
+nicht mehr stabil als Saisonprojektion: Am 8. September 2026 lieferte sie dem produktiven Fetcher eine echte CBS-Seite mit der Source-Identität `Week 1 Proj ... Stats`.
+
+Der aktive Contract verwendet deshalb ausschließlich die explizite Rest-of-Season-Route:
+
+`https://www.cbssports.com/fantasy/football/stats/<POSITION>/<season>/restofseason/projections/nonppr/`
+
+Der Parser verlangt passend dazu die Source-Identität `Rest of Season Proj Fantasy Football <Position> Stats`. Eine Weekly-Seite wie `Week 1 Proj ...` ist semantisch ein anderer Datensatz und muss fail-closed abgewiesen werden; sie darf niemals stillschweigend in die Season-Projection-Contracts geschrieben werden.
 
 ## Was die Quelle misst
 
-CBS veröffentlicht Regular-Season-Projections. Die Kicker-Tabelle enthält:
+CBS veröffentlicht positionsbezogene Rest-of-Season-Projections. Für QB/RB/WR/TE werden die positionsspezifischen Offense-Statistiken sowie CBS-`FPTS`/`FPPG` separat erhalten. Die Kicker-Tabelle enthält unter anderem:
 
 - Games Played
 - FGM / FGA
@@ -23,19 +43,15 @@ CBS veröffentlicht Regular-Season-Projections. Die Kicker-Tabelle enthält:
 - XPM / XPA
 - FPTS / FPPG
 
-Die Distanz-Buckets können Dezimalwerte enthalten und werden deshalb als Source-Projections unverändert numerisch erhalten. Bei Spielern mit einer vollständigen Null-Projektion zeigt CBS die Distanz-Buckets teilweise als `—`; der Fetcher normalisiert diese ausschließlich dann auf 0, wenn auch FGM und FGA 0 sind.
+Die Kicker-Distanz-Buckets können Dezimalwerte enthalten und werden deshalb als Source-Projections unverändert numerisch erhalten. Bei Spielern mit einer vollständigen Null-Projektion zeigt CBS die Distanz-Buckets teilweise als `—`; der Fetcher normalisiert diese ausschließlich dann auf 0, wenn auch FGM und FGA 0 sind.
 
-CBS-`FPTS` sind Provider-Werte und keine Mighty-Giants-Ligapunkte. Die einzelnen Kicking-Projections bleiben deshalb separat erhalten.
+CBS-`FPTS` sind Provider-Werte und keine Mighty-Giants-Ligapunkte. Scoring-relevante Einzelstatistiken bleiben separat erhalten, damit Downstream-Operations bei vergleichbaren Feldern liga-spezifische Core Points ableiten können, ohne CBS-Providerpunkte als League Truth zu behandeln.
 
 ## Öffentlicher Zugriff
 
-Der aktive Source-Contract verwendet die öffentliche CBS-Sports-Seite:
+Der Audit hat keinen dokumentierten öffentlichen Projection-API-Vertrag auf der verwendeten Oberfläche bestätigt. Deshalb lesen die Fetcher die öffentliche HTML-Tabelle konservativ und fail-closed.
 
-`https://www.cbssports.com/fantasy/football/stats/K/<season>/season/projections/nonppr/`
-
-Der Audit hat keinen dokumentierten öffentlichen Projection-API-Vertrag auf der verwendeten Oberfläche bestätigt. Deshalb liest der Fetcher die öffentliche HTML-Tabelle konservativ und fail-closed.
-
-CBS zeigt auf dieser Projection-Seite kein belastbares sichtbares Source-Updated-Datum. Der Datensatz speichert deshalb `fetched_at` und HTTP-Provenance, erfindet aber kein `source_updated_date`.
+CBS zeigt auf der verwendeten Projection-Oberfläche kein belastbares sichtbares Source-Updated-Datum. Der Datensatz speichert deshalb `fetched_at` und HTTP-Provenance, erfindet aber kein `source_updated_date`.
 
 ## Ablagestruktur
 
@@ -44,13 +60,23 @@ cbs-sports/
 ├── README.md
 ├── SOURCE_AUDIT.md
 ├── analysis-metadata.json
+├── redraft-qb-preseason/
+├── redraft-rb-preseason/
+├── redraft-wr-preseason/
+├── redraft-te-preseason/
 └── redraft-kicker-preseason/
-    ├── raw-latest.html
-    ├── latest.json
-    └── snapshots/
-        └── YYYY-MM-DD/
-            ├── ranking.csv
-            └── metadata.json
+```
+
+Jeder aktive Ranking-Ordner verwendet denselben Grundvertrag:
+
+```text
+<ranking-id>/
+├── raw-latest.html
+├── latest.json
+└── snapshots/
+    └── YYYY-MM-DD/
+        ├── ranking.csv
+        └── metadata.json
 ```
 
 ## Speicherregeln
@@ -60,40 +86,37 @@ cbs-sports/
 - `latest.json` verweist auf den neuesten normalisierten Snapshot.
 - Historisiert werden nur geänderte `ranking.csv`- und `metadata.json`-Snapshots.
 - Bleibt das normalisierte Ranking identisch, wird kein neuer Snapshot erzeugt; Raw und Fetch-Provenance werden trotzdem aktualisiert.
+- Eine Antwort mit falscher Source-Identität wird nicht als neuer Raw-/Ranking-Stand publiziert.
 
-## Normalisierte Kicker-Liste
+## Rang- und Identity-Semantik
 
-`ranking.csv` enthält Player-/Team-Identität, `Rank`, `source_rank`, Games Played, FGM/FGA, alle fünf Distanz-Buckets, XPM/XPA, CBS-FPTS/FPPG und Saison.
-
-Rangsemantik:
-
-- `source_rank` ist die sichtbare Reihenfolge der erfolgreich gelesenen CBS-Tabelle.
-- `Rank` ist der eindeutige normalisierte Kicker-Rang.
-- Sortierung: `projected_fantasy_points` absteigend, danach FGM, XPM und `source_player_id`.
+- `source_rank` ist die sichtbare Reihenfolge der erfolgreich gelesenen CBS-Positionstabelle.
+- `Rank` ist der eindeutige normalisierte positionsbezogene Rang.
 - `source_player_id` wird aus dem offiziellen CBS-NFL-Spielerlink `/nfl/players/<id>/...` übernommen und ist eine CBS-ID, keine Sleeper-ID.
+- Für Kicker erfolgt die deterministische Sortierung nach `projected_fantasy_points`, danach FGM, XPM und `source_player_id`.
+- Für QB/RB/WR/TE erfolgt die deterministische Sortierung nach `projected_fantasy_points`, danach `source_player_id`.
 
 ## Qualitäts- und Completeness-Gates
 
-Der Fetcher veröffentlicht nur, wenn unter anderem folgende Prüfungen bestehen:
+Die Fetcher veröffentlichen nur, wenn unter anderem folgende Prüfungen bestehen:
 
-- Seitentitel entspricht `<season> Projections Fantasy Football Kicker Stats`.
-- Non-PPR-Projection-Kontext und erwartete Kicker-Spalten sind vorhanden.
-- mindestens 20 Kicker-Zeilen werden gefunden.
+- Source-Identität entspricht explizit `Rest of Season Proj Fantasy Football <Position> Stats`.
+- Non-PPR-Projection-Kontext ist vorhanden.
+- mindestens 20 Zeilen pro Position werden gefunden.
 - jede Zeile hat eine eindeutige CBS-Spieler-ID.
 - Games Played liegt im plausiblen NFL-Bereich.
-- FGM <= FGA und XPM <= XPA.
-- in jedem Distanz-Bucket gilt Made <= Attempts.
-- CBS-FPPG stimmt innerhalb der Rundung plausibel mit FPTS / Games Played überein.
-- `—` in Distanz-Buckets wird nur für eine echte FGM/FGA-Null-Projektion akzeptiert.
+- FPPG stimmt innerhalb der jeweiligen Rundung plausibel mit FPTS / Games Played überein.
 - eine unerwartete Pagination blockiert die Veröffentlichung.
+- Kicker zusätzlich: FGM <= FGA, XPM <= XPA und in jedem Distanz-Bucket Made <= Attempts.
+- Kicker `—`-Distanz-Buckets werden nur für eine echte FGM/FGA-Null-Projektion akzeptiert.
 
 Bei Fehlern wird kein teilweiser neuer Ranking-Snapshot veröffentlicht.
 
 ### HTTP-200 mit unerwarteter Source-Identität
 
-Ein erfolgreicher HTTP-Transport ist noch kein erfolgreicher Source-Refresh. Liefert CBS mit HTTP 200 eine Seite, deren Source-Identität nicht dem erwarteten Kicker-Projections-Contract entspricht, muss der Fetcher weiterhin fail-closed abbrechen und darf die Antwort weder als `raw-latest.html` noch als Ranking-Snapshot publizieren.
+Ein erfolgreicher HTTP-Transport ist noch kein erfolgreicher Source-Refresh. Liefert CBS mit HTTP 200 eine Seite, deren Source-Identität nicht dem erwarteten Projection-Contract entspricht, muss der Fetcher weiterhin fail-closed abbrechen und darf die Antwort weder als `raw-latest.html` noch als Ranking-Snapshot publizieren.
 
-Der Fehler muss in diesem Fall eine **begrenzte, operator-taugliche Diagnose** enthalten, die eine legitime Provider-Seitenänderung von einer falschen, umgeleiteten oder Interstitial-/Block-Seite unterscheiden hilft, ohne die komplette Antwort zu loggen. Für den Kicker-Fetcher umfasst diese Diagnose:
+Der Kicker-Fetcher liefert für diesen Fall eine **begrenzte, operator-taugliche Diagnose**, die eine legitime Provider-Seitenänderung von einer falschen, umgeleiteten oder Interstitial-/Block-Seite unterscheiden hilft, ohne die komplette Antwort zu loggen. Die Diagnose umfasst:
 
 - den normalisierten HTML-`title`, falls vorhanden;
 - die normalisierte erste `h1`, falls vorhanden;
@@ -106,11 +129,19 @@ Diese Diagnose ist ausschließlich Observability. Sie darf nie dazu verwendet we
 
 ## Direkter Abruf
 
+Kicker:
+
 ```bash
 python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
 ```
 
-Prüfmodi:
+QB/RB/WR/TE:
+
+```bash
+python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+```
+
+Prüfmodi für Kicker:
 
 ```bash
 python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --dry-run
@@ -119,8 +150,8 @@ python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --i
 
 ## Automatische Aktualisierung
 
-Der GitHub-Actions-Workflow `FM • Projection • CBS Sports` aktualisiert den CBS-Kicker-Projections-Bereich täglich um 06:08 Europe/Berlin und kann zusätzlich manuell über `workflow_dispatch` gestartet werden. Er führt zuerst die CBS-spezifischen Unit-Tests aus, ruft anschließend den Fetcher mit `--skip-unchanged` auf und committed ausschließlich `fantasy-management/sources/external-rankings/projections/cbs-sports/` über den Generated-Data-Scope `cbs-projections`.
+Der GitHub-Actions-Workflow `FM • Projection • CBS Sports` aktualisiert den CBS-Projections-Bereich täglich über den zentralen Scheduler und kann zusätzlich manuell über `workflow_dispatch` gestartet werden. Er führt zuerst die CBS-spezifischen Unit-Tests aus, ruft anschließend Kicker- und Offense-Fetcher mit `--skip-unchanged` auf und veröffentlicht ausschließlich den CBS-Source-Bereich plus den erfolgreichen Source-Heartbeat über den bestehenden Generated-Data-Publish-Pfad.
 
 ## Interpretation
 
-CBS Sports Projections sind erwartete Produktion, kein Expert Consensus, kein ADP und kein Trade-Marktwert. Für Kicker liefert CBS zusätzlich zu Gesamtpunkten distanzbezogene Field-Goal-Projections. Diese Rohwerte können später für eine liga-spezifische Scoring-Reconciliation genutzt werden, ohne die Source-Werte selbst umzuschreiben.
+CBS Sports Projections sind erwartete Produktion, kein Expert Consensus, kein ADP und kein Trade-Marktwert. Der aktive In-Season-Horizont ist **Rest of Season**, nicht die einzelne aktuelle Woche. Weekly-Kontext für Lineup-/Kicker-Entscheidungen bleibt ein separater Layer und darf nicht aus diesem Season-Projection-Datensatz abgeleitet werden, indem eine Weekly-CBS-Seite in denselben Contract geschrieben wird.
