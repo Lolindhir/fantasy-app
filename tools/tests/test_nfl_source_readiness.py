@@ -92,6 +92,61 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.assertEqual(readiness["HardFailures"], [])
         self.assertEqual(readiness["Datasets"]["nflverse.player-stats"]["MissingHistoricalSeasons"], [])
 
+    def test_known_unavailable_historical_partition_is_explicit_but_not_a_hard_failure(self) -> None:
+        self.write_json("source-data/nfl/schedules/2014.json", {})
+        self.write_json(
+            "source-data/registry.json",
+            {
+                "datasets": [
+                    {
+                        "id": "nflverse.snap-counts",
+                        "rawPath": "providers/nflverse/snap-counts/raw-{season}.csv",
+                        "metadataPath": "providers/nflverse/snap-counts/metadata-{season}.json",
+                        "availabilityPolicy": "current-season-may-be-unavailable",
+                    }
+                ]
+            },
+        )
+        self.write_text("source-data/providers/nflverse/snap-counts/raw-2013.csv")
+        self.write_json(
+            "source-data/providers/nflverse/snap-counts/metadata-2013.json",
+            {"availabilityStatus": "available"},
+        )
+        self.write_json("source-data/nfl/snap-counts/2013/1.json", {"Season": 2013, "Week": 1})
+
+        with patch.dict(
+            HISTORICAL_BANDS,
+            {
+                "nflverse.snap-counts": {
+                    "start": 2012,
+                    "canonical": "snap-counts",
+                    "knownUnavailable": {2012: "upstream schema-only asset"},
+                }
+            },
+            clear=True,
+        ):
+            readiness = build_nfl_readiness(self.root)
+
+        dataset = readiness["Datasets"]["nflverse.snap-counts"]
+        self.assertEqual(dataset["MissingHistoricalSeasons"], [])
+        self.assertEqual(
+            dataset["KnownUnavailableHistoricalSeasons"],
+            [{"Season": 2012, "Reason": "upstream schema-only asset"}],
+        )
+        self.assertEqual(dataset["HistoricalSeasonCountNominal"], 2)
+        self.assertEqual(dataset["HistoricalSeasonCountExpected"], 1)
+        unavailable = next(row for row in dataset["Seasons"] if row["Season"] == 2012)
+        self.assertTrue(unavailable["Historical"])
+        self.assertTrue(unavailable["KnownUnavailable"])
+        self.assertFalse(unavailable["RequiredForReadiness"])
+        self.assertFalse(unavailable["Ready"])
+        self.assertTrue(readiness["ReadyForHistoricalScoring"])
+        self.assertEqual(readiness["HardFailures"], [])
+        self.assertEqual(
+            readiness["HistoricalBackfillPolicy"]["KnownUnavailableHistoricalPartitions"],
+            [{"DatasetID": "nflverse.snap-counts", "Season": 2012, "Reason": "upstream schema-only asset"}],
+        )
+
     def test_league_readiness_uses_human_readable_nfl_reise_namespace(self) -> None:
         self.write_json(
             "source-data/leagues/_bootstrap/nfl-reise.json",
