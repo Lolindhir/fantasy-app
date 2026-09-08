@@ -111,7 +111,7 @@ class TableParser(HTMLParser):
 
 
 def source_url(position: str, season: int) -> str:
-    return f"https://www.cbssports.com/fantasy/football/stats/{position}/{season}/season/projections/nonppr/"
+    return f"https://www.cbssports.com/fantasy/football/stats/{position}/{season}/restofseason/projections/nonppr/"
 
 
 def fetch_html(url: str, timeout: int = 30) -> tuple[str, dict[str, str]]:
@@ -154,8 +154,8 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
     parser = TableParser()
     parser.feed(html)
     text = parser.page_text
-    if not re.search(rf"\b{season}\s+Projections\s+Fantasy\s+Football\s+{re.escape(config['label'])}\s+Stats\b", text, re.IGNORECASE):
-        raise ProjectionError(f"Unexpected CBS source identity for {position} {season}")
+    if not re.search(rf"\bRest\s+of\s+Season\s+Proj\s+Fantasy\s+Football\s+{re.escape(config['label'])}\s+Stats\b", text, re.IGNORECASE):
+        raise ProjectionError(f"Unexpected CBS rest-of-season source identity for {position} {season}")
     if not re.search(r"\bNon-PPR\b", text, re.IGNORECASE):
         raise ProjectionError("CBS Non-PPR source context not found")
     if any(link["text"].strip().casefold() in {"next", "next page"} for link in parser.links):
@@ -230,7 +230,7 @@ def parse_projection_html(html: str, *, position: str, season: int) -> tuple[lis
     for rank, row in enumerate(rows, start=1):
         row["Rank"] = rank
         row.pop("_points")
-    return rows, {"row_count": len(rows), "source_update_timestamp_available": False, "pagination_detected": False}
+    return rows, {"row_count": len(rows), "source_update_timestamp_available": False, "pagination_detected": False, "projection_horizon": "rest_of_season"}
 
 
 def ranking_id(position: str) -> str:
@@ -295,9 +295,11 @@ def write_projection(*, repo_root: Path, position: str, rows: list[dict[str, Any
         "source_name": SOURCE_NAME,
         "ranking_kind": RANKING_KIND,
         "ranking_id": ranking_id(position),
-        "ranking_name": f"CBS Sports Preseason {position} Projections",
+        "ranking_name": f"CBS Sports Rest of Season {position} Projections",
         "position": position,
         "season": season,
+        "projection_horizon": "rest_of_season",
+        "compatibility_dataset_id": ranking_id(position),
         "source_format": "nonppr",
         "source_url": source_url_value,
         "fetched_at": fetched_at.isoformat(),
@@ -323,6 +325,7 @@ def write_projection(*, repo_root: Path, position: str, rows: list[dict[str, Any
         "ranking_sha256": ranking_sha,
         "raw_sha256": raw_sha,
         "source_url": source_url_value,
+        "projection_horizon": "rest_of_season",
     }
     _atomic_write(latest_path, json.dumps(pointer, indent=2, ensure_ascii=False) + "\n")
     return [raw_path, ranking_path, metadata_path, latest_path], True
