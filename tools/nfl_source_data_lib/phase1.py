@@ -21,6 +21,19 @@ _PHASE1_DATASET_IDS = {
     "sleeper.players",
 }
 
+_ROSTER_SOURCE_ID_ORDER = (
+    "GSIS",
+    "ESPN",
+    "PFR",
+    "PFF",
+    "Sleeper",
+    "ESB",
+    "Sportradar",
+    "Yahoo",
+    "Rotowire",
+    "FantasyData",
+)
+
 
 def _iter_csv_path(path: Path) -> Iterable[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
@@ -255,6 +268,37 @@ def _build_game_finality(
     return outputs, audit, preserved
 
 
+def _merge_equivalent_season_roster_duplicate(
+    existing: dict[str, Any],
+    candidate: dict[str, Any],
+    *,
+    dataset_id: str,
+    season: int,
+    team: str,
+    gsis: str,
+) -> None:
+    existing_facts = {key: value for key, value in existing.items() if key != "SourceIDs"}
+    candidate_facts = {key: value for key, value in candidate.items() if key != "SourceIDs"}
+    if existing_facts != candidate_facts:
+        raise ValueError(
+            f"Conflicting duplicate {dataset_id} roster identity: season={season} team={team} gsis={gsis}"
+        )
+
+    merged_source_ids = dict(existing["SourceIDs"])
+    for source, value in candidate["SourceIDs"].items():
+        existing_value = merged_source_ids.get(source)
+        if existing_value is not None and existing_value != value:
+            raise ValueError(
+                f"Conflicting duplicate {dataset_id} SourceID {source}: "
+                f"season={season} team={team} gsis={gsis} values={existing_value},{value}"
+            )
+        merged_source_ids[source] = value
+
+    ordered_sources = [source for source in _ROSTER_SOURCE_ID_ORDER if source in merged_source_ids]
+    ordered_sources.extend(sorted(set(merged_source_ids) - set(ordered_sources)))
+    existing["SourceIDs"] = {source: merged_source_ids[source] for source in ordered_sources}
+
+
 def _build_rosters(
     repo_root: Path,
     dataset: Dataset,
@@ -280,7 +324,7 @@ def _build_rosters(
             seen_weekly: dict[tuple[int, str, str], dict[str, Any]] = {}
         else:
             records: list[dict[str, Any]] = []
-            seen: set[tuple[int, str, str]] = set()
+            seen_season: dict[tuple[str, str], dict[str, Any]] = {}
 
         for row in _iter_csv_path(raw_path):
             row_season = as_int(row.get("season"))
@@ -296,13 +340,6 @@ def _build_rosters(
             week = as_int(row.get("week"))
             if weekly and week is None:
                 raise ValueError(f"{dataset.id} row {gsis} is missing week")
-            key = (week or 0, team, gsis)
-            if not weekly:
-                if key in seen:
-                    raise ValueError(
-                        f"Duplicate {dataset.id} roster identity: season={season} week={week} team={team} gsis={gsis}"
-                    )
-                seen.add(key)
 
             canonical_player_id = lookup.get(("GSIS", gsis))
             raw_status = clean(row.get("status"))
@@ -337,6 +374,7 @@ def _build_rosters(
             }
             record["SourceIDs"].update({source: value for source, value in extra_ids.items() if value})
             if weekly:
+                key = (week or 0, team, gsis)
                 record["Week"] = week
                 record["GameType"] = clean(row.get("game_type"))
                 existing = seen_weekly.get(key)
@@ -351,6 +389,20 @@ def _build_rosters(
                 seen_weekly[key] = record
                 grouped[week].append(record)
             else:
+                key = (team, gsis)
+                existing = seen_season.get(key)
+                if existing is not None:
+                    _merge_equivalent_season_roster_duplicate(
+                        existing,
+                        record,
+                        dataset_id=dataset.id,
+                        season=season,
+                        team=team,
+                        gsis=gsis,
+                    )
+                    equivalent_duplicate_count += 1
+                    continue
+                seen_season[key] = record
                 records.append(record)
 
             resolved_count += int(canonical_player_id is not None)

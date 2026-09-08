@@ -100,6 +100,33 @@ joinAudit:
       - current and archived copies of the same DraftKey/PickKey may collapse only when all transaction-enrichment facts are semantically identical; conflicting copies fail closed.
       - historical player aggregation uses Tank01 playerID as the provider identity and rejects duplicate claims inside one game.
 
+  nflverseSeasonRosters:
+    canonicalIdentity: season + team + GSIS
+    providerWeekRole: provenance-only
+    upstreamContext: >
+      nflreadr documents load_rosters() as season-level roster data representing
+      the latest roster view for a season, while load_rosters_weekly() is the
+      separate week-level history. The provider week/game_type columns therefore
+      do not distinguish records in the canonical season-roster output.
+    equivalentDuplicateRule: >
+      Multiple provider rows for one canonical season-roster identity may collapse
+      only when every canonical roster fact other than SourceIDs is identical.
+      Optional SourceIDs may be merged monotonically when a value is missing on one
+      row or the same non-empty value is repeated. Two different non-empty values
+      for the same provider ID are conflicting evidence and must fail closed.
+    teamBoundary: >
+      Team is part of the canonical identity. The same GSIS may therefore remain
+      as distinct season-roster records for different teams; a trade or roster
+      move must not be collapsed across teams.
+    rawEvidenceRule: >
+      All provider rows remain unchanged in source-data/providers. Canonical
+      merging enriches only the derived SourceIDs map and never chooses a first or
+      last row as a winner.
+    observability: >
+      Canonical materialization reports collapsed compatible season-roster rows in
+      equivalentDuplicateRowCount. Conflicting canonical facts or SourceIDs abort
+      materialization before publication.
+
   nflverseWeeklyRosters:
     canonicalIdentity: season + week + team + GSIS
     equivalentDuplicateRule: >
@@ -143,6 +170,7 @@ regressionCoverage:
     - duplicate generated TransactionIDs and manual SleeperTransactionID bindings
     - missing completed historical Sleeper draft IDs
     - identical versus conflicting current/history draft-pick copies
+    - compatible nflverse season-roster SourceID enrichment collapses only across identical season/team/GSIS canonical facts while conflicting facts or provider IDs fail closed
     - legacy nflverse weekly-roster status variants collapse only after documented normalization while remaining canonical conflicts fail closed
 
 futureSourceDataImplication: >
