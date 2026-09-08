@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from nfl_source_data_lib.history import HISTORICAL_BANDS
+from nfl_source_data_lib.history import HISTORICAL_BANDS, known_unavailable_reason
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
 
@@ -78,10 +78,12 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
     season_now = current_season(repo_root)
     datasets: dict[str, Any] = {}
     hard_failures: list[str] = []
+    known_unavailable_partitions: list[dict[str, Any]] = []
     for dataset_id, policy in HISTORICAL_BANDS.items():
         dataset = registry_dataset(repo_root, dataset_id)
         rows = []
         missing_historical = []
+        known_unavailable_historical = []
         for season in range(int(policy["start"]), season_now + 1):
             raw_rel = "source-data/" + render_path(dataset["rawPath"], season)
             metadata_rel = "source-data/" + render_path(dataset["metadataPath"], season)
@@ -90,9 +92,16 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             availability = metadata.get("availabilityStatus") or metadata.get("AvailabilityStatus")
             partitions = canonical_partition_count(repo_root, str(policy["canonical"]), season)
             historical = season < season_now
+            unavailable_reason = known_unavailable_reason(dataset_id, season) if historical else None
+            required_for_readiness = historical and unavailable_reason is None
             ready = raw_exists and partitions > 0
-            if historical and not ready:
+            if required_for_readiness and not ready:
                 missing_historical.append(season)
+            if unavailable_reason:
+                known_unavailable_historical.append({"Season": season, "Reason": unavailable_reason})
+                known_unavailable_partitions.append(
+                    {"DatasetID": dataset_id, "Season": season, "Reason": unavailable_reason}
+                )
             rows.append(
                 {
                     "Season": season,
@@ -101,14 +110,20 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
                     "CanonicalPartitionCount": partitions,
                     "AvailabilityStatus": availability,
                     "Ready": ready,
+                    "RequiredForReadiness": required_for_readiness,
+                    "KnownUnavailable": unavailable_reason is not None,
+                    "KnownUnavailableReason": unavailable_reason,
                 }
             )
         if missing_historical:
             hard_failures.append(f"{dataset_id}: missing historical seasons {missing_historical}")
+        nominal_historical_count = max(0, season_now - int(policy["start"]))
         datasets[dataset_id] = {
             "HistoryStart": policy["start"],
             "ExpectedThroughSeason": season_now,
-            "HistoricalSeasonCountExpected": max(0, season_now - int(policy["start"])),
+            "HistoricalSeasonCountNominal": nominal_historical_count,
+            "HistoricalSeasonCountExpected": nominal_historical_count - len(known_unavailable_historical),
+            "KnownUnavailableHistoricalSeasons": known_unavailable_historical,
             "MissingHistoricalSeasons": missing_historical,
             "CurrentSeasonMayBeUnavailable": dataset.get("availabilityPolicy") == "current-season-may-be-unavailable",
             "Seasons": rows,
@@ -125,8 +140,9 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "GeneralStatsBasisStart": 1999,
             "WeeklyRosterStart": 2002,
             "SnapCountStart": 2012,
+            "KnownUnavailableHistoricalPartitions": known_unavailable_partitions,
             "MissingIsZero": False,
-            "Rule": "Historical seasons in the supported source band must be persisted; current not-yet-available evidence is allowed only by dataset availability policy.",
+            "Rule": "Historical seasons in the supported source band must be persisted unless an exact partition is explicitly documented as known upstream-unavailable; current not-yet-available evidence is allowed only by dataset availability policy. Unavailable facts are never zero.",
         },
         "FixedHistoricalCoverage": {
             "Schedules": {

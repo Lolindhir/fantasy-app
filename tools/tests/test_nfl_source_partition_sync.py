@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib.common import Dataset, REGISTRY_SCHEMA_VERSION, load_registry, sync_dataset
-from nfl_source_data_lib.history import select_missing_historical_partitions
+from nfl_source_data_lib.history import known_unavailable_reason, select_missing_historical_partitions
 
 
 def partitioned_dataset(
@@ -136,10 +136,11 @@ class NflSourcePartitionSyncTests(unittest.TestCase):
             all_selected = select_missing_historical_partitions(
                 root,
                 datasets,
-                current_season=2012,
+                current_season=2013,
                 limit=100,
             )
-            self.assertNotIn(("nflverse.snap-counts", 2011), all_selected)
+            self.assertNotIn(("nflverse.snap-counts", 2012), all_selected)
+            self.assertIsNotNone(known_unavailable_reason("nflverse.snap-counts", 2012))
             self.assertIn(("nflverse.weekly-rosters", 2002), all_selected)
             self.assertNotIn(("nflverse.weekly-rosters", 2001), all_selected)
             self.assertIn(("nflverse.rosters", 1999), all_selected)
