@@ -10,8 +10,15 @@
     "redraft-te-preseason",
     "redraft-kicker-preseason"
   ],
+  "compatibility_id_policy": {
+    "legacy_suffix": "preseason",
+    "current_meaning": "stable repository and consumer identifier only",
+    "active_projection_horizon": "rest_of_season",
+    "rename_required_for_current_contract": false
+  },
   "source_measurement": {
     "type": "provider_regular_season_stat_projections",
+    "active_horizon": "rest_of_season",
     "ordering_basis": "source_fantasy_points_descending",
     "not_expert_consensus": true,
     "not_adp": true,
@@ -19,9 +26,16 @@
     "not_league_specific_truth": true
   },
   "active_scope": {
-    "season_mode": "current_preseason_full_regular_season",
+    "season_mode": "current_rest_of_season",
     "positions": ["QB", "RB", "WR", "TE", "K"],
     "confirmed_but_not_active_positions": ["DST"]
+  },
+  "source_route_contract": {
+    "active_template": "https://www.cbssports.com/fantasy/football/stats/<POSITION>/<season>/restofseason/projections/nonppr/",
+    "required_identity_pattern": "Rest of Season Proj Fantasy Football <Position> Stats",
+    "legacy_season_route_is_not_stable_season_projection": true,
+    "observed_legacy_route_identity_on_2026_09_08": "Week 1 Proj",
+    "weekly_identity_must_fail_closed": true
   },
   "format_context": {
     "source_scoring_label": "Non-PPR",
@@ -61,12 +75,12 @@
   },
   "rank_semantics": {
     "source_rank": {
-      "usage": "Visible provider row order on the successfully parsed CBS Sports position projection page."
+      "usage": "Visible provider row order on the successfully parsed CBS Sports rest-of-season position projection page."
     },
     "Rank": {
       "unique": true,
       "usage": "Deterministic position-only projection ranking and list-length-aware percentile input.",
-      "normalization": "projected_fantasy_points descending, source_player_id"
+      "normalization": "projected_fantasy_points descending with deterministic source-player-id tie breaking; Kicker additionally uses FGM and XPM before source_player_id"
     }
   },
   "player_join": {
@@ -77,14 +91,17 @@
   },
   "quality_gates": {
     "minimum_rows_per_position": 20,
-    "require_source_title_identity": true,
+    "require_rest_of_season_source_identity": true,
+    "reject_weekly_source_identity": true,
     "require_non_ppr_context": true,
     "require_unique_source_player_ids": true,
     "fail_if_pagination_appears": true,
     "validate_games_played": true,
     "validate_fppg_rounding": true,
     "kicker_validate_makes_not_above_attempts": true,
-    "kicker_allow_missing_distance_buckets_only_for_zero_fgm_fga": true
+    "kicker_allow_missing_distance_buckets_only_for_zero_fgm_fga": true,
+    "identity_mismatch_is_non_publishable": true,
+    "kicker_identity_mismatch_diagnostics_are_bounded": true
   },
   "cross_source_comparison": {
     "preferred_snapshot_alignment": "same_day",
@@ -95,6 +112,8 @@
   "league_adjustments": [
     "Retain projected raw statistics independently of the CBS fantasy-point formula.",
     "Do not treat CBS FPTS as Mighty Giants league points.",
+    "Treat the active CBS feed as rest-of-season expected production, not as the current weekly matchup projection.",
+    "Keep weekly lineup and kicker-streaming context in its separate weekly decision layer; never substitute a CBS Week N page into this season-projection contract.",
     "For QB/RB/WR/TE, derive Mighty Giants core points only from scoring-relevant raw stats comparably projected by active providers; do not impute missing components such as two-point conversions or fumble-loss projections.",
     "Apply six-team replacement level, two fixed QB, two fixed TE and four FLEX slots only during downstream interpretation.",
     "Use current role, injury and competition evidence separately from the projection ranking."
@@ -103,7 +122,8 @@
     "The audited public page does not expose a reliable projection-specific Updated timestamp.",
     "No documented public Projection API contract was confirmed on the audited CBS Sports surface.",
     "The HTML parser depends on the public table and official CBS NFL player-link structure.",
-    "Projection values are provider estimates and can change materially during training camp and the season.",
+    "CBS route semantics can change with the provider's seasonal lifecycle; the active parser therefore requires an explicit Rest of Season source identity and rejects weekly identities.",
+    "Projection values are provider estimates and can change materially during the season.",
     "Derived league-scoring core points intentionally omit non-comparable projected scoring components and are not a complete exact season-point forecast."
   ],
   "audit_file": "fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md"

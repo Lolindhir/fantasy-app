@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch, validate and materialize CBS Sports preseason kicker projections."""
+"""Fetch, validate and materialize CBS Sports rest-of-season kicker projections."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ SOURCE_ID = "cbs-sports"
 SOURCE_NAME = "CBS Sports"
 RANKING_KIND = "projections"
 RANKING_ID = "redraft-kicker-preseason"
-RANKING_NAME = "CBS Sports Preseason Kicker Projections"
+RANKING_NAME = "CBS Sports Rest of Season Kicker Projections"
 SCHEMA_VERSION = 1
 MIN_ROWS = 20
 SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/cbs-sports"
@@ -69,9 +69,13 @@ class TableParser(HTMLParser):
         self.rows: list[list[dict[str, Any]]] = []
         self.links: list[dict[str, str]] = []
         self.text_parts: list[str] = []
+        self.title_parts: list[str] = []
+        self.h1_parts: list[str] = []
         self._row: list[dict[str, Any]] | None = None
         self._cell: dict[str, Any] | None = None
         self._anchor: dict[str, str] | None = None
+        self._in_title = False
+        self._in_h1 = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = {key: value or "" for key, value in attrs}
@@ -81,10 +85,18 @@ class TableParser(HTMLParser):
             self._cell = {"text": [], "links": []}
         elif tag == "a":
             self._anchor = {"href": values.get("href", ""), "text": ""}
+        elif tag == "title":
+            self._in_title = True
+        elif tag == "h1":
+            self._in_h1 = True
 
     def handle_data(self, data: str) -> None:
         if data:
             self.text_parts.append(data)
+        if self._in_title:
+            self.title_parts.append(data)
+        if self._in_h1:
+            self.h1_parts.append(data)
         if self._cell is not None:
             self._cell["text"].append(data)
         if self._anchor is not None:
@@ -108,16 +120,28 @@ class TableParser(HTMLParser):
             if self._row:
                 self.rows.append(self._row)
             self._row = None
+        elif tag == "title":
+            self._in_title = False
+        elif tag == "h1":
+            self._in_h1 = False
 
     @property
     def page_text(self) -> str:
         return " ".join(" ".join(self.text_parts).split())
 
+    @property
+    def title_text(self) -> str:
+        return " ".join(" ".join(self.title_parts).split())
+
+    @property
+    def h1_text(self) -> str:
+        return " ".join(" ".join(self.h1_parts).split())
+
 
 def source_url(season: int) -> str:
     return (
         "https://www.cbssports.com/fantasy/football/stats/"
-        f"K/{season}/season/projections/nonppr/"
+        f"K/{season}/restofseason/projections/nonppr/"
     )
 
 
@@ -194,14 +218,39 @@ def _csv_number(value: Decimal) -> int | str:
     return format(value.normalize(), "f")
 
 
-def _validate_page_identity(text: str, season: int) -> None:
+def _identity_diagnostics(
+    parser: TableParser,
+    html: str,
+    response_headers: dict[str, str] | None,
+) -> str:
+    headers = response_headers or {}
+    title = parser.title_text[:160] or "<missing>"
+    h1 = parser.h1_text[:160] or "<missing>"
+    content_type = (headers.get("content_type") or "<unknown>")[:120]
+    text_excerpt = parser.page_text[:240] or "<empty>"
+    body_sha256 = hashlib.sha256(html.encode("utf-8")).hexdigest()[:16]
+    return (
+        f"observed title={title!r}; h1={h1!r}; content_type={content_type!r}; "
+        f"html_chars={len(html)}; body_sha256={body_sha256}; "
+        f"text_excerpt={text_excerpt!r}"
+    )
+
+
+def _validate_page_identity(
+    parser: TableParser,
+    html: str,
+    season: int,
+    response_headers: dict[str, str] | None,
+) -> None:
+    text = parser.page_text
     if not re.search(
-        rf"\b{season}\s+Projections\s+Fantasy\s+Football\s+Kicker\s+Stats\b",
+        r"\bRest\s+of\s+Season\s+Proj\s+Fantasy\s+Football\s+Kicker\s+Stats\b",
         text,
         re.IGNORECASE,
     ):
         raise CBSSportsProjectionError(
-            f"Unexpected CBS Sports source identity; expected {season} Kicker projections"
+            f"Unexpected CBS Sports source identity; expected {season} Rest of Season Kicker projections; "
+            + _identity_diagnostics(parser, html, response_headers)
         )
     required_headers = [
         "Games Played",
@@ -227,12 +276,12 @@ def parse_projection_html(
     *,
     season: int,
     fetched_at: datetime,
+    response_headers: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     del fetched_at  # CBS exposes no reliable projection-updated timestamp on this surface.
     parser = TableParser()
     parser.feed(html)
-    text = parser.page_text
-    _validate_page_identity(text, season)
+    _validate_page_identity(parser, html, season, response_headers)
 
     if any(
         link["text"].strip().casefold() in {"next", "next page"}
@@ -409,6 +458,7 @@ def parse_projection_html(
         "source_scoring_label": "Non-PPR",
         "source_update_timestamp_available": False,
         "pagination_detected": False,
+        "projection_horizon": "rest_of_season",
     }
 
 
@@ -482,6 +532,7 @@ def write_projection(
             "raw_sha256": raw_sha,
             "source_url": source_url_value,
             "freshness_status": "live_fetch",
+            "projection_horizon": "rest_of_season",
         })
         _atomic_write(latest_path, json.dumps(updated, indent=2, ensure_ascii=False) + "\n")
         return [raw_path, latest_path], False
@@ -494,13 +545,15 @@ def write_projection(
         "ranking_id": RANKING_ID,
         "ranking_name": RANKING_NAME,
         "ranking_type": "provider_regular_season_stat_projection_ordered_by_source_fantasy_points",
+        "projection_horizon": "rest_of_season",
+        "compatibility_dataset_id": RANKING_ID,
         "source_url": source_url_value,
         "fetched_at": fetched_at.isoformat(),
         "season_label": season,
         "source_update_timestamp_available": False,
         "format": {
             "dynasty": False,
-            "horizon": "preseason_full_regular_season",
+            "horizon": "rest_of_season",
             "position": "K",
             "source_scoring_label": diagnostics["source_scoring_label"],
             "custom_scoring_used": False,
@@ -536,7 +589,7 @@ def write_projection(
             "response_headers": response_headers,
         },
         "analysis_usage": {
-            "role": "Projected full-season kicker production",
+            "role": "Projected rest-of-season kicker production",
             "not_expert_consensus": True,
             "not_adp": True,
             "not_trade_market_value": True,
@@ -564,6 +617,7 @@ def write_projection(
         "raw_sha256": raw_sha,
         "source_url": source_url_value,
         "freshness_status": "live_fetch",
+        "projection_horizon": "rest_of_season",
         "direct_fetcher": DIRECT_FETCHER,
         "analysis_metadata_file": ANALYSIS_METADATA,
         "refresh_before_value_sensitive_analysis": True,
@@ -604,12 +658,13 @@ def main(argv: list[str] | None = None) -> int:
             html,
             season=args.season,
             fetched_at=fetched_at,
+            response_headers=headers,
         )
         if args.dry_run:
             print(
                 f"CBS Sports projections ranking={RANKING_ID} rows={len(rows)} "
                 f"scoring={diagnostics['source_scoring_label']} "
-                "source_updated=unavailable"
+                "horizon=rest_of_season source_updated=unavailable"
             )
             return 0
         paths, created = write_projection(

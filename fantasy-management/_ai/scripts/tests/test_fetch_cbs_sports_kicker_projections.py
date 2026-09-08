@@ -12,7 +12,14 @@ assert spec and spec.loader
 spec.loader.exec_module(module)
 
 
-def fixture(*, changed=False, duplicate=False, next_page=False, wrong_title=False):
+def fixture(
+    *,
+    changed=False,
+    duplicate=False,
+    next_page=False,
+    wrong_title=False,
+    week_one=False,
+):
     rows = []
     for index in range(24):
         player_id = 2815718 if index == 0 else 3000000 + index
@@ -43,11 +50,12 @@ def fixture(*, changed=False, duplicate=False, next_page=False, wrong_title=Fals
             + ''.join(f'<td>{value}</td>' for value in values)
             + f'<td>{xpm}</td><td>{xpa}</td><td>{points}</td><td>{fppg}</td></tr>'
         )
-    title = (
-        '2026 Projections Fantasy Football Running Back Stats'
-        if wrong_title
-        else '2026 Projections Fantasy Football Kicker Stats'
-    )
+    if week_one:
+        title = 'Week 1 Proj Fantasy Football Kicker Stats'
+    elif wrong_title:
+        title = 'Rest of Season Proj Fantasy Football Running Back Stats'
+    else:
+        title = 'Rest of Season Proj Fantasy Football Kicker Stats'
     next_link = '<a href="?page=2">Next Page</a>' if next_page else ''
     headers = (
         'Games Played Field Goals Made Field Goal Attempts Longest Field Goal '
@@ -59,7 +67,8 @@ def fixture(*, changed=False, duplicate=False, next_page=False, wrong_title=Fals
         'Extra Points Made Extra Points Attempted Fantasy Points Fantasy Points Per Game'
     )
     return (
-        f'<html><body><h1>{title}</h1><div>Non-PPR</div><div>{headers}</div>'
+        f'<html><head><title>CBS Sports Fantasy Football</title></head><body>'
+        f'<h1>{title}</h1><div>Non-PPR</div><div>{headers}</div>'
         f'<table>{"".join(rows)}</table>{next_link}</body></html>'
     )
 
@@ -79,12 +88,27 @@ class CBSSportsTests(unittest.TestCase):
         self.assertEqual('', rows[0]['longest_field_goal'])
         self.assertEqual(0, rows[-1]['fg_50_plus_attempts'])
         self.assertFalse(diagnostics['source_update_timestamp_available'])
+        self.assertEqual('rest_of_season', diagnostics['projection_horizon'])
+        self.assertIn('/K/2026/restofseason/projections/nonppr/', module.source_url(2026))
 
     def test_rejects_wrong_identity_duplicate_pagination_and_bad_stats(self):
-        with self.assertRaises(module.CBSSportsProjectionError):
+        with self.assertRaises(module.CBSSportsProjectionError) as caught:
             module.parse_projection_html(
-                fixture(wrong_title=True), season=2026, fetched_at=self.fetched()
+                fixture(wrong_title=True),
+                season=2026,
+                fetched_at=self.fetched(),
+                response_headers={'content_type': 'text/html; charset=utf-8'},
             )
+        message = str(caught.exception)
+        self.assertIn("observed title='CBS Sports Fantasy Football'", message)
+        self.assertIn(
+            "h1='Rest of Season Proj Fantasy Football Running Back Stats'", message
+        )
+        self.assertIn("content_type='text/html; charset=utf-8'", message)
+        self.assertRegex(message, r'body_sha256=[0-9a-f]{16}')
+        self.assertIn('text_excerpt=', message)
+        self.assertLess(len(message), 800)
+
         with self.assertRaisesRegex(module.CBSSportsProjectionError, 'Duplicate'):
             module.parse_projection_html(
                 fixture(duplicate=True), season=2026, fetched_at=self.fetched()
@@ -96,6 +120,18 @@ class CBSSportsTests(unittest.TestCase):
         bad = fixture().replace('<td>39</td><td>43</td>', '<td>44</td><td>43</td>', 1)
         with self.assertRaisesRegex(module.CBSSportsProjectionError, 'FGM exceeds FGA'):
             module.parse_projection_html(bad, season=2026, fetched_at=self.fetched())
+
+    def test_week_one_identity_fails_closed(self):
+        with self.assertRaises(module.CBSSportsProjectionError) as caught:
+            module.parse_projection_html(
+                fixture(week_one=True),
+                season=2026,
+                fetched_at=self.fetched(),
+                response_headers={'content_type': 'text/html; charset=utf-8'},
+            )
+        message = str(caught.exception)
+        self.assertIn('expected 2026 Rest of Season Kicker projections', message)
+        self.assertIn("h1='Week 1 Proj Fantasy Football Kicker Stats'", message)
 
     def test_latest_raw_and_skip_unchanged(self):
         rows, diagnostics = module.parse_projection_html(
@@ -125,6 +161,7 @@ class CBSSportsTests(unittest.TestCase):
             )
             self.assertEqual('2026-08-08', latest['snapshot_date'])
             self.assertFalse(latest['source_update_timestamp_available'])
+            self.assertEqual('rest_of_season', latest['projection_horizon'])
 
     def test_changed_projection_creates_snapshot(self):
         rows, diagnostics = module.parse_projection_html(
