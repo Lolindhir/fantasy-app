@@ -89,6 +89,21 @@ Der Fetcher veröffentlicht nur, wenn unter anderem folgende Prüfungen bestehen
 
 Bei Fehlern wird kein teilweiser neuer Ranking-Snapshot veröffentlicht.
 
+### HTTP-200 mit unerwarteter Source-Identität
+
+Ein erfolgreicher HTTP-Transport ist noch kein erfolgreicher Source-Refresh. Liefert CBS mit HTTP 200 eine Seite, deren Source-Identität nicht dem erwarteten Kicker-Projections-Contract entspricht, muss der Fetcher weiterhin fail-closed abbrechen und darf die Antwort weder als `raw-latest.html` noch als Ranking-Snapshot publizieren.
+
+Der Fehler muss in diesem Fall eine **begrenzte, operator-taugliche Diagnose** enthalten, die eine legitime Provider-Seitenänderung von einer falschen, umgeleiteten oder Interstitial-/Block-Seite unterscheiden hilft, ohne die komplette Antwort zu loggen. Für den Kicker-Fetcher umfasst diese Diagnose:
+
+- den normalisierten HTML-`title`, falls vorhanden;
+- die normalisierte erste `h1`, falls vorhanden;
+- den HTTP-`Content-Type`;
+- die Zeichenlänge der empfangenen HTML-Antwort;
+- einen kurzen SHA-256-Fingerprint der Antwort;
+- einen kurzen, hart begrenzten normalisierten Textausschnitt.
+
+Diese Diagnose ist ausschließlich Observability. Sie darf nie dazu verwendet werden, Source-Identity-, Schema-, Vollständigkeits- oder Plausibilitätsprüfungen automatisch zu lockern. Eine neue legitime CBS-Seitenidentität muss separat geprüft und explizit in den Parser-Contract übernommen werden.
+
 ## Direkter Abruf
 
 ```bash
