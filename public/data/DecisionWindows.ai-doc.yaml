@@ -1,17 +1,18 @@
-schemaVersion: 1
+schemaVersion: 2
 
 file:
   path: public/data/DecisionWindows.json
   kind: generated-json-read-model
   generator: public/requests/RequestLeague.ps1
-  derivation: public/requests/utils/league/DecisionWindowUtils.psm1
+  baseDerivation: public/requests/utils/league/DecisionWindowUtils.psm1
+  relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
   architectureDecision: .ai-context/manual/decisions.yaml#ADR-036
 
 contract:
   purpose: >
-    Small current App read model for exact NFL kickoff Decision Windows, current
-    fantasy-team/player lock associations and objective lineup integrity. It is
-    disposable generated output, not historical source of truth.
+    Current App read model for exact NFL kickoff Decision Windows, fantasy-team/player
+    lock associations, objective lineup integrity and Fantasy Relevance v2 lineup
+    state. It is disposable generated output, not historical source of truth.
   topLevel:
     - SchemaVersion
     - LeagueID
@@ -22,6 +23,7 @@ contract:
     - LookaheadDecisionWindow
     - PlayerLockFacts
     - TeamLineupEvaluations
+    - FantasyRelevance
   decisionWindow:
     fields:
       - DecisionWindowID
@@ -46,6 +48,10 @@ contract:
       - HomeTeamID
       - HomeTeamAbbr
   affectedFantasyTeam:
+    compatibility: >
+      The original #343/#346 affected-team fields remain available for existing
+      consumers. AffectedRosteredPlayerCount is broad schedule coverage and must
+      not be used as the v2 relevance or must-watch ranking signal.
     fields:
       - FantasyTeamID
       - AffectedRosteredPlayerCount
@@ -62,9 +68,93 @@ contract:
       bye: Player has a known NFL team but that team has no active-week game.
       no-team: Player has no usable current NFL-team association.
       unknown: Required identity or join evidence is missing, conflicting or ambiguous.
-    clockRule: >
-      Upcoming versus locked is intentionally not persisted. Angular may compare
-      StartsAtUtc with now at presentation time.
+    rule: >
+      PlayerLockFacts remain provider-neutral kickoff association evidence. The v2
+      current game-time state is materialized separately in FantasyRelevance.
+  fantasyRelevance:
+    version: 1
+    purpose: >
+      Generator-owned current lineup state for downstream remaining-scoring-path
+      and must-watch derivation. Angular must not reconstruct slot eligibility,
+      Active Roster membership or lock/completion semantics.
+    slotDefinitions:
+      fields:
+        - SlotID
+        - SlotType
+        - SlotOrdinal
+        - SlotIndex
+      rules:
+        - Starting slots are the ordered league roster_positions entries excluding BN.
+        - Repeated slot types receive stable per-lineup instance IDs such as QB-1, QB-2 and FLEX-1.
+        - Current Starter ordering is preserved long enough to map each entry to the corresponding ordered starting slot.
+    rosterPlacement:
+      values:
+        - starter
+        - bench
+        - ir
+        - taxi
+      rules:
+        - Roster remains the complete owned roster.
+        - Active Roster means Starter plus Bench.
+        - Bench is derived as Roster minus Starter minus IR/Reserve minus Taxi.
+        - IR and Taxi are outside Active Roster and are not normal lineup alternatives.
+        - A starter that is simultaneously IR or Taxi is contradictory evidence and fails closed.
+    gameState:
+      values:
+        unlocked: The player's NFL kickoff is still in the future; current lineup placement is mutable.
+        locked-active: The player's NFL kickoff has occurred and the NFL game is not Final; placement is committed and the player may still add points.
+        completed: The player's NFL game is Final; no ordinary additional live fantasy points can be added by that player.
+        unknown: Required scheduled-game evidence is unavailable or ambiguous.
+      rules:
+        - Final is taken from explicit Schedule gameStatus evidence, never inferred from score presence.
+        - Kickoff comparison is evaluated during generation against current UTC time.
+        - No EvaluatedAt timestamp is persisted; semantic output changes only when source facts or a relevant state boundary change.
+        - Later stat corrections are outside live remaining-scoring-path semantics.
+    team:
+      fields:
+        - FantasyTeamID
+        - ActiveRosterPlayerCount
+        - StarterCount
+        - BenchCount
+        - IRCount
+        - TaxiCount
+        - UnlockedStarterCount
+        - LockedActiveStarterCount
+        - CompletedStarterCount
+        - EligibleBenchCandidateCount
+        - HasRemainingScoringPath
+        - Slots
+        - Players
+    player:
+      fields:
+        - PlayerID
+        - Placement
+        - Position
+        - GameState
+        - GameID
+        - DecisionWindowID
+        - StartsAtUtc
+        - LineupSlotID
+        - LineupSlotType
+        - EligibleUnlockedSlotIDs
+        - IsBenchCandidate
+        - HasDirectScoringPath
+        - HasAlternativePath
+      candidateRule: >
+        A Bench player is a lineup candidate only when the player is still unlocked
+        and their generated fantasy Position is eligible for at least one still-
+        unlocked starting slot. Broad Roster membership is not candidate evidence.
+      slotEligibility:
+        exactPosition: QB/RB/WR/TE/K and other exact slot names match the same player Position.
+        FLEX: RB, WR or TE.
+        SUPER_FLEX: QB, RB, WR or TE.
+        WRRB_FLEX: WR or RB.
+        REC_FLEX: WR or TE.
+    autoSubs: >
+      Concrete Sleeper AutoSub assignments are intentionally excluded. Current
+      persisted/public Sleeper matchup and roster evidence exposes league-level
+      AutoSub settings but no reliable starter-to-sub assignment, so no assignment
+      is inferred.
   lineupEvaluation:
     states:
       - ready
@@ -103,14 +193,18 @@ ownership:
     Current runtime adapter uses fantasy-platform lineup-week evidence
     (Sleeper settings.leg), not generated League.CurrentWeek/finality.
   currentJoin: >
-    Transitional #343 adapter joins Player.TeamID to Schedule.teamIDHome/teamIDAway
+    Transitional adapter joins Player.TeamID to Schedule.teamIDHome/teamIDAway
     using inputs already present in the League refresh. It adds no duplicate
     provider request. #347 may replace this adapter with canonical source-data.
+  v2Boundary: >
+    FantasyRelevance v2 consumes the existing current League/Teams/Players/Schedule
+    inputs in the generation layer. It does not make Angular a source of truth and
+    does not change the separate #347 provider migration boundary.
   historical: >
     Historical Decision Window relevance is rebuilt from persisted season/week
     schedule, fantasy players/starters and week-appropriate player-to-NFL-team
-    assignments through the same provider-neutral derivation semantics. No live
-    kickoff snapshot is required.
+    assignments through the same provider-neutral base derivation semantics. The
+    new current FantasyRelevance enrichment is not required for historical output.
 
 freshness:
   writer: public/requests/utils/general/FileUtils.psm1::Save-JsonFile
@@ -129,10 +223,9 @@ failureBehavior:
   - Safe per-player ambiguity becomes unknown; unrecoverable derivation failures fail closed.
 
 nonGoals:
-  - Overview UI
-  - Team Detail UI
+  - broad Overview or dialog visual redesign
   - historical DecisionWindows store
-  - FantasyMatchupID integration
   - subjective start/sit optimization
-  - injury severity recommendations
+  - AutoSub assignment inference
+  - projections, expected points or win probability
   - viewing-slot grouping
