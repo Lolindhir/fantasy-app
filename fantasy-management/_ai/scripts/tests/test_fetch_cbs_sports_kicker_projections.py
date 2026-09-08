@@ -59,7 +59,8 @@ def fixture(*, changed=False, duplicate=False, next_page=False, wrong_title=Fals
         'Extra Points Made Extra Points Attempted Fantasy Points Fantasy Points Per Game'
     )
     return (
-        f'<html><body><h1>{title}</h1><div>Non-PPR</div><div>{headers}</div>'
+        f'<html><head><title>CBS Sports Fantasy Football</title></head><body>'
+        f'<h1>{title}</h1><div>Non-PPR</div><div>{headers}</div>'
         f'<table>{"".join(rows)}</table>{next_link}</body></html>'
     )
 
@@ -81,10 +82,23 @@ class CBSSportsTests(unittest.TestCase):
         self.assertFalse(diagnostics['source_update_timestamp_available'])
 
     def test_rejects_wrong_identity_duplicate_pagination_and_bad_stats(self):
-        with self.assertRaises(module.CBSSportsProjectionError):
+        with self.assertRaises(module.CBSSportsProjectionError) as caught:
             module.parse_projection_html(
-                fixture(wrong_title=True), season=2026, fetched_at=self.fetched()
+                fixture(wrong_title=True),
+                season=2026,
+                fetched_at=self.fetched(),
+                response_headers={'content_type': 'text/html; charset=utf-8'},
             )
+        message = str(caught.exception)
+        self.assertIn("observed title='CBS Sports Fantasy Football'", message)
+        self.assertIn(
+            "h1='2026 Projections Fantasy Football Running Back Stats'", message
+        )
+        self.assertIn("content_type='text/html; charset=utf-8'", message)
+        self.assertRegex(message, r'body_sha256=[0-9a-f]{16}')
+        self.assertIn('text_excerpt=', message)
+        self.assertLess(len(message), 800)
+
         with self.assertRaisesRegex(module.CBSSportsProjectionError, 'Duplicate'):
             module.parse_projection_html(
                 fixture(duplicate=True), season=2026, fetched_at=self.fetched()
