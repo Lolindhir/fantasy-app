@@ -131,10 +131,28 @@ joinAudit:
     canonicalIdentity: season + week + team + GSIS
     equivalentDuplicateRule: >
       Multiple provider rows for one canonical weekly-roster identity may collapse
-      only when every canonical field is identical after the explicitly documented
-      legacy-status normalization below. Any remaining canonical disagreement is
+      only when every canonical weekly fact other than SourceIDs is identical after
+      the explicitly documented legacy-status normalization below. Optional
+      SourceIDs may merge monotonically when a value is missing on one row or the
+      same non-empty value is repeated. Different non-empty values for the same
+      provider ID or any remaining canonical weekly fact disagreement are
       ambiguous provider evidence and must fail closed; first-wins and last-wins
       selection are prohibited.
+    sourceIdEnrichment:
+      rule: >
+        Compatible SourceID enrichment is season-independent and changes only the
+        derived SourceIDs map. Week, GameType, StatusDescription, Team, Position,
+        jersey number, player biographical facts and every other canonical weekly
+        fact remain strict.
+      productionEvidence: >
+        The persisted 2006 Fred Taylor JAX weekly roster repeats identical
+        week-specific records as sparse and enriched SourceID copies. In Week 10,
+        both rows carry the same GSIS and PFF values and identical weekly facts;
+        one row additionally carries ESPN 1430, Rotowire 906 and PFR TaylFr00.
+      conflictBoundary: >
+        A different non-empty value for any provider ID remains conflicting
+        evidence and aborts materialization. SourceID enrichment never authorizes
+        a canonical weekly-fact disagreement.
     legacyStatusNormalization:
       seasons: 2002-2015
       upstreamContext: >
@@ -151,11 +169,15 @@ joinAudit:
         retained as canonical StatusDescription.
       boundary: >
         The normalization ends after 2015. From 2016 onward Status remains a
-        canonical field, so conflicting status values for one weekly identity fail
-        closed unless the complete canonical records are otherwise exactly equal.
+        canonical weekly fact, so conflicting Status values fail closed. Compatible
+        SourceID enrichment does not relax this boundary.
       observability: >
         Canonical materialization reports equivalentDuplicateRowCount and
         legacyWeeklyStatusSuppressedRowCount in the weekly-roster audit.
+    rawEvidenceRule: >
+      All provider rows remain unchanged in source-data/providers. Canonical
+      SourceID enrichment only combines compatible evidence into the derived
+      weekly record and never rewrites provider raw history.
 
 regressionCoverage:
   entryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
@@ -171,6 +193,7 @@ regressionCoverage:
     - missing completed historical Sleeper draft IDs
     - identical versus conflicting current/history draft-pick copies
     - compatible nflverse season-roster SourceID enrichment collapses only across identical season/team/GSIS canonical facts while conflicting facts or provider IDs fail closed
+    - compatible nflverse weekly-roster SourceID enrichment collapses only across identical weekly facts while conflicting provider IDs or weekly facts fail closed
     - legacy nflverse weekly-roster status variants collapse only after documented normalization while remaining canonical conflicts fail closed
 
 futureSourceDataImplication: >
