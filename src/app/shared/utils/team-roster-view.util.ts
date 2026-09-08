@@ -12,7 +12,7 @@ export interface RosterPlayerGroup {
 }
 
 export interface RosterStatusPlayerGroups {
-  roster: Player[];
+  activeRoster: Player[];
   taxi: Player[];
   ir: Player[];
 }
@@ -64,9 +64,9 @@ export function buildRosterPlayerGroups(
 ): RosterPlayerGroup[] {
   switch (groupMode) {
     case 'rosterStatus': {
-      const statusGroups = rosterStatusGroups ?? { roster: players, taxi: [], ir: [] };
+      const statusGroups = rosterStatusGroups ?? { activeRoster: players, taxi: [], ir: [] };
       return [
-        buildGroup('roster', 'Roster', statusGroups.roster, sortMode, nextLockContext),
+        buildGroup('roster', 'Active Roster', statusGroups.activeRoster, sortMode, nextLockContext),
         buildGroup('taxi', 'Taxi', statusGroups.taxi, sortMode, nextLockContext),
         buildGroup('ir', 'IR', statusGroups.ir, sortMode, nextLockContext)
       ];
