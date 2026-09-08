@@ -268,7 +268,7 @@ def _build_game_finality(
     return outputs, audit, preserved
 
 
-def _merge_equivalent_season_roster_duplicate(
+def _merge_equivalent_roster_duplicate(
     existing: dict[str, Any],
     candidate: dict[str, Any],
     *,
@@ -276,13 +276,16 @@ def _merge_equivalent_season_roster_duplicate(
     season: int,
     team: str,
     gsis: str,
+    week: int | None = None,
 ) -> None:
     existing_facts = {key: value for key, value in existing.items() if key != "SourceIDs"}
     candidate_facts = {key: value for key, value in candidate.items() if key != "SourceIDs"}
+    identity = f"season={season}"
+    if week is not None:
+        identity += f" week={week}"
+    identity += f" team={team} gsis={gsis}"
     if existing_facts != candidate_facts:
-        raise ValueError(
-            f"Conflicting duplicate {dataset_id} roster identity: season={season} team={team} gsis={gsis}"
-        )
+        raise ValueError(f"Conflicting duplicate {dataset_id} roster identity: {identity}")
 
     merged_source_ids = dict(existing["SourceIDs"])
     for source, value in candidate["SourceIDs"].items():
@@ -290,7 +293,7 @@ def _merge_equivalent_season_roster_duplicate(
         if existing_value is not None and existing_value != value:
             raise ValueError(
                 f"Conflicting duplicate {dataset_id} SourceID {source}: "
-                f"season={season} team={team} gsis={gsis} values={existing_value},{value}"
+                f"{identity} values={existing_value},{value}"
             )
         merged_source_ids[source] = value
 
@@ -379,11 +382,15 @@ def _build_rosters(
                 record["GameType"] = clean(row.get("game_type"))
                 existing = seen_weekly.get(key)
                 if existing is not None:
-                    if existing != record:
-                        raise ValueError(
-                            f"Conflicting duplicate {dataset.id} roster identity: "
-                            f"season={season} week={week} team={team} gsis={gsis}"
-                        )
+                    _merge_equivalent_roster_duplicate(
+                        existing,
+                        record,
+                        dataset_id=dataset.id,
+                        season=season,
+                        week=week,
+                        team=team,
+                        gsis=gsis,
+                    )
                     equivalent_duplicate_count += 1
                     continue
                 seen_weekly[key] = record
@@ -392,7 +399,7 @@ def _build_rosters(
                 key = (team, gsis)
                 existing = seen_season.get(key)
                 if existing is not None:
-                    _merge_equivalent_season_roster_duplicate(
+                    _merge_equivalent_roster_duplicate(
                         existing,
                         record,
                         dataset_id=dataset.id,
