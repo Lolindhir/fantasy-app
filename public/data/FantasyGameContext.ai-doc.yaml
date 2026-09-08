@@ -1,0 +1,159 @@
+schemaVersion: 2
+
+file:
+  path: public/data/FantasyGameContext.json
+  kind: generated-json-read-model
+  generator: public/requests/RequestLeague.ps1
+  baseDerivation: public/requests/utils/league/FantasyGameContextCore.ps1
+  relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
+  predecessorIssue: 346
+  v2Issue: 432
+
+contract:
+  purpose: >
+    Provider-neutral fantasy/NFL game context read model. The original #346 game
+    relevance and league-scored impact facts remain available for compatibility;
+    Fantasy Relevance v2 adds remaining-scoring-path and must-watch facts derived
+    from generated lineup slots, Active Roster state and NFL game state.
+  topLevel:
+    - SchemaVersion
+    - LeagueID
+    - Season
+    - Week
+    - ScoringState
+    - DecisionWindows
+    - Games
+    - FantasyMatchups
+    - NonGameAssociations
+    - MustWatchGames
+  compatibility:
+    baseRelevance: >
+      Existing Relevance.RosteredPlayerCount and related broad schedule-coverage
+      fields remain for current consumers but are not the v2 ranking signal.
+    impact: >
+      Impact remains based only on league-scored matchup player points. No generic
+      provider fantasy-point source is substituted.
+
+remainingScoringPaths:
+  source: DecisionWindows.json.FantasyRelevance
+  pathTypes:
+    locked-starter: >
+      Current Starter whose NFL game has kicked but is not Final. This is a
+      committed remaining scoring path.
+    unlocked-starter: >
+      Current Starter whose NFL kickoff is still future. This is provisional
+      because the current lineup can still change.
+    bench-candidate: >
+      Current Bench player whose own NFL game is still unlocked and who is eligible
+      for at least one still-unlocked starting slot. This is a possible alternative
+      path, not a claim that the player will be started.
+  excluded:
+    - completed starters
+    - locked or completed Bench players
+    - IR players
+    - Taxi players
+    - AutoSub assignment inference
+    - players without a usable scheduled-game association
+
+fantasyMatchup:
+  v2Field: RemainingRelevance
+  fields:
+    - State
+    - HasRemainingScoringPaths
+    - LeftRemainingPathCount
+    - RightRemainingPathCount
+    - LockedActiveStarterCount
+    - UnlockedStarterCount
+    - EligibleBenchCandidateCount
+    - NextScoringWindowID
+    - NextScoringGameIDs
+    - FinalScoringWindowID
+    - FinalScoringGameIDs
+    - IsFinalScoringWindowCommitted
+  states:
+    both-sides: Both fantasy teams still have at least one generated scoring path.
+    left-only: Only the first TeamID side still has a generated scoring path.
+    right-only: Only the second TeamID side still has a generated scoring path.
+    none: Neither side has a generated remaining scoring path.
+  nextWindowRule: >
+    Prefer the earliest window containing a locked-active starter; otherwise use
+    the earliest remaining provisional window.
+  finalWindowRule: >
+    The latest remaining path window is FinalScoringWindowID. It is committed only
+    when every remaining path in that window is a locked starter; an unlocked
+    Starter or Bench candidate keeps the final-window claim provisional.
+  decidedBoundary: >
+    State=none is a deterministic no-scoring-paths-remaining statement. It is not
+    a probabilistic win claim and does not use projections.
+
+game:
+  v2Field: RemainingRelevance
+  fields:
+    - HasRemainingRelevance
+    - LockedActiveStarterCount
+    - UnlockedStarterCount
+    - EligibleBenchCandidateCount
+    - FantasyMatchupCount
+    - TwoSidedFantasyMatchupCount
+    - FinalWindowFantasyMatchupCount
+    - CommittedFinalWindowMatchupCount
+    - MustWatchRank
+  meaning: >
+    These fields answer why an NFL game still matters to the fantasy league now.
+    Completed-only exposure and broad owned-roster mass do not create remaining
+    relevance.
+
+mustWatchGames:
+  purpose: >
+    Deterministic generated ordering of NFL games that still have at least one
+    remaining fantasy scoring path. Angular may select the top N but must not
+    rebuild the ranking logic.
+  fields:
+    - Rank
+    - GameID
+    - DecisionWindowID
+    - StartsAtUtc
+    - CommittedFinalWindowMatchupCount
+    - LockedActiveStarterCount
+    - TwoSidedFantasyMatchupCount
+    - FantasyMatchupCount
+    - UnlockedStarterCount
+    - FinalWindowFantasyMatchupCount
+    - EligibleBenchCandidateCount
+  rankingOrder:
+    - CommittedFinalWindowMatchupCount descending
+    - LockedActiveStarterCount descending
+    - TwoSidedFantasyMatchupCount descending
+    - FantasyMatchupCount descending
+    - UnlockedStarterCount descending
+    - FinalWindowFantasyMatchupCount descending
+    - EligibleBenchCandidateCount descending
+    - StartsAtUtc ascending
+    - GameID ascending
+  rationale: >
+    Late-week committed and live starter relevance outranks provisional exposure.
+    Current starters outrank Bench alternatives. A future game being the latest
+    theoretical window alone does not outrank a more concrete current starter game.
+
+ownership:
+  domainLogic: >
+    Slot mapping, Active Roster/Bench derivation, eligibility, lock/completion
+    state, remaining paths and must-watch ranking are generation-layer facts.
+  angularBoundary: >
+    Angular may render, filter and select from these fields. It must not recreate
+    league slot eligibility, scoring-path state or ranking rules.
+  providerBoundary: >
+    The current runtime may still consume transitional Sleeper/Tank01-shaped inputs.
+    #347 owns the separate provider/source-data consumer migration.
+
+failureBehavior:
+  - Missing or ambiguous player/game joins remain explicit through the existing NonGameAssociations/fail-safe behavior.
+  - The v2 enrichment does not infer AutoSubs, projections or unknown position eligibility.
+  - Existing historical FantasyGameContext generation remains compatible when current FantasyRelevance evidence is absent.
+
+nonGoals:
+  - visual redesign of Matchup footer, Pulse, Fantasy Matchup dialog or NFL Game dialog
+  - probabilistic matchup win chance
+  - expected fantasy points or projections
+  - Sleeper AutoSub assignment reconstruction
+  - historical 2025 mapping repair tracked separately by #420
