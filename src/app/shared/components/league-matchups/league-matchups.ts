@@ -3,8 +3,9 @@ import { Component, inject, Input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { catchError, map, of, shareReplay } from 'rxjs';
+import { catchError, combineLatest, map, of, shareReplay } from 'rxjs';
 
+import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type {
   FantasyGameContextGame,
   FantasyGameContextMatchup,
@@ -17,13 +18,15 @@ import type {
   LeagueMatchupParticipant,
   PlacementRegularSeason
 } from '../../../core/models/league.models';
+import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import {
   getCompletedImpactGames,
   getFantasyMatchupContext,
+  getMustWatchGames,
   getNextFantasyMatchupGame,
-  getUpcomingRelevantGames,
-  isFantasyGameContextForLeagueWeek
+  isFantasyGameContextForLeagueWeek,
+  isFantasyMatchupFinalWindowGame
 } from '../../utils/fantasy-game-context.util';
 import {
   FantasyGameContextDialogComponent,
@@ -61,12 +64,15 @@ interface LeagueMatchupView {
 
 interface FantasyContextState {
   context: FantasyGameContextReadModel | null;
+  decisionWindows: DecisionWindowsReadModel | null;
+  nflTeams: NFLTeam[];
 }
 
 interface FantasyMatchupPreviewView {
   game: FantasyGameContextMatchupGame;
-  leftStarterCount: number;
-  rightStarterCount: number;
+  contextGame: FantasyGameContextGame | null;
+  isFinalWindow: boolean;
+  isFinalWindowCommitted: boolean;
 }
 
 @Component({
@@ -85,9 +91,12 @@ export class LeagueMatchupsComponent {
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
 
-  readonly fantasyContextState$ = this.dataService.getFantasyGameContext().pipe(
-    map(context => ({ context }) satisfies FantasyContextState),
-    catchError(() => of({ context: null } satisfies FantasyContextState)),
+  readonly fantasyContextState$ = combineLatest({
+    context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
+    decisionWindows: this.dataService.getDecisionWindows().pipe(catchError(() => of(null))),
+    nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
+  }).pipe(
+    map(state => state satisfies FantasyContextState),
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
@@ -148,28 +157,19 @@ export class LeagueMatchupsComponent {
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
   ): FantasyMatchupPreviewView | null {
-    const resolved = this.matchupContext(matchup, context);
+    const current = this.currentContext(context);
+    if (!current) return null;
+    const resolved = this.matchupContext(matchup, current);
     if (!resolved) return null;
 
     const game = getNextFantasyMatchupGame(resolved);
     if (!game) return null;
 
-    const firstTeamID = String(resolved.TeamIDs[0] ?? '');
-    const secondTeamID = String(resolved.TeamIDs[1] ?? '');
-    const cardLeftTeamID = String(matchup.left.team.TeamID);
-
-    if (cardLeftTeamID === secondTeamID && cardLeftTeamID !== firstTeamID) {
-      return {
-        game,
-        leftStarterCount: game.RightStarterCount,
-        rightStarterCount: game.LeftStarterCount
-      };
-    }
-
     return {
       game,
-      leftStarterCount: game.LeftStarterCount,
-      rightStarterCount: game.RightStarterCount
+      contextGame: current.Games.find(candidate => candidate.GameID === game.GameID) ?? null,
+      isFinalWindow: isFantasyMatchupFinalWindowGame(resolved, game.GameID),
+      isFinalWindowCommitted: resolved.RemainingRelevance?.IsFinalScoringWindowCommitted ?? false
     };
   }
 
@@ -177,9 +177,9 @@ export class LeagueMatchupsComponent {
     return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
   }
 
-  upcomingGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
+  mustWatchGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
     const current = this.currentContext(context);
-    return current ? getUpcomingRelevantGames(current).slice(0, 5) : [];
+    return current ? getMustWatchGames(current).slice(0, 5) : [];
   }
 
   completedGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
@@ -187,20 +187,44 @@ export class LeagueMatchupsComponent {
     return current ? getCompletedImpactGames(current).slice(0, 5) : [];
   }
 
-  openGameDetail(game: FantasyGameContextGame, context: FantasyGameContextReadModel | null): void {
-    const current = this.currentContext(context);
-    if (!current) return;
-    this.openContextDialog({ mode: 'game', context: current, league: this.league, gameId: game.GameID });
+  nflLogo(teamID: string | number, nflTeams: NFLTeam[]): string | null {
+    return nflTeams.find(team => String(team.ID) === String(teamID))?.Logo || null;
   }
 
-  openMatchupDetail(matchup: LeagueMatchupView, context: FantasyGameContextReadModel | null): void {
-    const current = this.currentContext(context);
+  remainingStarterCount(game: FantasyGameContextGame): number {
+    const remaining = game.RemainingRelevance;
+    return remaining
+      ? remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount
+      : game.Relevance.StarterCount;
+  }
+
+  gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
+    return (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
+  }
+
+  openGameDetail(game: FantasyGameContextGame, state: FantasyContextState): void {
+    const current = this.currentContext(state.context);
+    if (!current) return;
+    this.openContextDialog({
+      mode: 'game',
+      context: current,
+      decisionWindows: state.decisionWindows,
+      nflTeams: state.nflTeams,
+      league: this.league,
+      gameId: game.GameID
+    });
+  }
+
+  openMatchupDetail(matchup: LeagueMatchupView, state: FantasyContextState): void {
+    const current = this.currentContext(state.context);
     if (!current) return;
     const resolved = this.matchupContext(matchup, current);
     if (!resolved) return;
     this.openContextDialog({
       mode: 'matchup',
       context: current,
+      decisionWindows: state.decisionWindows,
+      nflTeams: state.nflTeams,
       league: this.league,
       fantasyMatchupId: resolved.FantasyMatchupID
     });
@@ -209,10 +233,12 @@ export class LeagueMatchupsComponent {
   private openContextDialog(data: FantasyGameContextDialogData): void {
     this.dialog.open(FantasyGameContextDialogComponent, {
       data,
-      width: '95vw',
-      maxWidth: '800px',
-      maxHeight: '90vh',
-      autoFocus: false
+      width: 'calc(100vw - 16px)',
+      maxWidth: '760px',
+      maxHeight: 'calc(100dvh - 16px)',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'fantasy-context-dialog-panel'
     });
   }
 

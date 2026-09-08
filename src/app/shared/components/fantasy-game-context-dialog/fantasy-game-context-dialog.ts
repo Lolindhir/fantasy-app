@@ -5,6 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
 import type {
+  DecisionWindowsReadModel,
+  FantasyRelevancePlayerState,
+  FantasyRelevanceTeamState
+} from '../../../core/models/decision-window.models';
+import type {
   FantasyGameContextGame,
   FantasyGameContextMatchup,
   FantasyGameContextMatchupGame,
@@ -12,14 +17,30 @@ import type {
   FantasyGameContextReadModel,
   FantasyGameContextTeam
 } from '../../../core/models/fantasy-game-context.models';
-import type { League, Player } from '../../../core/models/fantasy.models';
-import { isFantasyGameImpactVisible } from '../../utils/fantasy-game-context.util';
+import type { FantasyTeam, League } from '../../../core/models/league.models';
+import type { NFLTeam, Player } from '../../../core/models/player.models';
+import {
+  isFantasyGameImpactVisible,
+  isFantasyMatchupFinalWindowGame
+} from '../../utils/fantasy-game-context.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
+
+interface FantasyGamePlayerDisplay {
+  PlayerID: string;
+  IsStarter: boolean;
+  IsBenchCandidate: boolean;
+  GameState: string | null;
+  LineupSlotType: string | null;
+  EligibleUnlockedSlotIDs: string[];
+  Points: number | null;
+}
 
 export interface FantasyGameContextDialogData {
   mode: 'game' | 'matchup';
   context: FantasyGameContextReadModel;
+  decisionWindows?: DecisionWindowsReadModel | null;
+  nflTeams?: NFLTeam[];
   league: League;
   gameId?: string;
   fantasyMatchupId?: string;
@@ -49,17 +70,37 @@ export class FantasyGameContextDialogComponent {
   }
 
   teamName(teamID: string | number): string {
-    const team = this.data.league.Teams.find(candidate => String(candidate.TeamID) === String(teamID));
+    const team = this.teamForID(teamID);
     return team?.Team || team?.Owner || `Team ${teamID}`;
   }
 
   teamShortName(teamID: string | number): string {
-    const team = this.data.league.Teams.find(candidate => String(candidate.TeamID) === String(teamID));
+    const team = this.teamForID(teamID);
     return team?.TeamAbbr?.trim() || team?.Team?.trim() || team?.Owner || `Team ${teamID}`;
+  }
+
+  teamAvatar(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.Avatar || null;
+  }
+
+  nflLogo(teamID: string | number): string | null {
+    return (this.data.nflTeams ?? []).find(team => String(team.ID) === String(teamID))?.Logo || null;
   }
 
   playerName(playerID: string): string {
     return this.findPlayer(playerID)?.Name ?? playerID;
+  }
+
+  playerPicture(playerID: string): string | null {
+    return this.findPlayer(playerID)?.Picture || null;
+  }
+
+  playerPosition(playerID: string): string | null {
+    return this.findPlayer(playerID)?.Position || null;
+  }
+
+  playerNflLogo(playerID: string): string | null {
+    return this.findPlayer(playerID)?.TeamNFL?.Logo || null;
   }
 
   gameLabel(gameID: string): string {
@@ -85,11 +126,142 @@ export class FantasyGameContextDialogComponent {
     return matchup.CounterfactualState === 'available' || this.data.context.ScoringState === 'final';
   }
 
-  playersForTeam(team: FantasyGameContextTeam): FantasyGameContextPlayer[] {
-    return [...team.Players].sort((left, right) =>
-      Number(right.IsStarter) - Number(left.IsStarter)
-      || this.playerName(left.PlayerID).localeCompare(this.playerName(right.PlayerID))
-    );
+  relevantFantasyTeamsForGame(game: FantasyGameContextGame): FantasyGameContextTeam[] {
+    const relevanceAvailable = this.hasDecisionRelevance();
+    return game.FantasyTeams
+      .filter(team => relevanceAvailable
+        ? this.gamePlayersForTeam(game, team).length > 0
+        : team.StarterCount > 0)
+      .sort((left, right) => {
+        const leftPlayers = this.gamePlayersForTeam(game, left);
+        const rightPlayers = this.gamePlayersForTeam(game, right);
+        const leftStarterCount = leftPlayers.filter(player => player.IsStarter).length;
+        const rightStarterCount = rightPlayers.filter(player => player.IsStarter).length;
+        return rightStarterCount - leftStarterCount
+          || rightPlayers.length - leftPlayers.length
+          || this.teamName(left.FantasyTeamID).localeCompare(this.teamName(right.FantasyTeamID));
+      });
+  }
+
+  gamePlayersForTeam(game: FantasyGameContextGame, team: FantasyGameContextTeam): FantasyGamePlayerDisplay[] {
+    const legacyByID = new Map(team.Players.map(player => [String(player.PlayerID), player]));
+    const teamState = this.decisionTeamState(team.FantasyTeamID);
+
+    if (teamState) {
+      const states = teamState.Players
+        .filter(player => player.GameID === game.GameID)
+        .filter(player =>
+          player.HasDirectScoringPath
+          || player.HasAlternativePath
+          || (player.Placement === 'starter' && player.GameState === 'completed')
+        );
+
+      if (states.length > 0) {
+        return states
+          .map(state => this.toPlayerDisplay(state, legacyByID.get(String(state.PlayerID)) ?? null))
+          .sort((left, right) => Number(right.IsStarter) - Number(left.IsStarter)
+            || Number(right.GameState === 'locked-active') - Number(left.GameState === 'locked-active')
+            || Number(right.IsBenchCandidate) - Number(left.IsBenchCandidate)
+            || this.playerName(left.PlayerID).localeCompare(this.playerName(right.PlayerID)));
+      }
+    }
+
+    return [...team.Players]
+      .filter(player => player.IsStarter)
+      .sort((left, right) => this.playerName(left.PlayerID).localeCompare(this.playerName(right.PlayerID)))
+      .map(player => ({
+        PlayerID: player.PlayerID,
+        IsStarter: player.IsStarter,
+        IsBenchCandidate: false,
+        GameState: null,
+        LineupSlotType: null,
+        EligibleUnlockedSlotIDs: [],
+        Points: player.Points
+      }));
+  }
+
+  matchupTimelineRows(matchup: FantasyGameContextMatchup): FantasyGameContextMatchupGame[] {
+    const relevantGameIDs = new Set<string>();
+    if (this.hasDecisionRelevance()) {
+      for (const teamID of matchup.TeamIDs) {
+        const teamState = this.decisionTeamState(teamID);
+        for (const player of teamState?.Players ?? []) {
+          if (!player.GameID) continue;
+          if (player.HasDirectScoringPath
+              || player.HasAlternativePath
+              || (player.Placement === 'starter' && player.GameState === 'completed')) {
+            relevantGameIDs.add(player.GameID);
+          }
+        }
+      }
+    }
+
+    return [...matchup.Games]
+      .filter(row => relevantGameIDs.size > 0
+        ? relevantGameIDs.has(row.GameID) || row.OutcomeChangedWithoutGame === true
+        : row.LeftStarterCount + row.RightStarterCount > 0 || row.OutcomeChangedWithoutGame === true)
+      .sort((left, right) => Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc) || left.GameID.localeCompare(right.GameID));
+  }
+
+  matchupGameTeamPlayers(
+    matchup: FantasyGameContextMatchup,
+    row: FantasyGameContextMatchupGame,
+    teamID: string | number
+  ): FantasyGamePlayerDisplay[] {
+    const game = this.gameForMatchupRow(row);
+    if (!game) return [];
+    const legacyTeam = game.FantasyTeams.find(team => String(team.FantasyTeamID) === String(teamID));
+    if (legacyTeam) return this.gamePlayersForTeam(game, legacyTeam);
+
+    const state = this.decisionTeamState(teamID);
+    return (state?.Players ?? [])
+      .filter(player => player.GameID === row.GameID)
+      .filter(player => player.HasDirectScoringPath || player.HasAlternativePath || (player.Placement === 'starter' && player.GameState === 'completed'))
+      .map(player => this.toPlayerDisplay(player, null));
+  }
+
+  matchupStateLabel(matchup: FantasyGameContextMatchup): string {
+    const remaining = matchup.RemainingRelevance;
+    if (!remaining) return 'Current starter exposure';
+
+    switch (remaining.State) {
+      case 'both-sides': return 'Both teams can still score';
+      case 'left-only': return `Only ${this.teamShortName(matchup.TeamIDs[0])} can still score`;
+      case 'right-only': return `Only ${this.teamShortName(matchup.TeamIDs[1])} can still score`;
+      case 'none': return 'No scoring paths remaining';
+    }
+  }
+
+  remainingPathCount(matchup: FantasyGameContextMatchup, side: 'left' | 'right'): number | null {
+    const remaining = matchup.RemainingRelevance;
+    if (!remaining) return null;
+    return side === 'left' ? remaining.LeftRemainingPathCount : remaining.RightRemainingPathCount;
+  }
+
+  isFinalWindow(matchup: FantasyGameContextMatchup, gameID: string): boolean {
+    return isFantasyMatchupFinalWindowGame(matchup, gameID);
+  }
+
+  gameStageLabel(game: FantasyGameContextGame | null): string {
+    if (!game) return 'NFL game';
+    if (/^Final/i.test(game.Status ?? '')) return 'Final';
+    if ((game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0) return 'Live';
+    return 'Upcoming';
+  }
+
+  playerRoleLabel(player: FantasyGamePlayerDisplay): string {
+    if (player.IsBenchCandidate) return 'Lineup option';
+    if (player.GameState === 'locked-active') return player.LineupSlotType ? `${player.LineupSlotType} · locked` : 'Locked starter';
+    if (player.GameState === 'completed') return player.LineupSlotType ? `${player.LineupSlotType} · final` : 'Final starter';
+    if (player.LineupSlotType) return `${player.LineupSlotType} · current`;
+    return player.IsStarter ? 'Current starter' : 'Player';
+  }
+
+  playerAlternativeSlots(player: FantasyGamePlayerDisplay): string {
+    return player.EligibleUnlockedSlotIDs
+      .map(slot => slot.replace(/-\d+$/, ''))
+      .filter((slot, index, all) => all.indexOf(slot) === index)
+      .join(' / ');
   }
 
   openTeam(teamID: string | number): void {
@@ -102,14 +274,48 @@ export class FantasyGameContextDialogComponent {
     if (!player) return;
     this.dialog.open(PlayerDetailDialogComponent, {
       data: player,
-      width: '800px',
-      maxHeight: '90vh',
+      width: 'calc(100vw - 16px)',
+      maxWidth: '800px',
+      maxHeight: 'calc(100dvh - 16px)',
       panelClass: 'player-dialog'
     });
   }
 
+  private hasDecisionRelevance(): boolean {
+    const decision = this.data.decisionWindows;
+    return !!decision
+      && decision.Season === this.data.context.Season
+      && decision.LineupWeek === this.data.context.Week
+      && !!decision.FantasyRelevance;
+  }
+
+  private decisionTeamState(teamID: string | number): FantasyRelevanceTeamState | null {
+    if (!this.hasDecisionRelevance()) return null;
+    return this.data.decisionWindows?.FantasyRelevance?.Teams
+      .find(team => String(team.FantasyTeamID) === String(teamID)) ?? null;
+  }
+
+  private toPlayerDisplay(
+    state: FantasyRelevancePlayerState,
+    legacy: FantasyGameContextPlayer | null
+  ): FantasyGamePlayerDisplay {
+    return {
+      PlayerID: state.PlayerID,
+      IsStarter: state.Placement === 'starter',
+      IsBenchCandidate: state.IsBenchCandidate,
+      GameState: state.GameState,
+      LineupSlotType: state.LineupSlotType,
+      EligibleUnlockedSlotIDs: [...state.EligibleUnlockedSlotIDs],
+      Points: legacy?.Points ?? null
+    };
+  }
+
   private gameForID(gameID: string): FantasyGameContextGame | null {
     return this.data.context.Games.find(game => game.GameID === gameID) ?? null;
+  }
+
+  private teamForID(teamID: string | number): FantasyTeam | null {
+    return this.data.league.Teams.find(candidate => String(candidate.TeamID) === String(teamID)) ?? null;
   }
 
   private findPlayer(playerID: string): Player | null {

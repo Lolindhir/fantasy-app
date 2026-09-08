@@ -38,6 +38,18 @@ export interface FantasyGameImpact {
   OutcomeSwingMatchupCount: number;
 }
 
+export interface FantasyGameRemainingRelevance {
+  HasRemainingRelevance: boolean;
+  LockedActiveStarterCount: number;
+  UnlockedStarterCount: number;
+  EligibleBenchCandidateCount: number;
+  FantasyMatchupCount: number;
+  TwoSidedFantasyMatchupCount: number;
+  FinalWindowFantasyMatchupCount: number;
+  CommittedFinalWindowMatchupCount: number;
+  MustWatchRank?: number;
+}
+
 export interface FantasyGameContextGame {
   GameID: string;
   DecisionWindowID: string;
@@ -50,6 +62,7 @@ export interface FantasyGameContextGame {
   Relevance: FantasyGameRelevance;
   Impact: FantasyGameImpact;
   FantasyTeams: FantasyGameContextTeam[];
+  RemainingRelevance?: FantasyGameRemainingRelevance;
 }
 
 export interface FantasyGameContextCounterfactualScore {
@@ -72,6 +85,23 @@ export interface FantasyGameContextMatchupGame {
   ScoreWithoutGame: FantasyGameContextCounterfactualScore | null;
 }
 
+export type FantasyMatchupRemainingState = 'both-sides' | 'left-only' | 'right-only' | 'none';
+
+export interface FantasyMatchupRemainingRelevance {
+  State: FantasyMatchupRemainingState;
+  HasRemainingScoringPaths: boolean;
+  LeftRemainingPathCount: number;
+  RightRemainingPathCount: number;
+  LockedActiveStarterCount: number;
+  UnlockedStarterCount: number;
+  EligibleBenchCandidateCount: number;
+  NextScoringWindowID: string | null;
+  NextScoringGameIDs: string[];
+  FinalScoringWindowID: string | null;
+  FinalScoringGameIDs: string[];
+  IsFinalScoringWindowCommitted: boolean;
+}
+
 export interface FantasyGameContextMatchup {
   FantasyMatchupID: string;
   TeamIDs: Array<string | number>;
@@ -82,6 +112,7 @@ export interface FantasyGameContextMatchup {
     | 'unavailable-final-score'
     | 'unavailable-not-final';
   Games: FantasyGameContextMatchupGame[];
+  RemainingRelevance?: FantasyMatchupRemainingRelevance;
 }
 
 export interface FantasyGameContextNonGameAssociation {
@@ -94,6 +125,20 @@ export interface FantasyGameContextNonGameAssociation {
   Reason: string;
 }
 
+export interface FantasyMustWatchGame {
+  Rank: number;
+  GameID: string;
+  DecisionWindowID: string;
+  StartsAtUtc: string;
+  CommittedFinalWindowMatchupCount: number;
+  LockedActiveStarterCount: number;
+  TwoSidedFantasyMatchupCount: number;
+  FantasyMatchupCount: number;
+  UnlockedStarterCount: number;
+  FinalWindowFantasyMatchupCount: number;
+  EligibleBenchCandidateCount: number;
+}
+
 export interface FantasyGameContextReadModel {
   SchemaVersion: number;
   LeagueID: string | number;
@@ -104,6 +149,7 @@ export interface FantasyGameContextReadModel {
   Games: FantasyGameContextGame[];
   FantasyMatchups: FantasyGameContextMatchup[];
   NonGameAssociations: FantasyGameContextNonGameAssociation[];
+  MustWatchGames?: FantasyMustWatchGame[];
 }
 
 export interface HistoricalFantasyGameContextSeason {

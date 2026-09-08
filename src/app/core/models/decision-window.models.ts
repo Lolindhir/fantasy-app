@@ -69,6 +69,62 @@ export interface DecisionWindowTeamLineupEvaluation {
   Issues: DecisionWindowIssue[];
 }
 
+export type FantasyRelevanceRosterPlacement = 'starter' | 'bench' | 'ir' | 'taxi';
+export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'unknown';
+
+export interface FantasyRelevanceSlotDefinition {
+  SlotID: string;
+  SlotType: string;
+  SlotOrdinal: number;
+  SlotIndex: number;
+}
+
+export interface FantasyRelevanceSlotState extends FantasyRelevanceSlotDefinition {
+  CurrentStarterID: string | null;
+  State: FantasyRelevanceGameState;
+  GameID: string | null;
+  DecisionWindowID: string | null;
+  StartsAtUtc: string | null;
+}
+
+export interface FantasyRelevancePlayerState {
+  PlayerID: string;
+  Placement: FantasyRelevanceRosterPlacement;
+  Position: string | null;
+  GameState: FantasyRelevanceGameState;
+  GameID: string | null;
+  DecisionWindowID: string | null;
+  StartsAtUtc: string | null;
+  LineupSlotID: string | null;
+  LineupSlotType: string | null;
+  EligibleUnlockedSlotIDs: string[];
+  IsBenchCandidate: boolean;
+  HasDirectScoringPath: boolean;
+  HasAlternativePath: boolean;
+}
+
+export interface FantasyRelevanceTeamState {
+  FantasyTeamID: string | number;
+  ActiveRosterPlayerCount: number;
+  StarterCount: number;
+  BenchCount: number;
+  IRCount: number;
+  TaxiCount: number;
+  UnlockedStarterCount: number;
+  LockedActiveStarterCount: number;
+  CompletedStarterCount: number;
+  EligibleBenchCandidateCount: number;
+  HasRemainingScoringPath: boolean;
+  Slots: FantasyRelevanceSlotState[];
+  Players: FantasyRelevancePlayerState[];
+}
+
+export interface DecisionWindowFantasyRelevance {
+  Version: number;
+  SlotDefinitions: FantasyRelevanceSlotDefinition[];
+  Teams: FantasyRelevanceTeamState[];
+}
+
 export interface DecisionWindowsReadModel {
   SchemaVersion: number;
   LeagueID: string;
@@ -79,4 +135,5 @@ export interface DecisionWindowsReadModel {
   LookaheadDecisionWindow: DecisionWindow | null;
   PlayerLockFacts: DecisionWindowPlayerLockFact[];
   TeamLineupEvaluations: DecisionWindowTeamLineupEvaluation[];
+  FantasyRelevance?: DecisionWindowFantasyRelevance;
 }

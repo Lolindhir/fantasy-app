@@ -2,116 +2,248 @@
   <header class="fgc-dialog-header">
     <div class="fgc-dialog-heading-copy">
       <div class="fgc-eyebrow">NFL Fantasy Context · Week {{ data.context.Week }}</div>
-      <h2 *ngIf="game">{{ game.AwayTeamAbbr || game.AwayTeamID }} @ {{ game.HomeTeamAbbr || game.HomeTeamID }}</h2>
-      <h2 *ngIf="matchup">Fantasy Matchup Impact</h2>
+      <h2 *ngIf="game">Game impact</h2>
+      <h2 *ngIf="matchup">Fantasy matchup</h2>
     </div>
     <button mat-icon-button mat-dialog-close aria-label="Close"><mat-icon>close</mat-icon></button>
   </header>
 
-  <ng-container *ngIf="game as selectedGame">
-    <div class="fgc-meta">
-      <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
-      <span class="fgc-status">{{ selectedGame.Status || 'Status unavailable' }}</span>
-    </div>
+  <main class="fgc-dialog-body">
+    <ng-container *ngIf="game as selectedGame">
+      <section class="fgc-game-hero">
+        <div class="fgc-nfl-team">
+          <img *ngIf="nflLogo(selectedGame.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
+          <strong>{{ selectedGame.AwayTeamAbbr || selectedGame.AwayTeamID }}</strong>
+        </div>
+        <div class="fgc-game-center">
+          <span class="fgc-game-at">@</span>
+          <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
+          <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'">
+            {{ gameStageLabel(selectedGame) }}
+          </span>
+        </div>
+        <div class="fgc-nfl-team">
+          <img *ngIf="nflLogo(selectedGame.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
+          <strong>{{ selectedGame.HomeTeamAbbr || selectedGame.HomeTeamID }}</strong>
+        </div>
+      </section>
 
-    <section class="fgc-relevance-summary" aria-label="Fantasy relevance summary">
-      <span><strong>{{ selectedGame.Relevance.StarterCount }}</strong> starter{{ selectedGame.Relevance.StarterCount === 1 ? '' : 's' }}</span>
-      <span><strong>{{ selectedGame.Relevance.RosteredPlayerCount }}</strong> rostered</span>
-      <span><strong>{{ selectedGame.Relevance.FantasyTeamCount }}</strong> team{{ selectedGame.Relevance.FantasyTeamCount === 1 ? '' : 's' }}</span>
-      <span><strong>{{ selectedGame.Relevance.FantasyMatchupCount }}</strong> matchup{{ selectedGame.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
-    </section>
+      <section *ngIf="selectedGame.RemainingRelevance as remaining; else legacyGameSummary" class="fgc-signal-strip">
+        <span *ngIf="remaining.LockedActiveStarterCount > 0" class="fgc-signal fgc-signal--live">
+          <strong>{{ remaining.LockedActiveStarterCount }}</strong> locked live
+        </span>
+        <span *ngIf="remaining.UnlockedStarterCount > 0" class="fgc-signal">
+          <strong>{{ remaining.UnlockedStarterCount }}</strong> current starter{{ remaining.UnlockedStarterCount === 1 ? '' : 's' }}
+        </span>
+        <span class="fgc-signal">
+          <strong>{{ remaining.FantasyMatchupCount }}</strong> matchup{{ remaining.FantasyMatchupCount === 1 ? '' : 's' }}
+        </span>
+        <span *ngIf="remaining.FinalWindowFantasyMatchupCount > 0" class="fgc-signal fgc-signal--final">
+          Final window for {{ remaining.FinalWindowFantasyMatchupCount }}
+        </span>
+        <span *ngIf="remaining.EligibleBenchCandidateCount > 0" class="fgc-signal fgc-signal--secondary">
+          {{ remaining.EligibleBenchCandidateCount }} lineup option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
+        </span>
+      </section>
 
-    <section class="fgc-section fgc-impact-section">
-      <h3>League impact</h3>
-      <div *ngIf="!hasGameScoring(selectedGame)" class="fgc-impact-pending">
-        <mat-icon>schedule</mat-icon>
-        <span>Impact becomes available once league scoring starts for this game.</span>
-      </div>
-      <div *ngIf="hasGameScoring(selectedGame)" class="fgc-impact-summary">
-        <span><strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }}</strong> starter pts</span>
-        <span>{{ selectedGame.Impact.RosteredPoints | number:'1.0-2' }} rostered pts</span>
-        <span *ngIf="selectedGame.Impact.OutcomeSwingMatchupCount > 0" class="fgc-swing">
+      <ng-template #legacyGameSummary>
+        <section class="fgc-signal-strip">
+          <span class="fgc-signal"><strong>{{ selectedGame.Relevance.StarterCount }}</strong> starter{{ selectedGame.Relevance.StarterCount === 1 ? '' : 's' }}</span>
+          <span class="fgc-signal"><strong>{{ selectedGame.Relevance.FantasyMatchupCount }}</strong> matchup{{ selectedGame.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
+        </section>
+      </ng-template>
+
+      <section *ngIf="hasGameScoring(selectedGame)" class="fgc-impact-card">
+        <div>
+          <span class="fgc-card-label">League-scored starter impact</span>
+          <strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }} pts</strong>
+        </div>
+        <span *ngIf="selectedGame.Impact.OutcomeSwingMatchupCount > 0" class="fgc-impact-swing">
           {{ selectedGame.Impact.OutcomeSwingMatchupCount }} outcome swing{{ selectedGame.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
         </span>
-      </div>
-      <p *ngIf="selectedGame.Relevance.UnknownAssociationCount > 0" class="fgc-warning">
-        {{ selectedGame.Relevance.UnknownAssociationCount }} association{{ selectedGame.Relevance.UnknownAssociationCount === 1 ? '' : 's' }} could not be assigned safely.
-      </p>
-    </section>
+      </section>
 
-    <section *ngFor="let fantasyTeam of selectedGame.FantasyTeams" class="fgc-section fgc-team-section">
-      <div class="fgc-team-header">
-        <button mat-button type="button" class="fgc-team-link" (click)="openTeam(fantasyTeam.FantasyTeamID)">
-          {{ teamName(fantasyTeam.FantasyTeamID) }}
-        </button>
-        <span class="fgc-team-summary">
-          {{ fantasyTeam.StarterCount }} starter{{ fantasyTeam.StarterCount === 1 ? '' : 's' }}
-          <ng-container *ngIf="hasGameScoring(selectedGame)"> · {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts</ng-container>
-        </span>
-      </div>
-
-      <div class="fgc-player-list">
-        <button
-          *ngFor="let player of playersForTeam(fantasyTeam)"
-          mat-button
-          type="button"
-          class="fgc-player-row"
-          [class.fgc-player-row--starter]="player.IsStarter"
-          (click)="openPlayer(player.PlayerID)"
-        >
-          <span class="fgc-player-main">
-            <mat-icon *ngIf="player.IsStarter" aria-hidden="true">star</mat-icon>
-            <span>{{ playerName(player.PlayerID) }}</span>
-          </span>
-          <span *ngIf="player.IsStarter" class="fgc-player-role">Starter</span>
-          <span *ngIf="hasGameScoring(selectedGame) && player.Points !== null" class="fgc-player-points">
-            {{ player.Points | number:'1.0-2' }} pts
-          </span>
-        </button>
-      </div>
-    </section>
-  </ng-container>
-
-  <ng-container *ngIf="matchup as selectedMatchup">
-    <div class="fgc-matchup-title">
-      <button mat-button type="button" (click)="openTeam(selectedMatchup.TeamIDs[0])">{{ teamName(selectedMatchup.TeamIDs[0]) }}</button>
-      <span>vs</span>
-      <button mat-button type="button" (click)="openTeam(selectedMatchup.TeamIDs[1])">{{ teamName(selectedMatchup.TeamIDs[1]) }}</button>
-    </div>
-
-    <section class="fgc-section fgc-matchup-games-section">
-      <h3>NFL game windows</h3>
-      <div *ngFor="let row of selectedMatchup.Games" class="fgc-matchup-game">
-        <div class="fgc-matchup-game-header">
-          <div class="fgc-matchup-game-identity">
-            <strong>{{ gameLabel(row.GameID) }}</strong>
-            <small>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</small>
+      <section class="fgc-section">
+        <div class="fgc-section-heading">
+          <div>
+            <span class="fgc-card-label">Fantasy impact</span>
+            <h3>Teams and players still tied to this game</h3>
           </div>
-          <span *ngIf="gameForMatchupRow(row) as linkedGame" class="fgc-matchup-game-status">{{ linkedGame.Status }}</span>
         </div>
 
-        <div class="fgc-matchup-exposure">
-          <span><strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong> {{ row.LeftStarterCount }} starter{{ row.LeftStarterCount === 1 ? '' : 's' }}</span>
-          <span><strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong> {{ row.RightStarterCount }} starter{{ row.RightStarterCount === 1 ? '' : 's' }}</span>
+        <div class="fgc-team-cards">
+          <article *ngFor="let fantasyTeam of relevantFantasyTeamsForGame(selectedGame)" class="fgc-team-card">
+            <div class="fgc-team-card-header">
+              <button type="button" class="fgc-team-identity" (click)="openTeam(fantasyTeam.FantasyTeamID)">
+                <img *ngIf="teamAvatar(fantasyTeam.FantasyTeamID) as avatar" [src]="avatar" alt="" />
+                <span>
+                  <strong>{{ teamName(fantasyTeam.FantasyTeamID) }}</strong>
+                  <small>{{ teamShortName(fantasyTeam.FantasyTeamID) }}</small>
+                </span>
+              </button>
+              <span *ngIf="hasGameScoring(selectedGame)" class="fgc-team-points">
+                {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts
+              </span>
+            </div>
+
+            <div class="fgc-player-list">
+              <button
+                *ngFor="let player of gamePlayersForTeam(selectedGame, fantasyTeam)"
+                type="button"
+                class="fgc-player-row"
+                [class.fgc-player-row--starter]="player.IsStarter"
+                [class.fgc-player-row--candidate]="player.IsBenchCandidate"
+                (click)="openPlayer(player.PlayerID)"
+              >
+                <span class="fgc-player-photo-wrap">
+                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-player-photo" />
+                  <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-player-nfl-logo" />
+                </span>
+                <span class="fgc-player-copy">
+                  <strong>{{ playerName(player.PlayerID) }}</strong>
+                  <small>
+                    {{ playerPosition(player.PlayerID) || '—' }} · {{ playerRoleLabel(player) }}
+                    <ng-container *ngIf="player.IsBenchCandidate && playerAlternativeSlots(player)">
+                      · {{ playerAlternativeSlots(player) }} eligible
+                    </ng-container>
+                  </small>
+                </span>
+                <span *ngIf="hasGameScoring(selectedGame) && player.Points !== null" class="fgc-player-points">
+                  {{ player.Points | number:'1.0-2' }}
+                </span>
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          </article>
         </div>
 
-        <div *ngIf="hasMatchupGameScoring(row)" class="fgc-matchup-points">
-          {{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} starter pts
+        <div *ngIf="relevantFantasyTeamsForGame(selectedGame).length === 0" class="fgc-empty">
+          No current starter or lineup-option exposure remains for this NFL game.
         </div>
-        <div *ngIf="row.OutcomeChangedWithoutGame === true" class="fgc-swing">Outcome differs without this NFL game</div>
-      </div>
-    </section>
 
-    <section *ngIf="showCounterfactual(selectedMatchup)" class="fgc-section fgc-counterfactual-section">
-      <h3>Counterfactual</h3>
-      <p *ngIf="selectedMatchup.CounterfactualState === 'available'">
-        Uses official final fantasy scores and subtracts only starters' league-scored points from the selected NFL game. It is a descriptive counterfactual, not a causation claim.
-      </p>
-      <p *ngIf="selectedMatchup.CounterfactualState !== 'available'" class="fgc-muted">
-        Final counterfactual unavailable ({{ selectedMatchup.CounterfactualState }}).
-      </p>
-    </section>
-  </ng-container>
+        <p *ngIf="selectedGame.Relevance.UnknownAssociationCount > 0" class="fgc-warning">
+          {{ selectedGame.Relevance.UnknownAssociationCount }} player association{{ selectedGame.Relevance.UnknownAssociationCount === 1 ? '' : 's' }} could not be assigned safely.
+        </p>
+      </section>
+    </ng-container>
 
-  <p *ngIf="!game && !matchup" class="fgc-muted">Fantasy game context is unavailable for this selection.</p>
+    <ng-container *ngIf="matchup as selectedMatchup">
+      <section class="fgc-matchup-hero">
+        <button type="button" class="fgc-matchup-team" (click)="openTeam(selectedMatchup.TeamIDs[0])">
+          <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[0]) as leftAvatar" [src]="leftAvatar" alt="" />
+          <strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong>
+          <small *ngIf="remainingPathCount(selectedMatchup, 'left') as leftPaths">{{ leftPaths }} path{{ leftPaths === 1 ? '' : 's' }} left</small>
+        </button>
+
+        <div class="fgc-matchup-vs">
+          <span>VS</span>
+          <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
+        </div>
+
+        <button type="button" class="fgc-matchup-team" (click)="openTeam(selectedMatchup.TeamIDs[1])">
+          <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[1]) as rightAvatar" [src]="rightAvatar" alt="" />
+          <strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong>
+          <small *ngIf="remainingPathCount(selectedMatchup, 'right') as rightPaths">{{ rightPaths }} path{{ rightPaths === 1 ? '' : 's' }} left</small>
+        </button>
+      </section>
+
+      <section *ngIf="selectedMatchup.RemainingRelevance as remaining" class="fgc-signal-strip fgc-matchup-signal-strip">
+        <span *ngIf="remaining.LockedActiveStarterCount > 0" class="fgc-signal fgc-signal--live">
+          {{ remaining.LockedActiveStarterCount }} locked live
+        </span>
+        <span *ngIf="remaining.UnlockedStarterCount > 0" class="fgc-signal">
+          {{ remaining.UnlockedStarterCount }} current starter{{ remaining.UnlockedStarterCount === 1 ? '' : 's' }}
+        </span>
+        <span *ngIf="remaining.EligibleBenchCandidateCount > 0" class="fgc-signal fgc-signal--secondary">
+          {{ remaining.EligibleBenchCandidateCount }} lineup option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
+        </span>
+      </section>
+
+      <section class="fgc-section fgc-timeline-section">
+        <div class="fgc-section-heading">
+          <div>
+            <span class="fgc-card-label">Game-day timeline</span>
+            <h3>NFL games that matter to this matchup</h3>
+          </div>
+        </div>
+
+        <div class="fgc-timeline">
+          <article *ngFor="let row of matchupTimelineRows(selectedMatchup)" class="fgc-timeline-game">
+            <div class="fgc-timeline-game-header" *ngIf="gameForMatchupRow(row) as linkedGame">
+              <div class="fgc-mini-nfl-lockup">
+                <span>
+                  <img *ngIf="nflLogo(linkedGame.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
+                  <strong>{{ linkedGame.AwayTeamAbbr || linkedGame.AwayTeamID }}</strong>
+                </span>
+                <b>@</b>
+                <span>
+                  <img *ngIf="nflLogo(linkedGame.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
+                  <strong>{{ linkedGame.HomeTeamAbbr || linkedGame.HomeTeamID }}</strong>
+                </span>
+              </div>
+
+              <div class="fgc-timeline-meta">
+                <span>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(linkedGame) === 'Live'">{{ gameStageLabel(linkedGame) }}</span>
+                <span *ngIf="isFinalWindow(selectedMatchup, row.GameID)" class="fgc-final-window-chip">Final window</span>
+              </div>
+            </div>
+
+            <div class="fgc-matchup-exposure-grid">
+              <div class="fgc-matchup-side">
+                <div class="fgc-matchup-side-heading">
+                  <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[0]) as avatar" [src]="avatar" alt="" />
+                  <strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong>
+                </div>
+                <div *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0])" class="fgc-mini-player">
+                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" />
+                  <span>
+                    <strong>{{ playerName(player.PlayerID) }}</strong>
+                    <small>{{ playerRoleLabel(player) }}</small>
+                  </span>
+                </div>
+                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0]).length === 0" class="fgc-no-exposure">No scoring path</span>
+              </div>
+
+              <div class="fgc-matchup-side">
+                <div class="fgc-matchup-side-heading">
+                  <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[1]) as avatar" [src]="avatar" alt="" />
+                  <strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong>
+                </div>
+                <div *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1])" class="fgc-mini-player">
+                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" />
+                  <span>
+                    <strong>{{ playerName(player.PlayerID) }}</strong>
+                    <small>{{ playerRoleLabel(player) }}</small>
+                  </span>
+                </div>
+                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1]).length === 0" class="fgc-no-exposure">No scoring path</span>
+              </div>
+            </div>
+
+            <div *ngIf="hasMatchupGameScoring(row)" class="fgc-timeline-points">
+              {{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} starter pts
+              <span *ngIf="row.OutcomeChangedWithoutGame === true">· Outcome differs without this game</span>
+            </div>
+          </article>
+        </div>
+
+        <div *ngIf="matchupTimelineRows(selectedMatchup).length === 0" class="fgc-empty">
+          No fantasy-relevant NFL game exposure is available for this matchup.
+        </div>
+      </section>
+
+      <section *ngIf="showCounterfactual(selectedMatchup)" class="fgc-section fgc-counterfactual-section">
+        <span class="fgc-card-label">Completed impact</span>
+        <p *ngIf="selectedMatchup.CounterfactualState === 'available'">
+          Final scores can be compared with each NFL game's starter points removed. This is descriptive, not a causation claim.
+        </p>
+        <p *ngIf="selectedMatchup.CounterfactualState !== 'available'" class="fgc-muted">
+          Final counterfactual unavailable ({{ selectedMatchup.CounterfactualState }}).
+        </p>
+      </section>
+    </ng-container>
+
+    <p *ngIf="!game && !matchup" class="fgc-empty">Fantasy game context is unavailable for this selection.</p>
+  </main>
 </div>
