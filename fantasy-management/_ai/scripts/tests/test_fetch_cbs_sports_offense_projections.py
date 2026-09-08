@@ -16,6 +16,7 @@ def fixture(
     next_page: bool = False,
     source_position: str | None = None,
     negative_field: str | None = None,
+    week_one: bool = False,
 ) -> str:
     config = module.POSITIONS[position]
     row_position = source_position or position
@@ -46,8 +47,9 @@ def fixture(
             + '</tr>'
         )
     next_link = '<a href="?page=2">Next Page</a>' if next_page else ''
+    horizon = 'Week 1 Proj' if week_one else 'Rest of Season Proj'
     return (
-        f'<html><body><h1>2026 Projections Fantasy Football {config["label"]} Stats</h1>'
+        f'<html><body><h1>{horizon} Fantasy Football {config["label"]} Stats</h1>'
         f'<div>Non-PPR</div><table>{"".join(rows)}</table>{next_link}</body></html>'
     )
 
@@ -56,12 +58,15 @@ class CBSSportsOffenseTests(unittest.TestCase):
     def test_all_positions_parse(self):
         for position in module.POSITIONS:
             with self.subTest(position=position):
-                rows, diagnostics = module.parse_projection_html(fixture(position), position=position, season=2026)
+                rows, diagnostics = module.parse_projection_html(
+                    fixture(position), position=position, season=2026
+                )
                 self.assertEqual(24, len(rows))
                 self.assertEqual(position, rows[0]["position"])
                 self.assertEqual(position, rows[0]["source_position"])
                 self.assertEqual(1, rows[0]["Rank"])
                 self.assertFalse(diagnostics["source_update_timestamp_available"])
+                self.assertEqual("rest_of_season", diagnostics["projection_horizon"])
 
     def test_hybrid_pages_preserve_fullback_source_position(self):
         for position in ("RB", "TE"):
@@ -84,14 +89,18 @@ class CBSSportsOffenseTests(unittest.TestCase):
                 fixture("WR", negative_field="rush_attempts"), position="WR", season=2026
             )
 
-    def test_position_contracts_have_distinct_source_routes_and_ranking_ids(self):
+    def test_position_contracts_have_distinct_source_routes_and_compatible_ranking_ids(self):
         urls = set()
         ranking_ids = set()
         for position in module.POSITIONS:
             with self.subTest(position=position):
                 url = module.source_url(position, 2026)
-                self.assertIn(f"/stats/{position}/2026/season/projections/nonppr/", url)
-                self.assertEqual(f"redraft-{position.lower()}-preseason", module.ranking_id(position))
+                self.assertIn(
+                    f"/stats/{position}/2026/restofseason/projections/nonppr/", url
+                )
+                self.assertEqual(
+                    f"redraft-{position.lower()}-preseason", module.ranking_id(position)
+                )
                 urls.add(url)
                 ranking_ids.add(module.ranking_id(position))
         self.assertEqual(len(module.POSITIONS), len(urls))
@@ -99,13 +108,27 @@ class CBSSportsOffenseTests(unittest.TestCase):
 
     def test_duplicate_and_pagination_fail_closed(self):
         with self.assertRaisesRegex(module.ProjectionError, "Duplicate"):
-            module.parse_projection_html(fixture("QB", duplicate=True), position="QB", season=2026)
+            module.parse_projection_html(
+                fixture("QB", duplicate=True), position="QB", season=2026
+            )
         with self.assertRaisesRegex(module.ProjectionError, "paginated"):
-            module.parse_projection_html(fixture("RB", next_page=True), position="RB", season=2026)
+            module.parse_projection_html(
+                fixture("RB", next_page=True), position="RB", season=2026
+            )
 
     def test_wrong_position_identity_fails(self):
         with self.assertRaises(module.ProjectionError):
             module.parse_projection_html(fixture("WR"), position="TE", season=2026)
+
+    def test_week_one_identity_fails_closed(self):
+        for position in module.POSITIONS:
+            with self.subTest(position=position):
+                with self.assertRaisesRegex(
+                    module.ProjectionError, "Unexpected CBS rest-of-season source identity"
+                ):
+                    module.parse_projection_html(
+                        fixture(position, week_one=True), position=position, season=2026
+                    )
 
 
 if __name__ == "__main__":
