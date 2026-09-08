@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch, validate and materialize CBS Sports preseason kicker projections."""
+"""Fetch, validate and materialize CBS Sports rest-of-season kicker projections."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ SOURCE_ID = "cbs-sports"
 SOURCE_NAME = "CBS Sports"
 RANKING_KIND = "projections"
 RANKING_ID = "redraft-kicker-preseason"
-RANKING_NAME = "CBS Sports Preseason Kicker Projections"
+RANKING_NAME = "CBS Sports Rest of Season Kicker Projections"
 SCHEMA_VERSION = 1
 MIN_ROWS = 20
 SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/cbs-sports"
@@ -141,7 +141,7 @@ class TableParser(HTMLParser):
 def source_url(season: int) -> str:
     return (
         "https://www.cbssports.com/fantasy/football/stats/"
-        f"K/{season}/season/projections/nonppr/"
+        f"K/{season}/restofseason/projections/nonppr/"
     )
 
 
@@ -244,12 +244,12 @@ def _validate_page_identity(
 ) -> None:
     text = parser.page_text
     if not re.search(
-        rf"\b{season}\s+Projections\s+Fantasy\s+Football\s+Kicker\s+Stats\b",
+        r"\bRest\s+of\s+Season\s+Proj\s+Fantasy\s+Football\s+Kicker\s+Stats\b",
         text,
         re.IGNORECASE,
     ):
         raise CBSSportsProjectionError(
-            f"Unexpected CBS Sports source identity; expected {season} Kicker projections; "
+            f"Unexpected CBS Sports source identity; expected {season} Rest of Season Kicker projections; "
             + _identity_diagnostics(parser, html, response_headers)
         )
     required_headers = [
@@ -458,6 +458,7 @@ def parse_projection_html(
         "source_scoring_label": "Non-PPR",
         "source_update_timestamp_available": False,
         "pagination_detected": False,
+        "projection_horizon": "rest_of_season",
     }
 
 
@@ -531,6 +532,7 @@ def write_projection(
             "raw_sha256": raw_sha,
             "source_url": source_url_value,
             "freshness_status": "live_fetch",
+            "projection_horizon": "rest_of_season",
         })
         _atomic_write(latest_path, json.dumps(updated, indent=2, ensure_ascii=False) + "\n")
         return [raw_path, latest_path], False
@@ -543,13 +545,15 @@ def write_projection(
         "ranking_id": RANKING_ID,
         "ranking_name": RANKING_NAME,
         "ranking_type": "provider_regular_season_stat_projection_ordered_by_source_fantasy_points",
+        "projection_horizon": "rest_of_season",
+        "compatibility_dataset_id": RANKING_ID,
         "source_url": source_url_value,
         "fetched_at": fetched_at.isoformat(),
         "season_label": season,
         "source_update_timestamp_available": False,
         "format": {
             "dynasty": False,
-            "horizon": "preseason_full_regular_season",
+            "horizon": "rest_of_season",
             "position": "K",
             "source_scoring_label": diagnostics["source_scoring_label"],
             "custom_scoring_used": False,
@@ -585,7 +589,7 @@ def write_projection(
             "response_headers": response_headers,
         },
         "analysis_usage": {
-            "role": "Projected full-season kicker production",
+            "role": "Projected rest-of-season kicker production",
             "not_expert_consensus": True,
             "not_adp": True,
             "not_trade_market_value": True,
@@ -613,6 +617,7 @@ def write_projection(
         "raw_sha256": raw_sha,
         "source_url": source_url_value,
         "freshness_status": "live_fetch",
+        "projection_horizon": "rest_of_season",
         "direct_fetcher": DIRECT_FETCHER,
         "analysis_metadata_file": ANALYSIS_METADATA,
         "refresh_before_value_sensitive_analysis": True,
@@ -659,7 +664,7 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"CBS Sports projections ranking={RANKING_ID} rows={len(rows)} "
                 f"scoring={diagnostics['source_scoring_label']} "
-                "source_updated=unavailable"
+                "horizon=rest_of_season source_updated=unavailable"
             )
             return 0
         paths, created = write_projection(
