@@ -3,9 +3,9 @@
   "status": "failed",
   "phase": "materialize",
   "exitCode": 1,
-  "recordedAtUtc": "2026-09-08T03:15:35Z",
+  "recordedAtUtc": "2026-09-08T03:39:30Z",
   "workflow": "Data • NFL Source Sync",
-  "runId": "34182752626",
+  "runId": "34184132037",
   "runAttempt": "1",
   "datasetInput": null,
   "seasonInput": null,
@@ -22,11 +22,11 @@
     "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/materialize.py\", line 164, in materialize",
     "    phase1_outputs, phase1_audit, phase1_partitions_preserved = build_phase1_outputs(",
     "                                                                ^^^^^^^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/phase1.py\", line 708, in build_phase1_outputs",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/phase1.py\", line 769, in build_phase1_outputs",
     "    built, coverage, count = _build_rosters(",
     "                             ^^^^^^^^^^^^^^^",
-    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/phase1.py\", line 302, in _build_rosters",
+    "  File \"/home/runner/work/fantasy-app/fantasy-app/tools/nfl_source_data_lib/phase1.py\", line 383, in _build_rosters",
     "    raise ValueError(",
-    "ValueError: Duplicate nflverse.rosters roster identity: season=2010 week=19 team=NE gsis=00-0016098"
+    "ValueError: Conflicting duplicate nflverse.weekly-rosters roster identity: season=2006 week=10 team=JAX gsis=00-0016098"
   ]
 }
