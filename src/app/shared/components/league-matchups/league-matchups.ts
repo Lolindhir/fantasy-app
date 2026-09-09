@@ -36,6 +36,7 @@ import {
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
+type FantasyMatchupPreviewKind = 'scoring' | 'lineup-decision';
 
 interface LeagueMatchupTeamContextView {
   mode: LeagueMatchupContextMode;
@@ -69,9 +70,17 @@ interface FantasyContextState {
   nflTeams: NFLTeam[];
 }
 
-interface FantasyMatchupPreviewView {
+interface FantasyMatchupPreviewEventView {
+  kind: FantasyMatchupPreviewKind;
   game: FantasyGameContextMatchupGame;
   contextGame: FantasyGameContextGame | null;
+  starterCount: number;
+  optionCount: number;
+}
+
+interface FantasyMatchupPreviewView {
+  primary: FantasyMatchupPreviewEventView;
+  secondaryScoring: FantasyMatchupPreviewEventView | null;
   isFinalWindow: boolean;
   isFinalWindowCommitted: boolean;
 }
@@ -164,39 +173,46 @@ export class LeagueMatchupsComponent {
     const resolved = this.matchupContext(matchup, current);
     if (!resolved) return null;
 
-    const game = getNextFantasyMatchupGame(resolved);
-    if (!game) return null;
+    const remaining = resolved.RemainingRelevance;
+    const scoringGame = getNextFantasyMatchupGame(resolved);
+    const scoring = scoringGame
+      ? this.buildPreviewEvent(
+          'scoring',
+          scoringGame,
+          current,
+          remaining?.NextScoringLockedActiveStarterCount !== undefined
+            && remaining?.NextScoringUnlockedStarterCount !== undefined
+            ? remaining.NextScoringLockedActiveStarterCount + remaining.NextScoringUnlockedStarterCount
+            : scoringGame.LeftStarterCount + scoringGame.RightStarterCount,
+          remaining?.NextScoringOptionCount ?? 0
+        )
+      : null;
 
-    const baseContextGame = current.Games.find(candidate => candidate.GameID === game.GameID) ?? null;
-    const previewRemaining = resolved.RemainingRelevance;
-    const generatedPreviewCounts = previewRemaining
-      && previewRemaining.NextScoringLockedActiveStarterCount !== undefined
-      && previewRemaining.NextScoringUnlockedStarterCount !== undefined
-      && previewRemaining.NextScoringOptionCount !== undefined;
+    const decisionGameID = remaining?.NextLineupDecisionPrimaryGameID;
+    const decisionGame = decisionGameID
+      ? resolved.Games.find(game => game.GameID === decisionGameID) ?? null
+      : null;
+    const decision = decisionGame
+      ? this.buildPreviewEvent(
+          'lineup-decision',
+          decisionGame,
+          current,
+          remaining?.NextLineupDecisionStarterCount ?? decisionGame.LeftStarterCount + decisionGame.RightStarterCount,
+          remaining?.NextLineupDecisionOptionCount ?? 0
+        )
+      : null;
 
-    const contextGame = baseContextGame && baseContextGame.RemainingRelevance
-      ? {
-          ...baseContextGame,
-          RemainingRelevance: {
-            ...baseContextGame.RemainingRelevance,
-            LockedActiveStarterCount: generatedPreviewCounts
-              ? previewRemaining!.NextScoringLockedActiveStarterCount!
-              : 0,
-            UnlockedStarterCount: generatedPreviewCounts
-              ? previewRemaining!.NextScoringUnlockedStarterCount!
-              : game.LeftStarterCount + game.RightStarterCount,
-            EligibleBenchCandidateCount: generatedPreviewCounts
-              ? previewRemaining!.NextScoringOptionCount!
-              : 0
-          }
-        }
-      : baseContextGame;
+    const decisionIsEarlier = !!decision
+      && (!scoring || remaining?.NextLineupDecisionWindowID !== remaining?.NextScoringWindowID);
+    const primary = decisionIsEarlier ? decision : scoring ?? decision;
+    if (!primary) return null;
 
     return {
-      game,
-      contextGame,
-      isFinalWindow: isFantasyMatchupFinalWindowGame(resolved, game.GameID),
-      isFinalWindowCommitted: resolved.RemainingRelevance?.IsFinalScoringWindowCommitted ?? false
+      primary,
+      secondaryScoring: decisionIsEarlier ? scoring : null,
+      isFinalWindow: primary.kind === 'scoring' && isFantasyMatchupFinalWindowGame(resolved, primary.game.GameID),
+      isFinalWindowCommitted: primary.kind === 'scoring'
+        && (remaining?.IsFinalScoringWindowCommitted ?? false)
     };
   }
 
@@ -283,6 +299,22 @@ export class LeagueMatchupsComponent {
       league: this.league,
       fantasyMatchupId: resolved.FantasyMatchupID
     });
+  }
+
+  private buildPreviewEvent(
+    kind: FantasyMatchupPreviewKind,
+    game: FantasyGameContextMatchupGame,
+    context: FantasyGameContextReadModel,
+    starterCount: number,
+    optionCount: number
+  ): FantasyMatchupPreviewEventView {
+    return {
+      kind,
+      game,
+      contextGame: context.Games.find(candidate => candidate.GameID === game.GameID) ?? null,
+      starterCount,
+      optionCount
+    };
   }
 
   private openContextDialog(data: FantasyGameContextDialogData): void {
