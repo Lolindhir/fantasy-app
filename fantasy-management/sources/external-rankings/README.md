@@ -37,6 +37,8 @@ Die Ebenen bedeuten:
 
 Jedes normalisierte Ranking soll mindestens Ranking-Art, Anbieter, Ranking-ID, Format, Abrufzeit, eindeutigen normalisierten Rang und stabile Quellidentität dokumentieren. Quellenspezifische Felder wie Expertenstreuung, Marktwert, Projection-Stats oder ADP-Sample bleiben zusätzlich erhalten.
 
+Provider-Sentinels für unbekannte Positionswerte, zum Beispiel `UNK`, dürfen nur normalisiert werden, wenn der betroffene Datensatz über eine stabile Provider-/kanonische Identität eindeutig mit einer vorhandenen kanonischen Spielerposition verknüpft werden kann. Die Raw-Quelle bleibt dabei unverändert. Fehlt der eindeutige Join oder ist die kanonische Position selbst nicht im unterstützten Positionsvertrag, muss der Fetcher fail-closed bleiben. Namen- oder Spieler-Hardcodes, pauschale `UNK`-Allowlisting-Regeln und das generelle Akzeptieren neuer unbekannter Positionscodes sind unzulässig; neue Provider-Codes bleiben Fehler, bis ihr semantischer Vertrag explizit verstanden und implementiert ist.
+
 Ranking-Arten dürfen nicht so behandelt werden, als würden sie dasselbe messen. Quellenübergreifende Vergleiche verwenden listenlängenabhängige Perzentile statt roher Rang- oder Wertdifferenzen.
 
 Positionsspezifische Rankings wie Kicker müssen innerhalb ihrer Position normalisiert werden. Ein Kicker-Rang darf nicht in einen offensiven QB/RB/WR/TE-Cross-Position-Perzentilbestand gemischt werden.
