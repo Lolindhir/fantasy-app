@@ -1,0 +1,178 @@
+.matchup-nfl-context-meta {
+  align-items: center;
+  gap: 3px 4px;
+}
+
+.matchup-nfl-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.53rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.matchup-nfl-meta-chip--starter {
+  border: 1px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.matchup-nfl-meta-chip--option {
+  border: 1px solid #cbd5e1;
+  background: rgba(255, 255, 255, 0.58);
+  color: #64748b;
+}
+
+.fantasy-pulse-card--remaining {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  cursor: default;
+}
+
+.fantasy-pulse-card--remaining:hover { background: rgba(255, 255, 255, 0.94); }
+.fantasy-pulse-card--remaining.fantasy-pulse-card--final-window:hover { background: linear-gradient(135deg, #fff 0%, #faf7ff 100%); }
+
+.fantasy-pulse-card-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 9px;
+  width: 100%;
+  min-height: 66px;
+  padding: 10px 36px 6px 10px;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fantasy-pulse-card-main:hover { background: rgba(124, 58, 237, 0.025); }
+
+.fantasy-pulse-card-main > mat-icon {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #7c3aed;
+  font-size: 20px;
+}
+
+.fantasy-pulse-metrics {
+  align-items: center;
+  gap: 3px 5px;
+}
+
+.fantasy-pulse-metric-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 17px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.54rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fantasy-pulse-metric-chip--starter {
+  border: 1px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.fantasy-pulse-metric-chip--final {
+  border: 1px solid #c4b5fd;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.fantasy-pulse-metric-chip--option {
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #64748b;
+}
+
+.fantasy-pulse-team-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 2px 10px 8px;
+}
+
+.fantasy-pulse-team-strip-label {
+  color: #8a95a6;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fantasy-pulse-team-avatars {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.fantasy-pulse-team-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  margin-left: -4px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ede9fe;
+  color: #6d28d9;
+  font: inherit;
+  font-size: 0.46rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.fantasy-pulse-team-avatar:first-child { margin-left: 0; }
+.fantasy-pulse-team-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.fantasy-pulse-team-avatar:hover { z-index: 1; transform: translateY(-1px); }
+
+.fantasy-pulse-team-strip > strong {
+  color: #64748b;
+  font-size: 0.56rem;
+  font-weight: 900;
+}
+
+.fantasy-pulse-no-starter-teams {
+  color: #94a3b8;
+  font-size: 0.56rem;
+  font-weight: 700;
+}
+
+.fantasy-pulse-card-main:focus-visible,
+.fantasy-pulse-team-avatar:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+@media (max-width: 430px) {
+  .fantasy-pulse-card-main { padding-right: 32px; }
+  .fantasy-pulse-team-strip { gap: 5px; padding-inline: 8px; }
+  .fantasy-pulse-team-strip-label { font-size: 0.48rem; }
+  .fantasy-pulse-team-avatar { width: 22px; height: 22px; }
+}

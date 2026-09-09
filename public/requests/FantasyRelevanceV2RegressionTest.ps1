@@ -37,6 +37,25 @@ function New-FrvGame {
     }
 }
 
+function New-FrvRankingPlayer {
+    param(
+        [string]$PlayerID,
+        [string]$GameID,
+        [string]$StartsAtUtc
+    )
+    return [PSCustomObject]@{
+        PlayerID = $PlayerID
+        Placement = 'starter'
+        GameState = 'unlocked'
+        GameID = $GameID
+        DecisionWindowID = $StartsAtUtc
+        StartsAtUtc = $StartsAtUtc
+        IsBenchCandidate = $false
+        LineupSlotID = $null
+        EligibleUnlockedSlotIDs = @()
+    }
+}
+
 $league = [PSCustomObject]@{
     league_id = 'league'
     season = '2026'
@@ -121,6 +140,8 @@ Assert-FrvEqual '2026-09-13T20:00:00Z' $remaining.NextScoringWindowID 'next scor
 Assert-FrvEqual '2026-09-13T20:25:00Z' $remaining.FinalScoringWindowID 'eligible later Bench option may extend the provisional final window'
 Assert-FrvTrue (-not $remaining.IsFinalScoringWindowCommitted) 'a Bench-only provisional final window must not be called committed'
 Assert-FrvEqual 'g-t1' $context.MustWatchGames[0].GameID 'current starter exposure must outrank Bench-only alternatives before lock'
+Assert-FrvEqual 1 (@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamCount) 'direct starter fantasy-team breadth must be materialized'
+Assert-FrvTrue (@(@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamIDs) -contains '1') 'direct starter fantasy-team identities must be materialized'
 
 # After the TE kickoff, its starter is committed while the later RB remained on Bench and is now locked out.
 $lateDecision = Add-FantasyRelevanceDecisionFacts `
@@ -137,5 +158,51 @@ $lateGame = @($lateContext.Games | Where-Object GameID -eq 'g-t1')[0]
 Assert-FrvEqual 1 $lateGame.RemainingRelevance.CommittedFinalWindowMatchupCount 'committed final-window evidence must be explicit for ranking'
 Assert-FrvEqual 1 $lateGame.RemainingRelevance.LockedActiveStarterCount 'live locked starter must drive late-week relevance'
 Assert-FrvEqual 'g-t1' $lateContext.MustWatchGames[0].GameID 'committed final-window game must rank first'
+
+# Ordinary upcoming games rank by how many distinct fantasy teams have direct starter exposure,
+# before concentrated starter volume or broad matchup-count noise.
+$wideTime = '2026-09-20T17:00:00Z'
+$concentratedTime = '2026-09-20T20:00:00Z'
+$rankingDecisionFacts = [PSCustomObject]@{
+    FantasyRelevance = [PSCustomObject]@{
+        Teams = @(
+            [PSCustomObject]@{ FantasyTeamID='1'; Players=@(
+                (New-FrvRankingPlayer -PlayerID 'w1' -GameID 'g-wide' -StartsAtUtc $wideTime),
+                (New-FrvRankingPlayer -PlayerID 'c1' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime),
+                (New-FrvRankingPlayer -PlayerID 'c2' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime),
+                (New-FrvRankingPlayer -PlayerID 'c3' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime)
+            ) },
+            [PSCustomObject]@{ FantasyTeamID='2'; Players=@(
+                (New-FrvRankingPlayer -PlayerID 'w2' -GameID 'g-wide' -StartsAtUtc $wideTime),
+                (New-FrvRankingPlayer -PlayerID 'c4' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime),
+                (New-FrvRankingPlayer -PlayerID 'c5' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime),
+                (New-FrvRankingPlayer -PlayerID 'c6' -GameID 'g-concentrated' -StartsAtUtc $concentratedTime)
+            ) },
+            [PSCustomObject]@{ FantasyTeamID='3'; Players=@(
+                (New-FrvRankingPlayer -PlayerID 'w3' -GameID 'g-wide' -StartsAtUtc $wideTime)
+            ) }
+        )
+    }
+}
+$rankingBaseContext = [PSCustomObject]@{
+    SchemaVersion = 2
+    FantasyMatchups = @(
+        [PSCustomObject]@{ FantasyMatchupID='m1'; TeamIDs=@('1','2') },
+        [PSCustomObject]@{ FantasyMatchupID='m2'; TeamIDs=@('3','4') }
+    )
+    Games = @(
+        [PSCustomObject]@{ GameID='g-wide'; DecisionWindowID=$wideTime; StartsAtUtc=$wideTime },
+        [PSCustomObject]@{ GameID='g-concentrated'; DecisionWindowID=$concentratedTime; StartsAtUtc=$concentratedTime }
+    )
+}
+$rankingContext = Add-FantasyRelevanceContext -BaseContext $rankingBaseContext -DecisionFacts $rankingDecisionFacts
+$wideGame = @($rankingContext.Games | Where-Object GameID -eq 'g-wide')[0]
+$concentratedGame = @($rankingContext.Games | Where-Object GameID -eq 'g-concentrated')[0]
+Assert-FrvEqual 3 $wideGame.RemainingRelevance.DirectStarterFantasyTeamCount 'wide game must expose three distinct starter-affected fantasy teams'
+Assert-FrvEqual 2 $concentratedGame.RemainingRelevance.DirectStarterFantasyTeamCount 'concentrated game must expose two distinct starter-affected fantasy teams'
+Assert-FrvEqual 6 $concentratedGame.RemainingRelevance.UnlockedStarterCount 'ranking fixture must prove concentrated game has more starters'
+Assert-FrvEqual 'g-wide' $rankingContext.MustWatchGames[0].GameID 'distinct starter-affected fantasy-team breadth must outrank ordinary starter volume'
+Assert-FrvEqual 3 $rankingContext.MustWatchGames[0].DirectStarterFantasyTeamCount 'must-watch rows must retain starter-team breadth'
+Assert-FrvTrue (@($rankingContext.MustWatchGames[0].DirectStarterFantasyTeamIDs) -contains '3') 'must-watch rows must retain affected fantasy-team identities'
 
 Write-Host 'Fantasy Relevance v2 regression tests passed.' -ForegroundColor Green

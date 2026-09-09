@@ -8,6 +8,7 @@ file:
   relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
   predecessorIssue: 346
   v2Issue: 432
+  v2RefinementIssue: 437
 
 contract:
   purpose: >
@@ -93,11 +94,19 @@ game:
     - LockedActiveStarterCount
     - UnlockedStarterCount
     - EligibleBenchCandidateCount
+    - DirectStarterFantasyTeamCount
+    - DirectStarterFantasyTeamIDs
     - FantasyMatchupCount
     - TwoSidedFantasyMatchupCount
     - FinalWindowFantasyMatchupCount
     - CommittedFinalWindowMatchupCount
     - MustWatchRank
+  directStarterFantasyTeams: >
+    DirectStarterFantasyTeamIDs is the unique set of fantasy teams with at least
+    one remaining direct starter path in this NFL game (unlocked or locked-active).
+    Bench-option-only teams are intentionally excluded. The Count field is the
+    cardinality of that set and is the ordinary-upcoming breadth signal used by
+    must-watch ranking and visual affected-team strips.
   meaning: >
     These fields answer why an NFL game still matters to the fantasy league now.
     Completed-only exposure and broad owned-roster mass do not create remaining
@@ -115,30 +124,52 @@ mustWatchGames:
     - StartsAtUtc
     - CommittedFinalWindowMatchupCount
     - LockedActiveStarterCount
+    - DirectStarterFantasyTeamCount
+    - DirectStarterFantasyTeamIDs
+    - UnlockedStarterCount
     - TwoSidedFantasyMatchupCount
     - FantasyMatchupCount
-    - UnlockedStarterCount
     - FinalWindowFantasyMatchupCount
     - EligibleBenchCandidateCount
   rankingOrder:
     - CommittedFinalWindowMatchupCount descending
     - LockedActiveStarterCount descending
+    - DirectStarterFantasyTeamCount descending
+    - UnlockedStarterCount descending
     - TwoSidedFantasyMatchupCount descending
     - FantasyMatchupCount descending
-    - UnlockedStarterCount descending
     - FinalWindowFantasyMatchupCount descending
     - EligibleBenchCandidateCount descending
     - StartsAtUtc ascending
     - GameID ascending
   rationale: >
-    Late-week committed and live starter relevance outranks provisional exposure.
-    Current starters outrank Bench alternatives. A future game being the latest
-    theoretical window alone does not outrank a more concrete current starter game.
+    Late-week committed final-window and locked-live starter urgency outrank
+    ordinary upcoming exposure. For ordinary upcoming games, breadth across
+    distinct fantasy teams with direct starter exposure is more informative than
+    the small league's raw fantasy-matchup count, followed by starter volume.
+    Two-sided matchup context remains useful but secondary. Bench alternatives are
+    deliberately a late tie-breaker and cannot create direct-starter breadth.
+
+uiPresentation:
+  affectedTeamStrip: >
+    Prominent affected-fantasy-team avatar strips should use
+    DirectStarterFantasyTeamIDs, not every team with a Bench alternative. A legacy
+    fallback may use current game FantasyTeams with StarterCount > 0 while older
+    generated data is still in circulation.
+  stateGrammar: >
+    Position remains visually encoded by the existing position-color language.
+    Lineup state (Starter, Locked, Final, Option) is a separate compact semantic
+    treatment so state color does not replace or compete with position identity.
+  interactionBoundary: >
+    Entity-level interactions may open existing Player, Fantasy Team and NFL Game
+    detail views. Interaction wiring is presentation behavior; eligibility and
+    ranking remain generated facts.
 
 ownership:
   domainLogic: >
     Slot mapping, Active Roster/Bench derivation, eligibility, lock/completion
-    state, remaining paths and must-watch ranking are generation-layer facts.
+    state, remaining paths, direct starter-team breadth and must-watch ranking are
+    generation-layer facts.
   angularBoundary: >
     Angular may render, filter and select from these fields. It must not recreate
     league slot eligibility, scoring-path state or ranking rules.
@@ -152,8 +183,8 @@ failureBehavior:
   - Existing historical FantasyGameContext generation remains compatible when current FantasyRelevance evidence is absent.
 
 nonGoals:
-  - visual redesign of Matchup footer, Pulse, Fantasy Matchup dialog or NFL Game dialog
   - probabilistic matchup win chance
   - expected fantasy points or projections
   - Sleeper AutoSub assignment reconstruction
   - historical 2025 mapping repair tracked separately by #420
+  - app-wide design-system rollout tracked separately by #436
