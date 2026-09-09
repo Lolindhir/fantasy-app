@@ -67,15 +67,18 @@
 }
 
 .fgc-player-chip {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  min-height: 15px;
-  padding: 1px 5px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0 5px;
   border-radius: 999px;
   font-size: 0.5rem;
   font-weight: 900;
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: 0.025em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -86,10 +89,23 @@
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
+/* Slot is context, not a third equal-weight status pill. */
 .fgc-player-chip--slot {
-  border: 1px solid #d8dee8;
-  background: #fff;
-  color: #64748b;
+  height: auto;
+  min-height: 0;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #7c8799;
+  font-size: 0.47rem;
+  line-height: 1;
+}
+
+.fgc-player-chip--slot::before {
+  margin-right: 1px;
+  color: #c0c7d2;
+  content: '·';
 }
 
 .fgc-player-chip--state {
@@ -198,7 +214,7 @@ button.fgc-mini-player {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 1px;
+  gap: 2px;
 }
 
 .fgc-mini-player-copy > strong {
@@ -206,12 +222,24 @@ button.fgc-mini-player {
   color: #334155;
   font-size: 0.63rem;
   font-weight: 850;
+  line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fgc-player-chip-row--mini { gap: 2px; }
-.fgc-player-chip-row--mini .fgc-player-chip { min-height: 13px; padding: 1px 4px; font-size: 0.44rem; }
+.fgc-player-chip-row--mini .fgc-player-chip {
+  height: 14px;
+  min-height: 14px;
+  padding: 0 4px;
+  font-size: 0.44rem;
+}
+.fgc-player-chip-row--mini .fgc-player-chip--slot {
+  height: auto;
+  min-height: 0;
+  padding-inline: 0;
+  font-size: 0.42rem;
+}
 
 /* The base timeline styles make every nested span a column. Keep the metadata
    under the player name as one compact chip line instead. */
@@ -228,9 +256,10 @@ button.fgc-mini-player {
   flex: 0 0 auto;
 }
 
-/* Raw path cardinality is intentionally hidden from the matchup hero; the
-   plain-language scoring state remains the user-facing summary. */
-.fgc-matchup-team > small {
+/* Raw path cardinality and the global starter/option aggregate are deliberately
+   not primary matchup-hero information. */
+.fgc-matchup-team > small,
+.fgc-matchup-signal-strip {
   display: none;
 }
 
@@ -248,4 +277,5 @@ button.fgc-mini-player:focus-visible {
   .fgc-affected-team-avatar { width: 23px; height: 23px; }
   .fgc-affected-teams > strong { font-size: 0.56rem; }
   .fgc-player-chip-row--mini .fgc-player-chip { padding-inline: 3px; font-size: 0.42rem; }
+  .fgc-player-chip-row--mini .fgc-player-chip--slot { padding-inline: 0; font-size: 0.4rem; }
 }
