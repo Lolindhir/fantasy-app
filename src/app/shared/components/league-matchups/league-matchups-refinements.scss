@@ -28,6 +28,50 @@
   color: #64748b;
 }
 
+.matchup-nfl-context--dual {
+  min-height: 70px;
+}
+
+.matchup-nfl-secondary {
+  display: flex;
+  align-items: center;
+  gap: 3px 5px;
+  min-width: 0;
+  margin-top: 3px;
+  padding-top: 3px;
+  overflow: hidden;
+  border-top: 1px solid rgba(109, 40, 217, 0.1);
+  color: #64748b;
+  font-size: 0.54rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.matchup-nfl-secondary-label {
+  flex: 0 0 auto;
+  color: #7c3aed;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.matchup-nfl-secondary-game {
+  overflow: hidden;
+  color: #334155;
+  font-weight: 850;
+  text-overflow: ellipsis;
+}
+
+.matchup-nfl-secondary-time,
+.matchup-nfl-secondary-count {
+  flex: 0 0 auto;
+}
+
+.matchup-nfl-secondary-count {
+  color: #6d28d9;
+  font-weight: 850;
+}
+
 .fantasy-pulse-card--remaining {
   display: block;
   min-height: 0;
@@ -171,6 +215,8 @@
 }
 
 @media (max-width: 430px) {
+  .matchup-nfl-secondary { gap: 3px; font-size: 0.51rem; }
+  .matchup-nfl-secondary-count { display: none; }
   .fantasy-pulse-card-main { padding-right: 32px; }
   .fantasy-pulse-team-strip { gap: 5px; padding-inline: 8px; }
   .fantasy-pulse-team-strip-label { font-size: 0.48rem; }

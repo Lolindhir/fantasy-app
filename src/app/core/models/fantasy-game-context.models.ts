@@ -97,6 +97,12 @@ export interface FantasyMatchupRemainingRelevance {
   LockedActiveStarterCount: number;
   UnlockedStarterCount: number;
   EligibleBenchCandidateCount: number;
+  NextLineupDecisionWindowID?: string | null;
+  NextLineupDecisionGameIDs?: string[];
+  NextLineupDecisionPrimaryGameID?: string | null;
+  NextLineupDecisionWindowGameCount?: number;
+  NextLineupDecisionStarterCount?: number;
+  NextLineupDecisionOptionCount?: number;
   NextScoringWindowID: string | null;
   NextScoringGameIDs: string[];
   NextScoringPrimaryGameID?: string | null;

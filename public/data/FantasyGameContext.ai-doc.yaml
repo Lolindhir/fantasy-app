@@ -11,6 +11,7 @@ file:
   v2Issue: 432
   v2RefinementIssue: 437
   matchupPreviewFixIssue: 441
+  matchupDecisionScoringRefinementIssue: 443
 
 contract:
   purpose: >
@@ -68,6 +69,12 @@ fantasyMatchup:
     - LockedActiveStarterCount
     - UnlockedStarterCount
     - EligibleBenchCandidateCount
+    - NextLineupDecisionWindowID
+    - NextLineupDecisionGameIDs
+    - NextLineupDecisionPrimaryGameID
+    - NextLineupDecisionWindowGameCount
+    - NextLineupDecisionStarterCount
+    - NextLineupDecisionOptionCount
     - NextScoringWindowID
     - NextScoringGameIDs
     - NextScoringPrimaryGameID
@@ -83,16 +90,26 @@ fantasyMatchup:
     left-only: Only the first TeamID side still has a generated scoring path.
     right-only: Only the second TeamID side still has a generated scoring path.
     none: Neither side has a generated remaining scoring path.
-  nextWindowRule: >
-    For the compact matchup preview, prefer an already locked-active direct starter
-    window. Otherwise prefer the earliest future window containing at least one
-    unlocked direct starter. Only when no direct starter path remains may an
-    option-only Bench-candidate window become the fallback preview. Within the
-    selected window, NextScoringPrimaryGameID chooses the NFL game with the most
-    direct starter paths for this fantasy matchup, then locked starters, then
-    lineup options, then stable GameID. NextScoring*StarterCount and
-    NextScoringOptionCount are counts for that selected matchup/game preview, not
-    league-wide NFL-game totals.
+  nextLineupDecisionRule: >
+    The next lineup decision is the earliest still-unlocked kickoff window that
+    contains either a current unlocked Starter or an eligible Bench candidate for
+    this fantasy matchup. Locked-active starters are excluded because their lineup
+    decision has already passed. Within that window, the primary NFL game is chosen
+    deterministically by direct-starter count, then option count, then stable GameID.
+  nextScoringRule: >
+    The next scoring preview represents a current direct Starter path only. Prefer
+    an already locked-active Starter window when one is live; otherwise use the
+    earliest future window containing at least one unlocked current Starter. An
+    option-only Bench-candidate window is not a scoring window. Within the selected
+    window, NextScoringPrimaryGameID chooses the NFL game with the strongest direct
+    starter evidence for this fantasy matchup. NextScoring*StarterCount and
+    NextScoringOptionCount are matchup/game-specific counts, not league-wide NFL-game
+    totals.
+  presentationRelationship: >
+    If NextLineupDecisionWindowID and NextScoringWindowID are the same window, UI may
+    present one compact scoring card because the lineup decision and scoring trigger
+    coincide. If the lineup decision is earlier, UI should surface it first and may
+    show the later next-scoring event as secondary context.
   finalWindowRule: >
     The latest remaining path window is FinalScoringWindowID. It is committed only
     when every remaining path in that window is a locked starter; an unlocked
@@ -174,11 +191,16 @@ uiPresentation:
     Position remains visually encoded by the existing position-color language.
     Lineup state (Starter, Locked, Final, Option) is a separate compact semantic
     treatment so state color does not replace or compete with position identity.
+    A different lineup slot such as FLEX is contextual metadata and should be
+    visually quieter than the natural-position and lineup-state chips.
   matchupTimelineDensity: >
     In the two-column matchup timeline, player name remains the primary line and
-    position/slot/state chips stay on one compact metadata row underneath. Raw
-    LeftRemainingPathCount / RightRemainingPathCount are generated diagnostic
-    facts but are not primary user-facing hero copy; the plain-language State is.
+    position/slot/state metadata stays on one compact row underneath. Position and
+    state may use pills; a secondary lineup slot should not look like a third equal-
+    weight pill. Chip text must remain vertically centered. Raw
+    LeftRemainingPathCount / RightRemainingPathCount and the global matchup-level
+    current-starter/option aggregate are generated facts but are not primary
+    user-facing hero copy; the plain-language State and concrete timeline are.
   interactionBoundary: >
     Entity-level interactions may open existing Player, Fantasy Team and NFL Game
     detail views. Interaction wiring is presentation behavior; eligibility and
@@ -187,13 +209,13 @@ uiPresentation:
 ownership:
   domainLogic: >
     Slot mapping, Active Roster/Bench derivation, eligibility, lock/completion
-    state, remaining paths, matchup preview selection/counts, direct starter-team
-    breadth and must-watch ranking are generation-layer facts.
+    state, remaining paths, lineup-decision/scoring preview selection/counts,
+    direct starter-team breadth and must-watch ranking are generation-layer facts.
   angularBoundary: >
     Angular may render, filter and select from these fields. It must not recreate
-    league slot eligibility, scoring-path state or ranking rules. A temporary
-    compatibility fallback may use existing matchup starter-count rows only while
-    older schema-v2 JSON without NextScoringPrimaryGameID is still circulating.
+    league slot eligibility, scoring-path state or ranking rules. Older schema-v2
+    JSON without NextLineupDecision* fields may temporarily render only the scoring
+    preview until the next normal League materialization.
   providerBoundary: >
     The current runtime may still consume transitional Sleeper/Tank01-shaped inputs.
     #347 owns the separate provider/source-data consumer migration.
