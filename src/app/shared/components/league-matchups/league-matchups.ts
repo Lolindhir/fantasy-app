@@ -167,9 +167,34 @@ export class LeagueMatchupsComponent {
     const game = getNextFantasyMatchupGame(resolved);
     if (!game) return null;
 
+    const baseContextGame = current.Games.find(candidate => candidate.GameID === game.GameID) ?? null;
+    const previewRemaining = resolved.RemainingRelevance;
+    const generatedPreviewCounts = previewRemaining
+      && previewRemaining.NextScoringLockedActiveStarterCount !== undefined
+      && previewRemaining.NextScoringUnlockedStarterCount !== undefined
+      && previewRemaining.NextScoringOptionCount !== undefined;
+
+    const contextGame = baseContextGame && baseContextGame.RemainingRelevance
+      ? {
+          ...baseContextGame,
+          RemainingRelevance: {
+            ...baseContextGame.RemainingRelevance,
+            LockedActiveStarterCount: generatedPreviewCounts
+              ? previewRemaining!.NextScoringLockedActiveStarterCount!
+              : 0,
+            UnlockedStarterCount: generatedPreviewCounts
+              ? previewRemaining!.NextScoringUnlockedStarterCount!
+              : game.LeftStarterCount + game.RightStarterCount,
+            EligibleBenchCandidateCount: generatedPreviewCounts
+              ? previewRemaining!.NextScoringOptionCount!
+              : 0
+          }
+        }
+      : baseContextGame;
+
     return {
       game,
-      contextGame: current.Games.find(candidate => candidate.GameID === game.GameID) ?? null,
+      contextGame,
       isFinalWindow: isFantasyMatchupFinalWindowGame(resolved, game.GameID),
       isFinalWindowCommitted: resolved.RemainingRelevance?.IsFinalScoringWindowCommitted ?? false
     };

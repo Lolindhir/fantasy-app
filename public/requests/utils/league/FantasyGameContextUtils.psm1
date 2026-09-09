@@ -1,5 +1,6 @@
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop -Force
 
 $script:BaseNewFantasyGameContextReadModel = ${function:New-FantasyGameContextReadModel}
 
@@ -54,7 +55,8 @@ function New-FantasyGameContextReadModel {
         -Schedule $Schedule `
         -WeekIsFinal $WeekIsFinal
 
-    return Add-FantasyRelevanceContext -BaseContext $baseContext -DecisionFacts $DecisionFacts
+    $relevanceContext = Add-FantasyRelevanceContext -BaseContext $baseContext -DecisionFacts $DecisionFacts
+    return Add-FantasyMatchupPreviewContext -BaseContext $relevanceContext -DecisionFacts $DecisionFacts
 }
 
 # Sleeper currently publishes players_points as a PlayerID-keyed object but

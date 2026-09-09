@@ -99,6 +99,11 @@ export interface FantasyMatchupRemainingRelevance {
   EligibleBenchCandidateCount: number;
   NextScoringWindowID: string | null;
   NextScoringGameIDs: string[];
+  NextScoringPrimaryGameID?: string | null;
+  NextScoringWindowGameCount?: number;
+  NextScoringLockedActiveStarterCount?: number;
+  NextScoringUnlockedStarterCount?: number;
+  NextScoringOptionCount?: number;
   FinalScoringWindowID: string | null;
   FinalScoringGameIDs: string[];
   IsFinalScoringWindowCommitted: boolean;
