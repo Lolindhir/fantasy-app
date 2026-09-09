@@ -1,12 +1,12 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-09T18:53:39Z`  
+Generated: `2026-09-09T20:13:49Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `unknown`
 
 ## Roster status
 
-- Active: **31 / 30** (delta -1)
+- Active: **30 / 30** (delta +0)
 - Taxi: **2 / 2**; binding: **no**
 - Reserve: **1 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
@@ -20,7 +20,7 @@ Taxi phase: `unknown`
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
 | RB | 9 | 9 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 16 | 13 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 15 | 12 | 2 | 7 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -56,7 +56,6 @@ Taxi phase: `unknown`
 | WR | Malachi Fields | active | prospect | hold | development | development | no |
 | WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | WR | Marvin Harrison | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Pat Bryant | active | prospect | hold | development | development | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | WR | Ricky Pearsall | reserve | unclassified | unclassified | unclassified | unclassified | no |
 | WR | Tetairoa McMillan | active | unclassified | unclassified | unclassified | unclassified | no |
