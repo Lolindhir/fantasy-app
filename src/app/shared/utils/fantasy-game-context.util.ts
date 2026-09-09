@@ -126,11 +126,45 @@ export function getFantasyMatchupContext(
   ) ?? null;
 }
 
+function normalizeGeneratedGameIDs(value: string[] | string | null | undefined): string[] {
+  if (Array.isArray(value)) return value;
+  return typeof value === 'string' && value.length > 0 ? [value] : [];
+}
+
 export function getNextFantasyMatchupGame(
   matchup: FantasyGameContextMatchup,
   now: Date = new Date()
 ): FantasyGameContextMatchupGame | null {
-  const generatedGameIDs = matchup.RemainingRelevance?.NextScoringGameIDs ?? [];
+  const remaining = matchup.RemainingRelevance;
+  const primaryGameID = remaining?.NextScoringPrimaryGameID;
+  if (primaryGameID) {
+    const primary = matchup.Games.find(game => game.GameID === primaryGameID);
+    if (primary) return primary;
+  }
+
+  const generatedGameIDs = normalizeGeneratedGameIDs(
+    remaining?.NextScoringGameIDs as string[] | string | null | undefined
+  );
+
+  if ((remaining?.LockedActiveStarterCount ?? 0) > 0 && generatedGameIDs.length > 0) {
+    const lockedFallback = matchup.Games
+      .filter(game => generatedGameIDs.includes(game.GameID))
+      .sort((left, right) => Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc) || left.GameID.localeCompare(right.GameID))[0];
+    if (lockedFallback) return lockedFallback;
+  }
+
+  // Compatibility while older schema-v2 JSON is still circulating: prefer the
+  // earliest direct starter game over an earlier option-only generated window.
+  // New materializations provide NextScoringPrimaryGameID and remain authoritative.
+  const nowMs = now.getTime();
+  const directStarterFallback = [...matchup.Games]
+    .filter(game => Date.parse(game.StartsAtUtc) > nowMs)
+    .filter(game => game.LeftStarterCount + game.RightStarterCount > 0)
+    .sort((left, right) => Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc)
+      || (right.LeftStarterCount + right.RightStarterCount) - (left.LeftStarterCount + left.RightStarterCount)
+      || left.GameID.localeCompare(right.GameID))[0];
+  if (directStarterFallback) return directStarterFallback;
+
   if (generatedGameIDs.length > 0) {
     const generated = matchup.Games
       .filter(game => generatedGameIDs.includes(game.GameID))
@@ -138,17 +172,14 @@ export function getNextFantasyMatchupGame(
     if (generated) return generated;
   }
 
-  const nowMs = now.getTime();
-  return [...matchup.Games]
-    .filter(game => Date.parse(game.StartsAtUtc) > nowMs)
-    .filter(game => game.LeftStarterCount + game.RightStarterCount > 0)
-    .sort((left, right) => Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc) || left.GameID.localeCompare(right.GameID))[0]
-    ?? null;
+  return null;
 }
 
 export function isFantasyMatchupFinalWindowGame(
   matchup: FantasyGameContextMatchup,
   gameID: string
 ): boolean {
-  return matchup.RemainingRelevance?.FinalScoringGameIDs.includes(gameID) ?? false;
+  return normalizeGeneratedGameIDs(
+    matchup.RemainingRelevance?.FinalScoringGameIDs as string[] | string | null | undefined
+  ).includes(gameID);
 }

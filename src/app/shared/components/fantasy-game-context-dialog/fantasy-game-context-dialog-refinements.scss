@@ -213,6 +213,27 @@ button.fgc-mini-player {
 .fgc-player-chip-row--mini { gap: 2px; }
 .fgc-player-chip-row--mini .fgc-player-chip { min-height: 13px; padding: 1px 4px; font-size: 0.44rem; }
 
+/* The base timeline styles make every nested span a column. Keep the metadata
+   under the player name as one compact chip line instead. */
+.fgc-mini-player .fgc-player-chip-row--mini {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fgc-mini-player .fgc-player-chip-row--mini .fgc-player-chip {
+  flex: 0 0 auto;
+}
+
+/* Raw path cardinality is intentionally hidden from the matchup hero; the
+   plain-language scoring state remains the user-facing summary. */
+.fgc-matchup-team > small {
+  display: none;
+}
+
 .fgc-affected-team-avatar:focus-visible,
 button.fgc-mini-nfl-lockup:focus-visible,
 button.fgc-matchup-side-heading:focus-visible,
@@ -226,4 +247,5 @@ button.fgc-mini-player:focus-visible {
   .fgc-affected-teams-label { display: none; }
   .fgc-affected-team-avatar { width: 23px; height: 23px; }
   .fgc-affected-teams > strong { font-size: 0.56rem; }
+  .fgc-player-chip-row--mini .fgc-player-chip { padding-inline: 3px; font-size: 0.42rem; }
 }
