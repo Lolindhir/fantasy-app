@@ -104,6 +104,52 @@ class FantasyCalcFetcherTests(unittest.TestCase):
         self.assertEqual(1, rows[0]["Rank"])
         self.assertEqual(1, rows[0]["source_overall_rank"])
 
+    def test_resolves_travis_hunter_unk_from_canonical_sleeper_position(self):
+        payload = self.make_payload(dynasty=False)
+        payload[2]["player"].update(
+            {
+                "id": 12530,
+                "name": "Travis Hunter",
+                "position": "UNK",
+                "maybeTeam": "JAX",
+                "sleeperId": "12530",
+            }
+        )
+
+        rows = module.parse_assets(
+            payload,
+            module.FORMAT_CONFIGS["redraft"],
+            canonical_player_positions={"12530": "WR"},
+        )
+
+        hunter = next(row for row in rows if row["sleeper_id"] == "12530")
+        self.assertEqual("WR", hunter["position"])
+        self.assertEqual("player", hunter["asset_type"])
+        self.assertEqual("UNK", payload[2]["player"]["position"])
+
+    def test_unexpected_positions_remain_fail_closed(self):
+        config = module.FORMAT_CONFIGS["redraft"]
+        for raw_position, sleeper_id in (("UNK", "999999"), ("DB", "12530")):
+            with self.subTest(raw_position=raw_position, sleeper_id=sleeper_id):
+                payload = self.make_payload(dynasty=False)
+                payload[2]["player"].update(
+                    {
+                        "id": 12530,
+                        "name": "Travis Hunter",
+                        "position": raw_position,
+                        "maybeTeam": "JAX",
+                        "sleeperId": sleeper_id,
+                    }
+                )
+                with self.assertRaisesRegex(
+                    module.FantasyCalcFetchError, "Unexpected FantasyCalc position"
+                ):
+                    module.parse_assets(
+                        payload,
+                        config,
+                        canonical_player_positions={"12530": "WR"},
+                    )
+
     def test_accepts_duplicate_source_ranks_and_assigns_unique_normalized_ranks(self):
         rows = module.parse_assets(
             self.make_payload(dynasty=True, duplicate_source_rank=True),
