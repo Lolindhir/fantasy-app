@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-09T13:23:43Z",
-  "input_fingerprint": "1ea0ea28716cc0f802f127d704d01db85b8dbb716076ee8f5f0d957b21628280",
+  "generated_at": "2026-09-09T14:24:00Z",
+  "input_fingerprint": "1d7bd9fbb85ebcfb15b2e13e607ee5ad025dadd024898ae633cc3d4c7b01889e",
   "sources": [
     {
       "id": "league",
       "path": "public/data/League.json",
-      "content_sha256": "dec38e8a296ed9736eb73a923f8a2523cb0107a930c47164fb8fc73ff694f4d3"
+      "content_sha256": "26f56abbf08cfe4540c8cdab78133cff87f908218a203203a6cd12ef794a11ac"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "ddf9d753e73500fb5ca88dcbd9644f16400c29e84b0ea878d6ebcd217111b382"
+      "content_sha256": "791b8cf3351965f575bca06addd890f42f7b0dc491bc412fb90c9e930e68f1f9"
     },
     {
       "id": "roster_evaluation_state",
@@ -54,12 +54,12 @@
   "structure": {
     "capacity": {
       "regular_active_capacity": 30,
-      "current_active_count": 32,
+      "current_active_count": 31,
       "taxi_slots": 2,
-      "current_taxi_count": 1,
+      "current_taxi_count": 2,
       "reserve_slots": 5,
       "current_reserve_count": 1,
-      "hard_active_delta": -2
+      "hard_active_delta": -1
     },
     "lineup": {
       "fixed_starters": {
@@ -76,6 +76,10 @@
       "phase": "unknown",
       "binding": false,
       "current_technical_occupants": [
+        {
+          "player_id": "13301",
+          "name": "Antonio Williams"
+        },
         {
           "player_id": "13311",
           "name": "Chris Bell"
@@ -132,8 +136,8 @@
       "WR": {
         "fixed_starter_requirement": 2,
         "held_count": 16,
-        "current_active_count": 14,
-        "effective_prelock_or_locked_count": 14,
+        "current_active_count": 13,
+        "effective_prelock_or_locked_count": 13,
         "startable_count": 7,
         "backup_count": 2,
         "coverage_floor": null,
@@ -1373,12 +1377,13 @@
       "name": "Antonio Williams",
       "position": "WR",
       "nfl_team": "WSH",
-      "roster_area": "active",
+      "roster_area": "taxi",
       "roster_sections": [
-        "roster"
+        "roster",
+        "taxi"
       ],
-      "is_current_active": true,
-      "is_current_taxi": false,
+      "is_current_active": false,
+      "is_current_taxi": true,
       "is_current_reserve": false,
       "roster_role": "prospect",
       "roster_security": "strong_hold",

@@ -1,13 +1,13 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-09T13:23:43Z`  
+Generated: `2026-09-09T14:24:00Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `unknown`
 
 ## Roster status
 
-- Active: **32 / 30** (delta -2)
-- Taxi: **1 / 2**; binding: **no**
+- Active: **31 / 30** (delta -1)
+- Taxi: **2 / 2**; binding: **no**
 - Reserve: **1 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
 - General churn target: **2**; status: `below_target`
@@ -20,7 +20,7 @@ Taxi phase: `unknown`
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
 | RB | 9 | 9 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 16 | 14 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 16 | 13 | 2 | 7 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -45,7 +45,7 @@ Taxi phase: `unknown`
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no |
-| WR | Antonio Williams | active | prospect | strong_hold | development | development | no |
+| WR | Antonio Williams | taxi | prospect | strong_hold | development | development | no |
 | WR | Chris Bell | taxi | prospect | conditional | development | development | no |
 | WR | Davante Adams | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | De'Zhaun Stribling | active | prospect | strong_hold | development | development | no |
