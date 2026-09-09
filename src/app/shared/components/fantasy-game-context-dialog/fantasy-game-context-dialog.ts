@@ -19,6 +19,7 @@ import type {
 } from '../../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
+import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import {
   isFantasyGameImpactVisible,
   isFantasyMatchupFinalWindowGame
@@ -49,9 +50,9 @@ export interface FantasyGameContextDialogData {
 @Component({
   selector: 'app-fantasy-game-context-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, PositionStylePipe],
   templateUrl: './fantasy-game-context-dialog.html',
-  styleUrl: './fantasy-game-context-dialog.scss'
+  styleUrls: ['./fantasy-game-context-dialog.scss', './fantasy-game-context-dialog-refinements.scss']
 })
 export class FantasyGameContextDialogComponent {
   private readonly dialog = inject(MatDialog);
@@ -124,6 +125,17 @@ export class FantasyGameContextDialogComponent {
 
   showCounterfactual(matchup: FantasyGameContextMatchup): boolean {
     return matchup.CounterfactualState === 'available' || this.data.context.ScoringState === 'final';
+  }
+
+  affectedStarterTeamIDs(game: FantasyGameContextGame): Array<string | number> {
+    const generated = game.RemainingRelevance?.DirectStarterFantasyTeamIDs ?? [];
+    if (generated.length > 0) return this.uniqueTeamIDs(generated);
+
+    return this.uniqueTeamIDs(
+      game.FantasyTeams
+        .filter(team => team.StarterCount > 0)
+        .map(team => team.FantasyTeamID)
+    );
   }
 
   relevantFantasyTeamsForGame(game: FantasyGameContextGame): FantasyGameContextTeam[] {
@@ -249,12 +261,31 @@ export class FantasyGameContextDialogComponent {
     return 'Upcoming';
   }
 
+  playerStateLabel(player: FantasyGamePlayerDisplay): string {
+    if (player.IsBenchCandidate) return 'Option';
+    if (player.GameState === 'locked-active') return 'Locked';
+    if (player.GameState === 'completed') return 'Final';
+    if (player.IsStarter) return 'Starter';
+    return 'Player';
+  }
+
+  playerSecondarySlot(player: FantasyGamePlayerDisplay): string | null {
+    const naturalPosition = (this.playerPosition(player.PlayerID) ?? '').trim().toUpperCase();
+
+    if (player.IsBenchCandidate) {
+      const alternatives = player.EligibleUnlockedSlotIDs
+        .map(slot => slot.replace(/-\d+$/, '').toUpperCase())
+        .filter((slot, index, all) => slot !== naturalPosition && all.indexOf(slot) === index);
+      return alternatives.length > 0 ? alternatives.join(' / ') : null;
+    }
+
+    const lineupSlot = player.LineupSlotType?.trim().toUpperCase() ?? '';
+    return lineupSlot && lineupSlot !== naturalPosition ? lineupSlot : null;
+  }
+
   playerRoleLabel(player: FantasyGamePlayerDisplay): string {
-    if (player.IsBenchCandidate) return 'Lineup option';
-    if (player.GameState === 'locked-active') return player.LineupSlotType ? `${player.LineupSlotType} · locked` : 'Locked starter';
-    if (player.GameState === 'completed') return player.LineupSlotType ? `${player.LineupSlotType} · final` : 'Final starter';
-    if (player.LineupSlotType) return `${player.LineupSlotType} · current`;
-    return player.IsStarter ? 'Current starter' : 'Player';
+    const slot = this.playerSecondarySlot(player);
+    return slot ? `${slot} · ${this.playerStateLabel(player).toLowerCase()}` : this.playerStateLabel(player);
   }
 
   playerAlternativeSlots(player: FantasyGamePlayerDisplay): string {
@@ -278,6 +309,26 @@ export class FantasyGameContextDialogComponent {
       maxWidth: '800px',
       maxHeight: 'calc(100dvh - 16px)',
       panelClass: 'player-dialog'
+    });
+  }
+
+  openGame(gameID: string): void {
+    if (!this.gameForID(gameID)) return;
+    this.dialog.open(FantasyGameContextDialogComponent, {
+      data: {
+        mode: 'game',
+        context: this.data.context,
+        decisionWindows: this.data.decisionWindows,
+        nflTeams: this.data.nflTeams,
+        league: this.data.league,
+        gameId: gameID
+      } satisfies FantasyGameContextDialogData,
+      width: 'calc(100vw - 16px)',
+      maxWidth: '760px',
+      maxHeight: 'calc(100dvh - 16px)',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'fantasy-context-dialog-panel'
     });
   }
 
@@ -324,5 +375,15 @@ export class FantasyGameContextDialogComponent {
       if (player) return player;
     }
     return null;
+  }
+
+  private uniqueTeamIDs(teamIDs: Array<string | number>): Array<string | number> {
+    const seen = new Set<string>();
+    return teamIDs.filter(teamID => {
+      const key = String(teamID);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 }

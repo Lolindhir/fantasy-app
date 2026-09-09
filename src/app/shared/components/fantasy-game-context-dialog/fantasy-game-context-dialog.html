@@ -28,15 +28,30 @@
         </div>
       </section>
 
+      <section *ngIf="affectedStarterTeamIDs(selectedGame).length > 0" class="fgc-affected-teams">
+        <span class="fgc-affected-teams-label">Starter exposure</span>
+        <div class="fgc-affected-team-list" aria-label="Fantasy teams with starter exposure">
+          <button
+            *ngFor="let teamID of affectedStarterTeamIDs(selectedGame)"
+            type="button"
+            class="fgc-affected-team-avatar"
+            (click)="openTeam(teamID)"
+            [attr.aria-label]="'Open ' + teamName(teamID) + ' team details'"
+            [title]="teamName(teamID)"
+          >
+            <img *ngIf="teamAvatar(teamID) as avatar" [src]="avatar" alt="" />
+            <span *ngIf="!teamAvatar(teamID)">{{ teamShortName(teamID).slice(0, 2) }}</span>
+          </button>
+        </div>
+        <strong>{{ affectedStarterTeamIDs(selectedGame).length }} fantasy team{{ affectedStarterTeamIDs(selectedGame).length === 1 ? '' : 's' }}</strong>
+      </section>
+
       <section *ngIf="selectedGame.RemainingRelevance as remaining; else legacyGameSummary" class="fgc-signal-strip">
         <span *ngIf="remaining.LockedActiveStarterCount > 0" class="fgc-signal fgc-signal--live">
           <strong>{{ remaining.LockedActiveStarterCount }}</strong> locked live
         </span>
         <span *ngIf="remaining.UnlockedStarterCount > 0" class="fgc-signal">
           <strong>{{ remaining.UnlockedStarterCount }}</strong> current starter{{ remaining.UnlockedStarterCount === 1 ? '' : 's' }}
-        </span>
-        <span class="fgc-signal">
-          <strong>{{ remaining.FantasyMatchupCount }}</strong> matchup{{ remaining.FantasyMatchupCount === 1 ? '' : 's' }}
         </span>
         <span *ngIf="remaining.FinalWindowFantasyMatchupCount > 0" class="fgc-signal fgc-signal--final">
           Final window for {{ remaining.FinalWindowFantasyMatchupCount }}
@@ -101,12 +116,24 @@
                 </span>
                 <span class="fgc-player-copy">
                   <strong>{{ playerName(player.PlayerID) }}</strong>
-                  <small>
-                    {{ playerPosition(player.PlayerID) || '—' }} · {{ playerRoleLabel(player) }}
-                    <ng-container *ngIf="player.IsBenchCandidate && playerAlternativeSlots(player)">
-                      · {{ playerAlternativeSlots(player) }} eligible
-                    </ng-container>
-                  </small>
+                  <span class="fgc-player-chip-row">
+                    <span
+                      *ngIf="playerPosition(player.PlayerID) as position"
+                      class="fgc-player-chip fgc-player-chip--position"
+                      [ngStyle]="position | positionStyle"
+                    >{{ position }}</span>
+                    <span *ngIf="playerSecondarySlot(player) as slot" class="fgc-player-chip fgc-player-chip--slot">{{ slot }}</span>
+                    <span
+                      class="fgc-player-chip fgc-player-chip--state"
+                      [class.fgc-player-state--starter]="player.IsStarter && player.GameState !== 'locked-active' && player.GameState !== 'completed'"
+                      [class.fgc-player-state--locked]="player.GameState === 'locked-active'"
+                      [class.fgc-player-state--final]="player.GameState === 'completed'"
+                      [class.fgc-player-state--option]="player.IsBenchCandidate"
+                    >
+                      <mat-icon *ngIf="player.GameState === 'locked-active'">lock</mat-icon>
+                      {{ playerStateLabel(player) }}
+                    </span>
+                  </span>
                 </span>
                 <span *ngIf="hasGameScoring(selectedGame) && player.Points !== null" class="fgc-player-points">
                   {{ player.Points | number:'1.0-2' }}
@@ -170,7 +197,7 @@
         <div class="fgc-timeline">
           <article *ngFor="let row of matchupTimelineRows(selectedMatchup)" class="fgc-timeline-game">
             <div class="fgc-timeline-game-header" *ngIf="gameForMatchupRow(row) as linkedGame">
-              <div class="fgc-mini-nfl-lockup">
+              <button type="button" class="fgc-mini-nfl-lockup" (click)="openGame(row.GameID)" [attr.aria-label]="'Open ' + gameLabel(row.GameID) + ' game details'">
                 <span>
                   <img *ngIf="nflLogo(linkedGame.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
                   <strong>{{ linkedGame.AwayTeamAbbr || linkedGame.AwayTeamID }}</strong>
@@ -180,7 +207,7 @@
                   <img *ngIf="nflLogo(linkedGame.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
                   <strong>{{ linkedGame.HomeTeamAbbr || linkedGame.HomeTeamID }}</strong>
                 </span>
-              </div>
+              </button>
 
               <div class="fgc-timeline-meta">
                 <span>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</span>
@@ -191,32 +218,68 @@
 
             <div class="fgc-matchup-exposure-grid">
               <div class="fgc-matchup-side">
-                <div class="fgc-matchup-side-heading">
+                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(selectedMatchup.TeamIDs[0])">
                   <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[0]) as avatar" [src]="avatar" alt="" />
                   <strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong>
-                </div>
-                <div *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0])" class="fgc-mini-player">
-                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" />
-                  <span>
-                    <strong>{{ playerName(player.PlayerID) }}</strong>
-                    <small>{{ playerRoleLabel(player) }}</small>
+                </button>
+                <button
+                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0])"
+                  type="button"
+                  class="fgc-mini-player"
+                  (click)="openPlayer(player.PlayerID)"
+                >
+                  <span class="fgc-mini-player-photo-wrap">
+                    <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
+                    <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-mini-player-nfl-logo" />
                   </span>
-                </div>
+                  <span class="fgc-mini-player-copy">
+                    <strong>{{ playerName(player.PlayerID) }}</strong>
+                    <span class="fgc-player-chip-row fgc-player-chip-row--mini">
+                      <span *ngIf="playerPosition(player.PlayerID) as position" class="fgc-player-chip fgc-player-chip--position" [ngStyle]="position | positionStyle">{{ position }}</span>
+                      <span *ngIf="playerSecondarySlot(player) as slot" class="fgc-player-chip fgc-player-chip--slot">{{ slot }}</span>
+                      <span
+                        class="fgc-player-chip fgc-player-chip--state"
+                        [class.fgc-player-state--starter]="player.IsStarter && player.GameState !== 'locked-active' && player.GameState !== 'completed'"
+                        [class.fgc-player-state--locked]="player.GameState === 'locked-active'"
+                        [class.fgc-player-state--final]="player.GameState === 'completed'"
+                        [class.fgc-player-state--option]="player.IsBenchCandidate"
+                      >{{ playerStateLabel(player) }}</span>
+                    </span>
+                  </span>
+                </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0]).length === 0" class="fgc-no-exposure">No scoring path</span>
               </div>
 
               <div class="fgc-matchup-side">
-                <div class="fgc-matchup-side-heading">
+                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(selectedMatchup.TeamIDs[1])">
                   <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[1]) as avatar" [src]="avatar" alt="" />
                   <strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong>
-                </div>
-                <div *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1])" class="fgc-mini-player">
-                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" />
-                  <span>
-                    <strong>{{ playerName(player.PlayerID) }}</strong>
-                    <small>{{ playerRoleLabel(player) }}</small>
+                </button>
+                <button
+                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1])"
+                  type="button"
+                  class="fgc-mini-player"
+                  (click)="openPlayer(player.PlayerID)"
+                >
+                  <span class="fgc-mini-player-photo-wrap">
+                    <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
+                    <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-mini-player-nfl-logo" />
                   </span>
-                </div>
+                  <span class="fgc-mini-player-copy">
+                    <strong>{{ playerName(player.PlayerID) }}</strong>
+                    <span class="fgc-player-chip-row fgc-player-chip-row--mini">
+                      <span *ngIf="playerPosition(player.PlayerID) as position" class="fgc-player-chip fgc-player-chip--position" [ngStyle]="position | positionStyle">{{ position }}</span>
+                      <span *ngIf="playerSecondarySlot(player) as slot" class="fgc-player-chip fgc-player-chip--slot">{{ slot }}</span>
+                      <span
+                        class="fgc-player-chip fgc-player-chip--state"
+                        [class.fgc-player-state--starter]="player.IsStarter && player.GameState !== 'locked-active' && player.GameState !== 'completed'"
+                        [class.fgc-player-state--locked]="player.GameState === 'locked-active'"
+                        [class.fgc-player-state--final]="player.GameState === 'completed'"
+                        [class.fgc-player-state--option]="player.IsBenchCandidate"
+                      >{{ playerStateLabel(player) }}</span>
+                    </span>
+                  </span>
+                </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1]).length === 0" class="fgc-no-exposure">No scoring path</span>
               </div>
             </div>

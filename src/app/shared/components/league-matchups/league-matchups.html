@@ -90,15 +90,16 @@
                 <span class="matchup-nfl-context-title">NFL game</span>
               </ng-template>
               <span class="matchup-nfl-context-meta">
-                {{ preview.game.StartsAtUtc | date:'EEE · HH:mm' }}
+                <span>{{ preview.game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
                 <ng-container *ngIf="preview.contextGame?.RemainingRelevance as remaining">
-                  <span aria-hidden="true">·</span>
-                  <span *ngIf="remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount > 0">
-                    {{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount }} current starter{{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount === 1 ? '' : 's' }}
+                  <span
+                    *ngIf="remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount > 0"
+                    class="matchup-nfl-meta-chip matchup-nfl-meta-chip--starter"
+                  >
+                    {{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount }} starter{{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount === 1 ? '' : 's' }}
                   </span>
-                  <span *ngIf="remaining.EligibleBenchCandidateCount > 0">
-                    <span aria-hidden="true">·</span>
-                    {{ remaining.EligibleBenchCandidateCount }} lineup option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
+                  <span *ngIf="remaining.EligibleBenchCandidateCount > 0" class="matchup-nfl-meta-chip matchup-nfl-meta-chip--option">
+                    {{ remaining.EligibleBenchCandidateCount }} option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
                   </span>
                 </ng-container>
               </span>
@@ -130,58 +131,85 @@
         <h3>Games that can still move the league</h3>
         <ng-container *ngIf="mustWatchGames(fantasyContext) as mustWatch">
           <div class="fantasy-pulse-list">
-            <button
+            <article
               *ngFor="let game of mustWatch"
-              type="button"
-              class="fantasy-pulse-card"
+              class="fantasy-pulse-card fantasy-pulse-card--remaining"
               [class.fantasy-pulse-card--live]="gameIsLiveForFantasy(game)"
               [class.fantasy-pulse-card--final-window]="(game.RemainingRelevance?.FinalWindowFantasyMatchupCount ?? 0) > 0"
-              (click)="openGameDetail(game, contextState)"
             >
               <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
 
-              <span class="fantasy-pulse-game-lockup">
-                <span class="fantasy-pulse-nfl-team">
-                  <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                  <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }}</strong>
-                </span>
-                <span class="fantasy-pulse-at">@</span>
-                <span class="fantasy-pulse-nfl-team">
-                  <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                  <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
-                </span>
-              </span>
-
-              <span class="fantasy-pulse-game-meta">
-                <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
-                <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-              </span>
-
-              <span class="fantasy-pulse-metrics" *ngIf="game.RemainingRelevance as remaining; else legacyPulseMetrics">
-                <strong *ngIf="remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount > 0">
-                  {{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount }} current starter{{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount === 1 ? '' : 's' }}
-                </strong>
-                <span>{{ remaining.FantasyMatchupCount }} fantasy matchup{{ remaining.FantasyMatchupCount === 1 ? '' : 's' }}</span>
-                <span *ngIf="remaining.FinalWindowFantasyMatchupCount > 0" class="fantasy-pulse-final-window">
-                  Final window for {{ remaining.FinalWindowFantasyMatchupCount }}
-                </span>
-                <span *ngIf="remaining.EligibleBenchCandidateCount > 0" class="fantasy-pulse-secondary">
-                  {{ remaining.EligibleBenchCandidateCount }} lineup option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
-                </span>
-              </span>
-
-              <ng-template #legacyPulseMetrics>
-                <span class="fantasy-pulse-metrics">
-                  <strong>{{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}</strong>
-                  <span>{{ game.Relevance.FantasyMatchupCount }} fantasy matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
-                  <span *ngIf="game.Relevance.UnknownAssociationCount > 0" class="fantasy-pulse-unknown">
-                    {{ game.Relevance.UnknownAssociationCount }} unresolved
+              <button
+                type="button"
+                class="fantasy-pulse-card-main"
+                (click)="openGameDetail(game, contextState)"
+                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
+              >
+                <span class="fantasy-pulse-game-lockup">
+                  <span class="fantasy-pulse-nfl-team">
+                    <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                    <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }}</strong>
+                  </span>
+                  <span class="fantasy-pulse-at">@</span>
+                  <span class="fantasy-pulse-nfl-team">
+                    <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                    <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
                   </span>
                 </span>
-              </ng-template>
 
-              <mat-icon>chevron_right</mat-icon>
-            </button>
+                <span class="fantasy-pulse-game-meta">
+                  <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
+                  <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                </span>
+
+                <span class="fantasy-pulse-metrics" *ngIf="game.RemainingRelevance as remaining; else legacyPulseMetrics">
+                  <strong
+                    *ngIf="remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount > 0"
+                    class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter"
+                  >
+                    {{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount }} starter{{ remaining.LockedActiveStarterCount + remaining.UnlockedStarterCount === 1 ? '' : 's' }}
+                  </strong>
+                  <span *ngIf="remaining.FinalWindowFantasyMatchupCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--final">
+                    Final window · {{ remaining.FinalWindowFantasyMatchupCount }}
+                  </span>
+                  <span *ngIf="remaining.EligibleBenchCandidateCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--option">
+                    {{ remaining.EligibleBenchCandidateCount }} option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
+                  </span>
+                </span>
+
+                <ng-template #legacyPulseMetrics>
+                  <span class="fantasy-pulse-metrics">
+                    <strong class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
+                      {{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}
+                    </strong>
+                    <span *ngIf="game.Relevance.UnknownAssociationCount > 0" class="fantasy-pulse-unknown">
+                      {{ game.Relevance.UnknownAssociationCount }} unresolved
+                    </span>
+                  </span>
+                </ng-template>
+
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+
+              <div *ngIf="affectedFantasyTeamIDs(game) as affectedTeamIDs" class="fantasy-pulse-team-strip">
+                <span class="fantasy-pulse-team-strip-label">Starter teams</span>
+                <div class="fantasy-pulse-team-avatars" *ngIf="affectedTeamIDs.length > 0; else noStarterTeamAvatars">
+                  <button
+                    *ngFor="let teamID of affectedTeamIDs"
+                    type="button"
+                    class="fantasy-pulse-team-avatar"
+                    (click)="openTeam(teamID)"
+                    [attr.aria-label]="'Open ' + teamShortNameByID(teamID) + ' team details'"
+                    [title]="teamShortNameByID(teamID)"
+                  >
+                    <img *ngIf="teamAvatar(teamID) as avatar" [src]="avatar" alt="" />
+                    <span *ngIf="!teamAvatar(teamID)">{{ teamShortNameByID(teamID).slice(0, 2) }}</span>
+                  </button>
+                </div>
+                <ng-template #noStarterTeamAvatars><span class="fantasy-pulse-no-starter-teams">Option-only relevance</span></ng-template>
+                <strong *ngIf="affectedTeamIDs.length > 0">{{ affectedTeamIDs.length }}</strong>
+              </div>
+            </article>
           </div>
           <div *ngIf="mustWatch.length === 0" class="fantasy-pulse-empty">No remaining fantasy-relevant NFL games.</div>
         </ng-container>

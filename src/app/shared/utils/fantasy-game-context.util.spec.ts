@@ -2,6 +2,7 @@ import type { FantasyGameContextGame, FantasyGameContextReadModel } from '../../
 import {
   compareFantasyGameImpact,
   compareFantasyGameRelevance,
+  compareFantasyGameRemainingRelevance,
   getCompletedImpactGames,
   getFantasyMatchupContext,
   getMustWatchGames,
@@ -78,6 +79,41 @@ describe('fantasy game context utilities', () => {
     expect([low, high].sort(compareFantasyGameRelevance).map(item => item.GameID)).toEqual(['high', 'low']);
   });
 
+  it('orders remaining relevance by distinct directly affected fantasy teams before unlocked starter volume', () => {
+    const wide = game({
+      GameID: 'wide',
+      RemainingRelevance: {
+        HasRemainingRelevance: true,
+        LockedActiveStarterCount: 0,
+        UnlockedStarterCount: 3,
+        EligibleBenchCandidateCount: 0,
+        DirectStarterFantasyTeamCount: 3,
+        DirectStarterFantasyTeamIDs: [1, 2, 3],
+        FantasyMatchupCount: 2,
+        TwoSidedFantasyMatchupCount: 1,
+        FinalWindowFantasyMatchupCount: 0,
+        CommittedFinalWindowMatchupCount: 0
+      }
+    });
+    const concentrated = game({
+      GameID: 'concentrated',
+      RemainingRelevance: {
+        HasRemainingRelevance: true,
+        LockedActiveStarterCount: 0,
+        UnlockedStarterCount: 7,
+        EligibleBenchCandidateCount: 0,
+        DirectStarterFantasyTeamCount: 2,
+        DirectStarterFantasyTeamIDs: [1, 2],
+        FantasyMatchupCount: 1,
+        TwoSidedFantasyMatchupCount: 1,
+        FinalWindowFantasyMatchupCount: 0,
+        CommittedFinalWindowMatchupCount: 0
+      }
+    });
+
+    expect([concentrated, wide].sort(compareFantasyGameRemainingRelevance).map(item => item.GameID)).toEqual(['wide', 'concentrated']);
+  });
+
   it('orders completed impact by starter points before relevance', () => {
     const low = game({ GameID: 'low', Status: 'Final', Impact: { State: 'final', RosteredPoints: 50, StarterPoints: 10, OutcomeSwingMatchupCount: 0 } });
     const high = game({ GameID: 'high', Status: 'Final', Impact: { State: 'final', RosteredPoints: 20, StarterPoints: 18, OutcomeSwingMatchupCount: 1 } });
@@ -130,8 +166,8 @@ describe('fantasy game context utilities', () => {
       SchemaVersion: 2,
       Games: [second, first],
       MustWatchGames: [
-        { Rank: 1, GameID: 'first', DecisionWindowID: 'dw1', StartsAtUtc: first.StartsAtUtc, CommittedFinalWindowMatchupCount: 1, LockedActiveStarterCount: 1, TwoSidedFantasyMatchupCount: 0, FantasyMatchupCount: 1, UnlockedStarterCount: 0, FinalWindowFantasyMatchupCount: 1, EligibleBenchCandidateCount: 0 },
-        { Rank: 2, GameID: 'second', DecisionWindowID: 'dw2', StartsAtUtc: second.StartsAtUtc, CommittedFinalWindowMatchupCount: 0, LockedActiveStarterCount: 0, TwoSidedFantasyMatchupCount: 1, FantasyMatchupCount: 3, UnlockedStarterCount: 10, FinalWindowFantasyMatchupCount: 0, EligibleBenchCandidateCount: 5 }
+        { Rank: 1, GameID: 'first', DecisionWindowID: 'dw1', StartsAtUtc: first.StartsAtUtc, CommittedFinalWindowMatchupCount: 1, LockedActiveStarterCount: 1, DirectStarterFantasyTeamCount: 1, DirectStarterFantasyTeamIDs: [1], TwoSidedFantasyMatchupCount: 0, FantasyMatchupCount: 1, UnlockedStarterCount: 0, FinalWindowFantasyMatchupCount: 1, EligibleBenchCandidateCount: 0 },
+        { Rank: 2, GameID: 'second', DecisionWindowID: 'dw2', StartsAtUtc: second.StartsAtUtc, CommittedFinalWindowMatchupCount: 0, LockedActiveStarterCount: 0, DirectStarterFantasyTeamCount: 6, DirectStarterFantasyTeamIDs: [1, 2, 3, 4, 5, 6], TwoSidedFantasyMatchupCount: 1, FantasyMatchupCount: 3, UnlockedStarterCount: 10, FinalWindowFantasyMatchupCount: 0, EligibleBenchCandidateCount: 5 }
       ]
     };
 

@@ -27,9 +27,10 @@ export function compareFantasyGameRemainingRelevance(
   if (leftRemaining && rightRemaining) {
     return rightRemaining.CommittedFinalWindowMatchupCount - leftRemaining.CommittedFinalWindowMatchupCount
       || rightRemaining.LockedActiveStarterCount - leftRemaining.LockedActiveStarterCount
+      || (rightRemaining.DirectStarterFantasyTeamCount ?? 0) - (leftRemaining.DirectStarterFantasyTeamCount ?? 0)
+      || rightRemaining.UnlockedStarterCount - leftRemaining.UnlockedStarterCount
       || rightRemaining.TwoSidedFantasyMatchupCount - leftRemaining.TwoSidedFantasyMatchupCount
       || rightRemaining.FantasyMatchupCount - leftRemaining.FantasyMatchupCount
-      || rightRemaining.UnlockedStarterCount - leftRemaining.UnlockedStarterCount
       || rightRemaining.FinalWindowFantasyMatchupCount - leftRemaining.FinalWindowFantasyMatchupCount
       || rightRemaining.EligibleBenchCandidateCount - leftRemaining.EligibleBenchCandidateCount
       || Date.parse(left.StartsAtUtc) - Date.parse(right.StartsAtUtc)

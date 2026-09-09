@@ -1,0 +1,229 @@
+.fgc-affected-teams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 9px;
+  padding: 5px 8px;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.fgc-affected-teams-label {
+  color: #7c8799;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fgc-affected-team-list {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.fgc-affected-team-avatar {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  margin-left: -4px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ede9fe;
+  color: #6d28d9;
+  font: inherit;
+  font-size: 0.48rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.fgc-affected-team-avatar:first-child { margin-left: 0; }
+.fgc-affected-team-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.fgc-affected-team-avatar:hover { z-index: 1; transform: translateY(-1px); }
+
+.fgc-affected-teams > strong {
+  margin-left: auto;
+  color: #475569;
+  font-size: 0.6rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.fgc-player-copy { gap: 2px; }
+
+.fgc-player-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fgc-player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 15px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.5rem;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fgc-player-chip--position {
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.fgc-player-chip--slot {
+  border: 1px solid #d8dee8;
+  background: #fff;
+  color: #64748b;
+}
+
+.fgc-player-chip--state {
+  border: 1px solid transparent;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.fgc-player-state--starter {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.fgc-player-state--locked {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.fgc-player-state--final {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.fgc-player-state--option {
+  border-color: #cbd5e1;
+  background: transparent;
+  color: #64748b;
+}
+
+.fgc-player-chip mat-icon,
+.fgc-player-row .fgc-player-chip mat-icon {
+  width: 10px;
+  height: 10px;
+  color: currentColor;
+  font-size: 10px;
+  line-height: 10px;
+}
+
+button.fgc-mini-nfl-lockup,
+button.fgc-matchup-side-heading,
+button.fgc-mini-player {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.fgc-mini-nfl-lockup {
+  width: fit-content;
+  border-radius: 8px;
+}
+
+button.fgc-mini-nfl-lockup:hover,
+button.fgc-matchup-side-heading:hover,
+button.fgc-mini-player:hover {
+  background: rgba(124, 58, 237, 0.045);
+}
+
+button.fgc-matchup-side-heading {
+  width: 100%;
+  padding: 2px;
+  border-radius: 7px;
+}
+
+button.fgc-mini-player {
+  width: 100%;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.fgc-mini-player-photo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+
+.fgc-mini-player .fgc-mini-player-photo {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eef2f7;
+}
+
+.fgc-mini-player .fgc-mini-player-nfl-logo {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 0;
+  object-fit: contain;
+  background: transparent;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.2));
+}
+
+.fgc-mini-player-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.fgc-mini-player-copy > strong {
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.63rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fgc-player-chip-row--mini { gap: 2px; }
+.fgc-player-chip-row--mini .fgc-player-chip { min-height: 13px; padding: 1px 4px; font-size: 0.44rem; }
+
+.fgc-affected-team-avatar:focus-visible,
+button.fgc-mini-nfl-lockup:focus-visible,
+button.fgc-matchup-side-heading:focus-visible,
+button.fgc-mini-player:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .fgc-affected-teams { gap: 6px; padding-inline: 6px; }
+  .fgc-affected-teams-label { display: none; }
+  .fgc-affected-team-avatar { width: 23px; height: 23px; }
+  .fgc-affected-teams > strong { font-size: 0.56rem; }
+}

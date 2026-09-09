@@ -43,6 +43,8 @@ export interface FantasyGameRemainingRelevance {
   LockedActiveStarterCount: number;
   UnlockedStarterCount: number;
   EligibleBenchCandidateCount: number;
+  DirectStarterFantasyTeamCount?: number;
+  DirectStarterFantasyTeamIDs?: Array<string | number>;
   FantasyMatchupCount: number;
   TwoSidedFantasyMatchupCount: number;
   FinalWindowFantasyMatchupCount: number;
@@ -132,9 +134,11 @@ export interface FantasyMustWatchGame {
   StartsAtUtc: string;
   CommittedFinalWindowMatchupCount: number;
   LockedActiveStarterCount: number;
+  DirectStarterFantasyTeamCount?: number;
+  DirectStarterFantasyTeamIDs?: Array<string | number>;
+  UnlockedStarterCount: number;
   TwoSidedFantasyMatchupCount: number;
   FantasyMatchupCount: number;
-  UnlockedStarterCount: number;
   FinalWindowFantasyMatchupCount: number;
   EligibleBenchCandidateCount: number;
 }

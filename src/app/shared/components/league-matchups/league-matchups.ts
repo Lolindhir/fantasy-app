@@ -20,6 +20,7 @@ import type {
 } from '../../../core/models/league.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
+import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
   getCompletedImpactGames,
   getFantasyMatchupContext,
@@ -80,13 +81,14 @@ interface FantasyMatchupPreviewView {
   standalone: true,
   imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule, TeamIdentityComponent],
   templateUrl: './league-matchups.html',
-  styleUrl: './league-matchups.scss'
+  styleUrls: ['./league-matchups.scss', './league-matchups-refinements.scss']
 })
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
 
   private readonly dataService = inject(DataService);
   private readonly dialog = inject(MatDialog);
+  private readonly teamDialog = inject(TeamDetailDialogService);
 
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
@@ -177,6 +179,29 @@ export class LeagueMatchupsComponent {
     return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
   }
 
+  teamShortNameByID(teamID: string | number): string {
+    const team = this.teamForID(teamID);
+    return team ? this.teamShortName(team) : `Team ${teamID}`;
+  }
+
+  teamAvatar(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.Avatar || null;
+  }
+
+  affectedFantasyTeamIDs(game: FantasyGameContextGame): Array<string | number> {
+    const generated = game.RemainingRelevance?.DirectStarterFantasyTeamIDs ?? [];
+    const source = generated.length > 0
+      ? generated
+      : game.FantasyTeams.filter(team => team.StarterCount > 0).map(team => team.FantasyTeamID);
+    const seen = new Set<string>();
+    return source.filter(teamID => {
+      const key = String(teamID);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   mustWatchGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
     const current = this.currentContext(context);
     return current ? getMustWatchGames(current).slice(0, 5) : [];
@@ -200,6 +225,11 @@ export class LeagueMatchupsComponent {
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
     return (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
+  }
+
+  openTeam(teamID: string | number): void {
+    const numericID = Number(teamID);
+    if (Number.isFinite(numericID)) this.teamDialog.open(numericID);
   }
 
   openGameDetail(game: FantasyGameContextGame, state: FantasyContextState): void {
@@ -305,6 +335,10 @@ export class LeagueMatchupsComponent {
       pointsFor,
       pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
     };
+  }
+
+  private teamForID(teamID: string | number): FantasyTeam | null {
+    return this.league.Teams.find(team => String(team.TeamID) === String(teamID)) ?? null;
   }
 
   private normalizeStanding(place: number | undefined): number | null {

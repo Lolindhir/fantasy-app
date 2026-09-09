@@ -336,16 +336,16 @@ function Add-FantasyRelevanceContext {
         $relevance = [PSCustomObject][ordered]@{
             State                          = $remainingState
             HasRemainingScoringPaths       = $matchupPaths.Count -gt 0
-            LeftRemainingPathCount          = $leftPaths.Count
-            RightRemainingPathCount         = $rightPaths.Count
-            LockedActiveStarterCount        = @($matchupPaths | Where-Object PathType -eq 'locked-starter').Count
-            UnlockedStarterCount            = @($matchupPaths | Where-Object PathType -eq 'unlocked-starter').Count
-            EligibleBenchCandidateCount     = @($matchupPaths | Where-Object PathType -eq 'bench-candidate').Count
-            NextScoringWindowID             = if ($null -ne $nextGroup) { [string]$nextGroup.Name } else { $null }
-            NextScoringGameIDs              = if ($null -ne $nextGroup) { @($nextGroup.Group | Select-Object -ExpandProperty GameID -Unique | Sort-Object) } else { @() }
-            FinalScoringWindowID            = if ($null -ne $finalGroup) { [string]$finalGroup.Name } else { $null }
-            FinalScoringGameIDs             = if ($null -ne $finalGroup) { @($finalGroup.Group | Select-Object -ExpandProperty GameID -Unique | Sort-Object) } else { @() }
-            IsFinalScoringWindowCommitted   = $finalCommitted
+            LeftRemainingPathCount         = $leftPaths.Count
+            RightRemainingPathCount        = $rightPaths.Count
+            LockedActiveStarterCount       = @($matchupPaths | Where-Object PathType -eq 'locked-starter').Count
+            UnlockedStarterCount           = @($matchupPaths | Where-Object PathType -eq 'unlocked-starter').Count
+            EligibleBenchCandidateCount    = @($matchupPaths | Where-Object PathType -eq 'bench-candidate').Count
+            NextScoringWindowID            = if ($null -ne $nextGroup) { [string]$nextGroup.Name } else { $null }
+            NextScoringGameIDs             = if ($null -ne $nextGroup) { @($nextGroup.Group | Select-Object -ExpandProperty GameID -Unique | Sort-Object) } else { @() }
+            FinalScoringWindowID           = if ($null -ne $finalGroup) { [string]$finalGroup.Name } else { $null }
+            FinalScoringGameIDs            = if ($null -ne $finalGroup) { @($finalGroup.Group | Select-Object -ExpandProperty GameID -Unique | Sort-Object) } else { @() }
+            IsFinalScoringWindowCommitted  = $finalCommitted
         }
         $matchup | Add-Member -NotePropertyName RemainingRelevance -NotePropertyValue $relevance -Force
         $matchupRelevanceByID[$matchupID] = $relevance
@@ -356,6 +356,8 @@ function Add-FantasyRelevanceContext {
         $gameID = [string]$game.GameID
         $gamePaths = @($paths | Where-Object GameID -eq $gameID)
         $matchupIDs = @($gamePaths | Select-Object -ExpandProperty FantasyMatchupID -Unique)
+        $directStarterPaths = @($gamePaths | Where-Object { $_.PathType -eq 'locked-starter' -or $_.PathType -eq 'unlocked-starter' })
+        $directStarterTeamIDs = @($directStarterPaths | Select-Object -ExpandProperty FantasyTeamID -Unique | Sort-Object)
         $twoSided = 0
         $finalWindow = 0
         $committedFinalWindow = 0
@@ -376,6 +378,8 @@ function Add-FantasyRelevanceContext {
             LockedActiveStarterCount              = @($gamePaths | Where-Object PathType -eq 'locked-starter').Count
             UnlockedStarterCount                  = @($gamePaths | Where-Object PathType -eq 'unlocked-starter').Count
             EligibleBenchCandidateCount           = @($gamePaths | Where-Object PathType -eq 'bench-candidate').Count
+            DirectStarterFantasyTeamCount         = $directStarterTeamIDs.Count
+            DirectStarterFantasyTeamIDs           = $directStarterTeamIDs
             FantasyMatchupCount                   = $matchupIDs.Count
             TwoSidedFantasyMatchupCount           = $twoSided
             FinalWindowFantasyMatchupCount        = $finalWindow
@@ -389,9 +393,10 @@ function Add-FantasyRelevanceContext {
         $gameRows | Sort-Object `
             @{ Expression = { [int]$_.RemainingRelevance.CommittedFinalWindowMatchupCount }; Descending = $true }, `
             @{ Expression = { [int]$_.RemainingRelevance.LockedActiveStarterCount }; Descending = $true }, `
+            @{ Expression = { [int]$_.RemainingRelevance.DirectStarterFantasyTeamCount }; Descending = $true }, `
+            @{ Expression = { [int]$_.RemainingRelevance.UnlockedStarterCount }; Descending = $true }, `
             @{ Expression = { [int]$_.RemainingRelevance.TwoSidedFantasyMatchupCount }; Descending = $true }, `
             @{ Expression = { [int]$_.RemainingRelevance.FantasyMatchupCount }; Descending = $true }, `
-            @{ Expression = { [int]$_.RemainingRelevance.UnlockedStarterCount }; Descending = $true }, `
             @{ Expression = { [int]$_.RemainingRelevance.FinalWindowFantasyMatchupCount }; Descending = $true }, `
             @{ Expression = { [int]$_.RemainingRelevance.EligibleBenchCandidateCount }; Descending = $true }, `
             @{ Expression = { [string]$_.StartsAtUtc }; Descending = $false }, `
@@ -409,9 +414,11 @@ function Add-FantasyRelevanceContext {
             StartsAtUtc                         = [string]$game.StartsAtUtc
             CommittedFinalWindowMatchupCount    = [int]$game.RemainingRelevance.CommittedFinalWindowMatchupCount
             LockedActiveStarterCount            = [int]$game.RemainingRelevance.LockedActiveStarterCount
+            DirectStarterFantasyTeamCount       = [int]$game.RemainingRelevance.DirectStarterFantasyTeamCount
+            DirectStarterFantasyTeamIDs         = @($game.RemainingRelevance.DirectStarterFantasyTeamIDs)
+            UnlockedStarterCount                = [int]$game.RemainingRelevance.UnlockedStarterCount
             TwoSidedFantasyMatchupCount         = [int]$game.RemainingRelevance.TwoSidedFantasyMatchupCount
             FantasyMatchupCount                 = [int]$game.RemainingRelevance.FantasyMatchupCount
-            UnlockedStarterCount                = [int]$game.RemainingRelevance.UnlockedStarterCount
             FinalWindowFantasyMatchupCount      = [int]$game.RemainingRelevance.FinalWindowFantasyMatchupCount
             EligibleBenchCandidateCount         = [int]$game.RemainingRelevance.EligibleBenchCandidateCount
         }
