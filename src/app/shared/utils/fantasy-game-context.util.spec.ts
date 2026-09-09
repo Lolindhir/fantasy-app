@@ -174,7 +174,7 @@ describe('fantasy game context utilities', () => {
     expect(getMustWatchGames(context).map(item => item.GameID)).toEqual(['first', 'second']);
   });
 
-  it('uses generated next/final scoring windows even when a relevant window has zero current starters', () => {
+  it('keeps an option-only generated window when no direct starter game remains', () => {
     const zeroStarterRow = {
       ...baseContext.FantasyMatchups[0].Games[0],
       GameID: 'bench-path',
@@ -185,14 +185,21 @@ describe('fantasy game context utilities', () => {
     };
     const matchup = {
       ...baseContext.FantasyMatchups[0],
-      Games: [baseContext.FantasyMatchups[0].Games[0], zeroStarterRow],
+      Games: [
+        {
+          ...baseContext.FantasyMatchups[0].Games[0],
+          LeftStarterCount: 0,
+          RightStarterCount: 0
+        },
+        zeroStarterRow
+      ],
       RemainingRelevance: {
         State: 'both-sides' as const,
         HasRemainingScoringPaths: true,
         LeftRemainingPathCount: 2,
         RightRemainingPathCount: 1,
         LockedActiveStarterCount: 0,
-        UnlockedStarterCount: 2,
+        UnlockedStarterCount: 0,
         EligibleBenchCandidateCount: 1,
         NextScoringWindowID: 'dw-bench',
         NextScoringGameIDs: ['bench-path'],
