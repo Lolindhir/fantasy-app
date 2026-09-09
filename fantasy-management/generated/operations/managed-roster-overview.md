@@ -1,13 +1,13 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-09T13:14:14Z`  
+Generated: `2026-09-09T13:23:43Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `unknown`
 
 ## Roster status
 
 - Active: **32 / 30** (delta -2)
-- Taxi: **2 / 2**; binding: **no**
+- Taxi: **1 / 2**; binding: **no**
 - Reserve: **1 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
 - General churn target: **2**; status: `below_target`
@@ -18,7 +18,7 @@ Taxi phase: `unknown`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
-| RB | 10 | 9 | 2 | 5 | 1 | – | – | pool_managed |
+| RB | 9 | 9 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
 | WR | 16 | 14 | 2 | 7 | 2 | – | – | pool_managed |
 
@@ -37,7 +37,6 @@ Taxi phase: `unknown`
 | RB | Dylan Sampson | active | prospect | conditional | development | development | yes |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | RB | Jonathon Brooks | active | unclassified | unclassified | unclassified | unclassified | no |
-| RB | Kaelon Black | taxi | prospect | conditional | development | development | no |
 | RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | RB | Kyle Monangai | active | prospect | strong_hold | development | development | no |
 | RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |

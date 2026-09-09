@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-09T13:14:14Z",
-  "input_fingerprint": "1197921912efab1be90b1c6d7415bde704f05c2f293eba56c0ae80a2aa2039bd",
+  "generated_at": "2026-09-09T13:23:43Z",
+  "input_fingerprint": "90d17c0174d9450eb3c5b2594dd8dd2959daa81cfdf1d527bfd378728ddeece4",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "9f4df94bef2d984ee1e4a2312d1fcd0a4908128b2e39e7fd55eb7b6f68fee86e"
+      "input_fingerprint": "1af368f2ade07a60b1a6e8a0416e7d81c052602649b6440d556dff7b7d9ba0fa"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "eaf36a0c883d2900c2f50353bc5a066410703d16b5142a36009317f35479862f"
+      "input_fingerprint": "9f4df94bef2d984ee1e4a2312d1fcd0a4908128b2e39e7fd55eb7b6f68fee86e"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,148 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 262,
+    "current_discovery_count": 263,
     "previous_discovery_count": 262,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 3,
+    "event_type_counts": {
+      "changed": 2,
+      "new": 1
+    },
+    "event_priority_counts": {
+      "high": 3
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "cdef6c1a400dc709a5fb5b4b7405e8898b219427e4f6d3f57a2c1670d9df6323",
-    "previous_evidence_fingerprint": "22120c887baafe305a5a5088044dc0465dd95dcc954c29a4d6d372ce776ee31d",
+    "current_evidence_fingerprint": "260e3e3f01c05a316d8b74c75110ca61e70f706cbfbaf5170af71c959f881c9f",
+    "previous_evidence_fingerprint": "cdef6c1a400dc709a5fb5b4b7405e8898b219427e4f6d3f57a2c1670d9df6323",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 3,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "4066",
+      "name": "Evan Engram",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "713a9a09d2e8b5b4a6978a46b3e76637b22ccf0fce67015b8cf4f24b04a871ad",
+      "previous_state_hash": "6cef7489c4081e8761dbfdf929e90be00b2c0acfb3bc350a26ac451406b36ca1",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8131",
+      "name": "Isaiah Likely",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": null,
+      "current_state_hash": "c5418930ea91a39eff6173187279ef958a28ab0dd7d61568094bf1e362127b70",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3271",
+      "name": "Tyler Higbee",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "79ca01fb79e61cf7cf7e81f3afc5611d1cf50c76c6e4602398461ece85d838a9",
+      "previous_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "changed_dimensions": [
+        "replacement_classification",
+        "research_priority"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "ok",
     "movement_quality_status": "ok",
