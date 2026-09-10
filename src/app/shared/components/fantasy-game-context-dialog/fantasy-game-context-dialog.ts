@@ -58,6 +58,14 @@ export interface FantasyGameContextDialogData {
 export class FantasyGameContextDialogComponent {
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
+  private readonly fantasyScoreFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+  private readonly nflScoreFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
 
   readonly game: FantasyGameContextGame | null;
   readonly matchup: FantasyGameContextMatchup | null;
@@ -130,6 +138,16 @@ export class FantasyGameContextDialogComponent {
       && game.AwayScore !== undefined
       && game.HomeScore !== null
       && game.HomeScore !== undefined;
+  }
+
+  formatFantasyPoints(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
+    return this.fantasyScoreFormatter.format(Number(value));
+  }
+
+  formatNflScore(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
+    return this.nflScoreFormatter.format(Number(value));
   }
 
   fantasyMatchupScore(matchup: FantasyGameContextMatchup): FantasyGameContextCounterfactualScore | null {
