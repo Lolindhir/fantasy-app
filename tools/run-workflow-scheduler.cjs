@@ -181,6 +181,11 @@ function validateConfig(config) {
       if (!Number.isInteger(deferral.maxMinutes) || deferral.maxMinutes <= 0) {
         throw new Error(`Invalid deferral maxMinutes for ${target.id}`);
       }
+      if (!Number.isInteger(target.maxStarvationMinutes) || target.maxStarvationMinutes < deferral.maxMinutes) {
+        throw new Error(`Invalid maxStarvationMinutes for ${target.id}`);
+      }
+    } else if (target.maxStarvationMinutes !== undefined) {
+      throw new Error(`maxStarvationMinutes requires deferUntilOtherTargetsSettled for ${target.id}`);
     }
     localParts(new Date('2026-01-05T00:00:00Z'), target.timezone);
     for (const expression of target.cron) cronMatches(expression, new Date('2026-01-05T00:00:00Z'), target.timezone);
