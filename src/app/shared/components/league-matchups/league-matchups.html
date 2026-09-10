@@ -247,11 +247,17 @@
                   <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
                   <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
                 </span>
+                <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
+                  {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
+                </strong>
               </span>
               <span class="fantasy-pulse-game-meta">{{ game.Status || 'Final' }}</span>
-              <span class="fantasy-pulse-metrics">
+              <span class="fantasy-pulse-metrics fantasy-pulse-metrics--impact">
                 <ng-container *ngIf="game.Impact.StarterPoints !== null; else impactUnavailable">
-                  <strong>{{ game.Impact.StarterPoints | number:'1.0-2' }} starter pts</strong>
+                  <strong class="fantasy-pulse-impact-score">
+                    {{ formatFantasyPoints(game.Impact.StarterPoints) }}
+                    <small>starter pts</small>
+                  </strong>
                   <span>{{ game.Relevance.FantasyMatchupCount }} matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
                   <span *ngIf="game.Impact.OutcomeSwingMatchupCount > 0" class="fantasy-pulse-final-window">
                     {{ game.Impact.OutcomeSwingMatchupCount }} outcome swing{{ game.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
