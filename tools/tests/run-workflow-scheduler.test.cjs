@@ -18,7 +18,7 @@ const EXPECTED = {
   'update-transactions.yml': { timezone: 'America/New_York', cron: ['5 4 * * 3'] },
   'update-teams.yml': { timezone: 'America/New_York', cron: ['35 4 * * 3'] },
   'sync-nfl-source-data.yml': { timezone: 'Europe/Berlin', cron: ['0 4 * * *'] },
-  'sync-nfl-game-finality.yml': { timezone: 'Europe/Berlin', cron: ['*/15 * * 9-12,1 *'] },
+  'sync-nfl-game-finality.yml': { timezone: 'Europe/Berlin', cron: ['*/10 * * 9-12,1 *'] },
   'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
   'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
@@ -111,7 +111,7 @@ test('NFL game finality uses targeted seasonal polling and event-driven Games pu
   assert.ok(finalityTarget);
   assert.equal(finalityTarget.workflow, 'sync-nfl-game-finality.yml');
   assert.equal(finalityTarget.profile, 'productive');
-  assert.deepEqual(finalityTarget.cron, ['*/15 * * 9-12,1 *']);
+  assert.deepEqual(finalityTarget.cron, ['*/10 * * 9-12,1 *']);
 
   const finalityWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-nfl-game-finality.yml'), 'utf8');
   assert.match(finalityWorkflow, /uses:\s+\.\/\.github\/workflows\/sync-nfl-source-data\.yml/);
@@ -126,9 +126,9 @@ test('NFL game finality uses targeted seasonal polling and event-driven Games pu
 });
 
 test('finality cadence resolves in-season slots and stays dormant in the offseason', () => {
-  const inSeason = scheduler.latestDueSlot(['*/15 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-09-10T12:44:00Z'), 60);
-  assert.equal(inSeason.toISOString(), '2026-09-10T12:30:00.000Z');
-  const offseason = scheduler.latestDueSlot(['*/15 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-08-10T12:44:00Z'), 60);
+  const inSeason = scheduler.latestDueSlot(['*/10 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-09-10T12:44:00Z'), 60);
+  assert.equal(inSeason.toISOString(), '2026-09-10T12:40:00.000Z');
+  const offseason = scheduler.latestDueSlot(['*/10 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-08-10T12:44:00Z'), 60);
   assert.equal(offseason, null);
 });
 

@@ -235,7 +235,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     consecutiveFailures: 1
-    rationale: Seasonal fifteen-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
+    rationale: Seasonal ten-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
   .github/workflows/sync-league-source-data.yml:
     category: important
     relevantEvents:
