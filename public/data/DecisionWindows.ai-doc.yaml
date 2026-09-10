@@ -106,7 +106,9 @@ contract:
         completed: The player's NFL game is Final; no ordinary additional live fantasy points can be added by that player.
         unknown: Required scheduled-game evidence is unavailable or ambiguous.
       rules:
-        - Final is taken from explicit Schedule gameStatus evidence, never inferred from score presence.
+        - Final is taken from the effective Schedule gameStatus after RequestGames canonical finality resolution.
+        - Canonical Final truth is source-data/nfl/game-finality/<season>.json, derived from validated nflverse released-games evidence; score or fantasy-point presence is never Final evidence.
+        - RequestGames joins the transitional Tank01 Schedule shape to canonical game identity through the explicit ESPN provider ID before Schedule.json is published.
         - Kickoff comparison is evaluated during generation against current UTC time.
         - No EvaluatedAt timestamp is persisted; semantic output changes only when source facts or a relevant state boundary change.
         - Later stat corrections are outside live remaining-scoring-path semantics.
@@ -193,13 +195,15 @@ ownership:
     Current runtime adapter uses fantasy-platform lineup-week evidence
     (Sleeper settings.leg), not generated League.CurrentWeek/finality.
   currentJoin: >
-    Transitional adapter joins Player.TeamID to Schedule.teamIDHome/teamIDAway
-    using inputs already present in the League refresh. It adds no duplicate
-    provider request. #347 may replace this adapter with canonical source-data.
+    Transitional adapter still joins Player.TeamID to Schedule.teamIDHome/teamIDAway
+    using inputs already present in the League refresh. Schedule shape remains
+    transitional, but #447 moved its Final truth to canonical nflverse game-finality
+    before publication. #347 may replace the remaining Schedule/provider adapter.
   v2Boundary: >
-    FantasyRelevance v2 consumes the existing current League/Teams/Players/Schedule
-    inputs in the generation layer. It does not make Angular a source of truth and
-    does not change the separate #347 provider migration boundary.
+    FantasyRelevance v2 consumes current League/Teams/Players plus the generated
+    finality-resolved Schedule in the generation layer. It does not make Angular a
+    source of truth. #447 is a focused finality cutover; #347 retains ownership of
+    the broader provider/source-data consumer migration.
   historical: >
     Historical Decision Window relevance is rebuilt from persisted season/week
     schedule, fantasy players/starters and week-appropriate player-to-NFL-team
@@ -216,10 +220,16 @@ freshness:
   noOpRule: >
     Repeated derivation with no semantic DecisionWindows change skips the file
     rewrite and preserves the existing DecisionWindows timestamp.
+  finalityDependency: >
+    completed state cannot become fresher than the canonical nflverse game-finality
+    refresh plus the subsequent Schedule and League materializations. #447 identified
+    the current game-day cadence as an operational follow-up; no time heuristic is
+    used to compensate for stale source evidence.
 
 failureBehavior:
   - Invalid required derivation input must not overwrite the prior valid generated file.
   - Duplicate/conflicting provider-neutral evidence must never use first/last-wins behavior.
+  - Canonical finality/provider-ID contradictions fail closed in RequestGames before Schedule publication.
   - Safe per-player ambiguity becomes unknown; unrecoverable derivation failures fail closed.
 
 nonGoals:

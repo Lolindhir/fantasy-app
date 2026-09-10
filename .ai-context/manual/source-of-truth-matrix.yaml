@@ -3,7 +3,7 @@ schemaVersion: 2
 domain: source-of-truth-matrix
 
 status: accepted
-consolidatedAt: 2026-08-30
+consolidatedAt: 2026-09-10
 
 purpose: >
   Consolidates field- and domain-level source ownership after the NFL source-data
@@ -183,38 +183,41 @@ matrix:
       - game identity
       - final scores when published by schedule dataset
     durableCanonicalPrimary: nflverse schedules
-    currentRuntimePrimary: Tank01 getNFLGamesForWeek in RequestGames.ps1
+    currentRuntimePrimary: Tank01 getNFLGamesForWeek remains the legacy Schedule.json shape; RequestGames overlays canonical finality before publication
     secondary: none-required
     fallback:
-      - Tank01 for legacy Schedule.json compatibility during migration
-    identityKey: nflverse game_id for canonical schedule
+      - Tank01 for legacy Schedule.json shape compatibility during migration
+    identityKey: nflverse game_id for canonical schedule; current bridge uses explicit ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: 1999-present
-    freshness: every-5-minutes-during-season
-    migrationState: canonical-active-runtime-not-migrated
+    freshness: current Schedule publication follows APP Data Games cadence; canonical NFL source refresh is a separate dependency
+    migrationState: canonical-finality-migrated-schedule-shape-legacy
     guards:
       - game_type must be explicit; postseason must not silently enter the current REG-only app contract
       - canonical game identity must be unique before materialization
-      - migrating Schedule.json is separate from accepting nflverse as canonical source
+      - the current Tank01 Schedule row must resolve uniquely to canonical schedule identity by ESPN ID before Final can be published
+      - migrating the remaining Schedule.json fields is separate from the focused #447 finality cutover
 
   nflGameFinality:
     facts:
       - explicit Final state
       - derived all-games-final week closure
     durableCanonicalPrimary: nflverse released-games evidence normalized by canonical game_id
-    currentRuntimePrimary: Tank01 gameStatus in RequestGames.ps1 until the later generator migration
+    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by GameFinalityUtils.psm1 in RequestGames.ps1
     secondary:
       - nflverse schedules own canonical game identity, game type and final score fields
     fallback:
-      - Tank01 only for the existing legacy runtime contract until that consumer is migrated
-    identityKey: nflverse game_id / canonical game identity
+      - none for Final truth; Tank01 remains only a legacy Schedule-shape/boxscore provider and cannot override conflicting canonical finality
+    identityKey: nflverse game_id / canonical game identity; transitional Schedule bridge uses ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: follows validated released-games evidence; backfill coverage must be audited when activated
-    freshness: nflverse released-game publication during the season
-    migrationState: canonical-active-runtime-not-migrated
+    freshness: canonical evidence follows nflverse released-game publication; as of #447 the production source poll is daily and is insufficient for prompt game-day completion without a cadence follow-up
+    migrationState: canonical-active-runtime-finality-migrated
     guards:
-      - do not infer Final merely from score presence
+      - do not infer Final merely from score or fantasy-point presence
       - Final requires membership in the validated released-games evidence for the same canonical game_id
+      - RequestGames may promote stale non-Final Tank01 status when canonical Final=true, but a contradictory Tank01 Final while canonical Final=false fails closed
+      - missing/duplicate/mismatched ESPN provider joins fail closed before Schedule publication
       - the abandoned BUF-CIN Week 17/2022 game must not be treated as Final merely because schedule/score evidence exists
       - postponed/cancelled/no-contest semantics remain distinct terminal-state work if encountered
       - weekFinal may only be derived after every applicable game has canonical finality
@@ -235,6 +238,7 @@ matrix:
     historyCoverage: current app archives 2022-2025; provider history is not the preferred future backfill path
     migrationState: legacy-contract-retained
     guards:
+      - boxscore fetch eligibility for completed games follows the finality-resolved Schedule status rather than raw Tank01 finality
       - do not declare nflverse Player Stats a 1:1 replacement for the whole Tank01 boxscore object
       - future Games.json redesign belongs with the app-generator DAG/read-model migration
 
@@ -552,7 +556,7 @@ matrix:
 
 unresolvedDecisionsBeforeAppGeneratorDag:
   blocking:
-    - migrate app consumers from direct/legacy provider reads to the accepted canonical source-data layer without changing public contracts unintentionally
+    - migrate the remaining app consumers from direct/legacy provider reads to the accepted canonical source-data layer without changing public contracts unintentionally
     - define exact Games.json replacement/compatibility strategy instead of assuming canonical stat datasets reproduce the Tank01 boxscore object
     - validate how canonical source availability states are exposed to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
     - regression-test league-settings-based fantasy scoring against current outputs before replacing provider point values
@@ -600,7 +604,7 @@ historicalBackfillBands:
     priority: no-current-app-backfill-priority
 
 externalEvidence:
-  verifiedAt: 2026-08-28
+  verifiedAt: 2026-09-10
   nflverse:
     updateSchedule: https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html
     schedulesDictionary: https://nflreadr.nflverse.com/articles/dictionary_schedules.html
@@ -619,8 +623,10 @@ repositoryEvidence:
   - .ai-context/manual/data-sources.yaml
   - public/requests/RequestPlayers.ps1
   - public/requests/RequestGames.ps1
+  - public/requests/utils/general/GameFinalityUtils.psm1
 
 nextArchitectureStep: >
-  Phase 1 source-data is accepted. Proceed with the App-Generator-DAG and consumer
-  migration using these field-level ownership decisions while preserving public
-  contracts unless a separate contract change is explicitly approved.
+  Phase 1 source-data is accepted and #447 migrated current Final truth behind the
+  legacy Schedule.json shape. Continue the App-Generator-DAG and remaining consumer
+  migration while preserving public contracts unless a separate contract change is
+  explicitly approved; separately close the game-day finality refresh-cadence gap.
