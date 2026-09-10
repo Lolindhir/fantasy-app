@@ -62,7 +62,9 @@
   align-items: center;
   gap: 3px;
   min-width: 0;
+  min-height: 16px;
   overflow: hidden;
+  line-height: 16px;
   white-space: nowrap;
 }
 
@@ -91,15 +93,15 @@
 
 /* Slot is context, not a third equal-weight status pill. */
 .fgc-player-chip--slot {
-  height: auto;
-  min-height: 0;
+  height: 16px;
+  min-height: 16px;
   padding: 0 1px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #7c8799;
   font-size: 0.47rem;
-  line-height: 1;
+  line-height: 16px;
 }
 
 .fgc-player-chip--slot::before {
@@ -227,18 +229,24 @@ button.fgc-mini-player {
   white-space: nowrap;
 }
 
-.fgc-player-chip-row--mini { gap: 2px; }
+.fgc-player-chip-row--mini {
+  gap: 2px;
+  min-height: 14px;
+  line-height: 14px;
+}
 .fgc-player-chip-row--mini .fgc-player-chip {
   height: 14px;
   min-height: 14px;
   padding: 0 4px;
   font-size: 0.44rem;
+  line-height: 1;
 }
 .fgc-player-chip-row--mini .fgc-player-chip--slot {
-  height: auto;
-  min-height: 0;
+  height: 14px;
+  min-height: 14px;
   padding-inline: 0;
   font-size: 0.42rem;
+  line-height: 14px;
 }
 
 /* The base timeline styles make every nested span a column. Keep the metadata
@@ -254,6 +262,151 @@ button.fgc-mini-player {
 
 .fgc-mini-player .fgc-player-chip-row--mini .fgc-player-chip {
   flex: 0 0 auto;
+  align-self: center;
+}
+
+/* Sports scores are primary information, not tertiary metadata. */
+.fgc-nfl-score,
+.fgc-matchup-score,
+.fgc-impact-score-line strong,
+.fgc-timeline-side-score strong,
+.fgc-team-points,
+.fgc-player-points {
+  font-variant-numeric: tabular-nums;
+}
+
+.fgc-nfl-score {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  color: #172033;
+  font-size: 1.18rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fgc-nfl-score b {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.fgc-matchup-vs > .fgc-matchup-score {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: #172033;
+  font-size: 0.96rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fgc-matchup-score strong {
+  color: #172033;
+  font-size: 1.02rem;
+  font-weight: 950;
+}
+
+.fgc-matchup-score b {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.fgc-mini-nfl-score {
+  margin-left: 4px;
+  color: #172033 !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fgc-impact-card--score {
+  background: linear-gradient(135deg, #f8fafc 0%, #faf7ff 100%);
+}
+
+.fgc-impact-score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.fgc-impact-score-line strong {
+  color: #172033;
+  font-size: 1.3rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fgc-impact-score-line span {
+  color: #64748b;
+  font-size: 0.63rem;
+  font-weight: 850;
+}
+
+.fgc-team-points {
+  color: #172033;
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
+.fgc-player-points {
+  color: #263247;
+  font-weight: 900;
+}
+
+.fgc-timeline-score-wrap {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid #f0f2f6;
+}
+
+.fgc-timeline-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fgc-timeline-side-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  padding-inline: 7px;
+}
+
+.fgc-timeline-side-score--right {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.fgc-timeline-side-score strong {
+  color: #172033;
+  font-size: 0.88rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fgc-timeline-side-score small {
+  color: #7c8799;
+  font-size: 0.5rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.fgc-timeline-outcome {
+  display: block;
+  margin-top: 4px;
+  color: #7c3aed;
+  font-size: 0.52rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 /* Raw path cardinality and the global starter/option aggregate are deliberately
@@ -278,4 +431,5 @@ button.fgc-mini-player:focus-visible {
   .fgc-affected-teams > strong { font-size: 0.56rem; }
   .fgc-player-chip-row--mini .fgc-player-chip { padding-inline: 3px; font-size: 0.42rem; }
   .fgc-player-chip-row--mini .fgc-player-chip--slot { padding-inline: 0; font-size: 0.4rem; }
+  .fgc-timeline-side-score small { font-size: 0.47rem; }
 }
