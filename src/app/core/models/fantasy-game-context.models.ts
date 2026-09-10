@@ -61,6 +61,8 @@ export interface FantasyGameContextGame {
   HomeTeamID: string;
   HomeTeamAbbr: string | null;
   Status: string | null;
+  AwayScore?: number | null;
+  HomeScore?: number | null;
   Relevance: FantasyGameRelevance;
   Impact: FantasyGameImpact;
   FantasyTeams: FantasyGameContextTeam[];
