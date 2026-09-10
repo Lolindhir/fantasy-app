@@ -5,6 +5,7 @@
 try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\GameFinalityUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -113,6 +114,7 @@ $year = $Global:LeagueYear
 $apiHost = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataDir = Join-Path $scriptDir "..\data"
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptDir "..\.."))
 if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
 
 
@@ -184,6 +186,14 @@ try {
 if (-not $schedule) {
     Write-Warning "No schedule returned."
     exit 0
+}
+
+try {
+    $schedule = @(Resolve-CanonicalGameFinalitySchedule -Schedule @($schedule) -Season ([int]$year) -RepoRoot $repoRoot)
+}
+catch {
+    Write-Error "Error resolving canonical NFL game finality: $_"
+    exit 1
 }
 
 Write-Host "Schedule retrieved, total games: $($schedule.Count)" -ForegroundColor Green
