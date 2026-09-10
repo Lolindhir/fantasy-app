@@ -1,0 +1,96 @@
+{
+  "type": "draft_analysis",
+  "scope": "fantasy-management",
+  "created": "2026-09-10",
+  "status": "active",
+  "summary": "Korrigierte Post-Draft-Analyse des vollständigen 2026 Free-Agent Drafts mit Pre-Draft-Kontext, Liga-Marktbeobachtungen und Owner-Tendenzen.",
+  "draft_key": "2026_Free_Agent",
+  "draft_season": 2026,
+  "draft_type": "Free_Agent",
+  "analysis_kind": "post_draft_contextual",
+  "analysis_as_of": "2026-09-10",
+  "context_completeness": "partial",
+  "team_context_available": true,
+  "limitations": [
+    "Für Robert liegt eine dedizierte FA-Pre-Draft-Baseline vor; für die übrigen Teams ist der Need-Kontext nur teilweise aus dem Juli-Rookie-Postmortem und den Owner-Profilen dokumentiert.",
+    "Es wurde kein neuer datierter externer Markt-Snapshot für alle 30 FA-Picks erhoben; deshalb werden keine nachträglich erfundenen Pick-Grades oder Market-Delta-Werte gespeichert.",
+    "Managerbeobachtungen sind Evidenz für künftige Vorhersagen, aber einzelne Drafts beweisen keine permanenten Präferenzen.",
+    "Eine vorherige Chat-Zusammenfassung enthielt eine falsche FA-Pickliste und falsche Positionssummen; diese Datei verwendet ausschließlich die kanonischen Drafts.json-Ergebnisse."
+  ],
+  "data_snapshot": {
+    "captured_at": "2026-09-10T12:30:00+02:00",
+    "sources": [
+      {"path": "public/data/Drafts.json", "blob_sha": "5529991a8cebb33486e165f9687ba3fc53a2dbf2", "generated_at": null, "purpose": "Kanonische vollständige 2026-FA-Draftreihenfolge, Pickbesitz, Trades und Ergebnisse"},
+      {"path": "public/data/League.json", "blob_sha": "00957a261eea27db831ca400e84b1fc3e1e098f5", "generated_at": null, "purpose": "Historischer Pre-Draft-Liga- und Roster-Snapshot vom FA-Preboard"},
+      {"path": "fantasy-management/analyses/2026/free-agents/2026-08-19-fa-draft-preboard.md", "blob_sha": "e2049d3d8a3537edcf5960f061aa9eaac27c318b", "generated_at": null, "purpose": "Dokumentierte Mighty-Giants-Needs, Pick-Thresholds und Locked Decision vor dem FA-Draft"},
+      {"path": "fantasy-management/analyses/2026/drafts/2026-07-13_2026-rookie-draft-postmortem.md", "blob_sha": "f8765b843938c61ff3628e2844279265b5eaa09e", "generated_at": null, "purpose": "2026 Rookie-Draft-Ergebnisse, Teamkontexte und provisorische Managerbeobachtungen"},
+      {"path": "fantasy-management/league-context/owner-registry.json", "blob_sha": "84bb22c293bfae60ec9449a7d34b160be81bd25e", "generated_at": null, "purpose": "Owner- und TeamID-Auflösung"},
+      {"path": "fantasy-management/league-context/owner-profiles.md", "blob_sha": "7d2b0e9b5db2260d7a5979b0b49ec41ae511073e", "generated_at": null, "purpose": "Mehrjährige Draft- und Manager-Tendenzen einschließlich Live-FA-Barner-Trade"}
+    ]
+  },
+  "league_context": {"teams": 6, "scoring": "PPR", "lineup": {"QB": 2, "RB": 2, "WR": 2, "TE": 2, "FLEX": 4, "K": 1, "BENCH": 16}, "draft_rounds": 5, "draft_mode": "linear", "replacement_level_note": "Sechs Teams erzeugen hohen Replacement Level. Beobachtete Draftposition ist deshalb wichtiger als pauschale externe Superflex-Knappheit."},
+  "position_distribution": {"Free_Agent": {"WR": 11, "RB": 9, "QB": 6, "TE": 4}, "Rookie": {"WR": 15, "RB": 8, "QB": 3, "TE": 4}, "Combined_2026": {"WR": 26, "RB": 17, "QB": 9, "TE": 8}},
+  "teams": [
+    {"team_id": 1, "owner": "Robert", "team_name": "Mighty Giants", "team_window": "contender", "context_summary": "Vollständige FA-Pre-Draft-Baseline: McMillan 1.01 locked; zusätzlicher QB bewusst ausgeschlossen; Brooks im starken 2.04-Kandidaten-Tier.", "drafted_player_ids": ["12526", "11583", "11638"], "strengths": ["McMillan 1.01 entsprach der Locked Decision.", "Brooks 2.04 entsprach dem Pre-Draft-Board."], "risks": ["Die WR/RB-Konzentration ist 2026-spezifisch und darf nicht als permanente Positionspräferenz verallgemeinert werden."]},
+    {"team_id": 2, "owner": "Marcel", "team_name": "Ruhr Valley Packers", "team_window": "contender", "context_summary": "Juli-Kontext und Owner-Profil dokumentieren RB/TE-Altersabsicherung, Scarcity-Präferenz und den Live-Trade-up für AJ Barner.", "drafted_player_ids": ["6806", "5001", "11603", "5872", "4943"], "strengths": ["Dobbins, Schultz und Barner passen zum dokumentierten RB/TE-Schwerpunkt.", "Barner 4.04 war ein direkt bestätigter Target-Move."], "risks": ["Der Barner-Move ist target-spezifisch und beweist keine generelle Move-up-Regel."]},
+    {"team_id": 3, "owner": "Flo", "team_name": "Just Bill", "team_window": "reigning_champion", "context_summary": "Im Juli kein akutes Need; Owner-Profil beschreibt formatbewusste Diversifikation.", "drafted_player_ids": ["9487", "7594", "11581", "10213", "8161"], "strengths": ["WR2/RB2/QB1 bestätigt breite Positionsstreuung."], "risks": ["Kein dedizierter FA-Day-Need-Snapshot für Flo vorhanden."]},
+    {"team_id": 4, "owner": "Jan", "team_name": "Mammoth Marauders", "team_window": "contender_with_roster_pressure", "context_summary": "Juli: Elite-QB/WR-Kern und Roster-Druck; Profil: eigenes Board, TE-Aggression und häufiges Warten auf QB-Value.", "drafted_player_ids": ["8183", "4217", "8408", "8132", "10219", "9758"], "strengths": ["Purdy 1.03 zeigt Premium-QB-Ausnahme zur historischen QB-Geduld.", "Kittle 2.03 und Stroud 5.03 bestätigen tier-/value-orientiertes Verhalten."], "risks": ["Kein FA-WR trotz historischer WR-Stärke zeigt, dass starre Positionsvorhersagen ungeeignet sind."]},
+    {"team_id": 5, "owner": "Dennis", "team_name": "Team DennisLACards", "team_window": "rebuild_to_ascending", "context_summary": "Juli-Kontext nannte langfristige QB/WR-Anker; Owner-Profil bestätigt wiederholtes Ausnutzen fallender QB-Werte.", "drafted_player_ids": ["7543", "5927", "11646", "2449", "12522"], "strengths": ["WR3/RB1/QB1 ist exakt dieselbe Positionsform wie im Rookie-Draft.", "Ward 5.01 passt zu selektivem QB-Value-Verhalten."], "risks": ["Veteranen-Floor im Rebuild-Kontext lässt sich ohne vollständigen FA-Day-Need-Snapshot nur vorsichtig bewerten."]},
+    {"team_id": 6, "owner": "Tim", "team_name": "Team TimpaBay", "team_window": "retool_with_contender_ceiling", "context_summary": "Juli-Kontext nannte junges WR-Ceiling als Need; Profil bestätigt starke junge-WR-Präferenz sowie tiefe QB/TE-Portfolios.", "drafted_player_ids": ["7588", "7002", "8121", "12535", "3163", "11618"], "strengths": ["Drei weitere WR setzen die stärkste 2026 WR-Konzentration fort.", "Goff 4.02 ist Value-Mitnahme nach langem QB-Fall."], "risks": ["WR-Historie darf aktuellen Kader/Target-Kontext nicht ersetzen."]}
+  ],
+  "picks": [
+    {"pick_key":"2026_Free_Agent_R1_OO5","display_pick":"1.01","overall_pick":1,"original_owner_team_id":5,"current_owner_team_id":1,"player_id":"12526","player_name":"Tetairoa McMillan","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R1_OO6","display_pick":"1.02","overall_pick":2,"original_owner_team_id":6,"current_owner_team_id":6,"player_id":"7588","player_name":"Javonte Williams","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R1_OO4","display_pick":"1.03","overall_pick":3,"original_owner_team_id":4,"current_owner_team_id":4,"player_id":"8183","player_name":"Brock Purdy","position":"QB"},
+    {"pick_key":"2026_Free_Agent_R1_OO1","display_pick":"1.04","overall_pick":4,"original_owner_team_id":1,"current_owner_team_id":5,"player_id":"7543","player_name":"Travis Etienne","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R1_OO2","display_pick":"1.05","overall_pick":5,"original_owner_team_id":2,"current_owner_team_id":2,"player_id":"6806","player_name":"J.K. Dobbins","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R1_OO3","display_pick":"1.06","overall_pick":6,"original_owner_team_id":3,"current_owner_team_id":3,"player_id":"9487","player_name":"Parker Washington","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R2_OO5","display_pick":"2.01","overall_pick":7,"original_owner_team_id":5,"current_owner_team_id":5,"player_id":"5927","player_name":"Terry McLaurin","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R2_OO6","display_pick":"2.02","overall_pick":8,"original_owner_team_id":6,"current_owner_team_id":6,"player_id":"7002","player_name":"Juwan Johnson","position":"TE"},
+    {"pick_key":"2026_Free_Agent_R2_OO4","display_pick":"2.03","overall_pick":9,"original_owner_team_id":4,"current_owner_team_id":4,"player_id":"4217","player_name":"George Kittle","position":"TE"},
+    {"pick_key":"2026_Free_Agent_R2_OO1","display_pick":"2.04","overall_pick":10,"original_owner_team_id":1,"current_owner_team_id":1,"player_id":"11583","player_name":"Jonathon Brooks","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R2_OO2","display_pick":"2.05","overall_pick":11,"original_owner_team_id":2,"current_owner_team_id":6,"player_id":"8121","player_name":"Romeo Doubs","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R2_OO3","display_pick":"2.06","overall_pick":12,"original_owner_team_id":3,"current_owner_team_id":3,"player_id":"7594","player_name":"Chuba Hubbard","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R3_OO5","display_pick":"3.01","overall_pick":13,"original_owner_team_id":5,"current_owner_team_id":5,"player_id":"11646","player_name":"Jalen Coker","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R3_OO6","display_pick":"3.02","overall_pick":14,"original_owner_team_id":6,"current_owner_team_id":6,"player_id":"12535","player_name":"Isaac TeSlaa","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R3_OO4","display_pick":"3.03","overall_pick":15,"original_owner_team_id":4,"current_owner_team_id":4,"player_id":"8408","player_name":"Jordan Mason","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R3_OO1","display_pick":"3.04","overall_pick":16,"original_owner_team_id":1,"current_owner_team_id":4,"player_id":"8132","player_name":"Tyler Allgeier","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R3_OO2","display_pick":"3.05","overall_pick":17,"original_owner_team_id":2,"current_owner_team_id":2,"player_id":"5001","player_name":"Dalton Schultz","position":"TE"},
+    {"pick_key":"2026_Free_Agent_R3_OO3","display_pick":"3.06","overall_pick":18,"original_owner_team_id":3,"current_owner_team_id":3,"player_id":"11581","player_name":"MarShawn Lloyd","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R4_OO5","display_pick":"4.01","overall_pick":19,"original_owner_team_id":5,"current_owner_team_id":5,"player_id":"2449","player_name":"Stefon Diggs","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R4_OO6","display_pick":"4.02","overall_pick":20,"original_owner_team_id":6,"current_owner_team_id":6,"player_id":"3163","player_name":"Jared Goff","position":"QB"},
+    {"pick_key":"2026_Free_Agent_R4_OO4","display_pick":"4.03","overall_pick":21,"original_owner_team_id":4,"current_owner_team_id":4,"player_id":"10219","player_name":"Chris Rodriguez","position":"RB"},
+    {"pick_key":"2026_Free_Agent_R4_OO1","display_pick":"4.04","overall_pick":22,"original_owner_team_id":1,"current_owner_team_id":2,"player_id":"11603","player_name":"AJ Barner","position":"TE"},
+    {"pick_key":"2026_Free_Agent_R4_OO2","display_pick":"4.05","overall_pick":23,"original_owner_team_id":2,"current_owner_team_id":2,"player_id":"5872","player_name":"Deebo Samuel","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R4_OO3","display_pick":"4.06","overall_pick":24,"original_owner_team_id":3,"current_owner_team_id":3,"player_id":"10213","player_name":"Tre Tucker","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R5_OO5","display_pick":"5.01","overall_pick":25,"original_owner_team_id":5,"current_owner_team_id":5,"player_id":"12522","player_name":"Cam Ward","position":"QB"},
+    {"pick_key":"2026_Free_Agent_R5_OO6","display_pick":"5.02","overall_pick":26,"original_owner_team_id":6,"current_owner_team_id":6,"player_id":"11618","player_name":"Jalen McMillan","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R5_OO4","display_pick":"5.03","overall_pick":27,"original_owner_team_id":4,"current_owner_team_id":4,"player_id":"9758","player_name":"C.J. Stroud","position":"QB"},
+    {"pick_key":"2026_Free_Agent_R5_OO1","display_pick":"5.04","overall_pick":28,"original_owner_team_id":1,"current_owner_team_id":1,"player_id":"11638","player_name":"Ricky Pearsall","position":"WR"},
+    {"pick_key":"2026_Free_Agent_R5_OO2","display_pick":"5.05","overall_pick":29,"original_owner_team_id":2,"current_owner_team_id":2,"player_id":"4943","player_name":"Sam Darnold","position":"QB"},
+    {"pick_key":"2026_Free_Agent_R5_OO3","display_pick":"5.06","overall_pick":30,"original_owner_team_id":3,"current_owner_team_id":3,"player_id":"8161","player_name":"Malik Willis","position":"QB"}
+  ],
+  "manager_observations": [
+    {"team_id":1,"observation":"Robert passte auch den FA-Draft an die dokumentierte eigene Strategie an: 2026 gingen alle neun Rookie-/FA-Picks in WR oder RB; im FA-Preboard war zusätzlicher QB-Erwerb ausdrücklich ausgeschlossen.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":["2026_Free_Agent_R1_OO5","2026_Free_Agent_R2_OO1","2026_Free_Agent_R5_OO1"],"confidence":"high","status":"confirmed"},
+    {"team_id":2,"observation":"Marcel konzentrierte 2026 sechs seiner acht Draftpicks auf RB/TE und tradete im laufenden FA-Draft gezielt für AJ Barner hoch; dies verstärkt die bereits mehrjährig dokumentierte RB/TE- und Target-Conviction-Tendenz.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":["2026_Free_Agent_R4_OO1"],"confidence":"high","status":"confirmed"},
+    {"team_id":3,"observation":"Flo verteilte seine 2026 Draftinvestitionen erneut breit über WR, RB, QB und TE und bestätigt damit die mehrjährig beobachtete formatbewusste Diversifikation.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":[],"confidence":"high","status":"confirmed"},
+    {"team_id":4,"observation":"Jan arbeitet nicht mit einer starren Positionspräferenz: Im FA-Draft nahm er trotz starkem QB-/WR-Kern Purdy 1.03, Kittle 2.03, drei RBs und Stroud 5.03, aber keinen WR. Das stützt Independent-Board- und Value-/Target-Verhalten stärker als eine einfache 'wartet immer auf QB'-Regel.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":["2026_Free_Agent_R1_OO4","2026_Free_Agent_R2_OO4","2026_Free_Agent_R5_OO4"],"confidence":"high","status":"confirmed"},
+    {"team_id":5,"observation":"Dennis hatte in Rookie- und FA-Draft 2026 jeweils exakt WR3/RB1/QB1. Zusammen mit der historischen QB-Value-Evidenz spricht das für einen selektiven WR/QB-Aufbau mit Bereitschaft, auf fallende QB-Preise zu warten.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":["2026_Free_Agent_R5_OO5"],"confidence":"medium","status":"provisional"},
+    {"team_id":6,"observation":"Tim hatte 2026 sieben WR in elf Rookie-/FA-Picks und investierte in beiden Drafts zusätzlich in TE. Das bestätigt seine starke junge-WR-Präferenz und erhöhte TE-Bereitschaft; Goff 4.02 ist eher Value-Mitnahme als Beleg für QB-Aggression.","evidence_draft_keys":["2026_Rookie","2026_Free_Agent"],"evidence_pick_keys":["2026_Free_Agent_R4_OO6"],"confidence":"high","status":"confirmed"}
+  ],
+  "league_findings": [
+    "2026 gingen über Rookie- und FA-Draft 26 von 60 Picks an WR, 17 an RB, 9 an QB und 8 an TE; WR+RB stellten 71,7 Prozent der Picks.",
+    "Der FA-QB-Markt war 2026 zweigeteilt: Brock Purdy ging 1.03; danach folgten 16 Picks ohne QB bis Jared Goff 4.02; vier der letzten sechs Picks waren QBs.",
+    "Rookie- und FA-Draft dürfen nicht in ein einziges ADP-/Positionsmarktmodell gepresst werden: Im Rookie-Draft gingen 3 QBs, im FA-Draft 6.",
+    "Tight End war nicht ignoriert: je 4 TEs gingen im Rookie- und FA-Draft. Der 2TE-Ligaeinfluss ist im tatsächlichen Draftverhalten sichtbar.",
+    "Aktuelle Kader-Needs und direkte Target-Aussagen müssen Manager-Historie überstimmen; Draftverhalten ist ein prior-adjustierender Input, kein deterministischer Pick-Call."
+  ],
+  "review_schedule": [
+    {"review_kind":"year_1_review","target_date":"2027-09-10","status":"planned"},
+    {"review_kind":"year_2_review","target_date":"2028-09-10","status":"planned"},
+    {"review_kind":"year_3_review","target_date":"2029-09-10","status":"planned"}
+  ],
+  "review_of": null,
+  "supersedes": null,
+  "validity_note": "Historische Post-Draft-Baseline vom 10.09.2026. Exakte Draftresultate sind historisch fix; Manager-Interpretationen sind fortzuschreibende Evidenz und müssen vor zukünftigen Draftentscheidungen mit aktueller Kaderlage und neueren Jahren abgeglichen werden."
+}

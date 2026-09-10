@@ -36,6 +36,8 @@ For any `entity-observation` baseline read/write, monitoring-triggered durable o
 
 For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup/waiver, roster-capacity or roster-flexibility task, `fantasy-management/_ai/ROSTER_ARCHITECTURE.md` is additionally mandatory and must be read before classifying player roles/security or deciding whether a transaction consumes protected churn capacity.
 
+For any Rookie Draft, Free-Agent Draft, draft strategy, draft postmortem, draft-market or owner-draft-tendency task, `fantasy-management/_ai/DRAFT_STRATEGY_RULES.md` is additionally mandatory and must be read before applying generic position-scarcity assumptions or historical owner behavior. When opponent draft behavior matters, `fantasy-management/league-context/owner-draft-behavior.md` is also mandatory and must be combined with current roster/need context rather than used as a deterministic pick model.
+
 1. `fantasy-management/AGENTS.md`
 2. `.ai-context/manual/work-tracking.yaml` when planning, prioritizing, recording or resuming repository work
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
@@ -50,16 +52,17 @@ For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup
 12. `fantasy-management/_ai/source-registry.json` when source identity, weighting or comparison matters
 13. `fantasy-management/_ai/entity-resolution/player_identity_registry.json` when player names, aliases, transcript errors or source extraction matter
 14. `fantasy-management/league-context/owner-registry.json` when owner, team or user-perspective resolution matters
-15. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
-16. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
-17. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
-18. `fantasy-management/_ai/WORKFLOWS.md`
-19. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
-20. relevant source files under `fantasy-management/sources/`
-21. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
-22. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
-23. relevant analyses under `fantasy-management/analyses/` when such files exist
-24. relevant decisions under `fantasy-management/decisions/` when such files exist
+15. `fantasy-management/league-context/owner-draft-behavior.md` when draft behavior, draft-market tendencies or opponent pick prediction matters
+16. `fantasy-management/league-context/owner-profiles.md` when manager tendencies or negotiation context matters
+17. `fantasy-management/league-context/trade-negotiation-history.md` when trade talks or counterparty history matters
+18. `fantasy-management/league-context/league-format-notes.md` when format interpretation matters
+19. `fantasy-management/_ai/WORKFLOWS.md`
+20. relevant schema files listed in `fantasy-management/_ai/schema-list.json`
+21. relevant source files under `fantasy-management/sources/`
+22. relevant source-specific notes under `fantasy-management/sources/podcasts/{source_id}/SOURCE_NOTES.md`
+23. relevant knowledge files under `fantasy-management/knowledge/` when such files exist
+24. relevant analyses under `fantasy-management/analyses/` when such files exist
+25. relevant decisions under `fantasy-management/decisions/` when such files exist
 
 ## Canonical app data
 
@@ -142,6 +145,7 @@ fantasy-management/
   _ai/
     FANTASY_MANAGEMENT_SOURCES.md
     FANTASY_MANAGEMENT_RULES.md
+    DRAFT_STRATEGY_RULES.md
     ROSTER_ARCHITECTURE.md
     TRADE_NEGOTIATION_RULES.md
     PODCAST_SOURCE_MODEL.md
@@ -188,6 +192,7 @@ fantasy-management/
   league-context/
     README.md
     owner-registry.json
+    owner-draft-behavior.md
     owner-profiles.md
     trade-negotiation-history.md
     league-format-notes.md
