@@ -1,6 +1,11 @@
 name: APP • Data • Games
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "source-data/nfl/game-finality/**"
   repository_dispatch:
     types:
       - scheduler-update-games

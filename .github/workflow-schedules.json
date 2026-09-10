@@ -59,7 +59,7 @@
       "profile": "productive",
       "timezone": "America/New_York",
       "cron": ["45 0 * * *", "0 13 * * *"],
-      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "players",
@@ -110,6 +110,16 @@
       "timezone": "Europe/Berlin",
       "cron": ["0 4 * * *"],
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
+    },
+    {
+      "id": "nfl-game-finality",
+      "workflow": "sync-nfl-game-finality.yml",
+      "path": ".github/workflows/sync-nfl-game-finality.yml",
+      "eventType": "scheduler-sync-nfl-game-finality",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": ["*/15 * * 9-12,1 *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
       "id": "league-source",
