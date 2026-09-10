@@ -121,6 +121,11 @@ export class LeagueMatchupsComponent {
     maximumFractionDigits: 2
   });
 
+  private readonly nflScoreFormatter = new Intl.NumberFormat('de-DE', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+
   get week(): number | null {
     return this.league.Matchups?.Week ?? null;
   }
@@ -266,6 +271,24 @@ export class LeagueMatchupsComponent {
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
     return (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
+  }
+
+  hasNflScore(game: FantasyGameContextGame): boolean {
+    return /^Final/i.test(game.Status ?? '')
+      && game.AwayScore !== null
+      && game.AwayScore !== undefined
+      && game.HomeScore !== null
+      && game.HomeScore !== undefined;
+  }
+
+  formatFantasyPoints(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
+    return this.matchupScoreFormatter.format(Number(value));
+  }
+
+  formatNflScore(value: number | null | undefined): string {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
+    return this.nflScoreFormatter.format(Number(value));
   }
 
   openTeam(teamID: string | number): void {
