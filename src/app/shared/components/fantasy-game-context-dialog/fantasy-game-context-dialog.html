@@ -16,7 +16,14 @@
           <strong>{{ selectedGame.AwayTeamAbbr || selectedGame.AwayTeamID }}</strong>
         </div>
         <div class="fgc-game-center">
-          <span class="fgc-game-at">@</span>
+          <ng-container *ngIf="hasNflScore(selectedGame); else gameAt">
+            <strong class="fgc-nfl-score" aria-label="Final NFL score">
+              <span>{{ formatNflScore(selectedGame.AwayScore) }}</span>
+              <b aria-hidden="true">–</b>
+              <span>{{ formatNflScore(selectedGame.HomeScore) }}</span>
+            </strong>
+          </ng-container>
+          <ng-template #gameAt><span class="fgc-game-at">@</span></ng-template>
           <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
           <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'">
             {{ gameStageLabel(selectedGame) }}
@@ -68,10 +75,13 @@
         </section>
       </ng-template>
 
-      <section *ngIf="hasGameScoring(selectedGame)" class="fgc-impact-card">
+      <section *ngIf="hasGameScoring(selectedGame)" class="fgc-impact-card fgc-impact-card--score">
         <div>
           <span class="fgc-card-label">League-scored starter impact</span>
-          <strong>{{ selectedGame.Impact.StarterPoints | number:'1.0-2' }} pts</strong>
+          <span class="fgc-impact-score-line">
+            <strong>{{ formatFantasyPoints(selectedGame.Impact.StarterPoints) }}</strong>
+            <span>starter pts</span>
+          </span>
         </div>
         <span *ngIf="selectedGame.Impact.OutcomeSwingMatchupCount > 0" class="fgc-impact-swing">
           {{ selectedGame.Impact.OutcomeSwingMatchupCount }} outcome swing{{ selectedGame.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
@@ -97,7 +107,7 @@
                 </span>
               </button>
               <span *ngIf="hasGameScoring(selectedGame)" class="fgc-team-points">
-                {{ fantasyTeam.StarterPoints | number:'1.0-2' }} pts
+                {{ formatFantasyPoints(fantasyTeam.StarterPoints) }} pts
               </span>
             </div>
 
@@ -136,7 +146,7 @@
                   </span>
                 </span>
                 <span *ngIf="hasGameScoring(selectedGame) && player.Points !== null" class="fgc-player-points">
-                  {{ player.Points | number:'1.0-2' }}
+                  {{ formatFantasyPoints(player.Points) }}
                 </span>
                 <mat-icon>chevron_right</mat-icon>
               </button>
@@ -163,7 +173,14 @@
         </button>
 
         <div class="fgc-matchup-vs">
-          <span>VS</span>
+          <ng-container *ngIf="fantasyMatchupScore(selectedMatchup) as score; else matchupVsOnly">
+            <span class="fgc-matchup-score" aria-label="Fantasy matchup score">
+              <strong>{{ formatFantasyPoints(score.Left) }}</strong>
+              <b aria-hidden="true">–</b>
+              <strong>{{ formatFantasyPoints(score.Right) }}</strong>
+            </span>
+          </ng-container>
+          <ng-template #matchupVsOnly><span>VS</span></ng-template>
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
         </div>
 
@@ -207,6 +224,9 @@
                   <img *ngIf="nflLogo(linkedGame.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
                   <strong>{{ linkedGame.HomeTeamAbbr || linkedGame.HomeTeamID }}</strong>
                 </span>
+                <strong *ngIf="hasNflScore(linkedGame)" class="fgc-mini-nfl-score">
+                  {{ formatNflScore(linkedGame.AwayScore) }}–{{ formatNflScore(linkedGame.HomeScore) }}
+                </strong>
               </button>
 
               <div class="fgc-timeline-meta">
@@ -284,9 +304,18 @@
               </div>
             </div>
 
-            <div *ngIf="hasMatchupGameScoring(row)" class="fgc-timeline-points">
-              {{ row.LeftStarterPoints | number:'1.0-2' }} – {{ row.RightStarterPoints | number:'1.0-2' }} starter pts
-              <span *ngIf="row.OutcomeChangedWithoutGame === true">· Outcome differs without this game</span>
+            <div *ngIf="hasMatchupGameScoring(row)" class="fgc-timeline-score-wrap">
+              <div class="fgc-timeline-score-grid" aria-label="Fantasy starter points from this NFL game">
+                <span class="fgc-timeline-side-score">
+                  <strong>{{ formatFantasyPoints(row.LeftStarterPoints) }}</strong>
+                  <small>starter pts</small>
+                </span>
+                <span class="fgc-timeline-side-score fgc-timeline-side-score--right">
+                  <strong>{{ formatFantasyPoints(row.RightStarterPoints) }}</strong>
+                  <small>starter pts</small>
+                </span>
+              </div>
+              <span *ngIf="row.OutcomeChangedWithoutGame === true" class="fgc-timeline-outcome">Outcome differs without this game</span>
             </div>
           </article>
         </div>

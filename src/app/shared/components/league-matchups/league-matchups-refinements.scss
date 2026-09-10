@@ -214,6 +214,78 @@
   outline-offset: -2px;
 }
 
+/* Scores should read before supporting matchup metadata. */
+.matchup-score,
+.fantasy-pulse-final-nfl-score,
+.fantasy-pulse-impact-score {
+  font-variant-numeric: tabular-nums;
+}
+
+.matchup-score {
+  gap: 5px;
+  margin-top: 1px;
+  color: #172033;
+  font-size: 0.86rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.matchup-score strong {
+  color: #172033;
+  font-size: 0.94rem;
+  font-weight: 950;
+}
+
+.matchup-score-divider {
+  color: #a8b0bd;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.fantasy-pulse-card--impact {
+  min-height: 88px;
+}
+
+.fantasy-pulse-card--impact .fantasy-pulse-game-lockup {
+  flex-wrap: wrap;
+  row-gap: 3px;
+}
+
+.fantasy-pulse-final-nfl-score {
+  flex: 0 0 auto;
+  margin-left: 2px;
+  color: #172033;
+  font-size: 0.8rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.fantasy-pulse-metrics--impact {
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.fantasy-pulse-impact-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #172033 !important;
+  font-size: 1.02rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.fantasy-pulse-impact-score small {
+  color: #7c8799;
+  font-size: 0.52rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 @media (max-width: 430px) {
   .matchup-nfl-secondary { gap: 3px; font-size: 0.51rem; }
   .matchup-nfl-secondary-count { display: none; }
@@ -221,4 +293,12 @@
   .fantasy-pulse-team-strip { gap: 5px; padding-inline: 8px; }
   .fantasy-pulse-team-strip-label { font-size: 0.48rem; }
   .fantasy-pulse-team-avatar { width: 22px; height: 22px; }
+  .fantasy-pulse-final-nfl-score { font-size: 0.74rem; }
+}
+
+@media (min-width: 768px) {
+  .matchup-score { gap: 7px; font-size: 1.12rem; }
+  .matchup-score strong { font-size: 1.24rem; }
+  .matchup-score-divider { font-size: 0.9rem; }
+  .fantasy-pulse-impact-score { font-size: 1.12rem; }
 }

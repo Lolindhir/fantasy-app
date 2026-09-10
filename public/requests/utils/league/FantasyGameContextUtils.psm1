@@ -4,6 +4,67 @@ Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop 
 
 $script:BaseNewFantasyGameContextReadModel = ${function:New-FantasyGameContextReadModel}
 
+function ConvertTo-FgcOptionalScore {
+    param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value) { return $null }
+    $text = ([string]$Value).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+
+    $parsed = 0.0
+    if ([double]::TryParse(
+        $text,
+        [System.Globalization.NumberStyles]::Float,
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [ref]$parsed
+    )) {
+        return [double]$parsed
+    }
+    return $null
+}
+
+function Add-FantasyGameScoreContext {
+    param(
+        [Parameter(Mandatory = $true)][object]$BaseContext,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule
+    )
+
+    $scheduleByGameID = @{}
+    foreach ($row in @($Schedule)) {
+        if ($null -eq $row) { continue }
+        $gameID = [string](Get-FgcPropertyValue -Object $row -Names @('gameID','GameID'))
+        if ([string]::IsNullOrWhiteSpace($gameID)) { continue }
+        if ($scheduleByGameID.ContainsKey($gameID)) {
+            throw "Duplicate Schedule score identity for FantasyGameContext GameID '$gameID'."
+        }
+        $scheduleByGameID[$gameID] = $row
+    }
+
+    foreach ($game in @($BaseContext.Games)) {
+        $awayScore = $null
+        $homeScore = $null
+        $gameID = [string]$game.GameID
+        $isFinal = [string]$game.Status -match '^Final'
+        if ($isFinal -and $scheduleByGameID.ContainsKey($gameID)) {
+            $scheduleRow = $scheduleByGameID[$gameID]
+            $candidateAway = ConvertTo-FgcOptionalScore (Get-FgcPropertyValue -Object $scheduleRow -Names @('awayPts','AwayScore'))
+            $candidateHome = ConvertTo-FgcOptionalScore (Get-FgcPropertyValue -Object $scheduleRow -Names @('homePts','HomeScore'))
+            if ($null -ne $candidateAway -and $null -ne $candidateHome) {
+                $awayScore = [double]$candidateAway
+                $homeScore = [double]$candidateHome
+            }
+        }
+
+        if ($game.PSObject.Properties.Name -contains 'AwayScore') { $game.AwayScore = $awayScore }
+        else { $game | Add-Member -NotePropertyName AwayScore -NotePropertyValue $awayScore }
+        if ($game.PSObject.Properties.Name -contains 'HomeScore') { $game.HomeScore = $homeScore }
+        else { $game | Add-Member -NotePropertyName HomeScore -NotePropertyValue $homeScore }
+    }
+
+    if ([int]$BaseContext.SchemaVersion -lt 3) { $BaseContext.SchemaVersion = 3 }
+    return $BaseContext
+}
+
 # RequestLeague imports DecisionWindowUtils before this module. This compatibility
 # wrapper enriches the stable DecisionWindows baseline with the v2 lineup model
 # without moving the existing exact-kickoff derivation into Angular.
@@ -56,7 +117,8 @@ function New-FantasyGameContextReadModel {
         -WeekIsFinal $WeekIsFinal
 
     $relevanceContext = Add-FantasyRelevanceContext -BaseContext $baseContext -DecisionFacts $DecisionFacts
-    return Add-FantasyMatchupPreviewContext -BaseContext $relevanceContext -DecisionFacts $DecisionFacts
+    $previewContext = Add-FantasyMatchupPreviewContext -BaseContext $relevanceContext -DecisionFacts $DecisionFacts
+    return Add-FantasyGameScoreContext -BaseContext $previewContext -Schedule $Schedule
 }
 
 # Sleeper currently publishes players_points as a PlayerID-keyed object but
