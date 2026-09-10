@@ -6,6 +6,7 @@ try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\GameFinalityUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\GameScoreUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -169,6 +170,7 @@ if ($oldSchedule -and $oldSchedule.Count -gt 0) {
         @() | ConvertTo-Json -Depth 20 | Out-File -FilePath $gamesFile -Encoding UTF8
 
         Write-Host "Schedule.json and Games.json cleared." -ForegroundColor Green
+        $oldSchedule = $null
     }
 }
 
@@ -194,6 +196,47 @@ try {
 catch {
     Write-Error "Error resolving canonical NFL game finality: $_"
     exit 1
+}
+
+# Preserve already materialized final-score pairs as a cache when the full
+# schedule endpoint omits them. The score-only endpoint below remains the source
+# for new score facts; neither path is allowed to promote a game to Final.
+if ($oldSchedule) {
+    try {
+        $schedule = @(Merge-GameScoresIntoSchedule -Schedule @($schedule) -ScoreRows @($oldSchedule))
+    }
+    catch {
+        Write-Error "Error carrying forward previously materialized NFL scores: $_"
+        exit 1
+    }
+}
+
+# Fetch lightweight score evidence only for canonical-Final games whose complete
+# score pair is still missing. Group by NFL week to keep API usage bounded.
+$scoreWeeks = @(
+    $schedule |
+        Where-Object { $_.gameStatus -match '^Final' -and -not (Test-GameHasScorePair -Game $_) } |
+        ForEach-Object {
+            if ([string]$_.gameWeek -match 'Week\s+(\d+)') { [int]$matches[1] }
+        } |
+        Sort-Object -Unique
+)
+
+foreach ($scoreWeek in $scoreWeeks) {
+    $scoresUrl = "https://$apiHost/getNFLScoresOnly?week=$scoreWeek&season=$year"
+    try {
+        Write-Host "Fetching final NFL scores for Week $scoreWeek..." -ForegroundColor Yellow
+        $scoresResponse = Invoke-Tank01-With-Fallback -Url $scoresUrl -Keys $apiKeys
+        $scoreRows = @(Get-Tank01ScoreRows -Value $scoresResponse.body)
+        if ($scoreRows.Count -eq 0) {
+            Write-Warning "No score rows returned for Week $scoreWeek. Finality remains valid; NFL score stays unknown."
+            continue
+        }
+        $schedule = @(Merge-GameScoresIntoSchedule -Schedule @($schedule) -ScoreRows $scoreRows)
+    }
+    catch {
+        Write-Warning "Could not enrich final NFL scores for Week $scoreWeek. Finality remains canonical and score stays unknown. $_"
+    }
 }
 
 Write-Host "Schedule retrieved, total games: $($schedule.Count)" -ForegroundColor Green
@@ -397,7 +440,6 @@ $beforeCount = $games.Count
 # --- Duplikate nach gameID entfernen ---
 $games = $games | Group-Object -Property gameID | ForEach-Object {
     $group = $_.Group
-
     # Bevorzuge Spielversionen, bei denen alle Spieler snapCounts haben
     $validGames = $group | Where-Object {
         ($_.playerStats.PSObject.Properties.Value | Where-Object { -not $_.snapCounts }).Count -eq 0
@@ -451,4 +493,3 @@ if ($addedCount -gt 0 -or $updatedCount -gt 0 -or $diff -gt 0) {
 }
 
 Write-Host "Done. Added $addedCount new boxscore(s)." -ForegroundColor Green
-
