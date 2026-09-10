@@ -230,6 +230,12 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
+  .github/workflows/sync-nfl-game-finality.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 1
+    rationale: Seasonal fifteen-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
   .github/workflows/sync-league-source-data.yml:
     category: important
     relevantEvents:
@@ -321,8 +327,9 @@ workflows:
     category: important
     relevantEvents:
     - repository_dispatch
+    - push
     staleAfterMinutes: 960
-    rationale: Two centrally scheduled daily refreshes; 16 hours covers the longest normal gap with operational grace.
+    rationale: Retains two centrally scheduled daily fallback refreshes and also runs on main changes to canonical NFL game-finality so completed-game transitions publish promptly. Both scheduler and finality-driven push runs are production health evidence; 16 hours still covers the longest fallback schedule gap with operational grace.
   .github/workflows/update-transactions.yml:
     category: important
     relevantEvents:
