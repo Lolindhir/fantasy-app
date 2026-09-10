@@ -190,7 +190,7 @@ matrix:
     identityKey: nflverse game_id for canonical schedule; current bridge uses explicit ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: 1999-present
-    freshness: current Schedule publication follows APP Data Games cadence; canonical NFL source refresh is a separate dependency
+    freshness: current Schedule keeps its normal APP Data Games fallback cadence and additionally republishes on main changes to canonical NFL game-finality; canonical full-source refresh remains separate
     migrationState: canonical-finality-migrated-schedule-shape-legacy
     guards:
       - game_type must be explicit; postseason must not silently enter the current REG-only app contract
@@ -211,13 +211,14 @@ matrix:
     identityKey: nflverse game_id / canonical game identity; transitional Schedule bridge uses ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: follows validated released-games evidence; backfill coverage must be audited when activated
-    freshness: canonical evidence follows nflverse released-game publication; as of #447 the production source poll is daily and is insufficient for prompt game-day completion without a cadence follow-up
-    migrationState: canonical-active-runtime-finality-migrated
+    freshness: canonical evidence follows nflverse released-game publication; production polls nflverse.game-finality every 15 minutes during September-January through the dedicated scheduler target while retaining the daily full NFL source sync; semantic Finality changes trigger APP Data Games immediately and the normal 10-minute League refresh then converges dependent read models
+    migrationState: canonical-active-runtime-finality-migrated-live-refresh
     guards:
       - do not infer Final merely from score or fantasy-point presence
       - Final requires membership in the validated released-games evidence for the same canonical game_id
       - RequestGames may promote stale non-Final Tank01 status when canonical Final=true, but a contradictory Tank01 Final while canonical Final=false fails closed
       - missing/duplicate/mismatched ESPN provider joins fail closed before Schedule publication
+      - targeted game-day polling changes freshness only and must not introduce an elapsed-time or score-based terminal-state heuristic
       - the abandoned BUF-CIN Week 17/2022 game must not be treated as Final merely because schedule/score evidence exists
       - postponed/cancelled/no-contest semantics remain distinct terminal-state work if encountered
       - weekFinal may only be derived after every applicable game has canonical finality
@@ -621,12 +622,15 @@ repositoryEvidence:
   - .ai-context/manual/nfl-source-data.yaml
   - .ai-context/manual/provider-join-invariants.yaml
   - .ai-context/manual/data-sources.yaml
+  - .github/workflow-schedules.json
+  - .github/workflows/sync-nfl-game-finality.yml
+  - .github/workflows/update-games.yml
   - public/requests/RequestPlayers.ps1
   - public/requests/RequestGames.ps1
   - public/requests/utils/general/GameFinalityUtils.psm1
 
 nextArchitectureStep: >
-  Phase 1 source-data is accepted and #447 migrated current Final truth behind the
-  legacy Schedule.json shape. Continue the App-Generator-DAG and remaining consumer
-  migration while preserving public contracts unless a separate contract change is
-  explicitly approved; separately close the game-day finality refresh-cadence gap.
+  Phase 1 source-data is accepted and #447 migrated current Final truth plus live
+  game-day refresh behind the legacy Schedule.json shape. Continue the App-Generator-DAG
+  and remaining consumer migration while preserving public contracts unless a separate
+  contract change is explicitly approved.
