@@ -10,6 +10,7 @@ import type {
   FantasyRelevanceTeamState
 } from '../../../core/models/decision-window.models';
 import type {
+  FantasyGameContextCounterfactualScore,
   FantasyGameContextGame,
   FantasyGameContextMatchup,
   FantasyGameContextMatchupGame,
@@ -121,6 +122,38 @@ export class FantasyGameContextDialogComponent {
   hasMatchupGameScoring(row: FantasyGameContextMatchupGame): boolean {
     const game = this.gameForMatchupRow(row);
     return !!game && isFantasyGameImpactVisible(game);
+  }
+
+  hasNflScore(game: FantasyGameContextGame): boolean {
+    return /^Final/i.test(game.Status ?? '')
+      && game.AwayScore !== null
+      && game.AwayScore !== undefined
+      && game.HomeScore !== null
+      && game.HomeScore !== undefined;
+  }
+
+  fantasyMatchupScore(matchup: FantasyGameContextMatchup): FantasyGameContextCounterfactualScore | null {
+    const snapshot = this.data.league.Matchups;
+    if (snapshot && snapshot.Season === this.data.context.Season && snapshot.Week === this.data.context.Week) {
+      const teamIDs = matchup.TeamIDs.map(teamID => String(teamID));
+      const leagueMatchup = snapshot.Matchups.find(candidate => {
+        const participantIDs = candidate.Participants.map(participant => String(participant.TeamID));
+        return participantIDs.length === 2 && teamIDs.every(teamID => participantIDs.includes(teamID));
+      });
+      if (leagueMatchup) {
+        const left = leagueMatchup.Participants.find(participant => String(participant.TeamID) === teamIDs[0]);
+        const right = leagueMatchup.Participants.find(participant => String(participant.TeamID) === teamIDs[1]);
+        if (left && right) {
+          const leftPoints = Number(left.Points ?? 0);
+          const rightPoints = Number(right.Points ?? 0);
+          if (Number.isFinite(leftPoints) && Number.isFinite(rightPoints)
+              && (leftPoints !== 0 || rightPoints !== 0 || !!matchup.FinalScores)) {
+            return { Left: leftPoints, Right: rightPoints };
+          }
+        }
+      }
+    }
+    return matchup.FinalScores;
   }
 
   showCounterfactual(matchup: FantasyGameContextMatchup): boolean {
