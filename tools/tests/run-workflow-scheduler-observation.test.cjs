@@ -151,41 +151,44 @@ test('fallback workflow-run query recovers a success omitted by the branch-filte
   assert.equal(calls[1].event, 'repository_dispatch');
 });
 
-test('awaiting observation uses its own dispatch time for the Health anti-starvation window', () => {
+test('awaiting observation uses its own dispatch time for the Health blocker window', () => {
   const healthTarget = target({
     id: 'workflow-health',
     workflow: 'workflow-health-snapshot.yml',
     eventType: 'scheduler-workflow-health',
     profile: 'observer',
+    maxStarvationMinutes: 30,
     deferUntilOtherTargetsSettled: { maxMinutes: 20 },
   });
   const healthResult = {
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', profile: 'observer', healthBarrier: false,
-    decision: 'dispatch', dueAt: '2026-09-04T10:37:00.000Z',
+    decision: 'dispatch', dueAt: '2026-09-04T17:37:00.000Z',
   };
   const peer = {
     id: 'league', workflow: 'update-league.yml', profile: 'productive', healthBarrier: true,
-    decision: 'awaiting-observation', dueAt: '2026-09-04T13:30:00.000Z', lastDispatchAt: '2026-09-04T17:22:00.000Z',
+    decision: 'awaiting-observation', dueAt: '2026-09-04T17:30:00.000Z', lastDispatchAt: '2026-09-04T17:38:00.000Z',
   };
-  const before = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:25:00Z'));
+  const before = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:41:00Z'));
   assert.equal(before.decision, 'deferred');
   assert.equal(before.deferralReason, 'productive-in-flight-or-unobserved');
   assert.equal(before.deferralAgeAnchor, 'productive-blocker-start');
   assert.equal(before.deferralAgeMinutes, 3);
 
-  const after = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:43:00Z'));
+  const after = scheduler.applyTargetDeferral(healthTarget, healthResult, [healthResult, peer], new Date('2026-09-04T17:59:00Z'));
   assert.equal(after.decision, 'dispatch');
   assert.equal(after.deferralExpired, true);
+  assert.equal(after.starvationLimitExpired, undefined);
 });
 
-test('stale Health slot still waits for a freshly started productive in-flight run', () => {
+test('Health slot below the absolute starvation limit still waits for freshly started productive in-flight work', () => {
   const healthTarget = target({
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', eventType: 'scheduler-workflow-health', profile: 'observer',
+    maxStarvationMinutes: 30,
     deferUntilOtherTargetsSettled: { maxMinutes: 20 },
   });
   const healthResult = {
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', profile: 'observer', healthBarrier: false,
-    decision: 'dispatch', dueAt: '2026-09-04T10:37:00.000Z', latestDueAt: '2026-09-04T17:07:00.000Z',
+    decision: 'dispatch', dueAt: '2026-09-04T17:07:00.000Z', latestDueAt: '2026-09-04T17:07:00.000Z',
   };
   const peers = [
     healthResult,
@@ -203,6 +206,7 @@ test('stale Health slot still waits for a freshly started productive in-flight r
   const result = scheduler.applyTargetDeferral(healthTarget, healthResult, peers, new Date('2026-09-04T17:25:01.000Z'));
   assert.equal(result.decision, 'deferred');
   assert.equal(result.deferralAgeMinutes, 2);
+  assert.equal(result.starvationAgeMinutes, 18);
   assert.equal(result.blockingTargets.length, 2);
   assert.equal(result.blockingTargets[0].blockerStartedAt, '2026-09-04T17:22:57.000Z');
 });
@@ -210,6 +214,7 @@ test('stale Health slot still waits for a freshly started productive in-flight r
 test('productive in-flight work older than the blocker window no longer starves Health', () => {
   const healthTarget = target({
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', eventType: 'scheduler-workflow-health', profile: 'observer',
+    maxStarvationMinutes: 30,
     deferUntilOtherTargetsSettled: { maxMinutes: 20 },
   });
   const healthResult = {
@@ -225,11 +230,13 @@ test('productive in-flight work older than the blocker window no longer starves 
   assert.equal(result.decision, 'dispatch');
   assert.equal(result.deferralExpired, true);
   assert.equal(result.deferralAgeMinutes, 21);
+  assert.equal(result.starvationAgeMinutes, 14);
 });
 
 test('observation timeout and observation cooldown do not block Health', () => {
   const healthTarget = target({
     id: 'workflow-health', workflow: 'workflow-health-snapshot.yml', eventType: 'scheduler-workflow-health', profile: 'observer',
+    maxStarvationMinutes: 30,
     deferUntilOtherTargetsSettled: { maxMinutes: 20 },
   });
   const healthResult = {

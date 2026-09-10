@@ -363,6 +363,12 @@ function applyTargetDeferral(target, result, peerResults, now) {
     });
   if (blockers.length === 0) return result;
 
+  const dueAtMs = Date.parse(result.dueAt || '');
+  if (!Number.isFinite(dueAtMs)) throw new Error(`Deferred target ${target.id} has invalid dueAt`);
+  const starvationAgeMs = Math.max(0, now.getTime() - dueAtMs);
+  const starvationAgeMinutes = Math.floor(starvationAgeMs / 60000);
+  const starvationDeadlineAt = new Date(dueAtMs + target.maxStarvationMinutes * 60000).toISOString();
+
   const finiteAges = blockers
     .map((blocker) => blocker.blockerAgeMinutes)
     .filter((value) => Number.isFinite(value));
@@ -372,7 +378,20 @@ function applyTargetDeferral(target, result, peerResults, now) {
     deferralAgeAnchor: 'productive-blocker-start',
     deferralAgeMinutes: finiteAges.length ? Math.min(...finiteAges) : null,
     maxDeferralMinutes: deferral.maxMinutes,
+    starvationAgeAnchor: 'health-due-slot',
+    starvationAgeMinutes,
+    maxStarvationMinutes: target.maxStarvationMinutes,
+    starvationDeadlineAt,
   };
+
+  if (starvationAgeMs >= target.maxStarvationMinutes * 60000) {
+    return {
+      ...annotated,
+      starvationLimitExpired: true,
+      forcedByStarvationLimit: true,
+      deferralReason: 'health-starvation-limit-expired',
+    };
+  }
 
   if (blockers.some((blocker) => blocker.decision === 'dispatch')) {
     return { ...annotated, decision: 'deferred', deferralReason: 'productive-dispatch-this-tick', hardDispatchBarrier: true };
@@ -457,7 +476,10 @@ function reasonForResult(result, timeZone) {
       text = `Run #${result.inFlightRunId} is ${result.inFlightStatus || 'in flight'}.`;
       break;
     case 'dispatch':
-      if (result.deferralExpired) {
+      if (result.starvationLimitExpired) {
+        const blockers = (result.blockingTargets || []).map((item) => `${item.id} (${item.decision})`).join(', ');
+        text = `Health starts because its ${result.maxStarvationMinutes}-minute absolute starvation limit expired${blockers ? `; still active: ${blockers}` : ''}.`;
+      } else if (result.deferralExpired) {
         const blockers = (result.blockingTargets || []).map((item) => `${item.id} (${item.decision})`).join(', ');
         text = `Health starts because every productive blocker exceeded its ${result.maxDeferralMinutes}-minute observation window${blockers ? `; still unresolved: ${blockers}` : ''}.`;
       } else if ((result.retryAttempt || 1) > 1) {
@@ -520,6 +542,8 @@ function buildSummaryMarkdown(results, now, config) {
 
   const deferredHealth = results.find((result) => result.id === 'workflow-health' && result.decision === 'deferred');
   if (deferredHealth) markdown += `\n### Why Health waited\n\n${reasonForResult(deferredHealth, timeZone)}\n`;
+  const forcedHealth = results.find((result) => result.id === 'workflow-health' && result.decision === 'dispatch' && result.starvationLimitExpired);
+  if (forcedHealth) markdown += `\n### Health starvation override\n\n${reasonForResult(forcedHealth, timeZone)}\n`;
   const observations = results.filter((result) => OBSERVATION_DECISIONS.has(result.decision));
   if (observations.length > 0) {
     markdown += '\n### Dispatch observation notes\n\n';
