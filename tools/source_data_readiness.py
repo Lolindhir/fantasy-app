@@ -133,10 +133,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "CanonicalLastChange": git_last_change(repo_root, f"source-data/nfl/{policy['canonical']}"),
         }
 
-    player_identity_coverage = build_player_stats_identity_coverage(
-        repo_root,
-        current_season=season_now,
-    )
+    player_identity_coverage = build_player_stats_identity_coverage(repo_root, current_season=season_now)
     if player_identity_coverage["HistoricalUnresolvedRecordCount"]:
         hard_failures.append(
             "nflverse.player-stats: "
@@ -149,6 +146,18 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "nflverse.player-stats: "
             f"{player_identity_coverage['HistoricalMissingGSISRecordCount']} historical canonical stat records "
             "lack GSIS source identity"
+        )
+    if player_identity_coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"]:
+        hard_failures.append(
+            "nflverse.player-stats: "
+            f"{player_identity_coverage['HistoricalRawUnclassifiedMissingPlayerIDRecordCount']} historical raw stat rows "
+            "lack player_id and are not recognized team aggregates"
+        )
+    if player_identity_coverage["InvalidNonPlayerCanonicalAssignmentCount"]:
+        hard_failures.append(
+            "nflverse.player-stats: "
+            f"{player_identity_coverage['InvalidNonPlayerCanonicalAssignmentCount']} known non-player aggregate rows "
+            "incorrectly carry CanonicalPlayerID"
         )
     if player_identity_coverage["GSISCanonicalConflictCount"]:
         hard_failures.append(
@@ -170,7 +179,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "Rule": "Historical seasons in the supported source band must be persisted unless an exact partition is explicitly documented as known upstream-unavailable; current not-yet-available evidence is allowed only by dataset availability policy. Unavailable facts are never zero.",
         },
         "HistoricalPlayerIdentityCoverage": player_identity_coverage,
-        "HistoricalPlayerIdentityRule": "Canonical NFL player stats resolve nflverse GSIS player_id directly to stable CanonicalPlayerID. Historical scoring does not depend on Sleeper IDs or archived app Players.json snapshots. Historical unresolved GSIS identity and cross-canonical GSIS conflicts fail readiness closed; current-season unresolved rows remain diagnostic while the season is in progress.",
+        "HistoricalPlayerIdentityRule": "Canonical NFL player stats resolve nflverse GSIS player_id directly to stable CanonicalPlayerID. Historical scoring does not depend on Sleeper IDs or archived app Players.json snapshots. Historical unresolved person identity, unclassified raw rows without player_id, invalid person assignment to known team aggregates, and cross-canonical GSIS conflicts fail readiness closed. Explicit team aggregate rows remain non-player facts. Current-season unresolved rows remain diagnostic while the season is in progress.",
         "FixedHistoricalCoverage": {
             "Schedules": {
                 "SeasonCount": len(schedule_files),
