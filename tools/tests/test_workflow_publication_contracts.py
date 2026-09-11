@@ -27,9 +27,14 @@ REBUILD_WRITERS = {
 }
 
 WORKFLOW_LOCAL_REBUILD_WRITERS = {
+    "source-data-readiness.yml",
     "sync-nfl-source-data.yml",
     "sync-league-source-data.yml",
     "materialize-fantasy-operations-inputs.yml",
+}
+
+DELEGATED_REBUILD_WRITERS = {
+    "sync-nfl-game-finality.yml": "sync-nfl-source-data.yml",
 }
 
 REBASE_WRITERS = {
@@ -174,6 +179,18 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                 self.assertTrue(
                     "max_attempts=" in text or "for attempt in 1 2 3" in text,
                     f"{name} must have a bounded rebuild retry loop",
+                )
+
+    def test_delegated_rebuild_writers_call_rebuild_classified_workflow(self) -> None:
+        for name, delegated_name in sorted(DELEGATED_REBUILD_WRITERS.items()):
+            with self.subTest(workflow=name):
+                text = self.read(name)
+                self.assertIn(f"uses: ./.github/workflows/{delegated_name}", text)
+                delegated_path = f".github/workflows/{delegated_name}"
+                self.assertEqual(
+                    self.classifications.get(delegated_path),
+                    "rebuild-and-retry",
+                    f"{name} delegates to a workflow that is not rebuild-and-retry classified",
                 )
 
     def test_no_known_app_writer_has_naked_head_main_push(self) -> None:
