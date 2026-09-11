@@ -65,14 +65,14 @@ describe('decision-window-view util', () => {
     expect(formatDecisionWindowContext(window)).toBe('NE @ SEA · Week 1');
   });
 
-  it('uses local kickoff time and game count for simultaneous games', () => {
+  it('keeps week and game count first for simultaneous-game context', () => {
     const window = createWindow('2026-09-06T17:00:00Z', 1, {
       Games: [createGame('g1', 'ATL', 'PIT'), createGame('g2', 'BAL', 'IND')]
     });
 
     const label = formatDecisionWindowContext(window);
 
-    expect(label).toContain('2 games · Week 1');
+    expect(label.startsWith('Week 1 · 2 games · ')).toBeTrue();
     expect(label).not.toContain('Sunday Early');
   });
 
@@ -119,7 +119,7 @@ describe('decision-window-view util', () => {
     expect(rows.map(row => row.teamId)).toEqual([4, 3, 2, 1, 5]);
   });
 
-  it('sorts same-state rows by affected starters, then rostered players, then stable order', () => {
+  it('sorts same-state rows by affected Active Roster players, then starters, then stable order', () => {
     const window = createWindow('2026-09-06T17:00:00Z', 1, {
       AffectedFantasyTeams: [
         createAffectedTeam(2, 5, 0),
@@ -131,11 +131,52 @@ describe('decision-window-view util', () => {
 
     const rows = buildDecisionWindowTeamRows(model, window, teams);
 
-    expect(rows.map(row => row.teamId)).toEqual([4, 3, 2, 1, 5]);
+    expect(rows.map(row => row.teamId)).toEqual([2, 4, 3, 1, 5]);
     expect(rows.find(row => row.teamId === 2)?.contextText)
       .toBe('Affected · 5 players · 0 starters');
     expect(rows.find(row => row.teamId === 1)?.contextText)
       .toBe('Not affected · No players in this window');
+  });
+
+  it('excludes Taxi and IR from Decision Window priority when Fantasy Relevance is available', () => {
+    const window = createWindow('2026-09-06T17:00:00Z', 1, {
+      AffectedFantasyTeams: [
+        createAffectedTeam(1, 8, 2),
+        createAffectedTeam(2, 5, 2)
+      ]
+    });
+    const model = createModel([window], teams.map(team => createEvaluation(team.TeamID, 'ready')));
+    model.FantasyRelevance = {
+      Version: 1,
+      SlotDefinitions: [],
+      Teams: [
+        {
+          FantasyTeamID: 1,
+          Players: [
+            { Placement: 'starter', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'starter', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'bench', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'ir', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'taxi', DecisionWindowID: window.DecisionWindowID }
+          ]
+        },
+        {
+          FantasyTeamID: 2,
+          Players: [
+            { Placement: 'starter', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'starter', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'bench', DecisionWindowID: window.DecisionWindowID },
+            { Placement: 'bench', DecisionWindowID: window.DecisionWindowID }
+          ]
+        }
+      ]
+    } as DecisionWindowsReadModel['FantasyRelevance'];
+
+    const rows = buildDecisionWindowTeamRows(model, window, teams);
+
+    expect(rows[0].teamId).toBe(2);
+    expect(rows.find(row => row.teamId === 1)?.affectedActiveRosterPlayerCount).toBe(3);
+    expect(rows.find(row => row.teamId === 2)?.affectedActiveRosterPlayerCount).toBe(4);
   });
 
   it('marks every team pending for lookahead without fabricated counts or relevance reordering', () => {
@@ -149,6 +190,7 @@ describe('decision-window-view util', () => {
 
     expect(rows.every(row => row.state === 'pending')).toBeTrue();
     expect(rows.every(row => row.affectedRosteredPlayerCount === null)).toBeTrue();
+    expect(rows.every(row => row.affectedActiveRosterPlayerCount === null)).toBeTrue();
     expect(rows.every(row => row.affectedStarterCount === null)).toBeTrue();
     expect(rows.every(row => row.contextText === 'Week 2 lineup not available yet')).toBeTrue();
     expect(formatDecisionWindowAffectedSummary(rows)).toBeNull();
