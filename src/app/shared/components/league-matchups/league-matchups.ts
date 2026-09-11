@@ -111,17 +111,17 @@ export class LeagueMatchupsComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
-  private readonly pointsForFormatter = new Intl.NumberFormat('de-DE', {
+  private readonly pointsForFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
   });
 
-  private readonly matchupScoreFormatter = new Intl.NumberFormat('de-DE', {
+  private readonly matchupScoreFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
 
-  private readonly nflScoreFormatter = new Intl.NumberFormat('de-DE', {
+  private readonly nflScoreFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   });
