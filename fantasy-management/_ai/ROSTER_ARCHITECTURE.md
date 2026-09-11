@@ -41,6 +41,81 @@ Verwende separat genau eine aktuelle Sicherheitsstufe:
 
 Roster Security ist dynamisch. Sie muss bei materiellen Änderungen neu abgeleitet werden und darf nicht aus einer alten Analyse fortgeschrieben werden.
 
+### 3.1 Zusatzdimension: `contingent_rb_upside`
+
+Für Running Backs wird neben primärer Roster Role und Roster Security eine eigene kontextuelle Upside-Dimension geführt. Sie ersetzt **keine** der beiden Hauptachsen und macht einen Spieler nicht automatisch zum Hold.
+
+`contingent_rb_upside` beschreibt, wie stark sich der erwartete Fantasy- und Asset-Wert eines RBs erhöht, wenn vor ihm liegende Backfield-Konkurrenz ausfällt oder wegfällt. Verwende mindestens die Stufen `high`, `medium`, `low`, `none` oder `unknown`.
+
+Die Einstufung muss gemeinsam aus folgenden Faktoren abgeleitet werden:
+
+- eigenständiges Talentprofil und NFL-Draftkapital;
+- Alter und Dynasty-/Trade-Liquidität;
+- aktuelle eigenständige Weekly Role ohne Verletzung vor ihm;
+- tatsächliche Position in der aktuellen Backfield-Hierarchie;
+- Wahrscheinlichkeit, bei Ausfall des Starters einen **materiellen** statt nur nominellen Workload zu übernehmen;
+- erwartbare Carry-, Receiving-, Third-Down- und Goal-Line-Beteiligung im Contingency-Szenario;
+- Qualität und Fantasy-Freundlichkeit der Offense;
+- verbleibende Konkurrenz im Backfield;
+- aktueller Marktwert unabhängig vom Injury-Szenario.
+
+Zusätzlich wird `contingency_relation` ausgewiesen:
+
+- `own_starter` – der Spieler sichert einen bereits von Mighty Giants gehaltenen RB direkt ab;
+- `other_roster_starter` – der Spieler hängt primär an einem Starter, den ein anderer Fantasy-Manager hält;
+- `none` – kein klarer einzelner Starterbezug;
+- `unknown` – Hierarchie oder Ownership ist nicht sicher genug aufgelöst.
+
+Eigener Handcuff und fremder Handcuff erfüllen strategisch nicht dieselbe Funktion:
+
+- `own_starter` ist primär ein Hedge gegen eigenen Downside und reduziert Roster-Varianz;
+- `other_roster_starter` ist stärker eine asymmetrische Option: Fällt der fremde Starter aus, kann zusätzlicher Starterwert entstehen, ohne dass gleichzeitig ein eigener Starter verloren geht.
+
+Deshalb gilt **kein pauschales Own-Handcuff-Prinzip**. Ein fremder Premium-Contingency-RB darf für einen tiefen Contender wertvoller sein als ein marginaler eigener Handcuff. Umgekehrt kann ein eigener Handcuff besonders wertvoll sein, wenn der abgesicherte Starter zentral für die Championship-Wahrscheinlichkeit ist und der Backup einen klaren Workhorse-/High-Value-Touch-Pfad besitzt.
+
+Für Cut-/Add-/Waiver-Entscheidungen wird nicht `Prospect vs. Handcuff` als Kategorienvergleich verwendet. Verglichen wird der erwartete Gesamtwert pro Rosterplatz aus:
+
+1. eigenständigem aktuellen Wert;
+2. langfristigem Prospect-/Asset-Wert;
+3. `contingent_rb_upside`;
+4. Portfolio-Effekt der `contingency_relation`;
+5. tatsächlicher Opportunity Cost gegen den aktuellen Mighty-Giants-Boundary-Spieler.
+
+Ein junger RB mit eigenständiger Rolle **und** hohem `contingent_rb_upside` ist ein Dual-Path-Asset und soll gegenüber einem reinen Handcuff oder einem reinen langfristigen Stash entsprechend höher bewertet werden.
+
+### 3.2 Transaktions-Provenance und Reacquisition-Evidenz
+
+Historische Spielerbewegungen dürfen nur nach ihrer tatsächlichen Transaktionsart als Evidenz für Waiver-Nachfrage oder spätere Reacquisition interpretiert werden.
+
+Vor Aussagen wie „der Spieler wäre nach einem Cut sofort weg“, „der Markt hat ihn direkt aufgenommen“ oder „wir hätten ihn nicht zurückbekommen“ muss die Bewegung in `public/data/Transactions.json` aufgelöst werden.
+
+Dabei gilt:
+
+- **Trade-Abgang**: Ein direkter Trade zu einem anderen Manager ist **keine** Evidenz dafür, dass derselbe Spieler nach einem Cut geclaimt worden wäre oder dass Reacquisition über Waiver unmöglich gewesen wäre. Er belegt nur, dass ein konkreter Gegenpart bereit war, im Trade-Kontext Gegenwert zu geben.
+- **Cut/Drop + späterer Add/Claim durch einen anderen Manager**: Das ist echte Evidenz für Reacquisition-Risiko und Waiver-Nachfrage.
+- **Cut/Drop ohne späteren Add**: Das kann – nach ausreichend beobachteter Zeit und Waiver-Gelegenheit – Evidenz für geringere Nachfrage sein, ist aber kein automatischer Beweis für fehlenden Marktwert.
+- **Unklare oder unvollständige Provenance**: Die Schlussfolgerung bleibt `unknown`; aktuelle Ownership allein darf die historische Bewegungsart nicht ersetzen.
+
+Aktueller Ownership-State kommt weiterhin aus `League.json`; Transaktionshistorie dient der **Provenance**, nicht als Ersatz für Current State.
+
+### 3.3 In-Season Usage Freshness nach Saisonstart
+
+Sobald reale NFL-Spiele der aktuellen Saison gespielt wurden, dürfen alte Preseason-, Camp-, Snapchart- oder nominelle Depth-Chart-Annahmen nicht ungeprüft als aktuelle Rollenwahrheit fortgeschrieben werden.
+
+Für aktuelle Roster-, Cut-, Waiver- und Player-Evaluation gilt folgende Evidenz-Priorität, sofern die Quellen ausreichend belastbar und zeitlich vergleichbar sind:
+
+1. aktuelle offizielle Transactions, Injury-/Inactive-Informationen und tatsächlich beobachtete Regular-Season-Usage;
+2. aktuelle Game-Usage wie Snaps, Routes, Carries, Targets, Third-Down-/Two-Minute-/Goal-Line-Arbeit und Special-Teams-Einsatz;
+3. aktuelle offizielle Team-Depth-Charts und belastbare aktuelle Rollenberichte;
+4. aktuelle nominale Sleeper-Depth-Chart-Signale;
+5. ältere Preseason-/Camp-Snapcharts und gespeicherte historische Rollenannahmen.
+
+Ein alter Snapchart bleibt Kontext, aber **kein Current-State-Beweis**, wenn seitdem ein Regular-Season-Spiel, eine relevante Transaktion, eine Verletzungsänderung oder eine materielle Rollenänderung stattgefunden hat. Vor einer aktuellen Empfehlung muss er dann revalidiert oder ausdrücklich als stale markiert werden.
+
+Ein einzelnes Spiel bleibt eine kleine Stichprobe. Deshalb darf Week-1-Usage nicht automatisch als dauerhafte Saisonrolle behandelt werden. Sie ist aber für die **aktuelle** Rollenverteilung regelmäßig stärker als eine ältere Preseason-Annahme, insbesondere wenn die Nutzung klar verteilt war oder mit aktuellem Team-/Beat-Kontext übereinstimmt.
+
+Wenn neue Usage-Evidenz einen Grenzspieler materiell verändert, muss der relevante Vergleichspool vollständig neu bewertet werden. Nicht nur der gerade diskutierte Spieler darf wegen neuer Snap-/Route-/Touch-Information verschoben werden.
+
 ## 4. Positionsspezifische Coverage-Guardrail
 
 ### 4.1 Starter-Minimum immer dynamisch ableiten
@@ -385,6 +460,9 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 
 - `roster_role` je relevanter Mighty-Giants-Spieler;
 - `roster_security` je relevanter Mighty-Giants-Spieler;
+- bei relevanten RB-Grenzfällen `contingent_rb_upside` und `contingency_relation` sowie den getrennten eigenständigen und Injury-Contingency-Pfad;
+- bei Aussagen über frühere Cuts, Reacquisition oder gegnerische Nachfrage die in `Transactions.json` aufgelöste Transaktions-Provenance; Trade-Transfers dürfen nicht als Waiver-Evidenz gezählt werden;
+- nach Saisonstart bei Rollenentscheidungen die Freshness der verwendeten Usage-/Snap-/Depth-Chart-Evidenz; ältere Preseason-/Snapcharts dürfen aktuelle Regular-Season-Usage nicht ungeprüft überstimmen;
 - aktuelle harte aktive Kapazität;
 - `materialized_roster_count`, `pending_controlled_draft_count`, `effective_controlled_roster_count` und `effective_active_roster_count` inklusive der verwendeten aktuellen `League.json`-/`Drafts.json`-Stände;
 - dynamisch abgeleitete feste Starteranforderungen je Position;
