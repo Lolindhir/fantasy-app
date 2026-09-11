@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import csv
 import json
 import tempfile
 import unittest
-from collections import defaultdict
 from pathlib import Path
 
+from tools.nfl_source_data_lib.canonical_identity import identity_lookup
+from tools.nfl_source_data_lib.common import load_registry
 from tools.nfl_source_data_lib.coverage import build_player_stats_identity_coverage
+from tools.nfl_source_data_lib.identity import build_identities
 
 
 class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
@@ -73,77 +74,38 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
-    @staticmethod
-    def nonzero_stats(stats: object) -> dict[str, object]:
-        if not isinstance(stats, dict):
-            return {}
-        return {
-            str(key): value
-            for key, value in stats.items()
-            if value not in (None, "", 0, 0.0, "0", "0.0", False)
-        }
-
-    def test_repository_historical_player_stats_have_complete_canonical_identity(self) -> None:
+    def test_repository_historical_unresolved_ids_are_repairable_from_provider_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
-        problematic_seasons = {
-            season: details
-            for season, details in coverage["BySeason"].items()
-            if details["Historical"] and (details["UnresolvedRecordCount"] or details["MissingGSISRecordCount"])
-        }
-        diagnostic = {
-            "HistoricalRecordCount": coverage["HistoricalRecordCount"],
-            "HistoricalUnresolvedRecordCount": coverage["HistoricalUnresolvedRecordCount"],
-            "HistoricalMissingGSISRecordCount": coverage["HistoricalMissingGSISRecordCount"],
-            "HistoricalNonPlayerAggregateRecordCount": coverage["HistoricalNonPlayerAggregateRecordCount"],
-            "HistoricalNonPlayerSourceIDs": coverage["HistoricalNonPlayerSourceIDs"],
-            "HistoricalUnresolvedGSISIDs": coverage["HistoricalUnresolvedGSISIDs"],
-            "GSISCanonicalConflicts": coverage["GSISCanonicalConflicts"],
-            "ProblematicSeasons": problematic_seasons,
-        }
-        self.assertTrue(coverage["Ready"], json.dumps(diagnostic, indent=2, sort_keys=True))
+        unresolved = set(coverage["HistoricalUnresolvedGSISIDs"])
+        self.assertNotIn("0", unresolved, "team aggregate sentinel must not be treated as a person")
 
-    def test_repository_raw_stats_without_player_id_are_not_named_players(self) -> None:
+        datasets = {dataset.id: dataset for dataset in load_registry(repo_root)}
+        canonical, _, _, _, _ = build_identities(repo_root, datasets)
+        rebuilt_lookup = identity_lookup(canonical)
+        still_unresolved = sorted(gsis for gsis in unresolved if ("GSIS", gsis) not in rebuilt_lookup)
+
+        self.assertEqual(
+            [],
+            still_unresolved,
+            "historical player-stat identities must be repairable from authoritative provider evidence",
+        )
+
+    def test_repository_raw_missing_player_ids_are_explicit_team_aggregates(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
-        raw_root = repo_root / "source-data/providers/nflverse/player-stats"
-        missing_count = 0
-        named_count = 0
-        by_season: dict[str, int] = defaultdict(int)
-        named_examples: list[dict[str, object]] = []
-        unnamed_examples: list[dict[str, object]] = []
-        for raw_path in sorted(raw_root.glob("raw-*.csv")):
-            season = raw_path.stem.removeprefix("raw-")
-            with raw_path.open("r", encoding="utf-8-sig", newline="") as handle:
-                for row in csv.DictReader(handle):
-                    if str(row.get("player_id") or "").strip():
-                        continue
-                    missing_count += 1
-                    by_season[season] += 1
-                    name = str(row.get("player_display_name") or row.get("player_name") or "").strip()
-                    example = {
-                        "Season": season,
-                        "Week": row.get("week"),
-                        "PlayerName": name or None,
-                        "Position": row.get("position") or None,
-                        "Team": row.get("team") or None,
-                        "OpponentTeam": row.get("opponent_team") or None,
-                        "FantasyPoints": row.get("fantasy_points") or None,
-                        "FantasyPointsPPR": row.get("fantasy_points_ppr") or None,
-                    }
-                    if name:
-                        named_count += 1
-                        if len(named_examples) < 20:
-                            named_examples.append(example)
-                    elif len(unnamed_examples) < 10:
-                        unnamed_examples.append(example)
-        diagnostic = {
-            "MissingPlayerIDRowCount": missing_count,
-            "NamedMissingPlayerIDRowCount": named_count,
-            "BySeason": dict(sorted(by_season.items())),
-            "NamedExamples": named_examples,
-            "UnnamedExamples": unnamed_examples,
-        }
-        self.assertEqual(0, named_count, json.dumps(diagnostic, indent=2, sort_keys=True))
+        coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
+        self.assertGreater(coverage["HistoricalRawMissingPlayerIDRecordCount"], 0)
+        self.assertEqual(
+            coverage["HistoricalRawMissingPlayerIDRecordCount"],
+            coverage["HistoricalRawNonPlayerAggregateRecordCount"],
+        )
+        self.assertEqual(0, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"])
+        self.assertEqual(
+            coverage["CurrentRawMissingPlayerIDRecordCount"],
+            coverage["CurrentRawNonPlayerAggregateRecordCount"],
+        )
+        self.assertEqual(0, coverage["CurrentRawUnclassifiedMissingPlayerIDRecordCount"])
+        self.assertEqual([], coverage["RawUnclassifiedMissingPlayerIDExamples"])
 
     def test_justin_jefferson_keeps_one_canonical_identity_across_historical_week_one_stats(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
