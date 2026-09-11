@@ -1,5 +1,7 @@
 from pathlib import Path
+import os
 import re
+import subprocess
 import unittest
 
 
@@ -38,6 +40,30 @@ class RequestGamesScoreRecoveryTests(unittest.TestCase):
         self.assertIn("gameStatus -match '^Final'", self.source)
         self.assertNotRegex(retry_section, re.compile(r"gameStatus\s*="))
         self.assertNotRegex(retry_section, re.compile(r"gameStatusCode\s*="))
+
+    def test_request_games_has_valid_powershell_syntax(self):
+        env = dict(os.environ)
+        env["REQUEST_GAMES_PATH"] = str(REQUEST_GAMES)
+        command = (
+            "$tokens = $null; $errors = $null; "
+            "[System.Management.Automation.Language.Parser]::ParseFile("
+            "$env:REQUEST_GAMES_PATH, [ref]$tokens, [ref]$errors) | Out-Null; "
+            "if ($errors.Count -gt 0) { "
+            "$errors | ForEach-Object { Write-Error $_.Message }; exit 1 }"
+        )
+        completed = subprocess.run(
+            ["pwsh", "-NoProfile", "-Command", command],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            msg=f"PowerShell parser errors:\n{completed.stdout}\n{completed.stderr}",
+        )
 
 
 if __name__ == "__main__":
