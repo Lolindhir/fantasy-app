@@ -58,11 +58,11 @@ export interface FantasyGameContextDialogData {
 export class FantasyGameContextDialogComponent {
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
-  private readonly fantasyScoreFormatter = new Intl.NumberFormat('de-DE', {
+  private readonly fantasyScoreFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
-  private readonly nflScoreFormatter = new Intl.NumberFormat('de-DE', {
+  private readonly nflScoreFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   });
