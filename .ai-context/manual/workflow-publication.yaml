@@ -12,13 +12,16 @@ principles:
   - Real generator failures, unexpected changed paths and non-race Git failures fail closed.
   - Cross-workflow serialization is not the primary safety mechanism; independent writers may remain parallel when publication semantics are race-safe.
   - Generated-data writers publish only their declared output scope.
+  - Every workflow that requests repository content write permission, or otherwise contains recognized branch-publication behavior, must be explicitly classified here before CI may accept it.
+  - A workflow that intentionally needs contents write for a non-branch surface must still be classified as non-branch-writer; write permission is never an implicit exemption from publication review.
+  - Classified workflow paths must remain synchronized with the real workflow inventory; deleted or renamed workflows leave no stale classification entries.
 
 classes:
   rebase-and-retry:
     helper: tools/publish_generated_commit.py
     meaning: One self-contained generated snapshot may be rebased onto a newer target branch; content is not recomputed.
   rebuild-and-retry:
-    helper: tools/rebuild_and_publish.py or workflow-local equivalent with the same semantics
+    helper: tools/rebuild_and_publish.py or workflow-local/delegated equivalent with the same semantics
     meaning: The generator is rerun from the latest target branch after every recognized publication race.
   isolated-branch:
     meaning: State is intentionally published to a dedicated non-main branch and must not compete with main writers.
@@ -35,6 +38,8 @@ writers:
   .github/workflows/update-teams.yml: rebuild-and-retry
   .github/workflows/update-past-seasons-index.yml: rebuild-and-retry
   .github/workflows/clean-backups.yml: rebuild-and-retry
+  .github/workflows/source-data-readiness.yml: rebuild-and-retry
+  .github/workflows/sync-nfl-game-finality.yml: rebuild-and-retry
   .github/workflows/sync-nfl-source-data.yml: rebuild-and-retry
   .github/workflows/sync-league-source-data.yml: rebuild-and-retry
   .github/workflows/materialize-fantasy-operations-inputs.yml: rebuild-and-retry
@@ -50,8 +55,15 @@ writers:
 validation:
   regressionTest: tools/tests/test_workflow_publication_contracts.py
   rebuildHelperTests: tools/tests/test_rebuild_and_publish.py
+  coverageRule: >-
+    CI inventories every .github/workflows/*.yml and *.yaml file. A workflow requires
+    explicit classification when it requests contents: write/write-all at workflow
+    or job scope, or when recognized branch-publication markers are present.
   rules:
-    - Every workflow listed as rebuild-and-retry must either invoke tools/rebuild_and_publish.py or contain an explicitly reviewed workflow-local rebuild loop.
+    - Every workflow requiring publication classification must have exactly one writers entry above.
+    - Every writers entry must point to an existing workflow file and use a declared class.
+    - Every workflow listed as rebuild-and-retry must invoke tools/rebuild_and_publish.py, contain an explicitly reviewed workflow-local rebuild loop, or delegate to a reusable workflow with the same classified rebuild semantics.
     - Every workflow listed as rebase-and-retry must invoke tools/publish_generated_commit.py.
+    - Workflows classified non-branch-writer must not contain recognized branch-publication markers.
     - App/Maintenance generated-data workflows must not contain a naked direct HEAD:main push.
     - App/Maintenance generated-data workflows need contents: write only unless another permission is separately justified.
