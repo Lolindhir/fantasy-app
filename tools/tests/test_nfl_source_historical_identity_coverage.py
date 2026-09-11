@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from collections import defaultdict
 from pathlib import Path
 
 from tools.nfl_source_data_lib.coverage import build_player_stats_identity_coverage
@@ -91,6 +92,29 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
             if details["Historical"]
             and (details["UnresolvedRecordCount"] or details["MissingGSISRecordCount"])
         }
+        unresolved_ids = set(coverage["HistoricalUnresolvedGSISIDs"])
+        unresolved_examples: dict[str, list[dict[str, object]]] = defaultdict(list)
+        for season, details in problematic_seasons.items():
+            season_root = repo_root / f"source-data/nfl/player-stats/{season}"
+            for partition in sorted(season_root.glob("*.json")):
+                payload = json.loads(partition.read_text(encoding="utf-8"))
+                for record in payload.get("Records", []):
+                    gsis = str((record.get("SourceIDs") or {}).get("GSIS") or "")
+                    if gsis not in unresolved_ids or record.get("CanonicalPlayerID"):
+                        continue
+                    if len(unresolved_examples[gsis]) >= 5:
+                        continue
+                    unresolved_examples[gsis].append(
+                        {
+                            "Season": int(season),
+                            "Week": record.get("Week"),
+                            "SeasonType": record.get("SeasonType"),
+                            "PlayerName": record.get("PlayerName"),
+                            "Position": record.get("Position"),
+                            "Team": record.get("Team"),
+                            "OpponentTeam": record.get("OpponentTeam"),
+                        }
+                    )
         diagnostic = {
             "HistoricalRecordCount": coverage["HistoricalRecordCount"],
             "HistoricalUnresolvedRecordCount": coverage["HistoricalUnresolvedRecordCount"],
@@ -98,6 +122,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
             "HistoricalUnresolvedGSISIDs": coverage["HistoricalUnresolvedGSISIDs"],
             "GSISCanonicalConflicts": coverage["GSISCanonicalConflicts"],
             "ProblematicSeasons": problematic_seasons,
+            "UnresolvedExamples": dict(sorted(unresolved_examples.items())),
         }
         self.assertTrue(coverage["Ready"], json.dumps(diagnostic, indent=2, sort_keys=True))
 
