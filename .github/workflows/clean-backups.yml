@@ -4,10 +4,10 @@ on:
   repository_dispatch:
     types:
       - scheduler-clean-backups
-  workflow_dispatch: # Manueller Start
+  workflow_dispatch:
 
 permissions:
-  contents: write      # für Commit + Push
+  contents: write
 
 jobs:
   cleanup:
@@ -19,35 +19,10 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_PUSH }}
 
-      - name: Cleanup Backups
-        run: |
-          BACKUP_DIR="public/data/backup"
-          cd $BACKUP_DIR || exit 1
-
-          for TYPE in $(ls | sed -E 's/_.*//' | sort -u); do
-            echo "Processing type: $TYPE"
-            FILES=($(ls ${TYPE}_* | sort))
-            COUNT=${#FILES[@]}
-            if [ $COUNT -gt 5 ]; then
-              TO_DELETE=$((COUNT - 5))
-              echo "Deleting $TO_DELETE old files of type $TYPE"
-              for FILE in "${FILES[@]:0:$TO_DELETE}"; do
-                echo "Deleting $FILE"
-                rm "$FILE"
-              done
-            fi
-          done
-
-      - name: Commit and push changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add -A -- public/data/backup
-          before_commit="$(git rev-parse HEAD)"
-          pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope backup-cleanup
-          after_commit="$(git rev-parse HEAD)"
-          if [ "$before_commit" = "$after_commit" ]; then
-            echo "No data commit created. Push skipped."
-            exit 0
-          fi
-          git push https://x-access-token:${{ secrets.PAT_PUSH }}@github.com/${{ github.repository }} HEAD:main
+      - name: Rebuild and publish backup retention
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope backup-cleanup
+          --path public/data/backup
+          --
+          python3 tools/cleanup_backups.py

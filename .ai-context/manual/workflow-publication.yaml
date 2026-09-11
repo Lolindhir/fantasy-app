@@ -1,0 +1,57 @@
+schemaVersion: 1
+status: active
+purpose: >-
+  Canonical publication-safety contract for GitHub Actions workflows that mutate
+  repository branches. It classifies each branch writer by how it must react when
+  the target branch advances while work is in flight.
+
+principles:
+  - Never force-push to resolve an automated publication race.
+  - Self-contained snapshots may use rebase-and-retry when their content does not depend on repository state that can change during the run.
+  - Repository-derived outputs must use rebuild-and-retry: fetch latest target, discard the stale generated commit, rerun the generator, then retry publication.
+  - Real generator failures, unexpected changed paths and non-race Git failures fail closed.
+  - Cross-workflow serialization is not the primary safety mechanism; independent writers may remain parallel when publication semantics are race-safe.
+  - Generated-data writers publish only their declared output scope.
+
+classes:
+  rebase-and-retry:
+    helper: tools/publish_generated_commit.py
+    meaning: One self-contained generated snapshot may be rebased onto a newer target branch; content is not recomputed.
+  rebuild-and-retry:
+    helper: tools/rebuild_and_publish.py or workflow-local equivalent with the same semantics
+    meaning: The generator is rerun from the latest target branch after every recognized publication race.
+  isolated-branch:
+    meaning: State is intentionally published to a dedicated non-main branch and must not compete with main writers.
+  non-branch-writer:
+    meaning: Workflow may hold write permissions for another GitHub surface but does not publish repository branch content.
+
+writers:
+  .github/workflows/update-league.yml: rebuild-and-retry
+  .github/workflows/update-players.yml: rebuild-and-retry
+  .github/workflows/update-games.yml: rebuild-and-retry
+  .github/workflows/update-drafts.yml: rebuild-and-retry
+  .github/workflows/update-transactions.yml: rebuild-and-retry
+  .github/workflows/update-standings.yml: rebuild-and-retry
+  .github/workflows/update-teams.yml: rebuild-and-retry
+  .github/workflows/update-past-seasons-index.yml: rebuild-and-retry
+  .github/workflows/clean-backups.yml: rebuild-and-retry
+  .github/workflows/sync-nfl-source-data.yml: rebuild-and-retry
+  .github/workflows/sync-league-source-data.yml: rebuild-and-retry
+  .github/workflows/materialize-fantasy-operations-inputs.yml: rebuild-and-retry
+  .github/workflows/update-fantasypros-rankings.yml: rebase-and-retry
+  .github/workflows/update-fantasycalc-rankings.yml: rebase-and-retry
+  .github/workflows/update-fantasy-football-calculator-adp.yml: rebase-and-retry
+  .github/workflows/update-fftoday-projections.yml: rebase-and-retry
+  .github/workflows/update-cbs-sports-projections.yml: rebase-and-retry
+  .github/workflows/update-sleeper-trending.yml: rebase-and-retry
+  .github/workflows/workflow-health-snapshot.yml: isolated-branch
+  .github/workflows/scheduler.yml: isolated-branch
+
+validation:
+  regressionTest: tools/tests/test_workflow_publication_contracts.py
+  rebuildHelperTests: tools/tests/test_rebuild_and_publish.py
+  rules:
+    - Every workflow listed as rebuild-and-retry must either invoke tools/rebuild_and_publish.py or contain an explicitly reviewed workflow-local rebuild loop.
+    - Every workflow listed as rebase-and-retry must invoke tools/publish_generated_commit.py.
+    - App/Maintenance generated-data workflows must not contain a naked direct HEAD:main push.
+    - App/Maintenance generated-data workflows need contents: write only unless another permission is separately justified.
