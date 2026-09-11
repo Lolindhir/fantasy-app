@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-11T04:54:44Z",
-  "input_fingerprint": "352aec4e2982f897971b31c440c1d4729f8df98a2c577d16d86141fdb7ac1499",
+  "generated_at": "2026-09-11T05:19:40Z",
+  "input_fingerprint": "6c23f4b254b01e7320f71691e3fbc318ed2c60cce1453c39de4345a2858bb95e",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -19,14 +19,14 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "5f9c643ca7ec359f2470ec4dabe563ca37809aa9d72a36d186d099379291b753",
-      "source_timestamp": "2026-09-10T17:34:52Z"
+      "content_sha256": "526978aa1d0a5faba1b9b10097ebaf1f64fba22ad4f6338e2fb68955ca228c60",
+      "source_timestamp": "2026-09-11T05:19:40Z"
     },
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "d3b7fbf9356efbee66c30d5784bd8b61f45d6940de419da3fdf558c9f6e35ff6",
-      "source_timestamp": "2026-09-11T04:54:44Z"
+      "content_sha256": "606e76ec056df23845bc8b4a40a9830bd0d2f7d64c7b17dfc642103e15382c71",
+      "source_timestamp": "2026-09-11T05:19:40Z"
     },
     {
       "id": "operations_source_catalog",
@@ -520,13 +520,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Sep 8: Kansas City head coach Andy Reid said Tuesday that Mahomes (knee) has a \"pretty good chance\" to start next Monday's season opener versus the Broncos, Sam McDowell of The Kansas City Star reports.",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
-        "return_date": "20260914",
-        "external_verification_priority": "high",
+        "return_date": null,
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -877,10 +877,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -1288,7 +1287,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 10: Meyers (thumb) was spotted in a non-contact jersey at Thursday's practice, Ryan O'Halloran of The Florida Times-Union reports.",
+        "description": "Sep 10: Meyers (thumb) was a limited participant in Thursday's practice.",
         "reported_date": null,
         "return_date": "20260913",
         "external_verification_priority": "high",
@@ -2817,7 +2816,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 9: Pierce was a limited participant in Wednesday's practice due to a heel injury.",
+        "description": "Sep 10: Pierce (heel) was a limited participant at Thursday's practice.",
         "reported_date": null,
         "return_date": "20260913",
         "external_verification_priority": "high",
@@ -5496,7 +5495,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 9: Brooks (groin) was listed as a limited participant in Wednesday's practice.",
+        "description": "Sep 10: Brooks (groin) was a limited participant in Thursday's practice.",
         "reported_date": "20240801",
         "return_date": "20260913",
         "external_verification_priority": "high",
@@ -6261,7 +6260,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 9: Nabers (knee) participated in drills at Wednesday's practice, Connor Hughes of SNY.tv reports.",
+        "description": "Sep 10: Nabers (knee) logged another full practice Thursday, Connor Hughes of SNY.tv reports.",
         "reported_date": null,
         "return_date": "20260913",
         "external_verification_priority": "high",
@@ -11230,7 +11229,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 9: Love (ankle) was a limited practice participant Wednesday, Bo Brack of GoPHNX.com reports.",
+        "description": "Sep 10: Love (ankle) remained a limited practice participant Thursday, Bo Brack of GoPHNX.com reports.",
         "reported_date": null,
         "return_date": "20260913",
         "external_verification_priority": "high",
@@ -12376,13 +12375,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 10: Stribling (ankle) has been ruled out for the remainder of Thursday's game against the Rams, Matt Maiocco of NBC Sports Bay Area reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260920",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -12733,9 +12732,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
