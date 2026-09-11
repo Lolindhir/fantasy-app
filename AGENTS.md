@@ -38,10 +38,11 @@ Before making architecture, data model, generation or frontend changes, read:
 2. `.ai-context/manual/ai-guidance.yaml`
 3. `.ai-context/manual/work-tracking.yaml`
 4. `.ai-context/manual/workflow-monitoring.yaml`
-5. `.ai-context/manual/architecture.yaml`
-6. `.ai-context/manual/domain.yaml`
-7. `.ai-context/manual/data-sources.yaml`
-8. `.ai-context/manual/decisions.yaml`
+5. `.ai-context/manual/workflow-publication.yaml`
+6. `.ai-context/manual/architecture.yaml`
+7. `.ai-context/manual/domain.yaml`
+8. `.ai-context/manual/data-sources.yaml`
+9. `.ai-context/manual/decisions.yaml`
 
 ## Source-of-truth rules
 
@@ -62,10 +63,12 @@ Before making architecture, data model, generation or frontend changes, read:
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
 - Fantasy Management rules, sources, workflows, stored analyses and decisions belong under `fantasy-management/`.
 - Repository work tracking belongs in GitHub Issues according to `.ai-context/manual/work-tracking.yaml`; do not create parallel Markdown todo lists.
+- Workflow publication/race-safety classification belongs in `.ai-context/manual/workflow-publication.yaml`.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
 - When updating application documentation:
   - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
   - work-tracking and label semantics go to `.ai-context/manual/work-tracking.yaml`
+  - workflow publication and branch-writer race-safety rules go to `.ai-context/manual/workflow-publication.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
   - domain rules go to `.ai-context/manual/domain.yaml`
   - data sources and data flow go to `.ai-context/manual/data-sources.yaml`
@@ -99,6 +102,7 @@ Exception:
 
 - Do not create, modify, enable or commit GitHub Actions workflow files unless the user has explicitly approved the specific workflow change.
 - Every GitHub Actions workflow that is created, renamed or materially repurposed must be classified in `.ai-context/manual/workflow-monitoring.yaml` in the same authorized change; unclassified workflows are a fail-closed monitoring configuration error.
+- Every repository branch writer must follow the publication class assigned in `.ai-context/manual/workflow-publication.yaml`.
 - Topic-specific, one-off, migration, upload, recovery or branch-manipulation workflows are prohibited by default.
 - For one-off tasks, use existing repository tooling, local scripts, connector actions or temporary uncommitted files. If no safe alternative exists, ask for explicit approval before touching `.github/workflows/`.
 
