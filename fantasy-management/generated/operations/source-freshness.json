@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-11T04:02:06.537408Z",
+  "generated_at": "2026-09-11T04:16:54.161453Z",
   "berlin_date": "2026-09-11",
   "timezone": "Europe/Berlin",
   "morning_cycle": {
@@ -11,8 +11,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 4,
-    "stale_count": 2,
+    "fresh_count": 5,
+    "stale_count": 1,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -23,17 +23,14 @@
     "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "cbs-sports",
       "sleeper-trending"
     ],
     "blocking_source_ids": [],
     "no_event_blocking_source_ids": [
-      "cbs-sports",
       "sleeper-trending"
     ],
     "affected_signal_families": [
-      "external_activity",
-      "season_projection"
+      "external_activity"
     ]
   },
   "sources": [
@@ -51,7 +48,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-11T03:24:16.870810Z",
-      "age_minutes": 37.83,
+      "age_minutes": 52.62,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -69,7 +66,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-11T03:39:14.913917Z",
-      "age_minutes": 22.86,
+      "age_minutes": 37.65,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -86,7 +83,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-11T03:49:43.354889Z",
-      "age_minutes": 12.39,
+      "age_minutes": 27.18,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -103,7 +100,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-11T03:59:17.581901Z",
-      "age_minutes": 2.82,
+      "age_minutes": 17.61,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -117,10 +114,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-10T04:14:29.323035Z",
-      "age_minutes": 1427.62,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-11T04:14:13.702848Z",
+      "age_minutes": 2.67,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -137,7 +134,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-10T04:24:17.110856Z",
-      "age_minutes": 1417.82,
+      "age_minutes": 1432.62,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
