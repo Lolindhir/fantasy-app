@@ -83,6 +83,16 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
+    @staticmethod
+    def nonzero_stats(stats: object) -> dict[str, object]:
+        if not isinstance(stats, dict):
+            return {}
+        return {
+            str(key): value
+            for key, value in stats.items()
+            if value not in (None, "", 0, 0.0, "0", "0.0", False)
+        }
+
     def test_repository_historical_player_stats_have_complete_canonical_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -113,6 +123,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
                             "Position": record.get("Position"),
                             "Team": record.get("Team"),
                             "OpponentTeam": record.get("OpponentTeam"),
+                            "NonZeroStats": self.nonzero_stats(record.get("Stats")),
                         }
                     )
         diagnostic = {
