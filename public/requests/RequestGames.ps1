@@ -223,7 +223,7 @@ $scoreWeeks = @(
 )
 
 foreach ($scoreWeek in $scoreWeeks) {
-    $scoresUrl = "https://$apiHost/getNFLScoresOnly?week=$scoreWeek&season=$year"
+    $scoresUrl = "https://$apiHost/getNFLScoresOnly?gameWeek=$scoreWeek&season=$year"
     try {
         Write-Host "Fetching final NFL scores for Week $scoreWeek..." -ForegroundColor Yellow
         $scoresResponse = Invoke-Tank01-With-Fallback -Url $scoresUrl -Keys $apiKeys
