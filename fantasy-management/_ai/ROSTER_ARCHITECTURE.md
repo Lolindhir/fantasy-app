@@ -361,9 +361,13 @@ Bis zum ersten Ligaspiel können die Mighty Giants die Taxi-Belegung noch verän
 Unmittelbar vor dem ersten Ligaspiel muss eine explizite Taxi-Entscheidung getroffen werden:
 
 1. alle dann Taxi-eligible Rookies mit aktuellen Rollen-, Injury-, Markt-, Draftkapital- und Opportunity-Daten neu ranken;
-2. die zwei besten Spieler auswählen, deren kurzfristige Lineup-/Coverage-Utility am ehesten verzichtbar ist und deren Entwicklungs-/Upside-Wert durch Taxi am sinnvollsten konserviert wird;
-3. prüfen, welche Rookies wegen erwarteter früher Weekly Utility oder Positions-Coverage besser aktiv bleiben sollten;
-4. erst danach die finale Taxi-Belegung festlegen.
+2. für jeden ernsthaften Taxi-Kandidaten zusätzlich `retention_confidence` und `post_taxi_churn_risk` bewerten: Wie wahrscheinlich ist es, dass der Spieler nach Ende seiner Taxi-Eligibility einen aktiven Rosterplatz gegenüber der dann erwartbaren Churn-/Retention-Boundary tatsächlich rechtfertigt?
+3. die zwei besten Spieler auswählen, deren kurzfristige Lineup-/Coverage-Utility am ehesten verzichtbar ist und deren Entwicklungs-/Upside-Wert durch Taxi am sinnvollsten konserviert wird; hohe erwartete Production/Upside erzeugt dabei keinen automatischen Vorrang, wenn geringe `retention_confidence` bzw. hohes `post_taxi_churn_risk` erwarten lassen, dass der Spieler nach Taxi sehr wahrscheinlich wieder freigesetzt würde;
+4. bei ähnlich attraktiven Entwicklungsprofilen darf ein Prospect mit etwas niedrigerer kurzfristiger Production Projection vorgezogen werden, wenn seine langfristige Retention-Wahrscheinlichkeit, Asset-Liquidität oder Chance auf einen dauerhaft gerechtfertigten aktiven Rosterplatz deutlich höher ist;
+5. prüfen, welche Rookies wegen erwarteter früher Weekly Utility oder Positions-Coverage besser aktiv bleiben sollten;
+6. erst danach die finale Taxi-Belegung festlegen.
+
+`retention_confidence` und `post_taxi_churn_risk` sind dynamische Entscheidungsdimensionen und keine permanente Spielerklassifikation. Sie müssen aus aktuellem Rollenpfad, Draftkapital, Markt-/Trade-Wert, erwartbarer Konkurrenz, Salary-/Roster-Kontext und der absehbaren Mighty-Giants-Retention-Boundary neu abgeleitet werden. Die Taxi-Regel ergänzt die allgemeine Retention-Line aus Abschnitt 8.4; sie ersetzt sie nicht und macht kurzfristige Production Projection weiterhin zu einem relevanten, aber nicht allein ausreichenden Taxi-Signal.
 
 ### Nach dem Taxi-Lock
 
@@ -388,6 +392,7 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - aktuellen `startable_skill_pool`, `required_skill_lineup_slots` und `skill_pool_margin`;
 - aktuelle Taxi-Phase: `pre_lock` oder `locked`;
 - bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool einschließlich noch nicht materialisierter eigener Draft-Picks und die aktuell optimale **virtuelle** Taxi-Zuweisung;
+- bei einer materiellen Taxi-Entscheidung vor dem Lock für die ernsthaften Kandidaten: `retention_confidence`, `post_taxi_churn_risk` und die Begründung, wie erwartete Production/Upside gegen die Wahrscheinlichkeit eines später dauerhaft gerechtfertigten aktiven Rosterplatzes abgewogen wurde;
 - bei `locked`: die tatsächliche bindende Taxi-Zuweisung;
 - aktuelle Anzahl allgemeiner Churn-Slots;
 - aktuelle Churn-/Conditional-Boundary;
