@@ -1,11 +1,86 @@
 from __future__ import annotations
 
+import csv
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from .common import clean, load_json
 from .historical_identity import non_player_stat_identity
+
+_RAW_STATS_PATTERN = re.compile(r"^raw-(\d{4})\.csv$")
+
+
+def _raw_player_stats_identity_coverage(repo_root: Path, current_season: int) -> dict[str, Any]:
+    root = repo_root / "source-data/providers/nflverse/player-stats"
+    by_season: dict[str, dict[str, int]] = {}
+    historical_missing = 0
+    historical_aggregates = 0
+    historical_unclassified = 0
+    current_missing = 0
+    current_aggregates = 0
+    current_unclassified = 0
+    unclassified_examples: list[dict[str, Any]] = []
+
+    for path in sorted(root.glob("raw-*.csv")):
+        match = _RAW_STATS_PATTERN.fullmatch(path.name)
+        if not match:
+            continue
+        season = int(match.group(1))
+        missing = aggregates = unclassified = 0
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            for row in csv.DictReader(handle):
+                if clean(row.get("player_id")):
+                    continue
+                missing += 1
+                name = clean(row.get("player_display_name")) or clean(row.get("player_name"))
+                position = clean(row.get("position"))
+                # nflverse emits team-level rows without a player_id. Across the
+                # persisted source history these rows are either unnamed or carry
+                # the literal provider label "Team" and have no player position.
+                # They are game/team facts, not unresolved people.
+                is_team_aggregate = position is None and (name is None or name.casefold() == "team")
+                if is_team_aggregate:
+                    aggregates += 1
+                else:
+                    unclassified += 1
+                    if len(unclassified_examples) < 20:
+                        unclassified_examples.append(
+                            {
+                                "Season": season,
+                                "Week": clean(row.get("week")),
+                                "PlayerName": name,
+                                "Position": position,
+                                "Team": clean(row.get("team")),
+                                "OpponentTeam": clean(row.get("opponent_team")),
+                            }
+                        )
+        if missing:
+            by_season[str(season)] = {
+                "MissingPlayerIDRecordCount": missing,
+                "NonPlayerAggregateRecordCount": aggregates,
+                "UnclassifiedMissingPlayerIDRecordCount": unclassified,
+            }
+        if season < int(current_season):
+            historical_missing += missing
+            historical_aggregates += aggregates
+            historical_unclassified += unclassified
+        else:
+            current_missing += missing
+            current_aggregates += aggregates
+            current_unclassified += unclassified
+
+    return {
+        "HistoricalRawMissingPlayerIDRecordCount": historical_missing,
+        "HistoricalRawNonPlayerAggregateRecordCount": historical_aggregates,
+        "HistoricalRawUnclassifiedMissingPlayerIDRecordCount": historical_unclassified,
+        "CurrentRawMissingPlayerIDRecordCount": current_missing,
+        "CurrentRawNonPlayerAggregateRecordCount": current_aggregates,
+        "CurrentRawUnclassifiedMissingPlayerIDRecordCount": current_unclassified,
+        "RawUnclassifiedMissingPlayerIDExamples": unclassified_examples,
+        "RawMissingPlayerIDBySeason": by_season,
+    }
 
 
 def build_player_stats_identity_coverage(
@@ -22,6 +97,7 @@ def build_player_stats_identity_coverage(
     """
 
     root = repo_root / "source-data/nfl/player-stats"
+    raw_coverage = _raw_player_stats_identity_coverage(repo_root, current_season)
     by_season: dict[str, dict[str, Any]] = {}
     gsis_to_canonical: dict[str, set[str]] = defaultdict(set)
     canonical_to_seasons: dict[str, set[int]] = defaultdict(set)
@@ -44,6 +120,7 @@ def build_player_stats_identity_coverage(
 
     if not root.exists():
         return {
+            **raw_coverage,
             "HistoricalRecordCount": 0,
             "HistoricalResolvedRecordCount": 0,
             "HistoricalUnresolvedRecordCount": 0,
@@ -75,11 +152,7 @@ def build_player_stats_identity_coverage(
     ):
         season = int(season_dir.name)
         historical = season < int(current_season)
-        record_count = 0
-        resolved_count = 0
-        unresolved_count = 0
-        missing_gsis_count = 0
-        non_player_count = 0
+        record_count = resolved_count = unresolved_count = missing_gsis_count = non_player_count = 0
         unresolved_gsis: set[str] = set()
         non_player_ids: set[str] = set()
         unique_gsis: set[str] = set()
@@ -110,11 +183,7 @@ def build_player_stats_identity_coverage(
                         non_player_ids.add(gsis)
                     if canonical_player_id:
                         invalid_non_player_assignments.append(
-                            {
-                                "Season": str(season),
-                                "SourceID": gsis or "",
-                                "CanonicalPlayerID": canonical_player_id,
-                            }
+                            {"Season": str(season), "SourceID": gsis or "", "CanonicalPlayerID": canonical_player_id}
                         )
                     continue
 
@@ -168,6 +237,7 @@ def build_player_stats_identity_coverage(
     multi_season_player_count = sum(1 for seasons in canonical_to_seasons.values() if len(seasons) > 1)
 
     return {
+        **raw_coverage,
         "HistoricalRecordCount": historical_record_count,
         "HistoricalResolvedRecordCount": historical_resolved_count,
         "HistoricalUnresolvedRecordCount": historical_unresolved_count,
@@ -193,6 +263,7 @@ def build_player_stats_identity_coverage(
         "Ready": (
             historical_unresolved_count == 0
             and historical_missing_gsis_count == 0
+            and raw_coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"] == 0
             and not invalid_non_player_assignments
             and not conflicts
         ),
