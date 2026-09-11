@@ -82,6 +82,25 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
+    def test_repository_historical_player_stats_have_complete_canonical_identity(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
+        problematic_seasons = {
+            season: details
+            for season, details in coverage["BySeason"].items()
+            if details["Historical"]
+            and (details["UnresolvedRecordCount"] or details["MissingGSISRecordCount"])
+        }
+        diagnostic = {
+            "HistoricalRecordCount": coverage["HistoricalRecordCount"],
+            "HistoricalUnresolvedRecordCount": coverage["HistoricalUnresolvedRecordCount"],
+            "HistoricalMissingGSISRecordCount": coverage["HistoricalMissingGSISRecordCount"],
+            "HistoricalUnresolvedGSISIDs": coverage["HistoricalUnresolvedGSISIDs"],
+            "GSISCanonicalConflicts": coverage["GSISCanonicalConflicts"],
+            "ProblematicSeasons": problematic_seasons,
+        }
+        self.assertTrue(coverage["Ready"], json.dumps(diagnostic, indent=2, sort_keys=True))
+
     def test_justin_jefferson_keeps_one_canonical_identity_across_historical_week_one_stats(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         canonical_ids: set[str] = set()
