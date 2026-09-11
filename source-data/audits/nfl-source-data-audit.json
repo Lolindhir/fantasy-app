@@ -23,7 +23,7 @@
       "nflverse.contracts"
     ]
   },
-  "canonicalIdentityCount": 28576,
+  "canonicalIdentityCount": 28577,
   "appPlayerCount": 1263,
   "identityCoverage": {
     "matched": 1263,
@@ -333,7 +333,7 @@
     "duplicateLinkProviderIDs": {},
     "duplicateLinkProviderIDCount": 0
   },
-  "identityWeakProviderCollisionCount": 32,
+  "identityWeakProviderCollisionCount": 36,
   "identityWeakProviderCollisions": {
     "NFLCom": [
       "42861",
@@ -349,12 +349,17 @@
       "RIC070406",
       "SPE088890"
     ],
+    "FantasyPros": [
+      "28429",
+      "28635"
+    ],
     "MFL": [
       "17085",
       "17424",
       "17729",
       "17740",
-      "17756"
+      "17756",
+      "17766"
     ],
     "Sportradar": [
       "cef62250-41b1-11f1-985b-cb31865e3411"
@@ -376,6 +381,7 @@
     ],
     "Rotowire": [
       "19711",
+      "19797",
       "19985"
     ],
     "KTC": [
@@ -392,9 +398,9 @@
     "MFL": 2,
     "PFR": 1
   },
-  "identitySourceMappingConflictCount": 481,
+  "identitySourceMappingConflictCount": 482,
   "identitySourceMappingConflictsByReason": {
-    "birthdate_conflict_with_nflverse_players": 480,
+    "birthdate_conflict_with_nflverse_players": 481,
     "provider_id_maps_to_multiple_people": 1
   },
   "identitySourceMappingConflicts": [
@@ -546,6 +552,7 @@
         "PFR": "JoneCa06",
         "PFF": "155211",
         "NFLCom": "63258",
+        "FantasyPros": "28124",
         "Sportradar": "bf110080-418e-11f1-8233-2d15b9a7b86c",
         "CBS": "26738725",
         "Rotowire": "19649",
@@ -1337,6 +1344,13 @@
           ]
         },
         {
+          "Provider": "PFR",
+          "ID": "BailWe00",
+          "NFLVerseBirthDates": [
+            "2001-04-26"
+          ]
+        },
+        {
           "Provider": "PFF",
           "ID": "129871",
           "NFLVerseBirthDates": [
@@ -1348,6 +1362,7 @@
       "SuppressedIDs": {
         "GSIS": "00-0041404",
         "ESPN": "4430919",
+        "PFR": "BailWe00",
         "PFF": "129871",
         "NFLCom": "62967",
         "CBS": "3177353",
@@ -1498,6 +1513,55 @@
         "ESPN": "4693371",
         "PFR": "ThomJa01",
         "Rotowire": "19611"
+      }
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "row",
+      "MFLID": "17768",
+      "Name": "Ethan Burke",
+      "BirthDate": "1995-08-05",
+      "Position": "DE",
+      "DraftYear": "2026",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0040978",
+          "NFLVerseBirthDates": [
+            "2003-06-20"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "4908867",
+          "NFLVerseBirthDates": [
+            "2003-06-20"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "BurkEt00",
+          "NFLVerseBirthDates": [
+            "2003-06-20"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "163843",
+          "NFLVerseBirthDates": [
+            "2003-06-20"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {
+        "GSIS": "00-0040978",
+        "ESPN": "4908867",
+        "PFR": "BurkEt00",
+        "PFF": "163843",
+        "NFLCom": "63055",
+        "Rotowire": "19624"
       }
     },
     {
@@ -23815,20 +23879,21 @@
       }
     }
   ],
-  "providerMappingConflictCount": 53,
+  "providerMappingConflictCount": 57,
   "providerMappingConflictsByProvider": {
     "CBS": 10,
     "ESB": 6,
     "ESPN": 4,
     "FantasyData": 2,
+    "FantasyPros": 2,
     "Fleaflicker": 1,
     "GSIS": 4,
     "KTC": 1,
-    "MFL": 6,
+    "MFL": 7,
     "NFLCom": 4,
     "PFF": 4,
     "PFR": 2,
-    "Rotowire": 2,
+    "Rotowire": 3,
     "Sleeper": 4,
     "Sportradar": 1,
     "Tank01": 2
@@ -24226,6 +24291,38 @@
       }
     },
     {
+      "Provider": "FantasyPros",
+      "ExternalID": "28429",
+      "CanonicalPlayerIDs": [
+        "NFLP-b5ae9689506d83179401",
+        "NFLP-e3481680b3cf659f9794"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-b5ae9689506d83179401": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "FantasyPros",
+      "ExternalID": "28635",
+      "CanonicalPlayerIDs": [
+        "NFLP-402ba8dd3cc0ef032149",
+        "NFLP-e7bc97dceb7c48ba3993"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-e7bc97dceb7c48ba3993": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
       "Provider": "Fleaflicker",
       "ExternalID": "6636",
       "CanonicalPlayerIDs": [
@@ -24424,6 +24521,22 @@
       }
     },
     {
+      "Provider": "MFL",
+      "ExternalID": "17766",
+      "CanonicalPlayerIDs": [
+        "NFLP-402ba8dd3cc0ef032149",
+        "NFLP-e7bc97dceb7c48ba3993"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-e7bc97dceb7c48ba3993": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
       "Provider": "NFLCom",
       "ExternalID": "42861",
       "CanonicalPlayerIDs": [
@@ -24601,6 +24714,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-070451324fe39374b112": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Rotowire",
+      "ExternalID": "19797",
+      "CanonicalPlayerIDs": [
+        "NFLP-402ba8dd3cc0ef032149",
+        "NFLP-e7bc97dceb7c48ba3993"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-e7bc97dceb7c48ba3993": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -26530,8 +26659,8 @@
     },
     "playerStats": {
       "partitionCount": 573,
-      "recordCount": 475695,
-      "resolvedIdentityCount": 475634,
+      "recordCount": 475763,
+      "resolvedIdentityCount": 475702,
       "unresolvedIdentityCount": 61,
       "missingProviderIDRowCount": 531
     },
@@ -26544,8 +26673,8 @@
     },
     "sleeperPlayers": {
       "recordCount": 12227,
-      "resolvedIdentityCount": 6304,
-      "unresolvedIdentityCount": 5923
+      "resolvedIdentityCount": 6306,
+      "unresolvedIdentityCount": 5921
     },
     "activeDatasetIDs": [
       "nflverse.game-finality",
