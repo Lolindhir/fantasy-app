@@ -45,4 +45,8 @@ try {
 }
 Assert-True $threw 'Conflicting score evidence for the same game must fail closed.'
 
+$requestGamesSource = Get-Content (Join-Path $PSScriptRoot 'RequestGames.ps1') -Raw
+Assert-True ($requestGamesSource -match 'getNFLScoresOnly\?gameWeek=\$scoreWeek&season=\$year') 'Weekly score enrichment must use Tank01 gameWeek.'
+Assert-True (-not ($requestGamesSource -match 'getNFLScoresOnly\?week=\$scoreWeek')) 'Legacy Tank01 week parameter must not be used for getNFLScoresOnly.'
+
 Write-Host 'Game score regression test passed.' -ForegroundColor Green
