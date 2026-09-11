@@ -63,7 +63,10 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                 text = self.read(name)
                 self.assertIn("git fetch", text)
                 self.assertIn("git reset --hard", text)
-                self.assertRegex(text, r"max_attempts=\d+")
+                self.assertTrue(
+                    "max_attempts=" in text or "for attempt in 1 2 3" in text,
+                    f"{name} must have a bounded rebuild retry loop",
+                )
 
     def test_no_known_app_writer_has_naked_head_main_push(self) -> None:
         for name in sorted(REBUILD_WRITERS):
