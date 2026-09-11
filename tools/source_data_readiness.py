@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from league_source_data_lib.coverage import build_season_player_reference_coverage
 from nfl_source_data_lib.history import HISTORICAL_BANDS, known_unavailable_reason
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
@@ -185,6 +186,13 @@ def build_league_readiness(repo_root: Path) -> dict[str, Any]:
             missing_core = [name for name, present in core.items() if not present]
             if missing_core:
                 failures.append(f"{canonical_id}/{season}: missing {missing_core}")
+            player_coverage = build_season_player_reference_coverage(season_root)
+            if player_coverage["UnresolvedReferenceCount"]:
+                failures.append(
+                    f"{canonical_id}/{season}: "
+                    f"{player_coverage['UnresolvedReferenceCount']} unresolved canonical player references "
+                    f"across {player_coverage['UnresolvedUniqueSleeperPlayerIDCount']} Sleeper player IDs"
+                )
             seasons.append(
                 {
                     "Season": season,
@@ -195,6 +203,7 @@ def build_league_readiness(repo_root: Path) -> dict[str, Any]:
                     "TransactionPartitionCount": len(list((season_root / "transactions").glob("*.json"))),
                     "WeekStructure": league.get("WeekStructure"),
                     "ScoringSettingsPresent": isinstance(league.get("ScoringSettings"), dict),
+                    "PlayerReferenceCoverage": player_coverage,
                 }
             )
         leagues.append(
@@ -214,6 +223,7 @@ def build_league_readiness(repo_root: Path) -> dict[str, Any]:
         "Ready": not failures,
         "HardFailures": failures,
         "WeekStructureRule": "Sleeper playoff configuration is mutable provider evidence. Expected/projected boundaries and observed historical matchup/bracket reality remain separate; trailing future assignments do not by themselves extend the fantasy season.",
+        "PlayerReferenceRule": "Every Sleeper player reference remains evidence-preserving through its ProviderPlayerID, but League Source readiness is false while any such reference lacks a season-valid CanonicalPlayerID. Ambiguous mappings continue to fail closed during materialization.",
     }
 
 

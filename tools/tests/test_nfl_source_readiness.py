@@ -147,7 +147,7 @@ class SourceDataReadinessTests(unittest.TestCase):
             [{"DatasetID": "nflverse.snap-counts", "Season": 2012, "Reason": "upstream schema-only asset"}],
         )
 
-    def test_league_readiness_uses_human_readable_nfl_reise_namespace(self) -> None:
+    def _configure_league(self) -> str:
         self.write_json(
             "source-data/leagues/_bootstrap/nfl-reise.json",
             {
@@ -175,6 +175,10 @@ class SourceDataReadinessTests(unittest.TestCase):
         )
         for name in ("members.json", "rosters.json", "drafts.json", "winners-bracket.json", "losers-bracket.json"):
             self.write_json(f"{season_root}/{name}", [])
+        return season_root
+
+    def test_league_readiness_uses_human_readable_nfl_reise_namespace(self) -> None:
+        self._configure_league()
 
         readiness = build_league_readiness(self.root)
 
@@ -182,7 +186,45 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.assertEqual(readiness["HardFailures"], [])
         self.assertEqual(readiness["LeagueCount"], 1)
         self.assertEqual(readiness["Leagues"][0]["CanonicalLeagueID"], "nfl-reise")
-        self.assertEqual(readiness["Leagues"][0]["Seasons"][0]["CanonicalLeagueSeasonID"], "nfl-reise-2025")
+        season = readiness["Leagues"][0]["Seasons"][0]
+        self.assertEqual(season["CanonicalLeagueSeasonID"], "nfl-reise-2025")
+        self.assertTrue(season["PlayerReferenceCoverage"]["Ready"])
+
+    def test_unresolved_league_player_reference_is_a_hard_failure(self) -> None:
+        season_root = self._configure_league()
+        self.write_json(
+            f"{season_root}/rosters.json",
+            [
+                {
+                    "Players": [
+                        {
+                            "CanonicalPlayerID": None,
+                            "ProviderMappings": [
+                                {"Provider": "Sleeper", "ProviderPlayerID": "S1"}
+                            ],
+                        },
+                        {
+                            "CanonicalPlayerID": "NFLP-2",
+                            "ProviderMappings": [
+                                {"Provider": "Sleeper", "ProviderPlayerID": "S2"}
+                            ],
+                        },
+                    ]
+                }
+            ],
+        )
+
+        readiness = build_league_readiness(self.root)
+
+        self.assertFalse(readiness["Ready"])
+        self.assertEqual(1, len(readiness["HardFailures"]))
+        self.assertIn("1 unresolved canonical player references", readiness["HardFailures"][0])
+        coverage = readiness["Leagues"][0]["Seasons"][0]["PlayerReferenceCoverage"]
+        self.assertEqual(2, coverage["ReferenceCount"])
+        self.assertEqual(1, coverage["ResolvedReferenceCount"])
+        self.assertEqual(1, coverage["UnresolvedReferenceCount"])
+        self.assertEqual(["S1"], coverage["UnresolvedSleeperPlayerIDs"])
+        self.assertFalse(coverage["Ready"])
 
 
 if __name__ == "__main__":
