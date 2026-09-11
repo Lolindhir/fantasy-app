@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from league_source_data_lib.coverage import build_season_player_reference_coverage
+from nfl_source_data_lib.coverage import build_player_stats_identity_coverage
 from nfl_source_data_lib.history import HISTORICAL_BANDS, known_unavailable_reason
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
@@ -132,6 +133,29 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "CanonicalLastChange": git_last_change(repo_root, f"source-data/nfl/{policy['canonical']}"),
         }
 
+    player_identity_coverage = build_player_stats_identity_coverage(
+        repo_root,
+        current_season=season_now,
+    )
+    if player_identity_coverage["HistoricalUnresolvedRecordCount"]:
+        hard_failures.append(
+            "nflverse.player-stats: "
+            f"{player_identity_coverage['HistoricalUnresolvedRecordCount']} historical canonical stat records "
+            "lack CanonicalPlayerID across "
+            f"{player_identity_coverage['HistoricalUnresolvedUniqueGSISCount']} GSIS player IDs"
+        )
+    if player_identity_coverage["HistoricalMissingGSISRecordCount"]:
+        hard_failures.append(
+            "nflverse.player-stats: "
+            f"{player_identity_coverage['HistoricalMissingGSISRecordCount']} historical canonical stat records "
+            "lack GSIS source identity"
+        )
+    if player_identity_coverage["GSISCanonicalConflictCount"]:
+        hard_failures.append(
+            "nflverse.player-stats: "
+            f"{player_identity_coverage['GSISCanonicalConflictCount']} GSIS IDs map to multiple CanonicalPlayerIDs"
+        )
+
     schedule_files = sorted((repo_root / "source-data/nfl/schedules").glob("*.json"))
     finality_files = sorted((repo_root / "source-data/nfl/game-finality").glob("*.json"))
     return {
@@ -145,6 +169,8 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "MissingIsZero": False,
             "Rule": "Historical seasons in the supported source band must be persisted unless an exact partition is explicitly documented as known upstream-unavailable; current not-yet-available evidence is allowed only by dataset availability policy. Unavailable facts are never zero.",
         },
+        "HistoricalPlayerIdentityCoverage": player_identity_coverage,
+        "HistoricalPlayerIdentityRule": "Canonical NFL player stats resolve nflverse GSIS player_id directly to stable CanonicalPlayerID. Historical scoring does not depend on Sleeper IDs or archived app Players.json snapshots. Historical unresolved GSIS identity and cross-canonical GSIS conflicts fail readiness closed; current-season unresolved rows remain diagnostic while the season is in progress.",
         "FixedHistoricalCoverage": {
             "Schedules": {
                 "SeasonCount": len(schedule_files),
