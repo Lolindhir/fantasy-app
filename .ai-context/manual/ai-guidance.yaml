@@ -85,6 +85,7 @@ guidance:
 
   frontend:
     - Keep visible frontend UI copy in English by default, including Angular templates and presentation ViewModel strings. Only use German in frontend UI when the user explicitly requests a German-only UI element or when displaying generated/user-provided data that is already German.
+    - Use English-style user-facing numeric formatting by default: `.` as decimal separator and `,` as thousands separator (for example `1,234.5`). Make numeric locale explicit where needed rather than globally changing application locale in a way that could alter dates/times. Preserve surface-specific precision unless a product requirement changes it.
     - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
 
   ciDeployment:
