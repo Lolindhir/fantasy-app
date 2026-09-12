@@ -37,10 +37,15 @@ def _raw_player_stats_identity_coverage(repo_root: Path, current_season: int) ->
                 name = clean(row.get("player_display_name")) or clean(row.get("player_name"))
                 position = clean(row.get("position"))
                 # nflverse emits team-level rows without a player_id. Across the
-                # persisted source history these rows are either unnamed or carry
-                # the literal provider label "Team" and have no player position.
-                # They are game/team facts, not unresolved people.
-                is_team_aggregate = position is None and (name is None or name.casefold() == "team")
+                # persisted source history these rows are either unnamed with no
+                # player position or carry the literal provider label "Team".
+                # The literal label is itself explicit non-player evidence even if
+                # nflverse also supplies a team-defense position token.
+                is_team_aggregate = (
+                    name is not None and name.casefold() == "team"
+                ) or (
+                    name is None and position is None
+                )
                 if is_team_aggregate:
                     aggregates += 1
                 else:
