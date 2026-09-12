@@ -25,6 +25,28 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"Season": season, "Week": week, "Records": records}), encoding="utf-8")
 
+    def write_raw_stats(self, season: int, rows: list[dict[str, object]]) -> None:
+        path = self.root / f"source-data/providers/nflverse/player-stats/raw-{season}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fieldnames = [
+            "player_id",
+            "player_name",
+            "player_display_name",
+            "position",
+            "position_group",
+            "headshot_url",
+            "season",
+            "week",
+            "season_type",
+            "team",
+            "opponent_team",
+            "penalties",
+        ]
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+
     @staticmethod
     def record(gsis: str | None, canonical_player_id: str | None) -> dict[str, object]:
         return {
@@ -73,65 +95,93 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
         self.assertEqual(1, coverage["CurrentUnresolvedRecordCount"])
         self.assertEqual(["00-2"], coverage["CurrentUnresolvedGSISIDs"])
 
+    def test_named_missing_id_weekly_bucket_without_player_enrichment_is_aggregate(self) -> None:
+        self.write_raw_stats(
+            2025,
+            [{
+                "player_id": "",
+                "player_name": "D.Bryant",
+                "player_display_name": "D.Bryant",
+                "position": "",
+                "position_group": "",
+                "headshot_url": "",
+                "season": 2025,
+                "week": 6,
+                "season_type": "REG",
+                "team": "TEN",
+                "opponent_team": "PIT",
+                "penalties": 2,
+            }],
+        )
+        coverage = build_player_stats_identity_coverage(self.root, current_season=2026)
+        self.assertEqual(1, coverage["HistoricalRawMissingPlayerIDRecordCount"])
+        self.assertEqual(1, coverage["HistoricalRawNonPlayerAggregateRecordCount"])
+        self.assertEqual(0, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"])
+
+    def test_missing_id_row_with_player_enrichment_fails_closed(self) -> None:
+        self.write_raw_stats(
+            2025,
+            [{
+                "player_id": "",
+                "player_name": "Fixture Player",
+                "player_display_name": "Fixture Player",
+                "position": "WR",
+                "position_group": "WR",
+                "headshot_url": "https://example.invalid/player.png",
+                "season": 2025,
+                "week": 6,
+                "season_type": "REG",
+                "team": "TEN",
+                "opponent_team": "PIT",
+                "penalties": 0,
+            }],
+        )
+        coverage = build_player_stats_identity_coverage(self.root, current_season=2026)
+        self.assertEqual(0, coverage["HistoricalRawNonPlayerAggregateRecordCount"])
+        self.assertEqual(1, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"])
+        self.assertEqual("Fixture Player", coverage["RawUnclassifiedMissingPlayerIDExamples"][0]["PlayerName"])
+
+    def test_multiple_missing_id_rows_in_same_week_fail_closed(self) -> None:
+        self.write_raw_stats(
+            2025,
+            [
+                {
+                    "player_id": "",
+                    "player_name": "Team",
+                    "player_display_name": "Team",
+                    "position": "",
+                    "position_group": "",
+                    "headshot_url": "",
+                    "season": 2025,
+                    "week": 6,
+                    "season_type": "REG",
+                    "team": "TEN",
+                    "opponent_team": "PIT",
+                    "penalties": 2,
+                },
+                {
+                    "player_id": "",
+                    "player_name": "Another Label",
+                    "player_display_name": "Another Label",
+                    "position": "",
+                    "position_group": "",
+                    "headshot_url": "",
+                    "season": 2025,
+                    "week": 6,
+                    "season_type": "REG",
+                    "team": "PIT",
+                    "opponent_team": "TEN",
+                    "penalties": 1,
+                },
+            ],
+        )
+        coverage = build_player_stats_identity_coverage(self.root, current_season=2026)
+        self.assertEqual(2, coverage["HistoricalRawMissingPlayerIDRecordCount"])
+        self.assertEqual(0, coverage["HistoricalRawNonPlayerAggregateRecordCount"])
+        self.assertEqual(2, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"])
+
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
-    _RAW_CONTEXT_FIELDS = {
-        "player_id",
-        "player_name",
-        "player_display_name",
-        "position",
-        "position_group",
-        "headshot_url",
-        "season",
-        "week",
-        "season_type",
-        "game_id",
-        "team",
-        "opponent_team",
-    }
-
-    @staticmethod
-    def _is_nonzero(value: object) -> bool:
-        text = str(value or "").strip()
-        if not text:
-            return False
-        try:
-            return float(text) != 0.0
-        except ValueError:
-            return True
-
-    def _unclassified_raw_examples(self, repo_root: Path) -> list[dict[str, object]]:
-        examples: list[dict[str, object]] = []
-        raw_root = repo_root / "source-data/providers/nflverse/player-stats"
-        for raw_path in sorted(raw_root.glob("raw-*.csv")):
-            with raw_path.open("r", encoding="utf-8-sig", newline="") as handle:
-                for row in csv.DictReader(handle):
-                    if str(row.get("player_id") or "").strip():
-                        continue
-                    name = str(row.get("player_display_name") or row.get("player_name") or "").strip()
-                    position = str(row.get("position") or "").strip()
-                    is_team_aggregate = name.casefold() == "team" or (not name and not position)
-                    if is_team_aggregate:
-                        continue
-                    examples.append(
-                        {
-                            "Season": row.get("season"),
-                            "Week": row.get("week"),
-                            "SeasonType": row.get("season_type"),
-                            "GameID": row.get("game_id"),
-                            "PlayerName": name or None,
-                            "Position": position or None,
-                            "Team": row.get("team") or None,
-                            "OpponentTeam": row.get("opponent_team") or None,
-                            "NonZeroStats": {
-                                key: value
-                                for key, value in row.items()
-                                if key not in self._RAW_CONTEXT_FIELDS and self._is_nonzero(value)
-                            },
-                        }
-                    )
-        return examples
-
     def test_repository_historical_unresolved_ids_are_repairable_from_provider_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -149,13 +199,12 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
             "historical player-stat identities must be repairable from authoritative provider evidence",
         )
 
-    def test_repository_raw_missing_player_ids_are_explicit_team_aggregates(self) -> None:
+    def test_repository_raw_missing_player_ids_are_provider_aggregate_buckets(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
         diagnostic = json.dumps(
             {
                 "RawUnclassifiedMissingPlayerIDExamples": coverage["RawUnclassifiedMissingPlayerIDExamples"],
-                "RawUnclassifiedMissingPlayerIDDetails": self._unclassified_raw_examples(repo_root),
                 "RawMissingPlayerIDBySeason": coverage["RawMissingPlayerIDBySeason"],
             },
             indent=2,
