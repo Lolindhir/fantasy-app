@@ -8,6 +8,7 @@ from .common import (
     clean,
     normalize_legacy_canonical_player_fields,
 )
+from .historical_identity import PLAYER_STATS_VERIFIED_PROVIDER_ALIASES
 from .identity_model import LINK_ID_KEYS
 
 
@@ -35,6 +36,27 @@ def identity_lookup(canonical: list[dict[str, Any]]) -> dict[tuple[str, str], st
             if previous and previous != canonical_player_id:
                 raise ValueError(f"Link ID {key}:{value} maps to multiple canonical players")
             lookup[token] = canonical_player_id
+
+    # A tiny set of legacy nflverse player-stat tokens are synthetic rather than
+    # ordinary GSIS IDs. Resolve them only through an independently verified
+    # provider bridge to an already-canonical person. The synthetic token is not
+    # promoted into the person's active canonical IDs/aliases. Small unit-test
+    # fixtures may legitimately omit the real target person, so an absent target
+    # simply leaves the synthetic token unresolved; repository readiness catches
+    # that state if the token occurs in persisted historical stats.
+    for legacy_source_id, alias in sorted(PLAYER_STATS_VERIFIED_PROVIDER_ALIASES.items()):
+        target_provider = alias["TargetProvider"]
+        target_id = alias["TargetID"]
+        target = lookup.get((target_provider, target_id))
+        if not target:
+            continue
+        token = ("GSIS", legacy_source_id)
+        previous = lookup.get(token)
+        if previous and previous != target:
+            raise ValueError(
+                f"Verified historical player-stat alias {legacy_source_id} conflicts with canonical GSIS ownership"
+            )
+        lookup[token] = target
     return lookup
 
 

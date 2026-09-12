@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,9 @@ from .identity_model import (
     ids_from_ff,
     ids_from_players,
 )
+
+
+_VALID_GSIS_PLAYER_ID = re.compile(r"^00-\d{7}$")
 
 
 def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:
@@ -92,6 +96,30 @@ def _replay_existing_weak_identity(
         return None
     owners = sorted(replay_index.get(signature, set()))
     return owners[0] if len(owners) == 1 else None
+
+
+def _persisted_player_stats_gsis_ids(dataset: Dataset) -> set[str]:
+    """Return real GSIS player IDs observed in persisted nflverse player-stat raws.
+
+    Historical player stats are authoritative evidence that a GSIS identity took
+    part in an NFL game even when that retired player disappeared from today's
+    nflverse players/ff-player-ids snapshots. Only the real ``00-#######`` GSIS
+    namespace is accepted here; upstream sentinels such as ``0`` and synthetic
+    ``XX-*`` values are deliberately excluded and must be handled explicitly.
+    """
+
+    if not dataset.is_season_partitioned:
+        return set()
+    pattern = dataset.raw_path.name.replace("{season}", "*")
+    ids: set[str] = set()
+    for path in sorted(dataset.raw_path.parent.glob(pattern)):
+        if not path.is_file():
+            continue
+        for row in iter_csv(path):
+            gsis = clean(row.get("player_id"))
+            if gsis and _VALID_GSIS_PLAYER_ID.fullmatch(gsis):
+                ids.add(gsis)
+    return ids
 
 
 def raw_identity_candidates(
@@ -223,5 +251,27 @@ def raw_identity_candidates(
             )
             candidates.append(candidate)
         ff_candidates.append(candidate)
+
+    stats_dataset = datasets.get("nflverse.player-stats")
+    if stats_dataset is not None:
+        claimed_gsis = {
+            candidate.ids["GSIS"]
+            for candidate in candidates
+            if candidate.ids.get("GSIS")
+        }
+        for gsis in sorted(_persisted_player_stats_gsis_ids(stats_dataset) - claimed_gsis):
+            candidates.append(
+                IdentityCandidate(
+                    ids={"GSIS": gsis},
+                    name=None,
+                    first_name=None,
+                    last_name=None,
+                    birth_date=None,
+                    position=None,
+                    latest_team=None,
+                    source="nflverse.player-stats",
+                    priority=40,
+                )
+            )
 
     return candidates, ff_rows, ff_candidates, source_conflicts

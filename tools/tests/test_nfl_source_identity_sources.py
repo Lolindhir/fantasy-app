@@ -19,14 +19,18 @@ def write_csv(path: Path, rows, fieldnames):
         writer.writerows(rows)
 
 
-def dataset(dataset_id: str, raw_path: Path) -> Dataset:
+def dataset(dataset_id: str, raw_path: Path, *, season_partitioned: bool = False) -> Dataset:
     return Dataset(
         id=dataset_id,
         provider="test",
         upstream="test",
-        source_url="https://example.invalid",
+        source_url="https://example.invalid/{season}" if season_partitioned else "https://example.invalid",
         raw_path=raw_path,
-        metadata_path=raw_path.with_suffix(".metadata.json"),
+        metadata_path=(
+            raw_path.parent / "metadata-{season}.json"
+            if season_partitioned
+            else raw_path.with_suffix(".metadata.json")
+        ),
         required_columns=(),
         minimum_rows=1,
         kind="test",
@@ -34,6 +38,7 @@ def dataset(dataset_id: str, raw_path: Path) -> Dataset:
         retention_policy="test",
         license="test",
         attribution="test",
+        source_mode="season-partitioned" if season_partitioned else "fixed",
     )
 
 
@@ -96,6 +101,51 @@ class NflSourceIdentitySourceTests(unittest.TestCase):
             self.assertEqual({"MFL": "99"}, ff_candidates[0].ids)
             self.assertEqual("row", conflicts[0]["QuarantineScope"])
             self.assertIn("Sleeper", conflicts[0]["SuppressedIDs"])
+
+    def test_persisted_stats_seed_retired_real_gsis_without_name_matching(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            players_path = root / "players.csv"
+            ff_path = root / "ids.csv"
+            stats_template = root / "stats/raw-{season}.csv"
+            write_csv(
+                players_path,
+                [{"gsis_id": "00-1234567", "display_name": "Current Player", "position": "WR"}],
+                ["gsis_id", "display_name", "position"],
+            )
+            write_csv(
+                ff_path,
+                [],
+                ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "birthdate", "position"],
+            )
+            write_csv(
+                root / "stats/raw-1999.csv",
+                [
+                    {"player_id": "00-0005532", "player_name": "P.Franklin"},
+                    {"player_id": "00-1234567", "player_name": "Current Player"},
+                    {"player_id": "0", "player_name": ""},
+                    {"player_id": "XX-0000001", "player_name": "S.Fernando"},
+                ],
+                ["player_id", "player_name"],
+            )
+            datasets = {
+                "nflverse.players": dataset("nflverse.players", players_path),
+                "nflverse.ff-player-ids": dataset("nflverse.ff-player-ids", ff_path),
+                "nflverse.player-stats": dataset(
+                    "nflverse.player-stats",
+                    stats_template,
+                    season_partitioned=True,
+                ),
+            }
+
+            candidates, _, _, _ = raw_identity_candidates(root, datasets)
+            fallback = [candidate for candidate in candidates if candidate.source == "nflverse.player-stats"]
+
+            self.assertEqual(1, len(fallback))
+            self.assertEqual({"GSIS": "00-0005532"}, fallback[0].ids)
+            self.assertIsNone(fallback[0].name)
+            self.assertFalse(any(candidate.ids.get("GSIS") == "0" for candidate in fallback))
+            self.assertFalse(any(candidate.ids.get("GSIS") == "XX-0000001" for candidate in fallback))
 
 
 if __name__ == "__main__":

@@ -43,10 +43,13 @@ class SourceDataReadinessTests(unittest.TestCase):
             },
         )
 
-    def mark_player_stats_ready(self, season: int) -> None:
+    def mark_player_stats_ready(self, season: int, records: list[dict[str, object]] | None = None) -> None:
         self.write_text(f"source-data/providers/nflverse/player-stats/raw-{season}.csv")
         self.write_json(f"source-data/providers/nflverse/player-stats/metadata-{season}.json", {"availabilityStatus": "available"})
-        self.write_json(f"source-data/nfl/player-stats/{season}/1.json", {"Season": season, "Week": 1})
+        self.write_json(
+            f"source-data/nfl/player-stats/{season}/1.json",
+            {"Season": season, "Week": 1, "Records": records or []},
+        )
 
     def test_missing_historical_partition_is_hard_failure_but_current_unavailable_is_not(self) -> None:
         self.configure_player_stats_registry()
@@ -91,6 +94,77 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.assertTrue(readiness["ReadyForHistoricalScoring"])
         self.assertEqual(readiness["HardFailures"], [])
         self.assertEqual(readiness["Datasets"]["nflverse.player-stats"]["MissingHistoricalSeasons"], [])
+        self.assertTrue(readiness["HistoricalPlayerIdentityCoverage"]["Ready"])
+
+    def test_unresolved_historical_player_stat_identity_is_a_hard_failure(self) -> None:
+        self.configure_player_stats_registry()
+        self.mark_player_stats_ready(
+            2025,
+            [
+                {
+                    "CanonicalPlayerID": None,
+                    "SourceIDs": {"GSIS": "00-1"},
+                    "PlayerName": "Fixture Player",
+                    "Stats": {"receiving_yards": 10},
+                }
+            ],
+        )
+
+        with patch.dict(
+            HISTORICAL_BANDS,
+            {"nflverse.player-stats": {"start": 2025, "canonical": "player-stats"}},
+            clear=True,
+        ):
+            readiness = build_nfl_readiness(self.root)
+
+        self.assertFalse(readiness["ReadyForHistoricalScoring"])
+        self.assertIn(
+            "nflverse.player-stats: 1 historical canonical stat records lack CanonicalPlayerID across 1 GSIS player IDs",
+            readiness["HardFailures"],
+        )
+        coverage = readiness["HistoricalPlayerIdentityCoverage"]
+        self.assertEqual(1, coverage["HistoricalUnresolvedRecordCount"])
+        self.assertEqual(["00-1"], coverage["HistoricalUnresolvedGSISIDs"])
+        self.assertFalse(coverage["Ready"])
+
+    def test_current_unresolved_player_stat_identity_is_diagnostic_not_historical_failure(self) -> None:
+        self.configure_player_stats_registry()
+        self.mark_player_stats_ready(
+            2025,
+            [
+                {
+                    "CanonicalPlayerID": "NFLP-1",
+                    "SourceIDs": {"GSIS": "00-1"},
+                    "PlayerName": "Historical Fixture",
+                    "Stats": {},
+                }
+            ],
+        )
+        self.mark_player_stats_ready(
+            2026,
+            [
+                {
+                    "CanonicalPlayerID": None,
+                    "SourceIDs": {"GSIS": "00-2"},
+                    "PlayerName": "Current Fixture",
+                    "Stats": {},
+                }
+            ],
+        )
+
+        with patch.dict(
+            HISTORICAL_BANDS,
+            {"nflverse.player-stats": {"start": 2025, "canonical": "player-stats"}},
+            clear=True,
+        ):
+            readiness = build_nfl_readiness(self.root)
+
+        self.assertTrue(readiness["ReadyForHistoricalScoring"])
+        self.assertEqual([], readiness["HardFailures"])
+        coverage = readiness["HistoricalPlayerIdentityCoverage"]
+        self.assertEqual(0, coverage["HistoricalUnresolvedRecordCount"])
+        self.assertEqual(1, coverage["CurrentUnresolvedRecordCount"])
+        self.assertEqual(["00-2"], coverage["CurrentUnresolvedGSISIDs"])
 
     def test_known_unavailable_historical_partition_is_explicit_but_not_a_hard_failure(self) -> None:
         self.write_json("source-data/nfl/schedules/2014.json", {})
