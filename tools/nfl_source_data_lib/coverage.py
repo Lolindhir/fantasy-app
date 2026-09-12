@@ -29,24 +29,39 @@ def _raw_player_stats_identity_coverage(repo_root: Path, current_season: int) ->
             continue
         season = int(match.group(1))
         missing = aggregates = unclassified = 0
+        missing_by_week: dict[str | None, list[dict[str, str]]] = defaultdict(list)
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
                 if clean(row.get("player_id")):
                     continue
                 missing += 1
+                missing_by_week[clean(row.get("week"))].append(row)
+
+        for week, rows in missing_by_week.items():
+            # nflfastR calculate_stats() groups weekly player stats by
+            # season/week/player_id. All upstream playstats whose player_id is NA
+            # therefore collapse into one provider aggregate bucket for that week.
+            # player_name is chosen by mode while game_id/team use first(), and
+            # numeric stat fields are summed, so a non-"Team" display label is not
+            # person-identity evidence for this bucket. Keep this fail-closed:
+            # there must be exactly one missing-ID bucket for the week and no
+            # player-enrichment fields that would indicate a resolved person row.
+            unique_week_bucket = week is not None and len(rows) == 1
+            for row in rows:
                 name = clean(row.get("player_display_name")) or clean(row.get("player_name"))
                 position = clean(row.get("position"))
-                # nflverse emits team-level rows without a player_id. Across the
-                # persisted source history these rows are either unnamed with no
-                # player position or carry the literal provider label "Team".
-                # The literal label is itself explicit non-player evidence even if
-                # nflverse also supplies a team-defense position token.
-                is_team_aggregate = (
-                    name is not None and name.casefold() == "team"
-                ) or (
-                    name is None and position is None
+                position_group = clean(row.get("position_group"))
+                headshot_url = clean(row.get("headshot_url"))
+                explicit_team_label = name is not None and name.casefold() == "team"
+                lacks_player_enrichment = (
+                    position is None
+                    and position_group is None
+                    and headshot_url is None
                 )
-                if is_team_aggregate:
+                is_provider_aggregate = unique_week_bucket and (
+                    explicit_team_label or lacks_player_enrichment
+                )
+                if is_provider_aggregate:
                     aggregates += 1
                 else:
                     unclassified += 1
@@ -54,9 +69,11 @@ def _raw_player_stats_identity_coverage(repo_root: Path, current_season: int) ->
                         unclassified_examples.append(
                             {
                                 "Season": season,
-                                "Week": clean(row.get("week")),
+                                "Week": week,
                                 "PlayerName": name,
                                 "Position": position,
+                                "PositionGroup": position_group,
+                                "HeadshotURL": headshot_url,
                                 "Team": clean(row.get("team")),
                                 "OpponentTeam": clean(row.get("opponent_team")),
                             }
