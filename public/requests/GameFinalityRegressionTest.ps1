@@ -131,7 +131,8 @@ try {
         -LeagueID 'league' -Season '2026' -Week 1 -DecisionFacts $decision `
         -FantasyMatchups $matchupFacts -Schedule $resolvedSchedule -WeekIsFinal $false
 
-    Assert-GfrEqual 0 @($context.MustWatchGames).Count 'completed game must disappear from Must-watch'
+    Assert-GfrEqual 1 @($context.MustWatchGames).Count 'completed Starter-impact game must remain in schema-v4 weekly Must-watch'
+    Assert-GfrEqual '20260909_NE@SEA' $context.MustWatchGames[0].GameID 'weekly Must-watch must preserve the completed game identity'
     Assert-GfrTrue (-not [bool]$context.Games[0].RemainingRelevance.HasRemainingRelevance) 'completed game must have no remaining relevance'
     Assert-GfrEqual 'none' $context.FantasyMatchups[0].RemainingRelevance.State 'completed matchup must have no remaining scoring paths'
     Assert-GfrTrue (-not [bool]$context.FantasyMatchups[0].RemainingRelevance.HasRemainingScoringPaths) 'completed matchup must expose no remaining scoring paths'

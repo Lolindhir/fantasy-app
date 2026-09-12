@@ -139,7 +139,7 @@ Assert-FrvEqual 'left-only' $remaining.State 'only Team 1 should still have a sc
 Assert-FrvEqual '2026-09-13T20:00:00Z' $remaining.NextScoringWindowID 'next scoring window should use the current unlocked starter first'
 Assert-FrvEqual '2026-09-13T20:25:00Z' $remaining.FinalScoringWindowID 'eligible later Bench option may extend the provisional final window'
 Assert-FrvTrue (-not $remaining.IsFinalScoringWindowCommitted) 'a Bench-only provisional final window must not be called committed'
-Assert-FrvEqual 'g-t1' $context.MustWatchGames[0].GameID 'current starter exposure must outrank Bench-only alternatives before lock'
+Assert-FrvEqual 'g-q1' $context.MustWatchGames[0].GameID 'schema-v4 weekly Must-watch must retain completed Starter exposure instead of ranking only remaining urgency'
 Assert-FrvEqual 1 (@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamCount) 'direct starter fantasy-team breadth must be materialized'
 Assert-FrvTrue (@(@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamIDs) -contains '1') 'direct starter fantasy-team identities must be materialized'
 
@@ -157,7 +157,7 @@ Assert-FrvTrue $lateRemaining.IsFinalScoringWindowCommitted 'final window is com
 $lateGame = @($lateContext.Games | Where-Object GameID -eq 'g-t1')[0]
 Assert-FrvEqual 1 $lateGame.RemainingRelevance.CommittedFinalWindowMatchupCount 'committed final-window evidence must be explicit for ranking'
 Assert-FrvEqual 1 $lateGame.RemainingRelevance.LockedActiveStarterCount 'live locked starter must drive late-week relevance'
-Assert-FrvEqual 'g-t1' $lateContext.MustWatchGames[0].GameID 'committed final-window game must rank first'
+Assert-FrvEqual 'g-q1' $lateContext.MustWatchGames[0].GameID 'remaining/live urgency must not reorder the schema-v4 weekly Must-watch ranking'
 
 # Ordinary upcoming games rank by how many distinct fantasy teams have direct starter exposure,
 # before concentrated starter volume or broad matchup-count noise.

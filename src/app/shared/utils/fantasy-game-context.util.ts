@@ -79,9 +79,16 @@ export function getMustWatchGames(
   const ranked = [...(context.MustWatchGames ?? [])]
     .sort((left, right) => left.Rank - right.Rank)
     .map(item => gameByID.get(item.GameID) ?? null)
-    .filter((game): game is FantasyGameContextGame => !!game && game.RemainingRelevance?.HasRemainingRelevance !== false);
+    .filter((game): game is FantasyGameContextGame => !!game);
 
-  if (ranked.length > 0) return ranked;
+  // Schema v4 turns MustWatchGames into a stable week-level Starter-impact ranking.
+  // A completed game therefore remains in the list even when it has no remaining
+  // scoring relevance. Older schemas keep their original remaining-relevance
+  // compatibility behavior until regenerated.
+  if (context.SchemaVersion >= 4 && Array.isArray(context.MustWatchGames)) return ranked;
+
+  const remainingRanked = ranked.filter(game => game.RemainingRelevance?.HasRemainingRelevance !== false);
+  if (remainingRanked.length > 0) return remainingRanked;
 
   return context.Games
     .filter(game => game.RemainingRelevance?.HasRemainingRelevance === true)

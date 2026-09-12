@@ -22,6 +22,7 @@ export interface DecisionWindowTeamRowView {
   state: DecisionWindowEvaluationState;
   statusLabel: string | null;
   affectedRosteredPlayerCount: number | null;
+  affectedActiveRosterPlayerCount: number | null;
   affectedStarterCount: number | null;
   contextText: string;
   issueTexts: string[];
@@ -74,6 +75,9 @@ export function buildDecisionWindowTeamRows(
       const displayName = getTeamDisplayName(team);
       const affected = pending ? undefined : affectedByTeam.get(team.TeamID);
       const evaluation = pending ? undefined : evaluationByTeam.get(team.TeamID);
+      const activeRosterCount = pending
+        ? null
+        : getAffectedActiveRosterPlayerCount(model, window, team.TeamID, affected?.AffectedRosteredPlayerCount ?? 0);
       const state: DecisionWindowEvaluationState = pending
         ? 'pending'
         : evaluation?.State ?? 'unknown';
@@ -91,6 +95,7 @@ export function buildDecisionWindowTeamRows(
         state,
         statusLabel: state === 'ready' ? null : getDecisionWindowStatusLabel(state),
         affectedRosteredPlayerCount: pending ? null : affected?.AffectedRosteredPlayerCount ?? 0,
+        affectedActiveRosterPlayerCount: activeRosterCount,
         affectedStarterCount: pending ? null : affected?.AffectedStarterCount ?? 0,
         contextText: pending
           ? `Week ${window.Week} lineup not available yet`
@@ -106,13 +111,13 @@ export function buildDecisionWindowTeamRows(
       const byAttention = ATTENTION_ORDER[a.state] - ATTENTION_ORDER[b.state];
       if (byAttention !== 0) return byAttention;
 
+      const byAffectedActiveRoster =
+        (b.affectedActiveRosterPlayerCount ?? -1) - (a.affectedActiveRosterPlayerCount ?? -1);
+      if (byAffectedActiveRoster !== 0) return byAffectedActiveRoster;
+
       const byAffectedStarters =
         (b.affectedStarterCount ?? -1) - (a.affectedStarterCount ?? -1);
       if (byAffectedStarters !== 0) return byAffectedStarters;
-
-      const byAffectedRostered =
-        (b.affectedRosteredPlayerCount ?? -1) - (a.affectedRosteredPlayerCount ?? -1);
-      if (byAffectedRostered !== 0) return byAffectedRostered;
 
       const byStableOrder = a.stableOrder - b.stableOrder;
       if (byStableOrder !== 0) return byStableOrder;
@@ -181,7 +186,7 @@ export function formatDecisionWindowContext(window: DecisionWindow): string {
       }).format(startsAt)
     : 'Kickoff';
 
-  return `${localTime} · ${window.Games.length} games · Week ${window.Week}`;
+  return `Week ${window.Week} · ${window.Games.length} games · ${localTime}`;
 }
 
 export function formatDecisionWindowGame(
@@ -345,6 +350,23 @@ function formatDecisionWindowIssues(issues: DecisionWindowIssue[]): string[] {
   );
 
   return Array.from(new Set(issueTexts));
+}
+
+function getAffectedActiveRosterPlayerCount(
+  model: DecisionWindowsReadModel,
+  window: DecisionWindow,
+  teamId: number,
+  fallbackRosteredCount: number
+): number {
+  const teamState = model.FantasyRelevance?.Teams.find(
+    team => String(team.FantasyTeamID) === String(teamId)
+  );
+  if (!teamState) return fallbackRosteredCount;
+
+  return teamState.Players.filter(player =>
+    player.DecisionWindowID === window.DecisionWindowID
+    && (player.Placement === 'starter' || player.Placement === 'bench')
+  ).length;
 }
 
 function formatAffectedContext(rosteredCount: number, starterCount: number): string {

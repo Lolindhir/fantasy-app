@@ -174,6 +174,48 @@ describe('fantasy game context utilities', () => {
     expect(getMustWatchGames(context).map(item => item.GameID)).toEqual(['first', 'second']);
   });
 
+  it('keeps Final games in the schema-v4 weekly Must-watch ranking after remaining relevance ends', () => {
+    const final = game({
+      GameID: 'final',
+      Status: 'Final',
+      RemainingRelevance: {
+        HasRemainingRelevance: false,
+        LockedActiveStarterCount: 0,
+        UnlockedStarterCount: 0,
+        EligibleBenchCandidateCount: 0,
+        DirectStarterFantasyTeamCount: 0,
+        DirectStarterFantasyTeamIDs: [],
+        FantasyMatchupCount: 0,
+        TwoSidedFantasyMatchupCount: 0,
+        FinalWindowFantasyMatchupCount: 0,
+        CommittedFinalWindowMatchupCount: 0,
+        MustWatchRank: 1
+      }
+    });
+    const context: FantasyGameContextReadModel = {
+      ...baseContext,
+      SchemaVersion: 4,
+      Games: [final],
+      MustWatchGames: [{
+        Rank: 1,
+        GameID: 'final',
+        DecisionWindowID: final.DecisionWindowID,
+        StartsAtUtc: final.StartsAtUtc,
+        CommittedFinalWindowMatchupCount: 0,
+        LockedActiveStarterCount: 0,
+        DirectStarterFantasyTeamCount: 1,
+        DirectStarterFantasyTeamIDs: [1],
+        TwoSidedFantasyMatchupCount: 0,
+        FantasyMatchupCount: 1,
+        UnlockedStarterCount: 0,
+        FinalWindowFantasyMatchupCount: 0,
+        EligibleBenchCandidateCount: 0
+      }]
+    };
+
+    expect(getMustWatchGames(context).map(item => item.GameID)).toEqual(['final']);
+  });
+
   it('keeps an option-only generated window when no direct starter game remains', () => {
     const zeroStarterRow = {
       ...baseContext.FantasyMatchups[0].Games[0],

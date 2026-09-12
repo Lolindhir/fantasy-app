@@ -48,6 +48,7 @@
 }
 
 .decision-window-meta strong { color: #334155; }
+.decision-window-week-games { white-space: nowrap; }
 
 .decision-window-games {
   display: grid;
@@ -57,7 +58,12 @@
 }
 
 .decision-window-game {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
   max-width: 100%;
+  width: fit-content;
   padding: 4px 7px;
   border-radius: 999px;
   background: #f1f5f9;
@@ -65,8 +71,25 @@
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.2;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  white-space: nowrap;
+}
+
+.decision-window-game-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.decision-window-game-team img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.decision-window-game-at {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
 .decision-window-team-list,
