@@ -158,8 +158,10 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         for required in (
             "repository_dispatch:",
             "- scheduler-update-league",
+            "python3 tools/rebuild_and_publish.py",
+            "--scope league",
+            "--path public/data",
             "pwsh ./public/requests/RequestLeague.ps1",
-            "git add public/data/**",
         ):
             self.assertIn(required, workflow)
 
@@ -186,8 +188,10 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         for required in (
             "repository_dispatch:",
             "- scheduler-update-players",
+            "python3 tools/rebuild_and_publish.py",
+            "--scope players",
+            "--path public/data",
             "pwsh ./public/requests/RequestPlayers.ps1",
-            "git add public/data/**",
         ):
             self.assertIn(required, workflow)
 
