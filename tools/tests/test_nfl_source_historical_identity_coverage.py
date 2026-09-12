@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import tempfile
 import unittest
@@ -74,6 +75,63 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
+    _RAW_CONTEXT_FIELDS = {
+        "player_id",
+        "player_name",
+        "player_display_name",
+        "position",
+        "position_group",
+        "headshot_url",
+        "season",
+        "week",
+        "season_type",
+        "game_id",
+        "team",
+        "opponent_team",
+    }
+
+    @staticmethod
+    def _is_nonzero(value: object) -> bool:
+        text = str(value or "").strip()
+        if not text:
+            return False
+        try:
+            return float(text) != 0.0
+        except ValueError:
+            return True
+
+    def _unclassified_raw_examples(self, repo_root: Path) -> list[dict[str, object]]:
+        examples: list[dict[str, object]] = []
+        raw_root = repo_root / "source-data/providers/nflverse/player-stats"
+        for raw_path in sorted(raw_root.glob("raw-*.csv")):
+            with raw_path.open("r", encoding="utf-8-sig", newline="") as handle:
+                for row in csv.DictReader(handle):
+                    if str(row.get("player_id") or "").strip():
+                        continue
+                    name = str(row.get("player_display_name") or row.get("player_name") or "").strip()
+                    position = str(row.get("position") or "").strip()
+                    is_team_aggregate = name.casefold() == "team" or (not name and not position)
+                    if is_team_aggregate:
+                        continue
+                    examples.append(
+                        {
+                            "Season": row.get("season"),
+                            "Week": row.get("week"),
+                            "SeasonType": row.get("season_type"),
+                            "GameID": row.get("game_id"),
+                            "PlayerName": name or None,
+                            "Position": position or None,
+                            "Team": row.get("team") or None,
+                            "OpponentTeam": row.get("opponent_team") or None,
+                            "NonZeroStats": {
+                                key: value
+                                for key, value in row.items()
+                                if key not in self._RAW_CONTEXT_FIELDS and self._is_nonzero(value)
+                            },
+                        }
+                    )
+        return examples
+
     def test_repository_historical_unresolved_ids_are_repairable_from_provider_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -97,6 +155,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
         diagnostic = json.dumps(
             {
                 "RawUnclassifiedMissingPlayerIDExamples": coverage["RawUnclassifiedMissingPlayerIDExamples"],
+                "RawUnclassifiedMissingPlayerIDDetails": self._unclassified_raw_examples(repo_root),
                 "RawMissingPlayerIDBySeason": coverage["RawMissingPlayerIDBySeason"],
             },
             indent=2,
