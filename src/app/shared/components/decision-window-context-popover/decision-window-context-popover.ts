@@ -120,6 +120,10 @@ export class DecisionWindowContextPopoverComponent {
     return formatDecisionWindowGame(game);
   }
 
+  nflLogo(teamID: string | number): string | null {
+    return this.nflTeams.find(team => String(team.ID) === String(teamID))?.Logo || null;
+  }
+
   openTeam(teamId: number): void {
     this.teamDetailDialogService.open(teamId, { initialTab: 'lineup' });
   }
