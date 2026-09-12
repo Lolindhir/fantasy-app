@@ -94,18 +94,28 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
     def test_repository_raw_missing_player_ids_are_explicit_team_aggregates(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
+        diagnostic = json.dumps(
+            {
+                "RawUnclassifiedMissingPlayerIDExamples": coverage["RawUnclassifiedMissingPlayerIDExamples"],
+                "RawMissingPlayerIDBySeason": coverage["RawMissingPlayerIDBySeason"],
+            },
+            indent=2,
+            sort_keys=True,
+        )
         self.assertGreater(coverage["HistoricalRawMissingPlayerIDRecordCount"], 0)
         self.assertEqual(
             coverage["HistoricalRawMissingPlayerIDRecordCount"],
             coverage["HistoricalRawNonPlayerAggregateRecordCount"],
+            diagnostic,
         )
-        self.assertEqual(0, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"])
+        self.assertEqual(0, coverage["HistoricalRawUnclassifiedMissingPlayerIDRecordCount"], diagnostic)
         self.assertEqual(
             coverage["CurrentRawMissingPlayerIDRecordCount"],
             coverage["CurrentRawNonPlayerAggregateRecordCount"],
+            diagnostic,
         )
-        self.assertEqual(0, coverage["CurrentRawUnclassifiedMissingPlayerIDRecordCount"])
-        self.assertEqual([], coverage["RawUnclassifiedMissingPlayerIDExamples"])
+        self.assertEqual(0, coverage["CurrentRawUnclassifiedMissingPlayerIDRecordCount"], diagnostic)
+        self.assertEqual([], coverage["RawUnclassifiedMissingPlayerIDExamples"], diagnostic)
 
     def test_justin_jefferson_keeps_one_canonical_identity_across_historical_week_one_stats(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
