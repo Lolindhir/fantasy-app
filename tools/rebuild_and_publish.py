@@ -8,7 +8,6 @@ rebases one already-built self-contained snapshot.
 from __future__ import annotations
 
 import argparse
-import os
 import random
 import shlex
 import subprocess
@@ -26,6 +25,8 @@ RACE_MARKERS = (
     "failed to update ref",
     "stale info",
 )
+GENERATED_COMMIT_USER_NAME = "github-actions"
+GENERATED_COMMIT_USER_EMAIL = "github-actions@github.com"
 
 
 def run(args: Sequence[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -101,6 +102,11 @@ def has_staged_changes() -> bool:
     return run_git(["diff", "--cached", "--quiet"], check=False).returncode == 1
 
 
+def configure_generated_commit_identity() -> None:
+    run_git(["config", "--local", "user.name", GENERATED_COMMIT_USER_NAME])
+    run_git(["config", "--local", "user.email", GENERATED_COMMIT_USER_EMAIL])
+
+
 def create_generated_commit(scope: str) -> None:
     run(["pwsh", "./.github/scripts/Invoke-GeneratedDataCommit.ps1", "-Scope", scope])
 
@@ -147,6 +153,7 @@ def publish_rebuilt(
             print("No staged generated-data changes detected. Nothing to publish.")
             return
 
+        configure_generated_commit_identity()
         create_generated_commit(scope)
         if changed_paths():
             raise RuntimeError("Worktree is dirty after generated-data commit; refusing to push.")
