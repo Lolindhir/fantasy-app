@@ -55,25 +55,40 @@
   white-space: nowrap;
 }
 
+.fgc-dialog-header {
+  align-items: center;
+  padding: 16px 16px 13px;
+}
+
+.fgc-dialog-header > button[mat-icon-button] {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin: -4px -4px -4px 0;
+}
+
 .fgc-player-copy { gap: 2px; }
 
 .fgc-player-chip-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
+  gap: 2px 3px;
   min-width: 0;
   min-height: 16px;
-  overflow: hidden;
+  overflow: visible;
   line-height: 16px;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .fgc-player-chip {
   box-sizing: border-box;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 2px;
+  max-width: 100%;
   height: 16px;
   min-height: 16px;
   padding: 0 5px;
@@ -163,7 +178,24 @@ button.fgc-mini-player {
 
 button.fgc-mini-nfl-lockup {
   width: fit-content;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 4px 6px;
   border-radius: 8px;
+}
+
+button.fgc-mini-nfl-lockup::after {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  color: #8b5cf6;
+  content: '›';
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 button.fgc-mini-nfl-lockup:hover,
@@ -216,6 +248,7 @@ button.fgc-mini-player {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
   gap: 2px;
 }
 
@@ -250,14 +283,14 @@ button.fgc-mini-player {
 }
 
 /* The base timeline styles make every nested span a column. Keep the metadata
-   under the player name as one compact chip line instead. */
+   under the player name as a compact wrapping chip line instead. */
 .fgc-mini-player .fgc-player-chip-row--mini {
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  overflow: hidden;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
 }
 
 .fgc-mini-player .fgc-player-chip-row--mini .fgc-player-chip {
@@ -425,6 +458,8 @@ button.fgc-mini-player:focus-visible {
 }
 
 @media (max-width: 520px) {
+  .fgc-dialog-header { padding: 14px 12px 12px; }
+  .fgc-dialog-header > button[mat-icon-button] { margin-right: -4px; }
   .fgc-affected-teams { gap: 6px; padding-inline: 6px; }
   .fgc-affected-teams-label { display: none; }
   .fgc-affected-team-avatar { width: 23px; height: 23px; }
