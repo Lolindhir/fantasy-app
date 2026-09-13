@@ -11,4 +11,5 @@ $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\FantasyGameContextScoreRegressionTest.ps1"
 & "$PSScriptRoot\FantasyMatchupPreviewRegressionTest.ps1"
 & "$PSScriptRoot\MatchupReadModelRegressionTest.ps1"
-Write-Host 'Decision Window + FantasyGameContext + Matchups regression suite passed.' -ForegroundColor Green
+& "$PSScriptRoot\WeeklyRecapRegressionTest.ps1"
+Write-Host 'Decision Window + FantasyGameContext + Matchups + WeeklyRecaps regression suite passed.' -ForegroundColor Green
