@@ -182,6 +182,15 @@ try {
             [PSCustomObject][ordered]@{ GameID = '2026_01_CCC_DDD'; GameType = 'REG'; Week = 1; Final = $false }
         )
     })
+    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/weekly-rosters/2026/01.json') -Value ([PSCustomObject][ordered]@{
+        SchemaVersion = 2
+        Season = 2026
+        Week = 1
+        Records = @(
+            [PSCustomObject][ordered]@{ CanonicalPlayerID = 'NFLP-1'; Team = 'AAA' },
+            [PSCustomObject][ordered]@{ CanonicalPlayerID = 'NFLP-2'; Team = 'AAA' }
+        )
+    })
 
     $standings = @(
         [PSCustomObject][ordered]@{
@@ -242,6 +251,16 @@ try {
     Assert-MrmEqual 2 $finalModel.Weeks[0].Matchups[0].Result.WinnerTeamID 'Final winner must use the effective score.'
     Assert-MrmEqual 1 $finalModel.Summary.LastCompletedWeek 'LastCompletedWeek is incorrect.'
     Assert-MrmTrue ($null -eq $finalModel.Summary.ActiveOrNextWeek) 'ActiveOrNextWeek must be null after the last known week is final.'
+
+    $historicalStyleModel = New-MatchupSeasonReadModel `
+        -CanonicalLeagueID 'nfl-reise' `
+        -Season 2026 `
+        -Standings $standings `
+        -DecisionFacts $null `
+        -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) `
+        -RepoRoot $temp
+    Assert-MrmEqual 'final' $historicalStyleModel.Weeks[0].CompletionState 'Canonical weekly-roster Team strings must resolve historical starter finality.'
+    Assert-MrmEqual 'final' $historicalStyleModel.Weeks[0].Matchups[0].CompletionState 'An unrelated unfinished NFL game must not block historical fantasy finality.'
 
     $openModel = New-MatchupSeasonReadModel `
         -CanonicalLeagueID 'nfl-reise' `
