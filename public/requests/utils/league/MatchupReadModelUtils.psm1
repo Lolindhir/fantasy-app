@@ -156,7 +156,6 @@ function ConvertTo-MrmCanonicalPairings {
     $result = @()
     foreach ($groupKey in @($groups.Keys | Sort-Object)) {
         $groupRows = @($groups[$groupKey])
-
         $internalParticipants = @()
         $scoreEvidenceUnknown = $false
         $seenTeams = @{}
@@ -280,13 +279,33 @@ function Get-MrmWeeklyAssignmentMap {
     $path = Join-Path $RepoRoot ("source-data/nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
     if (-not (Test-Path $path)) { return $null }
     $document = Get-Content $path -Raw | ConvertFrom-Json
+    $rows = if ($document -is [System.Collections.IEnumerable] -and $document -isnot [string]) {
+        @($document)
+    }
+    else {
+        @(Get-MrmCollection (Get-MrmValue -Object $document -Names @('Records','Rows','Rosters','Players','Data')))
+    }
+
     $map = @{}
-    foreach ($assignment in @(Get-FgcWeeklyRosterAssignments -Document $document)) {
-        $canonicalID = [string]$assignment.CanonicalPlayerID
-        if ([string]::IsNullOrWhiteSpace($canonicalID)) { continue }
-        if (-not $map.ContainsKey($canonicalID)) { $map[$canonicalID] = @() }
-        $teamAbbr = ([string]$assignment.TeamAbbr).Trim().ToUpperInvariant()
-        if (-not [string]::IsNullOrWhiteSpace($teamAbbr)) { $map[$canonicalID] += $teamAbbr }
+    foreach ($row in $rows) {
+        $playerRef = Get-MrmValue -Object $row -Names @('Player')
+        $canonicalID = ConvertTo-FgcCanonicalPlayerID -Player $(if ($null -ne $playerRef) { $playerRef } else { $row })
+        if ([string]::IsNullOrWhiteSpace([string]$canonicalID)) { continue }
+
+        $teamRef = Get-MrmValue -Object $row -Names @('Team')
+        $teamAbbr = Get-MrmValue -Object $row -Names @('TeamAbbr','TeamAbv')
+        if ([string]::IsNullOrWhiteSpace([string]$teamAbbr) -and $teamRef -is [string]) {
+            $teamAbbr = $teamRef
+        }
+        elseif ($null -ne $teamRef -and $teamRef -isnot [string]) {
+            $teamAbbr = Get-MrmValue -Object $teamRef -Names @('TeamAbbr','TeamAbv','Abbr')
+        }
+
+        $teamAbbr = ([string]$teamAbbr).Trim().ToUpperInvariant()
+        if ([string]::IsNullOrWhiteSpace($teamAbbr)) { continue }
+        $key = [string]$canonicalID
+        if (-not $map.ContainsKey($key)) { $map[$key] = @() }
+        $map[$key] += $teamAbbr
     }
     foreach ($key in @($map.Keys)) { $map[$key] = @($map[$key] | Sort-Object -Unique) }
     return $map
