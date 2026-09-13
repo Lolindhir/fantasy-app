@@ -104,6 +104,53 @@ coreConcepts:
       from seasons older than League.Season remain historical only and must not be
       added as current team data.
 
+  LineupRepairability:
+    description: >
+      Provider-neutral generated fact describing whether an objective current-week
+      required-starter problem can still be repaired before the relevant lock
+      boundaries. Repairability belongs to the shared DecisionWindows/FantasyRelevance
+      domain read model so Matchups, Decision Window and future consumers use one
+      source of truth rather than recreating roster/acquisition heuristics in Angular.
+    initialProblemCodes:
+      - OPEN_STARTER_SLOT
+      - STARTER_ON_BYE
+    states:
+      repairable: >
+        Known evidence proves the complete remaining mutable lineup can still be
+        assigned legally through an accepted deterministic repair path.
+      irreparable: >
+        Complete known evidence proves no accepted internal or external repair path
+        remains for the complete mutable lineup.
+      unknown: >
+        Missing, conflicting or ambiguous lineup, ownership, position, acquisition
+        or player-lock evidence could change the result and therefore must not be
+        guessed into repairable or irreparable.
+    paths:
+      internal-roster: >
+        Eligible unlocked Active Roster players can fill the complete mutable lineup.
+      external-acquisition: >
+        The complete mutable lineup becomes fillable only when at least one eligible
+        currently unrostered player can be acquired before that player's lock.
+      none: >
+        Path is null for irreparable and unknown outcomes.
+    assignmentRules:
+      - Evaluate all mutable required starter slots together as an assignment/matching problem.
+      - One player may satisfy at most one starter slot.
+      - Unlocked starters may move between other eligible mutable slots, including FLEX and SUPER_FLEX reshuffles.
+      - Locked-active and completed starters remain fixed and are not future repair candidates.
+      - Active Roster means Starter plus Bench for internal repair; IR/Reserve and Taxi are excluded.
+      - Review/data-quality lineup problems remain neutral unknown rather than manager-fault irreparable states.
+    acquisitionRules:
+      - Fantasy-unrostered status means absence from every current fantasy roster; NFL free-agent status is not fantasy availability evidence.
+      - Trade is excluded because another manager's participation makes it non-deterministic.
+      - The current temporary #493 compatibility bridge supplies acquisition capability without leaking provider-specific policy names into the repairability contract.
+      - Under that current bridge, an external candidate is actionable only when the known NextWaiverRun is strictly earlier than that player's current-week kickoff.
+      - Issue #492 is the permanent acquisition-policy/current-state replacement and must preserve the repairability State/Path/Reason consumer semantics when it replaces #493.
+    ownership: >
+      Generation/data owns slot matching, lock evidence, fantasy ownership joins,
+      acquisition feasibility and fail-closed unknown handling. Angular owns only
+      presentation and consumer-specific display mapping.
+
   Player:
     description: >
       A football player enriched from source data and exposed to Angular through
