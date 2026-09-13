@@ -333,22 +333,40 @@ Mindestens:
    - 1 K;
    - aktuelle Ligaregeln aus dem Repo sind verbindlich.
 
-5. **Free-Agent-Upgrades prüfen**
+5. **Matchup-State und Risikobudget kalibrieren**
+   - den aktuellen Rohpunktestand nie isoliert als Begründung für konservativere oder aggressivere Start/Sit-Entscheidungen verwenden;
+   - für beide Teams die bereits abgeschlossenen Starter, deren erzielte Punkte und die verbleibenden Starter-/Lineup-Slots bestimmen;
+   - Punkte pro bereits abgeschlossenem Starter und die erwartbare verbleibende Produktion gemeinsam mit dem absoluten Punktestand betrachten;
+   - einen optischen Rückstand, der primär daraus entsteht, dass der Gegner mehr Spieler bereits absolviert hat, nicht als echten Comeback-Zwang behandeln;
+   - Floor-/Median-orientierte Entscheidungen bleiben der Default, solange kein materiell belastbarer Rückstand in der verbleibenden Siegchance vorliegt;
+   - Varianz und Ceiling gezielt erhöhen, wenn Gegner-Outperformance und verbleibende Projektionen einen echten Aufholbedarf zeigen; bei einem belastbaren Vorsprung darf unnötige Downside stärker vermieden werden;
+   - kleine Stichproben einzelner bereits gespielter Spieler nicht übergewichten: Matchup-State ist ein Kalibrierungsfaktor für enge Entscheidungen, kein Ersatz für Player-, Usage-, Injury- und Projection-Evaluation.
+
+6. **Late-Swap- und Late-Injury-Risiko absichern**
+   - späte `Questionable`-/Game-Time-Decision-Spieler nicht nur nach nominaler Projektion bewerten, sondern auch nach dem Risiko von Inactive-Status, Snap-Limit oder reduzierter Rolle;
+   - wenn ein unsicherer Spieler FLEX-eligible ist, ihn nach Möglichkeit in einen FLEX-Slot statt in einen früh blockierenden Positionsslot stellen, damit die spätere Ersatzmenge maximal bleibt;
+   - einen unsicheren späten Starter nur dann bevorzugen, wenn entweder ein realistisch startbarer Backup mit passender Positions-/FLEX-Berechtigung und gleichem oder späterem Kickoff verfügbar ist oder der Erwartungswertvorteil das zusätzliche Null-/Limitierungsrisiko klar rechtfertigt;
+   - ohne belastbaren Late-Swap-Pfad einen früheren gesunden Spieler mit etwas niedrigerer Ceiling bevorzugen, wenn der erwartete Floor-/Median-Verlust kleiner ist als das Downside-Risiko des späten unsicheren Spielers;
+   - Practice Participation, offizielle Game Designation, glaubwürdige Snap-/Workload-Berichte und finale Inactive-Meldungen unterscheiden; `Questionable` allein ist weder automatische Bench- noch automatische Start-Begründung;
+   - vor dem Lock des betroffenen Spiels die final verfügbare Injury-/Inactive-Evidenz revalidieren, wenn sie die Entscheidung materiell verändern kann;
+   - der finale Output muss bei jedem bewusst gestarteten späten unsicheren Spieler den konkreten Backup-Spieler und den nutzbaren Slot nennen.
+
+7. **Free-Agent-Upgrades prüfen**
    - nicht nur Top Projection suchen;
    - tatsächliche Fantasy-Verfügbarkeit prüfen;
    - erwarteten Vorteil gegen aktuellen Starter/Bench-Spieler bewerten.
 
-6. **Drop Opportunity Cost berechnen**
+8. **Drop Opportunity Cost berechnen**
    - welcher Spieler müsste weichen?
    - verliert das Team dadurch wertvolle Upside, Injury Insurance, Scarcity oder Trade Value?
    - ist der Move nur für eine Woche oder auch mittelfristig sinnvoll?
 
-7. **Waiver-/Add-/Drop-Empfehlung erzeugen**
+9. **Waiver-/Add-/Drop-Empfehlung erzeugen**
    - nur wenn der Gesamtnutzen positiv ist;
    - Alternativen und Mindestvorteil nennen;
    - Unsicherheit explizit machen.
 
-8. **Finale Lineup-Empfehlung erzeugen**
+10. **Finale Lineup-Empfehlung erzeugen**
    - Starter;
    - Bench;
    - nötige Moves davor;
@@ -364,6 +382,9 @@ Der spätere Workflow soll mindestens liefern:
 - zugehörige Drops;
 - priorisierte Alternativen;
 - Injury-/Bye-Risiken;
+- aktueller Matchup-State einschließlich absolvierte Starter und verbleibende Slots beider Teams, wenn bereits Spiele gelaufen sind;
+- das daraus abgeleitete Risikobudget für enge Start/Sit-Entscheidungen;
+- konkreter Late-Swap-Backup-Pfad für bewusst gestartete späte Questionable-/Game-Time-Decision-Spieler;
 - Kicker Hold/Stream;
 - Entscheidungskonfidenz;
 - zeitkritische nächste Aktion.
@@ -472,7 +493,8 @@ Vor einer automatischen Aktivierung müssen festgelegt werden:
 - gewünschter Hauptanalysezeitpunkt;
 - spätester Recheck vor den Spielen;
 - Umgang mit Thursday-/Saturday-/International-Games;
-- Late-Swap-/Late-Injury-Logik;
+- technische Umsetzung der Matchup-State-/Risikobudget-Neukalibrierung nach bereits absolvierten Spielen;
+- Late-Swap-/Late-Injury-Logik einschließlich konkreter Backup-Pfade;
 - ob ein zusätzlicher Spieltags-Recheck nur ereignisgesteuert oder immer ausgeführt wird;
 - ob Empfehlungen nur gemeldet oder irgendwann technisch in der App vorbereitet werden.
 
