@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-09-07
+updated: 2026-09-13
 
 purpose: >-
   Defines the generator-owned FantasyGameContext read model introduced by Issue #346.
@@ -51,8 +51,9 @@ relevance_v1:
 
 impact:
   source_of_truth: >-
-    League-scored matchup player facts only. Current data uses the Sleeper matchup response
-    already needed for League.Matchups. Historical data uses persisted canonical league
+    League-scored matchup player facts only. Current generation uses the same current
+    Sleeper matchup response loaded as score/player evidence for Matchups.json and
+    FantasyGameContext. Historical data uses persisted canonical league
     PlayerPoints/StarterPoints. Generic NFL/Tank fantasy points are not accepted for this model.
   states:
     unavailable: no league-scored player facts are available yet
@@ -104,9 +105,11 @@ boundaries:
   decision_windows: >-
     DecisionWindows.json remains the sole Decision Window read model. FantasyGameContext consumes
     its generated facts in the same RequestLeague run; Angular never reconstructs NFL/fantasy joins.
-  league_matchups: >-
-    League.json retains the compact scoreboard snapshot. FantasyGameContext owns richer roster,
-    starter, game relevance and impact facts.
+  matchups: >-
+    Matchups.json owns the season/week pairing, official/effective team score, matchup result and
+    fantasy completion state. FantasyGameContext reuses the same deterministic FantasyMatchupID and
+    owns richer roster, starter, NFL-game relevance, impact and counterfactual facts. League.json no
+    longer republishes a compact matchup scoreboard snapshot.
   source_snapshots: >-
-    source-data remains provider/canonical evidence. Generated FantasyGameContext files are disposable
-    presentation read models and can be rebuilt from those sources.
+    source-data remains provider/canonical evidence. Generated Matchups and FantasyGameContext files
+    are disposable presentation read models and can be rebuilt from those sources.

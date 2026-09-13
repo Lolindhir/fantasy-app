@@ -3,6 +3,7 @@ import type { Player } from './player.models';
 
 export interface DataTimestamps {
   League?: string;
+  Matchups?: string;
   Players?: string;
   Teams?: string;
   Drafts?: string;
@@ -93,22 +94,6 @@ export interface Standing {
   Awards?: AwardInStanding[];
 }
 
-export interface LeagueMatchupParticipant {
-  TeamID: number;
-  Points: number;
-}
-
-export interface LeagueMatchup {
-  MatchupID: number;
-  Participants: LeagueMatchupParticipant[];
-}
-
-export interface LeagueMatchupSnapshot {
-  Season: string;
-  Week: number;
-  Matchups: LeagueMatchup[];
-}
-
 export interface RawLeague {
   LeagueID: string;
   Name: string;
@@ -137,7 +122,6 @@ export interface RawLeague {
   SeasonKickoff?: string | null;
   LeagueTimeZone?: string;
   SalaryRelevantTeamSize: number;
-  Matchups?: LeagueMatchupSnapshot | null;
   Teams: RawFantasyTeam[];
   Standings: Standing[];
   Playoffs?: unknown;

@@ -125,9 +125,11 @@ history:
 
 compatibility:
   leagueMatchups: >
-    League.Matchups remains the transitional current-week snapshot. #305 does not
-    remove it because current consumers are not all migrated; #500/#505 and the
-    broader #347 migration can move consumers incrementally.
+    League.Matchups was the transitional single-week scoreboard snapshot. #305 removes
+    that duplicate public contract after migrating current Angular consumers; Matchups.json
+    is the sole app-facing matchup schedule/score/result/finality contract. Provider
+    matchup rows may still be loaded in RequestLeague as generation evidence for Matchups
+    and FantasyGameContext, but they are no longer published inside League.json.
   nonGoals:
     - player-level matchup detail
     - Strength of Schedule (#506)

@@ -9,6 +9,7 @@ import type { DecisionWindowsReadModel } from '../models/decision-window.models'
 import type { RawDraft } from '../models/draft.models';
 import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
+import type { MatchupsReadModel } from '../models/matchup.models';
 import type {
   NFLTeam,
   Player,
@@ -52,6 +53,10 @@ export class DataService {
     return this.dataApiService.getTimestamps().pipe(map(ts => ts.League));
   }
 
+  getMatchupsTimestamp(): Observable<string | undefined> {
+    return this.dataApiService.getTimestamps().pipe(map(ts => ts.Matchups));
+  }
+
   getPlayersTimestamp(): Observable<string | undefined> {
     return this.dataApiService.getTimestamps().pipe(map(ts => ts.Players));
   }
@@ -79,7 +84,7 @@ export class DataService {
   getLatestTimestamp(): Observable<string | undefined> {
     return this.dataApiService.getTimestamps().pipe(
       map(ts => {
-        return [ts.League, ts.Players, ts.Teams, ts.Drafts, ts.Transactions, ts.DecisionWindows, ts.FantasyGameContext]
+        return [ts.League, ts.Matchups, ts.Players, ts.Teams, ts.Drafts, ts.Transactions, ts.DecisionWindows, ts.FantasyGameContext]
           .reduce<string | undefined>((a, b) => {
             if (a === undefined) return b;
             if (b === undefined) return a;
@@ -111,6 +116,10 @@ export class DataService {
 
   getDecisionWindows(): Observable<DecisionWindowsReadModel> {
     return this.dataApiService.getDecisionWindowsRaw();
+  }
+
+  getMatchups(): Observable<MatchupsReadModel> {
+    return this.dataApiService.getMatchupsRaw();
   }
 
   getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
@@ -156,6 +165,10 @@ export class DataService {
 
   getPastDraftsRaw(path: string): Observable<RawDraft[]> {
     return this.dataApiService.getPastDraftsRaw(path);
+  }
+
+  getPastMatchupsRaw(path: string): Observable<MatchupsReadModel> {
+    return this.dataApiService.getPastMatchupsRaw(path);
   }
 
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<LeagueWithPlayers> {

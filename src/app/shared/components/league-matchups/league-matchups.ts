@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, Input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,15 +16,14 @@ import type {
 import type {
   FantasyTeam,
   League,
-  LeagueMatchupParticipant,
   PlacementRegularSeason
 } from '../../../core/models/league.models';
+import type { MatchupParticipant, MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
   getCompletedImpactGames,
-  getFantasyMatchupContext,
   getMustWatchGames,
   getNextFantasyMatchupGame,
   isFantasyGameContextForLeagueWeek,
@@ -58,21 +58,21 @@ interface LeagueMatchupTeamContextView {
 
 interface LeagueMatchupTeamView {
   team: FantasyTeam;
-  points: number;
+  points: number | null;
   pointsDisplay: string;
   context: LeagueMatchupTeamContextView | null;
 }
 
 interface LeagueMatchupView {
-  matchupID: number;
+  matchupID: string;
   left: LeagueMatchupTeamView;
   right: LeagueMatchupTeamView;
-  showScore: boolean;
 }
 
 interface FantasyContextState {
   context: FantasyGameContextReadModel | null;
   decisionWindows: DecisionWindowsReadModel | null;
+  matchups: MatchupsReadModel | null;
   nflTeams: NFLTeam[];
 }
 
@@ -105,6 +105,11 @@ export class LeagueMatchupsComponent {
   private readonly teamDialog = inject(TeamDetailDialogService);
   private latestFantasyContextState: FantasyContextState | null = null;
   private readonly expandedScoringWindows = new Set<string>();
+  private readonly matchups$ = this.dataService.getMatchups().pipe(
+    catchError(() => of(null)),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly matchupsReadModelSignal = toSignal(this.matchups$, { initialValue: null });
 
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
@@ -112,6 +117,7 @@ export class LeagueMatchupsComponent {
   readonly fantasyContextState$ = combineLatest({
     context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
     decisionWindows: this.dataService.getDecisionWindows().pipe(catchError(() => of(null))),
+    matchups: this.matchups$,
     nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
   }).pipe(
     map(state => state satisfies FantasyContextState),
@@ -135,16 +141,20 @@ export class LeagueMatchupsComponent {
   });
 
   get week(): number | null {
-    return this.league.Matchups?.Week ?? null;
+    return this.currentMatchupsReadModel()?.Summary.ActiveOrNextWeek ?? null;
   }
 
   get matchups(): LeagueMatchupView[] {
-    const snapshot = this.league.Matchups;
-    if (!snapshot || snapshot.Season !== this.league.Season) return [];
+    const readModel = this.currentMatchupsReadModel();
+    const week = this.week;
+    if (!readModel || week === null) return [];
+
+    const weekModel = readModel.Weeks.find(candidate => candidate.Week === week);
+    if (!weekModel) return [];
 
     const teamByID = new Map(this.league.Teams.map(team => [team.TeamID, team]));
 
-    return snapshot.Matchups
+    return weekModel.Matchups
       .filter(matchup => matchup.Participants.length === 2)
       .map(matchup => {
         const participants = matchup.Participants
@@ -154,14 +164,12 @@ export class LeagueMatchupsComponent {
         if (participants.length !== 2) return null;
 
         return {
-          matchupID: matchup.MatchupID,
+          matchupID: matchup.FantasyMatchupID,
           left: participants[0],
-          right: participants[1],
-          showScore: participants.some(participant => participant.points > 0)
+          right: participants[1]
         };
       })
-      .filter((matchup): matchup is LeagueMatchupView => !!matchup)
-      .sort((left, right) => left.matchupID - right.matchupID);
+      .filter((matchup): matchup is LeagueMatchupView => !!matchup);
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
@@ -174,7 +182,7 @@ export class LeagueMatchupsComponent {
   ): FantasyGameContextMatchup | null {
     const current = this.currentContext(context);
     if (!current) return null;
-    return getFantasyMatchupContext(current, [matchup.left.team.TeamID, matchup.right.team.TeamID]);
+    return current.FantasyMatchups.find(candidate => candidate.FantasyMatchupID === matchup.matchupID) ?? null;
   }
 
   starterProgress(
@@ -201,17 +209,17 @@ export class LeagueMatchupsComponent {
     );
   }
 
-  scoringWindowGames(matchupID: number, scoringWindow: MatchupScoringWindowView): FantasyGameContextGame[] {
+  scoringWindowGames(matchupID: string, scoringWindow: MatchupScoringWindowView): FantasyGameContextGame[] {
     return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID))
       ? scoringWindow.games
       : scoringWindow.mobileVisibleGames;
   }
 
-  isScoringWindowExpanded(matchupID: number, scoringWindow: MatchupScoringWindowView): boolean {
+  isScoringWindowExpanded(matchupID: string, scoringWindow: MatchupScoringWindowView): boolean {
     return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
   }
 
-  expandScoringWindow(matchupID: number, scoringWindow: MatchupScoringWindowView): void {
+  expandScoringWindow(matchupID: string, scoringWindow: MatchupScoringWindowView): void {
     this.expandedScoringWindows.add(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
   }
 
@@ -338,6 +346,7 @@ export class LeagueMatchupsComponent {
       mode: 'game',
       context: current,
       decisionWindows: state.decisionWindows,
+      matchups: state.matchups,
       nflTeams: state.nflTeams,
       league: this.league,
       gameId: game.GameID
@@ -353,6 +362,7 @@ export class LeagueMatchupsComponent {
       mode: 'matchup',
       context: current,
       decisionWindows: state.decisionWindows,
+      matchups: state.matchups,
       nflTeams: state.nflTeams,
       league: this.league,
       fantasyMatchupId: resolved.FantasyMatchupID
@@ -373,7 +383,7 @@ export class LeagueMatchupsComponent {
     };
   }
 
-  private scoringWindowKey(matchupID: number, decisionWindowID: string): string {
+  private scoringWindowKey(matchupID: string, decisionWindowID: string): string {
     return `${matchupID}|${decisionWindowID}`;
   }
 
@@ -390,20 +400,25 @@ export class LeagueMatchupsComponent {
   }
 
   private mapParticipant(
-    participant: LeagueMatchupParticipant,
+    participant: MatchupParticipant,
     teamByID: Map<number, FantasyTeam>
   ): LeagueMatchupTeamView | null {
     const team = teamByID.get(participant.TeamID);
     if (!team) return null;
 
-    const points = participant.Points ?? 0;
+    const points = participant.Points;
 
     return {
       team,
       points,
-      pointsDisplay: this.matchupScoreFormatter.format(points),
+      pointsDisplay: this.formatFantasyPoints(points),
       context: this.getTeamContext(team)
     };
+  }
+
+  private currentMatchupsReadModel(): MatchupsReadModel | null {
+    const readModel = this.matchupsReadModelSignal();
+    return readModel?.Season === this.league.Season ? readModel : null;
   }
 
   private getTeamContext(team: FantasyTeam): LeagueMatchupTeamContextView | null {
