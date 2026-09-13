@@ -87,11 +87,12 @@ $corrected = New-WeeklyRecapWeekReadModel -Week 4 -MatchupsWeek $matchupsWeek -F
 Assert-Equal 'p6' $corrected.KeyPlayers[0].PlayerID 'stat correction changes Key Player ranking'
 Assert-Equal 'game-c' $corrected.KeyGames[0].GameID 'stat correction changes Key Game ranking'
 
-# Full Key Game tie chain: same points -> affected matchups -> teams -> starter count -> kickoff -> GameID.
+# Key Game ordering: same points then affected matchup/team/starter density.
 $tieFacts = $facts | ConvertTo-Json -Depth 20 | ConvertFrom-Json
 $tieFacts[0].Teams[0].Players[0].Points = 10
 $tieFacts[0].Teams[1].Players[0].Points = 10
 $tieFacts[1].Teams[0].Players[0].Points = 0
+$tieFacts[1].Teams[0].Players[1].Points = 10
 $tieFacts[1].Teams[1].Players[0].Points = 10
 $tieFacts[2].Teams[0].Players[0].Points = 10
 $tieFacts[2].Teams[1].Players[0].Points = 0
