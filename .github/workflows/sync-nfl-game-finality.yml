@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   sync-finality:
@@ -15,4 +16,5 @@ jobs:
     with:
       dataset: nflverse.game-finality
       historical_backfill_limit: 0
+      materialization_scope: game-finality
     secrets: inherit
