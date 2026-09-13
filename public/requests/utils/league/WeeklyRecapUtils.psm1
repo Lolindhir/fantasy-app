@@ -38,14 +38,24 @@ function Get-WrScheduleWeekNumber {
     return 0
 }
 
+function ConvertTo-WrCanonicalTeamAbbr {
+    param([AllowNull()][object]$TeamAbbr)
+    $value = ([string]$TeamAbbr).Trim().ToUpperInvariant()
+    switch ($value) {
+        'LAR' { return 'LA' }
+        'WSH' { return 'WAS' }
+        default { return $value }
+    }
+}
+
 function Get-WrAwayAbbr {
     param([AllowNull()][object]$Game)
-    return ([string](Get-WrValue -Object $Game -Names @('away','teamAbvAway','AwayTeamAbbr','AwayTeam'))).Trim().ToUpperInvariant()
+    return ConvertTo-WrCanonicalTeamAbbr -TeamAbbr (Get-WrValue -Object $Game -Names @('away','teamAbvAway','AwayTeamAbbr','AwayTeam'))
 }
 
 function Get-WrHomeAbbr {
     param([AllowNull()][object]$Game)
-    return ([string](Get-WrValue -Object $Game -Names @('home','teamAbvHome','HomeTeamAbbr','HomeTeam'))).Trim().ToUpperInvariant()
+    return ConvertTo-WrCanonicalTeamAbbr -TeamAbbr (Get-WrValue -Object $Game -Names @('home','teamAbvHome','HomeTeamAbbr','HomeTeam'))
 }
 
 function Get-WrKickoffUtc {
@@ -110,12 +120,13 @@ function Get-WrNFLTeamID {
         [Parameter(Mandatory = $true)][string]$TeamAbbr,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$IdentitySchedule
     )
+    $teamKey = ConvertTo-WrCanonicalTeamAbbr -TeamAbbr $TeamAbbr
     $ids = @()
     foreach ($game in @($IdentitySchedule)) {
         $away = Get-WrAwayAbbr -Game $game
         $home = Get-WrHomeAbbr -Game $game
-        if ($away -eq $TeamAbbr) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDAway','AwayTeamID')) }
-        if ($home -eq $TeamAbbr) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDHome','HomeTeamID')) }
+        if ($away -eq $teamKey) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDAway','AwayTeamID')) }
+        if ($home -eq $teamKey) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDHome','HomeTeamID')) }
     }
     $ids = @($ids | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
     if ($ids.Count -ne 1) { throw "WeeklyRecaps cannot resolve one stable NFLTeamID for '$TeamAbbr'." }
@@ -128,9 +139,10 @@ function Get-WrWeekGameForTeam {
         [Parameter(Mandatory = $true)][int]$Week,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$IdentitySchedule
     )
+    $teamKey = ConvertTo-WrCanonicalTeamAbbr -TeamAbbr $TeamAbbr
     $games = @($IdentitySchedule | Where-Object {
         (Get-WrScheduleWeekNumber -Game $_) -eq $Week -and
-        ((Get-WrAwayAbbr -Game $_) -eq $TeamAbbr -or (Get-WrHomeAbbr -Game $_) -eq $TeamAbbr)
+        ((Get-WrAwayAbbr -Game $_) -eq $teamKey -or (Get-WrHomeAbbr -Game $_) -eq $teamKey)
     })
     if ($games.Count -gt 1) { throw "WeeklyRecaps found multiple NFL games for '$TeamAbbr' in Week $Week." }
     return $(if ($games.Count -eq 1) { $games[0] } else { $null })
