@@ -2,7 +2,7 @@
   "CurrentSourceSeason": 2026,
   "Datasets": {
     "nflverse.player-stats": {
-      "CanonicalLastChange": "2026-09-11T14:47:07Z",
+      "CanonicalLastChange": "2026-09-13T03:03:18Z",
       "CurrentSeasonMayBeUnavailable": true,
       "ExpectedThroughSeason": 2026,
       "HistoricalSeasonCountExpected": 27,
@@ -323,7 +323,7 @@
       ]
     },
     "nflverse.rosters": {
-      "CanonicalLastChange": "2026-09-11T14:47:07Z",
+      "CanonicalLastChange": "2026-09-13T03:03:18Z",
       "CurrentSeasonMayBeUnavailable": false,
       "ExpectedThroughSeason": 2026,
       "HistoricalSeasonCountExpected": 27,
@@ -331,7 +331,7 @@
       "HistoryStart": 1999,
       "KnownUnavailableHistoricalSeasons": [],
       "MissingHistoricalSeasons": [],
-      "RawLastChange": "2026-09-11T14:38:18Z",
+      "RawLastChange": "2026-09-12T20:36:56Z",
       "Seasons": [
         {
           "AvailabilityStatus": "available",
@@ -644,7 +644,7 @@
       ]
     },
     "nflverse.snap-counts": {
-      "CanonicalLastChange": "2026-09-11T04:11:47Z",
+      "CanonicalLastChange": "2026-09-13T03:03:18Z",
       "CurrentSeasonMayBeUnavailable": true,
       "ExpectedThroughSeason": 2026,
       "HistoricalSeasonCountExpected": 13,
@@ -827,7 +827,7 @@
       ]
     },
     "nflverse.weekly-rosters": {
-      "CanonicalLastChange": "2026-09-11T14:47:07Z",
+      "CanonicalLastChange": "2026-09-13T03:03:18Z",
       "CurrentSeasonMayBeUnavailable": true,
       "ExpectedThroughSeason": 2026,
       "HistoricalSeasonCountExpected": 24,
@@ -835,7 +835,7 @@
       "HistoryStart": 2002,
       "KnownUnavailableHistoricalSeasons": [],
       "MissingHistoricalSeasons": [],
-      "RawLastChange": "2026-09-11T14:38:18Z",
+      "RawLastChange": "2026-09-12T20:36:56Z",
       "Seasons": [
         {
           "AvailabilityStatus": "available",
@@ -1127,9 +1127,7 @@
       "SeasonCount": 28
     }
   },
-  "HardFailures": [
-    "nflverse.player-stats: 19 historical canonical stat records lack CanonicalPlayerID across 5 GSIS player IDs"
-  ],
+  "HardFailures": [],
   "HistoricalBackfillPolicy": {
     "GeneralStatsBasisStart": 1999,
     "KnownUnavailableHistoricalPartitions": [
@@ -1154,17 +1152,12 @@
           "0"
         ],
         "RecordCount": 16839,
-        "ResolvedCanonicalPlayerCount": 1678,
-        "ResolvedRecordCount": 16800,
+        "ResolvedCanonicalPlayerCount": 1682,
+        "ResolvedRecordCount": 16818,
         "UniqueGSISCount": 1683,
-        "UnresolvedGSISIDs": [
-          "00-0005532",
-          "00-0005765",
-          "00-0016335",
-          "00-0017820"
-        ],
-        "UnresolvedRecordCount": 18,
-        "UnresolvedUniqueGSISCount": 4
+        "UnresolvedGSISIDs": [],
+        "UnresolvedRecordCount": 0,
+        "UnresolvedUniqueGSISCount": 0
       },
       "2000": {
         "Historical": true,
@@ -1175,13 +1168,11 @@
         ],
         "RecordCount": 16623,
         "ResolvedCanonicalPlayerCount": 1646,
-        "ResolvedRecordCount": 16601,
+        "ResolvedRecordCount": 16602,
         "UniqueGSISCount": 1648,
-        "UnresolvedGSISIDs": [
-          "XX-0000001"
-        ],
-        "UnresolvedRecordCount": 1,
-        "UnresolvedUniqueGSISCount": 1
+        "UnresolvedGSISIDs": [],
+        "UnresolvedRecordCount": 0,
+        "UnresolvedUniqueGSISCount": 0
       },
       "2001": {
         "Historical": true,
@@ -1544,16 +1535,10 @@
     "HistoricalRawNonPlayerAggregateRecordCount": 530,
     "HistoricalRawUnclassifiedMissingPlayerIDRecordCount": 0,
     "HistoricalRecordCount": 475629,
-    "HistoricalResolvedRecordCount": 475568,
-    "HistoricalUnresolvedGSISIDs": [
-      "00-0005532",
-      "00-0005765",
-      "00-0016335",
-      "00-0017820",
-      "XX-0000001"
-    ],
-    "HistoricalUnresolvedRecordCount": 19,
-    "HistoricalUnresolvedUniqueGSISCount": 5,
+    "HistoricalResolvedRecordCount": 475587,
+    "HistoricalUnresolvedGSISIDs": [],
+    "HistoricalUnresolvedRecordCount": 0,
+    "HistoricalUnresolvedUniqueGSISCount": 0,
     "InvalidNonPlayerCanonicalAssignmentCount": 0,
     "InvalidNonPlayerCanonicalAssignments": [],
     "MultiSeasonCanonicalPlayerCount": 8832,
@@ -1690,9 +1675,9 @@
       }
     },
     "RawUnclassifiedMissingPlayerIDExamples": [],
-    "Ready": false
+    "Ready": true
   },
   "HistoricalPlayerIdentityRule": "Canonical NFL player stats resolve nflverse GSIS player_id directly to stable CanonicalPlayerID. Historical scoring does not depend on Sleeper IDs or archived app Players.json snapshots. Historical unresolved person identity, unclassified raw rows without player_id, invalid person assignment to known team aggregates, and cross-canonical GSIS conflicts fail readiness closed. Explicit team aggregate rows remain non-player facts. Current-season unresolved rows remain diagnostic while the season is in progress.",
-  "ReadyForHistoricalScoring": false,
+  "ReadyForHistoricalScoring": true,
   "schemaVersion": 1
 }
