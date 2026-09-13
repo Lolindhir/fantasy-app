@@ -200,6 +200,20 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(gameSpy).not.toHaveBeenCalled();
   });
 
+  it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const plate = element.querySelector<HTMLElement>('.matchup-score-plate');
+
+    expect(plate).not.toBeNull();
+    expect(plate!.getAttribute('data-scoreboard-state')).toBe('neutral');
+    expect(plate!.classList).toContain('matchup-score-plate--neutral');
+    expect(plate!.querySelector('.matchup-score-value--left')?.textContent?.trim()).toBe('37.4');
+    expect(plate!.querySelector('.matchup-vs')?.textContent?.trim()).toBe('VS');
+    expect(plate!.querySelector('.matchup-score-value--right')?.textContent?.trim()).toBe('13.8');
+    expect(element.querySelectorAll('.matchup-score-plate').length).toBe(1);
+    expect(element.querySelectorAll('.matchup-scoreboard > .matchup-score-value').length).toBe(0);
+  });
+
   it('renders dominant current scores, starter strips and one compact window-level summary', () => {
     const element: HTMLElement = fixture.nativeElement;
 
@@ -215,6 +229,74 @@ describe('LeagueMatchupsComponent scoring overview', () => {
   it('preserves missing score versus reliable zero semantics', () => {
     expect(component.formatFantasyPoints(null)).toBe('–');
     expect(component.formatFantasyPoints(0)).toBe('0');
+  });
+
+  it('keeps 0-0 and long decimal scores collision-free without growing the identity row at responsive widths', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const sourceCard = element.querySelector<HTMLElement>('.matchup-card')!;
+    const sourceLeftScore = sourceCard.querySelector<HTMLElement>('.matchup-score-value--left')!;
+    const sourceRightScore = sourceCard.querySelector<HTMLElement>('.matchup-score-value--right')!;
+
+    for (const [leftScore, rightScore] of [['0', '0'], ['123.45', '987.65']]) {
+      sourceLeftScore.textContent = leftScore;
+      sourceRightScore.textContent = rightScore;
+
+      for (const width of [360, 390, 430, 1280]) {
+        const frame = document.createElement('iframe');
+        frame.style.position = 'absolute';
+        frame.style.left = '-2000px';
+        frame.style.top = '0';
+        frame.style.width = `${width}px`;
+        frame.style.height = '900px';
+        frame.style.border = '0';
+        document.body.appendChild(frame);
+
+        try {
+          const frameDocument = frame.contentDocument!;
+          const frameWindow = frame.contentWindow!;
+          for (const style of Array.from(document.head.querySelectorAll('style'))) {
+            frameDocument.head.appendChild(style.cloneNode(true));
+          }
+
+          const reset = frameDocument.createElement('style');
+          reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}';
+          frameDocument.head.appendChild(reset);
+          frameDocument.body.appendChild(sourceCard.cloneNode(true));
+
+          const scoreboard = frameDocument.querySelector<HTMLElement>('.matchup-scoreboard')!;
+          const plate = frameDocument.querySelector<HTMLElement>('.matchup-score-plate')!;
+          const scoreboardRect = scoreboard.getBoundingClientRect();
+          const leftTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--left')!.getBoundingClientRect();
+          const rightTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--right')!.getBoundingClientRect();
+          const plateRect = plate.getBoundingClientRect();
+          const visibleIdentity = Array.from(frameDocument.querySelectorAll<HTMLElement>('.matchup-team-identity'))
+            .find(identity => frameWindow.getComputedStyle(identity).display !== 'none')!;
+          const scoreFontSize = Number.parseFloat(frameWindow.getComputedStyle(
+            plate.querySelector<HTMLElement>('.matchup-score-value--left')!
+          ).fontSize);
+
+          expect(frameWindow.innerWidth).withContext(`${width}px iframe viewport`).toBe(width);
+          expect(plateRect.left).withContext(`${width}px ${leftScore}-${rightScore} plate inside scoreboard`)
+            .toBeGreaterThanOrEqual(scoreboardRect.left - 1);
+          expect(plateRect.right).withContext(`${width}px ${leftScore}-${rightScore} plate inside scoreboard`)
+            .toBeLessThanOrEqual(scoreboardRect.right + 1);
+          expect(plateRect.left).withContext(`${width}px ${leftScore}-${rightScore} left identity collision`)
+            .toBeGreaterThanOrEqual(leftTeam.right - 1);
+          expect(plateRect.right).withContext(`${width}px ${leftScore}-${rightScore} right identity collision`)
+            .toBeLessThanOrEqual(rightTeam.left + 1);
+          expect(plateRect.height).withContext(`${width}px ${leftScore}-${rightScore} score plate height`)
+            .toBeLessThanOrEqual(visibleIdentity.getBoundingClientRect().height + 1);
+
+          if (width === 360) {
+            expect(scoreFontSize).withContext('360px compact score typography').toBeLessThan(18);
+          } else if (width === 1280) {
+            expect(scoreFontSize).withContext('1280px desktop score typography').toBeGreaterThan(20);
+          }
+        } finally {
+          frame.remove();
+        }
+      }
+    }
   });
 
   it('renders football-first logo previews without Overview NFL-game click targets', () => {
