@@ -252,6 +252,20 @@ try {
     Assert-MrmEqual 1 $finalModel.Summary.LastCompletedWeek 'LastCompletedWeek is incorrect.'
     Assert-MrmTrue ($null -eq $finalModel.Summary.ActiveOrNextWeek) 'ActiveOrNextWeek must be null after the last known week is final.'
 
+    $matchupReadModelModule = Get-Module MatchupReadModelUtils
+    $historyDiagnostics = & $matchupReadModelModule {
+        param($Root, $Starter)
+        $assignments = Get-MrmWeeklyAssignmentMap -RepoRoot $Root -Season 2026 -Week 1
+        $games = @(Get-MrmCanonicalScheduleGames -RepoRoot $Root -Season 2026 | Where-Object { [int](Get-MrmValue -Object $_ -Names @('Week')) -eq 1 })
+        $finality = Get-MrmFinalityMap -RepoRoot $Root -Season 2026
+        [PSCustomObject][ordered]@{
+            Assignment = if ($null -ne $assignments -and $assignments.ContainsKey('NFLP-1')) { @($assignments['NFLP-1']) -join ',' } else { $null }
+            StarterResolution = Get-MrmStarterGameResolution -Starter $Starter -WeekGames $games -WeeklyAssignments $assignments -FinalityMap $finality
+        }
+    } $temp $team1Row.StarterPoints[0]
+    Assert-MrmEqual 'AAA' $historyDiagnostics.Assignment 'Canonical weekly-roster assignment map must expose Team strings.'
+    Assert-MrmEqual 'final' $historyDiagnostics.StarterResolution 'Canonical weekly-roster assignment must resolve the starter NFL game finality.'
+
     $historicalStyleModel = New-MatchupSeasonReadModel `
         -CanonicalLeagueID 'nfl-reise' `
         -Season 2026 `
