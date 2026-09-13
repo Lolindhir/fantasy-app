@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-13T10:14:16Z",
-  "input_fingerprint": "5ebbb332d92e810afe61e47799e8d93379a3ccfd88997da59da5be6d3f31efc3",
+  "generated_at": "2026-09-13T10:24:27Z",
+  "input_fingerprint": "88d0143b1f9adb032e4883ce9861517901d5dc8057e69b08e8b9b99d6db007be",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "c77e984d48da403eeaed29d1ecf0d18eec34e0fcf377c8b90b0db40156e953bf"
+      "input_fingerprint": "f1bbe1578f56afcc922b4229c0672788f09d85247bc0a26ec46ae3df545b2ee5"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "c0efa62d65b188e83b47f6b0498fdca825682d6468e8f25774abc8e6b6728717"
+      "input_fingerprint": "c77e984d48da403eeaed29d1ecf0d18eec34e0fcf377c8b90b0db40156e953bf"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,148 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 260,
+    "current_discovery_count": 258,
     "previous_discovery_count": 260,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 4,
+    "event_type_counts": {
+      "changed": 2,
+      "resolved": 2
+    },
+    "event_priority_counts": {
+      "low": 1,
+      "medium": 3
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "5b3442df33cb771e734cb765384480cfe24cb7674692f1f959122504b087cb84",
-    "previous_evidence_fingerprint": "31c9d31bf35a565ab77c8b6392740d7c2b8ac93fa434d4b05cdf22c6713a4ad8",
+    "current_evidence_fingerprint": "58051eae9054cb4674dcaeb30ed5851e169a640e2231a5516c805e80829544ab",
+    "previous_evidence_fingerprint": "5b3442df33cb771e734cb765384480cfe24cb7674692f1f959122504b087cb84",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 4,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "5119",
+      "name": "Jason Sanders",
+      "position": "K",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "0d441fe7f67b50fde032ea7e52712cb677bd4e9175b3700d83ffa62630132d2c",
+      "previous_state_hash": "922f590b3d43e49bd1dc7e7943a8a764859c64439c0ba207defd79c9df88718c",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "650",
+      "name": "Nick Folk",
+      "position": "K",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "d3dcdc9f1dc3fa9fd0fde0183184786a1f994ff48b91a9da49a8e9b9e4cf4f74",
+      "previous_state_hash": "4f068c31b299f8c421f7325ac41103139f254043c7a5a29a0c0ded4706d8d147",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8131",
+      "name": "Isaiah Likely",
+      "position": "TE",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "9b171e08c2c902b8e33c054b419e104749504453a0c864783f061c6df2d49810",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "dynasty_market",
+        "redraft_adp"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "redraft_adp",
+          "kind": "percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13968",
+      "name": "Drew Stevens",
+      "position": "K",
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "8207ce28c16cb9dbfd70004b7de9a233cbe993468cd33640d0c5c867acea650d",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "ok",
     "movement_quality_status": "ok",
