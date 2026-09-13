@@ -200,6 +200,20 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(gameSpy).not.toHaveBeenCalled();
   });
 
+  it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const plate = element.querySelector<HTMLElement>('.matchup-score-plate');
+
+    expect(plate).not.toBeNull();
+    expect(plate!.getAttribute('data-scoreboard-state')).toBe('neutral');
+    expect(plate!.classList).toContain('matchup-score-plate--neutral');
+    expect(plate!.querySelector('.matchup-score-value--left')?.textContent?.trim()).toBe('37.4');
+    expect(plate!.querySelector('.matchup-vs')?.textContent?.trim()).toBe('VS');
+    expect(plate!.querySelector('.matchup-score-value--right')?.textContent?.trim()).toBe('13.8');
+    expect(element.querySelectorAll('.matchup-score-plate').length).toBe(1);
+    expect(element.querySelectorAll('.matchup-scoreboard > .matchup-score-value').length).toBe(0);
+  });
+
   it('renders dominant current scores, starter strips and one compact window-level summary', () => {
     const element: HTMLElement = fixture.nativeElement;
 
@@ -215,6 +229,46 @@ describe('LeagueMatchupsComponent scoring overview', () => {
   it('preserves missing score versus reliable zero semantics', () => {
     expect(component.formatFantasyPoints(null)).toBe('–');
     expect(component.formatFantasyPoints(0)).toBe('0');
+  });
+
+  it('keeps long score values collision-free and the score plate within identity-row height at responsive widths', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const scoreboard = element.querySelector<HTMLElement>('.matchup-scoreboard')!;
+    const plate = element.querySelector<HTMLElement>('.matchup-score-plate')!;
+    const leftScore = plate.querySelector<HTMLElement>('.matchup-score-value--left')!;
+    const rightScore = plate.querySelector<HTMLElement>('.matchup-score-value--right')!;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+
+    leftScore.textContent = '123.45';
+    rightScore.textContent = '987.65';
+
+    try {
+      for (const width of [360, 390, 430, 1280]) {
+        window.resizeTo(width, 900);
+        window.dispatchEvent(new Event('resize'));
+        fixture.detectChanges();
+
+        const leftTeam = element.querySelector<HTMLElement>('.matchup-team--left')!.getBoundingClientRect();
+        const rightTeam = element.querySelector<HTMLElement>('.matchup-team--right')!.getBoundingClientRect();
+        const plateRect = plate.getBoundingClientRect();
+        const visibleIdentity = Array.from(element.querySelectorAll<HTMLElement>('.matchup-team-identity'))
+          .find(identity => getComputedStyle(identity).display !== 'none')!;
+
+        expect(window.innerWidth).withContext(`${width}px viewport`).toBe(width);
+        expect(scoreboard.scrollWidth).withContext(`${width}px scoreboard overflow`)
+          .toBeLessThanOrEqual(scoreboard.clientWidth + 1);
+        expect(plateRect.left).withContext(`${width}px left identity collision`)
+          .toBeGreaterThanOrEqual(leftTeam.right - 1);
+        expect(plateRect.right).withContext(`${width}px right identity collision`)
+          .toBeLessThanOrEqual(rightTeam.left + 1);
+        expect(plateRect.height).withContext(`${width}px score plate height`)
+          .toBeLessThanOrEqual(visibleIdentity.getBoundingClientRect().height + 1);
+      }
+    } finally {
+      window.resizeTo(originalWidth, originalHeight);
+      window.dispatchEvent(new Event('resize'));
+    }
   });
 
   it('renders football-first logo previews without Overview NFL-game click targets', () => {
