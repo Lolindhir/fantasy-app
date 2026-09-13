@@ -144,11 +144,10 @@ export function buildMatchupScoringWindow(
       ? 'compact'
       : 'dense';
 
-  // Dense mobile presentation has four identities per row. Two rows therefore
-  // provide eight slots; when overflow is needed one of those slots is reserved
-  // for the +N disclosure control so the initial window remains at most two rows.
-  const mobileGameCapacity = gameIDs.length <= 8 ? gameIDs.length : 7;
-  const mobileVisibleGames = games.slice(0, mobileGameCapacity);
+  // The Overview footer keeps the complete generated window as its count signal,
+  // but only previews the first three already ordered NFL game identities. Exact
+  // per-game inspection belongs in Matchup Detail rather than local disclosure.
+  const mobileVisibleGames = games.slice(0, 3);
 
   return {
     decisionWindowID,

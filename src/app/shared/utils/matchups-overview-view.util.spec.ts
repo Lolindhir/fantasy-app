@@ -210,19 +210,23 @@ describe('matchups overview view utility', () => {
     expect(view?.groups.map(group => group.kind)).toEqual(['final', 'future']);
   });
 
-  it('keeps up to eight dense mobile game slots in two rows and reserves one slot for +N overflow', () => {
-    const eightIDs = Array.from({ length: 8 }, (_, index) => `g${index + 1}`);
-    const nineIDs = [...eightIDs, 'g9'];
+  it('caps the compact scoring-window preview at three games and reports informational overflow', () => {
+    const oneIDs = ['g1'];
+    const threeIDs = ['g1', 'g2', 'g3'];
+    const fiveIDs = ['g1', 'g2', 'g3', 'g4', 'g5'];
 
-    const eight = buildMatchupScoringWindow(matchup(eightIDs), context(eightIDs.map(id => game(id))));
-    const nine = buildMatchupScoringWindow(matchup(nineIDs), context(nineIDs.map(id => game(id))));
+    const one = buildMatchupScoringWindow(matchup(oneIDs), context(oneIDs.map(id => game(id))));
+    const three = buildMatchupScoringWindow(matchup(threeIDs), context(threeIDs.map(id => game(id))));
+    const five = buildMatchupScoringWindow(matchup(fiveIDs), context(fiveIDs.map(id => game(id))));
 
-    expect(eight?.density).toBe('dense');
-    expect(eight?.mobileVisibleGames.length).toBe(8);
-    expect(eight?.mobileOverflowCount).toBe(0);
-    expect(nine?.mobileVisibleGames.length).toBe(7);
-    expect(nine?.mobileOverflowCount).toBe(2);
-    expect(nine?.gameCount).toBe(9);
+    expect(one?.mobileVisibleGames.map(item => item.GameID)).toEqual(oneIDs);
+    expect(one?.mobileOverflowCount).toBe(0);
+    expect(three?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
+    expect(three?.mobileOverflowCount).toBe(0);
+    expect(five?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
+    expect(five?.mobileOverflowCount).toBe(2);
+    expect(five?.gameCount).toBe(5);
+    expect(five?.games.map(item => item.GameID)).toEqual(fiveIDs);
   });
 
   it('represents the whole generated scoring window and marks window-level live action once', () => {

@@ -158,47 +158,56 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     fixture.detectChanges();
   });
 
-  it('makes the upper fantasy zone the matchup target while an NFL pill remains its own game target', () => {
+  it('uses one coherent matchup target and keeps scoring-window previews non-interactive', () => {
     const matchupSpy = spyOn(component, 'openMatchupDetail').and.stub();
     const gameSpy = spyOn(component, 'openGameDetail').and.stub();
     fixture.detectChanges();
 
     const element: HTMLElement = fixture.nativeElement;
-    const matchupTarget = element.querySelector<HTMLElement>('.matchup-primary');
-    const gameTarget = element.querySelector<HTMLButtonElement>('.matchup-window-game');
+    const matchupTarget = element.querySelector<HTMLElement>('.matchup-card');
+    const footer = element.querySelector<HTMLElement>('.matchup-window');
+    const gamePreview = element.querySelector<HTMLElement>('.matchup-window-game');
 
     expect(matchupTarget).not.toBeNull();
-    expect(gameTarget).not.toBeNull();
+    expect(matchupTarget!.getAttribute('role')).toBe('button');
+    expect(matchupTarget!.tabIndex).toBe(0);
+    expect(footer).not.toBeNull();
+    expect(gamePreview).not.toBeNull();
+    expect(gamePreview!.tagName).toBe('SPAN');
+    expect(element.querySelector('.matchup-window button')).toBeNull();
 
-    matchupTarget!.click();
+    footer!.click();
     expect(matchupSpy).toHaveBeenCalledTimes(1);
     expect(gameSpy).not.toHaveBeenCalled();
 
-    gameTarget!.click();
-    expect(gameSpy).toHaveBeenCalledTimes(1);
-    expect(matchupSpy).toHaveBeenCalledTimes(1);
+    matchupTarget!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(matchupSpy).toHaveBeenCalledTimes(2);
+    expect(gameSpy).not.toHaveBeenCalled();
   });
 
-  it('renders dominant current scores, starter strips and one window-level kickoff label', () => {
+  it('renders dominant current scores, starter strips and one compact window-level summary', () => {
     const element: HTMLElement = fixture.nativeElement;
 
     expect(element.querySelector('.matchup-score-value--left')?.textContent?.trim()).toBe('37.4');
     expect(element.querySelector('.matchup-score-value--right')?.textContent?.trim()).toBe('13.8');
     expect(element.querySelectorAll('.matchup-progress-segment').length).toBe(2);
     expect(element.querySelectorAll('.matchup-window-time').length).toBe(1);
-    expect(element.querySelectorAll('.matchup-window-game').length).toBeGreaterThan(0);
+    expect(element.querySelector('.matchup-window-count')?.textContent?.trim()).toBe('1 NFL game');
+    expect(element.querySelectorAll('.matchup-window-game').length).toBe(1);
+    expect(element.querySelector('.matchup-window-overflow')).toBeNull();
   });
 
-  it('renders scoring-window game pills with compact logo-only visuals and accessible game identity', () => {
+  it('renders football-first logo previews without Overview NFL-game click targets', () => {
     const element: HTMLElement = fixture.nativeElement;
-    const gameTarget = element.querySelector<HTMLButtonElement>('.matchup-window-game');
+    const gamePreview = element.querySelector<HTMLElement>('.matchup-window-game');
 
-    expect(gameTarget).not.toBeNull();
-    expect(gameTarget!.querySelectorAll('img').length).toBe(2);
-    expect(gameTarget!.getAttribute('aria-label')).toBe('Open AAA at HHH game details');
-    expect(getComputedStyle(gameTarget!).borderRadius).toBe('999px');
+    expect(gamePreview).not.toBeNull();
+    expect(gamePreview!.getAttribute('role')).toBe('img');
+    expect(gamePreview!.querySelectorAll('img').length).toBe(2);
+    expect(gamePreview!.getAttribute('aria-label')).toBe('AAA at HHH');
+    expect(getComputedStyle(gamePreview!).borderRadius).toBe('999px');
 
-    const abbreviations = gameTarget!.querySelectorAll<HTMLElement>('.matchup-window-game-abbr');
+    const abbreviations = gamePreview!.querySelectorAll<HTMLElement>('.matchup-window-game-abbr');
     expect(abbreviations.length).toBe(2);
     abbreviations.forEach(abbreviation => expect(getComputedStyle(abbreviation).display).toBe('none'));
   });
