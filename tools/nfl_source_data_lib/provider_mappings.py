@@ -83,22 +83,15 @@ def build_provider_mapping_payload(
         external_id = str(claim["ExternalID"])
         internal_id = str(claim["CanonicalPlayerID"])
         key = (provider, external_id, internal_id)
-        exact = mapping_by_key.get(key)
-        if exact is not None:
-            first = int(exact.get("FirstObservedSeason") or observation_season)
-            last = int(exact.get("LastObservedSeason") or observation_season)
-            exact["FirstObservedSeason"] = min(first, observation_season)
-            exact["LastObservedSeason"] = max(last, observation_season)
-            exact["Sources"] = sorted(
-                set(exact.get("Sources") or []) | set(claim.get("Sources") or [])
-            )
-            continue
-
         token = (provider, external_id)
+        # Historical evidence can add an exact mapping for an earlier season.
+        # Its existence does not make the current-season claim safe: check other
+        # owners before extending its interval or merging current provenance.
         overlapping = [
             item
             for item in mappings_by_token.get(token, [])
-            if int(item.get("FirstObservedSeason") or observation_season) <= observation_season
+            if str(item.get("CanonicalPlayerID")) != internal_id
+            and int(item.get("FirstObservedSeason") or observation_season) <= observation_season
             <= int(item.get("LastObservedSeason") or observation_season)
         ]
         if overlapping:
@@ -112,6 +105,17 @@ def build_provider_mapping_payload(
                         internal_id: sorted(claim.get("Sources") or [])
                     },
                 }
+            )
+            continue
+
+        exact = mapping_by_key.get(key)
+        if exact is not None:
+            first = int(exact.get("FirstObservedSeason") or observation_season)
+            last = int(exact.get("LastObservedSeason") or observation_season)
+            exact["FirstObservedSeason"] = min(first, observation_season)
+            exact["LastObservedSeason"] = max(last, observation_season)
+            exact["Sources"] = sorted(
+                set(exact.get("Sources") or []) | set(claim.get("Sources") or [])
             )
             continue
 
