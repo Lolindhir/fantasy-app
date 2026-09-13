@@ -40,22 +40,22 @@ $facts = @(
 )
 $identitySchedule = @(
     [PSCustomObject]@{ gameID='game-a'; gameWeek='Week 4'; gameTime_epoch='1000'; away='AAA'; home='BBB'; teamIDAway='11'; teamIDHome='12' },
-    [PSCustomObject]@{ gameID='game-b'; gameWeek='Week 4'; gameTime_epoch='1100'; away='CCC'; home='DDD'; teamIDAway='13'; teamIDHome='14' },
-    [PSCustomObject]@{ gameID='game-c'; gameWeek='Week 4'; gameTime_epoch='1200'; away='EEE'; home='FFF'; teamIDAway='15'; teamIDHome='16' }
+    [PSCustomObject]@{ gameID='game-b'; gameWeek='Week 4'; gameTime_epoch='1100'; away='WSH'; home='DDD'; teamIDAway='13'; teamIDHome='14' },
+    [PSCustomObject]@{ gameID='game-c'; gameWeek='Week 4'; gameTime_epoch='1200'; away='FFF'; home='LAR'; teamIDAway='15'; teamIDHome='16' }
 )
 $canonicalSchedule = @(
     [PSCustomObject]@{ Week=4; AwayTeam='AAA'; HomeTeam='BBB'; AwayScore=21; HomeScore=17 },
-    [PSCustomObject]@{ Week=4; AwayTeam='CCC'; HomeTeam='DDD'; AwayScore=24; HomeScore=20 },
-    [PSCustomObject]@{ Week=4; AwayTeam='EEE'; HomeTeam='FFF'; AwayScore=10; HomeScore=7 }
+    [PSCustomObject]@{ Week=4; AwayTeam='WAS'; HomeTeam='DDD'; AwayScore=24; HomeScore=20 },
+    [PSCustomObject]@{ Week=4; AwayTeam='FFF'; HomeTeam='LA'; AwayScore=10; HomeScore=7 }
 )
 $rosters = @(
     [PSCustomObject]@{ CanonicalPlayerID='c1'; SourceIDs=[PSCustomObject]@{Sleeper='p1'}; Team='AAA'; Position='QB' },
     [PSCustomObject]@{ CanonicalPlayerID='cb'; SourceIDs=[PSCustomObject]@{Sleeper='bench'}; Team='AAA'; Position='WR' },
     [PSCustomObject]@{ CanonicalPlayerID='c2'; SourceIDs=[PSCustomObject]@{Sleeper='p2'}; Team='BBB'; Position='WR' },
     [PSCustomObject]@{ CanonicalPlayerID='c3'; SourceIDs=[PSCustomObject]@{Sleeper='p3'}; Team='AAA'; Position='RB' },
-    [PSCustomObject]@{ CanonicalPlayerID='c4'; SourceIDs=[PSCustomObject]@{Sleeper='p4'}; Team='CCC'; Position='WR' },
+    [PSCustomObject]@{ CanonicalPlayerID='c4'; SourceIDs=[PSCustomObject]@{Sleeper='p4'}; Team='WAS'; Position='WR' },
     [PSCustomObject]@{ CanonicalPlayerID='c5'; SourceIDs=[PSCustomObject]@{Sleeper='p5'}; Team='DDD'; Position='TE' },
-    [PSCustomObject]@{ CanonicalPlayerID='c6'; SourceIDs=[PSCustomObject]@{Sleeper='p6'}; Team='EEE'; Position='WR' },
+    [PSCustomObject]@{ CanonicalPlayerID='c6'; SourceIDs=[PSCustomObject]@{Sleeper='p6'}; Team='LA'; Position='WR' },
     [PSCustomObject]@{ CanonicalPlayerID='c7'; SourceIDs=[PSCustomObject]@{Sleeper='p7'}; Team='FFF'; Position='RB' }
 )
 $teamOrder = @{ '1'=1; '2'=4; '3'=3; '4'=5; '5'=2; '6'=6 }
@@ -72,6 +72,7 @@ Assert-Equal 'p6' $recap.KeyPlayers[1].PlayerID 'neutral team order determines s
 Assert-Equal 'p2' $recap.KeyPlayers[2].PlayerID 'third tied 20-point starter follows neutral team order'
 Assert-Equal 1 $recap.KeyPlayers[0].FantasyTeamID 'FantasyTeamID preserves Matchups representation'
 Assert-Equal '11' $recap.KeyPlayers[0].NFLTeamID 'week-specific NFL identity resolves through schedule team ID'
+Assert-Equal '16' $recap.KeyPlayers[1].NFLTeamID 'canonical LA maps to historical app LAR team ID'
 Assert-Equal 'QB' $recap.KeyPlayers[0].Position 'natural position is persisted'
 Assert-Equal 21.0 $recap.KeyGames[0].AwayScore 'canonical final away score is persisted'
 Assert-True (@($recap.KeyGames[0].FantasyMatchupIDs) -contains 'fgm-a') 'affected FantasyMatchupIDs are persisted'
