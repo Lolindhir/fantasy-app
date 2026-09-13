@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\FantasyTeamOrderUtils.psm1" -Force
 
 function Assert-True {
     param(
@@ -23,6 +24,22 @@ function Assert-Equal {
     if ($Actual -ne $Expected) {
         throw "$Message Expected '$Expected', got '$Actual'."
     }
+}
+
+function Assert-Throws {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock,
+        [Parameter(Mandatory = $true)][string]$Message
+    )
+
+    try {
+        & $ScriptBlock
+    }
+    catch {
+        return
+    }
+
+    throw $Message
 }
 
 function Get-OccurrenceCount {
@@ -76,14 +93,29 @@ $matchupFixture = @(
     [PSCustomObject]@{ matchup_id = 9; roster_id = 6; points = 0 },
     [PSCustomObject]@{ matchup_id = 0; roster_id = 5; points = 0 }
 )
-$matchupSnapshot = ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 1 -Season "2026"
+$neutralOrderIndex = Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @(
+    [PSCustomObject]@{ TeamID = 2; Place = 1 },
+    [PSCustomObject]@{ TeamID = 1; Place = 2 },
+    [PSCustomObject]@{ TeamID = 4; Place = 3 },
+    [PSCustomObject]@{ TeamID = 3; Place = 4 },
+    [PSCustomObject]@{ TeamID = 6; Place = 5 },
+    [PSCustomObject]@{ TeamID = 5; Place = 6 }
+)
+$matchupSnapshot = ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 1 -Season "2026" -NeutralTeamOrderIndex $neutralOrderIndex
 Assert-Equal -Actual $matchupSnapshot.Season -Expected "2026" -Message "Matchup snapshot season changed unexpectedly."
 Assert-Equal -Actual $matchupSnapshot.Week -Expected 1 -Message "Matchup snapshot week changed unexpectedly."
 Assert-Equal -Actual @($matchupSnapshot.Matchups).Count -Expected 2 -Message "Malformed matchup groups were not filtered correctly."
 Assert-Equal -Actual $matchupSnapshot.Matchups[0].MatchupID -Expected 1 -Message "Matchups are not sorted deterministically."
-Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[0].TeamID -Expected 1 -Message "Matchup participants are not sorted by TeamID."
-Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[1].Points -Expected 101.25 -Message "Matchup points were not preserved."
-Assert-Equal -Actual (ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 0 -Season "2026") -Expected $null -Message "Non-positive matchup week must not publish a snapshot."
+Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[0].TeamID -Expected 2 -Message "Neutral matchup participants did not follow All-Time Overall order."
+Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[1].Points -Expected 99.5 -Message "Matchup points were not preserved after neutral participant ordering."
+Assert-Equal -Actual $matchupSnapshot.Matchups[1].Participants[0].TeamID -Expected 4 -Message "Neutral matchup ordering fell back to lower TeamID/provider order."
+Assert-Equal -Actual (ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 0 -Season "2026" -NeutralTeamOrderIndex $neutralOrderIndex) -Expected $null -Message "Non-positive matchup week must not publish a snapshot."
+Assert-Throws -ScriptBlock {
+    Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @(
+        [PSCustomObject]@{ TeamID = 1; Place = 1 },
+        [PSCustomObject]@{ TeamID = 2; Place = 1 }
+    ) | Out-Null
+} -Message "Duplicate All-Time Overall places must fail rather than creating a TeamID fallback."
 
 # The dedicated helper must never publish Transactions.json itself. Drafts may
 # still be persisted by the draft step; only Transactions are delayed.

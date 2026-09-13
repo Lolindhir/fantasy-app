@@ -5,6 +5,8 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\StandingUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\FantasyTeamOrderUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -99,15 +101,32 @@ function Get-LeaguePlayoffStartUtc {
     }
 }
 
+function Get-LeagueNeutralTeamOrderIndex {
+    $allTimeStandings = @(Get-StandingsLocal | Where-Object { [string]$_.Season -eq "AllTime" })
+    if ($allTimeStandings.Count -ne 1) {
+        throw "Expected exactly one AllTime standings record for neutral fantasy-team ordering, found $($allTimeStandings.Count)."
+    }
+
+    return Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @($allTimeStandings[0].Playoffs)
+}
+
 function ConvertTo-LeagueMatchupSnapshot {
     param(
         [AllowNull()][array]$Matchups,
         [Parameter(Mandatory = $true)][int]$Week,
-        [Parameter(Mandatory = $true)][string]$Season
+        [Parameter(Mandatory = $true)][string]$Season,
+        [AllowNull()][System.Collections.IDictionary]$NeutralTeamOrderIndex = $null
     )
 
     if ($Week -le 0) {
         return $null
+    }
+
+    $resolvedNeutralOrderIndex = if ($null -ne $NeutralTeamOrderIndex) {
+        $NeutralTeamOrderIndex
+    }
+    else {
+        Get-LeagueNeutralTeamOrderIndex
     }
 
     $validRows = @($Matchups | Where-Object {
@@ -128,7 +147,7 @@ function ConvertTo-LeagueMatchupSnapshot {
         }
 
         $participantRows = @($participants |
-            Sort-Object { [int]$_.roster_id } |
+            Sort-Object { Get-FantasyTeamNeutralOrderPosition -NeutralOrderIndex $resolvedNeutralOrderIndex -TeamID $_.roster_id } |
             ForEach-Object {
                 $points = 0.0
                 if ($null -ne $_.points) {

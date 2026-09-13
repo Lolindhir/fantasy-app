@@ -57,19 +57,14 @@ export class TeamsPageComponent implements OnInit {
   ngOnInit(): void {
     this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ league, teams }) => {
       this.league = league;
-      this.cards = [...teams]
-        .sort((a, b) =>
-          a.Placements.AllTime.Playoffs.Place - b.Placements.AllTime.Playoffs.Place
-          || a.TeamID - b.TeamID
-        )
-        .map(team => ({
-          team,
-          salary: buildTeamSalarySummary(team, league),
-          roster: splitTeamRoster(team),
-          limits: getTeamRosterLimits(league),
-          season: getTeamSeasonSummary(team, league),
-          openPicks: getEarliestOpenPicks(team, league.SeasonAsNumber)
-        }));
+      this.cards = teams.map(team => ({
+        team,
+        salary: buildTeamSalarySummary(team, league),
+        roster: splitTeamRoster(team),
+        limits: getTeamRosterLimits(league),
+        season: getTeamSeasonSummary(team, league),
+        openPicks: getEarliestOpenPicks(team, league.SeasonAsNumber)
+      }));
       this.loading = false;
     });
   }
