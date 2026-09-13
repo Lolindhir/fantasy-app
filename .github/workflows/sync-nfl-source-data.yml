@@ -140,7 +140,7 @@ jobs:
           echo "- Queue before job start: ${queue_seconds}s" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Checkout main
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: ${{ inputs.materialization_scope == 'game-finality' && 1 || 0 }}
@@ -154,7 +154,7 @@ jobs:
           echo "- Checkout: ${checkout_seconds}s" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
