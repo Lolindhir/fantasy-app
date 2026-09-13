@@ -265,6 +265,7 @@ describe('LeagueMatchupsComponent scoring overview', () => {
 
           const scoreboard = frameDocument.querySelector<HTMLElement>('.matchup-scoreboard')!;
           const plate = frameDocument.querySelector<HTMLElement>('.matchup-score-plate')!;
+          const scoreboardRect = scoreboard.getBoundingClientRect();
           const leftTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--left')!.getBoundingClientRect();
           const rightTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--right')!.getBoundingClientRect();
           const plateRect = plate.getBoundingClientRect();
@@ -275,8 +276,10 @@ describe('LeagueMatchupsComponent scoring overview', () => {
           ).fontSize);
 
           expect(frameWindow.innerWidth).withContext(`${width}px iframe viewport`).toBe(width);
-          expect(scoreboard.scrollWidth).withContext(`${width}px ${leftScore}-${rightScore} scoreboard overflow`)
-            .toBeLessThanOrEqual(scoreboard.clientWidth + 1);
+          expect(plateRect.left).withContext(`${width}px ${leftScore}-${rightScore} plate inside scoreboard`)
+            .toBeGreaterThanOrEqual(scoreboardRect.left - 1);
+          expect(plateRect.right).withContext(`${width}px ${leftScore}-${rightScore} plate inside scoreboard`)
+            .toBeLessThanOrEqual(scoreboardRect.right + 1);
           expect(plateRect.left).withContext(`${width}px ${leftScore}-${rightScore} left identity collision`)
             .toBeGreaterThanOrEqual(leftTeam.right - 1);
           expect(plateRect.right).withContext(`${width}px ${leftScore}-${rightScore} right identity collision`)
