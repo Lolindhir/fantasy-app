@@ -9,107 +9,174 @@
 
     <div class="matchups-grid">
       <article *ngFor="let matchup of matchupRows" class="matchup-card">
-        <div class="matchup-team matchup-team--left">
-          <app-team-identity
-            class="matchup-team-identity matchup-team-identity--mobile"
-            [team]="matchup.left.team"
-            [elements]="mobileTeamIdentityElements"
-            size="large"
-          ></app-team-identity>
-          <app-team-identity
-            class="matchup-team-identity matchup-team-identity--desktop"
-            [team]="matchup.left.team"
-            [elements]="desktopTeamIdentityElements"
-            size="large"
-          ></app-team-identity>
+        <div
+          class="matchup-primary"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="matchupAriaLabel(matchup)"
+          (click)="openMatchupDetailFromOverview(matchup)"
+          (keydown.enter)="openMatchupDetailFromOverview(matchup)"
+          (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
+        >
+          <div class="matchup-scoreboard">
+            <div class="matchup-team matchup-team--left">
+              <app-team-identity
+                class="matchup-team-identity matchup-team-identity--mobile"
+                [team]="matchup.left.team"
+                [elements]="mobileTeamIdentityElements"
+                [interactive]="false"
+                size="large"
+              ></app-team-identity>
+              <app-team-identity
+                class="matchup-team-identity matchup-team-identity--desktop"
+                [team]="matchup.left.team"
+                [elements]="desktopTeamIdentityElements"
+                [interactive]="false"
+                size="large"
+              ></app-team-identity>
+              <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"></ng-container>
+            </div>
 
-          <ng-container
-            *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"
-          ></ng-container>
-        </div>
+            <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
+            <span class="matchup-vs" aria-hidden="true">VS</span>
+            <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
 
-        <div class="matchup-center">
-          <div class="matchup-vs" aria-label="versus">VS</div>
-          <div *ngIf="matchup.showScore" class="matchup-score" aria-label="Matchup score">
-            <strong>{{ matchup.left.pointsDisplay }}</strong>
-            <span class="matchup-score-divider" aria-hidden="true">–</span>
-            <strong>{{ matchup.right.pointsDisplay }}</strong>
+            <div class="matchup-team matchup-team--right">
+              <app-team-identity
+                class="matchup-team-identity matchup-team-identity--mobile"
+                [team]="matchup.right.team"
+                [elements]="mobileTeamIdentityElements"
+                [interactive]="false"
+                size="large"
+                align="end"
+              ></app-team-identity>
+              <app-team-identity
+                class="matchup-team-identity matchup-team-identity--desktop"
+                [team]="matchup.right.team"
+                [elements]="desktopTeamIdentityElements"
+                [interactive]="false"
+                size="large"
+                align="end"
+              ></app-team-identity>
+              <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"></ng-container>
+            </div>
+
+            <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
           </div>
-        </div>
 
-        <div class="matchup-team matchup-team--right">
-          <app-team-identity
-            class="matchup-team-identity matchup-team-identity--mobile"
-            [team]="matchup.right.team"
-            [elements]="mobileTeamIdentityElements"
-            size="large"
-            align="end"
-          ></app-team-identity>
-          <app-team-identity
-            class="matchup-team-identity matchup-team-identity--desktop"
-            [team]="matchup.right.team"
-            [elements]="desktopTeamIdentityElements"
-            size="large"
-            align="end"
-          ></app-team-identity>
+          <ng-container *ngIf="fantasyContextState$ | async as contextState">
+            <div class="matchup-progress-row">
+              <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
+                <div
+                  class="matchup-progress-strip matchup-progress-strip--left"
+                  [attr.aria-label]="leftProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.left.team)"
+                >
+                  <span
+                    *ngFor="let group of leftProgress.groups"
+                    class="matchup-progress-group"
+                    [class.matchup-progress-group--next]="group.outline === 'next'"
+                    [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                    [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                    [attr.aria-label]="group.ariaLabel"
+                  >
+                    <span
+                      *ngFor="let segment of group.segments"
+                      class="matchup-progress-segment"
+                      [ngClass]="'matchup-progress-segment--' + segment.kind"
+                      [title]="segment.ariaLabel"
+                      aria-hidden="true"
+                    ></span>
+                  </span>
+                </div>
+              </ng-container>
 
-          <ng-container
-            *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"
-          ></ng-container>
+              <span class="matchup-progress-center" aria-hidden="true"></span>
+
+              <ng-container *ngIf="starterProgress(matchup, contextState, 'right') as rightProgress">
+                <div
+                  class="matchup-progress-strip matchup-progress-strip--right"
+                  [attr.aria-label]="rightProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.right.team)"
+                >
+                  <span
+                    *ngFor="let group of rightProgress.groups"
+                    class="matchup-progress-group"
+                    [class.matchup-progress-group--next]="group.outline === 'next'"
+                    [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                    [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                    [attr.aria-label]="group.ariaLabel"
+                  >
+                    <span
+                      *ngFor="let segment of group.segments"
+                      class="matchup-progress-segment"
+                      [ngClass]="'matchup-progress-segment--' + segment.kind"
+                      [title]="segment.ariaLabel"
+                      aria-hidden="true"
+                    ></span>
+                  </span>
+                </div>
+              </ng-container>
+            </div>
+          </ng-container>
         </div>
 
         <ng-container *ngIf="fantasyContextState$ | async as contextState">
-          <button
-            *ngIf="matchupPreview(matchup, contextState.context) as preview"
-            type="button"
-            class="matchup-nfl-context"
-            (click)="openMatchupDetail(matchup, contextState)"
-          >
-            <span class="matchup-nfl-lockup" aria-hidden="true">
-              <img
-                *ngIf="preview.primary.contextGame && nflLogo(preview.primary.contextGame.AwayTeamID, contextState.nflTeams) as awayLogo"
-                [src]="awayLogo"
-                alt=""
-              />
-              <span class="matchup-nfl-at">@</span>
-              <img
-                *ngIf="preview.primary.contextGame && nflLogo(preview.primary.contextGame.HomeTeamID, contextState.nflTeams) as homeLogo"
-                [src]="homeLogo"
-                alt=""
-              />
-            </span>
+          <section *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
+            <div class="matchup-window-heading">
+              <div class="matchup-window-title-line">
+                <span class="matchup-window-kicker">Next scoring window</span>
+                <span *ngIf="scoringWindow.isLive" class="matchup-window-live">LIVE</span>
+              </div>
+              <time class="matchup-window-time">{{ scoringWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
+            </div>
+            <div class="matchup-window-count">
+              {{ scoringWindow.gameCount }} game{{ scoringWindow.gameCount === 1 ? '' : 's' }}
+            </div>
 
-            <span class="matchup-nfl-context-copy">
-              <span class="matchup-nfl-context-kicker">
-                {{ preview.isLive
-                  ? 'Live now'
-                  : (preview.isFinalWindow ? 'Final scoring window' : 'Next scoring window') }}
-              </span>
-              <span class="matchup-nfl-context-title" *ngIf="preview.primary.contextGame as contextGame; else matchupGameFallback">
-                {{ contextGame.AwayTeamAbbr || contextGame.AwayTeamID }} @ {{ contextGame.HomeTeamAbbr || contextGame.HomeTeamID }}
-              </span>
-              <ng-template #matchupGameFallback>
-                <span class="matchup-nfl-context-title">NFL game</span>
-              </ng-template>
-              <span class="matchup-nfl-context-meta">
-                <span>{{ preview.primary.game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-                <span
-                  *ngIf="preview.primary.starterCount > 0"
-                  class="matchup-nfl-meta-chip matchup-nfl-meta-chip--starter"
-                >
-                  {{ preview.primary.starterCount }} starter{{ preview.primary.starterCount === 1 ? '' : 's' }}
-                </span>
-                <span *ngIf="preview.primary.optionCount > 0" class="matchup-nfl-meta-chip matchup-nfl-meta-chip--option">
-                  {{ preview.primary.optionCount }} option{{ preview.primary.optionCount === 1 ? '' : 's' }}
-                </span>
-              </span>
-            </span>
+            <div
+              class="matchup-window-games matchup-window-games--mobile"
+              [ngClass]="'matchup-window-games--' + scoringWindow.density"
+            >
+              <button
+                *ngFor="let game of scoringWindowGames(matchup.matchupID, scoringWindow)"
+                type="button"
+                class="matchup-window-game"
+                (click)="openGameDetail(game, contextState)"
+                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
+              >
+                <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                <span class="matchup-window-at">@</span>
+                <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+              </button>
 
-            <span *ngIf="preview.isFinalWindow" class="matchup-final-window-badge">
-              {{ preview.isFinalWindowCommitted ? 'Final' : 'Final window' }}
-            </span>
-            <mat-icon class="matchup-nfl-context-chevron">chevron_right</mat-icon>
-          </button>
+              <button
+                *ngIf="scoringWindow.mobileOverflowCount > 0 && !isScoringWindowExpanded(matchup.matchupID, scoringWindow)"
+                type="button"
+                class="matchup-window-overflow"
+                (click)="expandScoringWindow(matchup.matchupID, scoringWindow)"
+                [attr.aria-label]="'Show ' + scoringWindow.mobileOverflowCount + ' more games in this scoring window'"
+              >
+                +{{ scoringWindow.mobileOverflowCount }}
+              </button>
+            </div>
+
+            <div class="matchup-window-games matchup-window-games--desktop">
+              <button
+                *ngFor="let game of scoringWindow.games"
+                type="button"
+                class="matchup-window-game"
+                (click)="openGameDetail(game, contextState)"
+                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
+              >
+                <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                <span class="matchup-window-at">@</span>
+                <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+              </button>
+            </div>
+          </section>
         </ng-container>
       </article>
     </div>
@@ -166,10 +233,7 @@
                 </span>
 
                 <span class="fantasy-pulse-metrics">
-                  <strong
-                    *ngIf="game.Relevance.StarterCount > 0"
-                    class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter"
-                  >
+                  <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
                     {{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}
                   </strong>
                   <span *ngIf="game.Relevance.FantasyMatchupCount > 0" class="fantasy-pulse-metric-chip">
@@ -258,10 +322,6 @@
         <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
         <span *ngIf="context.standing !== null && context.record" aria-hidden="true">·</span>
         <span *ngIf="context.record">{{ context.record }}</span>
-        <ng-container *ngIf="context.streak">
-          <span aria-hidden="true">·</span>
-          <span>{{ context.streak }}</span>
-        </ng-container>
       </ng-container>
       <ng-template #previousMobile>
         <span class="matchup-season-label">{{ context.seasonLabel }}:</span>
