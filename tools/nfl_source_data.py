@@ -8,6 +8,12 @@ from collections import defaultdict
 from pathlib import Path
 
 from nfl_source_data_lib.common import current_source_season, load_json, load_registry, sync_dataset
+from nfl_source_data_lib.finality_materialize import (
+    GAME_FINALITY_DATASET_ID,
+    GAME_FINALITY_SCOPE,
+    SCHEDULE_DATASET_ID,
+    materialize_game_finality,
+)
 from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
 
@@ -46,6 +52,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--offline", action="store_true", help="Do not fetch; validate and use already persisted raw files")
     parser.add_argument("--raw-only", action="store_true", help="For sync, stop after validated provider raw data is persisted")
+    parser.add_argument(
+        "--scope",
+        choices=("full", GAME_FINALITY_SCOPE),
+        default="full",
+        help=(
+            "Materialization scope. 'full' preserves the complete NFL materializer; "
+            "'game-finality' writes only canonical game-finality outputs."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -54,6 +69,9 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
     registry = load_registry(repo_root)
     datasets = {dataset.id: dataset for dataset in registry}
+
+    if args.scope != "full" and args.command != "materialize":
+        raise ValueError("--scope is only valid with the materialize command")
 
     if args.command == "audit":
         audit_path = repo_root / "source-data/audits/nfl-source-data-audit.json"
@@ -129,8 +147,17 @@ def main() -> int:
             print("materialization skipped: not all materialized fixed raw datasets are available")
             return 0
 
-    materialize_datasets = {dataset.id: dataset for dataset in registry if dataset.materialize}
-    result = materialize(repo_root, materialize_datasets, force=args.force)
+    if args.scope == GAME_FINALITY_SCOPE:
+        scoped_datasets = {
+            dataset_id: datasets[dataset_id]
+            for dataset_id in (SCHEDULE_DATASET_ID, GAME_FINALITY_DATASET_ID)
+            if dataset_id in datasets
+        }
+        result = materialize_game_finality(repo_root, scoped_datasets, force=args.force)
+    else:
+        materialize_datasets = {dataset.id: dataset for dataset in registry if dataset.materialize}
+        result = materialize(repo_root, materialize_datasets, force=args.force)
+
     if args.command == "sync":
         print(f"canonical identities: {result['identityCount']}")
         print(f"provider mappings: {result['providerMappingCount']}")
