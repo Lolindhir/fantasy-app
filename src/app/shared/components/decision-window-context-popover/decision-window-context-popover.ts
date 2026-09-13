@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 
 import type {
   DecisionWindow,
@@ -28,7 +31,14 @@ import { PlayerListComponent, type PlayerListColumn } from '../player-list/playe
 @Component({
   selector: 'app-decision-window-context-popover',
   standalone: true,
-  imports: [CommonModule, DecisionWindowMatchupContextComponent, PlayerListComponent],
+  imports: [
+    CommonModule,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    DecisionWindowMatchupContextComponent,
+    PlayerListComponent
+  ],
   templateUrl: './decision-window-context-popover.html',
   styleUrl: './decision-window-context-popover.scss'
 })
