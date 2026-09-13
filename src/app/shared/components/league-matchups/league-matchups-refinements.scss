@@ -259,7 +259,7 @@
   --score-border: rgba(148, 163, 184, 0.42);
   --score-tint: rgba(248, 250, 252, 0.9);
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: baseline;
   gap: 5px;
   padding: 4px 7px;
@@ -276,12 +276,13 @@
 .matchup-score-value {
   color: #172033;
   font-size: 1.18rem;
-  font-weight: 950;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
+.matchup-score-value--left { text-align: right; }
 
 .matchup-vs {
   width: auto;
@@ -494,10 +495,3 @@
   .matchup-score-divider { font-size: 0.9rem; }
   .fantasy-pulse-impact-score { font-size: 1.12rem; }
 }
-
-/* #521: soften score emphasis and keep VS geometrically centered for uneven score lengths. */
-.matchup-score-plate { grid-template-columns: 1fr auto 1fr; }
-.matchup-score-value { font-weight: 800; letter-spacing: -0.02em; }
-.matchup-score-value--left { text-align: right; }
-.matchup-score-value--right { text-align: left; }
-.matchup-vs { justify-self: center; }
