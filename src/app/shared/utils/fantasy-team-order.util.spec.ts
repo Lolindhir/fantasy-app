@@ -1,6 +1,3 @@
-import '../components/league-matchups/league-matchups.spec';
-import './matchups-overview-view.util.spec';
-
 import type {
   DecisionWindow,
   DecisionWindowsReadModel
