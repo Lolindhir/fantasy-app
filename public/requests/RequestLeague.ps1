@@ -18,6 +18,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
@@ -43,6 +44,7 @@ catch {
 }
 
 $LeagueID = $config.LeagueID
+$CanonicalLeagueID = "nfl-reise"
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
@@ -356,9 +358,12 @@ try {
 
     $matchupSnapshot = $null
     $fantasyGameContextAsJson = $null
+    $matchupRows = @()
+    $activeMatchupScoreEvidenceAvailable = $matchupWeek -le 0
     if ($matchupWeek -gt 0) {
         $matchupLoad = Get-FgcCurrentMatchupLoad -LeagueID $LeagueID -Week $matchupWeek
         if ($matchupLoad.Success) {
+            $activeMatchupScoreEvidenceAvailable = $true
             $matchupRows = @($matchupLoad.Rows)
             $matchupSnapshot = ConvertTo-LeagueMatchupSnapshot -Matchups $matchupRows -Week $matchupWeek -Season ([string]$league.season)
 
@@ -391,6 +396,14 @@ try {
             }
         }
     }
+
+    $matchupsAsJson = New-MatchupSeasonReadModel `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -Season ([int]$league.season) `
+        -Standings @($standings) `
+        -DecisionFacts $decisionWindowsAsJson `
+        -LiveMatchupRows @($matchupRows) `
+        -ActiveScoreEvidenceAvailable $activeMatchupScoreEvidenceAvailable
 
     $cutsAllowed = $true
     $cutsMetaText = ""
@@ -488,6 +501,17 @@ try {
     }
     Save-JsonFile -Type "DecisionWindows" -Data $decisionWindowsAsJson -CompareScript $decisionCompare -UpdateTimestamp
 
+    $matchupsCompare = {
+        param($oldMatchups, $newMatchups)
+        Test-MatchupSeasonReadModelChanged -OldData $oldMatchups -NewData $newMatchups
+    }
+    Save-JsonFile `
+        -TargetFile $config.MatchupsFile `
+        -Type "Matchups" `
+        -Data $matchupsAsJson `
+        -CompareScript $matchupsCompare `
+        -UpdateTimestamp
+
     if ($null -ne $fantasyGameContextAsJson) {
         $fantasyGameContextCompare = {
             param($oldContext, $newContext)
@@ -503,6 +527,13 @@ try {
 
     $compare = & Get-Compare
     Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
+
+    Ensure-MatchupHistoryReadModels `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -CurrentSeason ([int]$league.season) `
+        -Standings @($standings) `
+        -Config $config | Out-Null
+    Update-PastSeasonsIndex -Config $config | Out-Null
 
     try {
         Ensure-PreviousFantasyGameContextHistory -CurrentSeason ([int]$league.season)
