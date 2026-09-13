@@ -20,6 +20,7 @@ function Get-Config {
     $PlayersFile = Join-Path $DataDir "Players.json"
     $LeagueFile = Join-Path $DataDir "League.json"
     $DecisionWindowsFile = Join-Path $DataDir "DecisionWindows.json"
+    $MatchupsFile = Join-Path $DataDir "Matchups.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
     $GamesFile = Join-Path $DataDir "Games.json"
@@ -37,6 +38,9 @@ function Get-Config {
     $DraftsArchiveDir = Join-Path $PastSeasonsDir "Drafts"
     $DraftsFileHistoricalPrefix = Join-Path $DraftsArchiveDir "Drafts_"
     $DraftsFileHistoricalSuffix = ".json"
+    $MatchupsArchiveDir = Join-Path $PastSeasonsDir "Matchups"
+    $MatchupsFileHistoricalPrefix = Join-Path $MatchupsArchiveDir "Matchups_"
+    $MatchupsFileHistoricalSuffix = ".json"
 
     $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
     $PastSeasonPlayersFileHistoricalSuffix = ".json"
@@ -60,6 +64,12 @@ function Get-Config {
             Key = "Transactions"
             Directory = $TransactionsArchiveDir
             Prefix = "Transactions_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "Matchups"
+            Directory = $MatchupsArchiveDir
+            Prefix = "Matchups_"
             Suffix = ".json"
         },
         @{
@@ -140,6 +150,7 @@ function Get-Config {
         BackupDir                        = $BackupDir
         LeagueFile                       = $LeagueFile
         DecisionWindowsFile              = $DecisionWindowsFile
+        MatchupsFile                     = $MatchupsFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
         GamesFile                        = $GamesFile
@@ -158,6 +169,9 @@ function Get-Config {
         DraftsArchiveDir                 = $DraftsArchiveDir
         DraftsFileHistoricalPrefix       = $DraftsFileHistoricalPrefix
         DraftsFileHistoricalSuffix       = $DraftsFileHistoricalSuffix
+        MatchupsArchiveDir               = $MatchupsArchiveDir
+        MatchupsFileHistoricalPrefix     = $MatchupsFileHistoricalPrefix
+        MatchupsFileHistoricalSuffix     = $MatchupsFileHistoricalSuffix
 
         PastSeasonsDir                              = $PastSeasonsDir
         PastSeasonsIndexFile                        = $PastSeasonsIndexFile
