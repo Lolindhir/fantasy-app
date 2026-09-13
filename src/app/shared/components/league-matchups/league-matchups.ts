@@ -18,7 +18,11 @@ import type {
   League,
   PlacementRegularSeason
 } from '../../../core/models/league.models';
-import type { MatchupParticipant, MatchupsReadModel } from '../../../core/models/matchup.models';
+import type {
+  MatchupCompletionState,
+  MatchupParticipant,
+  MatchupsReadModel
+} from '../../../core/models/matchup.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
@@ -31,9 +35,11 @@ import {
 } from '../../utils/fantasy-game-context.util';
 import {
   buildMatchupScoringWindow,
+  buildMatchupScoreboardState,
   buildMatchupStarterProgress,
   findFantasyRelevanceTeam,
   type MatchupScoringWindowView,
+  type MatchupScoreboardState,
   type MatchupStarterProgressView
 } from '../../utils/matchups-overview-view.util';
 import {
@@ -65,6 +71,7 @@ interface LeagueMatchupTeamView {
 
 interface LeagueMatchupView {
   matchupID: string;
+  completionState: MatchupCompletionState;
   left: LeagueMatchupTeamView;
   right: LeagueMatchupTeamView;
 }
@@ -165,6 +172,7 @@ export class LeagueMatchupsComponent {
 
         return {
           matchupID: matchup.FantasyMatchupID,
+          completionState: matchup.CompletionState,
           left: participants[0],
           right: participants[1]
         };
@@ -183,6 +191,14 @@ export class LeagueMatchupsComponent {
     const current = this.currentContext(context);
     if (!current) return null;
     return current.FantasyMatchups.find(candidate => candidate.FantasyMatchupID === matchup.matchupID) ?? null;
+  }
+
+  scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {
+    const decisionWindows = this.latestFantasyContextState?.decisionWindows;
+    return buildMatchupScoreboardState(matchup.completionState, [
+      findFantasyRelevanceTeam(decisionWindows, matchup.left.team.TeamID),
+      findFantasyRelevanceTeam(decisionWindows, matchup.right.team.TeamID)
+    ]);
   }
 
   starterProgress(

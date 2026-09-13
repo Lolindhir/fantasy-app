@@ -8,6 +8,7 @@ import type {
   FantasyRelevanceSlotState,
   FantasyRelevanceTeamState
 } from '../../core/models/decision-window.models';
+import type { MatchupCompletionState } from '../../core/models/matchup.models';
 
 export type MatchupProgressSide = 'left' | 'right';
 export type MatchupProgressKind =
@@ -20,6 +21,7 @@ export type MatchupProgressKind =
   | 'unknown';
 export type MatchupProgressOutline = 'next' | 'repairable' | 'unknown' | null;
 export type MatchupScoringWindowDensity = 'rich' | 'compact' | 'dense';
+export type MatchupScoreboardState = 'neutral' | 'active' | 'final' | 'unknown';
 
 export interface MatchupProgressSegmentView {
   slotID: string;
@@ -79,6 +81,20 @@ export function findFantasyRelevanceTeam(
   return readModel?.FantasyRelevance?.Teams.find(team =>
     String(team.FantasyTeamID) === String(fantasyTeamID)
   ) ?? null;
+}
+
+export function buildMatchupScoreboardState(
+  completionState: MatchupCompletionState,
+  teams: ReadonlyArray<FantasyRelevanceTeamState | null | undefined>
+): MatchupScoreboardState {
+  if (completionState === 'final') return 'final';
+  if (completionState === 'unknown') return 'unknown';
+
+  const scoringHasStarted = teams.some(team => team?.Slots?.some(slot =>
+    slot.State === 'locked-active' || slot.State === 'completed'
+  ));
+
+  return scoringHasStarted ? 'active' : 'neutral';
 }
 
 export function buildMatchupStarterProgress(

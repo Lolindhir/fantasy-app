@@ -38,9 +38,15 @@
               <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"></ng-container>
             </div>
 
-            <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
-            <span class="matchup-vs" aria-hidden="true">VS</span>
-            <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
+            <div
+              class="matchup-score-plate"
+              [ngClass]="'matchup-score-plate--' + scoreboardState(matchup)"
+              [attr.data-scoreboard-state]="scoreboardState(matchup)"
+            >
+              <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
+              <span class="matchup-vs" aria-hidden="true">VS</span>
+              <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
+            </div>
 
             <div class="matchup-team matchup-team--right">
               <app-team-identity

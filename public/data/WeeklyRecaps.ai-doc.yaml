@@ -1,0 +1,103 @@
+schemaVersion: 1
+
+file:
+  path: public/data/WeeklyRecaps.json
+  kind: generated-json-read-model
+  generator: public/requests/RequestWeeklyRecaps.ps1
+  derivation: public/requests/utils/league/WeeklyRecapUtils.psm1
+  issue: 505
+
+contract:
+  purpose: >
+    Season-wide retrospective editorial read model for completed fantasy weeks.
+    It stores only the top two realized NFL-game impacts and top three actual
+    fantasy-starter performances needed by recap/history consumers.
+  topLevel:
+    - SchemaVersion
+    - Season
+    - Weeks
+  weekFields:
+    - Week
+    - KeyGames
+    - KeyPlayers
+  keyGameFields:
+    - GameID
+    - KickoffUtc
+    - AwayNFLTeamID
+    - HomeNFLTeamID
+    - AwayScore
+    - HomeScore
+    - StarterPoints
+    - StarterCount
+    - FantasyTeamIDs
+    - FantasyMatchupIDs
+  keyPlayerFields:
+    - PlayerID
+    - FantasyTeamID
+    - NFLTeamID
+    - Position
+    - Points
+
+sourceOfTruth:
+  finality: public/data/Matchups.json and historical Matchups archives; only Week CompletionState=final is eligible
+  leagueScoring: source-data/leagues/nfl-reise/seasons/<season>/matchups/week-<week>.json StarterPoints/PlayerPoints
+  nflWeeklyIdentity: source-data/nfl/weekly-rosters/<season>/<week>.json
+  nflScores: source-data/nfl/schedules/<season>.json
+  appGameIdentity: current/historical Schedule resources provide stable app GameID, kickoff and NFL team IDs
+  fantasyTeamOrdering: '#503 neutral All-Time Overall order; historical runs use cutoff-aware order'
+  forbiddenDependency: >
+    WeeklyRecaps generation must not parse published FantasyGameContext.json as its
+    source of truth. Reusable FantasyGameContext normalization/identity utilities may
+    be used over canonical facts.
+
+eligibilityAndRanking:
+  week: Matchups Week CompletionState must equal final; there is no second recap finality model
+  keyGames:
+    density: exactly 2 for a successfully materialized final week
+    ranking:
+      - actual Starter fantasy points descending
+      - affected FantasyMatchup count descending
+      - distinct FantasyTeam count descending
+      - actual Starter count descending
+      - KickoffUtc ascending
+      - GameID ascending
+    exclusions:
+      - Bench points
+      - Bench options
+      - projections
+      - hypothetical scoring paths
+      - counterfactual Matchup-Hero logic
+      - weighted synthetic impact scores
+  keyPlayers:
+    density: exactly 3 for a successfully materialized final week
+    eligibility: actual fantasy Starter with realized league-scored points
+    ranking:
+      - Points descending
+      - '#503 neutral FantasyTeam order ascending'
+      - PlayerID ascending
+    exclusions:
+      - Bench-only performances
+      - projections
+      - position normalization
+      - weekly award semantics
+
+boundaries:
+  commissionerAdjustments: >
+    Official/effective matchup scoring remains Matchups responsibility. WeeklyRecaps
+    never attributes commissioner/custom score adjustments to an NFL game or player;
+    game/player production is derived only from actual player fantasy points.
+  awards: >
+    #499 remains separate. WeeklyRecaps contains no Week MVP, Matchup Hero, Carry Job,
+    Heartbreaker or Bench Burn fields.
+  statCorrections: >
+    Finality does not mean immutable data. Later canonical scoring corrections may
+    rematerialize WeeklyRecaps and legitimately change Key Game/Key Player rankings.
+
+history:
+  path: public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json
+  index: public/data/PastSeasonsIndex.json resources.WeeklyRecaps
+  identity: >
+    Historical player team/Position comes from week-specific canonical NFL roster
+    evidence; app NFL team IDs/GameID come from that season's Schedule resource.
+    Normal display identity remains resolvable from season-scoped resources, so schema
+    v1 does not freeze duplicate display snapshots.

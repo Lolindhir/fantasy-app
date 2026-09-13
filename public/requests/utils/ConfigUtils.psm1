@@ -21,6 +21,7 @@ function Get-Config {
     $LeagueFile = Join-Path $DataDir "League.json"
     $DecisionWindowsFile = Join-Path $DataDir "DecisionWindows.json"
     $MatchupsFile = Join-Path $DataDir "Matchups.json"
+    $WeeklyRecapsFile = Join-Path $DataDir "WeeklyRecaps.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
     $GamesFile = Join-Path $DataDir "Games.json"
@@ -41,6 +42,9 @@ function Get-Config {
     $MatchupsArchiveDir = Join-Path $PastSeasonsDir "Matchups"
     $MatchupsFileHistoricalPrefix = Join-Path $MatchupsArchiveDir "Matchups_"
     $MatchupsFileHistoricalSuffix = ".json"
+    $WeeklyRecapsArchiveDir = Join-Path $PastSeasonsDir "WeeklyRecaps"
+    $WeeklyRecapsFileHistoricalPrefix = Join-Path $WeeklyRecapsArchiveDir "WeeklyRecaps_"
+    $WeeklyRecapsFileHistoricalSuffix = ".json"
 
     $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
     $PastSeasonPlayersFileHistoricalSuffix = ".json"
@@ -70,6 +74,12 @@ function Get-Config {
             Key = "Matchups"
             Directory = $MatchupsArchiveDir
             Prefix = "Matchups_"
+            Suffix = ".json"
+        },
+        @{
+            Key = "WeeklyRecaps"
+            Directory = $WeeklyRecapsArchiveDir
+            Prefix = "WeeklyRecaps_"
             Suffix = ".json"
         },
         @{
@@ -151,6 +161,7 @@ function Get-Config {
         LeagueFile                       = $LeagueFile
         DecisionWindowsFile              = $DecisionWindowsFile
         MatchupsFile                     = $MatchupsFile
+        WeeklyRecapsFile                 = $WeeklyRecapsFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
         GamesFile                        = $GamesFile
@@ -172,6 +183,9 @@ function Get-Config {
         MatchupsArchiveDir               = $MatchupsArchiveDir
         MatchupsFileHistoricalPrefix     = $MatchupsFileHistoricalPrefix
         MatchupsFileHistoricalSuffix     = $MatchupsFileHistoricalSuffix
+        WeeklyRecapsArchiveDir           = $WeeklyRecapsArchiveDir
+        WeeklyRecapsFileHistoricalPrefix = $WeeklyRecapsFileHistoricalPrefix
+        WeeklyRecapsFileHistoricalSuffix = $WeeklyRecapsFileHistoricalSuffix
 
         PastSeasonsDir                              = $PastSeasonsDir
         PastSeasonsIndexFile                        = $PastSeasonsIndexFile

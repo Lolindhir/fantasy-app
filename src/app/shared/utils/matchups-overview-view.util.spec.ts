@@ -9,6 +9,7 @@ import type {
 } from '../../core/models/decision-window.models';
 import {
   buildMatchupScoringWindow,
+  buildMatchupScoreboardState,
   buildMatchupStarterProgress
 } from './matchups-overview-view.util';
 
@@ -144,6 +145,48 @@ function context(games: FantasyGameContextGame[]): FantasyGameContextReadModel {
 }
 
 describe('matchups overview view utility', () => {
+  it('keeps the score plate neutral while an open matchup has no locked-active or completed starter', () => {
+    expect(buildMatchupScoreboardState('open', [
+      team([slot('QB-1', 'unlocked')]),
+      team([slot('RB-1', 'unlocked')])
+    ])).toBe('neutral');
+  });
+
+  it('marks an open score plate active when generated starter lifecycle evidence has started', () => {
+    expect(buildMatchupScoreboardState('open', [
+      team([slot('QB-1', 'locked-active')]),
+      team([slot('RB-1', 'unlocked')])
+    ])).toBe('active');
+
+    expect(buildMatchupScoreboardState('open', [
+      team([slot('QB-1', 'completed')]),
+      team([slot('RB-1', 'unlocked')])
+    ])).toBe('active');
+  });
+
+  it('takes final and unknown score-plate states only from authoritative matchup completion state', () => {
+    const activeEvidence = team([slot('QB-1', 'locked-active')]);
+
+    expect(buildMatchupScoreboardState('final', [activeEvidence])).toBe('final');
+    expect(buildMatchupScoreboardState('unknown', [activeEvidence])).toBe('unknown');
+  });
+
+  it('keeps an authoritatively final score plate final even when a starter strip has a red irreparable problem', () => {
+    const irreparable = {
+      ProblemCode: 'OPEN_STARTER_SLOT' as const,
+      State: 'irreparable' as const,
+      Path: null,
+      ReasonCode: 'NO_LEGAL_REPAIR_PATH' as const,
+      InternalCandidateCount: 0,
+      ExternalCandidateCount: 0
+    };
+    const problemTeam = team([
+      slot('QB-1', 'unknown', { Repairability: irreparable })
+    ]);
+
+    expect(buildMatchupScoreboardState('final', [problemTeam])).toBe('final');
+  });
+
   it('keeps starter count dynamic and creates no placeholder groups for absent states', () => {
     const slots = Array.from({ length: 10 }, (_, index) => slot(`WR-${index + 1}`, 'completed'));
     const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
