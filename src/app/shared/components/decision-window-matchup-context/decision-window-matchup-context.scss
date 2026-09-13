@@ -86,7 +86,7 @@
 .decision-window-multi-game-copy {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
   color: #64748b;
   font-size: 0.61rem;
@@ -98,6 +98,7 @@
 }
 
 .decision-window-multi-game-part {
+  position: relative;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: baseline;
@@ -105,8 +106,18 @@
   white-space: nowrap;
 }
 
-.decision-window-multi-game-separator {
+.decision-window-multi-game-part:not(:first-child)::before {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 3px);
   color: #94a3b8;
+  content: '·';
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.decision-window-multi-game-separator {
+  display: none;
 }
 
 .decision-window-multi-game .decision-window-game-week {
@@ -131,8 +142,8 @@
   .decision-window-multi-game-copy {
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 2px 4px;
-    overflow: visible;
+    gap: 2px 8px;
+    overflow: hidden;
     text-overflow: clip;
     white-space: normal;
     line-height: 1.15;
