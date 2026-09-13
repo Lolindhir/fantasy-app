@@ -8,16 +8,17 @@
     </div>
 
     <div class="matchups-grid">
-      <article *ngFor="let matchup of matchupRows" class="matchup-card">
-        <div
-          class="matchup-primary"
-          role="button"
-          tabindex="0"
-          [attr.aria-label]="matchupAriaLabel(matchup)"
-          (click)="openMatchupDetailFromOverview(matchup)"
-          (keydown.enter)="openMatchupDetailFromOverview(matchup)"
-          (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
-        >
+      <article
+        *ngFor="let matchup of matchupRows"
+        class="matchup-card"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="matchupAriaLabel(matchup)"
+        (click)="openMatchupDetailFromOverview(matchup)"
+        (keydown.enter)="openMatchupDetailFromOverview(matchup)"
+        (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
+      >
+        <div class="matchup-primary">
           <div class="matchup-scoreboard">
             <div class="matchup-team matchup-team--left">
               <app-team-identity
@@ -120,7 +121,7 @@
         </div>
 
         <ng-container *ngIf="fantasyContextState$ | async as contextState">
-          <section *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
+          <div *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
             <div class="matchup-window-heading">
               <div class="matchup-window-title-line">
                 <span class="matchup-window-kicker">Next scoring window</span>
@@ -128,55 +129,36 @@
               </div>
               <time class="matchup-window-time">{{ scoringWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
             </div>
-            <div class="matchup-window-count">
-              {{ scoringWindow.gameCount }} game{{ scoringWindow.gameCount === 1 ? '' : 's' }}
-            </div>
 
-            <div
-              class="matchup-window-games matchup-window-games--mobile"
-              [ngClass]="'matchup-window-games--' + scoringWindow.density"
-            >
-              <button
-                *ngFor="let game of scoringWindowGames(matchup.matchupID, scoringWindow)"
-                type="button"
-                class="matchup-window-game"
-                (click)="openGameDetail(game, contextState)"
-                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
-              >
-                <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
-                <span class="matchup-window-at">@</span>
-                <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
-              </button>
+            <div class="matchup-window-summary">
+              <strong class="matchup-window-count">
+                {{ scoringWindow.gameCount }} NFL game{{ scoringWindow.gameCount === 1 ? '' : 's' }}
+              </strong>
 
-              <button
-                *ngIf="scoringWindow.mobileOverflowCount > 0 && !isScoringWindowExpanded(matchup.matchupID, scoringWindow)"
-                type="button"
-                class="matchup-window-overflow"
-                (click)="expandScoringWindow(matchup.matchupID, scoringWindow)"
-                [attr.aria-label]="'Show ' + scoringWindow.mobileOverflowCount + ' more games in this scoring window'"
-              >
-                +{{ scoringWindow.mobileOverflowCount }}
-              </button>
-            </div>
+              <div class="matchup-window-games">
+                <span
+                  *ngFor="let game of scoringWindow.mobileVisibleGames"
+                  class="matchup-window-game"
+                  role="img"
+                  [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
+                >
+                  <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                  <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                  <span class="matchup-window-at" aria-hidden="true">@</span>
+                  <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                  <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+                </span>
 
-            <div class="matchup-window-games matchup-window-games--desktop">
-              <button
-                *ngFor="let game of scoringWindow.games"
-                type="button"
-                class="matchup-window-game"
-                (click)="openGameDetail(game, contextState)"
-                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
-              >
-                <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
-                <span class="matchup-window-at">@</span>
-                <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
-              </button>
+                <span
+                  *ngIf="scoringWindow.mobileOverflowCount > 0"
+                  class="matchup-window-overflow"
+                  [attr.aria-label]="scoringWindow.mobileOverflowCount + ' more NFL games'"
+                >
+                  +{{ scoringWindow.mobileOverflowCount }}
+                </span>
+              </div>
             </div>
-          </section>
+          </div>
         </ng-container>
       </article>
     </div>
