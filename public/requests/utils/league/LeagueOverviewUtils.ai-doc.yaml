@@ -4,7 +4,8 @@ layer: generator-scripts
 
 responsibility: >
   Normalizes provider-backed league overview inputs into app-facing League.json
-  facts such as TradeDeadlineWeek, SeasonKickoff and the current matchup snapshot.
+  facts such as TradeDeadlineWeek and SeasonKickoff. Fantasy matchup schedule,
+  score, result and finality facts are owned by the dedicated Matchups read model.
 
 tradeDeadlineContract:
   source: Sleeper league settings.trade_deadline
@@ -33,12 +34,21 @@ tradeDeadlineContract:
     - Normalize only the app-facing TradeDeadlineWeek field.
     - Angular consumers must use TradeDeadlineWeek and must not special-case Sleeper value 99.
 
+matchupBoundary:
+  dedicatedContract: public/data/Matchups.json
+  rule: >
+    LeagueOverviewUtils no longer builds or loads a League.Matchups compatibility
+    snapshot. RequestLeague may load current provider matchup rows once as generation
+    evidence for Matchups.json and FantasyGameContext.json, but League.json must not
+    republish a duplicate matchup scoreboard contract.
+
 regressionCoverage:
   script: public/requests/LeagueTransactionPipelineRegressionTest.ps1
   assertions:
     - Sleeper sentinel 99 normalizes to null.
     - normal positive configured weeks remain unchanged.
     - existing null, non-positive and non-numeric cases remain null.
+    - legacy League.Matchups publication/converter/loader helpers are absent.
 
 relatedManualDocs:
   - .ai-context/manual/architecture.yaml
@@ -47,4 +57,5 @@ relatedManualDocs:
 
 aiWarnings:
   - Never interpret raw Sleeper trade_deadline 99 as an actual trade deadline week.
-  - Do not move this provider normalization into Angular presentation code.
+  - Do not move provider normalization into Angular presentation code.
+  - Do not reintroduce a matchup snapshot inside League.json; consume Matchups.json instead.
