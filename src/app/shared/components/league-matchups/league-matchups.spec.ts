@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import type { DecisionWindowsReadModel, FantasyRelevanceTeamState } from '../../../core/models/decision-window.models';
 import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
+import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { LeagueMatchupsComponent } from './league-matchups';
@@ -137,7 +138,10 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(context));
     dataService.getDecisionWindows.and.returnValue(of(decisionWindows));
-    dataService.getNflTeams.and.returnValue(of([]));
+    dataService.getNflTeams.and.returnValue(of([
+      { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: 'away-logo' },
+      { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: 'home-logo' }
+    ] as NFLTeam[]));
 
     await TestBed.configureTestingModule({
       imports: [LeagueMatchupsComponent],
@@ -183,5 +187,19 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(element.querySelectorAll('.matchup-progress-segment').length).toBe(2);
     expect(element.querySelectorAll('.matchup-window-time').length).toBe(1);
     expect(element.querySelectorAll('.matchup-window-game').length).toBeGreaterThan(0);
+  });
+
+  it('renders scoring-window game pills with compact logo-only visuals and accessible game identity', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const gameTarget = element.querySelector<HTMLButtonElement>('.matchup-window-game');
+
+    expect(gameTarget).not.toBeNull();
+    expect(gameTarget!.querySelectorAll('img').length).toBe(2);
+    expect(gameTarget!.getAttribute('aria-label')).toBe('Open AAA at HHH game details');
+    expect(getComputedStyle(gameTarget!).borderRadius).toBe('999px');
+
+    const abbreviations = gameTarget!.querySelectorAll<HTMLElement>('.matchup-window-game-abbr');
+    expect(abbreviations.length).toBe(2);
+    abbreviations.forEach(abbreviation => expect(getComputedStyle(abbreviation).display).toBe('none'));
   });
 });
