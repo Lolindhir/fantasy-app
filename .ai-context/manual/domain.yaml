@@ -78,6 +78,29 @@ coreConcepts:
     description: >
       A fantasy team in the league. Teams are identified by generated TeamID and
       can be mapped from league metadata and generated league data.
+    neutralOrdering:
+      default: >
+        When a current/live app surface needs a stable fantasy-team sequence and
+        has no stronger feature-specific ranking or orientation, use the existing
+        All-Time Overall standings order. Higher All-Time Overall Place appears
+        earlier. That standings sequence is already fully resolved; TeamID,
+        provider row order and incidental array order are not product tiebreakers.
+      overrideRule: >
+        Explicit feature semantics remain stronger than the neutral base. Current
+        Standings uses its Current/Previous standings contract; Decision Window
+        uses attention/relevance priority; draft/statistical rankings use their own
+        documented ranking; current matchup presentation may apply the stronger
+        #500 standings-relevance and left/right orientation rules.
+      implementationBoundary: >
+        Generated All-Time Overall standings own the semantic evidence. Shared
+        generation/frontend helpers may map TeamID to a neutral order index and
+        apply that resolved sequence, but must not invent another ranking formula
+        or materialize a redundant TeamOrder field solely for presentation.
+      historicalRule: >
+        Historical/archive neutral ordering must use the All-Time Overall sequence
+        as it stood through the relevant season or cutoff when ordering materially
+        represents historical context. Do not inject today's later All-Time state
+        into earlier seasons merely to obtain a stable order.
     rosterTerminology:
       roster: >
         Roster is the complete fantasy-team roster and remains the umbrella/source
