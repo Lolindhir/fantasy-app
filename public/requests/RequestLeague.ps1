@@ -91,13 +91,6 @@ function Get-Compare {
             }
         }
 
-        $oldMatchupsJson = $oldLeague.Matchups | ConvertTo-Json -Depth 8 -Compress
-        $newMatchupsJson = $newLeague.Matchups | ConvertTo-Json -Depth 8 -Compress
-        if ($oldMatchupsJson -ne $newMatchupsJson) {
-            Write-Host "League matchups snapshot changed."
-            return $true
-        }
-
         foreach ($prop in @('RosterSize')) {
             if (-not (Compare-Arrays $oldLeague.$prop $newLeague.$prop $prop "League")) {
                 return $true
@@ -356,7 +349,6 @@ try {
         $matchupWeek = [Math]::Min([int]$currentWeek, [int]$lastWeek)
     }
 
-    $matchupSnapshot = $null
     $fantasyGameContextAsJson = $null
     $matchupRows = @()
     $activeMatchupScoreEvidenceAvailable = $matchupWeek -le 0
@@ -365,7 +357,6 @@ try {
         if ($matchupLoad.Success) {
             $activeMatchupScoreEvidenceAvailable = $true
             $matchupRows = @($matchupLoad.Rows)
-            $matchupSnapshot = ConvertTo-LeagueMatchupSnapshot -Matchups $matchupRows -Week $matchupWeek -Season ([string]$league.season)
 
             if ([int]$decisionWindowsAsJson.LineupWeek -eq $matchupWeek) {
                 $fantasyMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$league.season) -Week $matchupWeek -MatchupRows $matchupRows)
@@ -380,20 +371,11 @@ try {
                     -WeekIsFinal $weekIsFinal
             }
             else {
-                Write-Warning "FantasyGameContext not overwritten because League matchup Week $matchupWeek differs from DecisionWindows lineup Week $($decisionWindowsAsJson.LineupWeek)."
+                Write-Warning "FantasyGameContext not overwritten because matchup Week $matchupWeek differs from DecisionWindows lineup Week $($decisionWindowsAsJson.LineupWeek)."
             }
         }
-        elseif (Test-Path $config.LeagueFile) {
-            try {
-                $existingLeague = Get-Content $config.LeagueFile -Raw | ConvertFrom-Json
-                if ($null -ne $existingLeague.Matchups -and [string]$existingLeague.Matchups.Season -eq [string]$league.season -and [int]$existingLeague.Matchups.Week -eq $matchupWeek) {
-                    $matchupSnapshot = $existingLeague.Matchups
-                    Write-Warning "Using previous generated matchup snapshot for Week $matchupWeek after refresh failure. FantasyGameContext keeps its previous generated file."
-                }
-            }
-            catch {
-                Write-Warning "Could not reuse previous matchup snapshot. $_"
-            }
+        else {
+            Write-Warning "Current matchup refresh for Week $matchupWeek failed. Matchups finality will fail closed for active score evidence and FantasyGameContext keeps its previous generated file."
         }
     }
 
@@ -485,7 +467,6 @@ try {
         SeasonKickoff           = $seasonKickoff
         LeagueTimeZone          = $LeagueTimeZone
         SalaryRelevantTeamSize  = $SalaryRelevantTeamSize
-        Matchups                = $matchupSnapshot
         Teams                   = $teamData
         Standings               = $standings
         Playoffs                = $playoffs
@@ -528,7 +509,7 @@ try {
     $compare = & Get-Compare
     Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
 
-    Ensure-MatchupHistoryReadModels `
+    Update-MatchupHistoryReadModels `
         -CanonicalLeagueID $CanonicalLeagueID `
         -CurrentSeason ([int]$league.season) `
         -Standings @($standings) `

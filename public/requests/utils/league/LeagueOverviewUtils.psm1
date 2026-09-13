@@ -1,20 +1,5 @@
 # ===========================================================================
-# 1. Imports
-# ===========================================================================
-
-try {
-    Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\StandingUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\FantasyTeamOrderUtils.psm1" -ErrorAction Stop -Force
-}
-catch {
-    Write-Error "Fehler beim Laden der Module: $_"
-    throw $_
-}
-
-# ===========================================================================
-# 2. Functions
+# 1. Functions
 # ===========================================================================
 
 function Resolve-LeagueTradeDeadlineWeek {
@@ -97,99 +82,6 @@ function Get-LeaguePlayoffStartUtc {
     }
     catch {
         Write-Warning "Could not parse first kickoff for fantasy playoff Week $PlayoffStartWeek from schedule. $_"
-        return $null
-    }
-}
-
-function Get-LeagueNeutralTeamOrderIndex {
-    $allTimeStandings = @(Get-StandingsLocal | Where-Object { [string]$_.Season -eq "AllTime" })
-    if ($allTimeStandings.Count -ne 1) {
-        throw "Expected exactly one AllTime standings record for neutral fantasy-team ordering, found $($allTimeStandings.Count)."
-    }
-
-    return Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @($allTimeStandings[0].Playoffs)
-}
-
-function ConvertTo-LeagueMatchupSnapshot {
-    param(
-        [AllowNull()][array]$Matchups,
-        [Parameter(Mandatory = $true)][int]$Week,
-        [Parameter(Mandatory = $true)][string]$Season,
-        [AllowNull()][System.Collections.IDictionary]$NeutralTeamOrderIndex = $null
-    )
-
-    if ($Week -le 0) {
-        return $null
-    }
-
-    $resolvedNeutralOrderIndex = if ($null -ne $NeutralTeamOrderIndex) {
-        $NeutralTeamOrderIndex
-    }
-    else {
-        Get-LeagueNeutralTeamOrderIndex
-    }
-
-    $validRows = @($Matchups | Where-Object {
-        $matchupID = 0
-        $rosterID = 0
-        [int]::TryParse([string]$_.matchup_id, [ref]$matchupID) -and
-        $matchupID -gt 0 -and
-        [int]::TryParse([string]$_.roster_id, [ref]$rosterID) -and
-        $rosterID -gt 0
-    })
-
-    $mappedMatchups = @()
-    foreach ($group in @($validRows | Group-Object { [int]$_.matchup_id } | Sort-Object { [int]$_.Name })) {
-        $participants = @($group.Group)
-        if ($participants.Count -ne 2) {
-            Write-Warning "Skipping Sleeper matchup '$($group.Name)' for Week $Week because it contains $($participants.Count) participants instead of 2."
-            continue
-        }
-
-        $participantRows = @($participants |
-            Sort-Object { Get-FantasyTeamNeutralOrderPosition -NeutralOrderIndex $resolvedNeutralOrderIndex -TeamID $_.roster_id } |
-            ForEach-Object {
-                $points = 0.0
-                if ($null -ne $_.points) {
-                    $points = [double]$_.points
-                }
-
-                [PSCustomObject][ordered]@{
-                    TeamID = [int]$_.roster_id
-                    Points = $points
-                }
-            })
-
-        $mappedMatchups += [PSCustomObject][ordered]@{
-            MatchupID    = [int]$group.Name
-            Participants = $participantRows
-        }
-    }
-
-    return [PSCustomObject][ordered]@{
-        Season   = $Season
-        Week     = $Week
-        Matchups = @($mappedMatchups)
-    }
-}
-
-function Get-LeagueMatchupSnapshot {
-    param(
-        [string]$LeagueID = (Get-Config).LeagueID,
-        [Parameter(Mandatory = $true)][int]$Week,
-        [Parameter(Mandatory = $true)][string]$Season
-    )
-
-    if ($Week -le 0) {
-        return $null
-    }
-
-    try {
-        $matchups = Get-SleeperMatchups -leagueID $LeagueID -week $Week
-        return ConvertTo-LeagueMatchupSnapshot -Matchups @($matchups) -Week $Week -Season $Season
-    }
-    catch {
-        Write-Warning "Could not refresh Sleeper matchups for Week $Week. Keeping the previous generated snapshot when available. $_"
         return $null
     }
 }

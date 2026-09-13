@@ -3,7 +3,6 @@ $ErrorActionPreference = "Stop"
 Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\FantasyTeamOrderUtils.psm1" -Force
 
 function Assert-True {
     param(
@@ -24,22 +23,6 @@ function Assert-Equal {
     if ($Actual -ne $Expected) {
         throw "$Message Expected '$Expected', got '$Actual'."
     }
-}
-
-function Assert-Throws {
-    param(
-        [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock,
-        [Parameter(Mandatory = $true)][string]$Message
-    )
-
-    try {
-        & $ScriptBlock
-    }
-    catch {
-        return
-    }
-
-    throw $Message
 }
 
 function Get-OccurrenceCount {
@@ -65,10 +48,12 @@ Assert-True -Condition $requestLeague.Contains("Update-LeagueDraftsOrderAwareFro
 Assert-True -Condition $requestLeague.Contains("Add-LeagueTransactionDraftPickDetailsInMemory") -Message "RequestLeague does not enrich transaction pick details in memory."
 Assert-True -Condition $requestLeague.Contains("Resolve-LeagueTradeDeadlineWeek") -Message "RequestLeague does not normalize the trade deadline before publishing League.json."
 Assert-True -Condition $requestLeague.Contains("SeasonKickoff           = `$seasonKickoff") -Message "RequestLeague does not publish SeasonKickoff."
-Assert-True -Condition $requestLeague.Contains("Matchups                = `$matchupSnapshot") -Message "RequestLeague does not publish the current matchup snapshot."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups                = `$matchupSnapshot") -Expected 0 -Message "RequestLeague still publishes the legacy League.Matchups snapshot."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "RequestLeague still builds the legacy League.Matchups snapshot."
+Assert-True -Condition $requestLeague.Contains("Update-MatchupHistoryReadModels") -Message "RequestLeague does not use the public Matchups history API."
 
 # League overview read-model helpers normalize optional deadline settings and
-# build deterministic matchup/kickoff facts without frontend derivation.
+# deterministic kickoff facts without frontend derivation.
 Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline $null) -Expected $null -Message "Null trade deadline must stay null."
 Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline 0) -Expected $null -Message "Trade deadline week 0 must normalize to null."
 Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline -1) -Expected $null -Message "Negative trade deadline must normalize to null."
@@ -85,37 +70,13 @@ $kickoff = Get-LeagueSeasonKickoffUtc -Schedule $scheduleFixture
 $expectedKickoff = [DateTimeOffset]::FromUnixTimeSeconds(1788999600).UtcDateTime
 Assert-Equal -Actual $kickoff.ToString("o") -Expected $expectedKickoff.ToString("o") -Message "Season kickoff did not use the earliest regular-season game."
 
-$matchupFixture = @(
-    [PSCustomObject]@{ matchup_id = 2; roster_id = 4; points = 0 },
-    [PSCustomObject]@{ matchup_id = 1; roster_id = 2; points = 101.25 },
-    [PSCustomObject]@{ matchup_id = 1; roster_id = 1; points = 99.5 },
-    [PSCustomObject]@{ matchup_id = 2; roster_id = 3; points = 0 },
-    [PSCustomObject]@{ matchup_id = 9; roster_id = 6; points = 0 },
-    [PSCustomObject]@{ matchup_id = 0; roster_id = 5; points = 0 }
-)
-$neutralOrderIndex = Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @(
-    [PSCustomObject]@{ TeamID = 2; Place = 1 },
-    [PSCustomObject]@{ TeamID = 1; Place = 2 },
-    [PSCustomObject]@{ TeamID = 4; Place = 3 },
-    [PSCustomObject]@{ TeamID = 3; Place = 4 },
-    [PSCustomObject]@{ TeamID = 6; Place = 5 },
-    [PSCustomObject]@{ TeamID = 5; Place = 6 }
-)
-$matchupSnapshot = ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 1 -Season "2026" -NeutralTeamOrderIndex $neutralOrderIndex
-Assert-Equal -Actual $matchupSnapshot.Season -Expected "2026" -Message "Matchup snapshot season changed unexpectedly."
-Assert-Equal -Actual $matchupSnapshot.Week -Expected 1 -Message "Matchup snapshot week changed unexpectedly."
-Assert-Equal -Actual @($matchupSnapshot.Matchups).Count -Expected 2 -Message "Malformed matchup groups were not filtered correctly."
-Assert-Equal -Actual $matchupSnapshot.Matchups[0].MatchupID -Expected 1 -Message "Matchups are not sorted deterministically."
-Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[0].TeamID -Expected 2 -Message "Neutral matchup participants did not follow All-Time Overall order."
-Assert-Equal -Actual $matchupSnapshot.Matchups[0].Participants[1].Points -Expected 99.5 -Message "Matchup points were not preserved after neutral participant ordering."
-Assert-Equal -Actual $matchupSnapshot.Matchups[1].Participants[0].TeamID -Expected 4 -Message "Neutral matchup ordering fell back to lower TeamID/provider order."
-Assert-Equal -Actual (ConvertTo-LeagueMatchupSnapshot -Matchups $matchupFixture -Week 0 -Season "2026" -NeutralTeamOrderIndex $neutralOrderIndex) -Expected $null -Message "Non-positive matchup week must not publish a snapshot."
-Assert-Throws -ScriptBlock {
-    Get-FantasyTeamNeutralOrderIndex -AllTimeOverallStandings @(
-        [PSCustomObject]@{ TeamID = 1; Place = 1 },
-        [PSCustomObject]@{ TeamID = 2; Place = 1 }
-    ) | Out-Null
-} -Message "Duplicate All-Time Overall places must fail rather than creating a TeamID fallback."
+$leagueOverviewUtils = Get-Content "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Raw
+Assert-Equal -Actual (Get-OccurrenceCount -Text $leagueOverviewUtils -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "LeagueOverviewUtils still contains the legacy matchup snapshot converter."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $leagueOverviewUtils -Needle "Get-LeagueMatchupSnapshot") -Expected 0 -Message "LeagueOverviewUtils still contains the legacy matchup snapshot loader."
+
+$matchupReadModelUtils = Get-Content "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -Raw
+Assert-Equal -Actual (Get-OccurrenceCount -Text $matchupReadModelUtils -Needle "Set-Alias -Name Ensure-MatchupHistoryReadModels") -Expected 0 -Message "MatchupReadModelUtils still exposes the transitional history alias."
+Assert-True -Condition $matchupReadModelUtils.Contains("Update-MatchupHistoryReadModels") -Message "MatchupReadModelUtils no longer exposes the approved public history API."
 
 # The dedicated helper must never publish Transactions.json itself. Drafts may
 # still be persisted by the draft step; only Transactions are delayed.

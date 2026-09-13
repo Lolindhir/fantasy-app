@@ -65,7 +65,3 @@ Microsoft.PowerShell.Core\Export-ModuleMember -Function `
     Get-MatchupParticipantOrderMap, `
     ConvertTo-MrmCanonicalPairings, `
     Get-MrmEffectiveScore
-
-# Transitional caller compatibility for RequestLeague during the #305 migration.
-# This alias is deliberately not exported as a module member; the public API uses Update-*.
-Set-Alias -Name Ensure-MatchupHistoryReadModels -Value Update-MatchupHistoryReadModels -Scope Global
