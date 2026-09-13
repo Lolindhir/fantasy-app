@@ -1,5 +1,6 @@
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\LineupRepairabilityDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyWeeklyWatchUtils.psm1" -ErrorAction Stop -Force
 
@@ -75,7 +76,8 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Teams,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Players,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
-        [Parameter(Mandatory = $true)][int]$LastLineupWeek
+        [Parameter(Mandatory = $true)][int]$LastLineupWeek,
+        [AllowNull()][object]$AcquisitionCapability = $null
     )
 
     $baseReadModel = DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel `
@@ -89,12 +91,22 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         return $baseReadModel
     }
 
-    return Add-FantasyRelevanceDecisionFacts `
+    $asOfUtc = [DateTimeOffset]::UtcNow
+    $relevanceReadModel = Add-FantasyRelevanceDecisionFacts `
         -BaseReadModel $baseReadModel `
         -League $League `
         -Teams $Teams `
         -Players $Players `
-        -Schedule $Schedule
+        -Schedule $Schedule `
+        -AsOfUtc $asOfUtc
+
+    return Add-LineupRepairabilityDecisionFacts `
+        -BaseReadModel $relevanceReadModel `
+        -Teams $Teams `
+        -Players $Players `
+        -Schedule $Schedule `
+        -AcquisitionCapability $AcquisitionCapability `
+        -AsOfUtc $asOfUtc
 }
 
 function New-FantasyGameContextReadModel {

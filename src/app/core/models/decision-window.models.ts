@@ -71,6 +71,25 @@ export interface DecisionWindowTeamLineupEvaluation {
 
 export type FantasyRelevanceRosterPlacement = 'starter' | 'bench' | 'ir' | 'taxi';
 export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'unknown';
+export type FantasyRelevanceRepairabilityState = 'repairable' | 'irreparable' | 'unknown';
+export type FantasyRelevanceRepairabilityPath = 'internal-roster' | 'external-acquisition';
+export type FantasyRelevanceRepairabilityProblemCode = 'OPEN_STARTER_SLOT' | 'STARTER_ON_BYE';
+export type FantasyRelevanceRepairabilityReasonCode =
+  | 'INTERNAL_ASSIGNMENT_AVAILABLE'
+  | 'EXTERNAL_ACQUISITION_ASSIGNMENT_AVAILABLE'
+  | 'LINEUP_EVIDENCE_UNKNOWN'
+  | 'ACQUISITION_EVIDENCE_UNKNOWN'
+  | 'EXTERNAL_PLAYER_EVIDENCE_UNKNOWN'
+  | 'NO_LEGAL_REPAIR_PATH';
+
+export interface FantasyRelevanceSlotRepairability {
+  ProblemCode: FantasyRelevanceRepairabilityProblemCode;
+  State: FantasyRelevanceRepairabilityState;
+  Path: FantasyRelevanceRepairabilityPath | null;
+  ReasonCode: FantasyRelevanceRepairabilityReasonCode;
+  InternalCandidateCount: number;
+  ExternalCandidateCount: number;
+}
 
 export interface FantasyRelevanceSlotDefinition {
   SlotID: string;
@@ -85,6 +104,7 @@ export interface FantasyRelevanceSlotState extends FantasyRelevanceSlotDefinitio
   GameID: string | null;
   DecisionWindowID: string | null;
   StartsAtUtc: string | null;
+  Repairability?: FantasyRelevanceSlotRepairability | null;
 }
 
 export interface FantasyRelevancePlayerState {

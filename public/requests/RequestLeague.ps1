@@ -14,6 +14,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\WaiverUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\AcquisitionCapabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
@@ -291,12 +292,22 @@ try {
     if (-not $schedule) {
         throw "Decision Windows require Schedule.json in the League refresh."
     }
+
+    $waiversOpen = [int]$league.settings.disable_adds -eq 0
+    $nextWaiverRun = $null
+    $nextWaiverRunUtc = Resolve-LeagueNextWaiverRunUtc -League $league
+    if ($null -ne $nextWaiverRunUtc) { $nextWaiverRun = $nextWaiverRunUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+    $acquisitionCapability = Resolve-TemporaryWaiverOnlyAcquisitionCapability `
+        -WaiversOpen $waiversOpen `
+        -NextWaiverRun $nextWaiverRun
+
     $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
         -League $league `
         -Teams $teamData `
         -Players $playersData `
         -Schedule $schedule `
-        -LastLineupWeek ([int]$lastWeek)
+        -LastLineupWeek ([int]$lastWeek) `
+        -AcquisitionCapability $acquisitionCapability
 
     if ($schedule) {
         $sortedGames = $schedule | Sort-Object { $_.gameID }
@@ -383,7 +394,6 @@ try {
 
     $cutsAllowed = $true
     $cutsMetaText = ""
-    $waiversOpen = [int]$league.settings.disable_adds -eq 0
     Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
     $tradeReviewDays = if ($null -ne $league.settings.trade_review_days) { [int]$league.settings.trade_review_days } else { 0 }
@@ -425,13 +435,8 @@ try {
     if ($status -eq "Completed") {
         $cutsAllowed = $false
         $waiversOpen = $false
+        $nextWaiverRun = $null
         $tradesOpen = $false
-    }
-
-    $nextWaiverRun = $null
-    if ($status -ne "Completed") {
-        $nextWaiverRunUtc = Resolve-LeagueNextWaiverRunUtc -League $league
-        if ($null -ne $nextWaiverRunUtc) { $nextWaiverRun = $nextWaiverRunUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") }
     }
 
     Write-Host "League is in status '$status' with phase '$phase'." -ForegroundColor Yellow
