@@ -1,0 +1,135 @@
+schemaVersion: 1
+
+file:
+  path: public/data/Matchups.json
+  kind: generated-json-read-model
+  generator: public/requests/RequestLeague.ps1
+  derivation: public/requests/utils/league/MatchupReadModelUtils.psm1
+  issue: 305
+
+contract:
+  purpose: >
+    Season-wide, provider-neutral fantasy matchup schedule/history read model for
+    app consumers. It materializes known fantasy pairings, effective team scores,
+    matchup/week completion and lightweight results without making the read model
+    a source of truth.
+  topLevel:
+    - SchemaVersion
+    - Season
+    - Weeks
+    - Summary
+  weekFields:
+    - Week
+    - Stage
+    - FirstKickoffUtc
+    - CompletionState
+    - Matchups
+  matchupFields:
+    - FantasyMatchupID
+    - Participants
+    - CompletionState
+    - Result
+  participantFields:
+    - TeamID
+    - Points
+    - ScoreKind
+
+sourceOfTruth:
+  pairingAndScoreBase: >
+    source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-*.json
+    owns durable pairing and score evidence. During the active lineup week the
+    existing direct Sleeper matchup fetch may overlay fresher score/custom-score
+    values only onto already-known canonical TeamIDs/pairings. This is transitional
+    compatibility until #347 migrates all consumers to canonical source data.
+  nflSchedule: source-data/nfl/schedules/<season>.json
+  nflFinality: source-data/nfl/game-finality/<season>.json
+  weeklyRosterEvidence: source-data/nfl/weekly-rosters/<season>/<week>.json
+  currentLineupEvidence: public/data/DecisionWindows.json generation facts in-memory
+  ordering: >
+    Existing generated All-Time Overall Standings sequence. Current-season storage
+    uses the current All-Time sequence; historical archives recompute that sequence
+    only from standings through the archived season cutoff. Validation/indexing uses
+    the shared #503 FantasyTeamOrderUtils neutral-order resolver.
+  boundary: >
+    Canonical League/NFL source data remains the source of truth. Matchups.json is
+    an application read model and must not be used to write back or repair source data.
+
+identityAndOrdering:
+  fantasyMatchupID: >
+    Reuses the existing app-owned fgm-* identity generated from season, week and the
+    unordered pair of TeamIDs. Provider matchup IDs are evidence, never app identity.
+  participants: >
+    Exactly two neutral participants are stored in All-Time Overall Standings order.
+    There is no Home/Away meaning and no raw TeamID/provider-order fallback if that
+    neutral order cannot be resolved safely.
+
+scoring:
+  points: >
+    Points is nullable. A reliable numeric zero is 0.0, not missing. If a provider
+    commissioner/custom score is present it is the effective score and ScoreKind is
+    adjusted; otherwise the standard score is used and ScoreKind is standard.
+  result: >
+    Result is null for open/unknown matchups. For CompletionState=final it contains
+    Type win|tie and WinnerTeamID (winning TeamID or null for a tie). Missing score
+    evidence prevents a final result.
+
+finality:
+  states:
+    open: At least one known legal live/future fantasy scoring path can still change the matchup score.
+    final: No known legal live/future fantasy scoring path can still change the matchup score and effective scores are available.
+    unknown: Missing, ambiguous or conflicting evidence prevents a safe completion/result statement.
+  activeWeek: >
+    Uses shared DecisionWindows/FantasyRelevance remaining-scoring-path facts plus
+    shared lineup Repairability. A repairable lineup problem is a legal remaining
+    scoring path. Missing/review/unknown lineup evidence fails closed to unknown.
+  nonActivePastWeek: >
+    Resolves actual canonical starters to their NFL games using season/week roster
+    evidence (including the team-defense provider identity fallback) and checks only
+    those games against canonical NFL finality. Unrelated later NFL games do not block
+    a matchup from becoming final.
+  futureWeek: >
+    A known future regular-season matchup with starter evidence is open. Missing
+    starter evidence fails closed to unknown.
+  forbiddenHeuristics:
+    - Points greater than zero
+    - provider/Sleeper leg rollover
+    - completion of every NFL game in the week
+    - waiting for a stat-correction window
+  statCorrections: >
+    Already-final scores/results may be rematerialized later when authoritative score
+    evidence changes. Finality does not wait for that correction window.
+
+weekAndSummary:
+  stage: regular-season before PlayoffStartWeek, playoffs from PlayoffStartWeek onward
+  completionAggregation: open if any matchup is open; otherwise unknown if any is unknown; otherwise final
+  lastCompletedWeek: highest week with CompletionState=final, otherwise null
+  activeOrNextWeek: first materialized non-final week after LastCompletedWeek that has actual pairings, otherwise null
+  playoffKnowledgeBoundary: >
+    Regular-season pairings may be materialized season-wide. Future playoff pairings
+    are never invented from provider placeholders. Before the playoffs only regular
+    weeks are emitted; once playoffs begin, generation is bounded to the current
+    playoff round (respecting one- vs two-week round structure), and only actual
+    two-team pairings are materialized.
+  malformedPairingBoundary: >
+    Known grouping evidence that cannot resolve to exactly two unique ordered TeamIDs
+    never creates a speculative matchup. It forces the Week away from final (unknown
+    unless another known matchup already proves the Week open).
+
+history:
+  path: public/data/past_seasons/Matchups/Matchups_<season>.json
+  index: public/data/PastSeasonsIndex.json resources.Matchups
+  materialization: >
+    Completed canonical seasons are materialized when their Matchups archive is
+    absent. #193 remains the owner of the broader atomic season-finalization/archive
+    lifecycle and any future force/rematerialization policy.
+
+compatibility:
+  leagueMatchups: >
+    League.Matchups remains the transitional current-week snapshot. #305 does not
+    remove it because current consumers are not all migrated; #500/#505 and the
+    broader #347 migration can move consumers incrementally.
+  nonGoals:
+    - player-level matchup detail
+    - Strength of Schedule (#506)
+    - canonical source migration of all consumers (#347)
+    - broader archive-finalization lifecycle (#193)
