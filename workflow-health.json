@@ -1,13 +1,47 @@
 {
   "configurationDrift": [],
-  "generatedAt": "2026-09-13T08:14:19.827329Z",
+  "generatedAt": "2026-09-13T09:16:53.673402Z",
   "incidents": [
+    {
+      "category": "critical",
+      "failureStreak": 1,
+      "firstObservedAt": "2026-09-13T09:16:53.673402Z",
+      "incidentKey": "4e7e59571e1c6cca20889402",
+      "lastObservedAt": "2026-09-13T09:16:53.673402Z",
+      "lastSuccess": {
+        "conclusion": "success",
+        "createdAt": "2026-09-13T07:14:30Z",
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
+        "id": 34744734625,
+        "status": "completed",
+        "updatedAt": "2026-09-13T07:16:45Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34744734625"
+      },
+      "latestRun": {
+        "conclusion": "startup_failure",
+        "createdAt": "2026-09-13T09:05:59Z",
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "4bdeaff8bbed0cd5af459bd960433786265d8393",
+        "id": 34748931362,
+        "status": "completed",
+        "updatedAt": "2026-09-13T09:10:03Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748931362"
+      },
+      "notificationDue": true,
+      "onset": "2026-09-13T09:05:59Z",
+      "threshold": 1,
+      "type": "failure-streak",
+      "workflow": ".github/workflows/deploy.yml"
+    },
     {
       "category": "critical",
       "failureStreak": 6,
       "firstObservedAt": "2026-09-13T05:14:11.406771Z",
       "incidentKey": "9aac5071fffe7b5e46b9cc9e",
-      "lastObservedAt": "2026-09-13T08:14:19.827329Z",
+      "lastObservedAt": "2026-09-13T09:16:53.673402Z",
       "lastSuccess": {
         "conclusion": "success",
         "createdAt": "2026-09-12T07:27:28Z",
@@ -35,6 +69,40 @@
       "threshold": 1,
       "type": "failure-streak",
       "workflow": ".github/workflows/fantasy-management-validation.yml"
+    },
+    {
+      "category": "important",
+      "failureStreak": 2,
+      "firstObservedAt": "2026-09-13T09:16:53.673402Z",
+      "incidentKey": "e82c8a4597d71598dc7b03d2",
+      "lastObservedAt": "2026-09-13T09:16:53.673402Z",
+      "lastSuccess": {
+        "conclusion": "success",
+        "createdAt": "2026-09-13T08:26:48Z",
+        "event": "repository_dispatch",
+        "headBranch": "main",
+        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
+        "id": 34747702047,
+        "status": "completed",
+        "updatedAt": "2026-09-13T08:27:01Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747702047"
+      },
+      "latestRun": {
+        "conclusion": "failure",
+        "createdAt": "2026-09-13T08:54:46Z",
+        "event": "repository_dispatch",
+        "headBranch": "main",
+        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
+        "id": 34748666439,
+        "status": "completed",
+        "updatedAt": "2026-09-13T08:56:33Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748666439"
+      },
+      "notificationDue": true,
+      "onset": "2026-09-13T08:47:18Z",
+      "threshold": 2,
+      "type": "failure-streak",
+      "workflow": ".github/workflows/sync-project-fields.yml"
     }
   ],
   "overall": "incident",
@@ -42,7 +110,7 @@
   "repository": "Lolindhir/fantasy-app",
   "schemaVersion": 1,
   "sourceRef": "main",
-  "sourceSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
+  "sourceSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
   "workflows": {
     ".github/workflows/build.yml": {
       "apiState": "active",
@@ -89,14 +157,16 @@
       "notify": true,
       "staleAfterMinutes": 11520,
       "status": "healthy",
-      "successAgeMinutes": 5350
+      "successAgeMinutes": 5412
     },
     ".github/workflows/deploy.yml": {
       "apiState": "active",
       "category": "critical",
       "consecutiveFailureThreshold": 1,
-      "failureStreak": 0,
-      "incidentKeys": [],
+      "failureStreak": 1,
+      "incidentKeys": [
+        "4e7e59571e1c6cca20889402"
+      ],
       "lastSuccess": {
         "conclusion": "success",
         "createdAt": "2026-09-13T07:14:30Z",
@@ -110,19 +180,19 @@
       },
       "latestRelevantInFlightRun": null,
       "latestRelevantRun": {
-        "conclusion": "success",
-        "createdAt": "2026-09-13T07:14:30Z",
+        "conclusion": "startup_failure",
+        "createdAt": "2026-09-13T09:05:59Z",
         "event": "push",
         "headBranch": "main",
-        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34744734625,
+        "headSha": "4bdeaff8bbed0cd5af459bd960433786265d8393",
+        "id": 34748931362,
         "status": "completed",
-        "updatedAt": "2026-09-13T07:16:45Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34744734625"
+        "updatedAt": "2026-09-13T09:10:03Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748931362"
       },
       "notify": true,
       "staleAfterMinutes": null,
-      "status": "healthy"
+      "status": "incident"
     },
     ".github/workflows/fantasy-management-validation.yml": {
       "apiState": "active",
@@ -167,31 +237,31 @@
       "incidentKeys": [],
       "lastSuccess": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T06:44:43Z",
+        "createdAt": "2026-09-13T09:07:16Z",
         "event": "push",
         "headBranch": "main",
-        "headSha": "8ae5dce63fb73cc33fc8d0963ebe3c7d3f781dc0",
-        "id": 34743499784,
+        "headSha": "26d2d5b35cf14acfabedf33979346472cddaef46",
+        "id": 34748956639,
         "status": "completed",
-        "updatedAt": "2026-09-13T06:47:56Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34743499784"
+        "updatedAt": "2026-09-13T09:10:28Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748956639"
       },
       "latestRelevantInFlightRun": null,
       "latestRelevantRun": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T06:44:43Z",
+        "createdAt": "2026-09-13T09:07:16Z",
         "event": "push",
         "headBranch": "main",
-        "headSha": "8ae5dce63fb73cc33fc8d0963ebe3c7d3f781dc0",
-        "id": 34743499784,
+        "headSha": "26d2d5b35cf14acfabedf33979346472cddaef46",
+        "id": 34748956639,
         "status": "completed",
-        "updatedAt": "2026-09-13T06:47:56Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34743499784"
+        "updatedAt": "2026-09-13T09:10:28Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748956639"
       },
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 86
+      "successAgeMinutes": 6
     },
     ".github/workflows/scheduler.yml": {
       "apiState": "active",
@@ -201,26 +271,36 @@
       "incidentKeys": [],
       "lastSuccess": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T08:10:45Z",
+        "createdAt": "2026-09-13T09:10:43Z",
         "event": "repository_dispatch",
         "headBranch": "main",
-        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34747039013,
+        "headSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
+        "id": 34749069820,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:12:28Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747039013"
+        "updatedAt": "2026-09-13T09:15:03Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34749069820"
       },
-      "latestRelevantInFlightRun": null,
+      "latestRelevantInFlightRun": {
+        "conclusion": null,
+        "createdAt": "2026-09-13T09:15:46Z",
+        "event": "repository_dispatch",
+        "headBranch": "main",
+        "headSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
+        "id": 34749208497,
+        "status": "in_progress",
+        "updatedAt": "2026-09-13T09:16:04Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34749208497"
+      },
       "latestRelevantRun": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T08:10:45Z",
+        "createdAt": "2026-09-13T09:10:43Z",
         "event": "repository_dispatch",
         "headBranch": "main",
-        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34747039013,
+        "headSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
+        "id": 34749069820,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:12:28Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747039013"
+        "updatedAt": "2026-09-13T09:15:03Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34749069820"
       },
       "notify": true,
       "staleAfterMinutes": 20,
@@ -259,7 +339,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 310
+      "successAgeMinutes": 372
     },
     ".github/workflows/sync-league-source-data.yml": {
       "apiState": "active",
@@ -293,7 +373,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 209
+      "successAgeMinutes": 272
     },
     ".github/workflows/sync-nfl-game-finality.yml": {
       "apiState": "active",
@@ -303,36 +383,36 @@
       "incidentKeys": [],
       "lastSuccess": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T07:56:57Z",
+        "createdAt": "2026-09-13T08:54:35Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746466438,
+        "id": 34748664106,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:09:07Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746466438"
+        "updatedAt": "2026-09-13T09:11:38Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748664106"
       },
       "latestRelevantInFlightRun": {
         "conclusion": null,
-        "createdAt": "2026-09-13T08:12:24Z",
+        "createdAt": "2026-09-13T09:14:55Z",
         "event": "repository_dispatch",
         "headBranch": "main",
-        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34747104361,
+        "headSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
+        "id": 34749178131,
         "status": "in_progress",
-        "updatedAt": "2026-09-13T08:12:28Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747104361"
+        "updatedAt": "2026-09-13T09:14:59Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34749178131"
       },
       "latestRelevantRun": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T07:56:57Z",
+        "createdAt": "2026-09-13T08:54:35Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746466438,
+        "id": 34748664106,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:09:07Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746466438"
+        "updatedAt": "2026-09-13T09:11:38Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748664106"
       },
       "notify": true,
       "staleAfterMinutes": null,
@@ -370,40 +450,52 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 295
+      "successAgeMinutes": 358
     },
     ".github/workflows/sync-project-fields.yml": {
       "apiState": "active",
       "category": "important",
       "consecutiveFailureThreshold": 2,
-      "failureStreak": 0,
-      "incidentKeys": [],
+      "failureStreak": 2,
+      "incidentKeys": [
+        "e82c8a4597d71598dc7b03d2"
+      ],
       "lastSuccess": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T08:06:56Z",
+        "createdAt": "2026-09-13T08:26:48Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746882544,
+        "id": 34747702047,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:07:10Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746882544"
+        "updatedAt": "2026-09-13T08:27:01Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747702047"
       },
-      "latestRelevantInFlightRun": null,
-      "latestRelevantRun": {
-        "conclusion": "success",
-        "createdAt": "2026-09-13T08:06:56Z",
+      "latestRelevantInFlightRun": {
+        "conclusion": null,
+        "createdAt": "2026-09-13T08:59:33Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746882544,
+        "id": 34748766206,
+        "status": "queued",
+        "updatedAt": "2026-09-13T08:59:33Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748766206"
+      },
+      "latestRelevantRun": {
+        "conclusion": "failure",
+        "createdAt": "2026-09-13T08:54:46Z",
+        "event": "repository_dispatch",
+        "headBranch": "main",
+        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
+        "id": 34748666439,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:07:10Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746882544"
+        "updatedAt": "2026-09-13T08:56:33Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748666439"
       },
       "notify": true,
       "staleAfterMinutes": null,
-      "status": "healthy"
+      "status": "incident"
     },
     ".github/workflows/update-cbs-sports-projections.yml": {
       "apiState": "active",
@@ -437,7 +529,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 239
+      "successAgeMinutes": 302
     },
     ".github/workflows/update-drafts.yml": {
       "apiState": "active",
@@ -484,7 +576,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 264
+      "successAgeMinutes": 327
     },
     ".github/workflows/update-fantasycalc-rankings.yml": {
       "apiState": "active",
@@ -518,7 +610,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 274
+      "successAgeMinutes": 337
     },
     ".github/workflows/update-fantasypros-rankings.yml": {
       "apiState": "active",
@@ -552,7 +644,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 290
+      "successAgeMinutes": 352
     },
     ".github/workflows/update-fftoday-projections.yml": {
       "apiState": "active",
@@ -586,7 +678,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 254
+      "successAgeMinutes": 317
     },
     ".github/workflows/update-games.yml": {
       "apiState": "active",
@@ -620,7 +712,7 @@
       "notify": true,
       "staleAfterMinutes": 960,
       "status": "healthy",
-      "successAgeMinutes": 205
+      "successAgeMinutes": 268
     },
     ".github/workflows/update-league.yml": {
       "apiState": "active",
@@ -630,41 +722,41 @@
       "incidentKeys": [],
       "lastSuccess": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T08:01:50Z",
+        "createdAt": "2026-09-13T09:03:39Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746664653,
+        "id": 34748869132,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:04:21Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746664653"
+        "updatedAt": "2026-09-13T09:06:12Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748869132"
       },
       "latestRelevantInFlightRun": {
         "conclusion": null,
-        "createdAt": "2026-09-13T08:12:23Z",
+        "createdAt": "2026-09-13T09:14:54Z",
         "event": "repository_dispatch",
         "headBranch": "main",
-        "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34747103581,
+        "headSha": "bfe0c4039e0b61295b39b2ab4e4c4e8cefe373b9",
+        "id": 34749177695,
         "status": "in_progress",
-        "updatedAt": "2026-09-13T08:12:26Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34747103581"
+        "updatedAt": "2026-09-13T09:14:58Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34749177695"
       },
       "latestRelevantRun": {
         "conclusion": "success",
-        "createdAt": "2026-09-13T08:01:50Z",
+        "createdAt": "2026-09-13T09:03:39Z",
         "event": "repository_dispatch",
         "headBranch": "main",
         "headSha": "c610732f01e63f6b9d235303002306018e4b9bc7",
-        "id": 34746664653,
+        "id": 34748869132,
         "status": "completed",
-        "updatedAt": "2026-09-13T08:04:21Z",
-        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34746664653"
+        "updatedAt": "2026-09-13T09:06:12Z",
+        "url": "https://github.com/Lolindhir/fantasy-app/actions/runs/34748869132"
       },
       "notify": true,
       "staleAfterMinutes": 45,
       "status": "healthy",
-      "successAgeMinutes": 9
+      "successAgeMinutes": 10
     },
     ".github/workflows/update-past-seasons-index.yml": {
       "apiState": "active",
@@ -711,7 +803,7 @@
       "notify": true,
       "staleAfterMinutes": 840,
       "status": "healthy",
-      "successAgeMinutes": 174
+      "successAgeMinutes": 237
     },
     ".github/workflows/update-sleeper-trending.yml": {
       "apiState": "active",
@@ -745,7 +837,7 @@
       "notify": true,
       "staleAfterMinutes": 1800,
       "status": "healthy",
-      "successAgeMinutes": 230
+      "successAgeMinutes": 292
     },
     ".github/workflows/update-standings.yml": {
       "apiState": "active",
@@ -779,7 +871,7 @@
       "notify": true,
       "staleAfterMinutes": 11520,
       "status": "healthy",
-      "successAgeMinutes": 5795
+      "successAgeMinutes": 5858
     },
     ".github/workflows/update-teams.yml": {
       "apiState": "active",
@@ -813,7 +905,7 @@
       "notify": true,
       "staleAfterMinutes": 11520,
       "status": "healthy",
-      "successAgeMinutes": 5735
+      "successAgeMinutes": 5798
     },
     ".github/workflows/update-transactions.yml": {
       "apiState": "active",
@@ -847,7 +939,7 @@
       "notify": true,
       "staleAfterMinutes": 11520,
       "status": "healthy",
-      "successAgeMinutes": 5765
+      "successAgeMinutes": 5827
     },
     ".github/workflows/workflow-health-snapshot.yml": {
       "apiState": "active",
