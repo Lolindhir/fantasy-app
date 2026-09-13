@@ -3,7 +3,7 @@ import { Component, inject, Input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { catchError, combineLatest, map, of, shareReplay } from 'rxjs';
+import { catchError, combineLatest, map, of, shareReplay, tap } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type {
@@ -29,6 +29,13 @@ import {
   isFantasyGameContextForLeagueWeek,
   isFantasyMatchupFinalWindowGame
 } from '../../utils/fantasy-game-context.util';
+import {
+  buildMatchupScoringWindow,
+  buildMatchupStarterProgress,
+  findFantasyRelevanceTeam,
+  type MatchupScoringWindowView,
+  type MatchupStarterProgressView
+} from '../../utils/matchups-overview-view.util';
 import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
@@ -96,9 +103,11 @@ export class LeagueMatchupsComponent {
   private readonly dataService = inject(DataService);
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
+  private latestFantasyContextState: FantasyContextState | null = null;
+  private readonly expandedScoringWindows = new Set<string>();
 
-  readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
-  readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+  readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
+  readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
 
   readonly fantasyContextState$ = combineLatest({
     context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
@@ -106,6 +115,7 @@ export class LeagueMatchupsComponent {
     nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
   }).pipe(
     map(state => state satisfies FantasyContextState),
+    tap(state => this.latestFantasyContextState = state),
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
@@ -167,6 +177,52 @@ export class LeagueMatchupsComponent {
     return getFantasyMatchupContext(current, [matchup.left.team.TeamID, matchup.right.team.TeamID]);
   }
 
+  starterProgress(
+    matchup: LeagueMatchupView,
+    state: FantasyContextState,
+    side: 'left' | 'right'
+  ): MatchupStarterProgressView | null {
+    const resolved = this.matchupContext(matchup, state.context);
+    const team = side === 'left' ? matchup.left.team : matchup.right.team;
+    return buildMatchupStarterProgress(
+      findFantasyRelevanceTeam(state.decisionWindows, team.TeamID),
+      resolved?.RemainingRelevance?.NextScoringWindowID ?? null,
+      side
+    );
+  }
+
+  scoringWindow(
+    matchup: LeagueMatchupView,
+    state: FantasyContextState
+  ): MatchupScoringWindowView | null {
+    return buildMatchupScoringWindow(
+      this.matchupContext(matchup, state.context),
+      this.currentContext(state.context)
+    );
+  }
+
+  scoringWindowGames(matchupID: number, scoringWindow: MatchupScoringWindowView): FantasyGameContextGame[] {
+    return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID))
+      ? scoringWindow.games
+      : scoringWindow.mobileVisibleGames;
+  }
+
+  isScoringWindowExpanded(matchupID: number, scoringWindow: MatchupScoringWindowView): boolean {
+    return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
+  }
+
+  expandScoringWindow(matchupID: number, scoringWindow: MatchupScoringWindowView): void {
+    this.expandedScoringWindows.add(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
+  }
+
+  openMatchupDetailFromOverview(matchup: LeagueMatchupView): void {
+    if (this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
+  }
+
+  matchupAriaLabel(matchup: LeagueMatchupView): string {
+    return `Open ${this.teamShortName(matchup.left.team)} versus ${this.teamShortName(matchup.right.team)} matchup details`;
+  }
+
   matchupPreview(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
@@ -185,9 +241,6 @@ export class LeagueMatchupsComponent {
       ? remaining.NextScoringLockedActiveStarterCount + remaining.NextScoringUnlockedStarterCount
       : scoringGame.LeftStarterCount + scoringGame.RightStarterCount;
 
-    // Matchup cards are a football/scoring surface. A pure lineup-option window
-    // remains available in Decision Window data but must not replace the next
-    // actual Starter scoring event here.
     if (starterCount <= 0) return null;
 
     const scoring = this.buildPreviewEvent(
@@ -318,6 +371,10 @@ export class LeagueMatchupsComponent {
       starterCount,
       optionCount
     };
+  }
+
+  private scoringWindowKey(matchupID: number, decisionWindowID: string): string {
+    return `${matchupID}|${decisionWindowID}`;
   }
 
   private openContextDialog(data: FantasyGameContextDialogData): void {
