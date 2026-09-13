@@ -231,43 +231,68 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(component.formatFantasyPoints(0)).toBe('0');
   });
 
-  it('keeps long score values collision-free and the score plate within identity-row height at responsive widths', () => {
+  it('keeps 0-0 and long decimal scores collision-free without growing the identity row at responsive widths', () => {
     const element: HTMLElement = fixture.nativeElement;
-    const scoreboard = element.querySelector<HTMLElement>('.matchup-scoreboard')!;
-    const plate = element.querySelector<HTMLElement>('.matchup-score-plate')!;
-    const leftScore = plate.querySelector<HTMLElement>('.matchup-score-value--left')!;
-    const rightScore = plate.querySelector<HTMLElement>('.matchup-score-value--right')!;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
+    const sourceCard = element.querySelector<HTMLElement>('.matchup-card')!;
+    const sourceLeftScore = sourceCard.querySelector<HTMLElement>('.matchup-score-value--left')!;
+    const sourceRightScore = sourceCard.querySelector<HTMLElement>('.matchup-score-value--right')!;
 
-    leftScore.textContent = '123.45';
-    rightScore.textContent = '987.65';
+    for (const [leftScore, rightScore] of [['0', '0'], ['123.45', '987.65']]) {
+      sourceLeftScore.textContent = leftScore;
+      sourceRightScore.textContent = rightScore;
 
-    try {
       for (const width of [360, 390, 430, 1280]) {
-        window.resizeTo(width, 900);
-        window.dispatchEvent(new Event('resize'));
-        fixture.detectChanges();
+        const frame = document.createElement('iframe');
+        frame.style.position = 'absolute';
+        frame.style.left = '-2000px';
+        frame.style.top = '0';
+        frame.style.width = `${width}px`;
+        frame.style.height = '900px';
+        frame.style.border = '0';
+        document.body.appendChild(frame);
 
-        const leftTeam = element.querySelector<HTMLElement>('.matchup-team--left')!.getBoundingClientRect();
-        const rightTeam = element.querySelector<HTMLElement>('.matchup-team--right')!.getBoundingClientRect();
-        const plateRect = plate.getBoundingClientRect();
-        const visibleIdentity = Array.from(element.querySelectorAll<HTMLElement>('.matchup-team-identity'))
-          .find(identity => getComputedStyle(identity).display !== 'none')!;
+        try {
+          const frameDocument = frame.contentDocument!;
+          const frameWindow = frame.contentWindow!;
+          for (const style of Array.from(document.head.querySelectorAll('style'))) {
+            frameDocument.head.appendChild(style.cloneNode(true));
+          }
 
-        expect(window.innerWidth).withContext(`${width}px viewport`).toBe(width);
-        expect(scoreboard.scrollWidth).withContext(`${width}px scoreboard overflow`)
-          .toBeLessThanOrEqual(scoreboard.clientWidth + 1);
-        expect(plateRect.left).withContext(`${width}px left identity collision`)
-          .toBeGreaterThanOrEqual(leftTeam.right - 1);
-        expect(plateRect.right).withContext(`${width}px right identity collision`)
-          .toBeLessThanOrEqual(rightTeam.left + 1);
-        expect(plateRect.height).withContext(`${width}px score plate height`)
-          .toBeLessThanOrEqual(visibleIdentity.getBoundingClientRect().height + 1);
+          const reset = frameDocument.createElement('style');
+          reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}';
+          frameDocument.head.appendChild(reset);
+          frameDocument.body.appendChild(sourceCard.cloneNode(true));
+
+          const scoreboard = frameDocument.querySelector<HTMLElement>('.matchup-scoreboard')!;
+          const plate = frameDocument.querySelector<HTMLElement>('.matchup-score-plate')!;
+          const leftTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--left')!.getBoundingClientRect();
+          const rightTeam = frameDocument.querySelector<HTMLElement>('.matchup-team--right')!.getBoundingClientRect();
+          const plateRect = plate.getBoundingClientRect();
+          const visibleIdentity = Array.from(frameDocument.querySelectorAll<HTMLElement>('.matchup-team-identity'))
+            .find(identity => frameWindow.getComputedStyle(identity).display !== 'none')!;
+          const scoreFontSize = Number.parseFloat(frameWindow.getComputedStyle(
+            plate.querySelector<HTMLElement>('.matchup-score-value--left')!
+          ).fontSize);
+
+          expect(frameWindow.innerWidth).withContext(`${width}px iframe viewport`).toBe(width);
+          expect(scoreboard.scrollWidth).withContext(`${width}px ${leftScore}-${rightScore} scoreboard overflow`)
+            .toBeLessThanOrEqual(scoreboard.clientWidth + 1);
+          expect(plateRect.left).withContext(`${width}px ${leftScore}-${rightScore} left identity collision`)
+            .toBeGreaterThanOrEqual(leftTeam.right - 1);
+          expect(plateRect.right).withContext(`${width}px ${leftScore}-${rightScore} right identity collision`)
+            .toBeLessThanOrEqual(rightTeam.left + 1);
+          expect(plateRect.height).withContext(`${width}px ${leftScore}-${rightScore} score plate height`)
+            .toBeLessThanOrEqual(visibleIdentity.getBoundingClientRect().height + 1);
+
+          if (width === 360) {
+            expect(scoreFontSize).withContext('360px compact score typography').toBeLessThan(18);
+          } else if (width === 1280) {
+            expect(scoreFontSize).withContext('1280px desktop score typography').toBeGreaterThan(20);
+          }
+        } finally {
+          frame.remove();
+        }
       }
-    } finally {
-      window.resizeTo(originalWidth, originalHeight);
-      window.dispatchEvent(new Event('resize'));
     }
   });
 
