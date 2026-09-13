@@ -1,13 +1,25 @@
 <section class="decision-window-popover" aria-label="Decision Window details">
   <header class="decision-window-header">
-    <div class="decision-window-eyebrow">Decision Window</div>
-    <div class="decision-window-lock-time">{{ localDateTime }}</div>
-    <div class="decision-window-meta">
-      <span class="decision-window-week-games">
-        Week {{ window.Week }}<ng-container *ngIf="showGameCount"> · {{ window.Games.length }} games</ng-container>
-      </span>
-      <strong>{{ countdown }}</strong>
+    <div class="decision-window-header-copy">
+      <div class="decision-window-eyebrow">Decision Window</div>
+      <div class="decision-window-lock-time">{{ localDateTime }}</div>
+      <div class="decision-window-meta">
+        <span class="decision-window-week-games">
+          Week {{ window.Week }}<ng-container *ngIf="showGameCount"> · {{ window.Games.length }} games</ng-container>
+        </span>
+        <strong>{{ countdown }}</strong>
+      </div>
     </div>
+
+    <button
+      mat-icon-button
+      mat-dialog-close
+      type="button"
+      class="decision-window-close"
+      aria-label="Close"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
 
     <div class="decision-window-games" aria-label="NFL games in this Decision Window">
       <app-decision-window-matchup-context

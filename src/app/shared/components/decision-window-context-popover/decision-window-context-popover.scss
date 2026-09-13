@@ -17,9 +17,24 @@
 
 .decision-window-header {
   flex: 0 0 auto;
-  padding: 14px 14px 11px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 0 8px;
+  padding: 16px 14px 13px;
   border-bottom: 1px solid #e5e7eb;
   background: #fff;
+}
+
+.decision-window-header-copy {
+  min-width: 0;
+}
+
+.decision-window-close {
+  align-self: start;
+  width: 44px;
+  height: 44px;
+  margin: -4px -4px -4px 0;
+  color: #64748b;
 }
 
 .decision-window-eyebrow {
@@ -51,10 +66,17 @@
 .decision-window-week-games { white-space: nowrap; }
 
 .decision-window-games {
-  display: grid;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin-top: 9px;
+  margin-top: 10px;
   min-width: 0;
+}
+
+.decision-window-games app-decision-window-matchup-context {
+  flex: 0 0 100%;
 }
 
 .decision-window-game {
@@ -182,7 +204,13 @@ button.decision-window-team-row:focus-visible { box-shadow: inset 0 0 0 2px rgba
 }
 
 @media (max-width: 420px) {
-  .decision-window-header { padding: 12px 11px 9px; }
+  .decision-window-header {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 0 5px;
+    padding: 14px 11px 11px;
+  }
+  .decision-window-close { margin-right: -5px; }
+  .decision-window-games { gap: 5px; margin-top: 9px; }
   button.decision-window-team-row { grid-template-columns: 32px minmax(0, 1fr) 12px; gap: 7px; min-height: 58px; padding: 8px 9px; }
   .decision-window-team-avatar { width: 30px; height: 30px; }
   .decision-window-team-name { font-size: 0.8rem; }
