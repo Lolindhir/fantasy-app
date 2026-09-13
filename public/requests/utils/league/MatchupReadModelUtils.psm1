@@ -298,9 +298,23 @@ function Get-MrmWeeklyAssignmentMap {
         $canonicalID = ConvertTo-FgcCanonicalPlayerID -Player $player
         if ([string]::IsNullOrWhiteSpace([string]$canonicalID)) { continue }
 
-        $teamAbbr = Get-FgcPlayerTeamAbbr -Player $row
+        $teamRef = Get-MrmValue -Object $row -Names @('Team')
+        $teamAbbr = Get-MrmValue -Object $row -Names @('TeamAbbr','TeamAbv')
+        if ([string]::IsNullOrWhiteSpace([string]$teamAbbr) -and $teamRef -is [string]) {
+            $teamAbbr = $teamRef
+        }
+        elseif ($null -ne $teamRef -and $teamRef -isnot [string]) {
+            $teamAbbr = Get-MrmValue -Object $teamRef -Names @('TeamAbbr','TeamAbv','Abbr')
+        }
         if ([string]::IsNullOrWhiteSpace([string]$teamAbbr) -and $null -ne $playerRef) {
-            $teamAbbr = Get-FgcPlayerTeamAbbr -Player $playerRef
+            $nestedTeamRef = Get-MrmValue -Object $playerRef -Names @('Team')
+            $teamAbbr = Get-MrmValue -Object $playerRef -Names @('TeamAbbr','TeamAbv')
+            if ([string]::IsNullOrWhiteSpace([string]$teamAbbr) -and $nestedTeamRef -is [string]) {
+                $teamAbbr = $nestedTeamRef
+            }
+            elseif ($null -ne $nestedTeamRef -and $nestedTeamRef -isnot [string]) {
+                $teamAbbr = Get-MrmValue -Object $nestedTeamRef -Names @('TeamAbbr','TeamAbv','Abbr')
+            }
         }
         if ([string]::IsNullOrWhiteSpace([string]$teamAbbr)) { continue }
         $teamAbbr = ([string]$teamAbbr).Trim().ToUpperInvariant()
