@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import type { DecisionWindowsReadModel, FantasyRelevanceTeamState } from '../../../core/models/decision-window.models';
 import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
+import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
@@ -112,32 +113,46 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     }
   } satisfies DecisionWindowsReadModel;
 
+  const matchups: MatchupsReadModel = {
+    SchemaVersion: 1,
+    Season: '2026',
+    Weeks: [{
+      Week: 1,
+      Stage: 'regular-season',
+      FirstKickoffUtc: '2026-09-13T17:00:00Z',
+      CompletionState: 'open',
+      Matchups: [{
+        FantasyMatchupID: 'm1',
+        CompletionState: 'open',
+        Participants: [
+          { TeamID: 1, Points: 37.4, ScoreKind: 'standard' },
+          { TeamID: 2, Points: 13.8, ScoreKind: 'standard' }
+        ],
+        Result: null
+      }]
+    }],
+    Summary: {
+      LastCompletedWeek: null,
+      ActiveOrNextWeek: 1
+    }
+  };
+
   const league = {
     Season: '2026',
     FinalScoredWeek: 1,
     Teams: [
       { TeamID: 1, Team: 'Left Team', TeamAbbr: 'LFT', Owner: 'Left Owner', Avatar: null },
       { TeamID: 2, Team: 'Right Team', TeamAbbr: 'RGT', Owner: 'Right Owner', Avatar: null }
-    ],
-    Matchups: {
-      Season: '2026',
-      Week: 1,
-      Matchups: [{
-        MatchupID: 1,
-        Participants: [
-          { TeamID: 1, Points: 37.4 },
-          { TeamID: 2, Points: 13.8 }
-        ]
-      }]
-    }
+    ]
   } as unknown as League;
 
   beforeEach(async () => {
     const dataService = jasmine.createSpyObj<DataService>('DataService', [
-      'getFantasyGameContext', 'getDecisionWindows', 'getNflTeams'
+      'getFantasyGameContext', 'getDecisionWindows', 'getMatchups', 'getNflTeams'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(context));
     dataService.getDecisionWindows.and.returnValue(of(decisionWindows));
+    dataService.getMatchups.and.returnValue(of(matchups));
     dataService.getNflTeams.and.returnValue(of([
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: 'away-logo' },
       { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: 'home-logo' }
@@ -195,6 +210,11 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(element.querySelector('.matchup-window-count')?.textContent?.trim()).toBe('1 NFL game');
     expect(element.querySelectorAll('.matchup-window-game').length).toBe(1);
     expect(element.querySelector('.matchup-window-overflow')).toBeNull();
+  });
+
+  it('preserves missing score versus reliable zero semantics', () => {
+    expect(component.formatFantasyPoints(null)).toBe('–');
+    expect(component.formatFantasyPoints(0)).toBe('0');
   });
 
   it('renders football-first logo previews without Overview NFL-game click targets', () => {

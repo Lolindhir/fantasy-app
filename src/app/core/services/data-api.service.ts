@@ -7,6 +7,7 @@ import type { DecisionWindowsReadModel } from '../models/decision-window.models'
 import type { RawDraft } from '../models/draft.models';
 import type { FantasyGameContextReadModel, HistoricalFantasyGameContextSeason } from '../models/fantasy-game-context.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
+import type { MatchupsReadModel } from '../models/matchup.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { RawTransaction } from '../models/transaction.models';
 
@@ -39,6 +40,7 @@ export interface PastSeasonIndexEntry {
     Schedule?: PastSeasonResourceIndex;
     Standings?: PastSeasonResourceIndex;
     Teams?: PastSeasonResourceIndex;
+    Matchups?: PastSeasonResourceIndex;
     FantasyGameContext?: PastSeasonResourceIndex;
   };
 }
@@ -82,6 +84,10 @@ export class DataApiService {
     return this.http.get<DecisionWindowsReadModel>('data/DecisionWindows.json');
   }
 
+  getMatchupsRaw(): Observable<MatchupsReadModel> {
+    return this.http.get<MatchupsReadModel>('data/Matchups.json');
+  }
+
   getFantasyGameContextRaw(): Observable<FantasyGameContextReadModel> {
     return this.http.get<FantasyGameContextReadModel>('data/FantasyGameContext.json');
   }
@@ -100,6 +106,10 @@ export class DataApiService {
     return this.http.get<RawTransaction[] | RawTransaction>(this.normalizeDataPath(path)).pipe(
       map(transactions => Array.isArray(transactions) ? transactions : [transactions])
     );
+  }
+
+  getPastMatchupsRaw(path: string): Observable<MatchupsReadModel> {
+    return this.http.get<MatchupsReadModel>(this.normalizeDataPath(path));
   }
 
   getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {

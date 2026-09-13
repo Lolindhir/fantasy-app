@@ -19,6 +19,7 @@ import type {
   FantasyGameContextTeam
 } from '../../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../../core/models/league.models';
+import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import {
@@ -42,6 +43,7 @@ export interface FantasyGameContextDialogData {
   mode: 'game' | 'matchup';
   context: FantasyGameContextReadModel;
   decisionWindows?: DecisionWindowsReadModel | null;
+  matchups?: MatchupsReadModel | null;
   nflTeams?: NFLTeam[];
   league: League;
   gameId?: string;
@@ -151,21 +153,17 @@ export class FantasyGameContextDialogComponent {
   }
 
   fantasyMatchupScore(matchup: FantasyGameContextMatchup): FantasyGameContextCounterfactualScore | null {
-    const snapshot = this.data.league.Matchups;
-    if (snapshot && snapshot.Season === this.data.context.Season && snapshot.Week === this.data.context.Week) {
-      const teamIDs = matchup.TeamIDs.map(teamID => String(teamID));
-      const leagueMatchup = snapshot.Matchups.find(candidate => {
-        const participantIDs = candidate.Participants.map(participant => String(participant.TeamID));
-        return participantIDs.length === 2 && teamIDs.every(teamID => participantIDs.includes(teamID));
-      });
-      if (leagueMatchup) {
-        const left = leagueMatchup.Participants.find(participant => String(participant.TeamID) === teamIDs[0]);
-        const right = leagueMatchup.Participants.find(participant => String(participant.TeamID) === teamIDs[1]);
-        if (left && right) {
-          const leftPoints = Number(left.Points ?? 0);
-          const rightPoints = Number(right.Points ?? 0);
-          if (Number.isFinite(leftPoints) && Number.isFinite(rightPoints)
-              && (leftPoints !== 0 || rightPoints !== 0 || !!matchup.FinalScores)) {
+    const readModel = this.data.matchups;
+    if (readModel && readModel.Season === this.data.context.Season) {
+      const week = readModel.Weeks.find(candidate => candidate.Week === this.data.context.Week);
+      const officialMatchup = week?.Matchups.find(candidate => candidate.FantasyMatchupID === matchup.FantasyMatchupID);
+      if (officialMatchup) {
+        const left = officialMatchup.Participants.find(participant => String(participant.TeamID) === String(matchup.TeamIDs[0]));
+        const right = officialMatchup.Participants.find(participant => String(participant.TeamID) === String(matchup.TeamIDs[1]));
+        if (left?.Points !== null && left?.Points !== undefined && right?.Points !== null && right?.Points !== undefined) {
+          const leftPoints = Number(left.Points);
+          const rightPoints = Number(right.Points);
+          if (Number.isFinite(leftPoints) && Number.isFinite(rightPoints)) {
             return { Left: leftPoints, Right: rightPoints };
           }
         }
@@ -370,6 +368,7 @@ export class FantasyGameContextDialogComponent {
         mode: 'game',
         context: this.data.context,
         decisionWindows: this.data.decisionWindows,
+        matchups: this.data.matchups,
         nflTeams: this.data.nflTeams,
         league: this.data.league,
         gameId: gameID
