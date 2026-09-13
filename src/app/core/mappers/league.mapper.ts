@@ -10,6 +10,7 @@ import type {
   RawLeague
 } from '../models/league.models';
 import type { Player } from '../models/player.models';
+import { sortFantasyTeamsByNeutralOrder } from '../../shared/utils/fantasy-team-order.util';
 
 export interface LeagueMappingContext {
   leagueRaw: RawLeague;
@@ -30,7 +31,7 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
 
   const teams = leagueRaw.Teams.map(team => mapRawFantasyTeamToFantasyTeam(team, draftPickByKey));
   assignTeamRosters(teams, leagueRaw.Teams, players);
-  teams.sort((a, b) => a.Standing - b.Standing);
+  const neutralTeams = sortFantasyTeamsByNeutralOrder(teams);
 
   const league: League = {
     ...leagueRaw,
@@ -38,7 +39,7 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
       ...standing,
       Awards: standing.Awards?.map(award => mapStandingAward(award))
     })),
-    Teams: teams,
+    Teams: neutralTeams,
     SalaryCap: leagueRaw.SalaryCap,
     SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
     SalaryCapProjected: leagueRaw.SalaryCapProjected,
@@ -47,7 +48,7 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
     SeasonAsNumber: +leagueRaw.Season
   };
 
-  return { league, teams, drafts };
+  return { league, teams: neutralTeams, drafts };
 }
 
 function buildDraftPickByKey(drafts: RawDraft[]): Map<string, DraftPick> {
