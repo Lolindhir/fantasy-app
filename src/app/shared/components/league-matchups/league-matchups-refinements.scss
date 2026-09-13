@@ -351,42 +351,45 @@
 .matchup-window-count { margin-top: 1px; color: #94a3b8; font-size: 0.58rem; font-weight: 750; }
 
 .matchup-window-games { margin-top: 6px; }
-.matchup-window-games--mobile { display: grid; gap: 5px; }
-.matchup-window-games--rich { grid-template-columns: minmax(0, 1fr); }
-.matchup-window-games--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.matchup-window-games--dense { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.matchup-window-games--mobile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
 .matchup-window-games--desktop { display: none; }
 
 .matchup-window-game,
 .matchup-window-overflow {
   box-sizing: border-box;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  flex: 0 0 auto;
+  gap: 5px;
+  width: fit-content;
   min-width: 0;
-  min-height: 34px;
-  padding: 4px 5px;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: 9px;
-  background: #fff;
+  min-height: 0;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
   color: #334155;
   font: inherit;
+  line-height: 1.2;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .matchup-window-game:hover,
-.matchup-window-overflow:hover { background: #f8fafc; border-color: rgba(124, 58, 237, 0.28); }
+.matchup-window-overflow:hover { background: #e2e8f0; }
 .matchup-window-game:focus-visible,
 .matchup-window-overflow:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 1px; }
 
-.matchup-window-game img { width: 18px; height: 18px; flex: 0 0 auto; object-fit: contain; }
-.matchup-window-game-abbr { overflow: hidden; font-size: 0.62rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
-.matchup-window-at { color: #94a3b8; font-size: 0.5rem; font-weight: 850; }
+.matchup-window-game img { width: 16px; height: 16px; flex: 0 0 auto; object-fit: contain; }
+.matchup-window-game-abbr { display: none; }
+.matchup-window-at { color: #94a3b8; font-size: 0.68rem; font-weight: 800; }
 .matchup-window-overflow { color: #6d28d9; font-size: 0.68rem; font-weight: 950; }
-
-.matchup-window-games--dense .matchup-window-game { gap: 1px; min-height: 32px; padding-inline: 3px; }
-.matchup-window-games--dense .matchup-window-game-abbr { display: none; }
 
 @media (max-width: 360px) {
   .matchup-scoreboard .matchup-team-identity--mobile { --team-identity-avatar-size: 32px; --team-identity-title-font-size: 0.7rem; }
@@ -427,10 +430,7 @@
   .matchup-window-time { font-size: 0.72rem; }
   .matchup-window-count { font-size: 0.62rem; }
   .matchup-window-games--mobile { display: none; }
-  .matchup-window-games--desktop { display: flex; flex-wrap: wrap; gap: 6px; }
-  .matchup-window-game { min-height: 38px; padding: 5px 9px; }
-  .matchup-window-game img { width: 22px; height: 22px; }
-  .matchup-window-game-abbr { display: inline; font-size: 0.68rem; }
+  .matchup-window-games--desktop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .matchup-score { gap: 7px; font-size: 1.12rem; }
   .matchup-score strong { font-size: 1.24rem; }
   .matchup-score-divider { font-size: 0.9rem; }
