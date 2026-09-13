@@ -116,22 +116,18 @@ function Get-LineupExternalRepairEvidence {
         if ($null -eq $team) { continue }
 
         $names = @($team.PSObject.Properties.Name)
-        $roster = if ($names -contains 'Roster') {
-            $team.Roster
+        if ($names -contains 'Roster') {
+            $roster = @($team.Roster)
         }
         elseif ($names -contains 'PlayerIDs') {
-            $team.PlayerIDs
+            $roster = @($team.PlayerIDs)
         }
         else {
-            $null
-        }
-
-        if ($null -eq $roster) {
             $evidenceUnknown = $true
             continue
         }
 
-        foreach ($raw in @(Get-LreCollection -Value $roster)) {
+        foreach ($raw in $roster) {
             $id = ConvertTo-LrePlayerID -Value $raw
             if ($null -ne $id) { $owned[$id] = $true }
         }
