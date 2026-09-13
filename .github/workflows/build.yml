@@ -60,7 +60,7 @@ jobs:
         run: npm ci
 
       - name: Run fantasy-team ordering regression tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless --include=src/app/shared/utils/fantasy-team-order.util.spec.ts
+        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=fantasy-team-order --include=src/app/shared/utils/fantasy-team-order.util.spec.ts
 
       - name: Build Angular app
         shell: pwsh
