@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-09-13T04:14:19.337228Z",
-  "input_fingerprint": "a7a2ef2ad1ea19d6db4a73094d3a8e72ce5095f8720c48f0c9fa1e2a2f3d6261",
+  "generated_at": "2026-09-13T04:24:05.351199Z",
+  "input_fingerprint": "4eb65c4ead10d4a7bebe36558787f0d4540f867bdee7ce22a680484801be5289",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 33,
@@ -63,10 +63,10 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 149,
-        "materialized_entity_count": 147,
-        "resolved_players": 146,
-        "unresolved_players": 1,
+        "row_count": 148,
+        "materialized_entity_count": 153,
+        "resolved_players": 150,
+        "unresolved_players": 3,
         "excluded_non_player_entities": {
           "count": 8,
           "by_type": {
@@ -84,9 +84,9 @@
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 77,
-          "mighty_giants": 9,
-          "opponent_rostered": 61
+          "fantasy_free_agent": 85,
+          "mighty_giants": 8,
+          "opponent_rostered": 60
         },
         "baseline": false,
         "material_event_eligible": true
@@ -94,6 +94,20 @@
     }
   },
   "issues": [
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "10949"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "11678"
+    },
     {
       "domain": "external_signal_materialization",
       "severity": "info",
@@ -196,7 +210,7 @@
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-09-12T04:24:02.578222Z"
+      "source_timestamp": "2026-09-13T04:24:05.351199Z"
     }
   ],
   "interpretation_limits": [
