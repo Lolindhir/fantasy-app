@@ -21,7 +21,15 @@
   <ng-template #multiGameContext>
     <span class="decision-window-multi-game">
       <img class="decision-window-nfl-shield" src="assets/logo_nfl.png" alt="" />
-      <span class="decision-window-multi-game-copy">{{ multiGameLabel }}</span>
+      <span class="decision-window-multi-game-copy">
+        <span
+          *ngFor="let part of multiGameParts; let first = first"
+          class="decision-window-multi-game-part"
+        >
+          <span *ngIf="!first" class="decision-window-multi-game-separator" aria-hidden="true">·</span>
+          <span>{{ part }}</span>
+        </span>
+      </span>
       <span *ngIf="showWeek && !multiGameDetail" class="decision-window-game-week">
         Week {{ context.week }}
       </span>

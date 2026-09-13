@@ -18,4 +18,10 @@ export class DecisionWindowMatchupContextComponent {
   get multiGameLabel(): string {
     return this.multiGameDetail || `${this.context.gameCount} games`;
   }
+
+  get multiGameParts(): string[] {
+    return this.multiGameDetail
+      ? this.multiGameLabel.split(' · ').filter(part => part.length > 0)
+      : [this.multiGameLabel];
+  }
 }

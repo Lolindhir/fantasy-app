@@ -84,6 +84,9 @@
 }
 
 .decision-window-multi-game-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   min-width: 0;
   color: #64748b;
   font-size: 0.61rem;
@@ -92,6 +95,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.decision-window-multi-game-part {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.decision-window-multi-game-separator {
+  color: #94a3b8;
 }
 
 .decision-window-multi-game .decision-window-game-week {
@@ -114,10 +129,12 @@
   }
 
   .decision-window-multi-game-copy {
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 4px;
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
-    overflow-wrap: anywhere;
     line-height: 1.15;
   }
 }
