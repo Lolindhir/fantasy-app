@@ -5,6 +5,7 @@ import type {
 } from '../../core/models/decision-window.models';
 import type { League } from '../../core/models/league.models';
 import type { NFLTeam } from '../../core/models/player.models';
+import { formatCountdownDuration } from './countdown.util';
 import {
   buildDecisionWindowStatusBadges,
   buildDecisionWindowTeamRows,
@@ -397,23 +398,5 @@ function formatLocalDateTime(date: Date): string {
 }
 
 function formatCountdown(msLeft: number): string {
-  const minuteMs = 60_000;
-  const hourMs = 60 * minuteMs;
-  const dayMs = 24 * hourMs;
-
-  if (msLeft >= dayMs) {
-    const totalHours = Math.floor(msLeft / hourMs);
-    const days = Math.floor(totalHours / 24);
-    const hours = totalHours % 24;
-    return days < 4
-      ? `${days} ${days === 1 ? 'day' : 'days'} ${hours} h`
-      : `${days} ${days === 1 ? 'day' : 'days'}`;
-  }
-
-  const totalMinutes = Math.max(1, Math.floor(msLeft / minuteMs));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes} min`;
-  if (minutes === 0) return `${hours} h`;
-  return `${hours} h ${minutes} min`;
+  return formatCountdownDuration(msLeft);
 }

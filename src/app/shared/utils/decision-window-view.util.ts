@@ -5,6 +5,7 @@ import type {
   DecisionWindowsReadModel
 } from '../../core/models/decision-window.models';
 import type { FantasyTeam } from '../../core/models/league.models';
+import { formatCountdownDuration } from './countdown.util';
 
 const ATTENTION_ORDER: Record<DecisionWindowEvaluationState, number> = {
   'action-required': 0,
@@ -218,7 +219,7 @@ export function formatDecisionWindowCountdown(window: DecisionWindow, now: Date)
 
   const msLeft = startsAt.getTime() - now.getTime();
   if (msLeft <= 0) return 'Locked';
-  return formatCountdown(msLeft);
+  return formatCountdownDuration(msLeft);
 }
 
 export function formatDecisionWindowsUpdatedAt(
@@ -388,27 +389,4 @@ function getTeamFallback(displayName: string): string {
 function parseTimestamp(value: string): Date | null {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatCountdown(msLeft: number): string {
-  const minuteMs = 60_000;
-  const hourMs = 60 * minuteMs;
-  const dayMs = 24 * hourMs;
-
-  if (msLeft >= dayMs) {
-    const totalHours = Math.floor(msLeft / hourMs);
-    const days = Math.floor(totalHours / 24);
-    const hours = totalHours % 24;
-    return days < 4
-      ? `${days} ${days === 1 ? 'day' : 'days'} ${hours} h`
-      : `${days} ${days === 1 ? 'day' : 'days'}`;
-  }
-
-  const totalMinutes = Math.max(1, Math.floor(msLeft / minuteMs));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours === 0) return `${minutes} min`;
-  if (minutes === 0) return `${hours} h`;
-  return `${hours} h ${minutes} min`;
 }

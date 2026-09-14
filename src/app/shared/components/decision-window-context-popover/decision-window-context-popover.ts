@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { Subscription } from 'rxjs';
 
 import type {
   DecisionWindow,
@@ -13,6 +14,7 @@ import type {
 import type { FantasyTeam } from '../../../core/models/league.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
+import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
 import {
   buildDecisionWindowTeamRows,
   formatDecisionWindowCountdown,
@@ -42,7 +44,7 @@ import { PlayerListComponent, type PlayerListColumn } from '../player-list/playe
   templateUrl: './decision-window-context-popover.html',
   styleUrl: './decision-window-context-popover.scss'
 })
-export class DecisionWindowContextPopoverComponent {
+export class DecisionWindowContextPopoverComponent implements OnInit, OnDestroy {
   @Input({ required: true }) model!: DecisionWindowsReadModel;
   @Input({ required: true }) window!: DecisionWindow;
   @Input() teams: FantasyTeam[] = [];
@@ -54,7 +56,21 @@ export class DecisionWindowContextPopoverComponent {
 
   readonly teamPlayerColumns: PlayerListColumn[] = ['name', 'dynamicStat'];
 
+  private readonly subscriptions = new Subscription();
+
   constructor(private teamDetailDialogService: TeamDetailDialogService) {}
+
+  ngOnInit(): void {
+    this.subscriptions.add(
+      createAdaptiveCountdownClock(() => [this.window?.StartsAtUtc]).subscribe(now => {
+        this.now = now;
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 
   get teamRows(): DecisionWindowTeamRowView[] {
     return buildDecisionWindowTeamRows(this.model, this.window, this.teams);
