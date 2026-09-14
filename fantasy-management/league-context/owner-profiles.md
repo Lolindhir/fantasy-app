@@ -216,7 +216,6 @@ Recommended approach for Robert:
 - For protected stars, do not spend multiple iterations trying to turn a hard no into a yes unless the context materially changes.
 - When offering picks, match the asset to his view of that specific class/year rather than assuming "pick value" is generic.
 - Revisit curiosity-driven holds only after the information Flo wanted to observe has actually changed.
-
 ## TeamID 4 / Jan (Mammoth Marauders)
 
 Known references:
@@ -291,6 +290,10 @@ Draft and roster-construction tendencies:
 - **Confirmed, high confidence:** Reacts to failed contention with a decisive rebuild pivot rather than indefinitely protecting the original construction.
   - 2025 and 2026 rookie classes added Jeanty, Tetairoa McMillan, Judkins, Tyson and Mendoza.
 - **Provisional, medium confidence:** Will accept substantial early age and injury concentration when pursuing immediate upside.
+- **Provisional, medium-low confidence:** When Dennis strongly wants a specific incoming asset, he may optimize the immediate roster move locally and underweight the opportunity cost or market value of the boundary asset used to create the roster spot.
+  - On 2026-09-09, after acquiring Kaelon Black, Dennis created room by dropping Isaiah Likely before Week 1. Likely already carried a plausible starting-role path entering the season and Marcel claimed him the same day, providing immediate league-demand evidence independent of Likely's later Week-1 production.
+  - The 2024 Kyle Pitts reaction is only supporting context: Dennis initially considered moving Pitts after short-term frustration, then explicitly pulled back because Dynasty should be viewed over several years. Treat the pattern as target- and decision-context dependent, not as evidence that Dennis generally acts impulsively.
+  - For future roster analysis, compare the desired incoming asset against Dennis's complete cut pool and the likely trade/waiver value of the displaced player instead of assuming the selected cut reflects his stable long-term valuation.
 
 Negotiation tendencies:
 
