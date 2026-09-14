@@ -182,6 +182,28 @@ historicalIdentityBackfill:
       Unveraenderte Commit-Grenzen und persistierte Raw-Snapshots werden nicht
       neu geschrieben. Ein stabiler No-History-Zustand enthaelt keinen Laufzeit-
       Timestamp und bleibt ebenfalls ein semantischer No-op.
+  rawSchema:
+    requiredColumns:
+      - gsis_id
+      - sleeper_id
+      - espn_id
+      - pfr_id
+    rule: >
+      Der historische Crosswalk benoetigt nur die stabilen Provider-ID-Spalten.
+      Namen, MFL-IDs und Draft-Metadaten wie draft_ovr sind keine Pflichtspalten;
+      fruehere Snapshots besitzen nicht das gesamte heutige Schema. Alle
+      vorhandenen Zusatzspalten bleiben unveraendert in Raw und der
+      Spaltenprovenienz erhalten. Die Mindestzeilenzahl und die separate
+      Zwei-Provider-Corroboration pro historischer Zuordnung bleiben verbindlich.
+    minimumRows: 2000
+    minimumRowsEvidence: >
+      Die historischen 2020-Grenz-Snapshots enthalten 2072 Zeilen (opening,
+      4aa4481adf80065e8e54c54cd27458a5a754dfb6) beziehungsweise 2288 Zeilen
+      (closing, 5f646cf16ae313c038bb5686ef2be056285ae70a). Die am 2026-09-14
+      geprueften Grenz-Snapshots 2021-2026 enthalten 10528-12494 Zeilen.
+      Der historische Mindestwert 2000 akzeptiert die belegte fruehe Quelle
+      und weist kleinere/trunkierte Inputs weiterhin ab. Der separate
+      aktuelle Registry-Datensatz behaelt seinen eigenen Mindestwert.
   identityResolution:
     targetProvider: Sleeper
     minimumIndependentNonSleeperCorroborators: 2
