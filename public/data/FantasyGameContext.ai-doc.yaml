@@ -1,4 +1,4 @@
-schemaVersion: 4
+schemaVersion: 5
 
 file:
   path: public/data/FantasyGameContext.json
@@ -17,6 +17,7 @@ file:
   finalityFixIssue: 447
   scorePresentationIssue: 453
   weeklyWatchRefinementIssue: 467
+  liveAndNextScoringWindowsIssue: 520
 
 contract:
   purpose: >
@@ -27,9 +28,9 @@ contract:
     Schema v3 additionally projects an optional completed NFL away/home score pair
     from the already finality-resolved generated Schedule for sports-game identity
     display. Schema v4 separates the week-level Must-watch ranking from remaining
-    relevance: Must-watch is generated from actual current Starter exposure and
-    remains stable across Upcoming -> Live -> Final state changes unless lineup
-    exposure itself changes.
+    relevance. Schema v5 separates the currently active direct-Starter scoring
+    window from the next future direct-Starter scoring window so both temporal
+    horizons can be presented simultaneously without using lineup-decision facts.
   topLevel:
     - SchemaVersion
     - LeagueID
@@ -62,6 +63,11 @@ contract:
       Schema-v4 MustWatchGames is a stable week-level Starter-impact ranking. Older
       schema-v2/v3 generated files retain their previous remaining-relevance
       compatibility behavior in Angular until regenerated.
+    scoringWindows: >
+      Schema-v5 ActiveScoring* fields are additive. Existing NextScoring* fields now
+      mean the next future direct-Starter scoring window only. Angular keeps an
+      explicit schema-v4 compatibility path where the legacy NextScoringWindow may
+      itself be live, but schema-v4 data cannot prove FINAL SCORING WINDOW.
 
 remainingScoringPaths:
   source: DecisionWindows.json.FantasyRelevance
@@ -100,6 +106,8 @@ fantasyMatchup:
     - NextLineupDecisionWindowGameCount
     - NextLineupDecisionStarterCount
     - NextLineupDecisionOptionCount
+    - ActiveScoringWindowID
+    - ActiveScoringGameIDs
     - NextScoringWindowID
     - NextScoringGameIDs
     - NextScoringPrimaryGameID
@@ -121,27 +129,33 @@ fantasyMatchup:
     this fantasy matchup. Locked-active starters are excluded because their lineup
     decision has already passed. Within that window, the primary NFL game is chosen
     deterministically by direct-starter count, then option count, then stable GameID.
+  activeScoringRule: >
+    ActiveScoringWindowID is the current direct-Starter window containing generated
+    locked-starter paths. ActiveScoringGameIDs contains only NFL games in that window
+    with direct locked-starter membership, in generator-owned deterministic order.
+    No clock, status or lineup reconstruction is performed in Angular.
   nextScoringRule: >
-    The next scoring preview represents a current direct Starter path only. Prefer
-    an already locked-active Starter window when one is live; otherwise use the
-    earliest future window containing at least one unlocked current Starter. An
-    option-only Bench-candidate window is not a scoring window. Within the selected
-    window, NextScoringPrimaryGameID chooses the NFL game with the strongest direct
-    starter evidence for this fantasy matchup. NextScoring*StarterCount and
-    NextScoringOptionCount are matchup/game-specific counts, not league-wide NFL-game
-    totals.
+    In schema v5, NextScoring* means only the earliest future window containing at
+    least one generated unlocked-starter path. A currently active locked-starter
+    window does not consume Next. An option-only Bench-candidate window is never a
+    scoring window. Within the selected future window, NextScoringPrimaryGameID
+    chooses the NFL game with the strongest direct-starter evidence for this fantasy
+    matchup. NextScoringLockedActiveStarterCount is retained for compatibility and is
+    zero for schema-v5 generation; NextScoringUnlockedStarterCount and
+    NextScoringOptionCount remain matchup/game-specific counts.
   presentationRelationship: >
     Decision and scoring facts remain separate generated concepts. The league-level
     Decision Window is the primary overview surface for upcoming lineup flexibility.
-    A fantasy matchup overview card is sports/scoring-first: it should surface the
-    current locked-active Starter game as LIVE NOW when applicable, otherwise the
-    next direct Starter scoring game. An earlier option-only lineup decision must not
-    replace that scoring event in the matchup card. Generated lineup-decision facts
-    remain available for Decision Window and detail consumers.
+    A fantasy matchup overview card may present Final/completed, Live now, Next and
+    Later starter states simultaneously. An earlier option-only lineup decision must
+    not replace either active or future direct-Starter scoring in the matchup card.
   finalWindowRule: >
-    The latest remaining path window is FinalScoringWindowID. It is committed only
-    when every remaining path in that window is a locked starter; an unlocked
-    Starter or Bench candidate keeps the final-window claim provisional.
+    FinalScoringWindowID remains the latest remaining-path window and may therefore
+    include a later Bench-option-only path. It is committed only when every remaining
+    path in that window is a locked starter. For the #520 presentation, an active
+    direct-Starter window is the final direct-Starter scoring window when schema-v5
+    ActiveScoring* exists and no future NextScoring* direct-Starter window exists;
+    the UI must not reinterpret FinalScoringWindowID for that purpose.
   decidedBoundary: >
     State=none is a deterministic no-scoring-paths-remaining statement. It is not
     a probabilistic win claim and does not use projections.
@@ -258,10 +272,13 @@ uiPresentation:
     RemainingRelevance.DirectStarterFantasyTeamIDs may represent only teams still
     directly tied to an unfinished game. Bench-option-only teams stay secondary.
   matchupCardFocus: >
-    Fantasy matchup Overview cards are football/scoring-first. Show LIVE NOW for an
-    applicable locked-active direct-Starter game, otherwise the next direct-Starter
-    scoring window. Do not promote a pure option-only lineup-decision window into the
-    primary matchup card; the league Decision Window owns that decision-first view.
+    Fantasy matchup Overview cards are football/scoring-first. With schema-v5 data,
+    show the active direct-Starter window as LIVE NOW and independently show the next
+    future direct-Starter window as NEXT when both exist. When Active exists and Next
+    does not, FINAL SCORING WINDOW may be shown. If no Active exists, retain the
+    compact NEXT SCORING WINDOW presentation. Matchups.json authoritative finality
+    suppresses future-window presentation. Pure option-only lineup-decision windows
+    never become scoring rows.
   decisionWindowPriority: >
     Commissioner/team ordering first respects semantic attention state. Within the
     same attention state, priority is affected Active Roster player count in that
@@ -292,15 +309,16 @@ ownership:
   domainLogic: >
     Slot mapping, Active Roster/Bench derivation, eligibility, lock/completion
     state, remaining paths, lineup-decision/scoring preview selection/counts,
-    stable week-level Starter exposure and Must-watch ranking are generation-layer
-    facts. Complete NFL score-pair projection is also generation-layer behavior.
+    active-versus-next direct-Starter scoring membership, stable week-level Starter
+    exposure and Must-watch ranking are generation-layer facts. Complete NFL
+    score-pair projection is also generation-layer behavior.
   angularBoundary: >
     Angular may render, filter and select from these fields and may choose the
     documented presentation lens (Decision Window versus matchup scoring) without
-    changing generated domain facts. It must not recreate league slot eligibility,
-    scoring-path state, weekly ranking rules or infer NFL score completion from
-    presentation data. Older schema-v2/v3 JSON remains renderable with compatibility
-    behavior until the next materialization.
+    changing generated domain facts. It must not sort Schedule games into scoring
+    relevance, reconstruct Starter membership/eligibility/repairability/scoring
+    paths/finality or use clock/weekday heuristics. Older schema-v2/v3/v4 JSON remains
+    renderable with explicit compatibility behavior until the next materialization.
   providerBoundary: >
     Sleeper still owns league/matchup point evidence and Tank01 still supplies the
     transitional Schedule/boxscore shape and current numeric score evidence, but
@@ -308,12 +326,20 @@ ownership:
     nflverse game-finality contract through a strict ESPN-ID mapping. #347 owns the
     remaining broader provider/source-data consumer migration.
 
+historical:
+  schemaSemantics: >
+    Historical FantasyGameContext uses the same read-model types but does not project
+    today's live FantasyRelevance/roster state backward. Historical generation paths
+    that lack current FantasyRelevance keep their historical schema/output semantics;
+    schema-v5 ActiveScoring* is only materialized when the generating evidence contains
+    the corresponding generated current relevance facts.
+
 failureBehavior:
   - Missing or ambiguous player/game joins remain explicit through the existing NonGameAssociations/fail-safe behavior.
   - Canonical finality/provider-ID contradictions fail closed before Schedule publication; FantasyGameContext never resolves them locally.
   - NFL score values are projected only as a complete numeric pair for an already-Final game; partial score evidence remains null/null.
   - Duplicate Schedule GameID identities fail closed in FantasyGameContext score projection.
-  - The v2/v4 enrichment does not infer AutoSubs, projections or unknown position eligibility.
+  - The v2/v5 enrichment does not infer AutoSubs, projections or unknown position eligibility.
   - Existing historical FantasyGameContext generation remains compatible when current FantasyRelevance evidence is absent.
 
 nonGoals:
