@@ -1,3 +1,8 @@
+// CI currently enters its focused Angular regression run through this spec. Keep the
+// #520 Matchups Overview regressions on that existing path without changing workflow cadence.
+import '../components/league-matchups/league-matchups.spec';
+import './matchups-overview-view.util.spec';
+
 import type {
   DecisionWindow,
   DecisionWindowsReadModel

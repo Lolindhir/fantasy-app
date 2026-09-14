@@ -63,6 +63,13 @@ function Get-FmpPrimaryGameSelection {
     }
 }
 
+function Set-FmpEmptyActiveScoringWindow {
+    param([Parameter(Mandatory = $true)][object]$Remaining)
+
+    Set-FmpProperty -Object $Remaining -Name 'ActiveScoringWindowID' -Value $null
+    Set-FmpProperty -Object $Remaining -Name 'ActiveScoringGameIDs' -Value @()
+}
+
 function Set-FmpEmptyScoringPreview {
     param([Parameter(Mandatory = $true)][object]$Remaining)
 
@@ -94,6 +101,10 @@ function Add-FantasyMatchupPreviewContext {
 
     $decisionRelevance = Get-FmpPropertyValue -Object $DecisionFacts -Names @('FantasyRelevance')
     if ($null -eq $decisionRelevance) { return $BaseContext }
+
+    if ($BaseContext.PSObject.Properties.Name -contains 'SchemaVersion' -and [int]$BaseContext.SchemaVersion -lt 5) {
+        $BaseContext.SchemaVersion = 5
+    }
 
     $teamStateByID = @{}
     foreach ($teamState in @(Get-FmpCollection (Get-FmpPropertyValue -Object $decisionRelevance -Names @('Teams')))) {
@@ -158,38 +169,46 @@ function Add-FantasyMatchupPreviewContext {
             }
         }
 
-        # Scoring preview means a current direct starter path. An option-only window
-        # remains relevant to lineup decisions but must not be labeled as scoring.
+        # Direct-Starter scoring has two independent temporal horizons in schema v5:
+        # an already-live locked-starter window and the next FUTURE unlocked-starter
+        # window. Option-only windows remain lineup decisions and never become scoring.
         $lockedGroups = @($windowGroups | Where-Object { @($_.Group | Where-Object PathType -eq 'locked-starter').Count -gt 0 })
         $unlockedStarterGroups = @($windowGroups | Where-Object { @($_.Group | Where-Object PathType -eq 'unlocked-starter').Count -gt 0 })
-        $scoringGroup = if ($lockedGroups.Count -gt 0) {
-            $lockedGroups[0]
-        }
-        elseif ($unlockedStarterGroups.Count -gt 0) {
-            $unlockedStarterGroups[0]
+        $activeGroup = if ($lockedGroups.Count -gt 0) { $lockedGroups[0] } else { $null }
+        $nextGroup = if ($unlockedStarterGroups.Count -gt 0) { $unlockedStarterGroups[0] } else { $null }
+
+        if ($null -eq $activeGroup) {
+            Set-FmpEmptyActiveScoringWindow -Remaining $remaining
         }
         else {
-            $null
+            $activeSelection = Get-FmpPrimaryGameSelection -WindowPaths @($activeGroup.Group) -EligibleGamePathTypes @('locked-starter')
+            if ($null -eq $activeSelection) {
+                Set-FmpEmptyActiveScoringWindow -Remaining $remaining
+            }
+            else {
+                Set-FmpProperty -Object $remaining -Name 'ActiveScoringWindowID' -Value ([string]$activeGroup.Name)
+                Set-FmpProperty -Object $remaining -Name 'ActiveScoringGameIDs' -Value @($activeSelection.GameIDs)
+            }
         }
 
-        if ($null -eq $scoringGroup) {
+        if ($null -eq $nextGroup) {
             Set-FmpEmptyScoringPreview -Remaining $remaining
             continue
         }
 
-        $scoringSelection = Get-FmpPrimaryGameSelection -WindowPaths @($scoringGroup.Group) -EligibleGamePathTypes @('locked-starter', 'unlocked-starter')
+        $scoringSelection = Get-FmpPrimaryGameSelection -WindowPaths @($nextGroup.Group) -EligibleGamePathTypes @('unlocked-starter')
         if ($null -eq $scoringSelection) {
             Set-FmpEmptyScoringPreview -Remaining $remaining
             continue
         }
 
-        Set-FmpProperty -Object $remaining -Name 'NextScoringWindowID' -Value ([string]$scoringGroup.Name)
+        Set-FmpProperty -Object $remaining -Name 'NextScoringWindowID' -Value ([string]$nextGroup.Name)
         Set-FmpProperty -Object $remaining -Name 'NextScoringGameIDs' -Value @($scoringSelection.GameIDs)
         Set-FmpProperty -Object $remaining -Name 'NextScoringPrimaryGameID' -Value $scoringSelection.PrimaryGameID
         Set-FmpProperty -Object $remaining -Name 'NextScoringWindowGameCount' -Value @($scoringSelection.GameIDs).Count
-        Set-FmpProperty -Object $remaining -Name 'NextScoringLockedActiveStarterCount' -Value @($scoringSelection.PrimaryPaths | Where-Object PathType -eq 'locked-starter').Count
+        Set-FmpProperty -Object $remaining -Name 'NextScoringLockedActiveStarterCount' -Value 0
         Set-FmpProperty -Object $remaining -Name 'NextScoringUnlockedStarterCount' -Value @($scoringSelection.PrimaryPaths | Where-Object PathType -eq 'unlocked-starter').Count
-        Set-FmpProperty -Object $remaining -Name 'NextScoringOptionCount' -Value @($scoringGroup.Group | Where-Object { $_.GameID -eq $scoringSelection.PrimaryGameID -and $_.PathType -eq 'bench-candidate' }).Count
+        Set-FmpProperty -Object $remaining -Name 'NextScoringOptionCount' -Value @($nextGroup.Group | Where-Object { $_.GameID -eq $scoringSelection.PrimaryGameID -and $_.PathType -eq 'bench-candidate' }).Count
     }
 
     return $BaseContext

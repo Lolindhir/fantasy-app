@@ -43,7 +43,7 @@ export interface MatchupStarterProgressView {
   groups: MatchupProgressGroupView[];
 }
 
-export interface MatchupScoringWindowView {
+export interface MatchupScoringWindowHorizonView {
   decisionWindowID: string;
   startsAtUtc: string;
   gameCount: number;
@@ -51,6 +51,12 @@ export interface MatchupScoringWindowView {
   mobileVisibleGames: FantasyGameContextGame[];
   mobileOverflowCount: number;
   density: MatchupScoringWindowDensity;
+}
+
+export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonView {
+  active: MatchupScoringWindowHorizonView | null;
+  next: MatchupScoringWindowHorizonView | null;
+  liveIsFinalScoringWindow: boolean;
   isLive: boolean;
 }
 
@@ -138,10 +144,73 @@ export function buildMatchupScoringWindow(
   context: FantasyGameContextReadModel | null | undefined
 ): MatchupScoringWindowView | null {
   const remaining = matchup?.RemainingRelevance;
-  const decisionWindowID = remaining?.NextScoringWindowID;
-  if (!matchup || !context || !decisionWindowID) return null;
+  if (!matchup || !context || !remaining) return null;
 
-  const gameIDs = normalizeIDs(remaining.NextScoringGameIDs);
+  if (context.SchemaVersion >= 5) {
+    const active = buildGeneratedScoringWindow(
+      matchup,
+      context,
+      remaining.ActiveScoringWindowID,
+      remaining.ActiveScoringGameIDs
+    );
+    const next = buildGeneratedScoringWindow(
+      matchup,
+      context,
+      remaining.NextScoringWindowID,
+      remaining.NextScoringGameIDs
+    );
+
+    return combineScoringHorizons(active, next, !!active && !next);
+  }
+
+  // Schema-v4 compatibility: NextScoringWindow could itself be the live window.
+  // Render that known horizon, but do not claim FINAL SCORING WINDOW because older
+  // data cannot prove that no future direct-Starter window exists.
+  const legacy = buildGeneratedScoringWindow(
+    matchup,
+    context,
+    remaining.NextScoringWindowID,
+    remaining.NextScoringGameIDs
+  );
+  if (!legacy) return null;
+
+  const legacyIsLive = (remaining.NextScoringLockedActiveStarterCount ?? 0) > 0
+    || legacy.games.some(game => !/^Final/i.test(game.Status ?? '')
+      && (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0);
+
+  return combineScoringHorizons(
+    legacyIsLive ? legacy : null,
+    legacyIsLive ? null : legacy,
+    false
+  );
+}
+
+function combineScoringHorizons(
+  active: MatchupScoringWindowHorizonView | null,
+  next: MatchupScoringWindowHorizonView | null,
+  liveIsFinalScoringWindow: boolean
+): MatchupScoringWindowView | null {
+  const primary = next ?? active;
+  if (!primary) return null;
+
+  return {
+    ...primary,
+    active,
+    next,
+    liveIsFinalScoringWindow,
+    isLive: !!active
+  };
+}
+
+function buildGeneratedScoringWindow(
+  matchup: FantasyGameContextMatchup,
+  context: FantasyGameContextReadModel,
+  decisionWindowID: string | null | undefined,
+  generatedGameIDs: string[] | string | null | undefined
+): MatchupScoringWindowHorizonView | null {
+  if (!decisionWindowID) return null;
+
+  const gameIDs = normalizeIDs(generatedGameIDs);
   if (gameIDs.length === 0) return null;
 
   const gameByID = new Map(context.Games.map(game => [game.GameID, game]));
@@ -160,9 +229,8 @@ export function buildMatchupScoringWindow(
       ? 'compact'
       : 'dense';
 
-  // The Overview footer keeps the complete generated window as its count signal,
-  // but only previews the first three already ordered NFL game identities. Exact
-  // per-game inspection belongs in Matchup Detail rather than local disclosure.
+  // #507: the complete generated game count is the breadth signal. Overview only
+  // previews the first three already ordered identities; Matchup Detail is drilldown.
   const mobileVisibleGames = games.slice(0, 3);
 
   return {
@@ -172,10 +240,7 @@ export function buildMatchupScoringWindow(
     games,
     mobileVisibleGames,
     mobileOverflowCount: Math.max(0, gameIDs.length - mobileVisibleGames.length),
-    density,
-    isLive: (remaining.NextScoringLockedActiveStarterCount ?? 0) > 0
-      || games.some(game => !/^Final/i.test(game.Status ?? '')
-        && (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0)
+    density
   };
 }
 

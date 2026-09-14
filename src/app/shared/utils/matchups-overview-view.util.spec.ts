@@ -117,6 +117,8 @@ function matchup(gameIDs: string[]): FantasyGameContextMatchup {
       LockedActiveStarterCount: 0,
       UnlockedStarterCount: gameIDs.length,
       EligibleBenchCandidateCount: 0,
+      ActiveScoringWindowID: null,
+      ActiveScoringGameIDs: [],
       NextScoringWindowID: 'window-1',
       NextScoringGameIDs: gameIDs,
       NextScoringWindowGameCount: gameIDs.length,
@@ -130,9 +132,12 @@ function matchup(gameIDs: string[]): FantasyGameContextMatchup {
   };
 }
 
-function context(games: FantasyGameContextGame[]): FantasyGameContextReadModel {
+function context(
+  games: FantasyGameContextGame[],
+  schemaVersion = 5
+): FantasyGameContextReadModel {
   return {
-    SchemaVersion: 4,
+    SchemaVersion: schemaVersion,
     LeagueID: 'league',
     Season: '2026',
     Week: 1,
@@ -197,7 +202,7 @@ describe('matchups overview view utility', () => {
     expect(view?.groups[0].segments.length).toBe(10);
   });
 
-  it('orders every adopted state from the left outer edge toward center and mirrors it on the right', () => {
+  it('renders completed, live, next, later and problem semantics concurrently with precedence intact', () => {
     const repairable = {
       ProblemCode: 'OPEN_STARTER_SLOT' as const,
       State: 'repairable' as const,
@@ -225,9 +230,9 @@ describe('matchups overview view utility', () => {
       slot('RB-2', 'locked-active'),
       slot('WR-3', 'unlocked', { DecisionWindowID: 'next' }),
       slot('TE-4', 'unlocked', { DecisionWindowID: 'later' }),
-      slot('FLEX-5', 'unlocked', { Repairability: repairable }),
-      slot('K-6', 'unknown', { Repairability: irreparable }),
-      slot('SUPER_FLEX-7', 'unknown', { Repairability: unknown })
+      slot('FLEX-5', 'unlocked', { DecisionWindowID: 'next', Repairability: repairable }),
+      slot('K-6', 'unknown', { DecisionWindowID: 'next', Repairability: irreparable }),
+      slot('SUPER_FLEX-7', 'unknown', { DecisionWindowID: 'next', Repairability: unknown })
     ];
 
     const left = buildMatchupStarterProgress(team(slots), 'next', 'left');
@@ -253,7 +258,7 @@ describe('matchups overview view utility', () => {
     expect(view?.groups.map(group => group.kind)).toEqual(['final', 'future']);
   });
 
-  it('caps the compact scoring-window preview at three games and reports informational overflow', () => {
+  it('caps the compact future scoring-window preview at three games and reports informational overflow', () => {
     const oneIDs = ['g1'];
     const threeIDs = ['g1', 'g2', 'g3'];
     const fiveIDs = ['g1', 'g2', 'g3', 'g4', 'g5'];
@@ -262,28 +267,72 @@ describe('matchups overview view utility', () => {
     const three = buildMatchupScoringWindow(matchup(threeIDs), context(threeIDs.map(id => game(id))));
     const five = buildMatchupScoringWindow(matchup(fiveIDs), context(fiveIDs.map(id => game(id))));
 
-    expect(one?.mobileVisibleGames.map(item => item.GameID)).toEqual(oneIDs);
-    expect(one?.mobileOverflowCount).toBe(0);
-    expect(three?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
-    expect(three?.mobileOverflowCount).toBe(0);
-    expect(five?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
-    expect(five?.mobileOverflowCount).toBe(2);
-    expect(five?.gameCount).toBe(5);
-    expect(five?.games.map(item => item.GameID)).toEqual(fiveIDs);
+    expect(one?.next?.mobileVisibleGames.map(item => item.GameID)).toEqual(oneIDs);
+    expect(one?.next?.mobileOverflowCount).toBe(0);
+    expect(three?.next?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
+    expect(three?.next?.mobileOverflowCount).toBe(0);
+    expect(five?.next?.mobileVisibleGames.map(item => item.GameID)).toEqual(threeIDs);
+    expect(five?.next?.mobileOverflowCount).toBe(2);
+    expect(five?.next?.gameCount).toBe(5);
+    expect(five?.next?.games.map(item => item.GameID)).toEqual(fiveIDs);
+    expect(five?.active).toBeNull();
+    expect(five?.liveIsFinalScoringWindow).toBeFalse();
   });
 
-  it('represents the whole generated scoring window and marks window-level live action once', () => {
-    const ids = ['g1', 'g2', 'g3'];
-    const games = ids.map(id => game(id));
+  it('represents live and next future scoring windows simultaneously without sorting or rebuilding membership', () => {
+    const source = matchup(['g-next-a', 'g-next-b', 'g-live-a', 'g-live-b']);
+    source.RemainingRelevance!.ActiveScoringWindowID = '2026-09-13T17:00:00Z';
+    source.RemainingRelevance!.ActiveScoringGameIDs = ['g-live-b', 'g-live-a'];
+    source.RemainingRelevance!.NextScoringWindowID = '2026-09-13T20:25:00Z';
+    source.RemainingRelevance!.NextScoringGameIDs = ['g-next-b', 'g-next-a'];
+    const games = [
+      game('g-live-a', '2026-09-13T17:00:00Z'),
+      game('g-live-b', '2026-09-13T17:00:00Z'),
+      game('g-next-a', '2026-09-13T20:25:00Z'),
+      game('g-next-b', '2026-09-13T20:25:00Z')
+    ];
+    games[0].RemainingRelevance!.LockedActiveStarterCount = 1;
     games[1].RemainingRelevance!.LockedActiveStarterCount = 1;
-    const source = matchup(ids);
-    source.RemainingRelevance!.NextScoringLockedActiveStarterCount = 1;
 
     const view = buildMatchupScoringWindow(source, context(games));
 
-    expect(view?.gameCount).toBe(3);
-    expect(view?.games.map(item => item.GameID)).toEqual(ids);
+    expect(view?.active?.decisionWindowID).toBe('2026-09-13T17:00:00Z');
+    expect(view?.active?.games.map(item => item.GameID)).toEqual(['g-live-b', 'g-live-a']);
+    expect(view?.next?.decisionWindowID).toBe('2026-09-13T20:25:00Z');
+    expect(view?.next?.games.map(item => item.GameID)).toEqual(['g-next-b', 'g-next-a']);
     expect(view?.isLive).toBeTrue();
-    expect(view?.startsAtUtc).toBe('2026-09-13T17:00:00Z');
+    expect(view?.liveIsFinalScoringWindow).toBeFalse();
+  });
+
+  it('marks an active schema-v5 window as final only when no future direct-Starter scoring window exists', () => {
+    const source = matchup(['g-live']);
+    source.RemainingRelevance!.ActiveScoringWindowID = '2026-09-14T00:20:00Z';
+    source.RemainingRelevance!.ActiveScoringGameIDs = ['g-live'];
+    source.RemainingRelevance!.NextScoringWindowID = null;
+    source.RemainingRelevance!.NextScoringGameIDs = [];
+    const live = game('g-live', '2026-09-14T00:20:00Z');
+    live.RemainingRelevance!.LockedActiveStarterCount = 1;
+
+    const view = buildMatchupScoringWindow(source, context([live]));
+
+    expect(view?.active?.games.map(item => item.GameID)).toEqual(['g-live']);
+    expect(view?.next).toBeNull();
+    expect(view?.liveIsFinalScoringWindow).toBeTrue();
+  });
+
+  it('keeps schema-v4 live data renderable without falsely claiming the final scoring window', () => {
+    const source = matchup(['g-live']);
+    delete source.RemainingRelevance!.ActiveScoringWindowID;
+    delete source.RemainingRelevance!.ActiveScoringGameIDs;
+    source.RemainingRelevance!.NextScoringLockedActiveStarterCount = 1;
+    const live = game('g-live');
+    live.RemainingRelevance!.LockedActiveStarterCount = 1;
+
+    const view = buildMatchupScoringWindow(source, context([live], 4));
+
+    expect(view?.active?.games.map(item => item.GameID)).toEqual(['g-live']);
+    expect(view?.next).toBeNull();
+    expect(view?.isLive).toBeTrue();
+    expect(view?.liveIsFinalScoringWindow).toBeFalse();
   });
 });
