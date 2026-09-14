@@ -1,6 +1,7 @@
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityDecisionUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\ParticipantScoringPathDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyWeeklyWatchUtils.psm1" -ErrorAction Stop -Force
 
@@ -100,13 +101,15 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         -Schedule $Schedule `
         -AsOfUtc $asOfUtc
 
-    return Add-LineupRepairabilityDecisionFacts `
+    $repairabilityReadModel = Add-LineupRepairabilityDecisionFacts `
         -BaseReadModel $relevanceReadModel `
         -Teams $Teams `
         -Players $Players `
         -Schedule $Schedule `
         -AcquisitionCapability $AcquisitionCapability `
         -AsOfUtc $asOfUtc
+
+    return Add-ParticipantScoringPathDecisionFacts -BaseReadModel $repairabilityReadModel
 }
 
 function New-FantasyGameContextReadModel {

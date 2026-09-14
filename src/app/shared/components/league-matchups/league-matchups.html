@@ -73,55 +73,71 @@
 
           <ng-container *ngIf="fantasyContextState$ | async as contextState">
             <div class="matchup-progress-row">
-              <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
-                <div
-                  class="matchup-progress-strip matchup-progress-strip--left"
-                  [attr.aria-label]="leftProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.left.team)"
-                >
-                  <span
-                    *ngFor="let group of leftProgress.groups"
-                    class="matchup-progress-group"
-                    [class.matchup-progress-group--next]="group.outline === 'next'"
-                    [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
-                    [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
-                    [attr.aria-label]="group.ariaLabel"
+              <div class="matchup-progress-side matchup-progress-side--left">
+                <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
+                  <div
+                    class="matchup-progress-strip matchup-progress-strip--left"
+                    [attr.aria-label]="leftProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.left.team)"
                   >
                     <span
-                      *ngFor="let segment of group.segments"
-                      class="matchup-progress-segment"
-                      [ngClass]="'matchup-progress-segment--' + segment.kind"
-                      [title]="segment.ariaLabel"
-                      aria-hidden="true"
-                    ></span>
-                  </span>
-                </div>
-              </ng-container>
+                      *ngFor="let group of leftProgress.groups"
+                      class="matchup-progress-group"
+                      [class.matchup-progress-group--next]="group.outline === 'next'"
+                      [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                      [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                      [attr.aria-label]="group.ariaLabel"
+                    >
+                      <span
+                        *ngFor="let segment of group.segments"
+                        class="matchup-progress-segment"
+                        [ngClass]="'matchup-progress-segment--' + segment.kind"
+                        [title]="segment.ariaLabel"
+                        aria-hidden="true"
+                      ></span>
+                    </span>
+                  </div>
+                  <span
+                    *ngIf="leftProgress.showFinalMarker"
+                    class="matchup-progress-final-marker"
+                    role="img"
+                    [attr.aria-label]="teamShortName(matchup.left.team) + ' scoring final'"
+                  >🏁</span>
+                </ng-container>
+              </div>
 
               <span class="matchup-progress-center" aria-hidden="true"></span>
 
-              <ng-container *ngIf="starterProgress(matchup, contextState, 'right') as rightProgress">
-                <div
-                  class="matchup-progress-strip matchup-progress-strip--right"
-                  [attr.aria-label]="rightProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.right.team)"
-                >
+              <div class="matchup-progress-side matchup-progress-side--right">
+                <ng-container *ngIf="starterProgress(matchup, contextState, 'right') as rightProgress">
                   <span
-                    *ngFor="let group of rightProgress.groups"
-                    class="matchup-progress-group"
-                    [class.matchup-progress-group--next]="group.outline === 'next'"
-                    [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
-                    [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
-                    [attr.aria-label]="group.ariaLabel"
+                    *ngIf="rightProgress.showFinalMarker"
+                    class="matchup-progress-final-marker"
+                    role="img"
+                    [attr.aria-label]="teamShortName(matchup.right.team) + ' scoring final'"
+                  >🏁</span>
+                  <div
+                    class="matchup-progress-strip matchup-progress-strip--right"
+                    [attr.aria-label]="rightProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.right.team)"
                   >
                     <span
-                      *ngFor="let segment of group.segments"
-                      class="matchup-progress-segment"
-                      [ngClass]="'matchup-progress-segment--' + segment.kind"
-                      [title]="segment.ariaLabel"
-                      aria-hidden="true"
-                    ></span>
-                  </span>
-                </div>
-              </ng-container>
+                      *ngFor="let group of rightProgress.groups"
+                      class="matchup-progress-group"
+                      [class.matchup-progress-group--next]="group.outline === 'next'"
+                      [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                      [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                      [attr.aria-label]="group.ariaLabel"
+                    >
+                      <span
+                        *ngFor="let segment of group.segments"
+                        class="matchup-progress-segment"
+                        [ngClass]="'matchup-progress-segment--' + segment.kind"
+                        [title]="segment.ariaLabel"
+                        aria-hidden="true"
+                      ></span>
+                    </span>
+                  </div>
+                </ng-container>
+              </div>
             </div>
           </ng-container>
         </div>

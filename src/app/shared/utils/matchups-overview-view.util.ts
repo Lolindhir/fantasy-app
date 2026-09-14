@@ -40,6 +40,7 @@ export interface MatchupProgressGroupView {
 export interface MatchupStarterProgressView {
   side: MatchupProgressSide;
   slotCount: number;
+  showFinalMarker: boolean;
   groups: MatchupProgressGroupView[];
 }
 
@@ -135,6 +136,7 @@ export function buildMatchupStarterProgress(
   return {
     side,
     slotCount: team.Slots.length,
+    showFinalMarker: team.RemainingScoringPathState === 'none',
     groups: side === 'right' ? [...groups].reverse() : groups
   };
 }

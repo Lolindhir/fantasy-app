@@ -74,6 +74,7 @@ export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'complete
 export type FantasyRelevanceRepairabilityState = 'repairable' | 'irreparable' | 'unknown';
 export type FantasyRelevanceRepairabilityPath = 'internal-roster' | 'external-acquisition';
 export type FantasyRelevanceRepairabilityProblemCode = 'OPEN_STARTER_SLOT' | 'STARTER_ON_BYE';
+export type FantasyRelevanceRemainingScoringPathState = 'open' | 'none' | 'unknown';
 export type FantasyRelevanceRepairabilityReasonCode =
   | 'INTERNAL_ASSIGNMENT_AVAILABLE'
   | 'EXTERNAL_ACQUISITION_ASSIGNMENT_AVAILABLE'
@@ -135,6 +136,7 @@ export interface FantasyRelevanceTeamState {
   CompletedStarterCount: number;
   EligibleBenchCandidateCount: number;
   HasRemainingScoringPath: boolean;
+  RemainingScoringPathState?: FantasyRelevanceRemainingScoringPathState;
   Slots: FantasyRelevanceSlotState[];
   Players: FantasyRelevancePlayerState[];
 }
