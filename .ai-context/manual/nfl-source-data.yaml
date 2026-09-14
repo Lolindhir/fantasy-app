@@ -147,6 +147,62 @@ registry:
     Source-Season werden normal als frozen-existing validiert und ohne Netzabruf
     wiederverwendet. Historische Reparaturen verwenden --force.
 
+historicalIdentityBackfill:
+  configPath: source-data/historical-identity-backfill.json
+  purpose: >
+    Persistiert zeitgenoessische historische Provider-Crosswalk-Evidenz, damit
+    spaeter hinzugefuegte Fantasy-Ligen alte Sleeper-Player-IDs gegen bereits
+    bestehende CanonicalPlayerIDs aufloesen koennen, ohne pro Liga eine neue
+    manuelle Quellenrecherche zu starten.
+  registryRelationship: >
+    Die regulaere Registry bleibt der Vertrag fuer fixed und season-partitioned
+    Provider-Datasets. Commit-History-Auswahl ist bewusst ein separater,
+    versionierter Backfill-Vertrag, weil dabei nicht eine URL pro Partition,
+    sondern exakte historische Git-Commits einer externen Datei ausgewaehlt
+    werden. Die persistierte Evidenz liegt trotzdem im providerRaw-Layer.
+  initialStartSeason: 2016
+  currentSource:
+    id: dynastyprocess.ff-player-ids-history
+    upstream: dynastyprocess/data
+    path: files/db_playerids.csv
+    selectionWindow: August 1 of season through March 2 of following year
+    persistedBoundarySnapshots:
+      - opening
+      - closing
+    rule: >
+      Existiert im Saisonfenster nur ein Commit, wird nur opening persistiert.
+      Existiert keine zeitgenoessische Historie, wird explizit
+      no-contemporaneous-history gespeichert; es wird keine heutige Crosswalk-
+      Version auf die alte Saison rueckprojiziert.
+  lifecycle:
+    priorSeasons: frozen-unless-force
+    currentSeason: re-evaluate-boundary-commits
+    repair: --force
+    semanticNoOp: >
+      Unveraenderte Commit-Grenzen und persistierte Raw-Snapshots werden nicht
+      neu geschrieben. Ein stabiler No-History-Zustand enthaelt keinen Laufzeit-
+      Timestamp und bleibt ebenfalls ein semantischer No-op.
+  identityResolution:
+    targetProvider: Sleeper
+    minimumIndependentNonSleeperCorroborators: 2
+    rule: >
+      Sleeper ist die historische Zuordnung, die rekonstruiert wird, und darf
+      sich deshalb nicht ueber den heutigen Identity-Graphen selbst bestaetigen.
+      Mindestens zwei unabhaengige Nicht-Sleeper-Link-Provider aus derselben
+      historischen Crosswalk-Zeile muessen eindeutig auf dieselbe bestehende
+      CanonicalPlayerID zeigen. Display-Namen sind keine Identitaetsevidenz.
+    conflicts: fail-closed-and-audited
+    intervalRule: >
+      Nur zusammenhaengende beobachtete Saisons duerfen zu einem Mapping-Intervall
+      verschmolzen werden. Eine unbeobachtete Saisonluecke darf nicht durch
+      gleiche Providerwerte auf beiden Seiten still als gueltig angenommen werden.
+  execution: >
+    Ein unfiltrierter voller NFL-Source-Sync aktualisiert die Historical-Identity-
+    Evidenz automatisch vor der normalen Raw-Synchronisierung. Targeted Dataset-
+    oder Season-Syncs tun dies absichtlich nicht. Die bestehenden Raw-first-
+    Publikations- und zweiten No-op-Schritte des NFL-Source-Workflows bleiben
+    unveraendert nutzbar; ein eigener neuer Workflow ist nicht erforderlich.
+
 activeDatasets:
   - id: nflverse.players
     lifecycle: dynamic
@@ -433,11 +489,15 @@ publication:
     rule: >
       Der bestehende Workflow publiziert zuerst validierte Raw-Daten, baut danach
       kanonische Daten aus dem auf main persistierten Raw-Stand und fuehrt sofort
-      einen zweiten semantischen No-op-Pass aus. Phase 1 aendert die Workflow-
-      Datei selbst nicht.
+      einen zweiten semantischen No-op-Pass aus. Der Historical-Identity-Backfill
+      ist in den bestehenden Full-Sync integriert und erfordert keinen separaten
+      Workflow oder zusaetzlichen Schedule.
 
 validation:
   - Registry-v3 Source-/Lifecycle-Kombinationen werden beim Laden fail-closed validiert.
+  - Historical-Identity-Backfill-Konfiguration wird fail-closed validiert; exakte Commit-SHAs, Content-Hashes und Query-Fenster bleiben als Provider-Provenienz erhalten.
+  - Historical Sleeper Claims benoetigen mindestens zwei uebereinstimmende Nicht-Sleeper-Link-Provider; Sleeper selbst und Display-Namen duerfen die Zuordnung nicht corroborieren.
+  - Nicht zusammenhaengende historische Mapping-Beobachtungen werden nicht ueber unbeobachtete Saisonluecken verschmolzen.
   - Current 404 -> not-yet-available ist nur unter der expliziten Policy erlaubt; historical 404 bleibt Fehler.
   - Vorhandene prior-season Raw-Partitionen werden normal ohne Netzabruf erhalten.
   - Unerwartet kleine/leere oder schema-inkompatible Inputs koennen keinen letzten guten Stand ersetzen.
