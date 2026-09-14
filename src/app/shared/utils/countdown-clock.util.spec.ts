@@ -8,6 +8,10 @@ import {
 describe('countdown clock util', () => {
   let subscription: Subscription | null = null;
 
+  beforeEach(() => {
+    jasmine.clock().install();
+  });
+
   afterEach(() => {
     subscription?.unsubscribe();
     subscription = null;
@@ -15,7 +19,6 @@ describe('countdown clock util', () => {
   });
 
   it('emits visibly every second when a relevant target is under one hour away', () => {
-    jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2026-09-04T10:00:00.250Z'));
     const observed: string[] = [];
 
@@ -32,7 +35,6 @@ describe('countdown clock util', () => {
   });
 
   it('does not emit visible second updates above one hour but still emits at the minute boundary', () => {
-    jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2026-09-04T10:00:30Z'));
     const observed: string[] = [];
 

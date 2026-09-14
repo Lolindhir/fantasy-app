@@ -131,12 +131,7 @@ function createAffectedTeam(teamId: number): DecisionWindow['AffectedFantasyTeam
     FantasyTeamID: teamId,
     AffectedRosteredPlayerCount: 1,
     AffectedStarterCount: 1,
-    Players: [{
-      PlayerID: `player-${teamId}`,
-      NFLTeamID: '22',
-      GameID: 'game',
-      IsStarter: true
-    }]
+    Players: []
   };
 }
 
