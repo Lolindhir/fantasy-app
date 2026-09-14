@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from .canonical_identity import identity_lookup
-from .common import clean, load_json, normalize_legacy_canonical_player_fields
+from .common import clean, iter_csv, load_json, normalize_legacy_canonical_player_fields
+from .historical_crosswalk import iter_historical_crosswalk_snapshots
+from .identity_model import LINK_ID_KEYS, ids_from_ff
 
 _SEASON_FILE = re.compile(r"Players_(\d{4})\.json$")
 _MIN_HISTORICAL_CORROBORATORS = 2
@@ -84,6 +86,69 @@ def _resolve_snapshot_row(
             "Sources": [source],
         }
         for provider, external_id in sorted(snapshot_ids.items())
+    ]
+    return claims, None, "resolved"
+
+
+def _historical_crosswalk_ids(row: dict[str, Any]) -> dict[str, str]:
+    return {
+        provider: external_id
+        for provider, external_id in ids_from_ff(row).items()
+        if provider in LINK_ID_KEYS
+    }
+
+
+def _resolve_historical_crosswalk_row(
+    row: dict[str, Any],
+    *,
+    season: int,
+    lookup: dict[tuple[str, str], str],
+    source: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, str]:
+    provider_ids = _historical_crosswalk_ids(row)
+    sleeper_id = provider_ids.get("Sleeper")
+    if not sleeper_id:
+        return [], None, "insufficient"
+
+    # Sleeper is the mapping being reconstructed, so it must never corroborate
+    # itself through today's active identity graph. Require two independent
+    # non-Sleeper link-provider tokens to resolve to the same canonical person.
+    corroborated: dict[str, str] = {}
+    for provider, external_id in provider_ids.items():
+        if provider == "Sleeper":
+            continue
+        internal_id = lookup.get((provider, external_id))
+        if internal_id:
+            corroborated[provider] = internal_id
+
+    resolved_ids = sorted(set(corroborated.values()))
+    if len(resolved_ids) > 1:
+        return (
+            [],
+            {
+                "Reason": "historical_crosswalk_provider_disagreement",
+                "Season": season,
+                "SleeperID": sleeper_id,
+                "ProviderIDs": dict(sorted(provider_ids.items())),
+                "ResolvedByProvider": dict(sorted(corroborated.items())),
+                "EvidenceSource": source,
+            },
+            "conflict",
+        )
+
+    if len(corroborated) < _MIN_HISTORICAL_CORROBORATORS or not resolved_ids:
+        return [], None, "insufficient"
+
+    internal_id = resolved_ids[0]
+    claims = [
+        {
+            "Provider": provider,
+            "ExternalID": external_id,
+            "CanonicalPlayerID": internal_id,
+            "ObservedSeason": season,
+            "Sources": [source],
+        }
+        for provider, external_id in sorted(provider_ids.items())
     ]
     return claims, None, "resolved"
 
@@ -179,6 +244,15 @@ def build_historical_app_mapping_claims(
         "gitUnresolvedPlayerCount": 0,
         "gitInsufficientCorroborationCount": 0,
         "gitConflictingPlayerCount": 0,
+        "externalSnapshotSeasonCount": 0,
+        "externalSnapshotCount": 0,
+        "externalSnapshotPlayerCount": 0,
+        "externalResolvedPlayerCount": 0,
+        "externalUnresolvedPlayerCount": 0,
+        "externalInsufficientCorroborationCount": 0,
+        "externalConflictingPlayerCount": 0,
+        "externalHistoricalClaimCount": 0,
+        "externalSleeperClaimCount": 0,
         "historicalClaimCount": 0,
     }
 
@@ -246,9 +320,64 @@ def build_historical_app_mapping_claims(
                     stats["gitUnresolvedPlayerCount"] += 1
                     stats["gitInsufficientCorroborationCount"] += 1
 
+    external_claims: list[dict[str, Any]] = []
+    external_seasons: set[int] = set()
+    for snapshot in iter_historical_crosswalk_snapshots(repo_root):
+        season = int(snapshot["season"])
+        external_seasons.add(season)
+        stats["externalSnapshotCount"] += 1
+        source = (
+            f"{snapshot['sourceId']}.git.{season}.{snapshot['role']}"
+            f"@{str(snapshot['commitSha'])[:12]}"
+        )
+        rows = list(iter_csv(Path(snapshot["path"])))
+        stats["externalSnapshotPlayerCount"] += len(rows)
+        for row in rows:
+            row_claims, conflict, status = _resolve_historical_crosswalk_row(
+                row,
+                season=season,
+                lookup=lookup,
+                source=source,
+            )
+            if status == "resolved":
+                stats["externalResolvedPlayerCount"] += 1
+                external_claims.extend(row_claims)
+            elif status == "conflict":
+                stats["externalConflictingPlayerCount"] += 1
+                if conflict is not None:
+                    conflicts.append(conflict)
+            else:
+                stats["externalUnresolvedPlayerCount"] += 1
+                stats["externalInsufficientCorroborationCount"] += 1
+
+    stats["externalSnapshotSeasonCount"] = len(external_seasons)
+    deduped_external = _dedupe_claims(external_claims)
+    stats["externalHistoricalClaimCount"] = len(deduped_external)
+    stats["externalSleeperClaimCount"] = sum(
+        1 for claim in deduped_external if claim["Provider"] == "Sleeper"
+    )
+    claims.extend(deduped_external)
+
     claims = _dedupe_claims(claims)
     stats["historicalClaimCount"] = len(claims)
     return claims, conflicts, stats
+
+
+def _resolution_conflict_key(item: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        item.get("Reason"),
+        item.get("Season"),
+        item.get("SleeperID"),
+        item.get("Tank01ID"),
+        item.get("ESPNID"),
+        item.get("EvidenceSource"),
+        tuple(
+            sorted(
+                (str(provider), str(player_id))
+                for provider, player_id in (item.get("ResolvedByProvider") or {}).items()
+            )
+        ),
+    )
 
 
 def extend_provider_mapping_payload(
@@ -291,26 +420,15 @@ def extend_provider_mapping_payload(
         if active_conflict:
             continue
 
-        exact = next(
-            (
-                item
-                for item in mappings
-                if item.get("Provider") == provider
-                and str(item.get("ExternalID")) == str(external_id)
-                and item.get("CanonicalPlayerID") == internal_id
-            ),
-            None,
-        )
-        if exact is not None:
-            first, last = interval(exact, season)
-            exact["FirstObservedSeason"] = min(first, season)
-            exact["LastObservedSeason"] = max(last, season)
-            exact["Sources"] = sorted(set(exact.get("Sources") or []) | sources)
-            continue
-
+        # A historical observation may only bridge contiguous seasons. Do not
+        # widen an exact mapping across an unobserved gap merely because the
+        # current snapshot has the same provider token. First reject any
+        # different-owner mapping that is already valid for this season.
         overlaps = []
         for item in mappings:
             if item.get("Provider") != provider or str(item.get("ExternalID")) != str(external_id):
+                continue
+            if item.get("CanonicalPlayerID") == internal_id:
                 continue
             first, last = interval(item, season)
             if first <= season <= last:
@@ -331,6 +449,30 @@ def extend_provider_mapping_payload(
             )
             continue
 
+        touching = []
+        for item in mappings:
+            if item.get("Provider") != provider or str(item.get("ExternalID")) != str(external_id):
+                continue
+            if item.get("CanonicalPlayerID") != internal_id:
+                continue
+            first, last = interval(item, season)
+            if first - 1 <= season <= last + 1:
+                touching.append(item)
+
+        if touching:
+            primary = touching[0]
+            first_values = [interval(item, season)[0] for item in touching]
+            last_values = [interval(item, season)[1] for item in touching]
+            primary["FirstObservedSeason"] = min([season, *first_values])
+            primary["LastObservedSeason"] = max([season, *last_values])
+            merged_sources = set(sources)
+            for item in touching:
+                merged_sources.update(item.get("Sources") or [])
+            primary["Sources"] = sorted(merged_sources)
+            for item in touching[1:]:
+                mappings.remove(item)
+            continue
+
         mappings.append(
             {
                 "Provider": provider,
@@ -342,27 +484,15 @@ def extend_provider_mapping_payload(
             }
         )
 
-    # Provider disagreements in one archived app snapshot are evidence conflicts,
-    # not safe provider mappings. Keep them separately without inventing a winner.
-    history_resolution_conflicts = [dict(item) for item in payload.get("HistoricalResolutionConflicts", [])]
-    known = {
-        (
-            item.get("Reason"),
-            item.get("Season"),
-            item.get("SleeperID"),
-            item.get("Tank01ID"),
-            item.get("ESPNID"),
-        )
-        for item in history_resolution_conflicts
-    }
+    # Provider disagreements in one historical evidence snapshot are evidence
+    # conflicts, not safe provider mappings. Keep them separately without
+    # inventing a winner.
+    history_resolution_conflicts = [
+        dict(item) for item in payload.get("HistoricalResolutionConflicts", [])
+    ]
+    known = {_resolution_conflict_key(item) for item in history_resolution_conflicts}
     for conflict in resolution_conflicts:
-        key = (
-            conflict.get("Reason"),
-            conflict.get("Season"),
-            conflict.get("SleeperID"),
-            conflict.get("Tank01ID"),
-            conflict.get("ESPNID"),
-        )
+        key = _resolution_conflict_key(conflict)
         if key not in known:
             history_resolution_conflicts.append(conflict)
             known.add(key)
@@ -386,9 +516,9 @@ def extend_provider_mapping_payload(
     history_resolution_conflicts.sort(
         key=lambda item: (
             int(item.get("Season") or 0),
+            str(item.get("Reason") or ""),
             str(item.get("SleeperID") or ""),
-            str(item.get("Tank01ID") or ""),
-            str(item.get("ESPNID") or ""),
+            str(item.get("EvidenceSource") or ""),
         )
     )
     return {

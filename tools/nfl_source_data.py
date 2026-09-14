@@ -14,6 +14,7 @@ from nfl_source_data_lib.finality_materialize import (
     SCHEDULE_DATASET_ID,
     materialize_game_finality,
 )
+from nfl_source_data_lib.historical_crosswalk import sync_historical_crosswalk_evidence
 from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
 
@@ -106,6 +107,24 @@ def main() -> int:
             )
 
         source_season = current_source_season(repo_root)
+        historical_identity_result = None
+        if not requested and not args.seasons:
+            historical_identity_result = sync_historical_crosswalk_evidence(
+                repo_root,
+                current_season=source_season,
+                force=args.force,
+                offline=args.offline,
+            )
+            if historical_identity_result["enabled"]:
+                print(
+                    "historical identity evidence: "
+                    f"seasons={historical_identity_result['seasonCount']}, "
+                    f"available={historical_identity_result['availableSeasonCount']}, "
+                    f"no-history={historical_identity_result['noHistorySeasonCount']}, "
+                    f"snapshots={historical_identity_result['snapshotCount']}, "
+                    f"updated={historical_identity_result['updatedSeasonCount']}"
+                )
+
         historical_by_dataset: dict[str, list[int]] = defaultdict(list)
         if args.historical_backfill_limit:
             historical_batch = select_missing_historical_partitions(
@@ -162,6 +181,8 @@ def main() -> int:
         print(f"canonical identities: {result['identityCount']}")
         print(f"provider mappings: {result['providerMappingCount']}")
         print(f"provider mapping conflicts: {result['providerMappingConflictCount']}")
+        print(f"historical mapping observations: {result['historicalMappingObservationCount']}")
+        print(f"historical resolution conflicts: {result['historicalResolutionConflictCount']}")
         print(f"draft seasons: {result['draftSeasonCount']}")
         print(f"combine seasons: {result['combineSeasonCount']}")
         print(f"combine draft-link conflicts: {result['combineDraftLinkConflictCount']}")
