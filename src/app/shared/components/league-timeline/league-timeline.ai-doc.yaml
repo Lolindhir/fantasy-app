@@ -25,7 +25,9 @@ activeTimeline:
     next-milestone presentation.
 
 nextLineupLock:
-  clock: minute-aligned frontend clock
+  clock: shared adaptive countdown clock with second-level visible updates below one hour and minute-level visible updates otherwise
+  clockSource: src/app/shared/utils/countdown-clock.util.ts
+  formatter: src/app/shared/utils/countdown.util.ts
   selection: earliest generated current/lookahead window with StartsAtUtc greater than now
   rollover: exact kickoff; game Final is not consulted
   pending: generated pending lookahead is shown without reusing current-week evaluation or affected counts
@@ -77,12 +79,13 @@ responsive:
 
 boundaries:
   owns:
-    - frontend clock/countdown
+    - frontend clock/countdown consumption
     - future-window selection
-    - local formatting
+    - local presentation composition
     - status display, relevance tie-breaks and attention sorting
     - interaction and responsive layout
   doesNotOwn:
+    - countdown threshold definitions or shared clock cadence implementation
     - Decision Window derivation/grouping
     - schedule/roster/starter joins
     - lineup evaluation rules

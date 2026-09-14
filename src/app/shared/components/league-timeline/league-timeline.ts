@@ -1,19 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Subscription, timer } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type { League } from '../../../core/models/league.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
-import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
-import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
+import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
 import {
   buildLeagueTimelineView,
   type LeagueTimelineDraft,
   type LeagueTimelineView
 } from '../../utils/league-timeline-view.util';
+import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
+import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
 
 @Component({
   selector: 'app-league-timeline',
@@ -45,7 +46,11 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.startMinuteAlignedClock();
+    this.subscriptions.add(
+      createAdaptiveCountdownClock(() => this.getCountdownTargets()).subscribe(now => {
+        this.now = now;
+      })
+    );
     if (!this.isActiveLeagueStatus()) return;
 
     this.subscriptions.add(
@@ -111,14 +116,22 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startMinuteAlignedClock(): void {
-    const minuteMs = 60_000;
-    const firstTickDelay = minuteMs - (Date.now() % minuteMs);
-    this.subscriptions.add(
-      timer(firstTickDelay, minuteMs).subscribe(() => {
-        this.now = new Date();
-      })
-    );
+  private getCountdownTargets(): Array<string | null | undefined> {
+    const playoffStart = (this.league as League & { PlayoffStart?: string | null }).PlayoffStart;
+    const decisionWindowTargets = this.decisionWindows
+      ? [
+          ...this.decisionWindows.DecisionWindows.map(window => window.StartsAtUtc),
+          this.decisionWindows.LookaheadDecisionWindow?.StartsAtUtc
+        ]
+      : [];
+
+    return [
+      this.league.SeasonKickoff,
+      this.league.CapDeadline,
+      this.league.NextWaiverRun,
+      playoffStart,
+      ...decisionWindowTargets
+    ];
   }
 
   private isActiveLeagueStatus(): boolean {

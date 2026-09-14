@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 import type {
   DecisionWindow,
   DecisionWindowsReadModel
 } from '../../../core/models/decision-window.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
+import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
 import {
   formatDecisionWindowCountdown,
   formatDecisionWindowsUpdatedAt
@@ -36,7 +38,7 @@ import {
   templateUrl: './team-lineup-tab.html',
   styleUrl: './team-lineup-tab.scss'
 })
-export class TeamLineupTabComponent {
+export class TeamLineupTabComponent implements OnInit, OnDestroy {
   @Input() model: DecisionWindowsReadModel | null = null;
   @Input({ required: true }) fantasyTeamId!: number;
   @Input() players: Player[] = [];
@@ -46,6 +48,23 @@ export class TeamLineupTabComponent {
   @Input() loading = false;
   @Input() unavailable = false;
   @Output() openWindow = new EventEmitter<DecisionWindow>();
+
+  private readonly subscriptions = new Subscription();
+
+  ngOnInit(): void {
+    this.subscriptions.add(
+      createAdaptiveCountdownClock(() => {
+        const target = this.weekSummary.nextWindow?.window.StartsAtUtc;
+        return target ? [target] : [];
+      }).subscribe(now => {
+        this.now = now;
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 
   get upcomingWindows(): TeamUpcomingLockView[] {
     if (!this.model) return [];
