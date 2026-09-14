@@ -1,7 +1,3 @@
-import './countdown-clock.util.spec';
-import './countdown-consumers.spec';
-import './countdown.util.spec';
-
 import type {
   DecisionWindow,
   DecisionWindowsReadModel
