@@ -10,6 +10,7 @@ file:
     - public/requests/utils/league/LineupRepairabilityDecisionUtils.psm1
     - public/requests/utils/league/LineupRepairabilityUtils.psm1
     - public/requests/utils/league/LineupRepairabilityEvidenceUtils.psm1
+  participantScoringPathDerivation: public/requests/utils/league/ParticipantScoringPathDecisionUtils.psm1
   temporaryAcquisitionBridge: public/requests/utils/league/AcquisitionCapabilityUtils.psm1
   architectureDecision: .ai-context/manual/decisions.yaml#ADR-036
 
@@ -17,8 +18,9 @@ contract:
   purpose: >
     Current App read model for exact NFL kickoff Decision Windows, fantasy-team/player
     lock associations, objective lineup integrity, current Fantasy Relevance lineup
-    state and provider-neutral per-slot repairability. It is disposable generated
-    output, not historical source of truth.
+    state, provider-neutral per-slot repairability and provider-neutral participant
+    remaining-scoring-path state. It is disposable generated output, not historical
+    source of truth.
   topLevel:
     - SchemaVersion
     - LeagueID
@@ -78,12 +80,12 @@ contract:
       PlayerLockFacts remain provider-neutral kickoff association evidence. The
       current game-time state is materialized separately in FantasyRelevance.
   fantasyRelevance:
-    version: 2
+    version: 3
     purpose: >
       Generator-owned current lineup state for downstream remaining-scoring-path,
-      must-watch and lineup-repairability derivation. Angular must not reconstruct
-      slot eligibility, Active Roster membership, lock/completion semantics or
-      acquisition/repair heuristics.
+      must-watch, lineup-repairability and participant-terminal derivation. Angular
+      must not reconstruct slot eligibility, Active Roster membership, lock/completion
+      semantics, acquisition/repair heuristics or participant terminality.
     slotDefinitions:
       fields:
         - SlotID
@@ -177,6 +179,19 @@ contract:
       replacementBoundary: >
         Issue #492 must replace/remove the temporary #493 acquisition bridge later
         without changing the repairability State/Path/Reason consumer semantics.
+    participantRemainingScoringPath:
+      field: RemainingScoringPathState
+      values:
+        open: Known direct/alternative scoring-path evidence or a known repairable lineup path remains for this fantasy-team side.
+        none: Complete known evidence proves that this fantasy-team side has no remaining relevant scoring path.
+        unknown: Missing, review or unknown lineup/lifecycle/repairability evidence prevents a terminal claim.
+      rules:
+        - Participant state is derived only after repairability enrichment so a known repair path keeps the side open.
+        - HasRemainingScoringPath=false alone never proves none because unknown player or slot evidence can also yield no currently enumerated path.
+        - A known remaining direct, alternative or repairable path makes the participant state open even when other evidence is incomplete.
+        - none is the only participant state that Angular may present as the compact participant Final marker.
+        - Participant none never implies Matchups.json CompletionState=final; whole-matchup finality remains owned by canonical Matchups finality.
+        - Scores, rendered progress colors, NFL clock/time, weekday, provider rollover, opponent state and matchup CompletionState are not participant-terminal inputs.
     team:
       fields:
         - FantasyTeamID
@@ -190,6 +205,7 @@ contract:
         - CompletedStarterCount
         - EligibleBenchCandidateCount
         - HasRemainingScoringPath
+        - RemainingScoringPathState
         - Slots
         - Players
     player:
@@ -267,8 +283,9 @@ ownership:
   relevanceBoundary: >
     FantasyRelevance consumes current League/Teams/Players plus the generated
     finality-resolved Schedule in the generation layer. It does not make Angular a
-    source of truth. Repairability extends this same generator-owned boundary and
-    uses #493 only as a temporary normalized acquisition input.
+    source of truth. Repairability and participant remaining-scoring-path state extend
+    this same generator-owned boundary; #493 is used only as a temporary normalized
+    acquisition input for repairability.
   historical: >
     Historical Decision Window relevance is rebuilt from persisted season/week
     schedule, fantasy players/starters and week-appropriate player-to-NFL-team
@@ -297,6 +314,7 @@ failureBehavior:
   - Canonical finality/provider-ID contradictions fail closed in RequestGames before Schedule publication.
   - Safe per-player ambiguity becomes unknown; unrecoverable derivation failures fail closed.
   - Repairability ambiguity that could change the outcome remains unknown rather than being guessed into repairable or irreparable.
+  - Participant terminal ambiguity remains RemainingScoringPathState=unknown rather than being guessed into none.
 
 nonGoals:
   - broad Overview or dialog visual redesign
