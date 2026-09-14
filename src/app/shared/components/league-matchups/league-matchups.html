@@ -126,45 +126,90 @@
           </ng-container>
         </div>
 
-        <ng-container *ngIf="fantasyContextState$ | async as contextState">
-          <div *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
-            <div class="matchup-window-heading">
-              <div class="matchup-window-title-line">
-                <span class="matchup-window-kicker">Next scoring window</span>
-                <span *ngIf="scoringWindow.isLive" class="matchup-window-live">LIVE</span>
+        <ng-container *ngIf="matchup.completionState !== 'final'">
+          <ng-container *ngIf="fantasyContextState$ | async as contextState">
+            <div *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
+              <ng-container *ngIf="scoringWindow.active as activeWindow">
+                <div class="matchup-window-heading">
+                  <div class="matchup-window-title-line">
+                    <span class="matchup-window-kicker">Live now</span>
+                  </div>
+                  <time class="matchup-window-time">{{ activeWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
+                </div>
+
+                <div class="matchup-window-summary">
+                  <strong class="matchup-window-count">
+                    {{ activeWindow.gameCount }} NFL game{{ activeWindow.gameCount === 1 ? '' : 's' }}
+                  </strong>
+
+                  <div class="matchup-window-games">
+                    <span
+                      *ngFor="let game of activeWindow.mobileVisibleGames"
+                      class="matchup-window-game"
+                      role="img"
+                      [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
+                    >
+                      <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                      <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                      <span class="matchup-window-at" aria-hidden="true">@</span>
+                      <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                      <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+                    </span>
+
+                    <span
+                      *ngIf="activeWindow.mobileOverflowCount > 0"
+                      class="matchup-window-overflow"
+                      [attr.aria-label]="activeWindow.mobileOverflowCount + ' more NFL games'"
+                    >
+                      +{{ activeWindow.mobileOverflowCount }}
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="scoringWindow.next as nextWindow">
+                <div class="matchup-window-heading">
+                  <div class="matchup-window-title-line">
+                    <span class="matchup-window-kicker">{{ scoringWindow.active ? 'Next' : 'Next scoring window' }}</span>
+                  </div>
+                  <time class="matchup-window-time">{{ nextWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
+                </div>
+
+                <div class="matchup-window-summary">
+                  <strong class="matchup-window-count">
+                    {{ nextWindow.gameCount }} NFL game{{ nextWindow.gameCount === 1 ? '' : 's' }}
+                  </strong>
+
+                  <div class="matchup-window-games">
+                    <span
+                      *ngFor="let game of nextWindow.mobileVisibleGames"
+                      class="matchup-window-game"
+                      role="img"
+                      [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
+                    >
+                      <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
+                      <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                      <span class="matchup-window-at" aria-hidden="true">@</span>
+                      <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
+                      <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+                    </span>
+
+                    <span
+                      *ngIf="nextWindow.mobileOverflowCount > 0"
+                      class="matchup-window-overflow"
+                      [attr.aria-label]="nextWindow.mobileOverflowCount + ' more NFL games'"
+                    >
+                      +{{ nextWindow.mobileOverflowCount }}
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <div *ngIf="scoringWindow.liveIsFinalScoringWindow" class="matchup-window-title-line">
+                <span class="matchup-window-live">FINAL SCORING WINDOW</span>
               </div>
-              <time class="matchup-window-time">{{ scoringWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
             </div>
-
-            <div class="matchup-window-summary">
-              <strong class="matchup-window-count">
-                {{ scoringWindow.gameCount }} NFL game{{ scoringWindow.gameCount === 1 ? '' : 's' }}
-              </strong>
-
-              <div class="matchup-window-games">
-                <span
-                  *ngFor="let game of scoringWindow.mobileVisibleGames"
-                  class="matchup-window-game"
-                  role="img"
-                  [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
-                >
-                  <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                  <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
-                  <span class="matchup-window-at" aria-hidden="true">@</span>
-                  <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                  <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
-                </span>
-
-                <span
-                  *ngIf="scoringWindow.mobileOverflowCount > 0"
-                  class="matchup-window-overflow"
-                  [attr.aria-label]="scoringWindow.mobileOverflowCount + ' more NFL games'"
-                >
-                  +{{ scoringWindow.mobileOverflowCount }}
-                </span>
-              </div>
-            </div>
-          </div>
+          </ng-container>
         </ng-container>
       </article>
     </div>

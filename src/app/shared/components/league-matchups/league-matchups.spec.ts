@@ -2,7 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 
-import type { DecisionWindowsReadModel, FantasyRelevanceTeamState } from '../../../core/models/decision-window.models';
+import type {
+  DecisionWindowsReadModel,
+  FantasyRelevanceSlotState,
+  FantasyRelevanceTeamState
+} from '../../../core/models/decision-window.models';
 import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
@@ -43,7 +47,7 @@ describe('LeagueMatchupsComponent scoring overview', () => {
   });
 
   const context: FantasyGameContextReadModel = {
-    SchemaVersion: 4,
+    SchemaVersion: 5,
     LeagueID: 'league',
     Season: '2026',
     Week: 1,
@@ -87,6 +91,7 @@ describe('LeagueMatchupsComponent scoring overview', () => {
         State: 'both-sides', HasRemainingScoringPaths: true,
         LeftRemainingPathCount: 1, RightRemainingPathCount: 1,
         LockedActiveStarterCount: 0, UnlockedStarterCount: 2, EligibleBenchCandidateCount: 0,
+        ActiveScoringWindowID: null, ActiveScoringGameIDs: [],
         NextScoringWindowID: 'w1', NextScoringGameIDs: ['g1'], NextScoringPrimaryGameID: 'g1',
         NextScoringWindowGameCount: 1, NextScoringLockedActiveStarterCount: 0,
         NextScoringUnlockedStarterCount: 2, NextScoringOptionCount: 0,
@@ -214,13 +219,14 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(element.querySelectorAll('.matchup-scoreboard > .matchup-score-value').length).toBe(0);
   });
 
-  it('renders dominant current scores, starter strips and one compact window-level summary', () => {
+  it('renders dominant current scores, starter strips and one compact no-live next-scoring summary', () => {
     const element: HTMLElement = fixture.nativeElement;
 
     expect(element.querySelector('.matchup-score-value--left')?.textContent?.trim()).toBe('37.4');
     expect(element.querySelector('.matchup-score-value--right')?.textContent?.trim()).toBe('13.8');
     expect(element.querySelectorAll('.matchup-progress-segment').length).toBe(2);
     expect(element.querySelectorAll('.matchup-window-time').length).toBe(1);
+    expect(element.querySelector('.matchup-window-kicker')?.textContent?.trim()).toBe('Next scoring window');
     expect(element.querySelector('.matchup-window-count')?.textContent?.trim()).toBe('1 NFL game');
     expect(element.querySelectorAll('.matchup-window-game').length).toBe(1);
     expect(element.querySelector('.matchup-window-overflow')).toBeNull();
@@ -313,4 +319,206 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(abbreviations.length).toBe(2);
     abbreviations.forEach(abbreviation => expect(getComputedStyle(abbreviation).display).toBe('none'));
   });
+
+  it('shows Final, Live, Next and Later concurrently and renders LIVE NOW plus NEXT in the compact footer', () => {
+    const snapshot = snapshotFixtureState();
+    try {
+      configureLiveAndNextFixture();
+      fixture.detectChanges();
+
+      const element: HTMLElement = fixture.nativeElement;
+      const progressKinds = Array.from(element.querySelectorAll<HTMLElement>('.matchup-progress-strip--left .matchup-progress-segment'))
+        .map(segment => Array.from(segment.classList).find(name => name.startsWith('matchup-progress-segment--')));
+      const kickers = Array.from(element.querySelectorAll<HTMLElement>('.matchup-window-kicker'))
+        .map(kicker => kicker.textContent?.trim());
+
+      expect(progressKinds).toEqual([
+        'matchup-progress-segment--final',
+        'matchup-progress-segment--locked',
+        'matchup-progress-segment--next',
+        'matchup-progress-segment--future'
+      ]);
+      expect(kickers).toEqual(['Live now', 'Next']);
+      expect(element.querySelectorAll('.matchup-window-time').length).toBe(2);
+      expect(element.querySelectorAll('.matchup-window-count').length).toBe(2);
+      expect(element.querySelector('.matchup-window-live')).toBeNull();
+      expect(element.querySelector('.matchup-window button')).toBeNull();
+    } finally {
+      restoreFixtureState(snapshot);
+      fixture.detectChanges();
+    }
+  });
+
+  it('shows FINAL SCORING WINDOW when the active direct-Starter window has no future next', () => {
+    const snapshot = snapshotFixtureState();
+    try {
+      configureLiveAndNextFixture();
+      const remaining = context.FantasyMatchups[0].RemainingRelevance!;
+      remaining.NextScoringWindowID = null;
+      remaining.NextScoringGameIDs = [];
+      fixture.detectChanges();
+
+      const element: HTMLElement = fixture.nativeElement;
+      expect(element.querySelector('.matchup-window-kicker')?.textContent?.trim()).toBe('Live now');
+      expect(element.querySelector('.matchup-window-live')?.textContent?.trim()).toBe('FINAL SCORING WINDOW');
+      expect(element.querySelectorAll('.matchup-window-time').length).toBe(1);
+    } finally {
+      restoreFixtureState(snapshot);
+      fixture.detectChanges();
+    }
+  });
+
+  it('lets authoritative Matchups.json finality replace temporal scoring-window presentation', () => {
+    const snapshot = snapshotFixtureState();
+    try {
+      configureLiveAndNextFixture();
+      matchups.Weeks[0].Matchups[0].CompletionState = 'final';
+      fixture.detectChanges();
+
+      const element: HTMLElement = fixture.nativeElement;
+      expect(element.querySelector('.matchup-score-plate')?.getAttribute('data-scoreboard-state')).toBe('final');
+      expect(element.querySelector('.matchup-window')).toBeNull();
+    } finally {
+      restoreFixtureState(snapshot);
+      fixture.detectChanges();
+    }
+  });
+
+  it('keeps live-plus-next compact and horizontally contained at 360, 390, 430 and desktop widths', () => {
+    const snapshot = snapshotFixtureState();
+    try {
+      configureLiveAndNextFixture();
+      fixture.detectChanges();
+      const sourceCard = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.matchup-card')!;
+
+      for (const width of [360, 390, 430, 1280]) {
+        const frame = document.createElement('iframe');
+        frame.style.position = 'absolute';
+        frame.style.left = '-2000px';
+        frame.style.top = '0';
+        frame.style.width = `${width}px`;
+        frame.style.height = '900px';
+        frame.style.border = '0';
+        document.body.appendChild(frame);
+
+        try {
+          const frameDocument = frame.contentDocument!;
+          const frameWindow = frame.contentWindow!;
+          for (const style of Array.from(document.head.querySelectorAll('style'))) {
+            frameDocument.head.appendChild(style.cloneNode(true));
+          }
+          const reset = frameDocument.createElement('style');
+          reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}';
+          frameDocument.head.appendChild(reset);
+          frameDocument.body.appendChild(sourceCard.cloneNode(true));
+
+          const card = frameDocument.querySelector<HTMLElement>('.matchup-card')!;
+          const footer = frameDocument.querySelector<HTMLElement>('.matchup-window')!;
+          expect(frameWindow.innerWidth).withContext(`${width}px iframe viewport`).toBe(width);
+          expect(card.getBoundingClientRect().right).withContext(`${width}px card containment`).toBeLessThanOrEqual(width + 1);
+          expect(footer.scrollWidth).withContext(`${width}px footer horizontal overflow`).toBeLessThanOrEqual(footer.clientWidth + 1);
+          expect(footer.getBoundingClientRect().height).withContext(`${width}px live+next footer density`)
+            .toBeLessThanOrEqual(width < 768 ? 92 : 48);
+        } finally {
+          frame.remove();
+        }
+      }
+    } finally {
+      restoreFixtureState(snapshot);
+      fixture.detectChanges();
+    }
+  });
+
+  function snapshotFixtureState(): { context: FantasyGameContextReadModel; decisionWindows: DecisionWindowsReadModel; matchups: MatchupsReadModel } {
+    return {
+      context: structuredClone(context),
+      decisionWindows: structuredClone(decisionWindows),
+      matchups: structuredClone(matchups)
+    };
+  }
+
+  function restoreFixtureState(snapshot: { context: FantasyGameContextReadModel; decisionWindows: DecisionWindowsReadModel; matchups: MatchupsReadModel }): void {
+    Object.assign(context, snapshot.context);
+    Object.assign(decisionWindows, snapshot.decisionWindows);
+    Object.assign(matchups, snapshot.matchups);
+  }
+
+  function configureLiveAndNextFixture(): void {
+    const liveWindow = '2026-09-13T17:00:00Z';
+    const nextWindow = '2026-09-13T20:25:00Z';
+    const laterWindow = '2026-09-14T00:20:00Z';
+    const baseContextGame = structuredClone(context.Games[0]);
+    const baseMatchupGame = structuredClone(context.FantasyMatchups[0].Games[0]);
+
+    const contextGame = (gameID: string, windowID: string, lockedActiveStarterCount: number) => ({
+      ...structuredClone(baseContextGame),
+      GameID: gameID,
+      DecisionWindowID: windowID,
+      StartsAtUtc: windowID,
+      AwayTeamAbbr: `A-${gameID}`,
+      HomeTeamAbbr: `H-${gameID}`,
+      RemainingRelevance: {
+        ...structuredClone(baseContextGame.RemainingRelevance!),
+        LockedActiveStarterCount: lockedActiveStarterCount,
+        UnlockedStarterCount: lockedActiveStarterCount > 0 ? 0 : 1
+      }
+    });
+
+    context.SchemaVersion = 5;
+    context.Games = [
+      contextGame('g-live', liveWindow, 1),
+      contextGame('g-next', nextWindow, 0),
+      contextGame('g-later', laterWindow, 0)
+    ];
+    context.FantasyMatchups[0].Games = context.Games.map(candidate => ({
+      ...structuredClone(baseMatchupGame),
+      GameID: candidate.GameID,
+      DecisionWindowID: candidate.DecisionWindowID,
+      StartsAtUtc: candidate.StartsAtUtc
+    }));
+    Object.assign(context.FantasyMatchups[0].RemainingRelevance!, {
+      LockedActiveStarterCount: 1,
+      UnlockedStarterCount: 2,
+      ActiveScoringWindowID: liveWindow,
+      ActiveScoringGameIDs: ['g-live'],
+      NextScoringWindowID: nextWindow,
+      NextScoringGameIDs: ['g-next'],
+      NextScoringPrimaryGameID: 'g-next',
+      NextScoringWindowGameCount: 1,
+      NextScoringLockedActiveStarterCount: 0,
+      NextScoringUnlockedStarterCount: 1,
+      FinalScoringWindowID: laterWindow,
+      FinalScoringGameIDs: ['g-later']
+    });
+
+    const relevanceSlot = (
+      slotID: string,
+      state: FantasyRelevanceSlotState['State'],
+      windowID: string | null
+    ): FantasyRelevanceSlotState => ({
+      SlotID: slotID,
+      SlotType: slotID.split('-')[0],
+      SlotOrdinal: Number(slotID.split('-').at(-1)) || 1,
+      SlotIndex: Number(slotID.split('-').at(-1)) || 1,
+      CurrentStarterID: `p-${slotID}`,
+      State: state,
+      GameID: windowID ? `g-${state}` : null,
+      DecisionWindowID: windowID,
+      StartsAtUtc: windowID,
+      Repairability: null
+    });
+
+    const left = decisionWindows.FantasyRelevance!.Teams[0];
+    left.Slots = [
+      relevanceSlot('QB-1', 'completed', '2026-09-12T00:00:00Z'),
+      relevanceSlot('RB-2', 'locked-active', liveWindow),
+      relevanceSlot('WR-3', 'unlocked', nextWindow),
+      relevanceSlot('TE-4', 'unlocked', laterWindow)
+    ];
+    left.StarterCount = 4;
+    left.ActiveRosterPlayerCount = 4;
+    left.CompletedStarterCount = 1;
+    left.LockedActiveStarterCount = 1;
+    left.UnlockedStarterCount = 2;
+  }
 });

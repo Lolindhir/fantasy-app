@@ -1,17 +1,19 @@
 version: 1
-updated: 2026-09-13
+updated: 2026-09-14
 
 purpose: >-
   Defines the generator-owned FantasyGameContext read model introduced by Issue #346.
   The model explains which NFL games matter to the league and how completed NFL games
   contributed league-scored starter points to fantasy matchups without moving joins or
-  counterfactual logic into Angular.
+  counterfactual logic into Angular. Issue #520 extends the current read model so a live
+  direct-Starter scoring window and the next future direct-Starter scoring window remain
+  distinct generated facts.
 
 contract:
   current_output: public/data/FantasyGameContext.json
   historical_output: public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
   historical_index: public/data/PastSeasonsIndex.json
-  schema_version: 1
+  schema_version: 5
   ownership: generator-owned
   angular_role: presentation-only
 
@@ -49,6 +51,23 @@ relevance_v1:
     - StartsAtUtc ascending
     - GameID ascending
 
+scoring_windows:
+  active: >-
+    RemainingRelevance.ActiveScoringWindowID / ActiveScoringGameIDs identify the current
+    direct-Starter window from generated locked-active Starter paths. Angular must not
+    reconstruct this membership from Schedule status or wall-clock heuristics.
+  next_future: >-
+    In schema v5, RemainingRelevance.NextScoring* identifies only the earliest future
+    direct-Starter window from generated unlocked Starter paths. A live window no longer
+    consumes Next, and an option-only lineup-decision window is never promoted to scoring.
+  direct_final: >-
+    For Overview presentation, Active present plus future Next absent proves that the live
+    direct-Starter window is the last direct-Starter scoring window. FinalScoringWindowID
+    is not substituted because later Bench-option-only paths may extend that broader fact.
+  lineup_decision_separation: >-
+    NextLineupDecision* remains the earliest unlocked Starter/eligible-option decision
+    horizon and is independent from Active/Next direct-Starter scoring.
+
 impact:
   source_of_truth: >-
     League-scored matchup player facts only. Current generation uses the same current
@@ -78,6 +97,11 @@ historical_evidence_ladder:
   forbidden:
     - current roster/team membership as historical evidence
     - nearest-date or abbreviation guessing
+  scoring_window_rule: >-
+    Do not project today's current FantasyRelevance, locks or roster view backward merely
+    to populate schema-v5 ActiveScoring* fields. Historical generator paths keep their own
+    persisted week evidence and may remain on earlier compatible schema semantics when the
+    current live relevance input is absent.
 
 failure_policy:
   malformed_pairing: exclude the malformed matchup with a diagnostic
@@ -91,7 +115,12 @@ ui:
     location: immediately after league matchup cards
     upcoming_lens: Upcoming Relevance
     completed_lens: Completed Impact
-  matchup_cards: compact next-NFL-window context with detail trigger
+  matchup_cards: >-
+    Compact scoring-first temporal grammar: Final/completed Starter -> Live now -> Next
+    future direct-Starter window -> Later. If no live window exists, keep the compact
+    single NEXT SCORING WINDOW treatment. If live exists with no future direct-Starter
+    window, show FINAL SCORING WINDOW. Authoritative fantasy matchup Final always comes
+    from Matchups.json and replaces future-window presentation.
   details:
     - NFL matchup, kickoff, status and DecisionWindowID
     - affected fantasy teams and players
@@ -113,3 +142,8 @@ boundaries:
   source_snapshots: >-
     source-data remains provider/canonical evidence. Generated Matchups and FantasyGameContext files
     are disposable presentation read models and can be rebuilt from those sources.
+  angular: >-
+    Angular may render generated Active/Next horizons and preserve generator-owned GameID order/count
+    for compact previews. It must not sort Schedule games into scoring relevance, rebuild Starter
+    membership, eligibility, repairability or scoring paths, infer finality, or use weekday/time
+    heuristics as domain logic.

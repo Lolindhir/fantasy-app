@@ -105,6 +105,8 @@ export interface FantasyMatchupRemainingRelevance {
   NextLineupDecisionWindowGameCount?: number;
   NextLineupDecisionStarterCount?: number;
   NextLineupDecisionOptionCount?: number;
+  ActiveScoringWindowID?: string | null;
+  ActiveScoringGameIDs?: string[];
   NextScoringWindowID: string | null;
   NextScoringGameIDs: string[];
   NextScoringPrimaryGameID?: string | null;
