@@ -15,7 +15,7 @@ from nfl_source_data_lib.provider_mappings import build_provider_mapping_payload
 
 
 class NflSourceMappingHistoryTests(unittest.TestCase):
-    def test_archived_player_snapshot_extends_sleeper_and_tank_history(self):
+    def test_archived_player_snapshot_keeps_unobserved_gap_between_history_and_current(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             archive = root / "public/data/past_seasons"
@@ -65,14 +65,23 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
                 "Conflicts": [],
             }
             extended = extend_provider_mapping_payload(payload, claims, conflicts)
-            sleeper = next(
+            sleeper_rows = [
                 item
                 for item in extended["Mappings"]
                 if item["Provider"] == "Sleeper" and item["ExternalID"] == "S1"
+            ]
+            self.assertEqual(2, len(sleeper_rows))
+            self.assertEqual(
+                [(2023, 2023), (2026, 2026)],
+                sorted(
+                    (item["FirstObservedSeason"], item["LastObservedSeason"])
+                    for item in sleeper_rows
+                ),
             )
-            self.assertEqual(2023, sleeper["FirstObservedSeason"])
-            self.assertEqual(2026, sleeper["LastObservedSeason"])
-            self.assertIn("app.PastPlayers.2023", sleeper["Sources"])
+            historical = next(
+                item for item in sleeper_rows if item["FirstObservedSeason"] == 2023
+            )
+            self.assertIn("app.PastPlayers.2023", historical["Sources"])
 
     def test_archived_snapshot_disagreement_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
