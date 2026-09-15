@@ -3,6 +3,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
+import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
+import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { WeeklyRecapsReadModel } from '../../../core/models/weekly-recap.models';
@@ -118,8 +120,8 @@ describe('LeagueMatchupsComponent #500 responsive dashboard', () => {
       'getNflTeams',
       'getWeeklyRecaps'
     ]);
-    dataService.getFantasyGameContext.and.returnValue(of(null as never));
-    dataService.getDecisionWindows.and.returnValue(of(null as never));
+    dataService.getFantasyGameContext.and.returnValue(of(null as unknown as FantasyGameContextReadModel));
+    dataService.getDecisionWindows.and.returnValue(of(null as unknown as DecisionWindowsReadModel));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
     dataService.getNflTeams.and.returnValue(of([]));
     dataService.getWeeklyRecaps.and.returnValue(of(emptyRecap));
