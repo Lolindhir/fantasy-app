@@ -1,368 +1,416 @@
-<section *ngIf="matchups as matchupRows" class="matchups-shell">
-  <ng-container *ngIf="matchupRows.length > 0">
-    <div class="matchups-heading">
-      <div>
-        <div class="matchups-eyebrow">Next up</div>
-        <h2>Week {{ week }} Matchups</h2>
+<ng-container *ngIf="weeklyDashboardEnabled">
+  <section *ngIf="topContext as context" class="weekly-context-shell" data-weekly-context>
+    <a routerLink="/standings" class="weekly-context-half weekly-context-half--standings">
+      <div class="weekly-context-heading">
+        <span>Standings</span>
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
       </div>
-    </div>
 
-    <div class="matchups-grid">
-      <article
-        *ngFor="let matchup of matchupRows"
-        class="matchup-card"
-        role="button"
-        tabindex="0"
-        [attr.aria-label]="matchupAriaLabel(matchup)"
-        (click)="openMatchupDetailFromOverview(matchup)"
-        (keydown.enter)="openMatchupDetailFromOverview(matchup)"
-        (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
-      >
-        <div class="matchup-primary">
-          <div class="matchup-scoreboard">
-            <div class="matchup-team matchup-team--left">
-              <app-team-identity
-                class="matchup-team-identity matchup-team-identity--mobile"
-                [team]="matchup.left.team"
-                [elements]="mobileTeamIdentityElements"
-                [interactive]="false"
-                size="large"
-              ></app-team-identity>
-              <app-team-identity
-                class="matchup-team-identity matchup-team-identity--desktop"
-                [team]="matchup.left.team"
-                [elements]="desktopTeamIdentityElements"
-                [interactive]="false"
-                size="large"
-              ></app-team-identity>
-              <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"></ng-container>
+      <div class="weekly-context-rows">
+        <div *ngFor="let row of context.standings" class="weekly-context-row weekly-standing-row">
+          <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
+          <span class="weekly-team-avatar">
+            <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
+            <span *ngIf="!row.team.Avatar">{{ teamShortName(row.team).slice(0, 2) }}</span>
+          </span>
+          <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}</span>
+          <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
+        </div>
+      </div>
+    </a>
+
+    <a
+      class="weekly-context-half weekly-context-half--last"
+      [attr.href]="context.lastCompletedWeek !== null ? '#week-recap' : null"
+      [attr.aria-disabled]="context.lastCompletedWeek === null ? 'true' : null"
+      [class.weekly-context-half--disabled]="context.lastCompletedWeek === null"
+    >
+      <div class="weekly-context-heading">
+        <span>{{ context.lastCompletedWeek !== null ? 'Last Week · W' + context.lastCompletedWeek : 'Last Week' }}</span>
+        <mat-icon *ngIf="context.lastCompletedWeek !== null" aria-hidden="true">chevron_right</mat-icon>
+      </div>
+
+      <div *ngIf="context.lastMatchups.length > 0; else noCompletedWeek" class="weekly-context-rows weekly-last-matchups">
+        <div *ngFor="let matchup of context.lastMatchups" class="weekly-last-matchup">
+          <div
+            *ngFor="let participant of matchup.participants"
+            class="weekly-context-row weekly-last-row"
+            [class.weekly-last-row--winner]="participant.isWinner"
+          >
+            <span class="weekly-team-avatar weekly-team-avatar--last">
+              <img *ngIf="participant.team.Avatar" [src]="participant.team.Avatar" alt="" />
+              <span *ngIf="!participant.team.Avatar">{{ teamShortName(participant.team).slice(0, 2) }}</span>
+            </span>
+            <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(participant.team) }}</span>
+            <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(participant.team) }}</span>
+            <strong class="weekly-last-score">{{ formatFantasyPoints(participant.points) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noCompletedWeek>
+        <div class="weekly-context-empty">No completed fantasy week yet.</div>
+      </ng-template>
+    </a>
+  </section>
+
+  <ng-container *ngIf="overviewPhase === 'recap'">
+    <ng-container *ngTemplateOutlet="weekRecap; context: { compact: false }"></ng-container>
+  </ng-container>
+
+  <section *ngIf="matchups as matchupRows" class="matchups-shell" id="current-matchups">
+    <ng-container *ngIf="matchupRows.length > 0">
+      <div class="matchups-heading">
+        <div>
+          <div class="matchups-eyebrow">Current fantasy matchups</div>
+          <h2>Week {{ week }}</h2>
+        </div>
+      </div>
+
+      <div class="matchups-grid">
+        <article
+          *ngFor="let matchup of matchupRows"
+          class="matchup-card"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="matchupAriaLabel(matchup)"
+          (click)="openMatchupDetailFromOverview(matchup)"
+          (keydown.enter)="openMatchupDetailFromOverview(matchup)"
+          (keydown.space)="$event.preventDefault(); openMatchupDetailFromOverview(matchup)"
+        >
+          <div class="matchup-primary">
+            <div class="matchup-scoreboard">
+              <div class="matchup-team matchup-team--left">
+                <app-team-identity
+                  class="matchup-team-identity matchup-team-identity--mobile"
+                  [team]="matchup.left.team"
+                  [elements]="mobileTeamIdentityElements"
+                  [interactive]="false"
+                  size="large"
+                ></app-team-identity>
+                <app-team-identity
+                  class="matchup-team-identity matchup-team-identity--desktop"
+                  [team]="matchup.left.team"
+                  [elements]="desktopTeamIdentityElements"
+                  [interactive]="false"
+                  size="large"
+                ></app-team-identity>
+                <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.left.context }"></ng-container>
+              </div>
+
+              <div
+                class="matchup-score-plate"
+                [ngClass]="'matchup-score-plate--' + scoreboardState(matchup)"
+                [attr.data-scoreboard-state]="scoreboardState(matchup)"
+              >
+                <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
+                <span class="matchup-vs" aria-hidden="true">VS</span>
+                <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
+              </div>
+
+              <div class="matchup-team matchup-team--right">
+                <app-team-identity
+                  class="matchup-team-identity matchup-team-identity--mobile"
+                  [team]="matchup.right.team"
+                  [elements]="mobileTeamIdentityElements"
+                  [interactive]="false"
+                  size="large"
+                  align="end"
+                ></app-team-identity>
+                <app-team-identity
+                  class="matchup-team-identity matchup-team-identity--desktop"
+                  [team]="matchup.right.team"
+                  [elements]="desktopTeamIdentityElements"
+                  [interactive]="false"
+                  size="large"
+                  align="end"
+                ></app-team-identity>
+                <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"></ng-container>
+              </div>
+
+              <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
             </div>
 
-            <div
-              class="matchup-score-plate"
-              [ngClass]="'matchup-score-plate--' + scoreboardState(matchup)"
-              [attr.data-scoreboard-state]="scoreboardState(matchup)"
-            >
-              <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
-              <span class="matchup-vs" aria-hidden="true">VS</span>
-              <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
-            </div>
+            <ng-container *ngIf="fantasyContextState$ | async as contextState">
+              <div class="matchup-progress-row">
+                <div class="matchup-progress-side matchup-progress-side--left">
+                  <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
+                    <div
+                      class="matchup-progress-strip matchup-progress-strip--left"
+                      [attr.aria-label]="leftProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.left.team)"
+                    >
+                      <span
+                        *ngFor="let group of leftProgress.groups"
+                        class="matchup-progress-group"
+                        [class.matchup-progress-group--next]="group.outline === 'next'"
+                        [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                        [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                        [attr.aria-label]="group.ariaLabel"
+                      >
+                        <span
+                          *ngFor="let segment of group.segments"
+                          class="matchup-progress-segment"
+                          [ngClass]="'matchup-progress-segment--' + segment.kind"
+                          [title]="segment.ariaLabel"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </div>
+                    <span
+                      *ngIf="leftProgress.showFinalMarker"
+                      class="matchup-progress-final-marker"
+                      role="img"
+                      [attr.aria-label]="teamShortName(matchup.left.team) + ' scoring final'"
+                    >🏁</span>
+                  </ng-container>
+                </div>
 
-            <div class="matchup-team matchup-team--right">
-              <app-team-identity
-                class="matchup-team-identity matchup-team-identity--mobile"
-                [team]="matchup.right.team"
-                [elements]="mobileTeamIdentityElements"
-                [interactive]="false"
-                size="large"
-                align="end"
-              ></app-team-identity>
-              <app-team-identity
-                class="matchup-team-identity matchup-team-identity--desktop"
-                [team]="matchup.right.team"
-                [elements]="desktopTeamIdentityElements"
-                [interactive]="false"
-                size="large"
-                align="end"
-              ></app-team-identity>
-              <ng-container *ngTemplateOutlet="teamContext; context: { $implicit: matchup.right.context }"></ng-container>
-            </div>
+                <span class="matchup-progress-center" aria-hidden="true"></span>
 
-            <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
+                <div class="matchup-progress-side matchup-progress-side--right">
+                  <ng-container *ngIf="starterProgress(matchup, contextState, 'right') as rightProgress">
+                    <span
+                      *ngIf="rightProgress.showFinalMarker"
+                      class="matchup-progress-final-marker"
+                      role="img"
+                      [attr.aria-label]="teamShortName(matchup.right.team) + ' scoring final'"
+                    >🏁</span>
+                    <div
+                      class="matchup-progress-strip matchup-progress-strip--right"
+                      [attr.aria-label]="rightProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.right.team)"
+                    >
+                      <span
+                        *ngFor="let group of rightProgress.groups"
+                        class="matchup-progress-group"
+                        [class.matchup-progress-group--next]="group.outline === 'next'"
+                        [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                        [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
+                        [attr.aria-label]="group.ariaLabel"
+                      >
+                        <span
+                          *ngFor="let segment of group.segments"
+                          class="matchup-progress-segment"
+                          [ngClass]="'matchup-progress-segment--' + segment.kind"
+                          [title]="segment.ariaLabel"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
+            </ng-container>
           </div>
 
-          <ng-container *ngIf="fantasyContextState$ | async as contextState">
-            <div class="matchup-progress-row">
-              <div class="matchup-progress-side matchup-progress-side--left">
-                <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
-                  <div
-                    class="matchup-progress-strip matchup-progress-strip--left"
-                    [attr.aria-label]="leftProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.left.team)"
-                  >
-                    <span
-                      *ngFor="let group of leftProgress.groups"
-                      class="matchup-progress-group"
-                      [class.matchup-progress-group--next]="group.outline === 'next'"
-                      [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
-                      [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
-                      [attr.aria-label]="group.ariaLabel"
-                    >
-                      <span
-                        *ngFor="let segment of group.segments"
-                        class="matchup-progress-segment"
-                        [ngClass]="'matchup-progress-segment--' + segment.kind"
-                        [title]="segment.ariaLabel"
-                        aria-hidden="true"
-                      ></span>
-                    </span>
+          <ng-container *ngIf="matchup.completionState !== 'final'">
+            <ng-container *ngIf="fantasyContextState$ | async as contextState">
+              <div *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
+                <ng-container *ngIf="scoringWindow.active as activeWindow">
+                  <div class="matchup-window-heading">
+                    <span class="matchup-window-kicker">Live now</span>
+                    <time class="matchup-window-time">{{ activeWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
                   </div>
-                  <span
-                    *ngIf="leftProgress.showFinalMarker"
-                    class="matchup-progress-final-marker"
-                    role="img"
-                    [attr.aria-label]="teamShortName(matchup.left.team) + ' scoring final'"
-                  >🏁</span>
-                </ng-container>
-              </div>
-
-              <span class="matchup-progress-center" aria-hidden="true"></span>
-
-              <div class="matchup-progress-side matchup-progress-side--right">
-                <ng-container *ngIf="starterProgress(matchup, contextState, 'right') as rightProgress">
-                  <span
-                    *ngIf="rightProgress.showFinalMarker"
-                    class="matchup-progress-final-marker"
-                    role="img"
-                    [attr.aria-label]="teamShortName(matchup.right.team) + ' scoring final'"
-                  >🏁</span>
-                  <div
-                    class="matchup-progress-strip matchup-progress-strip--right"
-                    [attr.aria-label]="rightProgress.slotCount + ' required starter slots for ' + teamShortName(matchup.right.team)"
-                  >
-                    <span
-                      *ngFor="let group of rightProgress.groups"
-                      class="matchup-progress-group"
-                      [class.matchup-progress-group--next]="group.outline === 'next'"
-                      [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
-                      [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
-                      [attr.aria-label]="group.ariaLabel"
-                    >
-                      <span
-                        *ngFor="let segment of group.segments"
-                        class="matchup-progress-segment"
-                        [ngClass]="'matchup-progress-segment--' + segment.kind"
-                        [title]="segment.ariaLabel"
-                        aria-hidden="true"
-                      ></span>
-                    </span>
+                  <div class="matchup-window-summary">
+                    <strong class="matchup-window-count">{{ activeWindow.gameCount }} NFL game{{ activeWindow.gameCount === 1 ? '' : 's' }}</strong>
+                    <div class="matchup-window-games">
+                      <span *ngFor="let game of activeWindow.mobileVisibleGames" class="matchup-window-game">
+                        <img *ngIf="nflLogo(game.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
+                        <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                        <span class="matchup-window-at">@</span>
+                        <img *ngIf="nflLogo(game.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
+                        <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+                      </span>
+                      <span *ngIf="activeWindow.mobileOverflowCount > 0" class="matchup-window-overflow">+{{ activeWindow.mobileOverflowCount }}</span>
+                    </div>
                   </div>
                 </ng-container>
+
+                <ng-container *ngIf="scoringWindow.next as nextWindow">
+                  <div class="matchup-window-heading">
+                    <span class="matchup-window-kicker">{{ scoringWindow.active ? 'Next' : 'Next scoring window' }}</span>
+                    <time class="matchup-window-time">{{ nextWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
+                  </div>
+                  <div class="matchup-window-summary">
+                    <strong class="matchup-window-count">{{ nextWindow.gameCount }} NFL game{{ nextWindow.gameCount === 1 ? '' : 's' }}</strong>
+                    <div class="matchup-window-games">
+                      <span *ngFor="let game of nextWindow.mobileVisibleGames" class="matchup-window-game">
+                        <img *ngIf="nflLogo(game.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
+                        <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
+                        <span class="matchup-window-at">@</span>
+                        <img *ngIf="nflLogo(game.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
+                        <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
+                      </span>
+                      <span *ngIf="nextWindow.mobileOverflowCount > 0" class="matchup-window-overflow">+{{ nextWindow.mobileOverflowCount }}</span>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <div *ngIf="scoringWindow.liveIsFinalScoringWindow" class="matchup-window-title-line">
+                  <span class="matchup-window-live">FINAL SCORING WINDOW</span>
+                </div>
               </div>
-            </div>
+            </ng-container>
           </ng-container>
+        </article>
+      </div>
+    </ng-container>
+  </section>
+
+  <div class="weekly-tail" [class.weekly-tail--with-recap]="overviewPhase !== 'recap' && (topContext?.lastCompletedWeek ?? null) !== null">
+    <ng-container *ngIf="fantasyContextState$ | async as contextState">
+      <section *ngIf="currentContext(contextState.context) as fantasyContext" class="fantasy-pulse-shell">
+        <div class="fantasy-pulse-heading">
+          <div>
+            <div class="matchups-eyebrow">NFL Fantasy Pulse</div>
+            <h2>Must Watch · Week {{ fantasyContext.Week }}</h2>
+          </div>
+          <span class="fantasy-pulse-state">{{ fantasyContext.ScoringState }}</span>
         </div>
 
-        <ng-container *ngIf="matchup.completionState !== 'final'">
-          <ng-container *ngIf="fantasyContextState$ | async as contextState">
-            <div *ngIf="scoringWindow(matchup, contextState) as scoringWindow" class="matchup-window">
-              <ng-container *ngIf="scoringWindow.active as activeWindow">
-                <div class="matchup-window-heading">
-                  <div class="matchup-window-title-line">
-                    <span class="matchup-window-kicker">Live now</span>
-                  </div>
-                  <time class="matchup-window-time">{{ activeWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
-                </div>
-
-                <div class="matchup-window-summary">
-                  <strong class="matchup-window-count">
-                    {{ activeWindow.gameCount }} NFL game{{ activeWindow.gameCount === 1 ? '' : 's' }}
-                  </strong>
-
-                  <div class="matchup-window-games">
-                    <span
-                      *ngFor="let game of activeWindow.mobileVisibleGames"
-                      class="matchup-window-game"
-                      role="img"
-                      [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
-                    >
-                      <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                      <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
-                      <span class="matchup-window-at" aria-hidden="true">@</span>
-                      <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                      <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
-                    </span>
-
-                    <span
-                      *ngIf="activeWindow.mobileOverflowCount > 0"
-                      class="matchup-window-overflow"
-                      [attr.aria-label]="activeWindow.mobileOverflowCount + ' more NFL games'"
-                    >
-                      +{{ activeWindow.mobileOverflowCount }}
-                    </span>
-                  </div>
-                </div>
-              </ng-container>
-
-              <ng-container *ngIf="scoringWindow.next as nextWindow">
-                <div class="matchup-window-heading">
-                  <div class="matchup-window-title-line">
-                    <span class="matchup-window-kicker">{{ scoringWindow.active ? 'Next' : 'Next scoring window' }}</span>
-                  </div>
-                  <time class="matchup-window-time">{{ nextWindow.startsAtUtc | date:'EEE · HH:mm' }}</time>
-                </div>
-
-                <div class="matchup-window-summary">
-                  <strong class="matchup-window-count">
-                    {{ nextWindow.gameCount }} NFL game{{ nextWindow.gameCount === 1 ? '' : 's' }}
-                  </strong>
-
-                  <div class="matchup-window-games">
-                    <span
-                      *ngFor="let game of nextWindow.mobileVisibleGames"
-                      class="matchup-window-game"
-                      role="img"
-                      [attr.aria-label]="(game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID)"
-                    >
-                      <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                      <span class="matchup-window-game-abbr">{{ game.AwayTeamAbbr || game.AwayTeamID }}</span>
-                      <span class="matchup-window-at" aria-hidden="true">@</span>
-                      <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                      <span class="matchup-window-game-abbr">{{ game.HomeTeamAbbr || game.HomeTeamID }}</span>
-                    </span>
-
-                    <span
-                      *ngIf="nextWindow.mobileOverflowCount > 0"
-                      class="matchup-window-overflow"
-                      [attr.aria-label]="nextWindow.mobileOverflowCount + ' more NFL games'"
-                    >
-                      +{{ nextWindow.mobileOverflowCount }}
-                    </span>
-                  </div>
-                </div>
-              </ng-container>
-
-              <div *ngIf="scoringWindow.liveIsFinalScoringWindow" class="matchup-window-title-line">
-                <span class="matchup-window-live">FINAL SCORING WINDOW</span>
-              </div>
-            </div>
-          </ng-container>
-        </ng-container>
-      </article>
-    </div>
-  </ng-container>
-</section>
-
-<ng-container *ngIf="fantasyContextState$ | async as contextState">
-  <section *ngIf="currentContext(contextState.context) as fantasyContext" class="fantasy-pulse-shell">
-    <div class="fantasy-pulse-heading">
-      <div>
-        <div class="matchups-eyebrow">NFL Fantasy Pulse</div>
-        <h2>Must-watch · Week {{ fantasyContext.Week }}</h2>
-      </div>
-      <span class="fantasy-pulse-state">{{ fantasyContext.ScoringState }}</span>
-    </div>
-
-    <div class="fantasy-pulse-grid">
-      <div class="fantasy-pulse-lens">
-        <h3>Games with the biggest fantasy impact this week</h3>
-        <ng-container *ngIf="mustWatchGames(fantasyContext) as mustWatch">
-          <div class="fantasy-pulse-list">
-            <article
-              *ngFor="let game of mustWatch"
-              class="fantasy-pulse-card fantasy-pulse-card--remaining"
-              [class.fantasy-pulse-card--live]="gameIsLiveForFantasy(game)"
-            >
-              <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
-
-              <button
-                type="button"
-                class="fantasy-pulse-card-main"
-                (click)="openGameDetail(game, contextState)"
-                [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
-              >
-                <span class="fantasy-pulse-game-lockup">
-                  <span class="fantasy-pulse-nfl-team">
-                    <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                    <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }}</strong>
-                  </span>
-                  <span class="fantasy-pulse-at">@</span>
-                  <span class="fantasy-pulse-nfl-team">
-                    <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                    <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
-                  </span>
-                  <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
-                    {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
-                  </strong>
-                </span>
-
-                <span class="fantasy-pulse-game-meta">
-                  <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
-                  <span *ngIf="gameIsFinal(game)">Final</span>
-                  <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-                </span>
-
-                <span class="fantasy-pulse-metrics">
-                  <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
-                    {{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}
-                  </strong>
-                  <span *ngIf="game.Relevance.FantasyMatchupCount > 0" class="fantasy-pulse-metric-chip">
-                    {{ game.Relevance.FantasyMatchupCount }} matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}
-                  </span>
-                </span>
-
-                <mat-icon>chevron_right</mat-icon>
-              </button>
-
-              <div *ngIf="affectedFantasyTeamIDs(game) as affectedTeamIDs" class="fantasy-pulse-team-strip">
-                <span class="fantasy-pulse-team-strip-label">Starter teams</span>
-                <div class="fantasy-pulse-team-avatars" *ngIf="affectedTeamIDs.length > 0">
+        <div class="fantasy-pulse-grid">
+          <div class="fantasy-pulse-lens">
+            <h3>Games with the biggest fantasy impact this week</h3>
+            <ng-container *ngIf="mustWatchGames(fantasyContext) as mustWatch">
+              <div class="fantasy-pulse-list">
+                <article
+                  *ngFor="let game of mustWatch"
+                  class="fantasy-pulse-card fantasy-pulse-card--remaining"
+                  [class.fantasy-pulse-card--live]="gameIsLiveForFantasy(game)"
+                >
+                  <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
                   <button
-                    *ngFor="let teamID of affectedTeamIDs"
                     type="button"
-                    class="fantasy-pulse-team-avatar"
-                    (click)="openTeam(teamID)"
-                    [attr.aria-label]="'Open ' + teamShortNameByID(teamID) + ' team details'"
-                    [title]="teamShortNameByID(teamID)"
+                    class="fantasy-pulse-card-main"
+                    (click)="openGameDetail(game, contextState)"
+                    [attr.aria-label]="'Open ' + (game.AwayTeamAbbr || game.AwayTeamID) + ' at ' + (game.HomeTeamAbbr || game.HomeTeamID) + ' game details'"
                   >
-                    <img *ngIf="teamAvatar(teamID) as avatar" [src]="avatar" alt="" />
-                    <span *ngIf="!teamAvatar(teamID)">{{ teamShortNameByID(teamID).slice(0, 2) }}</span>
+                    <span class="fantasy-pulse-game-lockup">
+                      <span class="fantasy-pulse-nfl-team">
+                        <img *ngIf="nflLogo(game.AwayTeamID) as awayLogo" [src]="awayLogo" alt="" />
+                        <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }}</strong>
+                      </span>
+                      <span class="fantasy-pulse-at">@</span>
+                      <span class="fantasy-pulse-nfl-team">
+                        <img *ngIf="nflLogo(game.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
+                        <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
+                      </span>
+                      <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
+                        {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
+                      </strong>
+                    </span>
+                    <span class="fantasy-pulse-game-meta">
+                      <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
+                      <span *ngIf="gameIsFinal(game)">Final</span>
+                      <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                    </span>
+                    <span class="fantasy-pulse-metrics">
+                      <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
+                        {{ game.Relevance.StarterCount }} starter{{ game.Relevance.StarterCount === 1 ? '' : 's' }}
+                      </strong>
+                      <span *ngIf="game.Relevance.FantasyMatchupCount > 0" class="fantasy-pulse-metric-chip">
+                        {{ game.Relevance.FantasyMatchupCount }} matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}
+                      </span>
+                    </span>
+                    <mat-icon>chevron_right</mat-icon>
                   </button>
-                </div>
-                <strong *ngIf="affectedTeamIDs.length > 0">{{ affectedTeamIDs.length }}</strong>
+
+                  <div *ngIf="affectedFantasyTeamIDs(game) as affectedTeamIDs" class="fantasy-pulse-team-strip">
+                    <span class="fantasy-pulse-team-strip-label">Starter teams</span>
+                    <div class="fantasy-pulse-team-avatars" *ngIf="affectedTeamIDs.length > 0">
+                      <button
+                        *ngFor="let teamID of affectedTeamIDs"
+                        type="button"
+                        class="fantasy-pulse-team-avatar"
+                        (click)="openTeam(teamID)"
+                        [attr.aria-label]="'Open ' + teamShortNameByID(teamID) + ' team details'"
+                        [title]="teamShortNameByID(teamID)"
+                      >
+                        <img *ngIf="teamAvatar(teamID) as avatar" [src]="avatar" alt="" />
+                        <span *ngIf="!teamAvatar(teamID)">{{ teamShortNameByID(teamID).slice(0, 2) }}</span>
+                      </button>
+                    </div>
+                    <strong *ngIf="affectedTeamIDs.length > 0">{{ affectedTeamIDs.length }}</strong>
+                  </div>
+                </article>
+              </div>
+              <div *ngIf="mustWatch.length === 0" class="fantasy-pulse-empty">No starter-impact NFL games for this week.</div>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="overviewPhase !== 'recap'">
+      <ng-container *ngTemplateOutlet="weekRecap; context: { compact: true }"></ng-container>
+    </ng-container>
+  </div>
+</ng-container>
+
+<ng-template #weekRecap let-compact="compact">
+  <section
+    *ngIf="topContext?.lastCompletedWeek as recapWeek"
+    id="week-recap"
+    class="weekly-recap-shell"
+    [class.weekly-recap-shell--compact]="compact"
+    [class.weekly-recap-shell--prominent]="!compact"
+  >
+    <div class="weekly-recap-heading">
+      <div>
+        <div class="matchups-eyebrow">Last completed fantasy week</div>
+        <h2>Week {{ recapWeek }} Recap</h2>
+      </div>
+      <span class="weekly-recap-density">{{ compact ? 'Quick look' : 'Week recap' }}</span>
+    </div>
+
+    <ng-container *ngIf="weeklyRecap as recap; else recapUnavailable">
+      <div class="weekly-recap-grid">
+        <div class="weekly-recap-group">
+          <h3>Key NFL Games</h3>
+          <div class="weekly-recap-list">
+            <article *ngFor="let game of recap.games" class="weekly-recap-game" [attr.aria-label]="recapGameAriaLabel(game)">
+              <div class="weekly-recap-game-lockup">
+                <span class="weekly-recap-nfl-team">
+                  <img *ngIf="nflLogo(game.AwayNFLTeamID) as awayLogo" [src]="awayLogo" alt="" />
+                  <strong>{{ nflAbbr(game.AwayNFLTeamID) }}</strong>
+                </span>
+                <strong class="weekly-recap-nfl-score">{{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}</strong>
+                <span class="weekly-recap-nfl-team weekly-recap-nfl-team--home">
+                  <img *ngIf="nflLogo(game.HomeNFLTeamID) as homeLogo" [src]="homeLogo" alt="" />
+                  <strong>{{ nflAbbr(game.HomeNFLTeamID) }}</strong>
+                </span>
+              </div>
+              <div class="weekly-recap-meta">
+                <strong>{{ formatFantasyPoints(game.StarterPoints) }} starter pts</strong>
+                <span>{{ game.StarterCount }} starter{{ game.StarterCount === 1 ? '' : 's' }}</span>
               </div>
             </article>
           </div>
-          <div *ngIf="mustWatch.length === 0" class="fantasy-pulse-empty">No starter-impact NFL games for this week.</div>
-        </ng-container>
-      </div>
+        </div>
 
-      <div class="fantasy-pulse-lens fantasy-pulse-lens--completed">
-        <h3>Completed impact</h3>
-        <ng-container *ngIf="completedGames(fantasyContext) as completed">
-          <div class="fantasy-pulse-list">
-            <button
-              *ngFor="let game of completed"
-              type="button"
-              class="fantasy-pulse-card fantasy-pulse-card--impact"
-              (click)="openGameDetail(game, contextState)"
-            >
-              <span class="fantasy-pulse-game-lockup">
-                <span class="fantasy-pulse-nfl-team">
-                  <img *ngIf="nflLogo(game.AwayTeamID, contextState.nflTeams) as awayLogo" [src]="awayLogo" alt="" />
-                  <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }}</strong>
-                </span>
-                <span class="fantasy-pulse-at">@</span>
-                <span class="fantasy-pulse-nfl-team">
-                  <img *ngIf="nflLogo(game.HomeTeamID, contextState.nflTeams) as homeLogo" [src]="homeLogo" alt="" />
-                  <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
-                </span>
-                <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
-                  {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
-                </strong>
+        <div class="weekly-recap-group">
+          <h3>Key Fantasy Players</h3>
+          <div class="weekly-recap-list">
+            <article *ngFor="let player of recap.players" class="weekly-recap-player">
+              <span class="weekly-recap-player-picture">
+                <img *ngIf="recapPlayerPicture(player) as picture" [src]="picture" alt="" />
+                <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
               </span>
-              <span class="fantasy-pulse-game-meta">{{ game.Status || 'Final' }}</span>
-              <span class="fantasy-pulse-metrics fantasy-pulse-metrics--impact">
-                <ng-container *ngIf="game.Impact.StarterPoints !== null; else impactUnavailable">
-                  <strong class="fantasy-pulse-impact-score">
-                    {{ formatFantasyPoints(game.Impact.StarterPoints) }}
-                    <small>starter pts</small>
-                  </strong>
-                  <span>{{ game.Relevance.FantasyMatchupCount }} matchup{{ game.Relevance.FantasyMatchupCount === 1 ? '' : 's' }}</span>
-                  <span *ngIf="game.Impact.OutcomeSwingMatchupCount > 0" class="fantasy-pulse-final-window">
-                    {{ game.Impact.OutcomeSwingMatchupCount }} outcome swing{{ game.Impact.OutcomeSwingMatchupCount === 1 ? '' : 's' }}
-                  </span>
-                </ng-container>
-                <ng-template #impactUnavailable><span>Impact unavailable</span></ng-template>
-              </span>
-              <mat-icon>chevron_right</mat-icon>
-            </button>
+              <div class="weekly-recap-player-copy">
+                <strong>{{ recapPlayerName(player) }}</strong>
+                <span>{{ player.Position }} · {{ teamShortNameByID(player.FantasyTeamID) }}</span>
+              </div>
+              <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
+            </article>
           </div>
-          <div *ngIf="completed.length === 0" class="fantasy-pulse-empty">No completed impact yet.</div>
-        </ng-container>
+        </div>
       </div>
-    </div>
+    </ng-container>
+
+    <ng-template #recapUnavailable>
+      <div class="weekly-recap-empty">Completed-week recap data is not available yet.</div>
+    </ng-template>
   </section>
-</ng-container>
+</ng-template>
 
 <ng-template #teamContext let-context>
   <div *ngIf="context" class="matchup-team-context">
@@ -381,42 +429,21 @@
     </div>
 
     <div class="matchup-team-context-desktop">
-      <ng-container *ngIf="context.mode === 'current'; else previousDesktop">
-        <div *ngIf="context.standing !== null || context.record || context.streak" class="matchup-stat">
-          <span class="matchup-context-label">Current Standing</span>
-          <strong class="matchup-context-value">
-            <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
-            <span *ngIf="context.standing !== null && context.record" aria-hidden="true"> · </span>
-            <span *ngIf="context.record">{{ context.record }}</span>
-            <ng-container *ngIf="context.streak">
-              <span aria-hidden="true"> · </span><span>{{ context.streak }}</span>
-            </ng-container>
-          </strong>
-        </div>
-        <div *ngIf="context.pointsForDisplay" class="matchup-stat">
-          <span class="matchup-context-label">PF</span>
-          <strong class="matchup-context-value">{{ context.pointsForDisplay }}</strong>
-        </div>
-      </ng-container>
-
-      <ng-template #previousDesktop>
-        <div *ngIf="context.overallStanding !== null" class="matchup-stat">
-          <span class="matchup-context-label">{{ context.seasonLabel }} Overall</span>
-          <strong class="matchup-context-value">#{{ context.overallStanding }}</strong>
-        </div>
-        <div *ngIf="context.regularStanding !== null || context.record" class="matchup-stat">
-          <span class="matchup-context-label">Regular Season</span>
-          <strong class="matchup-context-value">
-            <span *ngIf="context.regularStanding !== null">#{{ context.regularStanding }}</span>
-            <span *ngIf="context.regularStanding !== null && context.record" aria-hidden="true"> · </span>
-            <span *ngIf="context.record">{{ context.record }}</span>
-          </strong>
-        </div>
-        <div *ngIf="context.pointsForDisplay" class="matchup-stat">
-          <span class="matchup-context-label">PF</span>
-          <strong class="matchup-context-value">{{ context.pointsForDisplay }}</strong>
-        </div>
-      </ng-template>
+      <div class="matchup-stat" *ngIf="context.standing !== null || context.record">
+        <span class="matchup-context-label">{{ context.mode === 'current' ? 'Current Standing' : context.seasonLabel + ' Overall' }}</span>
+        <strong class="matchup-context-value">
+          <span *ngIf="context.standing !== null">#{{ context.standing }}</span>
+          <span *ngIf="context.record"> {{ context.record }}</span>
+        </strong>
+      </div>
+      <div class="matchup-stat" *ngIf="context.pointsForDisplay">
+        <span class="matchup-context-label">Points For</span>
+        <strong class="matchup-context-value">{{ context.pointsForDisplay }}</strong>
+      </div>
+      <div class="matchup-stat" *ngIf="context.streak">
+        <span class="matchup-context-label">Streak</span>
+        <strong class="matchup-context-value">{{ context.streak }}</strong>
+      </div>
     </div>
   </div>
 </ng-template>
