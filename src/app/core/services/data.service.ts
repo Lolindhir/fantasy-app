@@ -17,6 +17,7 @@ import type {
   TopPlayersSalaryResult
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
+import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
 import {
@@ -124,6 +125,10 @@ export class DataService {
 
   getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
     return this.dataApiService.getFantasyGameContextRaw();
+  }
+
+  getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {
+    return this.dataApiService.getWeeklyRecapsRaw();
   }
 
   getTransactionsForSources(
