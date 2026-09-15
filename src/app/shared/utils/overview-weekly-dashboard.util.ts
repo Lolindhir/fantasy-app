@@ -192,7 +192,9 @@ function buildEffectiveStandingContext(league: League): OverviewEffectiveStandin
 function resolveUsableCurrentPlaces(league: League): ReadonlyMap<string, number> | null {
   if (league.FinalScoredWeek <= 0 || league.Teams.length === 0) return null;
 
-  const currentStanding = league.Standings.find(standing => standing.Season === league.Season);
+  const currentStanding = Array.isArray(league.Standings)
+    ? league.Standings.find(standing => standing.Season === league.Season)
+    : undefined;
   const rowPlaceByTeam = new Map(
     currentStanding?.RegularSeason.map(row => [String(row.TeamID), normalizePlace(row.Place)]) ?? []
   );
