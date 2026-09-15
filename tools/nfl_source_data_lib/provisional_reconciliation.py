@@ -226,6 +226,16 @@ def reconcile_provisional_app_mappings(
                 rebuilt_conflicts.append(conflict)
         token_conflicts[:] = rebuilt_conflicts
 
+        # The provisional mapping's source rows are still valid observations of
+        # this provider token; only their provisional canonical owner was wrong.
+        # Once external history safely selects the durable owner, retain those
+        # observation sources on the winning mapping as well as in the explicit
+        # reconciliation record. Otherwise the next full identity replay adds
+        # the same current app source one pass later and violates semantic no-op.
+        winning_sources = set(sources)
+        for values in retired_sources.values():
+            winning_sources.update(values)
+
         touching = [
             item
             for item in token_mappings
@@ -238,7 +248,7 @@ def reconcile_provisional_app_mappings(
             last_values = [_interval(item, season)[1] for item in touching]
             primary["FirstObservedSeason"] = min([season, *first_values])
             primary["LastObservedSeason"] = max([season, *last_values])
-            merged_sources = set(sources)
+            merged_sources = set(winning_sources)
             for item in touching:
                 merged_sources.update(str(value) for value in item.get("Sources") or [])
             primary["Sources"] = sorted(merged_sources)
@@ -252,7 +262,7 @@ def reconcile_provisional_app_mappings(
                     "CanonicalPlayerID": internal_id,
                     "FirstObservedSeason": season,
                     "LastObservedSeason": season,
-                    "Sources": sorted(sources),
+                    "Sources": sorted(winning_sources),
                 }
             )
 
