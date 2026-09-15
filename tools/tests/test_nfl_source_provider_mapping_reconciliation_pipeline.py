@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -52,7 +51,7 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
                     }
                 ],
             }
-            path.write_text(json.dumps(persisted), encoding="utf-8")
+            self.assertTrue(write_json_if_changed(path, persisted))
 
             current_claims = [
                 {
