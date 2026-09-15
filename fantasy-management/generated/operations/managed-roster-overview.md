@@ -1,13 +1,13 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-15T05:19:15Z`  
+Generated: `2026-09-15T07:34:58Z`  
 Evaluation mode: `hybrid_manual_v1`  
-Taxi phase: `unknown`
+Taxi phase: `locked`
 
 ## Roster status
 
 - Active: **30 / 30** (delta +0)
-- Taxi: **2 / 2**; binding: **no**
+- Taxi: **2 / 2**; binding: **yes**
 - Reserve: **1 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
 - General churn target: **2**; status: `below_target`
