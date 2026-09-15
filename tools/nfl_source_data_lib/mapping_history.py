@@ -389,6 +389,17 @@ def extend_provider_mapping_payload(
     mappings = [dict(item) for item in payload.get("Mappings", [])]
     conflicts = [dict(item) for item in payload.get("Conflicts", [])]
 
+    # Historical replay can contain hundreds of thousands of claims. Only the
+    # same provider token can overlap or touch a claim's validity interval.
+    mappings_by_token: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    conflicts_by_token: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for item in mappings:
+        token = (item.get("Provider"), str(item.get("ExternalID")))
+        mappings_by_token.setdefault(token, []).append(item)
+    for item in conflicts:
+        token = (item.get("Provider"), str(item.get("ExternalID")))
+        conflicts_by_token.setdefault(token, []).append(item)
+
     def interval(item: dict[str, Any], default_season: int) -> tuple[int, int]:
         first = int(item.get("FirstObservedSeason") or default_season)
         last = int(item.get("LastObservedSeason") or first)
@@ -408,11 +419,12 @@ def extend_provider_mapping_payload(
         internal_id = claim["CanonicalPlayerID"]
         season = int(claim["ObservedSeason"])
         sources = set(claim.get("Sources") or [])
+        token = (provider, str(external_id))
+        token_mappings = mappings_by_token.setdefault(token, [])
+        token_conflicts = conflicts_by_token.setdefault(token, [])
 
         active_conflict = False
-        for conflict in conflicts:
-            if conflict.get("Provider") != provider or str(conflict.get("ExternalID")) != str(external_id):
-                continue
+        for conflict in token_conflicts:
             first, last = interval(conflict, season)
             if first <= season <= last:
                 active_conflict = True
@@ -425,9 +437,7 @@ def extend_provider_mapping_payload(
         # current snapshot has the same provider token. First reject any
         # different-owner mapping that is already valid for this season.
         overlaps = []
-        for item in mappings:
-            if item.get("Provider") != provider or str(item.get("ExternalID")) != str(external_id):
-                continue
+        for item in token_mappings:
             if item.get("CanonicalPlayerID") == internal_id:
                 continue
             first, last = interval(item, season)
@@ -435,7 +445,7 @@ def extend_provider_mapping_payload(
                 overlaps.append(item)
         if overlaps:
             owners = sorted({internal_id, *(str(item.get("CanonicalPlayerID")) for item in overlaps)})
-            conflicts.append(
+            token_conflicts.append(
                 {
                     "Provider": provider,
                     "ExternalID": external_id,
@@ -450,9 +460,7 @@ def extend_provider_mapping_payload(
             continue
 
         touching = []
-        for item in mappings:
-            if item.get("Provider") != provider or str(item.get("ExternalID")) != str(external_id):
-                continue
+        for item in token_mappings:
             if item.get("CanonicalPlayerID") != internal_id:
                 continue
             first, last = interval(item, season)
@@ -470,10 +478,10 @@ def extend_provider_mapping_payload(
                 merged_sources.update(item.get("Sources") or [])
             primary["Sources"] = sorted(merged_sources)
             for item in touching[1:]:
-                mappings.remove(item)
+                token_mappings.remove(item)
             continue
 
-        mappings.append(
+        token_mappings.append(
             {
                 "Provider": provider,
                 "ExternalID": external_id,
@@ -497,6 +505,8 @@ def extend_provider_mapping_payload(
             history_resolution_conflicts.append(conflict)
             known.add(key)
 
+    mappings = [item for bucket in mappings_by_token.values() for item in bucket]
+    conflicts = [item for bucket in conflicts_by_token.values() for item in bucket]
     mappings.sort(
         key=lambda item: (
             item["Provider"],

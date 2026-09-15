@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import copy
 import hashlib
 import io
 import json
@@ -441,6 +442,48 @@ class HistoricalCrosswalkTests(unittest.TestCase):
         self.assertEqual(1, len(mappings))
         self.assertEqual(2024, mappings[0]["FirstObservedSeason"])
         self.assertEqual(2026, mappings[0]["LastObservedSeason"])
+
+    def test_token_replay_preserves_provider_isolation_and_new_conflicts(self) -> None:
+        payload = {
+            "Mappings": [
+                {
+                    "Provider": provider,
+                    "ExternalID": external_id,
+                    "CanonicalPlayerID": player,
+                    "FirstObservedSeason": 2024,
+                    "LastObservedSeason": 2024,
+                    "Sources": ["existing"],
+                }
+                for provider, external_id, player in (
+                    ("Sleeper", 7, "NFLP-a"),
+                    ("ESPN", "7", "NFLP-b"),
+                )
+            ],
+            "Conflicts": [],
+        }
+        original = copy.deepcopy(payload)
+        claims = [
+            {
+                "Provider": "Sleeper",
+                "ExternalID": "7",
+                "CanonicalPlayerID": player,
+                "ObservedSeason": season,
+                "Sources": ["historical"],
+            }
+            for player, season in (("NFLP-c", 2024), ("NFLP-d", 2024), ("NFLP-a", 2025))
+        ]
+
+        once = extend_provider_mapping_payload(payload, claims, [])
+        twice = extend_provider_mapping_payload(once, claims, [])
+
+        self.assertEqual(original, payload)
+        self.assertEqual(once, twice)
+        self.assertEqual(2, len(once["Mappings"]))
+        self.assertEqual(original["Mappings"][1], once["Mappings"][0])
+        self.assertEqual(2025, once["Mappings"][1]["LastObservedSeason"])
+        self.assertEqual(["existing", "historical"], once["Mappings"][1]["Sources"])
+        self.assertEqual(1, len(once["Conflicts"]))
+        self.assertEqual(["NFLP-a", "NFLP-c"], once["Conflicts"][0]["CanonicalPlayerIDs"])
 
 
 
