@@ -1,0 +1,392 @@
+app-league-matchups {
+  display: block;
+  container-type: inline-size;
+  --weekly-card-border: rgba(148, 163, 184, 0.35);
+  --weekly-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --weekly-muted: #64748b;
+  --weekly-text: #172033;
+  --weekly-accent: #7c3aed;
+}
+
+.weekly-context-shell,
+.weekly-recap-shell {
+  box-sizing: border-box;
+  margin: 0 5px 12px;
+  overflow: hidden;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--weekly-card-shadow);
+}
+
+.weekly-context-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.weekly-context-half {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.weekly-context-half + .weekly-context-half {
+  border-left: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.weekly-context-half:not(.weekly-context-half--disabled):hover {
+  background: rgba(124, 58, 237, 0.025);
+}
+
+.weekly-context-half--disabled { cursor: default; }
+
+.weekly-context-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  color: #475569;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.weekly-context-heading mat-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--weekly-accent);
+  font-size: 16px;
+}
+
+.weekly-context-rows,
+.weekly-last-matchup { display: grid; }
+
+.weekly-last-matchup + .weekly-last-matchup {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.weekly-context-row {
+  box-sizing: border-box;
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 7px;
+}
+
+.weekly-standing-row {
+  grid-template-columns: 16px 24px minmax(0, 1fr);
+  gap: 4px;
+}
+
+.weekly-last-row {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 4px;
+}
+
+.weekly-standing-rank {
+  color: #475569;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.weekly-team-avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #eef2ff;
+  color: #5b21b6;
+  font-size: 0.48rem;
+  font-weight: 900;
+}
+
+.weekly-team-avatar--last {
+  width: 22px;
+  height: 22px;
+}
+
+.weekly-team-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.weekly-team-identity {
+  min-width: 0;
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.69rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-team-identity--full { display: none; }
+
+.weekly-last-score {
+  color: #475569;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+}
+
+.weekly-last-row--winner .weekly-team-identity,
+.weekly-last-row--winner .weekly-last-score {
+  color: var(--weekly-text);
+  font-weight: 950;
+}
+
+.weekly-context-empty {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 10px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.weekly-recap-shell {
+  padding: 14px;
+  scroll-margin-top: 10px;
+}
+
+.weekly-recap-shell--prominent {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.07), transparent 34%),
+    #fff;
+}
+
+.weekly-recap-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weekly-recap-heading h2 {
+  margin: 0;
+  color: var(--weekly-text);
+  font-size: 1.08rem;
+  font-weight: 850;
+}
+
+.weekly-recap-density {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.weekly-recap-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.weekly-recap-group h3 {
+  margin: 0 0 6px;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.weekly-recap-list {
+  display: grid;
+  gap: 6px;
+}
+
+.weekly-recap-game,
+.weekly-recap-player {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.weekly-recap-game { padding: 8px; }
+
+.weekly-recap-game-lockup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+}
+
+.weekly-recap-nfl-team {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.weekly-recap-nfl-team--home { justify-content: flex-end; }
+
+.weekly-recap-nfl-team img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.weekly-recap-nfl-team strong {
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.weekly-recap-nfl-score {
+  color: var(--weekly-text);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+}
+
+.weekly-recap-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 0.62rem;
+}
+
+.weekly-recap-meta strong { color: #334155; }
+
+.weekly-recap-player {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+}
+
+.weekly-recap-player-picture {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.55rem;
+  font-weight: 900;
+}
+
+.weekly-recap-player-picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.weekly-recap-player-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.weekly-recap-player-copy strong,
+.weekly-recap-player-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-recap-player-copy strong {
+  color: #334155;
+  font-size: 0.72rem;
+}
+
+.weekly-recap-player-copy span {
+  margin-top: 1px;
+  color: #7c8799;
+  font-size: 0.6rem;
+}
+
+.weekly-recap-player-points {
+  color: var(--weekly-text);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+}
+
+.weekly-recap-empty {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.weekly-tail { min-width: 0; }
+.weekly-tail .fantasy-pulse-shell,
+.weekly-tail .weekly-recap-shell { min-width: 0; }
+.fantasy-pulse-grid { grid-template-columns: minmax(0, 1fr) !important; }
+
+@container (max-width: 370px) {
+  .weekly-context-shell { grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr); }
+  .weekly-context-heading { padding-inline: 6px; font-size: 0.61rem; }
+  .weekly-context-row { padding-inline: 5px; }
+  .weekly-standing-row { grid-template-columns: 14px 22px minmax(0, 1fr); gap: 3px; }
+  .weekly-team-avatar { width: 22px; height: 22px; }
+  .weekly-team-avatar--last { width: 21px; height: 21px; }
+  .weekly-team-identity { font-size: 0.65rem; }
+  .weekly-last-score { font-size: 0.67rem; }
+}
+
+@container (min-width: 768px) {
+  .weekly-context-row { min-height: 38px; padding: 5px 12px; }
+  .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
+  .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr); gap: 7px; }
+  .weekly-last-row { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 7px; }
+  .weekly-team-avatar { width: 28px; height: 28px; }
+  .weekly-team-avatar--last { width: 26px; height: 26px; }
+  .weekly-team-identity--short { display: none; }
+  .weekly-team-identity--full { display: block; font-size: 0.78rem; }
+  .weekly-last-score { font-size: 0.82rem; }
+
+  .weekly-recap-shell--prominent .weekly-recap-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .weekly-recap-shell--prominent .weekly-recap-group:first-child .weekly-recap-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .weekly-recap-shell--prominent .weekly-recap-group:last-child .weekly-recap-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .weekly-recap-shell--prominent .weekly-recap-player { grid-template-columns: 36px minmax(0, 1fr); }
+  .weekly-recap-shell--prominent .weekly-recap-player-points { grid-column: 2; margin-top: -4px; }
+}
+
+@container (min-width: 960px) {
+  .weekly-tail--with-recap {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 12px;
+    margin: 0 5px 12px;
+  }
+
+  .weekly-tail--with-recap .fantasy-pulse-shell,
+  .weekly-tail--with-recap .weekly-recap-shell { margin: 0; }
+  .weekly-tail--with-recap .weekly-recap-grid { grid-template-columns: 1fr; }
+}
