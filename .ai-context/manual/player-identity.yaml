@@ -149,16 +149,16 @@ mergeEvidence:
   currentCrosswalkBirthDateCorrection:
     crosswalkSource: nflverse.ff-player-ids
     authoritativePersonSource: nflverse.players
-    minimumSharedStrongAnchors: 3
+    minimumSharedStrongAnchors: 4
     rule: >
       A current crosswalk birth-date mismatch remains fail-closed unless at least
-      three independent strong provider anchors from that same crosswalk row each
+      four independent strong provider anchors from that same crosswalk row each
       resolve to one identical nflverse.players birth date and no resolved strong
       anchor points to another birth date. In that bounded case only the in-memory
       crosswalk candidate adopts the authoritative nflverse.players birth date so
       its provider IDs can participate in identity reconciliation. Raw source bytes
       are never changed, the mismatch remains explicitly audited with birthdate-only
-      scope, and names do not participate. With fewer than three corroborators or
+      scope, and names do not participate. With fewer than four corroborators or
       any counter-evidence the existing row/mapping quarantine behavior remains.
   canonicalBirthDateCorrection:
     authoritativeCurrentSource: nflverse.players
