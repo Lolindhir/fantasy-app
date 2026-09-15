@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-09-15T04:13:38.682833Z",
-  "input_fingerprint": "ee8375180c04b33b0f1e76b342fd6eb8b4c1d71001bc83b95cbbb758cb1a1ad1",
+  "generated_at": "2026-09-15T04:25:08Z",
+  "input_fingerprint": "10953b3be338a42317fb5364d97a4b874bef25b02d343c713d030a27109c97c1",
   "status": "ok",
   "coverage": {
     "managed_roster_ids": 33,
@@ -63,19 +63,20 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 156,
-        "materialized_entity_count": 173,
-        "resolved_players": 168,
-        "unresolved_players": 5,
+        "row_count": 172,
+        "materialized_entity_count": 174,
+        "resolved_players": 167,
+        "unresolved_players": 7,
         "excluded_non_player_entities": {
-          "count": 9,
+          "count": 10,
           "by_type": {
-            "team_defense": 9
+            "team_defense": 10
           },
           "entity_ids": [
             "DET",
             "HOU",
             "JAX",
+            "LAC",
             "LV",
             "MIN",
             "NE",
@@ -85,9 +86,9 @@
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 93,
-          "mighty_giants": 12,
-          "opponent_rostered": 68
+          "fantasy_free_agent": 89,
+          "mighty_giants": 13,
+          "opponent_rostered": 72
         },
         "baseline": false,
         "material_event_eligible": true
@@ -100,6 +101,13 @@
       "severity": "info",
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
+      "player_id": "2427"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
       "player_id": "6711"
     },
     {
@@ -107,14 +115,28 @@
       "severity": "info",
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
-      "player_id": "10949"
+      "player_id": "8330"
     },
     {
       "domain": "external_signal_materialization",
       "severity": "info",
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
-      "player_id": "11678"
+      "player_id": "10947"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "12556"
+    },
+    {
+      "domain": "external_signal_materialization",
+      "severity": "info",
+      "kind": "unresolved_external_signal_player",
+      "source": "sleeper-trending",
+      "player_id": "13370"
     },
     {
       "domain": "external_signal_materialization",
@@ -122,13 +144,6 @@
       "kind": "unresolved_external_signal_player",
       "source": "sleeper-trending",
       "player_id": "13379"
-    },
-    {
-      "domain": "external_signal_materialization",
-      "severity": "info",
-      "kind": "unresolved_external_signal_player",
-      "source": "sleeper-trending",
-      "player_id": "13403"
     }
   ],
   "source_freshness": [
@@ -145,7 +160,7 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "source_timestamp": "2026-09-15T03:24:33Z"
+      "source_timestamp": "2026-09-15T04:25:08Z"
     },
     {
       "id": "operations_source_catalog",
@@ -225,7 +240,7 @@
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-09-14T04:24:14.979658Z"
+      "source_timestamp": "2026-09-15T04:24:17.665902Z"
     }
   ],
   "interpretation_limits": [
