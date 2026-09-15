@@ -145,6 +145,7 @@ describe('LeagueMatchupsComponent #500 responsive dashboard', () => {
     it(`renders the intended top-context density without horizontal overflow at ${width}px`, () => {
       const host: HTMLElement = fixture.nativeElement;
       host.style.display = 'block';
+      host.style.containerType = 'inline-size';
       host.style.width = `${width}px`;
       fixture.detectChanges();
 
