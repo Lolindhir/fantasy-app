@@ -27,6 +27,16 @@ def build_provider_mapping_payload(
     mappings = [dict(item) for item in existing.get("Mappings", [])]
     conflicts = [dict(item) for item in existing.get("Conflicts", [])]
 
+    # Historical provenance is durable state, not a by-product of only the
+    # historical replay stage. The current-claim rebuild runs before replay and
+    # reconciliation on every full materialization, so it must carry these
+    # records forward. Otherwise a second pass forgets which provisional owner
+    # was already retired and recreates the same conflict indefinitely.
+    persisted_history: dict[str, list[dict[str, Any]]] = {}
+    for key in ("HistoricalResolutionConflicts", "HistoricalMappingReconciliations"):
+        if key in existing:
+            persisted_history[key] = [dict(item) for item in existing.get(key, [])]
+
     current_values_by_owner_provider: dict[tuple[str, str], set[str]] = defaultdict(set)
     for claim in provider_claims:
         current_values_by_owner_provider[
@@ -200,4 +210,5 @@ def build_provider_mapping_payload(
         "TemporalResolution": "season",
         "Mappings": mappings,
         "Conflicts": conflicts,
+        **persisted_history,
     }
