@@ -23,19 +23,19 @@
       "nflverse.contracts"
     ]
   },
-  "canonicalIdentityCount": 28581,
-  "appPlayerCount": 1263,
+  "canonicalIdentityCount": 28592,
+  "appPlayerCount": 1274,
   "identityCoverage": {
-    "matched": 1263,
-    "withGSIS": 1025,
-    "withoutGSIS": 238
+    "matched": 1274,
+    "withGSIS": 1026,
+    "withoutGSIS": 248
   },
   "identityCoverageByProvider": {
-    "Sleeper": 1263
+    "Sleeper": 1274
   },
   "draftStatusCoverage": {
-    "drafted": 664,
-    "unknown": 216,
+    "drafted": 665,
+    "unknown": 226,
     "undrafted": 383
   },
   "draftStatusByPosition": {
@@ -50,19 +50,19 @@
       "unknown": 20
     },
     "RB": {
-      "drafted": 149,
-      "unknown": 35,
+      "drafted": 150,
+      "unknown": 37,
       "undrafted": 95
     },
     "TE": {
       "drafted": 130,
       "undrafted": 67,
-      "unknown": 51
+      "unknown": 54
     },
     "WR": {
       "drafted": 261,
       "undrafted": 154,
-      "unknown": 98
+      "unknown": 103
     }
   },
   "combineCoverage": {
@@ -132,9 +132,9 @@
     ],
     "withoutPfrIdCount": 1531,
     "canonicalDraftLinkedCount": 5571,
-    "currentAppResolvedPlayerCount": 1263,
-    "currentAppPlayersWithCombine": 684,
-    "currentAppPlayersWithoutCombine": 579,
+    "currentAppResolvedPlayerCount": 1274,
+    "currentAppPlayersWithCombine": 685,
+    "currentAppPlayersWithoutCombine": 589,
     "draftLinkConflictCount": 0,
     "draftLinkConflicts": [],
     "bySeason": {
@@ -333,7 +333,7 @@
     "duplicateLinkProviderIDs": {},
     "duplicateLinkProviderIDCount": 0
   },
-  "identityWeakProviderCollisionCount": 36,
+  "identityWeakProviderCollisionCount": 38,
   "identityWeakProviderCollisions": {
     "NFLCom": [
       "42861",
@@ -356,6 +356,8 @@
     "MFL": [
       "17085",
       "17424",
+      "17482",
+      "17551",
       "17729",
       "17740",
       "17756",
@@ -407,7 +409,7 @@
     {
       "Source": "nflverse.ff-player-ids",
       "Reason": "birthdate_conflict_with_nflverse_players",
-      "QuarantineScope": "row",
+      "QuarantineScope": "mapping",
       "MFLID": "17482",
       "Name": "Mike Washington Jr.",
       "BirthDate": "2003-07-03",
@@ -422,13 +424,6 @@
           ]
         },
         {
-          "Provider": "ESPN",
-          "ID": "4686658",
-          "NFLVerseBirthDates": [
-            "1953-07-01"
-          ]
-        },
-        {
           "Provider": "PFR",
           "ID": "WashMi21",
           "NFLVerseBirthDates": [
@@ -436,19 +431,18 @@
           ]
         }
       ],
-      "MatchingAnchors": [],
+      "MatchingAnchors": [
+        {
+          "Provider": "ESPN",
+          "ID": "4686658",
+          "NFLVerseBirthDates": [
+            "2003-07-03"
+          ]
+        }
+      ],
       "SuppressedIDs": {
         "GSIS": "WAS569019",
-        "Sleeper": "13305",
-        "ESPN": "4686658",
-        "PFR": "WashMi21",
-        "FantasyPros": "28108",
-        "Sportradar": "b783f45a-16ea-4145-9f3a-fafaa1bb0058",
-        "CBS": "26693539",
-        "CFBRef": "mike-washington-5",
-        "Rotowire": "19300",
-        "KTC": "1944",
-        "FantasyData": "26932"
+        "PFR": "WashMi21"
       }
     },
     {
@@ -562,7 +556,7 @@
     {
       "Source": "nflverse.ff-player-ids",
       "Reason": "birthdate_conflict_with_nflverse_players",
-      "QuarantineScope": "row",
+      "QuarantineScope": "mapping",
       "MFLID": "17551",
       "Name": "David Bailey",
       "BirthDate": "2003-08-28",
@@ -577,13 +571,6 @@
           ]
         },
         {
-          "Provider": "ESPN",
-          "ID": "4685248",
-          "NFLVerseBirthDates": [
-            "1965-09-03"
-          ]
-        },
-        {
           "Provider": "PFR",
           "ID": "BailDa20",
           "NFLVerseBirthDates": [
@@ -591,14 +578,18 @@
           ]
         }
       ],
-      "MatchingAnchors": [],
+      "MatchingAnchors": [
+        {
+          "Provider": "ESPN",
+          "ID": "4685248",
+          "NFLVerseBirthDates": [
+            "2003-08-28"
+          ]
+        }
+      ],
       "SuppressedIDs": {
         "GSIS": "BAI173035",
-        "ESPN": "4685248",
-        "PFR": "BailDa20",
-        "CBS": "28878022",
-        "CFBRef": "david-bailey-5",
-        "Rotowire": "19393"
+        "PFR": "BailDa20"
       }
     },
     {
@@ -23879,24 +23870,24 @@
       }
     }
   ],
-  "providerMappingConflictCount": 57,
+  "providerMappingConflictCount": 147,
   "providerMappingConflictsByProvider": {
     "CBS": 10,
     "ESB": 6,
-    "ESPN": 4,
+    "ESPN": 6,
     "FantasyData": 2,
     "FantasyPros": 2,
     "Fleaflicker": 1,
     "GSIS": 4,
     "KTC": 1,
-    "MFL": 7,
+    "MFL": 9,
     "NFLCom": 4,
     "PFF": 4,
     "PFR": 2,
     "Rotowire": 3,
-    "Sleeper": 4,
+    "Sleeper": 89,
     "Sportradar": 1,
-    "Tank01": 2
+    "Tank01": 3
   },
   "providerMappingConflicts": [
     {
@@ -24225,6 +24216,40 @@
     },
     {
       "Provider": "ESPN",
+      "ExternalID": "4685248",
+      "CanonicalPlayerIDs": [
+        "NFLP-837f5f426e72e74c3555",
+        "NFLP-b89e6d4fde57ce2db5e8"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-b89e6d4fde57ce2db5e8": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "4686658",
+      "CanonicalPlayerIDs": [
+        "NFLP-3e30c8eca007d8d85b9a",
+        "NFLP-f0274aeb296b8867b51b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f0274aeb296b8867b51b": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
       "ExternalID": "4705926",
       "CanonicalPlayerIDs": [
         "NFLP-070451324fe39374b112",
@@ -24452,6 +24477,38 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-89a8039f89293cf247a0": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "MFL",
+      "ExternalID": "17482",
+      "CanonicalPlayerIDs": [
+        "NFLP-c5910fa9479664539c48",
+        "NFLP-f0274aeb296b8867b51b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f0274aeb296b8867b51b": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "MFL",
+      "ExternalID": "17551",
+      "CanonicalPlayerIDs": [
+        "NFLP-0c374bd8922ccb28a7da",
+        "NFLP-b89e6d4fde57ce2db5e8"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-b89e6d4fde57ce2db5e8": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -24752,6 +24809,802 @@
     },
     {
       "Provider": "Sleeper",
+      "ExternalID": "10219",
+      "CanonicalPlayerIDs": [
+        "NFLP-1702402b3985f41579a7",
+        "NFLP-3bf38211647fcb11da7f"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-3bf38211647fcb11da7f": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "10219",
+      "CanonicalPlayerIDs": [
+        "NFLP-1702402b3985f41579a7",
+        "NFLP-3bf38211647fcb11da7f"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-3bf38211647fcb11da7f": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "10651",
+      "CanonicalPlayerIDs": [
+        "NFLP-9fab4c6dda4f676835e6",
+        "NFLP-a443f6177458817c1c76"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-a443f6177458817c1c76": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11210",
+      "CanonicalPlayerIDs": [
+        "NFLP-3e0a5d3d54ef235fbced",
+        "NFLP-83654a40eb6250166452"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-83654a40eb6250166452": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11210",
+      "CanonicalPlayerIDs": [
+        "NFLP-3e0a5d3d54ef235fbced",
+        "NFLP-83654a40eb6250166452"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-83654a40eb6250166452": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11237",
+      "CanonicalPlayerIDs": [
+        "NFLP-8a27e8eca183eb77f860",
+        "NFLP-dc4efb02851a1e8c5021"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-8a27e8eca183eb77f860": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11237",
+      "CanonicalPlayerIDs": [
+        "NFLP-8a27e8eca183eb77f860",
+        "NFLP-dc4efb02851a1e8c5021"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-8a27e8eca183eb77f860": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11575",
+      "CanonicalPlayerIDs": [
+        "NFLP-277e918af8f11a9ff678",
+        "NFLP-40247fde205514cce7cd"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-277e918af8f11a9ff678": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11575",
+      "CanonicalPlayerIDs": [
+        "NFLP-277e918af8f11a9ff678",
+        "NFLP-40247fde205514cce7cd"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-277e918af8f11a9ff678": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11610",
+      "CanonicalPlayerIDs": [
+        "NFLP-9c35c62bf6b2758f6188",
+        "NFLP-ded19f9492072b1d5862"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-ded19f9492072b1d5862": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11610",
+      "CanonicalPlayerIDs": [
+        "NFLP-9c35c62bf6b2758f6188",
+        "NFLP-ded19f9492072b1d5862"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-ded19f9492072b1d5862": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11635",
+      "CanonicalPlayerIDs": [
+        "NFLP-0c8662956fb41db47489",
+        "NFLP-8c226073619ab2ee9f97"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-0c8662956fb41db47489": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11635",
+      "CanonicalPlayerIDs": [
+        "NFLP-0c8662956fb41db47489",
+        "NFLP-8c226073619ab2ee9f97"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-0c8662956fb41db47489": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11943",
+      "CanonicalPlayerIDs": [
+        "NFLP-48b3e4f2418748adcfd5",
+        "NFLP-a38239672329bb10c9df"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-48b3e4f2418748adcfd5": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11943",
+      "CanonicalPlayerIDs": [
+        "NFLP-48b3e4f2418748adcfd5",
+        "NFLP-a38239672329bb10c9df"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-48b3e4f2418748adcfd5": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11989",
+      "CanonicalPlayerIDs": [
+        "NFLP-a2beb8213335413a928d",
+        "NFLP-e83708b4ba2c58e041c9"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-a2beb8213335413a928d": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "11989",
+      "CanonicalPlayerIDs": [
+        "NFLP-a2beb8213335413a928d",
+        "NFLP-e83708b4ba2c58e041c9"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-a2beb8213335413a928d": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12190",
+      "CanonicalPlayerIDs": [
+        "NFLP-6a1425cc287628a38db9",
+        "NFLP-bb97e52353fb66d62b17"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bb97e52353fb66d62b17": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12190",
+      "CanonicalPlayerIDs": [
+        "NFLP-6a1425cc287628a38db9",
+        "NFLP-bb97e52353fb66d62b17"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bb97e52353fb66d62b17": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12374",
+      "CanonicalPlayerIDs": [
+        "NFLP-52249aed92b55abd43e9",
+        "NFLP-f59e52e78da3b2586875"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-52249aed92b55abd43e9": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12374",
+      "CanonicalPlayerIDs": [
+        "NFLP-52249aed92b55abd43e9",
+        "NFLP-f59e52e78da3b2586875"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-52249aed92b55abd43e9": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12412",
+      "CanonicalPlayerIDs": [
+        "NFLP-0610fe3950eec1f2e67f",
+        "NFLP-0c5a211ff2858fb8dd2e"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-0610fe3950eec1f2e67f": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12412",
+      "CanonicalPlayerIDs": [
+        "NFLP-0610fe3950eec1f2e67f",
+        "NFLP-0c5a211ff2858fb8dd2e"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-0610fe3950eec1f2e67f": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12473",
+      "CanonicalPlayerIDs": [
+        "NFLP-0ee681897a517a4db3c8",
+        "NFLP-345e6ccb68477a07573a"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-345e6ccb68477a07573a": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12473",
+      "CanonicalPlayerIDs": [
+        "NFLP-0ee681897a517a4db3c8",
+        "NFLP-345e6ccb68477a07573a"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-345e6ccb68477a07573a": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12478",
+      "CanonicalPlayerIDs": [
+        "NFLP-76b3cc540da3a2d1ea30",
+        "NFLP-aa2d7845f678a636bc51"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-aa2d7845f678a636bc51": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12478",
+      "CanonicalPlayerIDs": [
+        "NFLP-76b3cc540da3a2d1ea30",
+        "NFLP-aa2d7845f678a636bc51"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-aa2d7845f678a636bc51": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12490",
+      "CanonicalPlayerIDs": [
+        "NFLP-98282778fb5e6e2e824f",
+        "NFLP-fbd7ce3e42721ed14f47"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-fbd7ce3e42721ed14f47": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12490",
+      "CanonicalPlayerIDs": [
+        "NFLP-98282778fb5e6e2e824f",
+        "NFLP-fbd7ce3e42721ed14f47"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-fbd7ce3e42721ed14f47": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "1250",
+      "CanonicalPlayerIDs": [
+        "NFLP-34ff859559879640ba64",
+        "NFLP-b413711258c59467c802"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-b413711258c59467c802": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "1250",
+      "CanonicalPlayerIDs": [
+        "NFLP-34ff859559879640ba64",
+        "NFLP-b413711258c59467c802"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-b413711258c59467c802": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12500",
+      "CanonicalPlayerIDs": [
+        "NFLP-100f461f5508f63bbb17",
+        "NFLP-7a9bd02111f3adbe6119"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-100f461f5508f63bbb17": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12500",
+      "CanonicalPlayerIDs": [
+        "NFLP-100f461f5508f63bbb17",
+        "NFLP-7a9bd02111f3adbe6119"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-100f461f5508f63bbb17": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12548",
+      "CanonicalPlayerIDs": [
+        "NFLP-1584b82b093be812ad43",
+        "NFLP-bbc23272c16b6bccbaa7"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bbc23272c16b6bccbaa7": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12548",
+      "CanonicalPlayerIDs": [
+        "NFLP-1584b82b093be812ad43",
+        "NFLP-bbc23272c16b6bccbaa7"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bbc23272c16b6bccbaa7": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12690",
+      "CanonicalPlayerIDs": [
+        "NFLP-0a0d8b9cee7530b33b49",
+        "NFLP-dcc464cd9846a127da87"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-dcc464cd9846a127da87": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12690",
+      "CanonicalPlayerIDs": [
+        "NFLP-0a0d8b9cee7530b33b49",
+        "NFLP-dcc464cd9846a127da87"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-dcc464cd9846a127da87": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12713",
+      "CanonicalPlayerIDs": [
+        "NFLP-38088bd99442e6de6368",
+        "NFLP-3865580e0a039a8daddb"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-3865580e0a039a8daddb": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12713",
+      "CanonicalPlayerIDs": [
+        "NFLP-38088bd99442e6de6368",
+        "NFLP-3865580e0a039a8daddb"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-3865580e0a039a8daddb": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12787",
+      "CanonicalPlayerIDs": [
+        "NFLP-316c9b73ab533ff5bd77",
+        "NFLP-e57578bef3318bfc3d60"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-316c9b73ab533ff5bd77": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12787",
+      "CanonicalPlayerIDs": [
+        "NFLP-316c9b73ab533ff5bd77",
+        "NFLP-e57578bef3318bfc3d60"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-316c9b73ab533ff5bd77": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12849",
+      "CanonicalPlayerIDs": [
+        "NFLP-2d3d12d4db70b7f9ab6b",
+        "NFLP-4384672e98695ef52f13"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2d3d12d4db70b7f9ab6b": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12849",
+      "CanonicalPlayerIDs": [
+        "NFLP-2d3d12d4db70b7f9ab6b",
+        "NFLP-4384672e98695ef52f13"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2d3d12d4db70b7f9ab6b": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12866",
+      "CanonicalPlayerIDs": [
+        "NFLP-6eebb5d499532e170285",
+        "NFLP-7f8463dbb583453390a4"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-6eebb5d499532e170285": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "12866",
+      "CanonicalPlayerIDs": [
+        "NFLP-6eebb5d499532e170285",
+        "NFLP-7f8463dbb583453390a4"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-6eebb5d499532e170285": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
       "ExternalID": "12972",
       "CanonicalPlayerIDs": [
         "NFLP-086689fb7232091d55fd",
@@ -24764,6 +25617,60 @@
         "NFLP-086689fb7232091d55fd": [
           "app.Players",
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13273",
+      "CanonicalPlayerIDs": [
+        "NFLP-14f75a26206fd0bc978b",
+        "NFLP-d930d09bec24cff258c6"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-d930d09bec24cff258c6": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "133",
+      "CanonicalPlayerIDs": [
+        "NFLP-6337795348bbbd63e77c",
+        "NFLP-84896ddc8c105f43258b"
+      ],
+      "FirstObservedSeason": 2024,
+      "LastObservedSeason": 2024,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-84896ddc8c105f43258b": [
+          "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf",
+          "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "133",
+      "CanonicalPlayerIDs": [
+        "NFLP-6337795348bbbd63e77c",
+        "NFLP-84896ddc8c105f43258b"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-84896ddc8c105f43258b": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
         ]
       }
     },
@@ -24788,6 +25695,41 @@
     },
     {
       "Provider": "Sleeper",
+      "ExternalID": "13305",
+      "CanonicalPlayerIDs": [
+        "NFLP-79c428e814a8ecb04e1a",
+        "NFLP-f0274aeb296b8867b51b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f0274aeb296b8867b51b": [
+          "app.Players",
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13348",
+      "CanonicalPlayerIDs": [
+        "NFLP-38a2c647aaceaa748d88",
+        "NFLP-a0ad415ecccce04a0eb2"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-38a2c647aaceaa748d88": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
       "ExternalID": "13350",
       "CanonicalPlayerIDs": [
         "NFLP-d3bb9ad81cb6e7aa45d8",
@@ -24805,6 +25747,96 @@
     },
     {
       "Provider": "Sleeper",
+      "ExternalID": "13408",
+      "CanonicalPlayerIDs": [
+        "NFLP-03add1a5258d5b46ec01",
+        "NFLP-fdca22a3ad3a7d18e231"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-03add1a5258d5b46ec01": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13412",
+      "CanonicalPlayerIDs": [
+        "NFLP-147541f48ec096b07843",
+        "NFLP-40982a89271b5afd0150"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-40982a89271b5afd0150": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13423",
+      "CanonicalPlayerIDs": [
+        "NFLP-2c92cc6f9d6a61b9bc3f",
+        "NFLP-8699797815597c99b026"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2c92cc6f9d6a61b9bc3f": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13554",
+      "CanonicalPlayerIDs": [
+        "NFLP-23417ff0eeeb96137467",
+        "NFLP-9c9d9b4c2faa3647cb2c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-9c9d9b4c2faa3647cb2c": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13595",
+      "CanonicalPlayerIDs": [
+        "NFLP-651a1b864b51b7ebf506",
+        "NFLP-76ddd461dcfaf4a4b7e5"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-76ddd461dcfaf4a4b7e5": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
       "ExternalID": "13643",
       "CanonicalPlayerIDs": [
         "NFLP-070451324fe39374b112",
@@ -24816,6 +25848,544 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-070451324fe39374b112": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "13696",
+      "CanonicalPlayerIDs": [
+        "NFLP-38586d23fc59bcc6bb3b",
+        "NFLP-e9f71347d97328a8b2ba"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-38586d23fc59bcc6bb3b": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5134",
+      "CanonicalPlayerIDs": [
+        "NFLP-042f154259b0fd3160b0",
+        "NFLP-f28bbe67ba71ee5309ad"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f28bbe67ba71ee5309ad": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5134",
+      "CanonicalPlayerIDs": [
+        "NFLP-042f154259b0fd3160b0",
+        "NFLP-f28bbe67ba71ee5309ad"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f28bbe67ba71ee5309ad": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5209",
+      "CanonicalPlayerIDs": [
+        "NFLP-2a2e3a871801736ecc4a",
+        "NFLP-86769cecd51b5a840b74"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2a2e3a871801736ecc4a": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5209",
+      "CanonicalPlayerIDs": [
+        "NFLP-2a2e3a871801736ecc4a",
+        "NFLP-86769cecd51b5a840b74"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2a2e3a871801736ecc4a": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5773",
+      "CanonicalPlayerIDs": [
+        "NFLP-11ee9b5fa0bd71a28199",
+        "NFLP-5309ab80d8655c8d54e1"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-11ee9b5fa0bd71a28199": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "5773",
+      "CanonicalPlayerIDs": [
+        "NFLP-11ee9b5fa0bd71a28199",
+        "NFLP-5309ab80d8655c8d54e1"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-11ee9b5fa0bd71a28199": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6154",
+      "CanonicalPlayerIDs": [
+        "NFLP-9de71a4427881b70c3fb",
+        "NFLP-fdb6fa5014dbd7579f3f"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-9de71a4427881b70c3fb": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6154",
+      "CanonicalPlayerIDs": [
+        "NFLP-9de71a4427881b70c3fb",
+        "NFLP-fdb6fa5014dbd7579f3f"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-9de71a4427881b70c3fb": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6185",
+      "CanonicalPlayerIDs": [
+        "NFLP-4a51239284478a4a3c67",
+        "NFLP-b8ccf87dba52f25f74ca"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-4a51239284478a4a3c67": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6185",
+      "CanonicalPlayerIDs": [
+        "NFLP-4a51239284478a4a3c67",
+        "NFLP-b8ccf87dba52f25f74ca"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-4a51239284478a4a3c67": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6865",
+      "CanonicalPlayerIDs": [
+        "NFLP-2d41f6dc8ceabc77226b",
+        "NFLP-d327ec06bbbad0b1916a"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2d41f6dc8ceabc77226b": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6865",
+      "CanonicalPlayerIDs": [
+        "NFLP-2d41f6dc8ceabc77226b",
+        "NFLP-d327ec06bbbad0b1916a"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2d41f6dc8ceabc77226b": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6918",
+      "CanonicalPlayerIDs": [
+        "NFLP-53d3109a9a2a37fbca3c",
+        "NFLP-5575d60ac6ceeeb995b1"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-5575d60ac6ceeeb995b1": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6918",
+      "CanonicalPlayerIDs": [
+        "NFLP-53d3109a9a2a37fbca3c",
+        "NFLP-5575d60ac6ceeeb995b1"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-5575d60ac6ceeeb995b1": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6943",
+      "CanonicalPlayerIDs": [
+        "NFLP-265c5d2f4a9afa781664",
+        "NFLP-e5a00f2baa2156019a80"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-265c5d2f4a9afa781664": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6943",
+      "CanonicalPlayerIDs": [
+        "NFLP-265c5d2f4a9afa781664",
+        "NFLP-e5a00f2baa2156019a80"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-265c5d2f4a9afa781664": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6957",
+      "CanonicalPlayerIDs": [
+        "NFLP-708b805d6ebd87ef2c0f",
+        "NFLP-900dbd4f6c37c7c56ee0"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-900dbd4f6c37c7c56ee0": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "6957",
+      "CanonicalPlayerIDs": [
+        "NFLP-708b805d6ebd87ef2c0f",
+        "NFLP-900dbd4f6c37c7c56ee0"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-900dbd4f6c37c7c56ee0": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "7865",
+      "CanonicalPlayerIDs": [
+        "NFLP-4994a3239abdfe952a92",
+        "NFLP-84e374e9618fdbe430e1"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-84e374e9618fdbe430e1": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "7865",
+      "CanonicalPlayerIDs": [
+        "NFLP-4994a3239abdfe952a92",
+        "NFLP-84e374e9618fdbe430e1"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-84e374e9618fdbe430e1": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "8185",
+      "CanonicalPlayerIDs": [
+        "NFLP-7db7e3f5324437c8b3b9",
+        "NFLP-f12db9002ea16420b29f"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f12db9002ea16420b29f": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "8208",
+      "CanonicalPlayerIDs": [
+        "NFLP-3e68c6c01fd19f2d1cb0",
+        "NFLP-8f94dab98eeb619067f3"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-8f94dab98eeb619067f3": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "8208",
+      "CanonicalPlayerIDs": [
+        "NFLP-3e68c6c01fd19f2d1cb0",
+        "NFLP-8f94dab98eeb619067f3"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-8f94dab98eeb619067f3": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "8670",
+      "CanonicalPlayerIDs": [
+        "NFLP-6855ed3183bda11c11d4",
+        "NFLP-bb92146ba1ace7d0a1df"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bb92146ba1ace7d0a1df": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "8670",
+      "CanonicalPlayerIDs": [
+        "NFLP-6855ed3183bda11c11d4",
+        "NFLP-bb92146ba1ace7d0a1df"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-bb92146ba1ace7d0a1df": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "9225",
+      "CanonicalPlayerIDs": [
+        "NFLP-09dc9fc7c47137daa1ac",
+        "NFLP-26811bba8963101e12e0"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-26811bba8963101e12e0": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "9225",
+      "CanonicalPlayerIDs": [
+        "NFLP-09dc9fc7c47137daa1ac",
+        "NFLP-26811bba8963101e12e0"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-26811bba8963101e12e0": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "9483",
+      "CanonicalPlayerIDs": [
+        "NFLP-65ee400603e49553c325",
+        "NFLP-dec98197c3e7e11a62af"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-dec98197c3e7e11a62af": [
+          "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad",
+          "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
+      "ExternalID": "9483",
+      "CanonicalPlayerIDs": [
+        "NFLP-65ee400603e49553c325",
+        "NFLP-dec98197c3e7e11a62af"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-dec98197c3e7e11a62af": [
+          "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1",
+          "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
         ]
       }
     },
@@ -24866,6 +26436,22 @@
           "app.Players"
         ]
       }
+    },
+    {
+      "Provider": "Tank01",
+      "ExternalID": "4686658",
+      "CanonicalPlayerIDs": [
+        "NFLP-79c428e814a8ecb04e1a",
+        "NFLP-f0274aeb296b8867b51b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-f0274aeb296b8867b51b": [
+          "app.Players"
+        ]
+      }
     }
   ],
   "historicalAppMappingCoverage": {
@@ -24882,11 +26468,2836 @@
     "gitUnresolvedPlayerCount": 741,
     "gitInsufficientCorroborationCount": 741,
     "gitConflictingPlayerCount": 0,
-    "historicalClaimCount": 2118
+    "externalSnapshotSeasonCount": 7,
+    "externalSnapshotCount": 14,
+    "externalSnapshotPlayerCount": 142890,
+    "externalResolvedPlayerCount": 60880,
+    "externalUnresolvedPlayerCount": 81849,
+    "externalInsufficientCorroborationCount": 81849,
+    "externalConflictingPlayerCount": 161,
+    "externalHistoricalClaimCount": 144408,
+    "externalSleeperClaimCount": 31703,
+    "historicalClaimCount": 145644
   },
-  "historicalResolutionConflictCount": 0,
-  "historicalResolutionConflictsByReason": {},
-  "historicalResolutionConflicts": [],
+  "historicalResolutionConflictCount": 161,
+  "historicalResolutionConflictsByReason": {
+    "historical_crosswalk_provider_disagreement": 161
+  },
+  "historicalResolutionConflicts": [
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "2110",
+      "ProviderIDs": {
+        "ESPN": "17070",
+        "GSIS": "00-0034641",
+        "PFR": "JoneCh05",
+        "Sleeper": "2110"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-12e0e687706c34944497",
+        "GSIS": "NFLP-d2ed9dd562e5fa42e423",
+        "PFR": "NFLP-12e0e687706c34944497"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.closing@5f646cf16ae3"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "2110",
+      "ProviderIDs": {
+        "ESPN": "17070",
+        "GSIS": "00-0034641",
+        "PFR": "JoneCh05",
+        "Sleeper": "2110"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-12e0e687706c34944497",
+        "GSIS": "NFLP-d2ed9dd562e5fa42e423",
+        "PFR": "NFLP-12e0e687706c34944497"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.opening@4aa4481adf80"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "5094",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFR": "IzzoRy00",
+        "Sleeper": "5094"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFR": "NFLP-481850e8213875b7c227"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.closing@5f646cf16ae3"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "5094",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFR": "IzzoRy00",
+        "Sleeper": "5094"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFR": "NFLP-481850e8213875b7c227"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.opening@4aa4481adf80"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3122920",
+        "GSIS": "00-0034439",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-481850e8213875b7c227",
+        "GSIS": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.closing@5f646cf16ae3"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2020,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3122920",
+        "GSIS": "00-0034439",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-481850e8213875b7c227",
+        "GSIS": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2020.opening@4aa4481adf80"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "10925",
+      "ProviderIDs": {
+        "GSIS": "00-0038978",
+        "PFR": "YounBy01",
+        "Sleeper": "10925"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-ac26ccefe1d391b892c7",
+        "PFR": "NFLP-f85a1ac273b28de117a7"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "5094",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFF": "47327",
+        "PFR": "IzzoRy00",
+        "Sleeper": "5094"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFF": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-481850e8213875b7c227"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3122920",
+        "GSIS": "00-0034439",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-481850e8213875b7c227",
+        "GSIS": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "GSIS": "00-0037420",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "10894",
+      "ProviderIDs": {
+        "ESPN": "4036211",
+        "GSIS": "00-0038549",
+        "PFR": "TurnDJ01",
+        "Sleeper": "10894"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-490d70e2cab4ee8d12c8",
+        "GSIS": "NFLP-fbd738b6f07e46851af6",
+        "PFR": "NFLP-fbd738b6f07e46851af6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "10925",
+      "ProviderIDs": {
+        "GSIS": "00-0038978",
+        "PFR": "YounBy01",
+        "Sleeper": "10925"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-ac26ccefe1d391b892c7",
+        "PFR": "NFLP-f85a1ac273b28de117a7"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2218",
+      "ProviderIDs": {
+        "ESPN": "17199",
+        "PFR": "LewiKe20",
+        "Sleeper": "2218"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6ac90fb5b56bab4c638b",
+        "PFR": "NFLP-687abe2f00fb67e98d7f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2218",
+      "ProviderIDs": {
+        "ESPN": "17199",
+        "PFR": "LewiKe20",
+        "Sleeper": "2218"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6ac90fb5b56bab4c638b",
+        "PFR": "NFLP-687abe2f00fb67e98d7f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2697",
+      "ProviderIDs": {
+        "ESPN": "2578554",
+        "GSIS": "00-0032050",
+        "PFF": "10117",
+        "PFR": "MoorCo20",
+        "Sleeper": "2697"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-301faa552e280bcf796c",
+        "GSIS": "NFLP-301faa552e280bcf796c",
+        "PFF": "NFLP-301faa552e280bcf796c",
+        "PFR": "NFLP-07d3e6885b11384bb232"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2697",
+      "ProviderIDs": {
+        "ESPN": "2578554",
+        "GSIS": "00-0032050",
+        "PFF": "10117",
+        "PFR": "MoorCo20",
+        "Sleeper": "2697"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-301faa552e280bcf796c",
+        "GSIS": "NFLP-301faa552e280bcf796c",
+        "PFF": "NFLP-301faa552e280bcf796c",
+        "PFR": "NFLP-07d3e6885b11384bb232"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2859",
+      "ProviderIDs": {
+        "ESPN": "2574009",
+        "GSIS": "00-0031636",
+        "PFF": "9732",
+        "PFR": "HamiJu20",
+        "Sleeper": "2859"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-77f521db92d3295c1590",
+        "GSIS": "NFLP-77f521db92d3295c1590",
+        "PFF": "NFLP-77f521db92d3295c1590",
+        "PFR": "NFLP-31599ae6553732cf8056"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "2859",
+      "ProviderIDs": {
+        "ESPN": "2574009",
+        "GSIS": "00-0031636",
+        "PFF": "9732",
+        "PFR": "HamiJu20",
+        "Sleeper": "2859"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-77f521db92d3295c1590",
+        "GSIS": "NFLP-77f521db92d3295c1590",
+        "PFF": "NFLP-77f521db92d3295c1590",
+        "PFR": "NFLP-31599ae6553732cf8056"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "5094",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFF": "47327",
+        "PFR": "IzzoRy00",
+        "Sleeper": "5094"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFF": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-481850e8213875b7c227"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFF": "47327",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFF": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034439",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "7607",
+      "ProviderIDs": {
+        "ESPN": "4240456",
+        "GSIS": "00-0036924",
+        "PFF": "57337",
+        "PFR": "CartMi03",
+        "Sleeper": "7607"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e5cebe7e58c121876f39",
+        "GSIS": "NFLP-0d52a6be7aa01055c047",
+        "PFF": "NFLP-0d52a6be7aa01055c047",
+        "PFR": "NFLP-0d52a6be7aa01055c047"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "7835",
+      "ProviderIDs": {
+        "ESPN": "4240657",
+        "GSIS": "00-0036501",
+        "PFF": "60644",
+        "PFR": "CartMi02",
+        "Sleeper": "7835"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0d52a6be7aa01055c047",
+        "GSIS": "NFLP-e5cebe7e58c121876f39",
+        "PFF": "NFLP-e5cebe7e58c121876f39",
+        "PFR": "NFLP-e5cebe7e58c121876f39"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "ESPN": "4035912",
+        "GSIS": "00-0037420",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0b2feabca17425b83186",
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "GSIS": "00-0037420",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "8702",
+      "ProviderIDs": {
+        "ESPN": "4685145",
+        "GSIS": "00-0037106",
+        "PFR": "JoneJa12",
+        "Sleeper": "8702"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0e300c93585177be78e6",
+        "GSIS": "NFLP-7f08a8fc8bc41c59c195",
+        "PFR": "NFLP-7f08a8fc8bc41c59c195"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "10894",
+      "ProviderIDs": {
+        "ESPN": "4036211",
+        "GSIS": "00-0038549",
+        "PFR": "TurnDJ01",
+        "Sleeper": "10894"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-490d70e2cab4ee8d12c8",
+        "GSIS": "NFLP-fbd738b6f07e46851af6",
+        "PFR": "NFLP-fbd738b6f07e46851af6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1351",
+      "ProviderIDs": {
+        "ESPN": "14660",
+        "PFR": "WillDu00",
+        "Sleeper": "1351"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-8018c0e4d1f2db31846c",
+        "PFR": "NFLP-3b21b5c7711f999be0aa"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1393",
+      "ProviderIDs": {
+        "ESPN": "15915",
+        "GSIS": "00-0030126",
+        "PFF": "8034",
+        "PFR": "JohnTo20",
+        "Sleeper": "1393"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-b7a0f10dd830fb4d7a09",
+        "GSIS": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFF": "NFLP-b7a0f10dd830fb4d7a09",
+        "PFR": "NFLP-3f711eaa09cc783c2d71"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1899",
+      "ProviderIDs": {
+        "ESPN": "17101",
+        "PFR": "AgneRa20",
+        "Sleeper": "1899"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-fc45e2c752d055e7e259",
+        "PFR": "NFLP-bc9d7bea1a3f867482a9"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8058",
+        "PFR": "MillSt00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-5fc57ceeb86a2280f9cf",
+        "PFR": "NFLP-5fc57ceeb86a2280f9cf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8757",
+        "PFR": "HuffMa00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFR": "NFLP-c98065bcc60c6c5c5fbe"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "PFR": "HallAn01",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d",
+        "PFR": "NFLP-dc9141d944e4447170d4"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2218",
+      "ProviderIDs": {
+        "ESPN": "17199",
+        "PFR": "LewiKe20",
+        "Sleeper": "2218"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6ac90fb5b56bab4c638b",
+        "PFR": "NFLP-687abe2f00fb67e98d7f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9926",
+        "PFR": "HarrAl00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-6019fda812386996a26a",
+        "PFR": "NFLP-6019fda812386996a26a"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9639",
+        "PFR": "RipkAa00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-1a350c6817ac38266e2c",
+        "PFR": "NFLP-1a350c6817ac38266e2c"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFF": "10073",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFF": "NFLP-526098e197b83beda15c",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2697",
+      "ProviderIDs": {
+        "ESPN": "2578554",
+        "GSIS": "00-0032050",
+        "PFF": "10117",
+        "PFR": "MoorCo20",
+        "Sleeper": "2697"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-301faa552e280bcf796c",
+        "GSIS": "NFLP-301faa552e280bcf796c",
+        "PFF": "NFLP-301faa552e280bcf796c",
+        "PFR": "NFLP-07d3e6885b11384bb232"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "2859",
+      "ProviderIDs": {
+        "ESPN": "2574009",
+        "GSIS": "00-0031636",
+        "PFF": "9732",
+        "PFR": "HamiJu20",
+        "Sleeper": "2859"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-77f521db92d3295c1590",
+        "GSIS": "NFLP-77f521db92d3295c1590",
+        "PFF": "NFLP-77f521db92d3295c1590",
+        "PFR": "NFLP-31599ae6553732cf8056"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10977",
+        "PFR": "CartKy01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-a15e0185c49aa0056f54",
+        "PFR": "NFLP-a15e0185c49aa0056f54"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10822",
+        "PFR": "MorgDa01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-42576532019be29ed0cc",
+        "PFR": "NFLP-42576532019be29ed0cc"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "376",
+      "ProviderIDs": {
+        "ESPN": "11078",
+        "PFR": "SmitAn22",
+        "Sleeper": "376"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-846db9ef10c9e00fbfa7",
+        "PFR": "NFLP-56bcbdc11a76a606d973"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "5133",
+      "ProviderIDs": {
+        "ESPN": "3915486",
+        "GSIS": "00-0034270",
+        "PFF": "47327",
+        "PFR": "ConkTy00",
+        "Sleeper": "5133"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e63b49e13fe976be3c12",
+        "GSIS": "NFLP-e63b49e13fe976be3c12",
+        "PFF": "NFLP-481850e8213875b7c227",
+        "PFR": "NFLP-e63b49e13fe976be3c12"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "634",
+      "ProviderIDs": {
+        "ESPN": "13253",
+        "PFR": "DaviAn23",
+        "Sleeper": "634"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-152f2de771eb1e67dcdc",
+        "PFR": "NFLP-db692ef8be5288856487"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "7344",
+      "ProviderIDs": {
+        "ESPN": "4032481",
+        "GSIS": "00-0035944",
+        "PFF": "44597",
+        "PFR": "WillJo10",
+        "Sleeper": "7344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e4905a84a65ff5368e63",
+        "GSIS": "NFLP-e4905a84a65ff5368e63",
+        "PFF": "NFLP-e4905a84a65ff5368e63",
+        "PFR": "NFLP-fa4d819f8ccbf05052c8"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "ESPN": "4035912",
+        "GSIS": "00-0037420",
+        "PFF": "23226",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0b2feabca17425b83186",
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFF": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "ESPN": "4035912",
+        "GSIS": "00-0037420",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0b2feabca17425b83186",
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "13305",
+      "ProviderIDs": {
+        "ESPN": "4686658",
+        "GSIS": "WAS569019",
+        "PFR": "WashMi21",
+        "Sleeper": "13305"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-f0274aeb296b8867b51b",
+        "GSIS": "NFLP-3e30c8eca007d8d85b9a",
+        "PFR": "NFLP-3e30c8eca007d8d85b9a"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "13305",
+      "ProviderIDs": {
+        "ESPN": "4686658",
+        "GSIS": "WAS569019",
+        "PFR": "WashMi21",
+        "Sleeper": "13305"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-f0274aeb296b8867b51b",
+        "GSIS": "NFLP-3e30c8eca007d8d85b9a",
+        "PFR": "NFLP-3e30c8eca007d8d85b9a"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-63b55e435b64ec80c9b6",
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8058",
+        "PFR": "MillSt00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-5fc57ceeb86a2280f9cf",
+        "PFR": "NFLP-5fc57ceeb86a2280f9cf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1930",
+      "ProviderIDs": {
+        "ESPN": "16094",
+        "GSIS": "00-0031059",
+        "PFF": "8058",
+        "PFR": "MillSt00",
+        "Sleeper": "1930"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-5fc57ceeb86a2280f9cf",
+        "GSIS": "NFLP-c98065bcc60c6c5c5fbe",
+        "PFF": "NFLP-5fc57ceeb86a2280f9cf",
+        "PFR": "NFLP-5fc57ceeb86a2280f9cf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "PFR": "HallAn01",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d",
+        "PFR": "NFLP-dc9141d944e4447170d4"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1952",
+      "ProviderIDs": {
+        "ESPN": "10411",
+        "GSIS": "00-0031087",
+        "PFF": "8850",
+        "PFR": "HallAn01",
+        "Sleeper": "1952"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-dc9141d944e4447170d4",
+        "GSIS": "NFLP-51d619a7ab1cff06874d",
+        "PFF": "NFLP-51d619a7ab1cff06874d",
+        "PFR": "NFLP-dc9141d944e4447170d4"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9926",
+        "PFR": "HarrAl00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-6019fda812386996a26a",
+        "PFR": "NFLP-6019fda812386996a26a"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "2507",
+      "ProviderIDs": {
+        "ESPN": "2574010",
+        "GSIS": "00-0031612",
+        "PFF": "9926",
+        "PFR": "HarrAl00",
+        "Sleeper": "2507"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-6019fda812386996a26a",
+        "GSIS": "NFLP-1a350c6817ac38266e2c",
+        "PFF": "NFLP-6019fda812386996a26a",
+        "PFR": "NFLP-6019fda812386996a26a"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFF": "10073",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFF": "NFLP-526098e197b83beda15c",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "2642",
+      "ProviderIDs": {
+        "ESPN": "2516049",
+        "GSIS": "00-0032181",
+        "PFF": "10073",
+        "PFR": "BateHo00",
+        "Sleeper": "2642"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-526098e197b83beda15c",
+        "GSIS": "NFLP-ea4fce97c143ae79f773",
+        "PFF": "NFLP-526098e197b83beda15c",
+        "PFR": "NFLP-ea4fce97c143ae79f773"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10977",
+        "PFR": "CartKy01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-a15e0185c49aa0056f54",
+        "PFR": "NFLP-a15e0185c49aa0056f54"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "3344",
+      "ProviderIDs": {
+        "ESPN": "2582138",
+        "GSIS": "00-0032430",
+        "PFF": "10977",
+        "PFR": "CartKy01",
+        "Sleeper": "3344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-a15e0185c49aa0056f54",
+        "GSIS": "NFLP-42576532019be29ed0cc",
+        "PFF": "NFLP-a15e0185c49aa0056f54",
+        "PFR": "NFLP-a15e0185c49aa0056f54"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "7344",
+      "ProviderIDs": {
+        "ESPN": "4032481",
+        "GSIS": "00-0035944",
+        "PFF": "44597",
+        "PFR": "WillJo10",
+        "Sleeper": "7344"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-e4905a84a65ff5368e63",
+        "GSIS": "NFLP-e4905a84a65ff5368e63",
+        "PFF": "NFLP-e4905a84a65ff5368e63",
+        "PFR": "NFLP-fa4d819f8ccbf05052c8"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "ESPN": "4035912",
+        "GSIS": "00-0037420",
+        "PFF": "23226",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0b2feabca17425b83186",
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFF": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@b699c80a22a1"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "8435",
+      "ProviderIDs": {
+        "ESPN": "4035912",
+        "GSIS": "00-0037420",
+        "PFF": "23226",
+        "PFR": "LassKw20",
+        "Sleeper": "8435"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-0b2feabca17425b83186",
+        "GSIS": "NFLP-0b2feabca17425b83186",
+        "PFF": "NFLP-0b2feabca17425b83186",
+        "PFR": "NFLP-a0da942e1b72e369eacf"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    }
+  ],
   "unmatchedAppPlayers": [],
   "unknownDraftStatusAppPlayers": [
     {
@@ -25898,11 +30309,11 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "13305",
-      "Tank01ID": "4686658",
-      "CanonicalPlayerID": "NFLP-79c428e814a8ecb04e1a",
-      "Name": "Mike Washington",
-      "Position": "RB",
+      "SleeperID": "13292",
+      "Tank01ID": "4566198",
+      "CanonicalPlayerID": "NFLP-58dec8fc1d49ae5462cf",
+      "Name": "Lake McRee",
+      "Position": "TE",
       "DraftYear": null
     },
     {
@@ -26082,6 +30493,14 @@
       "DraftYear": null
     },
     {
+      "SleeperID": "13603",
+      "Tank01ID": "4691889",
+      "CanonicalPlayerID": "NFLP-03e167d31cc790f1d775",
+      "Name": "Gregory Desrosiers",
+      "Position": "RB",
+      "DraftYear": null
+    },
+    {
       "SleeperID": "13608",
       "Tank01ID": "4565184",
       "CanonicalPlayerID": "NFLP-d65c1f240a92d768ce08",
@@ -26118,6 +30537,14 @@
       "Tank01ID": "4709678",
       "CanonicalPlayerID": "NFLP-636e345b1b4e3e1dec5d",
       "Name": "Devonte Ross",
+      "Position": "WR",
+      "DraftYear": null
+    },
+    {
+      "SleeperID": "13645",
+      "Tank01ID": "5152117",
+      "CanonicalPlayerID": "NFLP-d9759ced652c946719fa",
+      "Name": "Michael Wortham",
       "Position": "WR",
       "DraftYear": null
     },
@@ -26194,6 +30621,14 @@
       "DraftYear": null
     },
     {
+      "SleeperID": "13760",
+      "Tank01ID": "4683111",
+      "CanonicalPlayerID": "NFLP-1f830939f625346b8ed6",
+      "Name": "Jaden Bradley",
+      "Position": "WR",
+      "DraftYear": null
+    },
+    {
       "SleeperID": "13802",
       "Tank01ID": "4569535",
       "CanonicalPlayerID": "NFLP-ae2c5f6a0b2c8a96bdf6",
@@ -26222,6 +30657,14 @@
       "Tank01ID": "4431197",
       "CanonicalPlayerID": "NFLP-024ac25d1cb509a84328",
       "Name": "Romello Brinson",
+      "Position": "WR",
+      "DraftYear": null
+    },
+    {
+      "SleeperID": "13825",
+      "Tank01ID": "4682509",
+      "CanonicalPlayerID": "NFLP-2b087861ead871ec2445",
+      "Name": "Malik McClain",
       "Position": "WR",
       "DraftYear": null
     },
@@ -26306,6 +30749,14 @@
       "DraftYear": null
     },
     {
+      "SleeperID": "13890",
+      "Tank01ID": "4688418",
+      "CanonicalPlayerID": "NFLP-9fede76e27ca822d2ba3",
+      "Name": "Michael Briscoe",
+      "Position": "WR",
+      "DraftYear": null
+    },
+    {
       "SleeperID": "13898",
       "Tank01ID": "4433901",
       "CanonicalPlayerID": "NFLP-9d0838d329ed8e3d24da",
@@ -26327,6 +30778,14 @@
       "CanonicalPlayerID": "NFLP-cc39346579efa4954fa3",
       "Name": "Elijah Tau-Tolliver",
       "Position": "RB",
+      "DraftYear": null
+    },
+    {
+      "SleeperID": "13913",
+      "Tank01ID": "4693208",
+      "CanonicalPlayerID": "NFLP-0f475b0faebdb54d5f1d",
+      "Name": "Patrick Gurd",
+      "Position": "TE",
       "DraftYear": null
     },
     {
@@ -26359,6 +30818,14 @@
       "CanonicalPlayerID": "NFLP-ff2e4f296d86383d1d49",
       "Name": "Damon Bankston",
       "Position": "RB",
+      "DraftYear": null
+    },
+    {
+      "SleeperID": "13957",
+      "Tank01ID": "4746099",
+      "CanonicalPlayerID": "NFLP-db9934b8b30733830e8a",
+      "Name": "Kenny Fletcher",
+      "Position": "TE",
       "DraftYear": null
     },
     {
@@ -26402,6 +30869,14 @@
       "DraftYear": null
     },
     {
+      "SleeperID": "14020",
+      "Tank01ID": "4875613",
+      "CanonicalPlayerID": "NFLP-28ade61371c0270e7fd2",
+      "Name": "Dean Patterson",
+      "Position": "WR",
+      "DraftYear": null
+    },
+    {
       "SleeperID": "14031",
       "Tank01ID": "4432784",
       "CanonicalPlayerID": "NFLP-cbf48edf8e5012b70c4c",
@@ -26434,6 +30909,14 @@
       "DraftYear": null
     },
     {
+      "SleeperID": "14041",
+      "Tank01ID": "4612558",
+      "CanonicalPlayerID": "NFLP-6407feec4451567bf4de",
+      "Name": "Anderson Castle",
+      "Position": "RB",
+      "DraftYear": null
+    },
+    {
       "SleeperID": "14044",
       "Tank01ID": "4613105",
       "CanonicalPlayerID": "NFLP-da1577d93b862a4174ea",
@@ -26455,6 +30938,14 @@
       "CanonicalPlayerID": "NFLP-a1b7f4ea45b5e2b8d2b0",
       "Name": "Malick Meiga",
       "Position": "WR",
+      "DraftYear": null
+    },
+    {
+      "SleeperID": "14071",
+      "Tank01ID": "5393270",
+      "CanonicalPlayerID": "NFLP-b704edf5303f840b02fa",
+      "Name": "Grant Finley",
+      "Position": "RB",
       "DraftYear": null
     },
     {
@@ -26641,10 +31132,10 @@
       "latestSeason": 2026
     },
     "gameFinality": {
-      "releasedEvidenceCount": 7288,
+      "releasedEvidenceCount": 7290,
       "scheduleGameCount": 7548,
-      "finalGameCount": 7288,
-      "weekFinalCount": 570,
+      "finalGameCount": 7290,
+      "weekFinalCount": 571,
       "unknownReleasedGameIDs": []
     },
     "rosters": {
@@ -26667,22 +31158,22 @@
     },
     "playerStats": {
       "partitionCount": 573,
-      "recordCount": 476321,
-      "resolvedIdentityCount": 476279,
+      "recordCount": 476746,
+      "resolvedIdentityCount": 476704,
       "unresolvedIdentityCount": 42,
       "missingProviderIDRowCount": 531
     },
     "snapCounts": {
       "partitionCount": 279,
-      "recordCount": 324798,
-      "resolvedIdentityCount": 324574,
-      "unresolvedIdentityCount": 224,
+      "recordCount": 326008,
+      "resolvedIdentityCount": 325782,
+      "unresolvedIdentityCount": 226,
       "missingProviderIDRowCount": 0
     },
     "sleeperPlayers": {
       "recordCount": 12227,
-      "resolvedIdentityCount": 6306,
-      "unresolvedIdentityCount": 5921
+      "resolvedIdentityCount": 6317,
+      "unresolvedIdentityCount": 5910
     },
     "activeDatasetIDs": [
       "nflverse.game-finality",
