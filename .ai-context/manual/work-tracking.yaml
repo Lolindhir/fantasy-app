@@ -72,7 +72,7 @@ lifecycle:
     - Treat post-merge Issue reconciliation as a mandatory lifecycle gate after every authorized successful merge associated with Issue-tracked work.
     - Verify the merge actually succeeded and fetch the resulting Pull Request and Issue state even when a closing reference such as `Fixes #N` has already closed the Issue automatically.
     - Re-evaluate all acceptance criteria against the merged result and available validation evidence.
-    - Update the Issue body to the actual merged state, including completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
+    - Update the Issue body to the actual merged state, including completed checklist items, merge/PR reference, validation outcome and final outcome or remaining handoff.
     - If the full Issue is complete, ensure the Issue is closed with state reason `completed`, remove `priority:*`, `status:*` and `blocked`, and retain the required origin/type/area classification.
     - If GitHub auto-closed the Issue but any acceptance criterion or meaningful scope remains incomplete, reopen the Issue, restore an appropriate current priority and lifecycle status as applicable, and update the body handoff.
     - Do not report the merge/close lifecycle as complete while the Issue body still describes a pre-merge state or otherwise conflicts with the native Issue state.
@@ -93,7 +93,22 @@ labelPolicy:
     - Do not silently tolerate ad-hoc, legacy or external Issue labels outside this schema.
     - Add or change label semantics in this contract before relying on a new Issue label operationally.
 
+scopePolicy:
+  exclusionLabel: tracking:excluded
+  excludedIssueAllowedLabels:
+    - tracking:excluded
+  rules:
+    - An Issue carrying `tracking:excluded` is explicitly not a repository work package and is excluded from normal priority/origin/area/type/status/blocked cardinality validation.
+    - `tracking:excluded` is only for accidentally created technical placeholders, connector/test artifacts or equivalent Issues that never represented repository work.
+    - Do not use `tracking:excluded` for genuine work that was rejected, superseded, abandoned or closed as not planned; those Issues retain normal durable classification.
+    - An excluded Issue must not carry any other label. If it does, the exclusion marker is invalid and the Issue must be reconciled rather than silently skipped.
+
 labels:
+  tracking:
+    cardinality: zero-or-one
+    label: tracking:excluded
+    meaning: Explicit scope marker for an Issue that never represented repository work and is therefore excluded from the normal work-tracking contract.
+
   priority:
     cardinalityByState:
       open: exactly-one
@@ -158,7 +173,7 @@ labels:
       area:documentation:
         meaning: Canonical documentation, agent context or documentation governance.
     rules:
-      - Every open or closed Issue must have at least one area label.
+      - Every open or closed tracked Issue must have at least one area label.
       - Prefer the smallest accurate set of areas.
       - Multiple areas are allowed when the work genuinely spans them.
 
@@ -252,7 +267,7 @@ projectIntegration:
       absent: clear
   rules:
     - Project fields mirror canonical Issue state and labels; Project fields are never the source of truth.
-    - Backlog is intentionally inferred from an open Issue with no status:* label.
+    - Backlog is intentionally inferred from an open tracked Issue with no status:* label.
     - Project Blocked is a single-select field with option Yes; absence of the `blocked` label clears the field rather than writing No.
     - Project auto-add and closed-to-Done automation may be configured in GitHub UI.
     - Normal current-work views should use native open/closed state and lifecycle labels rather than a separate historical label.
@@ -264,11 +279,12 @@ driftGovernance:
     - finalization of the TODO-to-Issue migration
   checks:
     - Every documented label exists in GitHub.
-    - Every label attached to a GitHub Issue is documented by this contract; unknown Issue labels are contract violations.
+    - Every label attached to a tracked GitHub Issue is documented by this contract; unknown Issue labels are contract violations.
+    - Every `tracking:excluded` Issue carries no other labels and is a genuine non-work artifact rather than a way to suppress real work-tracking drift.
     - Label meaning and actual usage still match.
     - Cardinality and exclusivity rules are still appropriate and followed.
-    - Open Issues have plausible current priorities.
-    - Closed Issues carry no priority, active status or blocked label.
+    - Open tracked Issues have plausible current priorities.
+    - Closed tracked Issues carry no priority, active status or blocked label.
     - Project views and filters still match the documented schema.
     - Deprecated or unused labels are identified for cleanup.
   normalWork:
