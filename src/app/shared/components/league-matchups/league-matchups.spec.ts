@@ -232,6 +232,25 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(element.querySelector('.matchup-window-overflow')).toBeNull();
   });
 
+  it('fails closed when starter progress DecisionWindows do not match the displayed season or week', () => {
+    const snapshot = snapshotFixtureState();
+    try {
+      decisionWindows.LineupWeek = 2;
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.matchup-progress-row')).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('.matchup-progress-segment').length).toBe(0);
+
+      decisionWindows.LineupWeek = 1;
+      decisionWindows.Season = '2027';
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('.matchup-progress-row')).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('.matchup-progress-segment').length).toBe(0);
+    } finally {
+      restoreFixtureState(snapshot);
+      fixture.detectChanges();
+    }
+  });
+
   it('preserves missing score versus reliable zero semantics', () => {
     expect(component.formatFantasyPoints(null)).toBe('–');
     expect(component.formatFantasyPoints(0)).toBe('0');
