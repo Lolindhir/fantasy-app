@@ -16,7 +16,7 @@ from .identity_model import (
 
 
 _VALID_GSIS_PLAYER_ID = re.compile(r"^00-\d{7}$")
-_FF_BIRTHDATE_CORRECTION_MIN_SHARED_ANCHORS = 3
+_FF_BIRTHDATE_CORRECTION_MIN_SHARED_ANCHORS = 4
 
 
 def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:
@@ -39,7 +39,7 @@ def _corroborated_ff_birthdate_correction(
     """Return the authoritative nflverse.players DOB for a strongly anchored crosswalk row.
 
     A current crosswalk DOB mismatch is still fail-closed by default. The only
-    bounded exception is when at least three independent strong provider IDs in
+    bounded exception is when at least four independent strong provider IDs in
     that same row each resolve to one identical nflverse.players birth date and no
     resolved strong anchor points anywhere else. Raw evidence is not mutated; this
     only normalizes the in-memory identity candidate used for reconciliation.
