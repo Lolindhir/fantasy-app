@@ -140,7 +140,7 @@ describe('LeagueMatchupsComponent #500 responsive dashboard', () => {
   });
 
   for (const width of [360, 390, 430, 1280]) {
-    it(`contains the weekly orientation block without horizontal overflow at ${width}px`, () => {
+    it(`renders the intended top-context density without horizontal overflow at ${width}px`, () => {
       const host: HTMLElement = fixture.nativeElement;
       host.style.display = 'block';
       host.style.width = `${width}px`;
@@ -151,6 +151,21 @@ describe('LeagueMatchupsComponent #500 responsive dashboard', () => {
       expect(shell!.scrollWidth).toBeLessThanOrEqual(shell!.clientWidth + 1);
       expect(shell!.querySelectorAll('.weekly-standing-row').length).toBe(8);
       expect(shell!.querySelectorAll('.weekly-last-row').length).toBe(8);
+
+      const columns = getComputedStyle(shell!).gridTemplateColumns
+        .split(' ')
+        .map(value => Number.parseFloat(value))
+        .filter(Number.isFinite);
+      expect(columns.length).toBe(2);
+
+      const rightShare = columns[1] / (columns[0] + columns[1]);
+      if (width === 360) {
+        expect(rightShare).toBeGreaterThan(0.51);
+        expect(rightShare).toBeLessThan(0.55);
+      } else {
+        expect(rightShare).toBeGreaterThan(0.49);
+        expect(rightShare).toBeLessThan(0.51);
+      }
     });
   }
 
