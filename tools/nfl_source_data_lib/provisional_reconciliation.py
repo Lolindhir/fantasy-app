@@ -62,6 +62,34 @@ def _reconciliation_key(item: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+def _prior_retired_owners(
+    reconciliations: list[dict[str, Any]],
+    *,
+    provider: str,
+    external_id: str,
+    season: int,
+    internal_id: str,
+) -> set[str]:
+    owners: set[str] = set()
+    for item in reconciliations:
+        if str(item.get("Reason") or "") != _RECONCILIATION_REASON:
+            continue
+        if str(item.get("Provider") or "") != provider:
+            continue
+        if str(item.get("ExternalID") or "") != external_id:
+            continue
+        if int(item.get("ObservedSeason") or 0) != season:
+            continue
+        if str(item.get("CanonicalPlayerID") or "") != internal_id:
+            continue
+        owners.update(
+            str(value)
+            for value in item.get("RetiredCanonicalPlayerIDs") or []
+            if str(value)
+        )
+    return owners
+
+
 def reconcile_provisional_app_mappings(
     payload: dict[str, Any],
     historical_claims: list[dict[str, Any]],
@@ -75,7 +103,9 @@ def reconcile_provisional_app_mappings(
 
     This function never resolves a collision involving any non-provisional mapping
     owner. It also preserves an explicit reconciliation record so the stronger
-    evidence does not silently erase the earlier provisional observation.
+    evidence does not silently erase the earlier provisional observation. On a
+    later full replay, that persisted record may suppress only the exact same
+    token/season conflict against the same retired provisional owner set.
     """
 
     payload = normalize_legacy_canonical_player_fields(payload)
@@ -113,6 +143,13 @@ def reconcile_provisional_app_mappings(
         token = (provider, external_id)
         token_mappings = mappings_by_token[token]
         token_conflicts = conflicts_by_token[token]
+        prior_retired_owners = _prior_retired_owners(
+            reconciliations,
+            provider=provider,
+            external_id=external_id,
+            season=season,
+            internal_id=internal_id,
+        )
 
         active_other_mappings = [
             item
@@ -120,9 +157,9 @@ def reconcile_provisional_app_mappings(
             if str(item.get("CanonicalPlayerID") or "") != internal_id
             and _interval(item, season)[0] <= season <= _interval(item, season)[1]
         ]
-        if not active_other_mappings:
-            continue
-        if not all(_is_provisional_app_mapping(item) for item in active_other_mappings):
+        if active_other_mappings and not all(
+            _is_provisional_app_mapping(item) for item in active_other_mappings
+        ):
             continue
 
         retired_owners = {
@@ -131,9 +168,11 @@ def reconcile_provisional_app_mappings(
             if str(item.get("CanonicalPlayerID") or "")
         }
         if not retired_owners:
+            retired_owners = set(prior_retired_owners)
+        if not retired_owners:
             continue
-        allowed_conflict_owners = {internal_id, *retired_owners}
 
+        allowed_conflict_owners = {internal_id, *retired_owners}
         active_conflicts = [
             item
             for item in token_conflicts
@@ -217,23 +256,24 @@ def reconcile_provisional_app_mappings(
                 }
             )
 
-        reconciliation = {
-            "Provider": provider,
-            "ExternalID": external_id,
-            "ObservedSeason": season,
-            "CanonicalPlayerID": internal_id,
-            "RetiredCanonicalPlayerIDs": sorted(retired_owners),
-            "RetiredSourcesByCanonicalPlayerID": {
-                owner: sorted(values) for owner, values in sorted(retired_sources.items())
-            },
-            "Sources": sorted(sources),
-            "Status": "reconciled",
-            "Reason": _RECONCILIATION_REASON,
-        }
-        key = _reconciliation_key(reconciliation)
-        if key not in known_reconciliations:
-            reconciliations.append(reconciliation)
-            known_reconciliations.add(key)
+        if active_other_mappings:
+            reconciliation = {
+                "Provider": provider,
+                "ExternalID": external_id,
+                "ObservedSeason": season,
+                "CanonicalPlayerID": internal_id,
+                "RetiredCanonicalPlayerIDs": sorted(retired_owners),
+                "RetiredSourcesByCanonicalPlayerID": {
+                    owner: sorted(values) for owner, values in sorted(retired_sources.items())
+                },
+                "Sources": sorted(sources),
+                "Status": "reconciled",
+                "Reason": _RECONCILIATION_REASON,
+            }
+            key = _reconciliation_key(reconciliation)
+            if key not in known_reconciliations:
+                reconciliations.append(reconciliation)
+                known_reconciliations.add(key)
 
     mappings = [item for bucket in mappings_by_token.values() for item in bucket]
     conflicts = [item for bucket in conflicts_by_token.values() for item in bucket]
