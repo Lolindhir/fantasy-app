@@ -1,6 +1,11 @@
 name: APP • Data • League
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/data/Schedule.json"
   repository_dispatch:
     types:
       - scheduler-update-league
