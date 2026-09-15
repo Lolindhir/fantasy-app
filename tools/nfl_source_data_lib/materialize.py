@@ -13,6 +13,7 @@ from .lifecycle import effective_partition_payload
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
 from .phase1 import build_phase1_outputs
 from .provider_mappings import build_provider_mapping_payload
+from .provisional_reconciliation import reconcile_provisional_app_mappings
 
 
 def _observation_season(repo_root: Path) -> int:
@@ -141,6 +142,10 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         provider_mapping_payload,
         historical_claims,
         historical_resolution_conflicts,
+    )
+    provider_mapping_payload = reconcile_provisional_app_mappings(
+        provider_mapping_payload,
+        historical_claims,
     )
 
     combine_payloads: dict[int, dict[str, Any]] = {}
