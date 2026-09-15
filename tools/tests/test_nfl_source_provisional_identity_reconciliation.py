@@ -9,7 +9,7 @@ from tools.nfl_source_data_lib.provisional_reconciliation import (
 
 
 class ProvisionalIdentityReconciliationTests(unittest.TestCase):
-    def test_ff_birthdate_correction_requires_three_consistent_strong_anchors(self) -> None:
+    def test_ff_birthdate_correction_requires_four_consistent_strong_anchors(self) -> None:
         ids = {
             "GSIS": "00-1",
             "ESPN": "111",
@@ -28,11 +28,10 @@ class ProvisionalIdentityReconciliationTests(unittest.TestCase):
             _corroborated_ff_birthdate_correction(ids, "2001-11-01", anchors),
         )
 
-        only_two = dict(anchors)
-        only_two.pop(("PFR", "TestPl00"))
-        only_two.pop(("PFF", "999"))
+        only_three = dict(anchors)
+        only_three.pop(("PFF", "999"))
         self.assertIsNone(
-            _corroborated_ff_birthdate_correction(ids, "2001-11-01", only_two)
+            _corroborated_ff_birthdate_correction(ids, "2001-11-01", only_three)
         )
 
         conflicting = dict(anchors)
