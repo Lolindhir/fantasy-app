@@ -16,7 +16,14 @@ CONTRACT = """\
 version: 1
 labelPolicy:
   unknownLabels: forbidden
+scopePolicy:
+  exclusionLabel: tracking:excluded
+  excludedIssueAllowedLabels:
+    - tracking:excluded
 labels:
+  tracking:
+    cardinality: zero-or-one
+    label: tracking:excluded
   priority:
     cardinalityByState:
       open: exactly-one
@@ -153,6 +160,20 @@ class WorkTrackingValidatorTests(unittest.TestCase):
         payload = issue(labels=["priority:p2", "origin:discovered", "area:platform", "type:architecture", "custom:surprise"])
         self.assertIn("label.unknown", self.codes(payload))
 
+    def test_excluded_issue_is_valid_without_work_labels(self):
+        payload = issue(state="closed", labels=["tracking:excluded"])
+        self.assertEqual([], MODULE.validate_issue(payload, self.contract))
+
+    def test_excluded_issue_with_work_label_is_rejected(self):
+        payload = issue(state="closed", labels=["tracking:excluded", "area:platform"])
+        violations = MODULE.validate_issue(payload, self.contract)
+        self.assertEqual(["scope.excluded.labels"], [v.ruleCode for v in violations])
+        self.assertEqual(["area:platform", "tracking:excluded"], violations[0].observed)
+
+    def test_excluded_issue_with_unknown_label_is_rejected_by_scope(self):
+        payload = issue(state="closed", labels=["tracking:excluded", "custom:surprise"])
+        self.assertEqual(["scope.excluded.labels"], self.codes(payload))
+
     def test_closed_issue_requires_no_priority_and_keeps_durable_classification(self):
         payload = issue(state="closed", labels=["origin:todo-migration", "area:data", "type:architecture"])
         self.assertEqual([], MODULE.validate_issue(payload, self.contract))
@@ -199,6 +220,13 @@ class WorkTrackingValidatorTests(unittest.TestCase):
         self.assertIn("observed", violation)
         self.assertIn("expected", violation)
 
+    def test_excluded_issue_is_still_counted_as_checked(self):
+        checked, violations = MODULE.validate_issues(
+            [issue(number=1, state="closed", labels=["tracking:excluded"])], self.contract
+        )
+        self.assertEqual(1, checked)
+        self.assertEqual([], violations)
+
     def test_github_label_object_shape(self):
         payload = issue(labels=[
             {"name": "priority:p2"},
@@ -220,6 +248,13 @@ class WorkTrackingValidatorTests(unittest.TestCase):
         path.write_text(json.dumps({"issues": [issue()]}), encoding="utf-8")
         loaded = MODULE.load_issues_file(path)
         self.assertEqual(1, len(loaded))
+
+    def test_contract_rejects_undocumented_exclusion_label(self):
+        bad_contract = CONTRACT.replace("  tracking:\n    cardinality: zero-or-one\n    label: tracking:excluded\n", "")
+        path = Path(self.tmp.name) / "bad-work-tracking.yaml"
+        path.write_text(bad_contract, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "exclusionLabel must also be documented"):
+            MODULE.load_contract(path)
 
 
 if __name__ == "__main__":
