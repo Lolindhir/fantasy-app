@@ -11,10 +11,13 @@ from .common import (
     IDENTITY_ID_KEYS,
     Dataset,
     clean,
+    current_source_season,
+    iter_csv,
     load_json,
     normalize_legacy_canonical_player_fields,
     stable_internal_id,
 )
+from .historical_crosswalk import iter_historical_crosswalk_snapshots
 from .identity_model import (
     ALIAS_MIN_CORROBORATORS,
     ANCHOR_ID_KEYS,
@@ -32,6 +35,7 @@ from .identity_sources import raw_identity_candidates
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
+_HISTORICAL_APP_REPLAY_MIN_CORROBORATORS = 2
 
 
 class UnionFind:
@@ -62,13 +66,72 @@ class UnionFind:
             self.rank[left_root] += 1
 
 
+def _historical_sleeper_replay_index(repo_root: Path) -> dict[str, str]:
+    """Resolve current Sleeper app identities from durable same-season crosswalk evidence.
+
+    The current app row may contain only Sleeper/Tank01 identifiers and therefore
+    can otherwise bootstrap a duplicate canonical person when the live ff-player
+    crosswalk row is quarantined. Historical crosswalk snapshots are allowed to
+    reconnect that provider-only row only when at least two independent non-Sleeper
+    link-provider identifiers resolve to one already persisted canonical person.
+    Conflicting or weak evidence remains unresolved.
+    """
+
+    payload = normalize_legacy_canonical_player_fields(
+        load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    )
+    canonical = [row for row in payload.get("Players", []) if isinstance(row, dict)]
+    if not canonical:
+        return {}
+
+    lookup = identity_lookup(canonical)
+    observation_season = current_source_season(repo_root)
+    owners_by_sleeper: dict[str, set[str]] = defaultdict(set)
+
+    for snapshot in iter_historical_crosswalk_snapshots(repo_root):
+        if int(snapshot["season"]) != observation_season:
+            continue
+        for row in iter_csv(Path(snapshot["path"])):
+            provider_ids = {
+                provider: external_id
+                for provider, external_id in ids_from_ff(row).items()
+                if provider in LINK_ID_KEYS
+            }
+            sleeper_id = provider_ids.get("Sleeper")
+            if not sleeper_id:
+                continue
+
+            corroborated: dict[str, str] = {}
+            for provider, external_id in provider_ids.items():
+                if provider == "Sleeper":
+                    continue
+                internal_id = lookup.get((provider, external_id))
+                if internal_id:
+                    corroborated[provider] = internal_id
+
+            resolved_ids = set(corroborated.values())
+            if (
+                len(corroborated) >= _HISTORICAL_APP_REPLAY_MIN_CORROBORATORS
+                and len(resolved_ids) == 1
+            ):
+                owners_by_sleeper[sleeper_id].add(next(iter(resolved_ids)))
+
+    return {
+        sleeper_id: next(iter(owners))
+        for sleeper_id, owners in owners_by_sleeper.items()
+        if len(owners) == 1
+    }
+
+
 def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
     players = load_json(repo_root / "public/data/Players.json", []) or []
     relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
+    replay_index = _historical_sleeper_replay_index(repo_root)
     candidates: list[IdentityCandidate] = []
     for row in players:
         ids: dict[str, str] = {}
-        if sleeper := clean(row.get("ID")):
+        sleeper = clean(row.get("ID"))
+        if sleeper:
             ids["Sleeper"] = sleeper
         if tank := clean(row.get("TankID")):
             ids["Tank01"] = tank
@@ -85,6 +148,7 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
                 latest_team=clean(row.get("Team")) or clean(row.get("TeamID")),
                 source="app.Players",
                 priority=30,
+                existing_internal_id=replay_index.get(sleeper) if sleeper else None,
             )
         )
     return candidates, relevant
