@@ -16,6 +16,7 @@ from .identity_model import (
 
 
 _VALID_GSIS_PLAYER_ID = re.compile(r"^00-\d{7}$")
+_FF_BIRTHDATE_CORRECTION_MIN_SHARED_ANCHORS = 4
 
 
 def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[str, str], set[str]]:
@@ -28,6 +29,49 @@ def _player_birthdate_anchors(player_rows: list[dict[str, str]]) -> dict[tuple[s
             if key in ANCHOR_ID_KEYS:
                 anchors[(key, value)].add(birth_date)
     return anchors
+
+
+def _corroborated_ff_birthdate_correction(
+    ids: dict[str, str],
+    birth_date: str | None,
+    anchors: dict[tuple[str, str], set[str]],
+) -> str | None:
+    """Return the authoritative nflverse.players DOB for a strongly anchored crosswalk row.
+
+    A current crosswalk DOB mismatch is still fail-closed by default. The only
+    bounded exception is when at least four independent strong provider IDs in
+    that same row each resolve to one identical nflverse.players birth date and no
+    resolved strong anchor points anywhere else. Raw evidence is not mutated; this
+    only normalizes the in-memory identity candidate used for reconciliation.
+    """
+
+    if not birth_date:
+        return None
+
+    resolved_birth_dates: set[str] = set()
+    shared_anchor_count = 0
+    for key in ANCHOR_ID_KEYS:
+        value = ids.get(key)
+        if not value:
+            continue
+        expected = anchors.get((key, value), set())
+        if not expected:
+            continue
+        if len(expected) != 1:
+            return None
+        resolved_birth_dates.update(expected)
+        shared_anchor_count += 1
+
+    if (
+        shared_anchor_count < _FF_BIRTHDATE_CORRECTION_MIN_SHARED_ANCHORS
+        or len(resolved_birth_dates) != 1
+    ):
+        return None
+
+    authoritative_birth_date = next(iter(resolved_birth_dates))
+    if authoritative_birth_date == birth_date:
+        return None
+    return authoritative_birth_date
 
 
 def _is_weak_only(ids: dict[str, str]) -> bool:
@@ -168,6 +212,7 @@ def raw_identity_candidates(
         ids = dict(raw_ids)
         name = clean(row.get("name"))
         birth_date = clean(row.get("birthdate"))
+        candidate_birth_date = birth_date
         position = clean(row.get("position"))
         conflicting_anchors: list[dict[str, Any]] = []
         matching_anchors: list[dict[str, Any]] = []
@@ -191,43 +236,68 @@ def raw_identity_candidates(
                     conflicting_anchors.append(detail)
 
         if conflicting_anchors:
-            conflicting_keys = {item["Provider"] for item in conflicting_anchors}
-            if matching_anchors:
-                # One exact-birthdate anchor still identifies the person. Keep
-                # unrelated provider mappings and suppress only contradicted anchors.
-                suppressed = {
-                    key: value
-                    for key, value in raw_ids.items()
-                    if key in conflicting_keys
-                }
-                ids = {
-                    key: value
-                    for key, value in raw_ids.items()
-                    if key not in conflicting_keys
-                }
-                quarantine_scope = "mapping"
-            else:
-                # No authoritative NFL anchor corroborates this row's birth date.
-                # Do not let provider-only IDs bootstrap a person from contradicted evidence.
-                suppressed = {key: value for key, value in raw_ids.items() if key != "MFL"}
-                ids = {"MFL": raw_ids["MFL"]} if raw_ids.get("MFL") else {}
-                quarantine_scope = "row"
-
-            source_conflicts.append(
-                {
-                    "Source": "nflverse.ff-player-ids",
-                    "Reason": "birthdate_conflict_with_nflverse_players",
-                    "QuarantineScope": quarantine_scope,
-                    "MFLID": raw_ids.get("MFL"),
-                    "Name": name,
-                    "BirthDate": birth_date,
-                    "Position": position,
-                    "DraftYear": clean(row.get("draft_year")),
-                    "ConflictingAnchors": conflicting_anchors,
-                    "MatchingAnchors": matching_anchors,
-                    "SuppressedIDs": suppressed,
-                }
+            corrected_birth_date = _corroborated_ff_birthdate_correction(
+                raw_ids,
+                birth_date,
+                anchors,
             )
+            if corrected_birth_date:
+                candidate_birth_date = corrected_birth_date
+                source_conflicts.append(
+                    {
+                        "Source": "nflverse.ff-player-ids",
+                        "Reason": "birthdate_conflict_with_nflverse_players",
+                        "QuarantineScope": "birthdate-only",
+                        "Resolution": "strong_anchor_consensus",
+                        "ResolvedBirthDate": corrected_birth_date,
+                        "MFLID": raw_ids.get("MFL"),
+                        "Name": name,
+                        "BirthDate": birth_date,
+                        "Position": position,
+                        "DraftYear": clean(row.get("draft_year")),
+                        "ConflictingAnchors": conflicting_anchors,
+                        "MatchingAnchors": matching_anchors,
+                        "SuppressedIDs": {},
+                    }
+                )
+            else:
+                conflicting_keys = {item["Provider"] for item in conflicting_anchors}
+                if matching_anchors:
+                    # One exact-birthdate anchor still identifies the person. Keep
+                    # unrelated provider mappings and suppress only contradicted anchors.
+                    suppressed = {
+                        key: value
+                        for key, value in raw_ids.items()
+                        if key in conflicting_keys
+                    }
+                    ids = {
+                        key: value
+                        for key, value in raw_ids.items()
+                        if key not in conflicting_keys
+                    }
+                    quarantine_scope = "mapping"
+                else:
+                    # No authoritative NFL anchor corroborates this row's birth date.
+                    # Do not let provider-only IDs bootstrap a person from contradicted evidence.
+                    suppressed = {key: value for key, value in raw_ids.items() if key != "MFL"}
+                    ids = {"MFL": raw_ids["MFL"]} if raw_ids.get("MFL") else {}
+                    quarantine_scope = "row"
+
+                source_conflicts.append(
+                    {
+                        "Source": "nflverse.ff-player-ids",
+                        "Reason": "birthdate_conflict_with_nflverse_players",
+                        "QuarantineScope": quarantine_scope,
+                        "MFLID": raw_ids.get("MFL"),
+                        "Name": name,
+                        "BirthDate": birth_date,
+                        "Position": position,
+                        "DraftYear": clean(row.get("draft_year")),
+                        "ConflictingAnchors": conflicting_anchors,
+                        "MatchingAnchors": matching_anchors,
+                        "SuppressedIDs": suppressed,
+                    }
+                )
 
         candidate = None
         if ids:
@@ -236,7 +306,7 @@ def raw_identity_candidates(
                 name=name,
                 first_name=None,
                 last_name=None,
-                birth_date=birth_date,
+                birth_date=candidate_birth_date,
                 position=position,
                 latest_team=clean(row.get("team")),
                 source="nflverse.ff-player-ids",
@@ -244,7 +314,7 @@ def raw_identity_candidates(
                 existing_internal_id=_replay_existing_weak_identity(
                     existing_replay_index,
                     ids,
-                    birth_date,
+                    candidate_birth_date,
                     position,
                     name,
                 ),
