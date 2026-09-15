@@ -73,11 +73,12 @@ lifecycle:
     - Verify the merge actually succeeded and fetch the resulting Pull Request and Issue state even when a closing reference such as `Fixes #N` has already closed the Issue automatically.
     - Re-evaluate all acceptance criteria against the merged result and available validation evidence.
     - Update the Issue body to the actual merged state, including completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
-    - If the full Issue is complete, ensure the Issue is closed with state reason `completed` and remove active work-status labels unless intentionally retained for history.
-    - If GitHub auto-closed the Issue but any acceptance criterion or meaningful scope remains incomplete, reopen the Issue, restore the appropriate active status label and update the body handoff.
+    - If the full Issue is complete, ensure the Issue is closed with state reason `completed`, remove `priority:*`, `status:*` and `blocked`, and retain the required origin/type/area classification.
+    - If GitHub auto-closed the Issue but any acceptance criterion or meaningful scope remains incomplete, reopen the Issue, restore an appropriate current priority and lifecycle status as applicable, and update the body handoff.
     - Do not report the merge/close lifecycle as complete while the Issue body still describes a pre-merge state or otherwise conflicts with the native Issue state.
   regression:
     - Reopen an old Issue when the same original scope regresses.
+    - A reopened Issue must receive exactly one current priority before it is treated as valid open work.
     - Create a linked new Issue for a distinct new problem.
   syncFailure:
     - Inform the user transparently.
@@ -85,9 +86,18 @@ lifecycle:
     - Do not silently fall back to a Markdown TODO file.
     - Do not claim tracking is current if Issue synchronization failed.
 
+labelPolicy:
+  unknownLabels: forbidden
+  rules:
+    - Every label attached to a GitHub Issue in this repository must be documented by this contract.
+    - Do not silently tolerate ad-hoc, legacy or external Issue labels outside this schema.
+    - Add or change label semantics in this contract before relying on a new Issue label operationally.
+
 labels:
   priority:
-    cardinality: exactly-one-for-active-operative-issues
+    cardinalityByState:
+      open: exactly-one
+      closed: zero
     mutable: true
     meaning: current urgency and importance, not permanent classification
     values:
@@ -109,7 +119,8 @@ labels:
     rules:
       - Priorities may be raised or lowered whenever risks, deadlines, dependencies, impact or project context change.
       - Structural work-tracking audits should check both presence and current plausibility of priority.
-      - Do not invent historical priority for retrospective completed Issues.
+      - Closed Issues do not carry priority because priority describes current work urgency rather than permanent historical classification.
+      - Reopened Issues receive a current priority according to their present urgency before they are treated as valid open work.
       - Open Issues migrated from legacy TODOs are prioritized according to current need.
 
   origin:
@@ -125,20 +136,12 @@ labels:
       origin:automation:
         meaning: An explicitly authorized automated process detected the work and created the Issue.
     rules:
+      - Origin remains required after an Issue is closed because it is durable provenance rather than lifecycle state.
       - Do not use origin:ai; technical creation by an AI agent does not define the work origin.
       - The existence of origin:automation does not authorize current automations to create Issues. That capability requires a separate explicit automation contract.
 
-  history:
-    cardinality: optional
-    values:
-      history:retrospective:
-        meaning: The Issue was created retrospectively for work completed before Issue-based tracking was introduced.
-    rules:
-      - history:retrospective is independent of origin and may coexist with origin:todo-migration.
-      - An open migrated TODO is not retrospective merely because it is old.
-
   area:
-    cardinality: one-or-more-when-applicable
+    cardinality: one-or-more
     values:
       area:app:
         meaning: Application behavior or application-level domain/read-model work.
@@ -155,11 +158,12 @@ labels:
       area:documentation:
         meaning: Canonical documentation, agent context or documentation governance.
     rules:
+      - Every open or closed Issue must have at least one area label.
       - Prefer the smallest accurate set of areas.
       - Multiple areas are allowed when the work genuinely spans them.
 
   type:
-    cardinality: exactly-one-for-operative-issues
+    cardinality: exactly-one
     values:
       type:bug:
         meaning: Defect or regression.
@@ -173,11 +177,15 @@ labels:
         meaning: Maintenance, cleanup, modernization or operational hardening.
       type:migration:
         meaning: Migration from one canonical structure, process or representation to another.
+    rules:
+      - Type remains required after an Issue is closed because it is durable classification rather than lifecycle state.
 
   status:
-    cardinality: zero-or-one
+    cardinalityByState:
+      open: zero-or-one
+      closed: zero
     exclusive: true
-    meaning: Lifecycle position of an open operative Issue.
+    meaning: Lifecycle position of an open Issue.
     values:
       status:analysis:
         meaning: The topic has been taken up and analyzed or discussed, but it is not yet sufficiently defined or decided to be Ready for implementation.
@@ -193,18 +201,20 @@ labels:
       - Use status:analysis when meaningful analysis or discussion has happened but the Issue is deliberately not yet Ready.
       - Use status:review for a normal review or approval handoff; do not model that handoff as a blocker.
       - Do not use status:done; GitHub closed/completed is the canonical completion state.
-      - Remove active work-status labels when an Issue is closed unless retaining one is intentionally useful for history.
+      - Closed Issues must not retain an active status label.
 
   blocked:
-    cardinality: zero-or-one
+    cardinalityByState:
+      open: zero-or-one
+      closed: zero
     label: blocked
     orthogonalTo: status
     meaning: A real impediment currently prevents the next meaningful step while preserving the Issue's lifecycle position.
     rules:
-      - The `blocked` label may coexist with implicit Backlog, status:analysis, status:ready, status:in-progress or status:review.
+      - The `blocked` label may coexist with implicit Backlog, status:analysis, status:ready, status:in-progress or status:review on an open Issue.
       - Use `blocked` only for a real impediment such as an unavailable dependency, missing required access, an unresolved external prerequisite or another condition that prevents meaningful progress.
       - Do not use `blocked` merely because human or agent review, approval or acceptance is the next normal step; use status:review for that.
-      - Remove `blocked` when the impediment is resolved.
+      - Remove `blocked` when the impediment is resolved and always before or when the Issue is closed.
       - The Issue body must state the current blocker clearly enough for another worker to understand what prevents progress and what can unblock it.
 
 migration:
@@ -215,7 +225,7 @@ migration:
     - Every relevant legacy work item must map to at least one GitHub Issue before the TODO file is removed.
     - Preserve meaningful subtask, context, guardrail, acceptance and validation information in the Issue even when it does not become a separate Issue.
     - Prefer more retained context or an additional Issue over silently dropping legacy work.
-    - Historical completed work is represented by retrospective Issues and then closed as completed.
+    - Historical completed work from the one-time migration is represented by closed migrated Issues whose bodies preserve the historical purpose and migration provenance; no dedicated history label is required.
     - Do not invent historical dates, outcomes, priorities or implementation references; clearly mark inference when reconstruction is uncertain.
 
 projectIntegration:
@@ -235,6 +245,7 @@ projectIntegration:
       priority:p2: P2
       priority:p3: P3
       priority:p4: P4
+      closed: none
     blocked:
       label: blocked
       present: Yes
@@ -244,7 +255,7 @@ projectIntegration:
     - Backlog is intentionally inferred from an open Issue with no status:* label.
     - Project Blocked is a single-select field with option Yes; absence of the `blocked` label clears the field rather than writing No.
     - Project auto-add and closed-to-Done automation may be configured in GitHub UI.
-    - Normal current-work views should be able to exclude history:retrospective.
+    - Normal current-work views should use native open/closed state and lifecycle labels rather than a separate historical label.
 
 driftGovernance:
   fullAuditTriggers:
@@ -253,12 +264,14 @@ driftGovernance:
     - finalization of the TODO-to-Issue migration
   checks:
     - Every documented label exists in GitHub.
-    - Work-tracking labels present in GitHub are documented or intentionally outside this schema.
+    - Every label attached to a GitHub Issue is documented by this contract; unknown Issue labels are contract violations.
     - Label meaning and actual usage still match.
     - Cardinality and exclusivity rules are still appropriate and followed.
-    - Active Issues have plausible current priorities.
+    - Open Issues have plausible current priorities.
+    - Closed Issues carry no priority, active status or blocked label.
     - Project views and filters still match the documented schema.
     - Deprecated or unused labels are identified for cleanup.
   normalWork:
     - Perform opportunistic drift detection when a documented label is missing, renamed or semantically inconsistent; do not silently ignore the mismatch.
+    - Treat any Issue label not documented by this contract as drift rather than as an implicit exception.
     - A full label audit is not required after every normal commit.
