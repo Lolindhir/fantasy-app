@@ -13,6 +13,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\WaiverUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\AcquisitionCapabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
@@ -264,12 +265,15 @@ try {
     $playoffStart = $league.settings.playoff_week_start
     Write-Host "Playoff start week: Week $playoffStart" -ForegroundColor Yellow
 
-    $lastWeek = $league.settings.last_scored_leg
-    if($null -eq $lastWeek){
-        Write-Host "Last scored week in league not set in league settings." -ForegroundColor Yellow
-        $lastWeek = $playoffStart - 1 + $playoffs.WinnersBracket.length
-    }
-    Write-Host "Last scored week in league: Week $lastWeek" -ForegroundColor Yellow
+    $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+    $currentLeagueSourceFile = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
+    $leagueWeekState = Resolve-LeagueWeekState `
+        -League $league `
+        -CanonicalLeagueSourceFile $currentLeagueSourceFile
+    $lastScoredLeg = [int]$leagueWeekState.LastScoredLeg
+    $lastWeek = [int]$leagueWeekState.LastLeagueWeek
+    Write-Host "Last scored leg in league: Week $lastScoredLeg" -ForegroundColor Yellow
+    Write-Host "Last structural league week: Week $lastWeek ($($leagueWeekState.BoundarySource))" -ForegroundColor Yellow
 
     $currentWeek = 0
     $finalWeek = 0
@@ -329,7 +333,7 @@ try {
 
         if ($finalWeek -gt $lastWeek) {
             $finalWeek = $lastWeek
-            Write-Host "Adjusting final week to last scored week: Week $finalWeek" -ForegroundColor DarkGray
+            Write-Host "Adjusting final week to last league week: Week $finalWeek" -ForegroundColor DarkGray
         }
     }
 
@@ -360,7 +364,7 @@ try {
 
             if ([int]$decisionWindowsAsJson.LineupWeek -eq $matchupWeek) {
                 $fantasyMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$league.season) -Week $matchupWeek -MatchupRows $matchupRows)
-                $weekIsFinal = $null -ne $league.settings.last_scored_leg -and [int]$league.settings.last_scored_leg -ge $matchupWeek
+                $weekIsFinal = $lastScoredLeg -ge $matchupWeek
                 $fantasyGameContextAsJson = New-FantasyGameContextReadModel `
                     -LeagueID $LeagueID `
                     -Season ([string]$league.season) `
