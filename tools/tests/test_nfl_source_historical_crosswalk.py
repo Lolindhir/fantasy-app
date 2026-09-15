@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import csv
+import hashlib
+import io
 import json
 import sys
 import tempfile
@@ -22,41 +24,26 @@ from nfl_source_data_lib.mapping_history import (  # noqa: E402
 )
 
 
-def _config(start_season: int = 2024) -> dict:
-    return {
-        "schemaVersion": 1,
-        "startSeason": start_season,
-        "source": {
-            "id": "dynastyprocess.ff-player-ids-history",
-            "provider": "dynastyprocess",
-            "upstream": "dynastyprocess/data",
-            "repository": "dynastyprocess/data",
-            "path": "files/db_playerids.csv",
-            "rawPath": "providers/dynastyprocess/ff-player-ids-history/{season}/{role}.csv",
-            "metadataPath": "providers/dynastyprocess/ff-player-ids-history/{season}/metadata.json",
-            "requiredColumns": [
-                "mfl_id",
-                "gsis_id",
-                "sleeper_id",
-                "espn_id",
-                "pfr_id",
-                "name",
-                "draft_year",
-                "draft_round",
-                "draft_pick",
-                "draft_ovr",
-            ],
-            "minimumRows": 1,
-            "license": "CC BY 4.0",
-            "attribution": "DynastyProcess data via nflverse/ffverse",
-        },
-    }
+def _config(start_season: int = 2024, *, minimum_rows: int | None = 1) -> dict:
+    config = json.loads(
+        (TOOLS.parent / "source-data/historical-identity-backfill.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    config["startSeason"] = start_season
+    if minimum_rows is not None:
+        config["source"]["minimumRows"] = minimum_rows
+    return config
 
 
-def _write_config(root: Path, start_season: int = 2024) -> None:
+def _write_config(
+    root: Path, start_season: int = 2024, *, minimum_rows: int | None = 1
+) -> None:
     path = root / "source-data/historical-identity-backfill.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(_config(start_season)), encoding="utf-8")
+    path.write_text(
+        json.dumps(_config(start_season, minimum_rows=minimum_rows)), encoding="utf-8"
+    )
 
 
 def _write_crosswalk(root: Path, season: int, rows: list[dict[str, str]]) -> None:
@@ -103,6 +90,84 @@ def _write_crosswalk(root: Path, season: int, rows: list[dict[str, str]]) -> Non
 
 
 class HistoricalCrosswalkTests(unittest.TestCase):
+    def test_legacy_schema_acquisition_preserves_raw_and_replays_offline(self) -> None:
+        # The actual 2020 opening snapshot has 2,072 rows and no draft_ovr.
+        raw = b"gsis_id,sleeper_id,espn_id,pfr_id,name\n" + (
+            b"00-0019596,167,2330,BradTo00,Tom Brady\n" * 2072
+        )
+        commit = {"sha": "a" * 40, "committedAtUtc": "2020-08-01T00:00:00Z"}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _write_config(root, 2020, minimum_rows=None)
+            with patch(
+                "nfl_source_data_lib.historical_crosswalk._history_commits",
+                return_value=[commit],
+            ), patch(
+                "nfl_source_data_lib.historical_crosswalk.urllib.request.urlopen",
+                return_value=io.BytesIO(raw),
+            ):
+                result = sync_historical_crosswalk_evidence(root, current_season=2020)
+
+            directory = root / "source-data/providers/dynastyprocess/ff-player-ids-history/2020"
+            metadata_path = directory / "metadata.json"
+            metadata_bytes = metadata_path.read_bytes()
+            metadata = json.loads(metadata_bytes)
+            self.assertEqual(1, result["snapshotCount"])
+            self.assertEqual(raw, (directory / "opening.csv").read_bytes())
+            self.assertEqual(commit["sha"], metadata["snapshots"][0]["commitSha"])
+            self.assertEqual(2072, metadata["snapshots"][0]["rowCount"])
+            self.assertEqual(
+                hashlib.sha256(raw).hexdigest(),
+                metadata["snapshots"][0]["contentHashSha256"],
+            )
+            self.assertEqual(
+                ["gsis_id", "sleeper_id", "espn_id", "pfr_id", "name"],
+                metadata["snapshots"][0]["columns"],
+            )
+            with patch(
+                "nfl_source_data_lib.historical_crosswalk.urllib.request.urlopen",
+                side_effect=AssertionError("Offline replay must not fetch"),
+            ):
+                replay = sync_historical_crosswalk_evidence(
+                    root, current_season=2020, offline=True
+                )
+                frozen = sync_historical_crosswalk_evidence(
+                    root, current_season=2021, offline=True
+                )
+            self.assertEqual("offline-existing", replay["results"][0]["status"])
+            self.assertEqual("frozen-available", frozen["results"][0]["status"])
+            self.assertEqual(metadata_bytes, metadata_path.read_bytes())
+            self.assertEqual(raw, (directory / "opening.csv").read_bytes())
+
+    def test_legacy_schema_still_requires_provider_columns_and_plausible_size(self) -> None:
+        fields = ["gsis_id", "sleeper_id", "espn_id", "pfr_id"]
+        commit = {"sha": "a" * 40, "committedAtUtc": "2020-08-01T00:00:00Z"}
+        for missing in [*fields, None]:
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                _write_config(root, 2020, minimum_rows=None)
+                retained = [field for field in fields if field != missing]
+                raw = (",".join(retained) + "\n").encode()
+                # Missing columns fail even with enough rows; a schema-valid
+                # truncated snapshot must still fail the production size floor.
+                raw += (",".join("id" for _ in retained) + "\n").encode() * (
+                    2072 if missing else 1999
+                )
+                with patch(
+                    "nfl_source_data_lib.historical_crosswalk._history_commits",
+                    return_value=[commit],
+                ), patch(
+                    "nfl_source_data_lib.historical_crosswalk.urllib.request.urlopen",
+                    return_value=io.BytesIO(raw),
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError, f"missing required columns: {missing}" if missing else "implausibly few rows"
+                    ):
+                        sync_historical_crosswalk_evidence(root, current_season=2020)
+                directory = root / "source-data/providers/dynastyprocess/ff-player-ids-history/2020"
+                self.assertFalse((directory / "opening.csv").exists())
+                self.assertFalse((directory / "metadata.json").exists())
+
     def test_boundary_commit_selection_uses_first_and_last(self) -> None:
         commits = [
             {"sha": "b", "committedAtUtc": "2024-09-20T00:00:00Z"},
