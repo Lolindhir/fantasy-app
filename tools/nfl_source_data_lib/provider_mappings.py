@@ -8,6 +8,11 @@ from .common import CANONICAL_SCHEMA_VERSION, load_json, normalize_legacy_canoni
 from .identity_model import ANCHOR_ID_KEYS
 
 
+def _is_app_only_mapping(item: dict[str, Any]) -> bool:
+    sources = [str(source) for source in item.get("Sources") or []]
+    return bool(sources) and all(source.startswith("app.") for source in sources)
+
+
 def build_provider_mapping_payload(
     repo_root: Path,
     provider_claims: list[dict[str, Any]],
@@ -20,6 +25,12 @@ def build_provider_mapping_payload(
     observation season. Persisted anchor mappings may still represent real older
     history, but a stale value from a previous latest snapshot must not block a
     corrected current mapping for the same canonical person.
+
+    Provider-only app mappings are weaker than a current canonical claim that has
+    been reconnected through durable external crosswalk evidence. When such a
+    claim changes the owner of an overlapping app-only mapping, close that stale
+    interval before the current season instead of preserving a self-created
+    current conflict. Earlier-season ambiguity remains preserved.
     """
 
     path = repo_root / "source-data/nfl/identities/provider-mappings.json"
@@ -28,10 +39,43 @@ def build_provider_mapping_payload(
     conflicts = [dict(item) for item in existing.get("Conflicts", [])]
 
     current_values_by_owner_provider: dict[tuple[str, str], set[str]] = defaultdict(set)
+    current_owners_by_token: dict[tuple[str, str], set[str]] = defaultdict(set)
     for claim in provider_claims:
-        current_values_by_owner_provider[
-            (str(claim["CanonicalPlayerID"]), str(claim["Provider"]))
-        ].add(str(claim["ExternalID"]))
+        internal_id = str(claim["CanonicalPlayerID"])
+        provider = str(claim["Provider"])
+        external_id = str(claim["ExternalID"])
+        current_values_by_owner_provider[(internal_id, provider)].add(external_id)
+        current_owners_by_token[(provider, external_id)].add(internal_id)
+
+    # Provider-only app rows can become provisional identities when their live
+    # crosswalk row is quarantined. If replay has now reattached the current claim
+    # to another durable canonical person, retire only the overlapping app-derived
+    # mapping. External/corroborated mappings remain fail-closed and are never
+    # displaced by this rule.
+    retired_app_owners_by_token: dict[tuple[str, str], set[str]] = defaultdict(set)
+    app_reconciled_mappings: list[dict[str, Any]] = []
+    for item in mappings:
+        provider = str(item.get("Provider") or "")
+        external_id = str(item.get("ExternalID") or "")
+        internal_id = str(item.get("CanonicalPlayerID") or "")
+        first = int(item.get("FirstObservedSeason") or observation_season)
+        last = int(item.get("LastObservedSeason") or first)
+        current_owners = current_owners_by_token.get((provider, external_id), set())
+
+        if (
+            len(current_owners) == 1
+            and internal_id not in current_owners
+            and first <= observation_season <= last
+            and _is_app_only_mapping(item)
+        ):
+            retired_app_owners_by_token[(provider, external_id)].add(internal_id)
+            if first < observation_season:
+                item["LastObservedSeason"] = observation_season - 1
+                app_reconciled_mappings.append(item)
+            continue
+
+        app_reconciled_mappings.append(item)
+    mappings = app_reconciled_mappings
 
     # Canonical identity stores the active provider bridge, while this mapping
     # payload also retains true historical validity. If an anchor provider has a
@@ -63,6 +107,45 @@ def build_provider_mapping_payload(
         # must not pretend it remained valid for the whole season.
 
     mappings = reconciled_mappings
+
+    # Historical-overlap conflicts are temporal evidence. If their only losing
+    # current-season owners were the app-only mappings retired above, close the
+    # conflict before the current season. Conflicts from independent evidence or
+    # earlier seasons remain untouched.
+    reconciled_conflicts: list[dict[str, Any]] = []
+    active_mapping_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for item in mappings:
+        first = int(item.get("FirstObservedSeason") or observation_season)
+        last = int(item.get("LastObservedSeason") or first)
+        if first <= observation_season <= last:
+            token = (str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))
+            active_mapping_owners[token].add(str(item.get("CanonicalPlayerID") or ""))
+
+    for item in conflicts:
+        provider = str(item.get("Provider") or "")
+        external_id = str(item.get("ExternalID") or "")
+        token = (provider, external_id)
+        first = int(item.get("FirstObservedSeason") or observation_season)
+        last = int(item.get("LastObservedSeason") or first)
+        current_owners = current_owners_by_token.get(token, set())
+        conflict_owners = {str(value) for value in item.get("CanonicalPlayerIDs") or []}
+        retired_owners = retired_app_owners_by_token.get(token, set())
+
+        can_close_current_overlap = (
+            item.get("Reason") == "historical_mapping_overlap"
+            and first <= observation_season <= last
+            and len(current_owners) == 1
+            and bool(conflict_owners - current_owners)
+            and (conflict_owners - current_owners).issubset(retired_owners)
+            and active_mapping_owners.get(token, set()).issubset(current_owners)
+        )
+        if can_close_current_overlap:
+            if first < observation_season:
+                item["LastObservedSeason"] = observation_season - 1
+                reconciled_conflicts.append(item)
+            continue
+        reconciled_conflicts.append(item)
+    conflicts = reconciled_conflicts
 
     def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
         return (
