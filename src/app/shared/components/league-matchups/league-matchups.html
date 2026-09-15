@@ -132,7 +132,10 @@
             </div>
 
             <ng-container *ngIf="fantasyContextState$ | async as contextState">
-              <div class="matchup-progress-row">
+              <div
+                *ngIf="contextState.decisionWindows?.Season === league.Season && contextState.decisionWindows?.LineupWeek === week"
+                class="matchup-progress-row"
+              >
                 <div class="matchup-progress-side matchup-progress-side--left">
                   <ng-container *ngIf="starterProgress(matchup, contextState, 'left') as leftProgress">
                     <div
