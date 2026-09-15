@@ -10,7 +10,31 @@ from .phase1 import _build_game_finality, _build_schedules
 SCHEDULE_DATASET_ID = "nflverse.schedules"
 GAME_FINALITY_DATASET_ID = "nflverse.game-finality"
 GAME_FINALITY_SCOPE = "game-finality"
+SCHEDULE_WRITE_SET = "source-data/nfl/schedules/**"
 GAME_FINALITY_WRITE_SET = "source-data/nfl/game-finality/**"
+
+
+def _write_scoped_outputs(
+    repo_root: Path,
+    outputs: list[tuple[Path, Any]],
+    *,
+    prefix: str,
+    label: str,
+) -> list[str]:
+    changed_paths: list[str] = []
+    for path, payload in outputs:
+        try:
+            relative_path = path.relative_to(repo_root).as_posix()
+        except ValueError as exc:
+            raise ValueError(f"Scoped {GAME_FINALITY_SCOPE} output escapes repository root: {path}") from exc
+        if not relative_path.startswith(prefix):
+            raise ValueError(
+                f"Scoped {GAME_FINALITY_SCOPE} materializer produced an unexpected {label} output path: "
+                f"{relative_path}"
+            )
+        if write_json_if_changed(path, payload):
+            changed_paths.append(relative_path)
+    return changed_paths
 
 
 def materialize_game_finality(
@@ -19,13 +43,14 @@ def materialize_game_finality(
     *,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Materialize only canonical game-finality outputs from their direct evidence.
+    """Materialize canonical schedules and game finality from their direct evidence.
 
-    The scoped path deliberately reuses the exact schedule and finality builders
-    from the full Phase-1 materializer. Schedule candidates are evaluated only to
-    obtain the validated canonical game index; schedule outputs are not written.
-    No player identity, provider mapping, Draft, Combine, roster, stats or full
-    NFL audit work is performed here.
+    The fast scope deliberately reuses the exact schedule and finality builders
+    from the full Phase-1 materializer. Current canonical schedule facts are
+    written together with finality so WeekFinal cannot advance ahead of the
+    canonical score evidence consumed by downstream read models. No player
+    identity, provider mapping, Draft, Combine, roster, stats or full NFL audit
+    work is performed here.
     """
 
     required_ids = (SCHEDULE_DATASET_ID, GAME_FINALITY_DATASET_ID)
@@ -61,32 +86,31 @@ def materialize_game_finality(
         force=force,
     )
 
-    changed_paths: list[str] = []
-    for path, payload in finality_outputs:
-        try:
-            relative_path = path.relative_to(repo_root).as_posix()
-        except ValueError as exc:
-            raise ValueError(f"Scoped game-finality output escapes repository root: {path}") from exc
-        if not relative_path.startswith("source-data/nfl/game-finality/"):
-            raise ValueError(
-                f"Scoped game-finality materializer produced an unexpected output path: {relative_path}"
-            )
-        if write_json_if_changed(path, payload):
-            changed_paths.append(relative_path)
+    schedule_changed_paths = _write_scoped_outputs(
+        repo_root,
+        schedule_outputs,
+        prefix="source-data/nfl/schedules/",
+        label="schedule",
+    )
+    finality_changed_paths = _write_scoped_outputs(
+        repo_root,
+        finality_outputs,
+        prefix="source-data/nfl/game-finality/",
+        label="game-finality",
+    )
 
     return {
         "scope": GAME_FINALITY_SCOPE,
         "observationSeason": observation_season,
-        "writeSet": [GAME_FINALITY_WRITE_SET],
-        "scheduleDependency": {
-            "dataset": SCHEDULE_DATASET_ID,
-            "canonicalWritesSuppressed": len(schedule_outputs),
-            "frozenPartitionsObserved": schedule_preserved,
-            **schedule_diagnostics,
-        },
+        "writeSet": [SCHEDULE_WRITE_SET, GAME_FINALITY_WRITE_SET],
+        "scheduleDiagnostics": schedule_diagnostics,
+        "scheduleCanonicalFileCount": len(schedule_outputs),
+        "scheduleFilesChanged": len(schedule_changed_paths),
+        "scheduleChangedPaths": schedule_changed_paths,
+        "schedulePartitionsPreserved": schedule_preserved,
         "gameFinalityDiagnostics": finality_diagnostics,
         "gameFinalityCanonicalFileCount": len(finality_outputs),
-        "gameFinalityFilesChanged": len(changed_paths),
-        "gameFinalityChangedPaths": changed_paths,
+        "gameFinalityFilesChanged": len(finality_changed_paths),
+        "gameFinalityChangedPaths": finality_changed_paths,
         "gameFinalityPartitionsPreserved": finality_preserved,
     }

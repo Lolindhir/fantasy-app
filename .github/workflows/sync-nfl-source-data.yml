@@ -205,6 +205,9 @@ jobs:
           if [[ -n "${DATASET:-}" ]]; then
             raw_sync_args+=(--dataset "$DATASET")
           fi
+          if [[ "$materialization_scope" == "game-finality" ]]; then
+            raw_sync_args+=(--dataset "nflverse.schedules")
+          fi
           if [[ -n "${SEASON:-}" ]]; then
             IFS=',' read -ra season_values <<< "$SEASON"
             for season in "${season_values[@]}"; do
@@ -232,7 +235,8 @@ jobs:
             echo "- Season input: ${SEASON:-current}"
             echo "- Materialization scope: $materialization_scope"
             if [[ "$materialization_scope" == "game-finality" ]]; then
-              echo "- Canonical write-set: source-data/nfl/game-finality/**"
+              echo "- Scoped raw datasets: nflverse.schedules + nflverse.game-finality"
+              echo "- Canonical write-set: source-data/nfl/schedules/** + source-data/nfl/game-finality/**"
               echo "- Full NFL audit: read/write disabled for scoped materialization"
             else
               echo "- Canonical write-set: full NFL source materialization"
@@ -283,6 +287,9 @@ jobs:
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
+              if [[ "$path" == source-data/nfl/schedules/* ]]; then
+                continue
+              fi
               if [[ "$path" == source-data/nfl/game-finality/* ]]; then
                 continue
               fi
@@ -370,6 +377,12 @@ jobs:
             if [[ -n "$raw_line" ]]; then
               echo "- Raw result: $raw_line" >> "$GITHUB_STEP_SUMMARY"
             fi
+            if [[ "$materialization_scope" == "game-finality" ]]; then
+              schedule_raw_line="$(grep -m1 '^nflverse.schedules' "$raw_log" || true)"
+              if [[ -n "$schedule_raw_line" ]]; then
+                echo "- Raw companion result: $schedule_raw_line" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            fi
             backfill_line="$(grep -m1 '^historical backfill batch:' "$raw_log" || true)"
             if [[ -n "$backfill_line" ]]; then
               echo "- $backfill_line" >> "$GITHUB_STEP_SUMMARY"
@@ -431,9 +444,13 @@ jobs:
           result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
           scope = sys.argv[2]
           if scope == "game-finality":
-              print(f"- Scoped canonical files evaluated: {result.get('gameFinalityCanonicalFileCount')}")
-              print(f"- Scoped canonical files changed: {result.get('gameFinalityFilesChanged')}")
-              changed = result.get("gameFinalityChangedPaths") or []
+              schedule_evaluated = result.get("scheduleCanonicalFileCount") or 0
+              finality_evaluated = result.get("gameFinalityCanonicalFileCount") or 0
+              schedule_changed = result.get("scheduleFilesChanged") or 0
+              finality_changed = result.get("gameFinalityFilesChanged") or 0
+              changed = (result.get("scheduleChangedPaths") or []) + (result.get("gameFinalityChangedPaths") or [])
+              print(f"- Scoped canonical files evaluated: {schedule_evaluated + finality_evaluated}")
+              print(f"- Scoped canonical files changed: {schedule_changed + finality_changed}")
               print("- Scoped changed paths: " + (", ".join(changed) if changed else "none"))
               diagnostics = result.get("gameFinalityDiagnostics") or {}
               print(
@@ -470,6 +487,8 @@ jobs:
           scope = sys.argv[2]
           if scope == "game-finality":
               expected = {
+                  "scheduleFilesChanged": 0,
+                  "scheduleChangedPaths": [],
                   "gameFinalityFilesChanged": 0,
                   "gameFinalityChangedPaths": [],
               }

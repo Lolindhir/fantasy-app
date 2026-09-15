@@ -117,27 +117,43 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             write_csv(finality.raw_path, ["game_id"], [{"game_id": "2026_01_A_B"}])
 
             full_outputs, full_audit, _ = build_phase1_outputs(root, datasets, [], 2026)
-            expected = next(
+            expected_schedule = next(
+                payload
+                for path, payload in full_outputs
+                if path.as_posix().endswith("source-data/nfl/schedules/2026.json")
+            )
+            expected_finality = next(
                 payload
                 for path, payload in full_outputs
                 if path.as_posix().endswith("source-data/nfl/game-finality/2026.json")
             )
 
             first = materialize_game_finality(root, datasets)
-            output_path = root / "source-data/nfl/game-finality/2026.json"
-            actual = json.loads(output_path.read_text(encoding="utf-8"))
-            self.assertEqual(expected, actual)
+            schedule_path = root / "source-data/nfl/schedules/2026.json"
+            finality_path = root / "source-data/nfl/game-finality/2026.json"
+            actual_schedule = json.loads(schedule_path.read_text(encoding="utf-8"))
+            actual_finality = json.loads(finality_path.read_text(encoding="utf-8"))
+            self.assertEqual(expected_schedule, actual_schedule)
+            self.assertEqual(expected_finality, actual_finality)
+            self.assertEqual(full_audit["schedules"], first["scheduleDiagnostics"])
             self.assertEqual(full_audit["gameFinality"], first["gameFinalityDiagnostics"])
+            self.assertEqual(1, first["scheduleFilesChanged"])
+            self.assertEqual(["source-data/nfl/schedules/2026.json"], first["scheduleChangedPaths"])
             self.assertEqual(1, first["gameFinalityFilesChanged"])
             self.assertEqual(["source-data/nfl/game-finality/2026.json"], first["gameFinalityChangedPaths"])
-            self.assertEqual(["source-data/nfl/game-finality/**"], first["writeSet"])
+            self.assertEqual(
+                ["source-data/nfl/schedules/**", "source-data/nfl/game-finality/**"],
+                first["writeSet"],
+            )
 
-            by_game = {game["GameID"]: game for game in actual["Games"]}
+            by_game = {game["GameID"]: game for game in actual_finality["Games"]}
             self.assertTrue(by_game["2026_01_A_B"]["Final"])
             self.assertFalse(by_game["2026_01_C_D"]["Final"])
-            self.assertFalse(actual["Weeks"][0]["WeekFinal"])
+            self.assertFalse(actual_finality["Weeks"][0]["WeekFinal"])
 
             second = materialize_game_finality(root, datasets)
+            self.assertEqual(0, second["scheduleFilesChanged"])
+            self.assertEqual([], second["scheduleChangedPaths"])
             self.assertEqual(0, second["gameFinalityFilesChanged"])
             self.assertEqual([], second["gameFinalityChangedPaths"])
 
@@ -163,6 +179,7 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
                 [{"game_id": "2026_01_A_B"}, {"game_id": "2026_01_C_D"}],
             )
             changed = materialize_game_finality(root, datasets)
+            self.assertEqual(0, changed["scheduleFilesChanged"])
             self.assertEqual(1, changed["gameFinalityFilesChanged"])
             payload = json.loads(
                 (root / "source-data/nfl/game-finality/2026.json").read_text(encoding="utf-8")
@@ -171,6 +188,42 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             self.assertTrue(payload["Weeks"][0]["WeekFinal"])
 
             noop = materialize_game_finality(root, datasets)
+            self.assertEqual(0, noop["scheduleFilesChanged"])
+            self.assertEqual(0, noop["gameFinalityFilesChanged"])
+
+    def test_schedule_score_change_is_published_when_finality_is_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_league(root, 2026)
+            schedules, finality, datasets = self._datasets(root)
+            write_csv(schedules.raw_path, SCHEDULE_FIELDS, [schedule_row("2026_01_A_B")])
+            write_csv(finality.raw_path, ["game_id"], [{"game_id": "2026_01_A_B"}])
+            first = materialize_game_finality(root, datasets)
+            self.assertEqual(1, first["scheduleFilesChanged"])
+            self.assertEqual(1, first["gameFinalityFilesChanged"])
+
+            write_csv(
+                schedules.raw_path,
+                SCHEDULE_FIELDS,
+                [schedule_row("2026_01_A_B", away_score=31, home_score=20)],
+            )
+            changed = materialize_game_finality(root, datasets)
+            self.assertEqual(1, changed["scheduleFilesChanged"])
+            self.assertEqual(0, changed["gameFinalityFilesChanged"])
+            schedule_payload = json.loads(
+                (root / "source-data/nfl/schedules/2026.json").read_text(encoding="utf-8")
+            )
+            game = schedule_payload["Games"][0]
+            self.assertEqual(31, game["AwayScore"])
+            self.assertEqual(20, game["HomeScore"])
+            finality_payload = json.loads(
+                (root / "source-data/nfl/game-finality/2026.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(finality_payload["Games"][0]["Final"])
+            self.assertTrue(finality_payload["Weeks"][0]["WeekFinal"])
+
+            noop = materialize_game_finality(root, datasets)
+            self.assertEqual(0, noop["scheduleFilesChanged"])
             self.assertEqual(0, noop["gameFinalityFilesChanged"])
 
     def test_schedule_change_updates_finality_even_when_released_evidence_is_unchanged(self) -> None:
@@ -186,6 +239,7 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             rows.append(schedule_row("2026_01_C_D", away="C", home="D"))
             write_csv(schedules.raw_path, SCHEDULE_FIELDS, rows)
             changed = materialize_game_finality(root, datasets)
+            self.assertEqual(1, changed["scheduleFilesChanged"])
             self.assertEqual(1, changed["gameFinalityFilesChanged"])
             payload = json.loads(
                 (root / "source-data/nfl/game-finality/2026.json").read_text(encoding="utf-8")
@@ -194,7 +248,7 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             self.assertEqual(1, payload["Weeks"][0]["FinalGameCount"])
             self.assertFalse(payload["Weeks"][0]["WeekFinal"])
 
-    def test_missing_finality_output_is_rebuilt(self) -> None:
+    def test_missing_scoped_outputs_are_rebuilt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_league(root, 2026)
@@ -202,12 +256,16 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             write_csv(schedules.raw_path, SCHEDULE_FIELDS, [schedule_row("2026_01_A_B")])
             write_csv(finality.raw_path, ["game_id"], [{"game_id": "2026_01_A_B"}])
             materialize_game_finality(root, datasets)
-            output_path = root / "source-data/nfl/game-finality/2026.json"
-            output_path.unlink()
+            schedule_path = root / "source-data/nfl/schedules/2026.json"
+            finality_path = root / "source-data/nfl/game-finality/2026.json"
+            schedule_path.unlink()
+            finality_path.unlink()
 
             rebuilt = materialize_game_finality(root, datasets)
+            self.assertEqual(1, rebuilt["scheduleFilesChanged"])
             self.assertEqual(1, rebuilt["gameFinalityFilesChanged"])
-            self.assertTrue(output_path.exists())
+            self.assertTrue(schedule_path.exists())
+            self.assertTrue(finality_path.exists())
 
     def test_observation_season_switch_recomputes_partition_finalization(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -240,7 +298,9 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             )
             self.assertTrue(payload_2026["Finalized"])
             self.assertFalse(payload_2027["Finalized"])
-            self.assertEqual(0, materialize_game_finality(root, datasets)["gameFinalityFilesChanged"])
+            noop = materialize_game_finality(root, datasets)
+            self.assertEqual(0, noop["scheduleFilesChanged"])
+            self.assertEqual(0, noop["gameFinalityFilesChanged"])
 
     def test_unknown_released_game_id_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -287,19 +347,35 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             )
             write_csv(finality.raw_path, ["game_id"], [{"game_id": "2026_01_A_B"}])
             materialize_game_finality(root, datasets)
-            output_path = root / "source-data/nfl/game-finality/2026.json"
-            before = output_path.read_text(encoding="utf-8")
+            schedule_path = root / "source-data/nfl/schedules/2026.json"
+            finality_path = root / "source-data/nfl/game-finality/2026.json"
+            schedule_before = schedule_path.read_text(encoding="utf-8")
+            finality_before = finality_path.read_text(encoding="utf-8")
 
+            write_csv(
+                schedules.raw_path,
+                SCHEDULE_FIELDS,
+                [
+                    schedule_row("2026_01_A_B", season=2026, away_score=31, home_score=20),
+                    schedule_row("2026_01_C_D", season=2026, away="C", home="D"),
+                ],
+            )
             write_csv(finality.raw_path, ["game_id"], [{"game_id": "2026_01_C_D"}])
             frozen = materialize_game_finality(root, datasets)
+            self.assertEqual(0, frozen["scheduleFilesChanged"])
+            self.assertEqual(1, frozen["schedulePartitionsPreserved"])
             self.assertEqual(0, frozen["gameFinalityFilesChanged"])
             self.assertEqual(1, frozen["gameFinalityPartitionsPreserved"])
-            self.assertEqual(before, output_path.read_text(encoding="utf-8"))
+            self.assertEqual(schedule_before, schedule_path.read_text(encoding="utf-8"))
+            self.assertEqual(finality_before, finality_path.read_text(encoding="utf-8"))
 
             repaired = materialize_game_finality(root, datasets, force=True)
+            self.assertEqual(1, repaired["scheduleFilesChanged"])
             self.assertEqual(1, repaired["gameFinalityFilesChanged"])
-            payload = json.loads(output_path.read_text(encoding="utf-8"))
-            by_game = {game["GameID"]: game for game in payload["Games"]}
+            schedule_payload = json.loads(schedule_path.read_text(encoding="utf-8"))
+            self.assertEqual(31, schedule_payload["Games"][0]["AwayScore"])
+            finality_payload = json.loads(finality_path.read_text(encoding="utf-8"))
+            by_game = {game["GameID"]: game for game in finality_payload["Games"]}
             self.assertFalse(by_game["2026_01_A_B"]["Final"])
             self.assertTrue(by_game["2026_01_C_D"]["Final"])
 
@@ -323,6 +399,9 @@ class ScopedGameFinalityMaterializationTests(unittest.TestCase):
             result = materialize_game_finality(root, datasets)
             self.assertEqual(audit_sentinel, audit_path.read_text(encoding="utf-8"))
             self.assertEqual(foreign_sentinel, foreign_path.read_text(encoding="utf-8"))
+            self.assertTrue(
+                all(path.startswith("source-data/nfl/schedules/") for path in result["scheduleChangedPaths"])
+            )
             self.assertTrue(
                 all(path.startswith("source-data/nfl/game-finality/") for path in result["gameFinalityChangedPaths"])
             )
