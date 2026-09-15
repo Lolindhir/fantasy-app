@@ -4,13 +4,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { catchError, combineLatest, map, of, shareReplay, tap } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { catchError, combineLatest, map, of, shareReplay, tap, timer } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type {
   FantasyGameContextGame,
   FantasyGameContextMatchup,
-  FantasyGameContextMatchupGame,
   FantasyGameContextReadModel
 } from '../../../core/models/fantasy-game-context.models';
 import type {
@@ -23,15 +23,17 @@ import type {
   MatchupParticipant,
   MatchupsReadModel
 } from '../../../core/models/matchup.models';
-import type { NFLTeam } from '../../../core/models/player.models';
+import type { NFLTeam, Player } from '../../../core/models/player.models';
+import type {
+  WeeklyRecapKeyGame,
+  WeeklyRecapKeyPlayer,
+  WeeklyRecapsReadModel
+} from '../../../core/models/weekly-recap.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
-  getCompletedImpactGames,
   getMustWatchGames,
-  getNextFantasyMatchupGame,
-  isFantasyGameContextForLeagueWeek,
-  isFantasyMatchupFinalWindowGame
+  isFantasyGameContextForLeagueWeek
 } from '../../utils/fantasy-game-context.util';
 import {
   buildMatchupScoringWindow,
@@ -42,6 +44,15 @@ import {
   type MatchupScoreboardState,
   type MatchupStarterProgressView
 } from '../../utils/matchups-overview-view.util';
+import {
+  buildOverviewTopContext,
+  orderOverviewCurrentMatchups,
+  resolveOverviewWeeklyPhase,
+  selectOverviewRecap,
+  type OverviewRecapSelection,
+  type OverviewTopContext,
+  type OverviewWeeklyPhase
+} from '../../utils/overview-weekly-dashboard.util';
 import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
@@ -83,26 +94,23 @@ interface FantasyContextState {
   nflTeams: NFLTeam[];
 }
 
-interface FantasyMatchupPreviewEventView {
-  game: FantasyGameContextMatchupGame;
-  contextGame: FantasyGameContextGame | null;
-  starterCount: number;
-  optionCount: number;
-}
-
-interface FantasyMatchupPreviewView {
-  primary: FantasyMatchupPreviewEventView;
-  isLive: boolean;
-  isFinalWindow: boolean;
-  isFinalWindowCommitted: boolean;
-}
-
 @Component({
   selector: 'app-league-matchups',
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatDialogModule, MatIconModule, TeamIdentityComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatDialogModule,
+    MatIconModule,
+    TeamIdentityComponent
+  ],
   templateUrl: './league-matchups.html',
-  styleUrls: ['./league-matchups.scss', './league-matchups-refinements.scss']
+  styleUrls: [
+    './league-matchups.scss',
+    './league-matchups-refinements.scss',
+    './league-weekly-dashboard.scss'
+  ]
 })
 export class LeagueMatchupsComponent {
   @Input({ required: true }) league!: League;
@@ -111,12 +119,29 @@ export class LeagueMatchupsComponent {
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
   private latestFantasyContextState: FantasyContextState | null = null;
-  private readonly expandedScoringWindows = new Set<string>();
+
   private readonly matchups$ = this.dataService.getMatchups().pipe(
     catchError(() => of(null)),
     shareReplay({ bufferSize: 1, refCount: true })
   );
   private readonly matchupsReadModelSignal = toSignal(this.matchups$, { initialValue: null });
+
+  private readonly weeklyRecaps$ = (this.dataService.getWeeklyRecaps?.() ?? of(null)).pipe(
+    catchError(() => of(null)),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly weeklyRecapsSignal = toSignal<WeeklyRecapsReadModel | null>(this.weeklyRecaps$, { initialValue: null });
+
+  private readonly nflTeams$ = this.dataService.getNflTeams().pipe(
+    catchError(() => of([] as NFLTeam[])),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly nflTeamsSignal = toSignal(this.nflTeams$, { initialValue: [] as NFLTeam[] });
+
+  private readonly nowSignal = toSignal(
+    timer(0, 30_000).pipe(map(() => new Date())),
+    { initialValue: new Date() }
+  );
 
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
@@ -125,7 +150,7 @@ export class LeagueMatchupsComponent {
     context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
     decisionWindows: this.dataService.getDecisionWindows().pipe(catchError(() => of(null))),
     matchups: this.matchups$,
-    nflTeams: this.dataService.getNflTeams().pipe(catchError(() => of([] as NFLTeam[])))
+    nflTeams: this.nflTeams$
   }).pipe(
     map(state => state satisfies FantasyContextState),
     tap(state => this.latestFantasyContextState = state),
@@ -147,8 +172,37 @@ export class LeagueMatchupsComponent {
     maximumFractionDigits: 0
   });
 
+  get weeklyDashboardEnabled(): boolean {
+    return !this.league?.Status || ['Pre-Season', 'In-Season', 'Playoffs'].includes(this.league.Status);
+  }
+
+  get hasOverviewContextData(): boolean {
+    return Array.isArray(this.league?.Standings)
+      && Array.isArray(this.league?.Teams)
+      && this.league.Teams.every(team => !!team.Placements);
+  }
+
   get week(): number | null {
     return this.currentMatchupsReadModel()?.Summary.ActiveOrNextWeek ?? null;
+  }
+
+  get overviewPhase(): OverviewWeeklyPhase {
+    return resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal());
+  }
+
+  get topContext(): OverviewTopContext | null {
+    if (!this.hasOverviewContextData) return null;
+    return buildOverviewTopContext(this.league, this.currentMatchupsReadModel());
+  }
+
+  get weeklyRecap(): OverviewRecapSelection | null {
+    const lastCompletedWeek = this.topContext?.lastCompletedWeek ?? null;
+    return selectOverviewRecap(
+      this.weeklyRecapsSignal(),
+      this.league.Season,
+      lastCompletedWeek,
+      this.overviewPhase
+    );
   }
 
   get matchups(): LeagueMatchupView[] {
@@ -160,8 +214,9 @@ export class LeagueMatchupsComponent {
     if (!weekModel) return [];
 
     const teamByID = new Map(this.league.Teams.map(team => [team.TeamID, team]));
+    const ordered = orderOverviewCurrentMatchups(this.league, weekModel.Matchups);
 
-    return weekModel.Matchups
+    return ordered
       .filter(matchup => matchup.Participants.length === 2)
       .map(matchup => {
         const participants = matchup.Participants
@@ -225,20 +280,6 @@ export class LeagueMatchupsComponent {
     );
   }
 
-  scoringWindowGames(matchupID: string, scoringWindow: MatchupScoringWindowView): FantasyGameContextGame[] {
-    return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID))
-      ? scoringWindow.games
-      : scoringWindow.mobileVisibleGames;
-  }
-
-  isScoringWindowExpanded(matchupID: string, scoringWindow: MatchupScoringWindowView): boolean {
-    return this.expandedScoringWindows.has(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
-  }
-
-  expandScoringWindow(matchupID: string, scoringWindow: MatchupScoringWindowView): void {
-    this.expandedScoringWindows.add(this.scoringWindowKey(matchupID, scoringWindow.decisionWindowID));
-  }
-
   openMatchupDetailFromOverview(matchup: LeagueMatchupView): void {
     if (this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
   }
@@ -247,45 +288,12 @@ export class LeagueMatchupsComponent {
     return `Open ${this.teamShortName(matchup.left.team)} versus ${this.teamShortName(matchup.right.team)} matchup details`;
   }
 
-  matchupPreview(
-    matchup: LeagueMatchupView,
-    context: FantasyGameContextReadModel | null
-  ): FantasyMatchupPreviewView | null {
-    const current = this.currentContext(context);
-    if (!current) return null;
-    const resolved = this.matchupContext(matchup, current);
-    if (!resolved) return null;
-
-    const remaining = resolved.RemainingRelevance;
-    const scoringGame = getNextFantasyMatchupGame(resolved);
-    if (!scoringGame) return null;
-
-    const starterCount = remaining?.NextScoringLockedActiveStarterCount !== undefined
-      && remaining?.NextScoringUnlockedStarterCount !== undefined
-      ? remaining.NextScoringLockedActiveStarterCount + remaining.NextScoringUnlockedStarterCount
-      : scoringGame.LeftStarterCount + scoringGame.RightStarterCount;
-
-    if (starterCount <= 0) return null;
-
-    const scoring = this.buildPreviewEvent(
-      scoringGame,
-      current,
-      starterCount,
-      remaining?.NextScoringOptionCount ?? 0
-    );
-
-    return {
-      primary: scoring,
-      isLive: scoring.contextGame
-        ? this.gameIsLiveForFantasy(scoring.contextGame)
-        : (remaining?.NextScoringLockedActiveStarterCount ?? 0) > 0,
-      isFinalWindow: isFantasyMatchupFinalWindowGame(resolved, scoring.game.GameID),
-      isFinalWindowCommitted: remaining?.IsFinalScoringWindowCommitted ?? false
-    };
-  }
-
   teamShortName(team: FantasyTeam): string {
     return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
+  }
+
+  teamDisplayName(team: FantasyTeam): string {
+    return team.Team?.trim() || team.Owner || `Team ${team.TeamID}`;
   }
 
   teamShortNameByID(teamID: string | number): string {
@@ -315,13 +323,13 @@ export class LeagueMatchupsComponent {
     return current ? getMustWatchGames(current).slice(0, 5) : [];
   }
 
-  completedGames(context: FantasyGameContextReadModel | null): FantasyGameContextGame[] {
-    const current = this.currentContext(context);
-    return current ? getCompletedImpactGames(current).slice(0, 5) : [];
+  nflLogo(teamID: string | number): string | null {
+    return this.nflTeamsSignal().find(team => String(team.ID) === String(teamID))?.Logo || null;
   }
 
-  nflLogo(teamID: string | number, nflTeams: NFLTeam[]): string | null {
-    return nflTeams.find(team => String(team.ID) === String(teamID))?.Logo || null;
+  nflAbbr(teamID: string | number): string {
+    const team = this.nflTeamsSignal().find(candidate => String(candidate.ID) === String(teamID));
+    return team?.Abv || String(teamID);
   }
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
@@ -348,6 +356,27 @@ export class LeagueMatchupsComponent {
   formatNflScore(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.nflScoreFormatter.format(Number(value));
+  }
+
+  recapGameAriaLabel(game: WeeklyRecapKeyGame): string {
+    return `${this.nflAbbr(game.AwayNFLTeamID)} at ${this.nflAbbr(game.HomeNFLTeamID)}, ${this.formatNflScore(game.AwayScore)} to ${this.formatNflScore(game.HomeScore)}`;
+  }
+
+  recapPlayer(player: WeeklyRecapKeyPlayer): Player | null {
+    for (const team of this.league.Teams) {
+      const resolved = team.Roster.find(candidate => String(candidate.ID) === String(player.PlayerID));
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+
+  recapPlayerName(player: WeeklyRecapKeyPlayer): string {
+    const resolved = this.recapPlayer(player);
+    return resolved?.NameShort || resolved?.Name || `Player ${player.PlayerID}`;
+  }
+
+  recapPlayerPicture(player: WeeklyRecapKeyPlayer): string | null {
+    return this.recapPlayer(player)?.Picture || null;
   }
 
   openTeam(teamID: string | number): void {
@@ -385,24 +414,6 @@ export class LeagueMatchupsComponent {
     });
   }
 
-  private buildPreviewEvent(
-    game: FantasyGameContextMatchupGame,
-    context: FantasyGameContextReadModel,
-    starterCount: number,
-    optionCount: number
-  ): FantasyMatchupPreviewEventView {
-    return {
-      game,
-      contextGame: context.Games.find(candidate => candidate.GameID === game.GameID) ?? null,
-      starterCount,
-      optionCount
-    };
-  }
-
-  private scoringWindowKey(matchupID: string, decisionWindowID: string): string {
-    return `${matchupID}|${decisionWindowID}`;
-  }
-
   private openContextDialog(data: FantasyGameContextDialogData): void {
     this.dialog.open(FantasyGameContextDialogComponent, {
       data,
@@ -422,12 +433,10 @@ export class LeagueMatchupsComponent {
     const team = teamByID.get(participant.TeamID);
     if (!team) return null;
 
-    const points = participant.Points;
-
     return {
       team,
-      points,
-      pointsDisplay: this.formatFantasyPoints(points),
+      points: participant.Points,
+      pointsDisplay: this.formatFantasyPoints(participant.Points),
       context: this.getTeamContext(team)
     };
   }
@@ -448,7 +457,6 @@ export class LeagueMatchupsComponent {
       const pointsFor = Number.isFinite(placement.Points) ? placement.Points : null;
 
       if (standing === null && !record && !streak && pointsFor === null) return null;
-
       return {
         mode: 'current',
         seasonLabel: null,
@@ -471,15 +479,14 @@ export class LeagueMatchupsComponent {
       : null;
 
     if (overallStanding === null && regularStanding === null && !record && pointsFor === null) return null;
-
     return {
       mode: 'previous',
       seasonLabel: this.previousSeasonLabel,
-      standing: null,
+      standing: overallStanding,
       overallStanding,
       regularStanding,
       record,
-      streak: null,
+      streak: regularPlacement?.Streak?.trim() || null,
       pointsFor,
       pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
     };
@@ -490,12 +497,11 @@ export class LeagueMatchupsComponent {
   }
 
   private normalizeStanding(place: number | undefined): number | null {
-    return Number.isFinite(place) && (place ?? 0) > 0 ? place! : null;
+    return Number.isFinite(place) && (place ?? 0) > 0 && (place ?? 999) < 999 ? place! : null;
   }
 
   private formatRecord(placement: PlacementRegularSeason): string | null {
     if (![placement.Wins, placement.Losses, placement.Ties].every(Number.isFinite)) return null;
-
     const baseRecord = `${placement.Wins}-${placement.Losses}`;
     return placement.Ties > 0 ? `${baseRecord}-${placement.Ties}` : baseRecord;
   }
