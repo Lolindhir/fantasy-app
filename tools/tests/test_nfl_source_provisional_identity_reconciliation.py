@@ -102,6 +102,52 @@ class ProvisionalIdentityReconciliationTests(unittest.TestCase):
             )
         )
 
+    def test_persisted_reconciliation_removes_same_conflict_recreated_by_full_replay(self) -> None:
+        claim = self._external_claim(2025)
+        first = reconcile_provisional_app_mappings(
+            self._payload(first=2025, last=2025),
+            [claim],
+        )
+
+        replayed = {
+            **first,
+            "Conflicts": [
+                {
+                    "Provider": "Sleeper",
+                    "ExternalID": "S1",
+                    "CanonicalPlayerIDs": ["NFLP-durable", "NFLP-provisional"],
+                    "FirstObservedSeason": 2025,
+                    "LastObservedSeason": 2025,
+                    "Status": "ambiguous",
+                    "Reason": "historical_mapping_overlap",
+                }
+            ],
+        }
+        second = reconcile_provisional_app_mappings(replayed, [claim])
+
+        self.assertEqual(first, second)
+
+    def test_persisted_reconciliation_does_not_hide_new_owner(self) -> None:
+        claim = self._external_claim(2025)
+        first = reconcile_provisional_app_mappings(
+            self._payload(first=2025, last=2025),
+            [claim],
+        )
+        new_conflict = {
+            "Provider": "Sleeper",
+            "ExternalID": "S1",
+            "CanonicalPlayerIDs": ["NFLP-durable", "NFLP-new-owner"],
+            "FirstObservedSeason": 2025,
+            "LastObservedSeason": 2025,
+            "Status": "ambiguous",
+            "Reason": "historical_mapping_overlap",
+        }
+        replayed = {**first, "Conflicts": [new_conflict]}
+
+        second = reconcile_provisional_app_mappings(replayed, [claim])
+
+        self.assertEqual([new_conflict], second["Conflicts"])
+
     def test_reconciliation_is_season_local_and_preserves_surrounding_history(self) -> None:
         payload = self._payload(first=2024, last=2026)
         payload["Conflicts"] = [payload["Conflicts"][1]]
