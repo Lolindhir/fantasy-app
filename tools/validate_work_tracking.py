@@ -51,6 +51,8 @@ class ContractModel:
     groups: tuple[LabelGroup, ...]
     allowed_labels: frozenset[str]
     unknown_labels_forbidden: bool
+    exclusion_label: str | None
+    excluded_issue_allowed_labels: frozenset[str]
 
 
 def _load_yaml(path: Path) -> Mapping[str, Any]:
@@ -113,10 +115,28 @@ def load_contract(path: Path) -> ContractModel:
         raise ValueError("labelPolicy must be a mapping")
     unknown_policy = label_policy.get("unknownLabels", "allowed")
 
+    scope_policy = data.get("scopePolicy") or {}
+    if not isinstance(scope_policy, Mapping):
+        raise ValueError("scopePolicy must be a mapping")
+    exclusion_label = scope_policy.get("exclusionLabel")
+    excluded_allowed = scope_policy.get("excludedIssueAllowedLabels") or []
+    if not isinstance(excluded_allowed, list):
+        raise ValueError("scopePolicy.excludedIssueAllowedLabels must be a list")
+    if exclusion_label is not None:
+        exclusion_label = str(exclusion_label)
+        if exclusion_label not in allowed:
+            raise ValueError("scopePolicy.exclusionLabel must also be documented under labels")
+        if exclusion_label not in {str(label) for label in excluded_allowed}:
+            raise ValueError(
+                "scopePolicy.excludedIssueAllowedLabels must include the exclusion label"
+            )
+
     return ContractModel(
         groups=tuple(groups),
         allowed_labels=frozenset(allowed),
         unknown_labels_forbidden=(unknown_policy == "forbidden"),
+        exclusion_label=exclusion_label,
+        excluded_issue_allowed_labels=frozenset(str(label) for label in excluded_allowed),
     )
 
 
@@ -163,6 +183,24 @@ def validate_issue(issue: Mapping[str, Any], contract: ContractModel) -> list[Vi
     state = _issue_state(issue)
     labels = _label_names(issue)
     violations: list[Violation] = []
+
+    if contract.exclusion_label and contract.exclusion_label in labels:
+        unexpected = sorted(set(labels) - contract.excluded_issue_allowed_labels)
+        if unexpected:
+            violations.append(
+                Violation(
+                    issueNumber=number,
+                    ruleCode="scope.excluded.labels",
+                    rule="Excluded Issues may carry only labels allowed by scopePolicy",
+                    observed=sorted(labels),
+                    expected=", ".join(sorted(contract.excluded_issue_allowed_labels)),
+                    message=(
+                        f"Issue #{number} is marked {contract.exclusion_label!r} but also carries "
+                        f"non-exclusion labels: {unexpected}."
+                    ),
+                )
+            )
+        return violations
 
     if contract.unknown_labels_forbidden:
         for label in sorted(set(labels) - contract.allowed_labels):
