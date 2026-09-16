@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import Any
 
 from .common import CANONICAL_SCHEMA_VERSION, load_json, normalize_legacy_canonical_player_fields
+from .identity_adjudications import (
+    apply_identity_adjudications,
+    load_identity_adjudication_claims,
+)
 from .identity_model import ANCHOR_ID_KEYS
 
 
@@ -205,10 +209,33 @@ def build_provider_mapping_payload(
             tuple(item["CanonicalPlayerIDs"]),
         )
     )
-    return {
+
+    payload = {
         "SchemaVersion": CANONICAL_SCHEMA_VERSION,
         "TemporalResolution": "season",
         "Mappings": mappings,
         "Conflicts": conflicts,
         **persisted_history,
     }
+    known_canonical_ids = {
+        str(item.get("CanonicalPlayerID") or "")
+        for item in mappings
+        if str(item.get("CanonicalPlayerID") or "")
+    }
+    known_canonical_ids.update(
+        str(claim.get("CanonicalPlayerID") or "")
+        for claim in provider_claims
+        if str(claim.get("CanonicalPlayerID") or "")
+    )
+    for conflict in conflicts:
+        known_canonical_ids.update(
+            str(value)
+            for value in conflict.get("CanonicalPlayerIDs") or []
+            if str(value)
+        )
+
+    adjudication_claims = load_identity_adjudication_claims(
+        repo_root,
+        known_canonical_ids,
+    )
+    return apply_identity_adjudications(payload, adjudication_claims)
