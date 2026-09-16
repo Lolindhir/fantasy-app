@@ -45,8 +45,29 @@ try {
 }
 Assert-True $threw 'Conflicting score evidence for the same game must fail closed.'
 
+# Regression for #553: PowerShell emits $null for an empty pipeline unless the
+# result is explicitly materialized as an array. RequestGames must therefore
+# wrap the game-ID projection in @() before calling [array]::IndexOf.
+$emptyGames = @()
+$emptyGameIDs = @($emptyGames | ForEach-Object { $_.gameID })
+$emptyIndex = [array]::IndexOf($emptyGameIDs, '20260909_NE@SEA')
+Assert-True ($emptyIndex -eq -1) 'An empty Games collection must resolve a missing game to index -1 without throwing.'
+
+$existingGames = @(
+    [PSCustomObject]@{ gameID = '20260909_NE@SEA' },
+    [PSCustomObject]@{ gameID = '20260910_SF@LAR' }
+)
+$existingGameIDs = @($existingGames | ForEach-Object { $_.gameID })
+Assert-True ([array]::IndexOf($existingGameIDs, '20260910_SF@LAR') -eq 1) 'Populated Games lookup must keep the existing update index semantics.'
+
 $requestGamesSource = Get-Content (Join-Path $PSScriptRoot 'RequestGames.ps1') -Raw
 Assert-True ($requestGamesSource -match 'getNFLScoresOnly\?gameWeek=\$scoreWeek&season=\$year') 'Weekly score enrichment must use Tank01 gameWeek.'
 Assert-True (-not ($requestGamesSource -match 'getNFLScoresOnly\?week=\$scoreWeek')) 'Legacy Tank01 week parameter must not be used for getNFLScoresOnly.'
+Assert-True ($requestGamesSource.Contains('$gameIDs = @($games | ForEach-Object { $_.gameID })')) 'RequestGames must materialize the game-ID projection as an array before IndexOf.'
+Assert-True ($requestGamesSource.Contains('$index = [array]::IndexOf($gameIDs, $gameID)')) 'RequestGames must use the materialized game-ID array for lookup.'
+Assert-True (-not $requestGamesSource.Contains('[array]::IndexOf(($games | ForEach-Object { $_.gameID }), $gameID)')) 'The null-prone empty pipeline IndexOf expression must not return.'
+Assert-True ($requestGamesSource.Contains('Write-Error "  -> Error processing boxscore for $($gameID): $_"')) 'Internal boxscore processing failures must be terminating generator errors.'
+Assert-True (-not $requestGamesSource.Contains('Using cached key: $($Global:CurrentApiKey)')) 'RequestGames must not log the cached Tank01 key value.'
+Assert-True (-not $requestGamesSource.Contains('Try with key: $key')) 'RequestGames must not log Tank01 key candidate values.'
 
 Write-Host 'Game score regression test passed.' -ForegroundColor Green
