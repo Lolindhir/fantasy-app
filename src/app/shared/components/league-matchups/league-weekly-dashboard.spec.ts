@@ -7,7 +7,7 @@ import type { DecisionWindowsReadModel } from '../../../core/models/decision-win
 import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
-import type { Player } from '../../../core/models/player.models';
+import type { NFLTeam, Player } from '../../../core/models/player.models';
 import type { WeeklyRecapsReadModel } from '../../../core/models/weekly-recap.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
@@ -25,9 +25,21 @@ function makePlayer(teamID: number): Player {
       ID: `NFL-${teamID}`,
       Name: `NFL Team ${teamID}`,
       Abv: `N${teamID}`,
-      Logo: `/nfl-${teamID}.svg`
+      Logo: `/player-attached-nfl-${teamID}.png`
     }
   } as unknown as Player;
+}
+
+function makeNflTeams(teamCount = 10): NFLTeam[] {
+  return Array.from({ length: teamCount }, (_, index) => {
+    const teamID = index + 1;
+    return {
+      ID: `NFL-${teamID}`,
+      Name: `NFL Team ${teamID}`,
+      Abv: `N${teamID}`,
+      Logo: `/transparent-nfl-${teamID}.svg`
+    } as unknown as NFLTeam;
+  });
 }
 
 function makeLeague(teamCount = 8): League {
@@ -169,7 +181,7 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     dataService.getFantasyGameContext.and.returnValue(of(null as unknown as FantasyGameContextReadModel));
     dataService.getDecisionWindows.and.returnValue(of(null as unknown as DecisionWindowsReadModel));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
-    dataService.getNflTeams.and.returnValue(of([]));
+    dataService.getNflTeams.and.returnValue(of(makeNflTeams()));
     dataService.getWeeklyRecaps.and.returnValue(of(recap));
 
     await TestBed.configureTestingModule({
@@ -207,13 +219,16 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       const standingRows = shell!.querySelector<HTMLElement>('.weekly-context-half--standings .weekly-context-rows');
       const lastRows = shell!.querySelector<HTMLElement>('.weekly-last-matchups');
       expect(Math.abs(lastRows!.scrollHeight - standingRows!.scrollHeight)).toBeLessThanOrEqual(1);
-      expect(Number.parseFloat(getComputedStyle(standingRows!).paddingBottom)).toBeGreaterThanOrEqual(4);
+      expect(Number.parseFloat(getComputedStyle(standingRows!).paddingBottom)).toBeGreaterThanOrEqual(8);
 
-      for (const matchup of Array.from(shell!.querySelectorAll<HTMLElement>('.weekly-last-matchup'))) {
+      const matchups = Array.from(shell!.querySelectorAll<HTMLElement>('.weekly-last-matchup'));
+      for (const matchup of matchups) {
         expect(matchup.querySelectorAll('.weekly-last-side').length).toBe(2);
         expect(matchup.scrollWidth).toBeLessThanOrEqual(matchup.clientWidth + 1);
-        expect(matchup.getBoundingClientRect().height).toBeGreaterThanOrEqual(width >= 768 ? 72 : 60);
+        expect(matchup.getBoundingClientRect().height).toBeGreaterThanOrEqual(width >= 768 ? 76 : 66);
       }
+      expect(getComputedStyle(matchups[0]).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+      expect(getComputedStyle(matchups[1]).borderTopWidth).toBe('1px');
 
       for (const playerRow of Array.from(host.querySelectorAll<HTMLElement>('.weekly-recap-player'))) {
         expect(playerRow.scrollWidth).toBeLessThanOrEqual(playerRow.clientWidth + 1);
@@ -277,16 +292,22 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(host.querySelector('.weekly-last-matchup a, .weekly-last-matchup button')).toBeNull();
   });
 
-  it('uses integrated transparent NFL-team identity for recap players and preserves WeeklyRecaps order', () => {
+  it('uses the established NFL-team source for recap player marks and preserves WeeklyRecaps order', () => {
     const host: HTMLElement = fixture.nativeElement;
     const rows = Array.from(host.querySelectorAll<HTMLButtonElement>('.weekly-recap-player'));
 
     expect(rows.length).toBe(3);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-copy strong')?.textContent?.trim())).toEqual(['P2', 'P1', 'P3']);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-points')?.textContent?.trim())).toEqual(['15', '30', '10']);
-    expect(rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-2.svg');
-    expect(rows[1].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-1.svg');
-    expect(rows[2].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-3.svg');
+    expect(rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/transparent-nfl-2.svg');
+    expect(rows[1].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/transparent-nfl-1.svg');
+    expect(rows[2].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/transparent-nfl-3.svg');
+    expect(rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).not.toContain('player-attached');
+
+    const picture = rows[0].querySelector<HTMLElement>('.weekly-recap-player-picture');
+    expect(picture).not.toBeNull();
+    expect(picture!.getBoundingClientRect().width).toBeLessThanOrEqual(32.5);
+    expect(picture!.getBoundingClientRect().height).toBeLessThanOrEqual(32.5);
 
     const nflLogo = rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo');
     expect(nflLogo).not.toBeNull();
@@ -294,6 +315,7 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(nflLogoStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(nflLogoStyle.paddingTop).toBe('0px');
     expect(nflLogoStyle.borderTopWidth).toBe('0px');
+    expect(nflLogoStyle.mixBlendMode).toBe('normal');
   });
 
   it('opens the established Player Detail dialog from the whole recap player row', () => {
