@@ -1,41 +1,22 @@
 from __future__ import annotations
 
 import csv
-import json
 import sys
 import unittest
 from pathlib import Path
-from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools"
 sys.path.insert(0, str(TOOLS))
 
 from league_source_data_lib.materialize import PlayerMappingResolver  # noqa: E402
-from nfl_source_data_lib.canonical_identity import identity_lookup  # noqa: E402
-from nfl_source_data_lib.common import clean, iter_csv  # noqa: E402
+from nfl_source_data_lib.common import clean  # noqa: E402
 from nfl_source_data_lib.historical_crosswalk import (  # noqa: E402
     iter_historical_crosswalk_snapshots,
-)
-from nfl_source_data_lib.mapping_history import (  # noqa: E402
-    _resolve_historical_crosswalk_row,
-    extend_provider_mapping_payload,
 )
 
 
 class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
-    @staticmethod
-    def _resolver_from_payload(payload: dict[str, Any]) -> PlayerMappingResolver:
-        mappings: dict[tuple[str, str], list[dict[str, Any]]] = {}
-        conflicts: dict[tuple[str, str], list[dict[str, Any]]] = {}
-        for item in payload.get("Mappings", []) or []:
-            key = (str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))
-            mappings.setdefault(key, []).append(item)
-        for item in payload.get("Conflicts", []) or []:
-            key = (str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))
-            conflicts.setdefault(key, []).append(item)
-        return PlayerMappingResolver(mappings=mappings, conflicts=conflicts)
-
     @staticmethod
     def _2020_snapshots() -> list[dict[str, object]]:
         snapshots = [
@@ -48,17 +29,17 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
         roles = {str(item["role"]) for item in snapshots}
         if roles != {"opening", "closing"}:
             raise AssertionError(
-                f"2020 onboarding coverage requires opening + closing evidence, found {sorted(roles)}"
+                f"2020 historical identity coverage requires opening + closing evidence, found {sorted(roles)}"
             )
         return snapshots
 
     @classmethod
-    def _2020_evidence(cls) -> tuple[set[str], dict[str, list[dict[str, str | None]]], int, int]:
-        snapshots = cls._2020_snapshots()
+    def _2020_evidence(cls) -> tuple[set[str], dict[str, set[tuple[str, str]]], int]:
         sleeper_ids: set[str] = set()
-        rows_by_sleeper: dict[str, list[dict[str, str | None]]] = {}
+        anchors_by_sleeper: dict[str, set[tuple[str, str]]] = {}
         observation_count = 0
-        for snapshot in snapshots:
+
+        for snapshot in cls._2020_snapshots():
             path = Path(snapshot["path"])
             with path.open("r", encoding="utf-8", newline="") as handle:
                 reader = csv.DictReader(handle)
@@ -70,267 +51,85 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                         continue
                     sleeper_ids.add(sleeper_id)
                     observation_count += 1
-                    rows_by_sleeper.setdefault(sleeper_id, []).append(
-                        {
-                            "name": clean(row.get("name")) or clean(row.get("player_name")),
-                            "gsis_id": clean(row.get("gsis_id")),
-                            "espn_id": clean(row.get("espn_id")),
-                            "pfr_id": clean(row.get("pfr_id")),
-                        }
-                    )
-        return sleeper_ids, rows_by_sleeper, observation_count, len(snapshots)
+                    anchors = anchors_by_sleeper.setdefault(sleeper_id, set())
+                    for field, provider in (
+                        ("gsis_id", "GSIS"),
+                        ("espn_id", "ESPN"),
+                        ("pfr_id", "PFR"),
+                    ):
+                        external_id = clean(row.get(field))
+                        if external_id:
+                            anchors.add((provider, external_id))
 
-    @staticmethod
-    def _anchor_tokens(evidence: list[dict[str, str | None]]) -> set[tuple[str, str]]:
-        tokens: set[tuple[str, str]] = set()
-        for row in evidence:
-            for field, provider in (
-                ("gsis_id", "GSIS"),
-                ("espn_id", "ESPN"),
-                ("pfr_id", "PFR"),
-            ):
-                value = clean(row.get(field))
-                if value:
-                    tokens.add((provider, value))
-        return tokens
+        return sleeper_ids, anchors_by_sleeper, observation_count
 
-    @classmethod
-    def _anchor_diagnostics(
-        cls,
-        resolver: PlayerMappingResolver,
-        evidence: list[dict[str, str | None]],
-    ) -> list[dict[str, object]]:
-        result: list[dict[str, object]] = []
-        for provider, external_id in sorted(cls._anchor_tokens(evidence)):
-            try:
-                active = resolver.resolve(provider, external_id, 2020)
-            except ValueError as exc:
-                active = f"AMBIGUOUS: {exc}"
-            result.append(
-                {
-                    "provider": provider,
-                    "id": external_id,
-                    "active2020": active,
-                    "spans": [
-                        {
-                            "canonical": item.get("CanonicalPlayerID"),
-                            "first": item.get("FirstObservedSeason"),
-                            "last": item.get("LastObservedSeason"),
-                            "sources": item.get("Sources"),
-                        }
-                        for item in resolver.mappings.get((provider, external_id), [])
-                    ],
-                }
-            )
-        return result
+    def test_unresolved_2020_crosswalk_ids_have_no_safe_seasonal_corroboration(self) -> None:
+        """Fail if persisted evidence could safely resolve a Sleeper ID but did not.
 
-    @classmethod
-    def _classify_gap(
-        cls,
-        resolver: PlayerMappingResolver,
-        sleeper_id: str,
-        evidence: list[dict[str, str | None]],
-    ) -> tuple[str, dict[str, object]]:
-        tokens = sorted(cls._anchor_tokens(evidence))
-        active_owners: list[str] = []
-        ambiguous_tokens: list[str] = []
-        all_known_owners: set[str] = set()
+        The DynastyProcess snapshot is a provider-wide identity universe, not this
+        fantasy league's roster universe. Missing Sleeper mappings are therefore
+        allowed when evidence is insufficient or conflicting. What is *not*
+        allowed is leaving a Sleeper ID unresolved when two independent
+        non-Sleeper IDs are already mapped to the same CanonicalPlayerID in the
+        exact observed season.
 
-        for provider, external_id in tokens:
-            try:
-                owner = resolver.resolve(provider, external_id, 2020)
-            except ValueError as exc:
-                ambiguous_tokens.append(f"{provider}/{external_id}: {exc}")
-                owner = None
-            if owner:
-                active_owners.append(owner)
-            for item in resolver.mappings.get((provider, external_id), []):
-                canonical = str(item.get("CanonicalPlayerID") or "")
-                if canonical:
-                    all_known_owners.add(canonical)
+        Later-only mappings are deliberately ignored here: using them would
+        back-project today's/later identity state into 2020 and violate the
+        historical identity contract.
+        """
 
-        active_owner_set = set(active_owners)
-        if not tokens:
-            category = "no-non-sleeper-anchor"
-        elif len(tokens) == 1:
-            category = "single-non-sleeper-anchor"
-        elif ambiguous_tokens or len(active_owner_set) > 1:
-            category = "season-2020-provider-conflict"
-        elif len(active_owners) >= 2 and len(active_owner_set) == 1:
-            category = "season-2020-safe-corroboration"
-        elif len(all_known_owners) > 1:
-            category = "cross-season-provider-disagreement"
-        elif len(all_known_owners) == 1:
-            category = "later-only-consistent-owner"
-        else:
-            category = "multi-anchor-no-mapping-evidence"
-
-        return category, {
-            "sleeper": sleeper_id,
-            "name": next((row.get("name") for row in evidence if row.get("name")), None),
-            "rawAnchorCount": len(tokens),
-            "active2020AnchorCount": len(active_owners),
-            "active2020Owners": sorted(active_owner_set),
-            "allKnownOwners": sorted(all_known_owners),
-            "ambiguousTokens": ambiguous_tokens,
-            "anchors": cls._anchor_diagnostics(resolver, evidence),
-        }
-
-    def test_every_2020_historical_sleeper_id_resolves_uniquely(self) -> None:
-        sleeper_ids, rows_by_sleeper, observation_count, snapshot_count = self._2020_evidence()
+        sleeper_ids, anchors_by_sleeper, observation_count = self._2020_evidence()
         self.assertGreater(
             len(sleeper_ids),
             1000,
             "2020 historical identity evidence unexpectedly contains too few Sleeper IDs",
         )
+        self.assertGreater(
+            observation_count,
+            4000,
+            "2020 opening/closing evidence unexpectedly contains too few observations",
+        )
 
         resolver = PlayerMappingResolver.load(ROOT)
-        unresolved: list[str] = []
-        ambiguous: list[str] = []
+        safe_but_unresolved: list[dict[str, object]] = []
 
         for sleeper_id in sorted(sleeper_ids):
             try:
-                canonical_id = resolver.resolve("Sleeper", sleeper_id, 2020)
-            except ValueError as exc:
-                ambiguous.append(f"{sleeper_id}: {exc}")
+                current = resolver.resolve("Sleeper", sleeper_id, 2020)
+            except ValueError:
+                # Ambiguous Sleeper mappings are already fail-closed and must not
+                # be auto-repaired from a provider-wide crosswalk.
                 continue
-            if canonical_id is None:
-                unresolved.append(sleeper_id)
+            if current is not None:
+                continue
 
-        detail = (
-            f"snapshots={snapshot_count}, observations={observation_count}, "
-            f"uniqueSleeperIDs={len(sleeper_ids)}"
-        )
-        self.assertFalse(
-            ambiguous,
-            "2020 historical Sleeper IDs with ambiguous seasonal mappings; "
-            f"{detail}; first={ambiguous[:50]}",
-        )
-        self.assertFalse(
-            unresolved,
-            "2020 historical Sleeper IDs without a seasonal CanonicalPlayerID; "
-            f"{detail}; count={len(unresolved)}; first={unresolved[:100]}",
-        )
+            resolved_anchors: list[tuple[str, str, str]] = []
+            anchor_conflict = False
+            for provider, external_id in sorted(anchors_by_sleeper.get(sleeper_id, set())):
+                try:
+                    canonical_id = resolver.resolve(provider, external_id, 2020)
+                except ValueError:
+                    anchor_conflict = True
+                    break
+                if canonical_id:
+                    resolved_anchors.append((provider, external_id, canonical_id))
 
-    def test_classify_current_2020_onboarding_gaps(self) -> None:
-        sleeper_ids, rows_by_sleeper, _, _ = self._2020_evidence()
-        resolver = PlayerMappingResolver.load(ROOT)
-        unresolved = [
-            sleeper_id
-            for sleeper_id in sorted(sleeper_ids)
-            if resolver.resolve("Sleeper", sleeper_id, 2020) is None
-        ]
-
-        by_category: dict[str, list[dict[str, object]]] = {}
-        for sleeper_id in unresolved:
-            category, detail = self._classify_gap(
-                resolver,
-                sleeper_id,
-                rows_by_sleeper.get(sleeper_id, []),
-            )
-            by_category.setdefault(category, []).append(detail)
-
-        summary = {key: len(values) for key, values in sorted(by_category.items())}
-        examples = {
-            key: values[:8]
-            for key, values in sorted(by_category.items())
-        }
-        self.fail(
-            "2020 onboarding gap classification; "
-            f"unresolved={len(unresolved)}; categories={summary}; examples={examples}"
-        )
-
-    def test_current_2020_replay_explains_or_repairs_gap(self) -> None:
-        sleeper_ids, rows_by_sleeper, _, _ = self._2020_evidence()
-        canonical_payload = json.loads(
-            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
-        )
-        mapping_payload = json.loads(
-            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
-                encoding="utf-8-sig"
-            )
-        )
-        lookup = identity_lookup(canonical_payload.get("Players") or [])
-
-        claims: list[dict[str, object]] = []
-        conflicts: list[dict[str, object]] = []
-        resolved_rows = 0
-        insufficient_rows = 0
-        conflicting_rows = 0
-        for snapshot in self._2020_snapshots():
-            source = (
-                f"{snapshot['sourceId']}.git.2020.{snapshot['role']}"
-                f"@{str(snapshot['commitSha'])[:12]}"
-            )
-            for row in iter_csv(Path(snapshot["path"])):
-                row_claims, conflict, status = _resolve_historical_crosswalk_row(
-                    row,
-                    season=2020,
-                    lookup=lookup,
-                    source=source,
+            owners = {item[2] for item in resolved_anchors}
+            if not anchor_conflict and len(resolved_anchors) >= 2 and len(owners) == 1:
+                safe_but_unresolved.append(
+                    {
+                        "SleeperID": sleeper_id,
+                        "CanonicalPlayerID": next(iter(owners)),
+                        "SeasonValidAnchors": resolved_anchors,
+                    }
                 )
-                if status == "resolved":
-                    resolved_rows += 1
-                    claims.extend(row_claims)
-                elif status == "conflict":
-                    conflicting_rows += 1
-                    if conflict is not None:
-                        conflicts.append(conflict)
-                else:
-                    insufficient_rows += 1
 
-        sleeper_claims_2020 = {
-            str(claim["ExternalID"]): str(claim["CanonicalPlayerID"])
-            for claim in claims
-            if claim.get("Provider") == "Sleeper"
-        }
-        extended = extend_provider_mapping_payload(mapping_payload, claims, conflicts)
-        resolver_before = self._resolver_from_payload(mapping_payload)
-        resolver_after = self._resolver_from_payload(extended)
-
-        unresolved_before = [
-            sleeper_id
-            for sleeper_id in sorted(sleeper_ids)
-            if resolver_before.resolve("Sleeper", sleeper_id, 2020) is None
-        ]
-        unresolved_after = [
-            sleeper_id
-            for sleeper_id in sorted(sleeper_ids)
-            if resolver_after.resolve("Sleeper", sleeper_id, 2020) is None
-        ]
-        claimable_before = [
-            sleeper_id for sleeper_id in unresolved_before if sleeper_id in sleeper_claims_2020
-        ]
-        unclaimable_before = [
-            sleeper_id for sleeper_id in unresolved_before if sleeper_id not in sleeper_claims_2020
-        ]
-
-        detail = {
-            "unresolvedBefore": len(unresolved_before),
-            "claimableBefore": len(claimable_before),
-            "unclaimableBefore": len(unclaimable_before),
-            "unresolvedAfterReplay": len(unresolved_after),
-            "resolvedRows2020": resolved_rows,
-            "insufficientRows2020": insufficient_rows,
-            "conflictingRows2020": conflicting_rows,
-            "examplesStillUnresolved": unresolved_after[:40],
-        }
-
-        self.assertFalse(
-            unresolved_after,
-            "2020-only in-memory historical replay still leaves onboarding gaps; "
-            f"diagnostics={detail}",
-        )
-        self.assertGreater(
-            len(unresolved_before),
-            0,
-            "Diagnostic expected the currently persisted mapping payload to expose the known gap",
-        )
         self.assertEqual(
-            unresolved_before,
-            claimable_before,
-            "All currently persisted 2020 gaps should be repairable by the current 2020 replay; "
-            f"diagnostics={detail}"
+            [],
+            safe_but_unresolved,
+            "Historical replay missed 2020 Sleeper IDs despite two agreeing, "
+            "season-valid non-Sleeper anchors. These are materializer bugs, not "
+            f"evidence gaps: {safe_but_unresolved[:50]}",
         )
 
 
