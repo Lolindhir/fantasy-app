@@ -95,18 +95,25 @@ identityModel:
       provisionalSources:
         - app.Players
         - app.Players.git.*
-      replacementEvidence: corroborated external historical crosswalk claim
+      replacementEvidence:
+        - corroborated external historical crosswalk claim
+        - unique current claim jointly observed by app.Players and at least one non-app source
       rule: >
         Generated app player snapshots may bootstrap a provisional provider mapping
-        when no durable bridge exists yet. If a later season-specific historical
-        crosswalk claim has already passed the independent non-Sleeper corroboration
-        contract, and every competing mapping for that provider token in that exact
-        season is supported only by provisional app.Players evidence, the external
-        claim may retire only that season from the provisional interval. Surrounding
-        seasons remain unchanged. Any competing non-provisional mapping or unrelated
-        active conflict keeps the token fail-closed. The replacement is persisted as
-        HistoricalMappingReconciliations provenance; it must never happen silently
-        and display names are not evidence.
+        when no durable bridge exists yet. A season-local replacement is allowed in
+        two bounded cases: a historical crosswalk claim that has already passed the
+        independent non-Sleeper corroboration contract, or a unique current claim
+        whose persisted conflict provenance shows that app.Players and at least one
+        non-app source both resolve the same provider token to the same current
+        CanonicalPlayerID. In either case every competing active mapping for that
+        provider token in the exact season must be supported only by provisional
+        app.Players evidence. Only that season may be retired from the provisional
+        interval; surrounding seasons remain unchanged. Any competing
+        non-provisional mapping, multiple jointly corroborated current owners, or
+        unrelated active conflict keeps the token fail-closed. Replacements are
+        persisted in HistoricalMappingReconciliations provenance with a reason that
+        distinguishes historical-claim from current-claim evidence; they must never
+        happen silently and display names are not evidence.
     conflictRules:
       - A provider ID collision must never merge two otherwise distinguishable people.
       - If one provider ID claims multiple distinct CanonicalPlayerIDs for an overlapping period, quarantine the provider mapping as ambiguous or conflicting.
