@@ -63,20 +63,22 @@ app-league-matchups {
 }
 
 .weekly-context-rows,
-.weekly-last-matchups { display: grid; }
+.weekly-last-matchups {
+  display: grid;
+  padding-block: 4px;
+}
 
 .weekly-last-matchup {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
-  min-height: 48px;
-  padding: 4px 6px;
-}
-
-.weekly-last-matchup + .weekly-last-matchup {
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  min-height: 60px;
+  margin: 2px 4px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.82);
 }
 
 .weekly-context-row {
@@ -169,7 +171,7 @@ app-league-matchups {
 }
 
 .weekly-last-score {
-  margin-top: 1px;
+  margin-top: 2px;
   color: #64748b;
   font-size: 0.69rem;
   font-variant-numeric: tabular-nums;
@@ -355,16 +357,12 @@ app-league-matchups {
 
 .weekly-recap-player-nfl-logo {
   position: absolute;
-  right: -3px;
-  bottom: -2px;
-  box-sizing: border-box;
-  width: 14px;
-  height: 14px;
-  padding: 1px;
-  border: 1.5px solid #fff;
-  border-radius: 50%;
-  background: #fff;
+  right: -1px;
+  bottom: -1px;
+  width: 15px;
+  height: 15px;
   object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.2));
 }
 
 .weekly-recap-player-copy {
@@ -422,7 +420,7 @@ app-league-matchups {
   .weekly-team-avatar { width: 22px; height: 22px; }
   .weekly-team-avatar--last { width: 21px; height: 21px; flex-basis: 21px; }
   .weekly-team-identity { font-size: 0.65rem; }
-  .weekly-last-matchup { gap: 4px; padding-inline: 5px; }
+  .weekly-last-matchup { gap: 6px; padding-inline: 6px; }
   .weekly-last-team { gap: 3px; }
   .weekly-last-score { font-size: 0.65rem; }
 }
@@ -432,7 +430,7 @@ app-league-matchups {
   .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
   .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) auto; gap: 7px; }
   .weekly-standing-record { font-size: 0.78rem; }
-  .weekly-last-matchup { min-height: 54px; gap: 10px; padding: 5px 10px; }
+  .weekly-last-matchup { min-height: 72px; gap: 12px; padding: 9px 10px; }
   .weekly-last-side { grid-template-rows: 26px auto; }
   .weekly-team-avatar { width: 28px; height: 28px; }
   .weekly-team-avatar--last { width: 26px; height: 26px; flex-basis: 26px; }
