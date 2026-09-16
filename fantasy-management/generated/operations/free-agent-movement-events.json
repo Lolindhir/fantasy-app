@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-16T10:03:55Z",
-  "input_fingerprint": "a8353b7827fbf1fad6e3de001900847f52b323af9a5de34e524b76a441b9917f",
+  "generated_at": "2026-09-16T10:14:58Z",
+  "input_fingerprint": "95789a2c9ff1ec424488ae51df6b92c4dceac9d6699ae204c900d55e45bd8e6a",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "a73fba49adeeb6c9e802f91b4d6faa69df93d380751028a17939f1c67595ae1d"
+      "input_fingerprint": "a43f0b4e34a31fc56610139cf4c41b40225eb87c09dd23d634ea77df3c14493e"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "5adcc7d150c43065e4c59896d791d906b8209620c5587aae9a73ccec8e7cc47a"
+      "input_fingerprint": "a73fba49adeeb6c9e802f91b4d6faa69df93d380751028a17939f1c67595ae1d"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,357 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 252,
+    "current_discovery_count": 248,
     "previous_discovery_count": 252,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 5,
+    "event_type_counts": {
+      "changed": 1,
+      "resolved": 4
+    },
+    "event_priority_counts": {
+      "high": 1,
+      "medium": 4
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "9551e7d910ad3a78a94e2ed679a26d9f7953e664eebef98a6b20f8c550a75331",
-    "previous_evidence_fingerprint": "e97c7bd3e98e5d660838b19630960a0583bf6ccad935110d62866495228948d2",
+    "current_evidence_fingerprint": "8bf125a8040a0fc5792abf8d2a82270289f1b51aa42f5f4d7c6d4ca642ed443f",
+    "previous_evidence_fingerprint": "9551e7d910ad3a78a94e2ed679a26d9f7953e664eebef98a6b20f8c550a75331",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 5,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "11610",
+      "name": "Malik Washington",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "e03287215cffa767dee60f9bb70e72c5ef1cd6abc05d075388079099e1a1e14b",
+      "previous_state_hash": "79ca01fb79e61cf7cf7e81f3afc5611d1cf50c76c6e4602398461ece85d838a9",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9228",
+      "name": "Bryce Young",
+      "position": "QB",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "88a2fd5a495f28c008482ed704f50cae69b5ee1641bb6c4246e160cf34cf5202",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13296",
+      "name": "Caleb Douglas",
+      "position": "WR",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "bb26929008d635f522208c1c60cea42454fefe0ef778bb7e6e8a0394e62fb6e8",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "down_families": [
+            "redraft_adp"
+          ]
+        },
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "redraft_adp"
+          ]
+        },
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "redraft_adp",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        },
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11834",
+      "name": "Devaughn Vele",
+      "position": "WR",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "d350eb1bcfff2558c238e4c8bbc1d18334842a206ecd9f8cb90fc55b7262b15e",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9486",
+      "name": "Dontayvion Wicks",
+      "position": "WR",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "5c4c3bbd4e9a84f913993bb55060b8a10467b763da0cf4be57feea172c2355bb",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "redraft_adp"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "ok",
     "movement_quality_status": "ok",

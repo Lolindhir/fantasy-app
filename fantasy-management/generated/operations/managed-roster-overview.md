@@ -1,12 +1,12 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-16T10:03:55Z`  
+Generated: `2026-09-16T10:14:58Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
 ## Roster status
 
-- Active: **28 / 30** (delta +2)
+- Active: **30 / 30** (delta +0)
 - Taxi: **2 / 2**; binding: **yes**
 - Reserve: **3 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
@@ -20,7 +20,7 @@ Taxi phase: `locked`
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
 | RB | 9 | 8 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 15 | 11 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 17 | 13 | 2 | 7 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -46,9 +46,11 @@ Taxi phase: `locked`
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no |
 | WR | Antonio Williams | taxi | prospect | strong_hold | development | development | no |
+| WR | Caleb Douglas | active | unclassified | unclassified | unclassified | unclassified | no |
 | WR | Chris Bell | taxi | prospect | conditional | development | development | no |
 | WR | Davante Adams | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no |
+| WR | Dontayvion Wicks | active | unclassified | unclassified | unclassified | unclassified | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no |
 | WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
