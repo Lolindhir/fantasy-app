@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -10,25 +11,32 @@ TOOLS = ROOT / "tools"
 sys.path.insert(0, str(TOOLS))
 
 from league_source_data_lib.materialize import PlayerMappingResolver  # noqa: E402
+from nfl_source_data_lib.canonical_identity import provider_mapping_lookup  # noqa: E402
 from nfl_source_data_lib.common import clean  # noqa: E402
 from nfl_source_data_lib.historical_crosswalk import (  # noqa: E402
     iter_historical_crosswalk_snapshots,
 )
+from nfl_source_data_lib.mapping_history import (  # noqa: E402
+    build_historical_app_mapping_claims,
+    extend_provider_mapping_payload,
+)
 
 
 class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
-    def test_every_2020_historical_sleeper_id_resolves_uniquely(self) -> None:
+    @staticmethod
+    def _2020_evidence() -> tuple[set[str], dict[str, list[dict[str, str | None]]], int, int]:
         snapshots = [
             item
             for item in iter_historical_crosswalk_snapshots(ROOT)
             if int(item["season"]) == 2020
         ]
-        self.assertTrue(snapshots, "Expected persisted historical identity snapshots for 2020")
-        self.assertEqual(
-            {"opening", "closing"},
-            {str(item["role"]) for item in snapshots},
-            "2020 onboarding coverage requires both opening and closing evidence",
-        )
+        if not snapshots:
+            raise AssertionError("Expected persisted historical identity snapshots for 2020")
+        roles = {str(item["role"]) for item in snapshots}
+        if roles != {"opening", "closing"}:
+            raise AssertionError(
+                f"2020 onboarding coverage requires opening + closing evidence, found {sorted(roles)}"
+            )
 
         sleeper_ids: set[str] = set()
         rows_by_sleeper: dict[str, list[dict[str, str | None]]] = {}
@@ -37,7 +45,8 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             path = Path(snapshot["path"])
             with path.open("r", encoding="utf-8", newline="") as handle:
                 reader = csv.DictReader(handle)
-                self.assertIn("sleeper_id", reader.fieldnames or [], str(path))
+                if "sleeper_id" not in (reader.fieldnames or []):
+                    raise AssertionError(f"Missing sleeper_id in {path}")
                 for row in reader:
                     sleeper_id = clean(row.get("sleeper_id"))
                     if not sleeper_id:
@@ -52,7 +61,10 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                             "pfr_id": clean(row.get("pfr_id")),
                         }
                     )
+        return sleeper_ids, rows_by_sleeper, observation_count, len(snapshots)
 
+    def test_every_2020_historical_sleeper_id_resolves_uniquely(self) -> None:
+        sleeper_ids, rows_by_sleeper, observation_count, snapshot_count = self._2020_evidence()
         self.assertGreater(
             len(sleeper_ids),
             1000,
@@ -73,7 +85,7 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                 unresolved.append(sleeper_id)
 
         detail = (
-            f"snapshots={len(snapshots)}, observations={observation_count}, "
+            f"snapshots={snapshot_count}, observations={observation_count}, "
             f"uniqueSleeperIDs={len(sleeper_ids)}"
         )
         self.assertFalse(
@@ -92,21 +104,19 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             else:
                 no_mapping_record.append(sleeper_id)
 
-            evidence = rows_by_sleeper.get(sleeper_id, [])
-            mapping_spans = [
-                {
-                    "canonical": item.get("CanonicalPlayerID"),
-                    "first": item.get("FirstObservedSeason"),
-                    "last": item.get("LastObservedSeason"),
-                    "sources": item.get("Sources"),
-                }
-                for item in mapping_records
-            ]
             unresolved_details.append(
                 {
                     "sleeper": sleeper_id,
-                    "evidence": evidence,
-                    "mappingSpans": mapping_spans,
+                    "evidence": rows_by_sleeper.get(sleeper_id, []),
+                    "mappingSpans": [
+                        {
+                            "canonical": item.get("CanonicalPlayerID"),
+                            "first": item.get("FirstObservedSeason"),
+                            "last": item.get("LastObservedSeason"),
+                            "sources": item.get("Sources"),
+                        }
+                        for item in mapping_records
+                    ],
                 }
             )
 
@@ -117,6 +127,86 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             f"noMappingRecord={len(no_mapping_record)}; "
             f"mappingOutside2020={len(mapping_outside_2020)}; "
             f"first={unresolved_details[:40]}",
+        )
+
+    def test_current_replay_explains_or_repairs_2020_gap(self) -> None:
+        sleeper_ids, rows_by_sleeper, _, _ = self._2020_evidence()
+        canonical_payload = json.loads(
+            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
+        )
+        mapping_payload = json.loads(
+            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
+                encoding="utf-8-sig"
+            )
+        )
+        canonical = canonical_payload.get("Players") or []
+        claims, conflicts, stats = build_historical_app_mapping_claims(ROOT, canonical)
+
+        sleeper_claims_2020 = {
+            str(claim["ExternalID"]): str(claim["CanonicalPlayerID"])
+            for claim in claims
+            if claim.get("Provider") == "Sleeper" and int(claim.get("ObservedSeason") or 0) == 2020
+        }
+        extended = extend_provider_mapping_payload(mapping_payload, claims, conflicts)
+
+        unresolved_before = [
+            sleeper_id
+            for sleeper_id in sorted(sleeper_ids)
+            if provider_mapping_lookup(mapping_payload, "Sleeper", sleeper_id, 2020) is None
+        ]
+        unresolved_after = [
+            sleeper_id
+            for sleeper_id in sorted(sleeper_ids)
+            if provider_mapping_lookup(extended, "Sleeper", sleeper_id, 2020) is None
+        ]
+        claimable_before = [
+            sleeper_id for sleeper_id in unresolved_before if sleeper_id in sleeper_claims_2020
+        ]
+        unclaimable_before = [
+            sleeper_id for sleeper_id in unresolved_before if sleeper_id not in sleeper_claims_2020
+        ]
+
+        detail = {
+            "unresolvedBefore": len(unresolved_before),
+            "claimableBefore": len(claimable_before),
+            "unclaimableBefore": len(unclaimable_before),
+            "unresolvedAfterReplay": len(unresolved_after),
+            "externalResolvedPlayerCount": stats.get("externalResolvedPlayerCount"),
+            "externalUnresolvedPlayerCount": stats.get("externalUnresolvedPlayerCount"),
+            "externalConflictingPlayerCount": stats.get("externalConflictingPlayerCount"),
+            "examplesClaimable": [
+                {
+                    "sleeper": sleeper_id,
+                    "canonical": sleeper_claims_2020.get(sleeper_id),
+                    "evidence": rows_by_sleeper.get(sleeper_id, []),
+                }
+                for sleeper_id in claimable_before[:12]
+            ],
+            "examplesUnclaimable": [
+                {
+                    "sleeper": sleeper_id,
+                    "evidence": rows_by_sleeper.get(sleeper_id, []),
+                }
+                for sleeper_id in unclaimable_before[:12]
+            ],
+            "examplesStillUnresolved": unresolved_after[:40],
+        }
+
+        self.assertFalse(
+            unresolved_after,
+            "In-memory historical replay still leaves 2020 onboarding gaps; "
+            f"diagnostics={detail}",
+        )
+        self.assertGreater(
+            len(unresolved_before),
+            0,
+            "Diagnostic expected the currently persisted mapping payload to expose the known gap",
+        )
+        self.assertEqual(
+            unresolved_before,
+            claimable_before,
+            "All currently persisted 2020 gaps should be repairable by the current replay; "
+            f"diagnostics={detail}",
         )
 
 
