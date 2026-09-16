@@ -386,7 +386,7 @@ export class LeagueMatchupsComponent {
   }
 
   recapPlayerNflLogo(player: WeeklyRecapKeyPlayer): string | null {
-    return this.recapPlayer(player)?.TeamNFL?.Logo || null;
+    return this.nflLogo(player.NFLTeamID);
   }
 
   recapPlayerDetailAvailable(player: WeeklyRecapKeyPlayer): boolean {

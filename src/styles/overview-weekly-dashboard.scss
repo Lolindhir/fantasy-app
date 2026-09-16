@@ -65,7 +65,11 @@ app-league-matchups {
 .weekly-context-rows,
 .weekly-last-matchups {
   display: grid;
-  padding-block: 4px;
+  padding: 6px 0 8px;
+}
+
+.weekly-last-matchups {
+  padding-block: 7px;
 }
 
 .weekly-last-matchup {
@@ -74,11 +78,15 @@ app-league-matchups {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
   min-width: 0;
-  min-height: 60px;
-  margin: 2px 4px;
-  padding: 7px 8px;
-  border-radius: 10px;
-  background: rgba(248, 250, 252, 0.82);
+  min-height: 66px;
+  margin: 0 4px;
+  padding: 8px;
+  border-radius: 0;
+  background: transparent;
+}
+
+.weekly-last-matchup + .weekly-last-matchup {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .weekly-context-row {
@@ -93,6 +101,7 @@ app-league-matchups {
 .weekly-standing-row {
   grid-template-columns: 16px 24px minmax(0, 1fr) auto;
   gap: 4px;
+  min-height: 33px;
 }
 
 .weekly-standing-rank {
@@ -152,6 +161,7 @@ app-league-matchups {
   display: grid;
   grid-template-rows: 22px auto;
   align-content: center;
+  row-gap: 4px;
   min-width: 0;
 }
 
@@ -171,12 +181,11 @@ app-league-matchups {
 }
 
 .weekly-last-score {
-  margin-top: 2px;
   color: #64748b;
   font-size: 0.69rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .weekly-last-side--winner .weekly-team-identity,
@@ -430,8 +439,8 @@ app-league-matchups {
   .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
   .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) auto; gap: 7px; }
   .weekly-standing-record { font-size: 0.78rem; }
-  .weekly-last-matchup { min-height: 72px; gap: 12px; padding: 9px 10px; }
-  .weekly-last-side { grid-template-rows: 26px auto; }
+  .weekly-last-matchup { min-height: 76px; gap: 12px; padding: 10px; }
+  .weekly-last-side { grid-template-rows: 26px auto; row-gap: 4px; }
   .weekly-team-avatar { width: 28px; height: 28px; }
   .weekly-team-avatar--last { width: 26px; height: 26px; flex-basis: 26px; }
   .weekly-team-identity--short { display: none; }
