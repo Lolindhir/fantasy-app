@@ -157,7 +157,6 @@ const recap: WeeklyRecapsReadModel = {
 describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
   let fixture: ComponentFixture<LeagueMatchupsComponent>;
   let dataService: jasmine.SpyObj<DataService>;
-  let dialog: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
     dataService = jasmine.createSpyObj<DataService>('DataService', [
@@ -172,14 +171,12 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
     dataService.getNflTeams.and.returnValue(of([]));
     dataService.getWeeklyRecaps.and.returnValue(of(recap));
-    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
 
     await TestBed.configureTestingModule({
       imports: [LeagueMatchupsComponent],
       providers: [
         provideRouter([]),
         { provide: DataService, useValue: dataService },
-        { provide: MatDialog, useValue: dialog },
         { provide: TeamDetailDialogService, useValue: jasmine.createSpyObj<TeamDetailDialogService>('TeamDetailDialogService', ['open']) }
       ]
     }).compileComponents();
@@ -294,13 +291,15 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     const host: HTMLElement = fixture.nativeElement;
     const row = host.querySelector<HTMLButtonElement>('.weekly-recap-player');
     const expectedPlayer = fixture.componentInstance.league.Teams[1].Roster[0];
+    const resolvedDialog = fixture.debugElement.injector.get(MatDialog);
+    const openSpy = spyOn(resolvedDialog, 'open');
 
     expect(row).not.toBeNull();
     expect(row!.disabled).toBeFalse();
     expect(row!.getAttribute('aria-label')).toBe('Open P2 player details');
     row!.click();
 
-    expect(dialog.open).toHaveBeenCalledWith(
+    expect(openSpy).toHaveBeenCalledWith(
       PlayerDetailDialogComponent,
       jasmine.objectContaining({
         data: expectedPlayer,
