@@ -97,8 +97,6 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             try:
                 current = resolver.resolve("Sleeper", sleeper_id, 2020)
             except ValueError:
-                # Ambiguous Sleeper mappings are already fail-closed and must not
-                # be auto-repaired from a provider-wide crosswalk.
                 continue
             if current is not None:
                 continue
