@@ -16,6 +16,12 @@
           <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}</span>
           <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
           <strong *ngIf="standingsRecord(row.team) as record" class="weekly-standing-record">{{ record }}</strong>
+          <strong
+            class="weekly-standing-point-diff"
+            [class.weekly-standing-point-diff--positive]="row.team.Points - row.team.PointsAgainst > 0"
+            [class.weekly-standing-point-diff--negative]="row.team.Points - row.team.PointsAgainst < 0"
+            title="Point differential"
+          ><ng-container *ngIf="row.team.Points - row.team.PointsAgainst > 0">+</ng-container>{{ row.team.Points - row.team.PointsAgainst | number:'1.0-0' }}</strong>
         </div>
       </div>
     </a>

@@ -73,6 +73,7 @@ app-league-matchups {
 }
 
 .weekly-last-matchup {
+  position: relative;
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -83,6 +84,24 @@ app-league-matchups {
   padding: 8px;
   border-radius: 0;
   background: transparent;
+}
+
+.weekly-last-matchup::after {
+  content: 'VS';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  padding: 1px 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #fff;
+  color: #94a3b8;
+  font-size: 0.46rem;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .weekly-last-matchup + .weekly-last-matchup {
@@ -99,12 +118,13 @@ app-league-matchups {
 }
 
 .weekly-standing-row {
-  grid-template-columns: 16px 24px minmax(0, 1fr) auto;
+  display: flex;
   gap: 4px;
   min-height: 33px;
 }
 
 .weekly-standing-rank {
+  flex: 0 0 16px;
   color: #475569;
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
@@ -112,12 +132,28 @@ app-league-matchups {
 }
 
 .weekly-standing-record {
+  flex: 0 0 auto;
+  margin-left: 1px;
   color: #475569;
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
   font-weight: 850;
   white-space: nowrap;
 }
+
+.weekly-standing-point-diff {
+  flex: 0 0 auto;
+  min-width: 4ch;
+  color: #64748b;
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.weekly-standing-point-diff--positive { color: #5f8f70; }
+.weekly-standing-point-diff--negative { color: #b46b6b; }
 
 .weekly-team-avatar {
   display: grid;
@@ -130,6 +166,10 @@ app-league-matchups {
   color: #5b21b6;
   font-size: 0.48rem;
   font-weight: 900;
+}
+
+.weekly-standing-row > .weekly-team-avatar {
+  flex: 0 0 24px;
 }
 
 .weekly-team-avatar--last {
@@ -153,6 +193,10 @@ app-league-matchups {
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.weekly-standing-row > .weekly-team-identity {
+  flex: 0 1 auto;
 }
 
 .weekly-team-identity--full { display: none; }
@@ -192,6 +236,16 @@ app-league-matchups {
 .weekly-last-side--winner .weekly-last-score {
   color: var(--weekly-text);
   font-weight: 950;
+}
+
+.weekly-last-side--winner .weekly-last-team::after {
+  content: '';
+  flex: 0 0 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #78a98a;
+  box-shadow: 0 0 0 2px rgba(120, 169, 138, 0.13);
 }
 
 .weekly-context-empty {
@@ -424,12 +478,16 @@ app-league-matchups {
   .weekly-context-shell { grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr); }
   .weekly-context-heading { padding-inline: 6px; font-size: 0.61rem; }
   .weekly-context-row { padding-inline: 5px; }
-  .weekly-standing-row { grid-template-columns: 14px 22px minmax(0, 1fr) auto; gap: 3px; }
+  .weekly-standing-row { gap: 3px; }
+  .weekly-standing-rank { flex-basis: 14px; }
   .weekly-standing-record { font-size: 0.64rem; }
+  .weekly-standing-point-diff { min-width: 4ch; font-size: 0.6rem; }
   .weekly-team-avatar { width: 22px; height: 22px; }
+  .weekly-standing-row > .weekly-team-avatar { flex-basis: 22px; }
   .weekly-team-avatar--last { width: 21px; height: 21px; flex-basis: 21px; }
   .weekly-team-identity { font-size: 0.65rem; }
   .weekly-last-matchup { gap: 6px; padding-inline: 6px; }
+  .weekly-last-matchup::after { font-size: 0.42rem; }
   .weekly-last-team { gap: 3px; }
   .weekly-last-score { font-size: 0.65rem; }
 }
@@ -437,15 +495,20 @@ app-league-matchups {
 @container (min-width: 768px) {
   .weekly-context-row { min-height: 38px; padding: 5px 12px; }
   .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
-  .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) auto; gap: 7px; }
+  .weekly-standing-row { gap: 7px; }
+  .weekly-standing-rank { flex-basis: 20px; }
   .weekly-standing-record { font-size: 0.78rem; }
+  .weekly-standing-point-diff { min-width: 4.2ch; font-size: 0.72rem; }
   .weekly-last-matchup { min-height: 76px; gap: 12px; padding: 10px; }
+  .weekly-last-matchup::after { font-size: 0.5rem; }
   .weekly-last-side { grid-template-rows: 26px auto; row-gap: 4px; }
   .weekly-team-avatar { width: 28px; height: 28px; }
+  .weekly-standing-row > .weekly-team-avatar { flex-basis: 28px; }
   .weekly-team-avatar--last { width: 26px; height: 26px; flex-basis: 26px; }
   .weekly-team-identity--short { display: none; }
   .weekly-team-identity--full { display: block; font-size: 0.78rem; }
   .weekly-last-score { font-size: 0.78rem; }
+  .weekly-last-side--winner .weekly-last-team::after { width: 6px; height: 6px; flex-basis: 6px; }
 
   .weekly-recap-shell--prominent .weekly-recap-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
