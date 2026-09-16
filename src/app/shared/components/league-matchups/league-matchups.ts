@@ -57,6 +57,7 @@ import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
+import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
@@ -296,6 +297,11 @@ export class LeagueMatchupsComponent {
     return team.Team?.trim() || team.Owner || `Team ${team.TeamID}`;
   }
 
+  standingsRecord(team: FantasyTeam): string | null {
+    const placement = team.Placements?.Current?.Regular;
+    return placement ? this.formatRecord(placement) : null;
+  }
+
   teamShortNameByID(teamID: string | number): string {
     const team = this.teamForID(teamID);
     return team ? this.teamShortName(team) : `Team ${teamID}`;
@@ -377,6 +383,26 @@ export class LeagueMatchupsComponent {
 
   recapPlayerPicture(player: WeeklyRecapKeyPlayer): string | null {
     return this.recapPlayer(player)?.Picture || null;
+  }
+
+  recapPlayerNflLogo(player: WeeklyRecapKeyPlayer): string | null {
+    return this.recapPlayer(player)?.TeamNFL?.Logo || null;
+  }
+
+  recapPlayerDetailAvailable(player: WeeklyRecapKeyPlayer): boolean {
+    return this.recapPlayer(player) !== null;
+  }
+
+  openRecapPlayerDetail(player: WeeklyRecapKeyPlayer): void {
+    const resolved = this.recapPlayer(player);
+    if (!resolved) return;
+
+    this.dialog.open(PlayerDetailDialogComponent, {
+      data: resolved,
+      width: '800px',
+      maxHeight: '90vh',
+      panelClass: 'player-dialog'
+    });
   }
 
   openTeam(teamID: string | number): void {
