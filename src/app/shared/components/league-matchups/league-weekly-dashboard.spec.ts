@@ -206,11 +206,13 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
 
       const standingRows = shell!.querySelector<HTMLElement>('.weekly-context-half--standings .weekly-context-rows');
       const lastRows = shell!.querySelector<HTMLElement>('.weekly-last-matchups');
-      expect(lastRows!.scrollHeight).toBeLessThanOrEqual(standingRows!.scrollHeight + 1);
+      expect(Math.abs(lastRows!.scrollHeight - standingRows!.scrollHeight)).toBeLessThanOrEqual(1);
+      expect(Number.parseFloat(getComputedStyle(standingRows!).paddingBottom)).toBeGreaterThanOrEqual(4);
 
       for (const matchup of Array.from(shell!.querySelectorAll<HTMLElement>('.weekly-last-matchup'))) {
         expect(matchup.querySelectorAll('.weekly-last-side').length).toBe(2);
         expect(matchup.scrollWidth).toBeLessThanOrEqual(matchup.clientWidth + 1);
+        expect(matchup.getBoundingClientRect().height).toBeGreaterThanOrEqual(width >= 768 ? 72 : 60);
       }
 
       for (const playerRow of Array.from(host.querySelectorAll<HTMLElement>('.weekly-recap-player'))) {
@@ -275,7 +277,7 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(host.querySelector('.weekly-last-matchup a, .weekly-last-matchup button')).toBeNull();
   });
 
-  it('uses integrated NFL-team identity for recap players and preserves WeeklyRecaps order', () => {
+  it('uses integrated transparent NFL-team identity for recap players and preserves WeeklyRecaps order', () => {
     const host: HTMLElement = fixture.nativeElement;
     const rows = Array.from(host.querySelectorAll<HTMLButtonElement>('.weekly-recap-player'));
 
@@ -285,6 +287,13 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-2.svg');
     expect(rows[1].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-1.svg');
     expect(rows[2].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo')?.getAttribute('src')).toContain('/nfl-3.svg');
+
+    const nflLogo = rows[0].querySelector<HTMLImageElement>('.weekly-recap-player-nfl-logo');
+    expect(nflLogo).not.toBeNull();
+    const nflLogoStyle = getComputedStyle(nflLogo!);
+    expect(nflLogoStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(nflLogoStyle.paddingTop).toBe('0px');
+    expect(nflLogoStyle.borderTopWidth).toBe('0px');
   });
 
   it('opens the established Player Detail dialog from the whole recap player row', () => {
