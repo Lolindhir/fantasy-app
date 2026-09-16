@@ -33,12 +33,12 @@ function Invoke-Tank01-With-Fallback {
             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
         }
         try {
-            Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
+            Write-Host "  Using cached Tank01 key." -ForegroundColor DarkGray
             return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
         } catch {
             $statusCode = $_.Exception.Response.StatusCode.Value__
             if ($statusCode -eq 429) {
-                Write-Warning "Cached key $($Global:CurrentApiKey) hit 429 - switching..."
+                Write-Warning "Cached Tank01 key hit 429 - switching..."
                 # Reset Key, nächster Versuch mit allen Keys
                 $Global:CurrentApiKey = $null
             } else {
@@ -55,7 +55,7 @@ function Invoke-Tank01-With-Fallback {
         }
 
         try {
-            Write-Host "  Try with key: $key" -ForegroundColor DarkGray
+            Write-Host "  Trying Tank01 key candidate." -ForegroundColor DarkGray
             $result = Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
             # Wenn erfolgreich: Key merken
             $Global:CurrentApiKey = $key
@@ -429,12 +429,18 @@ foreach ($g in $schedule) {
 
             $gameIDEncoded = [uri]::EscapeDataString($gameID)
             $boxScoresUrl = "https://$apiHost/getNFLBoxScore?gameID=$gameIDEncoded&playByPlay=false&fantasyPoints=true"
+            $bscoreResponse = $null
 
             try {
                 $bscoreResponse = Invoke-Tank01-With-Fallback -Url $boxScoresUrl -Keys $apiKeys
-                $boxScore = $bscoreResponse.body
+            } catch {
+                Write-Warning "  -> Could not fetch boxscore for $($gameID): $_"
+            }
 
-                if ($boxScore) {
+            $boxScore = if ($bscoreResponse) { $bscoreResponse.body } else { $null }
+
+            if ($boxScore) {
+                try {
                     # Convert to PSCustomObject only at the end
                     $boxObj = $boxScore | ConvertTo-Json -Depth 10 | ConvertFrom-Json
 
@@ -453,8 +459,10 @@ foreach ($g in $schedule) {
                     if ($missingSnapsFetched.Count -gt 0 -and $matchingGame) {
                         Write-Host "  -> Fetched game still has players without snapCounts. Existing game is kept." 
                     } else {
-                        # Spiel anhand der ID finden
-                        $index = [array]::IndexOf(($games | ForEach-Object { $_.gameID }), $gameID)
+                        # Spiel anhand der ID finden. @() guarantees an empty array instead of $null
+                        # when Games.json is empty, so the first materialized game cleanly gets index -1.
+                        $gameIDs = @($games | ForEach-Object { $_.gameID })
+                        $index = [array]::IndexOf($gameIDs, $gameID)
 
                         if ($index -ge 0) {
                             $games[$index] = $boxObj
@@ -466,11 +474,12 @@ foreach ($g in $schedule) {
                             $added = $true
                         }
                     }
-                } else {
-                    Write-Warning "  -> No boxScore.body returned for $gameID"
+                } catch {
+                    Write-Error "  -> Error processing boxscore for $($gameID): $_"
+                    exit 1
                 }
-            } catch {
-                Write-Warning "  -> Error fetching boxscore for $($gameID): $_"
+            } elseif ($bscoreResponse) {
+                Write-Warning "  -> No boxScore.body returned for $gameID"
             }
 
             # short sleep to avoid rapid-fire requests; adjust $boxScoreWaitSeconds as needed
