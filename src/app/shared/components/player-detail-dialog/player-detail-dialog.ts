@@ -11,7 +11,6 @@ import type { ChartConfiguration, ChartOptions } from 'chart.js';
 
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
-import { SharedMaterialImports } from '../../shared-material-imports';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 
 // Registrierung
@@ -29,7 +28,6 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    SharedMaterialImports,
     PositionStylePipe
   ],
   templateUrl: './player-detail-dialog.html',
