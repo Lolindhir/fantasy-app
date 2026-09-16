@@ -119,6 +119,27 @@ identityModel:
       - If one provider ID claims multiple distinct CanonicalPlayerIDs for an overlapping period, quarantine the provider mapping as ambiguous or conflicting.
       - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
       - Do not choose a winner silently and do not add provider-specific or player-specific hard-coded identity exceptions as the primary conflict strategy.
+    historicalAdjudication:
+      source: source-data/nfl/identities/historical-identity-adjudications.json
+      provenancePrefix: manual.identity-adjudication
+      role: bounded-human-reviewed-evidence
+      rule: >
+        Rare historical provider tokens that remain unresolved after the ordinary
+        automated corroboration rules may be confirmed through an explicit,
+        versioned adjudication. An adjudication confirms exactly one Provider plus
+        ExternalID plus Season observation to an already existing
+        CanonicalPlayerID. It never creates a canonical person, never turns display
+        names into merge evidence, never weakens the ordinary automatic
+        corroboration thresholds and never rewrites raw provider evidence.
+      requirements:
+        - Status must be confirmed; unresolved review candidates do not belong in the canonical adjudication source.
+        - Every decision requires a stable AdjudicationID, DecisionAuthority, DecisionDate, rationale and non-empty evidence references.
+        - The target CanonicalPlayerID must already exist in the canonical identity graph.
+        - A confirmation is valid only for its exact provider token and observed season.
+        - A confirmed season may join same-owner intervals only when that observation makes them contiguous; it must not bridge another unobserved gap.
+        - An adjudication must fail closed rather than override an active provider conflict or a different season-valid owner.
+        - Historical provider disagreements remain preserved in conflict diagnostics even when a separate provider token is adjudicated.
+        - Materialized provider-mapping provenance must retain manual.identity-adjudication:<AdjudicationID> so the human decision remains auditable and reversible by an explicit later correction.
 
 historicalResolution:
   rule: >
