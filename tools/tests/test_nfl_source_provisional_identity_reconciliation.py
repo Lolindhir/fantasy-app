@@ -183,6 +183,61 @@ class ProvisionalIdentityReconciliationTests(unittest.TestCase):
         self.assertEqual(payload["Conflicts"], result["Conflicts"])
         self.assertEqual([], result["HistoricalMappingReconciliations"])
 
+    def test_current_app_and_external_claim_replaces_stale_provisional_mapping(self) -> None:
+        payload = self._payload(first=2026, last=2026)
+        payload["Conflicts"][0]["SourcesByCanonicalPlayerID"] = {
+            "NFLP-durable": ["app.Players", "nflverse.ff-player-ids"]
+        }
+
+        first = reconcile_provisional_app_mappings(payload, [])
+        second = reconcile_provisional_app_mappings(first, [])
+
+        self.assertEqual(first, second)
+        self.assertEqual([], first["Conflicts"])
+        self.assertEqual(1, len(first["Mappings"]))
+        mapping = first["Mappings"][0]
+        self.assertEqual("NFLP-durable", mapping["CanonicalPlayerID"])
+        self.assertEqual((2026, 2026), (mapping["FirstObservedSeason"], mapping["LastObservedSeason"]))
+        self.assertEqual(
+            ["app.Players", "app.Players.git.2025@abc", "nflverse.ff-player-ids"],
+            mapping["Sources"],
+        )
+        self.assertEqual(1, len(first["HistoricalMappingReconciliations"]))
+        self.assertEqual(
+            "corroborated_current_claim_replaces_provisional_app_mapping",
+            first["HistoricalMappingReconciliations"][0]["Reason"],
+        )
+
+    def test_current_claim_requires_joint_app_and_external_provenance(self) -> None:
+        for sources in (["app.Players"], ["nflverse.ff-player-ids"]):
+            with self.subTest(sources=sources):
+                payload = self._payload(first=2026, last=2026)
+                payload["Conflicts"][0]["SourcesByCanonicalPlayerID"] = {
+                    "NFLP-durable": sources
+                }
+
+                result = reconcile_provisional_app_mappings(payload, [])
+
+                self.assertEqual(payload["Mappings"], result["Mappings"])
+                self.assertEqual(payload["Conflicts"], result["Conflicts"])
+                self.assertEqual([], result["HistoricalMappingReconciliations"])
+
+    def test_current_claim_still_cannot_replace_non_provisional_mapping(self) -> None:
+        payload = self._payload(
+            first=2026,
+            last=2026,
+            source="trusted-provider-history",
+        )
+        payload["Conflicts"][0]["SourcesByCanonicalPlayerID"] = {
+            "NFLP-durable": ["app.Players", "nflverse.ff-player-ids"]
+        }
+
+        result = reconcile_provisional_app_mappings(payload, [])
+
+        self.assertEqual(payload["Mappings"], result["Mappings"])
+        self.assertEqual(payload["Conflicts"], result["Conflicts"])
+        self.assertEqual([], result["HistoricalMappingReconciliations"])
+
 
 if __name__ == "__main__":
     unittest.main()
