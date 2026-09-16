@@ -5,16 +5,14 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools"
 sys.path.insert(0, str(TOOLS))
 
 from league_source_data_lib.materialize import PlayerMappingResolver  # noqa: E402
-from nfl_source_data_lib.canonical_identity import (  # noqa: E402
-    identity_lookup,
-    provider_mapping_lookup,
-)
+from nfl_source_data_lib.canonical_identity import identity_lookup  # noqa: E402
 from nfl_source_data_lib.common import clean, iter_csv  # noqa: E402
 from nfl_source_data_lib.historical_crosswalk import (  # noqa: E402
     iter_historical_crosswalk_snapshots,
@@ -26,6 +24,18 @@ from nfl_source_data_lib.mapping_history import (  # noqa: E402
 
 
 class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
+    @staticmethod
+    def _resolver_from_payload(payload: dict[str, Any]) -> PlayerMappingResolver:
+        mappings: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        conflicts: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        for item in payload.get("Mappings", []) or []:
+            key = (str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))
+            mappings.setdefault(key, []).append(item)
+        for item in payload.get("Conflicts", []) or []:
+            key = (str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))
+            conflicts.setdefault(key, []).append(item)
+        return PlayerMappingResolver(mappings=mappings, conflicts=conflicts)
+
     @staticmethod
     def _2020_snapshots() -> list[dict[str, object]]:
         snapshots = [
@@ -181,16 +191,18 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             if claim.get("Provider") == "Sleeper"
         }
         extended = extend_provider_mapping_payload(mapping_payload, claims, conflicts)
+        resolver_before = self._resolver_from_payload(mapping_payload)
+        resolver_after = self._resolver_from_payload(extended)
 
         unresolved_before = [
             sleeper_id
             for sleeper_id in sorted(sleeper_ids)
-            if provider_mapping_lookup(mapping_payload, "Sleeper", sleeper_id, 2020) is None
+            if resolver_before.resolve("Sleeper", sleeper_id, 2020) is None
         ]
         unresolved_after = [
             sleeper_id
             for sleeper_id in sorted(sleeper_ids)
-            if provider_mapping_lookup(extended, "Sleeper", sleeper_id, 2020) is None
+            if resolver_after.resolve("Sleeper", sleeper_id, 2020) is None
         ]
         claimable_before = [
             sleeper_id for sleeper_id in unresolved_before if sleeper_id in sleeper_claims_2020
