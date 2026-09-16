@@ -7,6 +7,11 @@ from .common import normalize_legacy_canonical_player_fields
 
 
 _RECONCILIATION_REASON = "corroborated_historical_claim_replaces_provisional_app_mapping"
+_CURRENT_RECONCILIATION_REASON = "corroborated_current_claim_replaces_provisional_app_mapping"
+_RECONCILIATION_REASONS = {
+    _RECONCILIATION_REASON,
+    _CURRENT_RECONCILIATION_REASON,
+}
 
 
 def _is_provisional_app_source(source: object) -> bool:
@@ -62,6 +67,58 @@ def _reconciliation_key(item: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+def _current_conflict_claims(conflicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Recover a bounded current claim from persisted conflict provenance.
+
+    ``build_provider_mapping_payload`` records only the current claimant's source
+    provenance when a unique current provider claim collides with an older
+    persisted mapping. If exactly one conflict owner is jointly observed by the
+    live app snapshot and at least one non-app source, that provenance is enough
+    to retry reconciliation against an app-only provisional mapping without
+    relying on display names or on a historical crosswalk.
+    """
+
+    claims: list[dict[str, Any]] = []
+    for conflict in conflicts:
+        provider = str(conflict.get("Provider") or "")
+        external_id = str(conflict.get("ExternalID") or "")
+        if not provider or not external_id:
+            continue
+
+        candidates: list[tuple[str, set[str]]] = []
+        for internal_id, raw_sources in (
+            conflict.get("SourcesByCanonicalPlayerID") or {}
+        ).items():
+            sources = {str(value) for value in raw_sources or [] if str(value)}
+            if "app.Players" not in sources:
+                continue
+            if not _has_external_historical_source(sources):
+                continue
+            candidate_id = str(internal_id or "")
+            if candidate_id:
+                candidates.append((candidate_id, sources))
+
+        if len(candidates) != 1:
+            continue
+
+        internal_id, sources = candidates[0]
+        first = int(conflict.get("FirstObservedSeason") or 0)
+        last = int(conflict.get("LastObservedSeason") or first)
+        if last <= 0:
+            continue
+        claims.append(
+            {
+                "Provider": provider,
+                "ExternalID": external_id,
+                "CanonicalPlayerID": internal_id,
+                "ObservedSeason": last,
+                "Sources": sorted(sources),
+                "_ReconciliationReason": _CURRENT_RECONCILIATION_REASON,
+            }
+        )
+    return claims
+
+
 def _prior_retired_owners(
     reconciliations: list[dict[str, Any]],
     *,
@@ -72,7 +129,7 @@ def _prior_retired_owners(
 ) -> set[str]:
     owners: set[str] = set()
     for item in reconciliations:
-        if str(item.get("Reason") or "") != _RECONCILIATION_REASON:
+        if str(item.get("Reason") or "") not in _RECONCILIATION_REASONS:
             continue
         if str(item.get("Provider") or "") != provider:
             continue
@@ -94,12 +151,13 @@ def reconcile_provisional_app_mappings(
     payload: dict[str, Any],
     historical_claims: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Replace only season-local provisional app mappings with corroborated history.
+    """Replace only season-local provisional app mappings with corroborated evidence.
 
     ``app.Players`` and its contemporaneous git snapshots can bootstrap a person
     when no durable provider bridge exists yet. They are deliberately weaker than
-    the external historical-crosswalk claims, which are emitted only after at
-    least two independent non-Sleeper provider IDs resolve to one canonical person.
+    either a corroborated external historical-crosswalk claim or a unique current
+    claim whose conflict provenance shows that both ``app.Players`` and a non-app
+    source resolve the provider token to the same current canonical owner.
 
     This function never resolves a collision involving any non-provisional mapping
     owner. It also preserves an explicit reconciliation record so the stronger
@@ -123,13 +181,38 @@ def reconcile_provisional_app_mappings(
     for item in conflicts:
         conflicts_by_token[(str(item.get("Provider") or ""), str(item.get("ExternalID") or ""))].append(item)
 
+    claims: list[dict[str, Any]] = []
+    historical_keys: set[tuple[str, str, int, str]] = set()
+    for claim in historical_claims:
+        copied = dict(claim)
+        copied["_ReconciliationReason"] = _RECONCILIATION_REASON
+        claims.append(copied)
+        historical_keys.add(
+            (
+                str(claim.get("Provider") or ""),
+                str(claim.get("ExternalID") or ""),
+                int(claim.get("ObservedSeason") or 0),
+                str(claim.get("CanonicalPlayerID") or ""),
+            )
+        )
+    for claim in _current_conflict_claims(conflicts):
+        key = (
+            str(claim.get("Provider") or ""),
+            str(claim.get("ExternalID") or ""),
+            int(claim.get("ObservedSeason") or 0),
+            str(claim.get("CanonicalPlayerID") or ""),
+        )
+        if key not in historical_keys:
+            claims.append(claim)
+
     for claim in sorted(
-        historical_claims,
+        claims,
         key=lambda item: (
             int(item["ObservedSeason"]),
             str(item["Provider"]),
             str(item["ExternalID"]),
             str(item["CanonicalPlayerID"]),
+            str(item.get("_ReconciliationReason") or ""),
         ),
     ):
         sources = {str(source) for source in claim.get("Sources") or [] if str(source)}
@@ -140,6 +223,9 @@ def reconcile_provisional_app_mappings(
         external_id = str(claim["ExternalID"])
         internal_id = str(claim["CanonicalPlayerID"])
         season = int(claim["ObservedSeason"])
+        reconciliation_reason = str(
+            claim.get("_ReconciliationReason") or _RECONCILIATION_REASON
+        )
         token = (provider, external_id)
         token_mappings = mappings_by_token[token]
         token_conflicts = conflicts_by_token[token]
@@ -286,7 +372,7 @@ def reconcile_provisional_app_mappings(
                 },
                 "Sources": sorted(sources),
                 "Status": "reconciled",
-                "Reason": _RECONCILIATION_REASON,
+                "Reason": reconciliation_reason,
             }
             key = _reconciliation_key(reconciliation)
             if key not in known_reconciliations:
