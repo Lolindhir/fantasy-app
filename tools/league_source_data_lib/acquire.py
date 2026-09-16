@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
+import time
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +15,9 @@ from .registry import LeagueDataset
 from .week_structure import resolve_nfl_regular_season_week_ceiling
 
 API_ROOT = "https://api.sleeper.app"
+SLEEPER_FETCH_MAX_ATTEMPTS = 3
+SLEEPER_FETCH_BACKOFF_SECONDS = (1.0, 3.0)
+SLEEPER_RETRYABLE_HTTP_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 @dataclass(frozen=True)
@@ -26,12 +32,43 @@ class PlannedRawWrite:
     partition: dict
 
 
+def _log_fetch_retry(source_url: str, attempt: int, error: BaseException, delay: float) -> None:
+    print(
+        f"Sleeper source fetch transient failure; retrying in {delay:g}s "
+        f"after attempt {attempt}/{SLEEPER_FETCH_MAX_ATTEMPTS}: {source_url}: {error}",
+        file=sys.stderr,
+    )
+
+
 def fetch_sleeper_json(source_url: str) -> object:
     request = urllib.request.Request(source_url, headers={"User-Agent": "fantasy-app-source-data/1"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        if response.status != 200:
-            raise RuntimeError(f"Sleeper source fetch failed: HTTP {response.status} {source_url}")
-        return json.loads(response.read().decode("utf-8"))
+    for attempt in range(1, SLEEPER_FETCH_MAX_ATTEMPTS + 1):
+        retry_error: BaseException | None = None
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                if response.status != 200:
+                    error = RuntimeError(f"Sleeper source fetch failed: HTTP {response.status} {source_url}")
+                    if response.status not in SLEEPER_RETRYABLE_HTTP_STATUS_CODES or attempt >= SLEEPER_FETCH_MAX_ATTEMPTS:
+                        raise error
+                    retry_error = error
+                else:
+                    return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            if error.code not in SLEEPER_RETRYABLE_HTTP_STATUS_CODES or attempt >= SLEEPER_FETCH_MAX_ATTEMPTS:
+                raise
+            retry_error = error
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if attempt >= SLEEPER_FETCH_MAX_ATTEMPTS:
+                raise
+            retry_error = error
+
+        if retry_error is None:
+            raise RuntimeError(f"Sleeper source fetch failed without a retryable error: {source_url}")
+        delay = SLEEPER_FETCH_BACKOFF_SECONDS[attempt - 1]
+        _log_fetch_retry(source_url, attempt, retry_error, delay)
+        time.sleep(delay)
+
+    raise RuntimeError(f"Sleeper source fetch exhausted unexpectedly: {source_url}")
 
 
 def _validate_payload(dataset: LeagueDataset, payload: object, source_url: str) -> None:
