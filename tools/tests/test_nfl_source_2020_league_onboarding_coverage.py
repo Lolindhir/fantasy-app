@@ -81,10 +81,7 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
         return sleeper_ids, rows_by_sleeper, observation_count, len(snapshots)
 
     @staticmethod
-    def _anchor_diagnostics(
-        resolver: PlayerMappingResolver,
-        evidence: list[dict[str, str | None]],
-    ) -> list[dict[str, object]]:
+    def _anchor_tokens(evidence: list[dict[str, str | None]]) -> set[tuple[str, str]]:
         tokens: set[tuple[str, str]] = set()
         for row in evidence:
             for field, provider in (
@@ -95,8 +92,16 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                 value = clean(row.get(field))
                 if value:
                     tokens.add((provider, value))
+        return tokens
+
+    @classmethod
+    def _anchor_diagnostics(
+        cls,
+        resolver: PlayerMappingResolver,
+        evidence: list[dict[str, str | None]],
+    ) -> list[dict[str, object]]:
         result: list[dict[str, object]] = []
-        for provider, external_id in sorted(tokens):
+        for provider, external_id in sorted(cls._anchor_tokens(evidence)):
             try:
                 active = resolver.resolve(provider, external_id, 2020)
             except ValueError as exc:
@@ -118,6 +123,58 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                 }
             )
         return result
+
+    @classmethod
+    def _classify_gap(
+        cls,
+        resolver: PlayerMappingResolver,
+        sleeper_id: str,
+        evidence: list[dict[str, str | None]],
+    ) -> tuple[str, dict[str, object]]:
+        tokens = sorted(cls._anchor_tokens(evidence))
+        active_owners: list[str] = []
+        ambiguous_tokens: list[str] = []
+        all_known_owners: set[str] = set()
+
+        for provider, external_id in tokens:
+            try:
+                owner = resolver.resolve(provider, external_id, 2020)
+            except ValueError as exc:
+                ambiguous_tokens.append(f"{provider}/{external_id}: {exc}")
+                owner = None
+            if owner:
+                active_owners.append(owner)
+            for item in resolver.mappings.get((provider, external_id), []):
+                canonical = str(item.get("CanonicalPlayerID") or "")
+                if canonical:
+                    all_known_owners.add(canonical)
+
+        active_owner_set = set(active_owners)
+        if not tokens:
+            category = "no-non-sleeper-anchor"
+        elif len(tokens) == 1:
+            category = "single-non-sleeper-anchor"
+        elif ambiguous_tokens or len(active_owner_set) > 1:
+            category = "season-2020-provider-conflict"
+        elif len(active_owners) >= 2 and len(active_owner_set) == 1:
+            category = "season-2020-safe-corroboration"
+        elif len(all_known_owners) > 1:
+            category = "cross-season-provider-disagreement"
+        elif len(all_known_owners) == 1:
+            category = "later-only-consistent-owner"
+        else:
+            category = "multi-anchor-no-mapping-evidence"
+
+        return category, {
+            "sleeper": sleeper_id,
+            "name": next((row.get("name") for row in evidence if row.get("name")), None),
+            "rawAnchorCount": len(tokens),
+            "active2020AnchorCount": len(active_owners),
+            "active2020Owners": sorted(active_owner_set),
+            "allKnownOwners": sorted(all_known_owners),
+            "ambiguousTokens": ambiguous_tokens,
+            "anchors": cls._anchor_diagnostics(resolver, evidence),
+        }
 
     def test_every_2020_historical_sleeper_id_resolves_uniquely(self) -> None:
         sleeper_ids, rows_by_sleeper, observation_count, snapshot_count = self._2020_evidence()
@@ -149,40 +206,38 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             "2020 historical Sleeper IDs with ambiguous seasonal mappings; "
             f"{detail}; first={ambiguous[:50]}",
         )
-
-        no_mapping_record: list[str] = []
-        mapping_outside_2020: list[str] = []
-        unresolved_details: list[dict[str, object]] = []
-        for sleeper_id in unresolved:
-            mapping_records = resolver.mappings.get(("Sleeper", sleeper_id), [])
-            if mapping_records:
-                mapping_outside_2020.append(sleeper_id)
-            else:
-                no_mapping_record.append(sleeper_id)
-
-            unresolved_details.append(
-                {
-                    "sleeper": sleeper_id,
-                    "evidence": rows_by_sleeper.get(sleeper_id, []),
-                    "mappingSpans": [
-                        {
-                            "canonical": item.get("CanonicalPlayerID"),
-                            "first": item.get("FirstObservedSeason"),
-                            "last": item.get("LastObservedSeason"),
-                            "sources": item.get("Sources"),
-                        }
-                        for item in mapping_records
-                    ],
-                }
-            )
-
         self.assertFalse(
             unresolved,
             "2020 historical Sleeper IDs without a seasonal CanonicalPlayerID; "
-            f"{detail}; count={len(unresolved)}; "
-            f"noMappingRecord={len(no_mapping_record)}; "
-            f"mappingOutside2020={len(mapping_outside_2020)}; "
-            f"first={unresolved_details[:40]}",
+            f"{detail}; count={len(unresolved)}; first={unresolved[:100]}",
+        )
+
+    def test_classify_current_2020_onboarding_gaps(self) -> None:
+        sleeper_ids, rows_by_sleeper, _, _ = self._2020_evidence()
+        resolver = PlayerMappingResolver.load(ROOT)
+        unresolved = [
+            sleeper_id
+            for sleeper_id in sorted(sleeper_ids)
+            if resolver.resolve("Sleeper", sleeper_id, 2020) is None
+        ]
+
+        by_category: dict[str, list[dict[str, object]]] = {}
+        for sleeper_id in unresolved:
+            category, detail = self._classify_gap(
+                resolver,
+                sleeper_id,
+                rows_by_sleeper.get(sleeper_id, []),
+            )
+            by_category.setdefault(category, []).append(detail)
+
+        summary = {key: len(values) for key, values in sorted(by_category.items())}
+        examples = {
+            key: values[:8]
+            for key, values in sorted(by_category.items())
+        }
+        self.fail(
+            "2020 onboarding gap classification; "
+            f"unresolved={len(unresolved)}; categories={summary}; examples={examples}"
         )
 
     def test_current_2020_replay_explains_or_repairs_gap(self) -> None:
@@ -258,16 +313,6 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             "resolvedRows2020": resolved_rows,
             "insufficientRows2020": insufficient_rows,
             "conflictingRows2020": conflicting_rows,
-            "examplesUnclaimable": [
-                {
-                    "sleeper": sleeper_id,
-                    "evidence": rows_by_sleeper.get(sleeper_id, []),
-                    "anchorMappings": self._anchor_diagnostics(
-                        resolver_before, rows_by_sleeper.get(sleeper_id, [])
-                    ),
-                }
-                for sleeper_id in unclaimable_before[:12]
-            ],
             "examplesStillUnresolved": unresolved_after[:40],
         }
 
@@ -285,7 +330,7 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             unresolved_before,
             claimable_before,
             "All currently persisted 2020 gaps should be repairable by the current 2020 replay; "
-            f"diagnostics={detail}",
+            f"diagnostics={detail}"
         )
 
 
