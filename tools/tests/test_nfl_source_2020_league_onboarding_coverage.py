@@ -80,6 +80,45 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
                     )
         return sleeper_ids, rows_by_sleeper, observation_count, len(snapshots)
 
+    @staticmethod
+    def _anchor_diagnostics(
+        resolver: PlayerMappingResolver,
+        evidence: list[dict[str, str | None]],
+    ) -> list[dict[str, object]]:
+        tokens: set[tuple[str, str]] = set()
+        for row in evidence:
+            for field, provider in (
+                ("gsis_id", "GSIS"),
+                ("espn_id", "ESPN"),
+                ("pfr_id", "PFR"),
+            ):
+                value = clean(row.get(field))
+                if value:
+                    tokens.add((provider, value))
+        result: list[dict[str, object]] = []
+        for provider, external_id in sorted(tokens):
+            try:
+                active = resolver.resolve(provider, external_id, 2020)
+            except ValueError as exc:
+                active = f"AMBIGUOUS: {exc}"
+            result.append(
+                {
+                    "provider": provider,
+                    "id": external_id,
+                    "active2020": active,
+                    "spans": [
+                        {
+                            "canonical": item.get("CanonicalPlayerID"),
+                            "first": item.get("FirstObservedSeason"),
+                            "last": item.get("LastObservedSeason"),
+                            "sources": item.get("Sources"),
+                        }
+                        for item in resolver.mappings.get((provider, external_id), [])
+                    ],
+                }
+            )
+        return result
+
     def test_every_2020_historical_sleeper_id_resolves_uniquely(self) -> None:
         sleeper_ids, rows_by_sleeper, observation_count, snapshot_count = self._2020_evidence()
         self.assertGreater(
@@ -219,18 +258,13 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
             "resolvedRows2020": resolved_rows,
             "insufficientRows2020": insufficient_rows,
             "conflictingRows2020": conflicting_rows,
-            "examplesClaimable": [
-                {
-                    "sleeper": sleeper_id,
-                    "canonical": sleeper_claims_2020.get(sleeper_id),
-                    "evidence": rows_by_sleeper.get(sleeper_id, []),
-                }
-                for sleeper_id in claimable_before[:12]
-            ],
             "examplesUnclaimable": [
                 {
                     "sleeper": sleeper_id,
                     "evidence": rows_by_sleeper.get(sleeper_id, []),
+                    "anchorMappings": self._anchor_diagnostics(
+                        resolver_before, rows_by_sleeper.get(sleeper_id, [])
+                    ),
                 }
                 for sleeper_id in unclaimable_before[:12]
             ],
