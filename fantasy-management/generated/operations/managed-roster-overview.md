@@ -1,14 +1,14 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-16T04:14:29.832845Z`  
+Generated: `2026-09-16T05:34:43Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
 ## Roster status
 
-- Active: **30 / 30** (delta +0)
+- Active: **28 / 30** (delta +2)
 - Taxi: **2 / 2**; binding: **yes**
-- Reserve: **1 / 5**
+- Reserve: **3 / 5**
 - Startable Skill Pool: **15 / 10** (margin +5)
 - General churn target: **2**; status: `below_target`
 
@@ -18,9 +18,9 @@ Taxi phase: `locked`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
-| RB | 9 | 9 | 2 | 5 | 1 | – | – | pool_managed |
+| RB | 9 | 8 | 2 | 5 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 15 | 12 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 15 | 11 | 2 | 7 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -34,7 +34,7 @@ Taxi phase: `locked`
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | RB | Cam Skattebo | active | backup | strong_hold | coverage_reserve | positional_coverage | no |
 | RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| RB | Dylan Sampson | active | prospect | conditional | development | development | yes |
+| RB | Dylan Sampson | reserve | prospect | conditional | development | development | no |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no |
 | RB | Jonathon Brooks | active | unclassified | unclassified | unclassified | unclassified | no |
 | RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
@@ -48,7 +48,7 @@ Taxi phase: `locked`
 | WR | Antonio Williams | taxi | prospect | strong_hold | development | development | no |
 | WR | Chris Bell | taxi | prospect | conditional | development | development | no |
 | WR | Davante Adams | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | De'Zhaun Stribling | active | prospect | strong_hold | development | development | no |
+| WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
 | WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no |
 | WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
@@ -62,7 +62,7 @@ Taxi phase: `locked`
 
 ## Churn boundary pool
 
-- Dylan Sampson (RB) — `conditional` — area `active` — priority `20`
+- No current boundary candidate available.
 
 ## Interpretation
 
