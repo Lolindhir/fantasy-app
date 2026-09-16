@@ -63,7 +63,7 @@ class HistoricalLeagueOnboardingCoverageTests(unittest.TestCase):
 
         return sleeper_ids, anchors_by_sleeper, observation_count
 
-    def test_unresolved_2020_crosswalk_ids_have_no_safe_seasonal_corroboration(self) -> None:
+    def test_provider_wide_2020_gaps_are_fail_closed_without_safe_misses(self) -> None:
         """Fail if persisted evidence could safely resolve a Sleeper ID but did not.
 
         The DynastyProcess snapshot is a provider-wide identity universe, not this
