@@ -207,6 +207,7 @@ def reconcile_provisional_app_mappings(
                 rebuilt_mappings.append(item)
         token_mappings[:] = rebuilt_mappings
 
+        winning_conflict_sources: set[str] = set()
         rebuilt_conflicts: list[dict[str, Any]] = []
         for conflict in token_conflicts:
             first, last = _interval(conflict, season)
@@ -221,6 +222,12 @@ def reconcile_provisional_app_mappings(
                 and owners.issubset(allowed_conflict_owners)
                 and owners.intersection(retired_owners)
             ):
+                sources_by_owner = conflict.get("SourcesByCanonicalPlayerID") or {}
+                winning_conflict_sources.update(
+                    str(value)
+                    for value in sources_by_owner.get(internal_id, []) or []
+                    if str(value)
+                )
                 rebuilt_conflicts.extend(_without_season(conflict, season))
             else:
                 rebuilt_conflicts.append(conflict)
@@ -228,11 +235,12 @@ def reconcile_provisional_app_mappings(
 
         # The provisional mapping's source rows are still valid observations of
         # this provider token; only their provisional canonical owner was wrong.
-        # Once external history safely selects the durable owner, retain those
-        # observation sources on the winning mapping as well as in the explicit
-        # reconciliation record. Otherwise the next full identity replay adds
-        # the same current app source one pass later and violates semantic no-op.
+        # Current-claim provenance attached to a conflict that is safely retired
+        # is also valid evidence for the winning durable owner and must survive
+        # removal of that conflict. Otherwise the next full identity replay adds
+        # the same current source one pass later and violates semantic no-op.
         winning_sources = set(sources)
+        winning_sources.update(winning_conflict_sources)
         for values in retired_sources.values():
             winning_sources.update(values)
 

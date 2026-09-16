@@ -162,6 +162,56 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertFalse(write_json_if_changed(path, second))
 
+    def test_reconciliation_preserves_winning_current_claim_source_in_first_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+            historical_source = "dynastyprocess.ff-player-ids-history.git.2026.opening@deadbeef"
+            initial = {
+                "SchemaVersion": 2,
+                "TemporalResolution": "season",
+                "Mappings": [
+                    {
+                        "Provider": "Sleeper",
+                        "ExternalID": "S1",
+                        "CanonicalPlayerID": "NFLP-provisional",
+                        "FirstObservedSeason": 2026,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["app.Players"],
+                    }
+                ],
+                "Conflicts": [],
+                "HistoricalResolutionConflicts": [],
+            }
+            self.assertTrue(write_json_if_changed(path, initial))
+            historical_claims = [self._historical_claim(historical_source)]
+            durable_current_claims = [
+                {
+                    "Provider": "Sleeper",
+                    "ExternalID": "S1",
+                    "CanonicalPlayerID": "NFLP-durable",
+                    "Sources": ["nflverse.ff-player-ids"],
+                }
+            ]
+
+            first = self._replay(root, durable_current_claims, historical_claims)
+
+            self.assertEqual([], first["Conflicts"])
+            self.assertEqual(1, len(first["Mappings"]))
+            self.assertEqual("NFLP-durable", first["Mappings"][0]["CanonicalPlayerID"])
+            self.assertEqual(
+                ["app.Players", historical_source, "nflverse.ff-player-ids"],
+                first["Mappings"][0]["Sources"],
+            )
+            self.assertTrue(write_json_if_changed(path, first))
+
+            second = self._replay(root, durable_current_claims, historical_claims)
+
+            self.assertEqual(first, second)
+            self.assertFalse(write_json_if_changed(path, second))
+
 
 if __name__ == "__main__":
     unittest.main()
