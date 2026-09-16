@@ -212,6 +212,58 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
             self.assertEqual(first, second)
             self.assertFalse(write_json_if_changed(path, second))
 
+    def test_full_mapping_pipeline_reconciles_joint_current_claim_without_history(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+            initial = {
+                "SchemaVersion": 2,
+                "TemporalResolution": "season",
+                "Mappings": [
+                    {
+                        "Provider": "Sleeper",
+                        "ExternalID": "S1",
+                        "CanonicalPlayerID": "NFLP-provisional",
+                        "FirstObservedSeason": 2026,
+                        "LastObservedSeason": 2026,
+                        "Sources": ["app.Players"],
+                    }
+                ],
+                "Conflicts": [],
+                "HistoricalResolutionConflicts": [],
+            }
+            self.assertTrue(write_json_if_changed(path, initial))
+            current_claims = [
+                {
+                    "Provider": "Sleeper",
+                    "ExternalID": "S1",
+                    "CanonicalPlayerID": "NFLP-durable",
+                    "Sources": ["app.Players", "nflverse.ff-player-ids"],
+                }
+            ]
+
+            first = self._replay(root, current_claims, [])
+
+            self.assertEqual([], first["Conflicts"])
+            self.assertEqual(1, len(first["Mappings"]))
+            self.assertEqual("NFLP-durable", first["Mappings"][0]["CanonicalPlayerID"])
+            self.assertEqual(
+                ["app.Players", "nflverse.ff-player-ids"],
+                first["Mappings"][0]["Sources"],
+            )
+            self.assertEqual(
+                "corroborated_current_claim_replaces_provisional_app_mapping",
+                first["HistoricalMappingReconciliations"][0]["Reason"],
+            )
+            self.assertTrue(write_json_if_changed(path, first))
+
+            second = self._replay(root, current_claims, [])
+
+            self.assertEqual(first, second)
+            self.assertFalse(write_json_if_changed(path, second))
+
 
 if __name__ == "__main__":
     unittest.main()
