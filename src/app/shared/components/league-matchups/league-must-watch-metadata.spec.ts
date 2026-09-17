@@ -68,7 +68,7 @@ function makeContext(): FantasyGameContextReadModel {
     LeagueID: 'league',
     Season: '2026',
     Week: 2,
-    ScoringState: 'pending',
+    ScoringState: 'partial',
     DecisionWindows: [{
       DecisionWindowID: 'w1',
       StartsAtUtc: '2099-09-17T17:00:00Z',
@@ -142,12 +142,22 @@ function makeContext(): FantasyGameContextReadModel {
   };
 }
 
-describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
+function makeFinalContext(): FantasyGameContextReadModel {
+  const context = makeContext();
+  return {
+    ...context,
+    ScoringState: 'final',
+    Games: context.Games.map(game => ({ ...game, Status: 'Final' }))
+  };
+}
+
+describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
   let fixture: ComponentFixture<LeagueMatchupsComponent>;
+  let dataService: jasmine.SpyObj<DataService>;
   let teamDialog: jasmine.SpyObj<TeamDetailDialogService>;
 
   beforeEach(async () => {
-    const dataService = jasmine.createSpyObj<DataService>('DataService', [
+    dataService = jasmine.createSpyObj<DataService>('DataService', [
       'getFantasyGameContext',
       'getDecisionWindows',
       'getMatchups',
@@ -179,7 +189,7 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
     fixture.detectChanges();
   });
 
-  it('keeps unchanged counts and direct-Starter team exposure in one compact visual row', () => {
+  it('keeps unchanged counts and direct-Starter team exposure without redundant global or strip labels', () => {
     const host: HTMLElement = fixture.nativeElement;
     const card = host.querySelector<HTMLElement>('.fantasy-pulse-card--remaining');
     const metrics = card?.querySelector<HTMLElement>('.fantasy-pulse-metrics');
@@ -191,11 +201,14 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
     expect(metrics).not.toBeNull();
     expect(strip).not.toBeNull();
     expect(chips.map(chip => chip.textContent?.trim())).toEqual(['8 starters', '4 matchups']);
-    expect(strip!.querySelector('.fantasy-pulse-team-strip-label')?.textContent?.trim()).toBe('Starter teams');
+    expect(strip!.querySelector('.fantasy-pulse-team-strip-label')).toBeNull();
     expect(strip!.querySelector(':scope > strong')?.textContent?.trim()).toBe('8');
     expect(avatars.length).toBe(8);
     expect(avatars.map(avatar => avatar.title)).toEqual(['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8']);
     expect(host.querySelector<HTMLButtonElement>('[title="T9"]')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-state')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-heading')?.textContent?.toUpperCase()).not.toContain('PARTIAL');
+    expect(card!.querySelector('[role="img"][aria-label="Final"]')).toBeNull();
     expect(getComputedStyle(metrics!).flexWrap).toBe('nowrap');
     expect(getComputedStyle(strip!).position).toBe('absolute');
 
@@ -204,6 +217,26 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
     const metricsCenter = metricsRect.top + metricsRect.height / 2;
     const stripCenter = stripRect.top + stripRect.height / 2;
     expect(Math.abs(metricsCenter - stripCenter)).toBeLessThanOrEqual(4);
+  });
+
+  it('shows only the accessible checkered flag when existing game finality is true', () => {
+    dataService.getFantasyGameContext.and.returnValue(of(makeFinalContext()));
+    const finalFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    finalFixture.componentInstance.league = makeLeague();
+    finalFixture.detectChanges();
+
+    try {
+      const host: HTMLElement = finalFixture.nativeElement;
+      const meta = host.querySelector<HTMLElement>('.fantasy-pulse-game-meta');
+      const finalMarker = meta?.querySelector<HTMLElement>('[role="img"][aria-label="Final"]');
+
+      expect(finalMarker).not.toBeNull();
+      expect(finalMarker!.textContent?.trim()).toBe('🏁');
+      expect(meta?.textContent).not.toContain('Final');
+      expect(host.querySelector('.fantasy-pulse-state')).toBeNull();
+    } finally {
+      finalFixture.destroy();
+    }
   });
 
   it('keeps the existing Team Detail interaction separate from the NFL game-detail target', () => {
@@ -267,6 +300,7 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
         expect(cardRect.right).withContext(`${width}px card containment`).toBeLessThanOrEqual(width + 1);
         expect(card.scrollWidth).withContext(`${width}px card horizontal overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
         expect(getComputedStyle(metrics).flexWrap).withContext(`${width}px metadata wrapping`).toBe('nowrap');
+        expect(strip.querySelector('.fantasy-pulse-team-strip-label')).withContext(`${width}px redundant strip label`).toBeNull();
         expect(lastMetricRect.right).withContext(`${width}px counts/avatar overlap`).toBeLessThanOrEqual(stripRect.left + 1);
         expect(stripRect.right).withContext(`${width}px strip containment`).toBeLessThanOrEqual(cardRect.right + 1);
         expect(countRect.right).withContext(`${width}px affected-team count visibility`).toBeLessThanOrEqual(stripRect.right + 1);
