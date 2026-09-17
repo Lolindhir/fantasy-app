@@ -1,25 +1,53 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: canonical
 purpose: >
   Canonical home for durable app-wide frontend design principles. Principles guide
   judgment and trade-offs but are intentionally less mechanically enforceable than
   standards.
 
-principles: []
+principles:
+  - id: FDP-001
+    statement: Identity and orientation come before information density.
+    rationale: >
+      Sports interfaces are easier to scan when users first recognize the game,
+      fantasy team or player they are looking at before secondary metadata competes
+      for attention.
+    scope: app-wide sports surfaces
+    implications:
+      - Establish the represented sports entity before dense supporting metadata.
+      - Prefer clear hierarchy over maximizing visible fields.
+    references: ["#436"]
+  - id: FDP-002
+    statement: Show football before showing the database.
+    rationale: >
+      Concrete sports entities, scores, logos, portraits and matchups communicate
+      meaning faster than abstract counts, internal state labels or technical data
+      structure when both represent the same underlying fact.
+    scope: app-wide sports surfaces
+    implications:
+      - Prefer concrete entities over aggregate text when space and clarity permit.
+      - Keep diagnostic/internal cardinalities out of primary sports copy.
+    references: ["#436"]
+  - id: FDP-003
+    statement: Responsive width changes density, not product meaning.
+    rationale: >
+      Mobile and desktop should preserve the same semantic hierarchy, selected
+      entities and ranking. Additional width should improve spacing, metadata and
+      parallel layout rather than invent a different product surface.
+    scope: responsive app surfaces
+    references: ["#436", "#500"]
+  - id: FDP-004
+    statement: Reuse validated sports identity patterns before inventing feature-local visual languages.
+    rationale: >
+      Repeated entity and state patterns reduce relearning and keep app-wide design
+      coherent while still allowing feature-specific composition.
+    scope: frontend/UI/UX work
+    references: ["#436", "#497"]
 
 principleRecord:
-  requiredFields:
-    - id
-    - statement
-    - rationale
-  optionalFields:
-    - scope
-    - implications
-    - examples
-    - counterExamples
-    - references
-    - supersedes
+  requiredFields: [id, statement, rationale]
+  optionalFields: [scope, implications, examples, counterExamples, references, supersedes]
 
 promotionPolicy:
   - Add a principle only after it is intentionally accepted as app-wide guidance.

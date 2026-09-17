@@ -1,34 +1,59 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: canonical
 purpose: >
   Canonical home for app-wide frontend design architecture: the relationships and
   boundaries between information hierarchy, entities, surfaces, interaction,
   responsive behavior and reusable design primitives.
 
 architectureAreas:
-  informationHierarchy: []
-  entityIdentityAndScale: []
-  surfaceAndContainerHierarchy: []
-  interactionGrammar: []
-  compactVsDetailComposition: []
-  responsiveBehavior: []
+  informationHierarchy:
+    - id: FDA-001
+      rule: Sports surfaces establish the primary represented entity before secondary metadata and diagnostics.
+      rationale: Users should first understand what game, fantasy team, player or matchup they are looking at.
+      references: ["#436"]
+  entityIdentityAndScale:
+    - id: FDA-002
+      rule: NFL game, fantasy team and player identities use progressively smaller visual scale while remaining recognizable as distinct entity classes.
+      rationale: The established hierarchy uses large NFL-game identity, medium fantasy-team identity and compact player identity.
+      references: ["#436"]
+    - id: FDA-003
+      rule: Compact player identity combines the player portrait with NFL-team identity as one visual unit.
+      rationale: Repeated validated player-heavy surfaces scan better when portrait and NFL affiliation read together.
+      references: ["#436", "#497"]
+  surfaceAndContainerHierarchy:
+    - id: FDA-004
+      rule: Summary surfaces preserve high-level signal and representative entity identity; detail surfaces own exhaustive evidence and deeper drilldown.
+      rationale: Compact cards should remain scannable without stripping away the sports entities that give the data meaning.
+      references: ["#436", "#507"]
+  interactionGrammar:
+    - id: FDA-005
+      rule: Entity identity ordinarily drills into the detail surface for that same entity class.
+      rationale: Player, fantasy-team and NFL-game interactions should be predictable across the app.
+      exceptions:
+        - Dense summary surfaces may intentionally collapse child interactions into one parent target when nested targets harm usability; such exceptions must be explicit.
+      references: ["#436", "#507"]
+  compactVsDetailComposition:
+    - id: FDA-006
+      rule: Compact surfaces may limit previews and use informational overflow while preserving the complete high-level fact.
+      rationale: The user should understand scope without rendering every underlying entity inline.
+      references: ["#436", "#507"]
+  responsiveBehavior:
+    - id: FDA-007
+      rule: Responsive variants preserve product meaning, ranking and selected entity set; width primarily changes density and composition.
+      rationale: Desktop should not silently become a semantically different product from mobile.
+      references: ["#436", "#500"]
   progressiveDisclosure: []
   accessibilityAndInput: []
-  sharedPrimitivesAndTokens: []
+  sharedPrimitivesAndTokens:
+    - id: FDA-008
+      rule: Repeated validated identity, score and state patterns should converge on shared primitives or tokens when repetition justifies extraction.
+      rationale: Shared implementation should follow proven design relationships rather than precede them with speculative abstraction.
+      references: ["#436", "#531"]
 
 architectureRecord:
-  requiredFields:
-    - id
-    - rule
-    - rationale
-  optionalFields:
-    - scope
-    - constraints
-    - exceptions
-    - implementationNotes
-    - references
-    - supersedes
+  requiredFields: [id, rule, rationale]
+  optionalFields: [scope, constraints, exceptions, implementationNotes, references, supersedes]
 
 boundaries:
   - Architecture defines relationships and composition boundaries; exact reusable component APIs remain owned by code.
