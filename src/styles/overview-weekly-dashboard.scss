@@ -252,6 +252,8 @@ app-league-matchups {
   scroll-margin-top: 10px;
 }
 
+.weekly-recap-shell--compact { padding: 10px; }
+
 .weekly-recap-shell--prominent {
   background:
     radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.07), transparent 34%),
@@ -272,102 +274,146 @@ app-league-matchups {
   font-weight: 850;
 }
 
+.weekly-recap-shell--compact .weekly-recap-heading h2 { font-size: 1rem; }
+
 .weekly-recap-density {
   flex: 0 0 auto;
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 999px;
   background: #f1f5f9;
   color: #64748b;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
 .weekly-recap-grid {
   display: grid;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.weekly-recap-shell--compact .weekly-recap-grid {
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .weekly-recap-group h3 {
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   color: #475569;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 900;
+}
+
+.weekly-recap-shell--compact .weekly-recap-group h3 {
+  margin-bottom: 4px;
+  font-size: 0.66rem;
 }
 
 .weekly-recap-list {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
+
+.weekly-recap-list--games {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.weekly-recap-list--players {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.weekly-recap-shell--compact .weekly-recap-list { gap: 4px; }
 
 .weekly-recap-game,
 .weekly-recap-player {
+  box-sizing: border-box;
   min-width: 0;
+  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #f8fafc;
 }
 
-.weekly-recap-game { padding: 8px; }
+.weekly-recap-game { padding: 6px; }
+.weekly-recap-shell--compact .weekly-recap-game { padding: 4px; }
 
 .weekly-recap-game-lockup {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
 }
+
+.weekly-recap-shell--compact .weekly-recap-game-lockup { gap: 2px; }
 
 .weekly-recap-nfl-team {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
 .weekly-recap-nfl-team--home { justify-content: flex-end; }
 
 .weekly-recap-nfl-team img {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
   object-fit: contain;
 }
 
-.weekly-recap-nfl-team strong {
-  font-size: 0.72rem;
-  font-weight: 900;
+.weekly-recap-shell--compact .weekly-recap-nfl-team img {
+  width: 18px;
+  height: 18px;
+  flex-basis: 18px;
 }
+
+.weekly-recap-nfl-team strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-recap-shell--compact .weekly-recap-nfl-team strong { font-size: 0.58rem; }
 
 .weekly-recap-nfl-score {
   color: var(--weekly-text);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   font-weight: 950;
+  white-space: nowrap;
 }
 
-.weekly-recap-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 5px;
-  color: #64748b;
-  font-size: 0.62rem;
-}
-
-.weekly-recap-meta strong { color: #334155; }
+.weekly-recap-shell--compact .weekly-recap-nfl-score { font-size: 0.7rem; }
 
 .weekly-recap-player {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas:
+    'picture copy'
+    'points points';
   align-items: center;
-  gap: 7px;
+  column-gap: 5px;
+  row-gap: 3px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 5px 6px;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.weekly-recap-shell--compact .weekly-recap-player {
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 3px;
+  row-gap: 2px;
+  padding: 4px;
 }
 
 .weekly-recap-player:not(:disabled):hover {
@@ -387,36 +433,35 @@ app-league-matchups {
 }
 
 .weekly-recap-player-picture {
-  position: relative;
+  grid-area: picture;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 8px;
   background: #e2e8f0;
   color: #475569;
-  font-size: 0.55rem;
+  font-size: 0.52rem;
   font-weight: 900;
+}
+
+.weekly-recap-shell--compact .weekly-recap-player-picture {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 0.46rem;
 }
 
 .weekly-recap-player-portrait {
   width: 100%;
   height: 100%;
-  border-radius: 9px;
+  border-radius: inherit;
   object-fit: cover;
 }
 
-.weekly-recap-player-nfl-logo {
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 15px;
-  height: 15px;
-  object-fit: contain;
-  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.2));
-}
-
 .weekly-recap-player-copy {
+  grid-area: copy;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -431,21 +476,32 @@ app-league-matchups {
 
 .weekly-recap-player-copy strong {
   color: #334155;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
+  line-height: 1.05;
 }
 
 .weekly-recap-player-copy span {
   margin-top: 1px;
-  color: #7c8799;
-  font-size: 0.6rem;
+  color: #8792a4;
+  font-size: 0.56rem;
+  line-height: 1.05;
 }
 
+.weekly-recap-shell--compact .weekly-recap-player-copy strong { font-size: 0.62rem; }
+.weekly-recap-shell--compact .weekly-recap-player-copy span { font-size: 0.5rem; }
+
 .weekly-recap-player-points {
+  grid-area: points;
   color: var(--weekly-text);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
+
+.weekly-recap-shell--compact .weekly-recap-player-points { font-size: 0.76rem; }
 
 .weekly-recap-empty {
   margin-top: 10px;
@@ -476,6 +532,7 @@ app-league-matchups {
   .weekly-last-matchup::after { font-size: 0.42rem; }
   .weekly-last-team { gap: 3px; }
   .weekly-last-score { font-size: 0.65rem; }
+  .weekly-recap-shell--compact { padding-inline: 8px; }
 }
 
 @container (min-width: 768px) {
@@ -497,14 +554,6 @@ app-league-matchups {
   .weekly-recap-shell--prominent .weekly-recap-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 16px;
-  }
-
-  .weekly-recap-shell--prominent .weekly-recap-group:first-child .weekly-recap-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .weekly-recap-shell--prominent .weekly-recap-group:last-child .weekly-recap-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -134,12 +134,14 @@ function recaps(): WeeklyRecapsReadModel {
       Week: 1,
       KeyGames: [
         { GameID: 'g1', KickoffUtc: '2026-09-10T00:00:00Z', AwayNFLTeamID: 'A', HomeNFLTeamID: 'B', AwayScore: 21, HomeScore: 17, StarterPoints: 88, StarterCount: 5, FantasyTeamIDs: [1, 2], FantasyMatchupIDs: ['m-1'] },
-        { GameID: 'g2', KickoffUtc: '2026-09-11T00:00:00Z', AwayNFLTeamID: 'C', HomeNFLTeamID: 'D', AwayScore: 14, HomeScore: 24, StarterPoints: 74, StarterCount: 4, FantasyTeamIDs: [3, 4], FantasyMatchupIDs: ['m-2'] }
+        { GameID: 'g2', KickoffUtc: '2026-09-11T00:00:00Z', AwayNFLTeamID: 'C', HomeNFLTeamID: 'D', AwayScore: 14, HomeScore: 24, StarterPoints: 74, StarterCount: 4, FantasyTeamIDs: [3, 4], FantasyMatchupIDs: ['m-2'] },
+        { GameID: 'g3', KickoffUtc: '2026-09-12T00:00:00Z', AwayNFLTeamID: 'E', HomeNFLTeamID: 'F', AwayScore: 31, HomeScore: 28, StarterPoints: 62, StarterCount: 3, FantasyTeamIDs: [1, 4], FantasyMatchupIDs: ['m-3'] }
       ],
       KeyPlayers: [
         { PlayerID: 'p1', FantasyTeamID: 1, NFLTeamID: 'A', Position: 'QB', Points: 38 },
         { PlayerID: 'p2', FantasyTeamID: 2, NFLTeamID: 'B', Position: 'RB', Points: 31 },
-        { PlayerID: 'p3', FantasyTeamID: 3, NFLTeamID: 'C', Position: 'WR', Points: 28 }
+        { PlayerID: 'p3', FantasyTeamID: 3, NFLTeamID: 'C', Position: 'WR', Points: 28 },
+        { PlayerID: 'p4', FantasyTeamID: 4, NFLTeamID: 'D', Position: 'TE', Points: 25 }
       ]
     }]
   };
@@ -232,18 +234,19 @@ describe('Overview weekly dashboard presentation', () => {
     expect(ordered[0].Participants.map(participant => participant.TeamID)).toEqual([2, 1]);
   });
 
-  it('preserves WeeklyRecaps ranking while applying prominent vs compact density only', () => {
+  it('preserves WeeklyRecaps ranking while keeping 2 games and 3 players in every density', () => {
     const source = recaps();
     const prominent = selectOverviewRecap(source, '2026', 1, 'recap');
     const prep = selectOverviewRecap(source, '2026', 1, 'prep');
     const live = selectOverviewRecap(source, '2026', 1, 'live');
 
-    expect(prominent?.games.map(game => game.GameID)).toEqual(['g1', 'g2']);
-    expect(prominent?.players.map(player => player.PlayerID)).toEqual(['p1', 'p2', 'p3']);
-    expect(prep?.games.map(game => game.GameID)).toEqual(['g1']);
-    expect(prep?.players.map(player => player.PlayerID)).toEqual(['p1']);
-    expect(live?.games.map(game => game.GameID)).toEqual(['g1']);
-    expect(live?.players.map(player => player.PlayerID)).toEqual(['p1']);
+    for (const selection of [prominent, prep, live]) {
+      expect(selection?.games.map(game => game.GameID)).toEqual(['g1', 'g2']);
+      expect(selection?.players.map(player => player.PlayerID)).toEqual(['p1', 'p2', 'p3']);
+    }
+    expect(prominent?.prominent).toBeTrue();
+    expect(prep?.prominent).toBeFalse();
+    expect(live?.prominent).toBeFalse();
   });
 
   it('rejects an unknown/non-final LastCompletedWeek instead of inferring recap finality', () => {

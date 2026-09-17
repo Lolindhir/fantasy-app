@@ -176,8 +176,8 @@ export function getLastCompletedWeek(
 function selectRecapDensity(recap: WeeklyRecapWeek, prominent: boolean): OverviewRecapSelection {
   return {
     week: recap.Week,
-    games: recap.KeyGames.slice(0, prominent ? 2 : 1),
-    players: recap.KeyPlayers.slice(0, prominent ? 3 : 1),
+    games: recap.KeyGames.slice(0, 2),
+    players: recap.KeyPlayers.slice(0, 3),
     prominent
   };
 }
