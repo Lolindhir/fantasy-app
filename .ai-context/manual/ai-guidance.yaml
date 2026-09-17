@@ -5,6 +5,17 @@ purpose: >
   repository changes and report post-commit checks in this project.
 
 guidance:
+  executionCheckpoints:
+    - For complex or longer-running authorized work, use checkpointed execution: split the work into small, independently verifiable and reversible steps that leave a stable persisted state whenever practical.
+    - Define each step narrowly enough that its scope, validation result, persisted state and rollback path can be explained without reconstructing a large unfinished work chain.
+    - Prefer several small commits, pull requests or merges over a large monolithic change when the work can be separated cleanly; do not accumulate unnecessarily large uncommitted or unmerged change chains.
+    - Within one clearly authorized small step, do not pause merely for routine commit, pull-request or merge actions when those actions are already inside the granted scope and repository governance allows them; complete the step through the relevant validation and post-merge/live verification.
+    - In interactive ChatGPT-style workflows, autonomy applies within the agreed small step, not across an open-ended sequence of substantive work packages.
+    - After completing one substantive step, report the achieved state, relevant commit/PR/merge or persisted result, validation outcome, known risks or deviations, rollback path and the proposed next small step in chat, then stop before beginning that next substantive step.
+    - Begin the next substantive step only after another user interaction unless the user explicitly requested a continuous multi-step run.
+    - If an apparently small step expands materially in scope or no longer has a clean rollback/validation boundary, stop at the safest stable checkpoint, report the expansion and propose how to split the remaining work instead of continuing a monolithic run.
+    - These checkpoint rules govern execution granularity and interaction cadence; they do not weaken explicit authorization requirements, workflow approvals, issue synchronization, source-of-truth ownership or other repository governance.
+
   answering:
     - When the user asks implementation questions, option comparisons, feasibility questions or follow-up questions about specific application, frontend, data generation, script or repository behavior, inspect the relevant current repository files and AI context before answering.
     - Ground application-specific recommendations in the current repository structure, source-of-truth rules and existing implementation.
