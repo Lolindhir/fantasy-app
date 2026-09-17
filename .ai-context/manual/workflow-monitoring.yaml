@@ -255,6 +255,12 @@ workflows:
     - repository_dispatch
     staleAfterMinutes: 45
     rationale: Ten-minute canonical League transaction freshness refresh dispatched by the central scheduler. It delegates to the reusable League Source producer for the source-owned current/previous-week transaction window; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
+  .github/workflows/sync-league-drafts.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    staleAfterMinutes: 45
+    rationale: Ten-minute canonical League draft/pick freshness refresh dispatched at minute 8 of each ten-minute window, after transaction-source refresh and before the next App League refresh. It delegates current-season draft-index/detail/picks/traded-picks acquisition and bounded drafts.json materialization to the reusable League Source producer; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
   .github/workflows/source-data-readiness.yml:
     category: important
     relevantEvents:
