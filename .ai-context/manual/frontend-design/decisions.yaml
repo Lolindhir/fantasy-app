@@ -12,19 +12,8 @@ decisionStatuses:
   rejected: Considered and intentionally not adopted.
 
 decisionRecord:
-  requiredFields:
-    - id
-    - status
-    - title
-    - decision
-    - rationale
-    - consequences
-  optionalFields:
-    - date
-    - alternatives
-    - references
-    - supersedes
-    - supersededBy
+  requiredFields: [id, status, title, decision, rationale, consequences]
+  optionalFields: [date, alternatives, references, supersedes, supersededBy]
 
 decisions:
   - id: FD-001
@@ -46,7 +35,36 @@ decisions:
       - App-wide design audits can evaluate documented standards without treating all design prose as equally binding.
       - Concrete design rules can be added incrementally without requiring an app-wide restyle.
       - "GitHub Issue #436 remains the discovery and rollout anchor while promoted durable rules move into this directory."
-    references:
-      - "#436"
-      - "#497"
-      - "#531"
+    references: ["#436", "#497", "#531"]
+  - id: FD-002
+    status: accepted
+    title: Separate visual channels for separate semantics
+    decision: >
+      Natural position, lineup/roster role, lifecycle state and problem/review state
+      are distinct meanings and must not be collapsed into one visual channel.
+    rationale: >
+      The app repeatedly needs to show several simultaneous facts about the same
+      player. Independent channels preserve scanability and prevent colors, chips or
+      icons from changing meaning across surfaces.
+    consequences:
+      - Natural position keeps its established position-color language.
+      - Lifecycle colors follow the canonical neutral/blue/green/red/amber semantics.
+      - Role/state iconography may coexist with position without replacing it.
+      - Shared primitives should expose these meanings independently rather than encode one compound status.
+    references: ["#436", "#497", "#509"]
+  - id: FD-003
+    status: accepted
+    title: Responsive width changes density, not product meaning
+    decision: >
+      Mobile and desktop variants of the same surface preserve product meaning,
+      ranking and selected entity set. Additional width is used for richer metadata,
+      spacing and parallel composition rather than silently adding semantic breadth.
+    rationale: >
+      Responsive design should adapt presentation without making one viewport a
+      materially different product or changing which entities the user is being told
+      matter.
+    consequences:
+      - Responsive reviews compare semantic parity as well as visual containment.
+      - Feature-specific deviations require an explicit product contract.
+      - Desktop may expose more metadata for the same entities without introducing extra ranked entities solely to fill space.
+    references: ["#436", "#500"]
