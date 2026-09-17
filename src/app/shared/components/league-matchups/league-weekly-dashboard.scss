@@ -18,3 +18,44 @@
   color: #475569;
   font-size: 0.72rem;
 }
+
+/* #572: keep Must Watch counts and direct-Starter team exposure on one compact metadata row. */
+.fantasy-pulse-card--remaining { position: relative; }
+
+.fantasy-pulse-metrics {
+  flex-wrap: nowrap;
+  min-width: 0;
+  padding-right: 160px;
+}
+
+.fantasy-pulse-team-strip {
+  position: absolute;
+  right: 34px;
+  bottom: 6px;
+  left: 165px;
+  gap: 5px;
+  min-width: 0;
+  min-height: 23px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.fantasy-pulse-team-strip-label,
+.fantasy-pulse-team-avatar,
+.fantasy-pulse-team-strip > strong { flex: 0 0 auto; }
+
+.fantasy-pulse-team-avatars {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+@media (max-width: 360px) {
+  .fantasy-pulse-metrics { gap: 3px; padding-right: 135px; }
+  .fantasy-pulse-metric-chip { padding-inline: 5px; font-size: 0.51rem; }
+  .fantasy-pulse-team-strip { right: 30px; left: 140px; }
+}
+
+@media (max-width: 430px) {
+  .fantasy-pulse-metrics { padding-right: 145px; }
+  .fantasy-pulse-team-strip { right: 30px; left: 150px; gap: 4px; }
+}
