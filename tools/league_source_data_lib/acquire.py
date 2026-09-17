@@ -161,6 +161,41 @@ def _plan_one(
     )
 
 
+def _selected_datasets(
+    datasets: list[LeagueDataset],
+    dataset_ids: set[str] | None,
+) -> list[LeagueDataset]:
+    if not dataset_ids:
+        return list(datasets)
+    known = {item.id for item in datasets}
+    unknown = dataset_ids - known
+    if unknown:
+        raise ValueError(f"Unknown League dataset id(s): {', '.join(sorted(unknown))}")
+
+    selected_ids = set(dataset_ids)
+    by_id = {item.id: item for item in datasets}
+    for dataset_id in tuple(selected_ids):
+        dataset = by_id[dataset_id]
+        if dataset.scope == "draft":
+            if not dataset.discover_from:
+                raise ValueError(f"Draft dataset {dataset.id} has no discovery dataset")
+            selected_ids.add(dataset.discover_from)
+    return [item for item in datasets if item.id in selected_ids]
+
+
+def _selected_seasons(
+    lineage: list[SleeperLeagueInstance],
+    seasons: set[int] | None,
+) -> set[int]:
+    known = {item.season for item in lineage}
+    if not seasons:
+        return known
+    unknown = seasons - known
+    if unknown:
+        raise ValueError(f"Unknown League season(s) for provider lineage: {', '.join(str(v) for v in sorted(unknown))}")
+    return set(seasons)
+
+
 def plan_raw_acquisition(
     repo_root: Path,
     lineage: list[SleeperLeagueInstance],
@@ -169,13 +204,25 @@ def plan_raw_acquisition(
     *,
     force: bool = False,
     offline: bool = False,
+    dataset_ids: set[str] | None = None,
+    seasons: set[int] | None = None,
+    weeks: set[int] | None = None,
 ) -> list[PlannedRawWrite]:
     if not lineage:
         raise ValueError("Cannot acquire league datasets without provider lineage")
+    if weeks and any(week < 1 for week in weeks):
+        raise ValueError("League acquisition weeks must be positive integers")
+
     current_season = lineage[0].season
-    league_datasets = [item for item in datasets if item.scope == "league-instance"]
-    week_datasets = [item for item in datasets if item.scope == "week"]
-    draft_datasets = [item for item in datasets if item.scope == "draft"]
+    selected_datasets = _selected_datasets(datasets, dataset_ids)
+    selected_seasons = _selected_seasons(lineage, seasons)
+
+    league_datasets = [item for item in selected_datasets if item.scope == "league-instance"]
+    week_datasets = [item for item in selected_datasets if item.scope == "week"]
+    draft_datasets = [item for item in selected_datasets if item.scope == "draft"]
+    if weeks and not week_datasets:
+        raise ValueError("--week targeting requires at least one selected week-scoped dataset")
+
     league_drafts = next((item for item in league_datasets if item.id == "sleeper.league-drafts"), None)
     if draft_datasets and league_drafts is None:
         raise ValueError("Draft datasets require sleeper.league-drafts discovery dataset")
@@ -183,6 +230,9 @@ def plan_raw_acquisition(
     plans: list[PlannedRawWrite] = []
     week_ceilings: dict[int, int] = {}
     for instance in lineage:
+        if instance.season not in selected_seasons:
+            continue
+
         by_id: dict[str, PlannedRawWrite] = {}
         for dataset in league_datasets:
             seeded = instance.payload if dataset.id == "sleeper.league" else None
@@ -215,7 +265,17 @@ def plan_raw_acquisition(
                         f"Week start {dataset.week_start} exceeds NFL schedule ceiling "
                         f"{week_ceiling} for {dataset.id} season {instance.season}"
                     )
-                for week in range(dataset.week_start, week_ceiling + 1):
+
+                target_weeks = sorted(weeks) if weeks else list(range(dataset.week_start, week_ceiling + 1))
+                invalid_weeks = [
+                    week for week in target_weeks if week < dataset.week_start or week > week_ceiling
+                ]
+                if invalid_weeks:
+                    raise ValueError(
+                        f"Requested week(s) {invalid_weeks} are outside {dataset.id} "
+                        f"range {dataset.week_start}-{week_ceiling} for season {instance.season}"
+                    )
+                for week in target_weeks:
                     plans.append(
                         _plan_one(
                             repo_root,

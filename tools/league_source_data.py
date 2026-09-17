@@ -24,6 +24,10 @@ from league_source_data_lib.materialize import (
     plan_canonical_materialization,
 )
 from league_source_data_lib.registry import load_league_registry
+from league_source_data_lib.transaction_materialize import (
+    TRANSACTION_SCOPE_DEPENDENCIES,
+    plan_transaction_materialization,
+)
 
 
 def combine_sync_results(identity: dict, raw: dict) -> dict:
@@ -54,6 +58,32 @@ def parse_args() -> argparse.Namespace:
         help="Restrict to one CanonicalLeagueID; may be repeated.",
     )
     parser.add_argument(
+        "--dataset",
+        action="append",
+        dest="dataset_ids",
+        help="Restrict sync acquisition to one registry dataset; may be repeated.",
+    )
+    parser.add_argument(
+        "--season",
+        action="append",
+        dest="seasons",
+        type=int,
+        help="Restrict sync or scoped materialization to one season; may be repeated.",
+    )
+    parser.add_argument(
+        "--week",
+        action="append",
+        dest="weeks",
+        type=int,
+        help="Restrict week-scoped sync/materialization to one week; may be repeated.",
+    )
+    parser.add_argument(
+        "--materialization-scope",
+        choices=("full", "transactions"),
+        default="full",
+        help="Choose full League materialization or the transaction-only write scope.",
+    )
+    parser.add_argument(
         "--offline",
         action="store_true",
         help="Read already persisted Sleeper raw files instead of fetching the API.",
@@ -64,6 +94,12 @@ def parse_args() -> argparse.Namespace:
         help="Explicitly repair/refetch historical provider partitions.",
     )
     return parser.parse_args()
+
+
+def _target_set(values: list[int] | list[str] | None) -> set | None:
+    if not values:
+        return None
+    return set(values)
 
 
 def main() -> int:
@@ -103,19 +139,43 @@ def main() -> int:
         return 0
 
     if args.command == "materialize":
+        if args.dataset_ids:
+            raise ValueError("--dataset applies to sync acquisition, not materialization")
+        if args.materialization_scope == "full" and (args.seasons or args.weeks):
+            raise ValueError(
+                "--season/--week materialization targeting requires "
+                "--materialization-scope transactions"
+            )
+
         resolver = PlayerMappingResolver.load(repo_root)
         results = []
         for bootstrap in selected:
-            outputs = plan_canonical_materialization(
-                repo_root,
-                bootstrap.canonical_league_id,
-                registry,
-                resolver,
-            )
+            if args.materialization_scope == "transactions":
+                outputs = plan_transaction_materialization(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    registry,
+                    resolver,
+                    seasons=_target_set(args.seasons),
+                    weeks=_target_set(args.weeks),
+                )
+            else:
+                outputs = plan_canonical_materialization(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    registry,
+                    resolver,
+                )
             result = persist_canonical_outputs(outputs)
             results.append(
                 {
                     "CanonicalLeagueID": bootstrap.canonical_league_id,
+                    "MaterializationScope": args.materialization_scope,
+                    "Dependencies": (
+                        list(TRANSACTION_SCOPE_DEPENDENCIES)
+                        if args.materialization_scope == "transactions"
+                        else []
+                    ),
                     **result,
                 }
             )
@@ -148,6 +208,9 @@ def main() -> int:
             fetch_sleeper_json,
             force=args.force,
             offline=args.offline,
+            dataset_ids=_target_set(args.dataset_ids),
+            seasons=_target_set(args.seasons),
+            weeks=_target_set(args.weeks),
         )
         raw = persist_raw_plans(plans)
         results.append(combine_sync_results(identity, raw))
