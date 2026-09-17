@@ -112,6 +112,13 @@ Exception:
 - Agent-facing instruction files should be written in English.
 - Human-facing documentation may be written in German or bilingual.
 
+## Execution checkpoints
+
+- For complex or longer-running authorized work, use checkpointed execution: split the work into small, independently verifiable and reversible steps that leave a stable persisted state whenever practical.
+- Prefer several small commits, pull requests or merges over a large monolithic change when the work can be separated cleanly.
+- In interactive ChatGPT-style work, a clearly authorized small step may be completed autonomously through validation, commit/PR/merge and relevant live verification, but after that step the agent must report the achieved state and proposed next step in chat and stop before beginning the next substantive step unless the user explicitly requested a continuous run.
+- The detailed execution-checkpoint rules live in `.ai-context/manual/ai-guidance.yaml`.
+
 ## Change guidance
 
 - Keep root `AGENTS.md` short and use it as a pointer to `.ai-context` and `fantasy-management/AGENTS.md`.
