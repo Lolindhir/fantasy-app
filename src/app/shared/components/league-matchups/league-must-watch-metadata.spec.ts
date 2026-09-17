@@ -162,7 +162,7 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: '/away.svg' },
       { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: '/home.svg' }
     ] as NFLTeam[]));
-    dataService.getWeeklyRecaps.and.returnValue(of(null));
+    dataService.getWeeklyRecaps.and.returnValue(of({ SchemaVersion: 1 as const, Season: '2026', Weeks: [] }));
 
     teamDialog = jasmine.createSpyObj<TeamDetailDialogService>('TeamDetailDialogService', ['open']);
     gameDialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
