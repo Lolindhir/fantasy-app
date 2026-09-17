@@ -18,9 +18,18 @@ architectureAreas:
       rationale: The established hierarchy uses large NFL-game identity, medium fantasy-team identity and compact player identity.
       references: ["#436"]
     - id: FDA-003
-      rule: Compact player identity combines the player portrait with NFL-team identity as one visual unit.
-      rationale: Repeated validated player-heavy surfaces scan better when portrait and NFL affiliation read together.
-      references: ["#436", "#497"]
+      rule: Player identity preserves both the player portrait and recognizable NFL-team identity, adapting their composition to available density.
+      rationale: >
+        NFL affiliation is part of player orientation, but roomy layouts do not need
+        to force the team mark into the portrait. When constrained space would
+        otherwise remove the NFL-team identity, portrait and team mark should collapse
+        into one compact visual unit instead.
+      constraints:
+        - Comfortable layouts may present the NFL-team mark separately from the portrait.
+        - Constrained layouts must integrate the NFL-team mark with the portrait when the alternative would be omitting the team mark.
+      implementationNotes:
+        - The established compact fallback is a small NFL-team logo overlaid at the portrait's lower-right.
+      references: ["#436"]
   surfaceAndContainerHierarchy:
     - id: FDA-004
       rule: Summary surfaces preserve high-level signal and representative entity identity; detail surfaces own exhaustive evidence and deeper drilldown.
