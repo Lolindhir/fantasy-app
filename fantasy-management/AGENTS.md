@@ -1,32 +1,51 @@
-# Fantasy Management Agent Instructions
+# Fantasy Workspace Agent Instructions
 
-This folder is the isolated Fantasy Management workspace of the repository.
+This folder is the isolated Fantasy workspace of the repository. It contains two related but distinct responsibility layers: Fantasy Management and Fantasy Operations.
 
-Read this file first for Fantasy Football, Dynasty, Mighty Giants, Stoned Lack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer, league-context or analysis-storage tasks.
+Read this file first for Fantasy Football, Dynasty, Mighty Giants, Stoned Lack, Down Set Talk, Football Bromance, Relevant Players, roster, trade, draft, free-agent, player evaluation, source-processing, knowledge-layer, league-context, monitoring, Operations materialization or analysis-storage tasks.
 
 ## Scope
 
-Fantasy Management work must stay inside this folder unless current application or league data from elsewhere in the repository is required.
+Fantasy workspace work must stay inside this folder unless current application, shared source-data or league data from elsewhere in the repository is required.
 
-Fantasy Management includes:
+### Fantasy Management
+
+Fantasy Management is the decision layer. It includes:
 
 - Robert / Mighty Giants analysis
-- roster, trade, draft and free-agent analysis
-- player evaluations
-- player analysis and derived Operations player datasets
+- roster, trade, draft, free-agent, lineup and waiver analysis and decisions
+- player evaluations and strategy
+- league context, owner profiles and trade negotiation history
+- decision-oriented boards and reviews
+- stored AI analyses
+- user decisions and decision history
+
+### Fantasy Operations
+
+Fantasy Operations is the Fantasy-specific preparation and execution-support layer. It includes:
+
+- derived Operations player, roster, league and free-agent datasets/readmodels
+- monitoring, events, baselines, observation state and freshness handling
+- Fantasy-specific materialization and orchestration
 - podcast and external-source processing
 - source take extraction
 - player identity resolution and alias handling
 - entity-mention coverage auditing
-- normalized knowledge-layer updates
-- league context, owner profiles and trade negotiation history
-- boards and source summaries
-- stored AI analyses
-- user decisions and decision history
+- normalized knowledge-layer preparation and source summaries when they serve downstream Fantasy analysis
+
+Fantasy Operations prepares reliable decision inputs but does not own final Draft, Trade, Lineup, Waiver, Add/Drop or Roster decisions.
+
+### Shared Data / Platform boundary
+
+Shared provider-normalized NFL/league facts and cross-consumer technical infrastructure are not Fantasy Operations merely because this workspace consumes them. `source-data/**` and shared Data/Platform contracts remain in the repository application/data/platform context according to root `AGENTS.md` and `.ai-context`.
+
+A downstream dependency does not change ownership: classify work by the responsibility it changes. Use both Fantasy Management and Fantasy Operations only when one coherent work package substantively changes both layers.
+
+This responsibility split does not imply a physical folder migration. `fantasy-management/**` remains the common workspace for both layers until a separate architecture decision explicitly changes that structure.
 
 ## Required reading order
 
-For Fantasy Management tasks, read these files as needed:
+For Fantasy workspace tasks, read these files as needed:
 
 For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tendency or counterparty-communication task, `fantasy-management/_ai/TRADE_NEGOTIATION_RULES.md` is additionally mandatory and must be read before applying owner profiles or negotiation history.
 
@@ -72,32 +91,38 @@ The central application and league data remains under:
 
 Current league, roster, player, draft, transaction, salary, scoring and settings information must be derived from current repository data when needed.
 
-Fantasy Management artifacts are working and analysis artifacts. They are not permanent truth.
+Fantasy workspace artifacts are working, source-processing, Operations and analysis artifacts. They are not permanent truth unless a specific canonical contract says otherwise.
 
 Dynamic evaluations must be re-derived from current repository data and, when relevant, current external sources.
 
 ## Separation rule
 
-The Fantasy Management workspace is separate from the application context.
+The Fantasy workspace is separate from the application context while consuming shared repository facts where appropriate.
 
-Do not place Fantasy Management outputs, stored analyses, podcast/source extractions, source summaries, player boards or decisions in the central app AI context.
+Do not place Fantasy Management decisions/analyses or Fantasy Operations source-processing, monitoring, derived-state and stored-analysis outputs in the central app AI context.
 
-Store them only under:
+Store Fantasy-specific artifacts only under:
 
 `fantasy-management/`
+
+Shared canonical source facts remain in their repository-owned `source-data/**` / application-data context rather than being copied into Fantasy Operations as a second source of truth.
 
 ## Work tracking
 
 - GitHub Issues are the canonical operative source of truth for Fantasy Management and Fantasy Operations backlog, progress, handoff and historical work records.
-- Follow `.ai-context/manual/work-tracking.yaml` for Issue lifecycle, granularity, mutable priority semantics and drift governance.
+- Follow `.ai-context/manual/work-tracking.yaml` for Issue lifecycle, granularity, mutable priority semantics, area ownership and drift governance.
 - The current Issue body is the canonical mutable work state; comments are supplemental history or communication and must not be required to reconstruct current work state.
 - Do not maintain parallel Markdown todo lists; operative repository work belongs in GitHub Issues.
-- Classify work by its purpose and owning context, not by whether the implementation uses Python, PowerShell, GitHub Actions, ChatGPT tasks or another technical mechanism.
-- A pipeline, materialized dataset or workflow whose purpose is Fantasy Management monitoring, analyses or reviews remains Fantasy Management work even when implementation touches shared repository tooling.
-- Application, frontend, generated-app-data and shared technical-platform work remains application/platform work; coordinated cross-context work should use one coherent Issue where appropriate rather than duplicate canonical work.
+- Classify work by the responsibility it changes, not by implementation technology or every downstream consumer.
+- Fantasy Management owns interpretation, evaluation, strategy, final fantasy decisions and retrospective decision/process reviews.
+- Fantasy Operations owns Fantasy-specific automation, materialization, monitoring, readmodels, baselines, events, freshness and orchestration that prepare those decisions.
+- A Fantasy Operations pipeline or dataset does not also become Fantasy Management work merely because Management consumes it; a Management analysis or review does not become Operations merely because it reads Operations inputs.
+- Use both `area:fantasy-management` and `area:fantasy-operations` only when one coherent work package substantively changes both layers.
+- Shared `source-data/**`, provider-normalization, application, frontend, generated-app-data and shared technical-platform work remains in its Data/App/Frontend/Platform context as appropriate; a Fantasy consumer does not change that ownership.
+- Coordinated cross-context work should use one coherent Issue where appropriate rather than duplicate canonical work.
 - Move durable Fantasy Management decisions into the relevant canonical rules, source maps or workflow documentation under `fantasy-management/_ai`; Issues do not replace durable knowledge.
 - Questions and analysis alone do not authorize repository mutation. Once the user explicitly authorizes concrete repository work, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
-- Durable Fantasy Management State, Knowledge, Decisions, boards, baselines, reviews and similar persisted analysis remain subject to their existing explicit-approval rules; administrative Issue bookkeeping is not such persistence and does not expand those permissions.
+- Durable Fantasy workspace State, Knowledge, Decisions, boards, baselines, reviews and similar persisted analysis remain subject to their existing explicit-approval rules; administrative Issue bookkeeping is not such persistence and does not expand those permissions.
 - `origin:automation` is reserved in the label contract but does not authorize current scheduled monitoring or automation to create Issues. Automatic Issue creation requires a separate explicit automation contract.
 
 ## Source, knowledge and analysis separation
@@ -232,8 +257,9 @@ fantasy-management/
 
 ## Source of truth rules
 
-- Current league state comes from `public/data/`.
-- Fantasy Management files are analysis and working files, not permanent truth.
+- Current league state comes from `public/data/` until the corresponding Canonical Source consumer migration is explicitly completed and documented.
+- Shared canonical NFL/league basis facts belong to the repository Source Data layer; Fantasy-specific derived state, knowledge and decisions stay under `fantasy-management/**`.
+- Fantasy workspace files are source-processing, Operations, analysis and working files, not permanent shared source truth.
 - Podcast and external-source outputs are source context, not final recommendations.
 - Final recommendations for Robert must combine current league data, source context, derived knowledge and current market/news context when relevant.
 - Podcast source takes must not be treated as final knowledge until a knowledge derivation step decides whether they apply to the league format and current context.
@@ -254,6 +280,6 @@ fantasy-management/
 
 ## Language
 
-Use German for human-facing Fantasy Management notes, summaries, Issue bodies, source summaries, rollups and recommendations unless the user explicitly asks otherwise.
+Use German for human-facing Fantasy workspace notes, summaries, Issue bodies, source summaries, rollups and recommendations unless the user explicitly asks otherwise.
 
 Machine-readable JSON keys may remain English.
