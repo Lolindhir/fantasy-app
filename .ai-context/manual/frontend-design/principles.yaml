@@ -1,12 +1,65 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: initial
 purpose: >
   Canonical home for durable app-wide frontend design principles. Principles guide
   judgment and trade-offs but are intentionally less mechanically enforceable than
   standards.
 
-principles: []
+principles:
+  - id: FDP-001
+    statement: Identity and orientation come before information density.
+    rationale: >
+      Sports surfaces should let users recognize the game, fantasy team or player
+      and understand the immediate context before asking them to parse secondary
+      metadata.
+    scope: App-wide sports and fantasy surfaces.
+    implications:
+      - Establish the represented sports entity before secondary counts, diagnostics or controls.
+      - Preserve strong identity cues even on compact surfaces.
+      - Add density only after orientation remains clear.
+    references:
+      - "#436"
+
+  - id: FDP-002
+    statement: Prefer concrete sports entities over abstract database-style summaries when space allows.
+    rationale: >
+      Logos, avatars, portraits and concrete game or player identities communicate
+      fantasy-football meaning faster than raw counts or technical aggregation copy.
+    scope: Summary, overview and detail surfaces that can represent concrete sports entities.
+    implications:
+      - Prefer visible NFL games, fantasy teams and players over redundant aggregate rows.
+      - Keep raw diagnostic cardinality out of prominent sports copy when concrete evidence is available.
+    references:
+      - "#436"
+      - "#507"
+
+  - id: FDP-003
+    statement: Compact presentation may reduce detail, but it should not change product meaning.
+    rationale: >
+      A narrower surface should preserve the same semantic selection, ranking and
+      entity meaning while reducing metadata, spacing or simultaneous detail.
+    scope: Responsive variants and compact-versus-comfortable presentations of the same product surface.
+    implications:
+      - Use progressive disclosure for detail instead of changing the underlying meaning.
+      - Treat additional desktop width as room for density and layout rather than new semantic breadth.
+    references:
+      - "#436"
+      - "#507"
+
+  - id: FDP-004
+    statement: Use distinct visual channels for distinct kinds of meaning.
+    rationale: >
+      Natural position, roster role, lifecycle state and exceptional/problem state
+      can coexist. Reusing one visual channel for several meanings makes dense
+      football UI harder to scan and creates ambiguous color or icon semantics.
+    scope: Player-heavy and game-state surfaces.
+    implications:
+      - Preserve the natural-position color language independently from lineup or lifecycle state.
+      - Keep role, lifecycle and exceptional modifiers composable rather than mutually replacing each other.
+    references:
+      - "#436"
+      - "#497"
 
 principleRecord:
   requiredFields:
