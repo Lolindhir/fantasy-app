@@ -1,6 +1,6 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: initial
 purpose: >
   Canonical home for explicit, auditable frontend design standards. Standards are
   intended to support later repository and visual reviews that can distinguish
@@ -48,4 +48,203 @@ exceptionPolicy:
   - A feature-local exception does not weaken the app-wide rule for unrelated surfaces.
   - Repeated exceptions should trigger reconsideration of the standard or its scope.
 
-standards: []
+standards:
+  - id: FDS-001
+    level: MUST
+    scope: Player-heavy surfaces that present natural position together with lineup role or lifecycle state.
+    rule: Natural player position and lineup/lifecycle state use separate visual channels.
+    rationale: >
+      Position describes what the player is; lineup and lifecycle state describe
+      current fantasy context. Combining them makes color and status semantics ambiguous.
+    review:
+      method: Inspect position, role and lifecycle styling for semantic channel separation.
+      evidence: Position styling remains independently identifiable when Starter, Locked, Live, Final, Problem or Review state is also present.
+    references:
+      - "#436"
+      - "#497"
+
+  - id: FDS-002
+    level: SHOULD
+    scope: Player rows that show a natural position plus a secondary lineup slot such as FLEX or SUPER_FLEX.
+    rule: >
+      Keep natural position visually primary, render a different lineup slot as
+      quieter contextual metadata, and reserve the status treatment for the actual
+      lineup/lifecycle state.
+    rationale: >
+      Three equal-weight chips for position, slot and state add noise and obscure
+      which value represents stable player identity.
+    review:
+      method: Compare visual emphasis of natural position, secondary slot and state.
+      evidence: The natural position is stronger than the secondary slot, and the state remains independently identifiable.
+    references:
+      - "#436"
+      - "#497"
+
+  - id: FDS-003
+    level: MUST
+    scope: Compact portrait-based player identity components.
+    rule: >
+      Integrate the player's NFL-team mark into the portrait identity at the
+      bottom-right so portrait and NFL-team affiliation read as one compact entity.
+    rationale: >
+      The accepted player-identity treatment preserves team context without consuming
+      a separate equal-weight metadata slot.
+    review:
+      method: Inspect compact player identities that use portraits.
+      evidence: A visible NFL-team mark is integrated at the portrait bottom-right and belongs visually to the portrait identity.
+    exceptions:
+      - A surface that intentionally does not render a player portrait is outside this standard.
+    references:
+      - "#436"
+
+  - id: FDS-004
+    level: SHOULD
+    scope: Narrow or two-column player rows with compact metadata.
+    rule: >
+      Keep the player name as the primary line and keep compact metadata on one
+      horizontal line beneath it; avoid vertical stacks of equal-weight position,
+      slot and state chips.
+    rationale: >
+      The accepted narrow-row rhythm preserves scanability and row density while
+      keeping identity and state visible.
+    review:
+      method: Inspect narrow player rows at their supported compact widths.
+      evidence: Metadata remains horizontally composed without a WR/FLEX/OPTION-style vertical chip stack.
+    references:
+      - "#436"
+
+  - id: FDS-005
+    level: SHOULD
+    scope: Interactive player, fantasy-team and NFL-game identities.
+    rule: >
+      Make an entity identity open the matching entity detail surface when that
+      detail surface exists.
+    rationale: >
+      Repeated entities should behave consistently across the app so users do not
+      need to relearn interaction targets on each screen.
+    review:
+      method: Exercise the visible entity identity target.
+      evidence: Player identity opens Player Detail, fantasy-team identity opens Team Detail and NFL-game identity opens NFL Game Detail.
+    exceptions:
+      - Dense summary surfaces may intentionally use one parent-detail target when nested entity targets would create poor or conflicting interaction.
+    references:
+      - "#436"
+      - "#507"
+
+  - id: FDS-006
+    level: MUST
+    scope: Fantasy matchup scores, NFL final scores and relevant per-game fantasy contributions when shown as primary sports facts.
+    rule: >
+      Present scores as primary sports information rather than as ordinary metadata
+      pills or generic status badges.
+    rationale: >
+      Scores are a core orientation fact and require stronger hierarchy than
+      secondary labels or diagnostics.
+    review:
+      method: Compare score hierarchy with adjacent metadata and state controls.
+      evidence: Scores are visually prominent, readable as numbers and not styled as interchangeable metadata pills.
+    references:
+      - "#436"
+      - "#509"
+
+  - id: FDS-007
+    level: MUST
+    scope: Frontend lifecycle, problem and review color semantics.
+    rule: >
+      Use neutral/gray for open, future or quiet context; blue for locked,
+      committed or active non-final state; green for authoritative Final/completed
+      state; red for objective problem/error semantics; and amber/yellow for
+      uncertainty, review or unknown evidence. Do not use red merely for Live/active
+      urgency or losing-score semantics, and do not use lifecycle color to replace
+      natural-position color.
+    rationale: >
+      Stable lifecycle color meaning prevents activity, outcome, position and
+      problem states from being conflated across surfaces.
+    review:
+      method: Inspect semantic use of lifecycle/problem colors across applicable states.
+      evidence: Each color family is used only for its canonical meaning; red is not ordinary activity/losing status and position styling remains position-owned.
+    references:
+      - "#436"
+      - "#497"
+      - "#509"
+
+  - id: FDS-008
+    level: SHOULD
+    scope: Scoreboards and other surfaces where lifecycle state accompanies primary score information.
+    rule: >
+      Prefer tint, border or accent treatment for lifecycle state instead of
+      recoloring core score numerals when color could be misread as winner/loser or
+      good/bad semantics.
+    rationale: >
+      Lifecycle should remain visible without corrupting the independent meaning of
+      the score itself.
+    review:
+      method: Inspect how lifecycle state is layered onto score presentation.
+      evidence: Lifecycle remains legible while score numerals preserve neutral sports-score meaning.
+    references:
+      - "#436"
+      - "#509"
+
+  - id: FDS-009
+    level: MUST
+    scope: Responsive variants of the same ranked or selected sports surface.
+    rule: >
+      Preserve the same product meaning, ranking and selected entity set across
+      viewport sizes; do not add semantic categories or additional ranked entities
+      solely because desktop width is available.
+    rationale: >
+      Responsive layout should alter density and composition, not the underlying
+      product contract.
+    review:
+      method: Compare representative mobile and desktop renderings of the same state.
+      evidence: Both variants represent the same selected entities and ordering while only metadata, spacing or layout richness changes.
+    references:
+      - "#436"
+
+  - id: FDS-010
+    level: MUST
+    scope: Semantic compact role, lifecycle and modifier iconography.
+    rule: >
+      Preserve one canonical visual shorthand per semantic concept across surfaces:
+      Starter, Bench, Taxi, IR, Locked, Live, Final, Bye, Problem and Review/Unknown
+      must not receive feature-local competing meanings or symbols.
+    rationale: >
+      Compact iconography only reduces reading cost when the same visual shorthand
+      carries the same meaning everywhere.
+    review:
+      method: Compare semantic icon/shorthand mappings across applicable surfaces.
+      evidence: The same concept uses one canonical mapping; implementations may evolve from native emoji to app-owned icons without changing the concept mapping.
+    references:
+      - "#497"
+      - "#531"
+
+  - id: FDS-011
+    level: SHOULD
+    scope: Dense player rows and other compact identity-heavy surfaces that express lifecycle/problem state.
+    rule: >
+      Prefer local identity treatment such as portrait tile, ring, halo, border or
+      compact modifier over coloring the entire row by default.
+    rationale: >
+      Local state treatment preserves row readability and allows role, position and
+      lifecycle information to coexist without flooding the whole surface.
+    review:
+      method: Inspect the spatial extent of lifecycle/problem emphasis.
+      evidence: State is communicated locally around identity or a compact modifier unless a documented surface-specific reason justifies whole-row treatment.
+    references:
+      - "#497"
+
+  - id: FDS-012
+    level: MAY
+    scope: Constrained surfaces that use the canonical semantic shorthand from FDS-010.
+    rule: >
+      Use icon-only semantic fallback when visible text would materially harm compact
+      layout, provided the canonical concept mapping is preserved and accessible
+      semantic metadata is exposed where practical.
+    rationale: >
+      Compact surfaces need a stable low-width fallback without inventing
+      screen-specific abbreviations or forcing verbose chips.
+    review:
+      method: Inspect constrained semantic indicators and available accessibility metadata.
+      evidence: Icon-only use preserves the canonical mapping; visible text is omitted only for density, not because the concept meaning changed.
+    references:
+      - "#497"
