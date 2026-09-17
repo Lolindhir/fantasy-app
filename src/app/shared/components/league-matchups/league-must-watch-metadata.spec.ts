@@ -151,7 +151,7 @@ function makeFinalContext(): FantasyGameContextReadModel {
   };
 }
 
-describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
+describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
   let fixture: ComponentFixture<LeagueMatchupsComponent>;
   let dataService: jasmine.SpyObj<DataService>;
   let teamDialog: jasmine.SpyObj<TeamDetailDialogService>;
@@ -194,12 +194,14 @@ describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
     const card = host.querySelector<HTMLElement>('.fantasy-pulse-card--remaining');
     const metrics = card?.querySelector<HTMLElement>('.fantasy-pulse-metrics');
     const strip = card?.querySelector<HTMLElement>('.fantasy-pulse-team-strip');
+    const avatarGroup = strip?.querySelector<HTMLElement>('.fantasy-pulse-team-avatars');
     const chips = Array.from(metrics?.querySelectorAll<HTMLElement>('.fantasy-pulse-metric-chip') ?? []);
     const avatars = Array.from(strip?.querySelectorAll<HTMLButtonElement>('.fantasy-pulse-team-avatar') ?? []);
 
     expect(card).not.toBeNull();
     expect(metrics).not.toBeNull();
     expect(strip).not.toBeNull();
+    expect(avatarGroup).not.toBeNull();
     expect(chips.map(chip => chip.textContent?.trim())).toEqual(['8 starters', '4 matchups']);
     expect(strip!.querySelector('.fantasy-pulse-team-strip-label')).toBeNull();
     expect(strip!.querySelector(':scope > strong')?.textContent?.trim()).toBe('8');
@@ -211,6 +213,8 @@ describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
     expect(card!.querySelector('[role="img"][aria-label="Final"]')).toBeNull();
     expect(getComputedStyle(metrics!).flexWrap).toBe('nowrap');
     expect(getComputedStyle(strip!).position).toBe('absolute');
+    expect(getComputedStyle(strip!).justifyContent).toBe('flex-end');
+    expect(getComputedStyle(avatarGroup!).flexGrow).toBe('0');
 
     const metricsRect = metrics!.getBoundingClientRect();
     const stripRect = strip!.getBoundingClientRect();
@@ -259,7 +263,7 @@ describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
   });
 
   for (const width of [360, 390, 430, 1280]) {
-    it(`keeps the compact Must Watch metadata contained on one row at ${width}px`, () => {
+    it(`keeps the compact Must Watch metadata contained and right-clustered at ${width}px`, () => {
       const sourceCard = (fixture.nativeElement as HTMLElement)
         .querySelector<HTMLElement>('.fantasy-pulse-card--remaining')!;
       const frame = document.createElement('iframe');
@@ -286,24 +290,31 @@ describe('LeagueMatchupsComponent #578 Must Watch presentation', () => {
         const card = frameDocument.querySelector<HTMLElement>('.fantasy-pulse-card--remaining')!;
         const metrics = frameDocument.querySelector<HTMLElement>('.fantasy-pulse-metrics')!;
         const strip = frameDocument.querySelector<HTMLElement>('.fantasy-pulse-team-strip')!;
+        const avatarGroup = strip.querySelector<HTMLElement>('.fantasy-pulse-team-avatars')!;
         const metricChips = metrics.querySelectorAll<HTMLElement>('.fantasy-pulse-metric-chip');
         const count = strip.querySelector<HTMLElement>(':scope > strong')!;
         const cardRect = card.getBoundingClientRect();
         const metricsRect = metrics.getBoundingClientRect();
         const stripRect = strip.getBoundingClientRect();
+        const avatarGroupRect = avatarGroup.getBoundingClientRect();
         const lastMetricRect = metricChips[metricChips.length - 1].getBoundingClientRect();
         const countRect = count.getBoundingClientRect();
         const metricsCenter = metricsRect.top + metricsRect.height / 2;
         const stripCenter = stripRect.top + stripRect.height / 2;
+        const avatarCountGap = countRect.left - avatarGroupRect.right;
 
         expect(frameWindow.innerWidth).withContext(`${width}px iframe viewport`).toBe(width);
         expect(cardRect.right).withContext(`${width}px card containment`).toBeLessThanOrEqual(width + 1);
         expect(card.scrollWidth).withContext(`${width}px card horizontal overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
         expect(getComputedStyle(metrics).flexWrap).withContext(`${width}px metadata wrapping`).toBe('nowrap');
+        expect(getComputedStyle(strip).justifyContent).withContext(`${width}px right cluster alignment`).toBe('flex-end');
+        expect(getComputedStyle(avatarGroup).flexGrow).withContext(`${width}px avatar group must not consume metadata row`).toBe('0');
         expect(strip.querySelector('.fantasy-pulse-team-strip-label')).withContext(`${width}px redundant strip label`).toBeNull();
         expect(lastMetricRect.right).withContext(`${width}px counts/avatar overlap`).toBeLessThanOrEqual(stripRect.left + 1);
         expect(stripRect.right).withContext(`${width}px strip containment`).toBeLessThanOrEqual(cardRect.right + 1);
-        expect(countRect.right).withContext(`${width}px affected-team count visibility`).toBeLessThanOrEqual(stripRect.right + 1);
+        expect(Math.abs(stripRect.right - countRect.right)).withContext(`${width}px affected-team count right alignment`).toBeLessThanOrEqual(1);
+        expect(avatarCountGap).withContext(`${width}px avatar/count separation`).toBeGreaterThanOrEqual(-1);
+        expect(avatarCountGap).withContext(`${width}px avatar/count compact adjacency`).toBeLessThanOrEqual(6);
         expect(countRect.width).withContext(`${width}px affected-team count width`).toBeGreaterThan(0);
         expect(Math.abs(metricsCenter - stripCenter)).withContext(`${width}px shared metadata row`).toBeLessThanOrEqual(4);
         expect(cardRect.height).withContext(`${width}px compact card height`).toBeLessThanOrEqual(90);
