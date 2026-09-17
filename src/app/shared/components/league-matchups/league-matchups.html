@@ -312,7 +312,6 @@
             <div class="matchups-eyebrow">NFL Fantasy Pulse</div>
             <h2>Must Watch · Week {{ fantasyContext.Week }}</h2>
           </div>
-          <span class="fantasy-pulse-state">{{ fantasyContext.ScoringState }}</span>
         </div>
 
         <div class="fantasy-pulse-grid">
@@ -348,7 +347,7 @@
                     </span>
                     <span class="fantasy-pulse-game-meta">
                       <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
-                      <span *ngIf="gameIsFinal(game)">Final</span>
+                      <span *ngIf="gameIsFinal(game)" role="img" aria-label="Final">🏁</span>
                       <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
                     </span>
                     <span class="fantasy-pulse-metrics">
@@ -363,7 +362,6 @@
                   </button>
 
                   <div *ngIf="affectedFantasyTeamIDs(game) as affectedTeamIDs" class="fantasy-pulse-team-strip">
-                    <span class="fantasy-pulse-team-strip-label">Starter teams</span>
                     <div class="fantasy-pulse-team-avatars" *ngIf="affectedTeamIDs.length > 0">
                       <button
                         *ngFor="let teamID of affectedTeamIDs"
