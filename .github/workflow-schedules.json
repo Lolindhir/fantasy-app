@@ -132,6 +132,16 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
+      "id": "league-transaction-source",
+      "workflow": "sync-league-transactions.yml",
+      "path": ".github/workflows/sync-league-transactions.yml",
+      "eventType": "scheduler-sync-league-transactions",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": ["5-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
+    },
+    {
       "id": "source-data-readiness",
       "workflow": "source-data-readiness.yml",
       "path": ".github/workflows/source-data-readiness.yml",
