@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/trade-decision-record.schema.json",
+  "title": "Trade Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "type",
+    "record_id",
+    "trade_id",
+    "transaction_date",
+    "created_at",
+    "record_origin",
+    "transaction",
+    "evidence_basis",
+    "decision_context",
+    "theses",
+    "alternatives",
+    "protected_assets",
+    "price_ceiling",
+    "known_risks",
+    "decision_state_at_execution",
+    "portfolio_links",
+    "review_plan",
+    "seal",
+    "corrections"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "type": {"const": "trade_decision_record"},
+    "record_id": {"type": "string", "minLength": 1},
+    "trade_id": {"type": "string", "minLength": 1},
+    "transaction_date": {"type": "string", "format": "date"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "record_origin": {"enum": ["contemporaneous", "reconstructed"]},
+    "reconstruction": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reconstruction_date", "reconstruction_confidence", "outcome_firewall_acknowledged", "limitations"],
+          "properties": {
+            "reconstruction_date": {"type": "string", "format": "date"},
+            "reconstruction_confidence": {"type": "integer", "minimum": 1, "maximum": 5},
+            "outcome_firewall_acknowledged": {"const": true},
+            "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+          }
+        }
+      ]
+    },
+    "transaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["counterparty", "assets_received", "assets_sent", "transaction_refs"],
+      "properties": {
+        "counterparty": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["team_id", "team_name"],
+          "properties": {
+            "team_id": {"type": ["integer", "string"]},
+            "team_name": {"type": "string", "minLength": 1},
+            "owner_name": {"type": ["string", "null"]}
+          }
+        },
+        "assets_received": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/asset"}},
+        "assets_sent": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/asset"}},
+        "transaction_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "evidence_basis": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+    "decision_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "season_phase", "roster_context", "cap_salary_context", "team_window", "market_context", "why_now", "constraints"],
+      "properties": {
+        "objective": {"type": "string", "minLength": 1},
+        "season_phase": {"enum": ["offseason", "preseason", "regular_season", "playoffs", "draft", "other"]},
+        "roster_context": {"type": "string", "minLength": 1},
+        "cap_salary_context": {"type": "string", "minLength": 1},
+        "team_window": {"type": "string", "minLength": 1},
+        "market_context": {"type": "string", "minLength": 1},
+        "why_now": {"type": "string", "minLength": 1},
+        "constraints": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "theses": {"type": "array", "minItems": 1, "maxItems": 12, "items": {"$ref": "#/$defs/thesis"}},
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "reason_not_chosen"],
+        "properties": {
+          "description": {"type": "string", "minLength": 1},
+          "reason_not_chosen": {"type": "string", "minLength": 1},
+          "status": {"enum": ["less_preferred", "rejected", "unavailable", "not_pursued", "unknown"]}
+        }
+      }
+    },
+    "protected_assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset", "reason"],
+        "properties": {
+          "asset": {"$ref": "#/$defs/asset"},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "price_ceiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["known", "description", "execution_vs_ceiling"],
+      "properties": {
+        "known": {"type": "boolean"},
+        "description": {"type": "string", "minLength": 1},
+        "execution_vs_ceiling": {"enum": ["below", "at", "above", "unknown"]},
+        "reason_if_above": {"type": ["string", "null"]}
+      }
+    },
+    "known_risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["risk_id", "description"],
+        "properties": {
+          "risk_id": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1},
+          "likelihood": {"enum": ["low", "medium", "high", "unknown"]},
+          "impact": {"enum": ["low", "medium", "high", "unknown"]}
+        }
+      }
+    },
+    "decision_state_at_execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision_confidence", "outcome_uncertainty", "gut_feeling", "decision_margin", "confidence_rationale", "primary_confidence_driver", "primary_source_of_doubt", "known_personal_biases", "state_provenance"],
+      "properties": {
+        "decision_confidence": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "outcome_uncertainty": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "gut_feeling": {"enum": ["very_negative", "negative", "mixed", "positive", "very_positive", "unknown"]},
+        "decision_margin": {"enum": ["clear", "moderate", "close", "unknown"]},
+        "confidence_rationale": {"type": "string", "minLength": 1},
+        "primary_confidence_driver": {"type": "string", "minLength": 1},
+        "primary_source_of_doubt": {"type": "string", "minLength": 1},
+        "known_personal_biases": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "state_provenance": {"enum": ["direct_contemporaneous", "reconstructed_contemporary_evidence", "reconstructed_user_recollection", "mixed_reconstruction", "unknown"]}
+      }
+    },
+    "portfolio_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["linked_trade_id", "relationship", "description"],
+        "properties": {
+          "linked_trade_id": {"type": "string", "minLength": 1},
+          "relationship": {"enum": ["predecessor", "successor", "same_strategy", "cap_chain", "position_rebalance", "pick_chain", "other"]},
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "review_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["review_kind", "trigger_type", "trigger_value", "purpose"],
+        "properties": {
+          "review_kind": {"enum": ["early_signal", "season_end", "year_1", "year_2", "year_3", "asset_resolution", "ad_hoc"]},
+          "trigger_type": {"enum": ["season_checkpoint", "event", "date", "relative_interval"]},
+          "trigger_value": {"type": "string", "minLength": 1},
+          "purpose": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "seal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "sealed_at", "sealed_with_user_confirmation"],
+      "properties": {
+        "status": {"enum": ["draft", "sealed"]},
+        "sealed_at": {"type": ["string", "null"], "format": "date-time"},
+        "sealed_with_user_confirmation": {"type": "boolean"}
+      }
+    },
+    "corrections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["correction_id", "corrected_at", "field_path", "previous_value_summary", "corrected_value_summary", "reason", "evidence_ref", "judgment_impact"],
+        "properties": {
+          "correction_id": {"type": "string", "minLength": 1},
+          "corrected_at": {"type": "string", "format": "date-time"},
+          "field_path": {"type": "string", "minLength": 1},
+          "previous_value_summary": {"type": "string", "minLength": 1},
+          "corrected_value_summary": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1},
+          "evidence_ref": {"type": "string", "minLength": 1},
+          "judgment_impact": {"enum": ["none", "requires_review"]}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset_id", "asset_type", "label"],
+      "properties": {
+        "asset_id": {"type": "string", "minLength": 1},
+        "asset_type": {"enum": ["player", "rookie_pick", "free_agent_pick", "startup_pick", "other_pick", "other"]},
+        "label": {"type": "string", "minLength": 1},
+        "player_id": {"type": ["string", "null"]},
+        "player_name": {"type": ["string", "null"]},
+        "season": {"type": ["integer", "null"]},
+        "draft_key": {"type": ["string", "null"]},
+        "pick_key": {"type": ["string", "null"]},
+        "pick_label": {"type": ["string", "null"]},
+        "original_owner_team_id": {"type": ["integer", "string", "null"]}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "source_type", "source_ref", "as_of", "ex_ante_relevant", "evidence_confidence", "note"],
+      "properties": {
+        "evidence_id": {"type": "string", "minLength": 1},
+        "source_type": {"enum": ["canonical_transaction", "contemporary_chat", "stored_negotiation_history", "contemporary_analysis", "market_snapshot", "repository_snapshot", "user_recollection", "later_inference"]},
+        "source_ref": {"type": "string", "minLength": 1},
+        "as_of": {"type": ["string", "null"], "format": "date-time"},
+        "ex_ante_relevant": {"type": "boolean"},
+        "evidence_confidence": {"type": "integer", "minimum": 1, "maximum": 5},
+        "note": {"type": "string", "minLength": 1}
+      }
+    },
+    "thesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thesis_id", "statement", "confidence", "horizon", "falsification_conditions"],
+      "properties": {
+        "thesis_id": {"type": "string", "minLength": 1},
+        "statement": {"type": "string", "minLength": 1},
+        "confidence": {"type": ["integer", "null"], "minimum": 1, "maximum": 5},
+        "horizon": {"enum": ["immediate", "season", "multi_year", "asset_lifecycle"]},
+        "falsification_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_origin": {"const": "reconstructed"}}, "required": ["record_origin"]},
+      "then": {"required": ["reconstruction"], "properties": {"reconstruction": {"type": "object"}}},
+      "else": {"properties": {"reconstruction": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"seal": {"properties": {"status": {"const": "sealed"}}, "required": ["status"]}}},
+      "then": {"properties": {"seal": {"properties": {"sealed_at": {"type": "string", "format": "date-time"}, "sealed_with_user_confirmation": {"const": true}}}}}
+    },
+    {
+      "if": {"properties": {"record_origin": {"const": "contemporaneous"}, "seal": {"properties": {"status": {"const": "sealed"}}}}, "required": ["record_origin", "seal"]},
+      "then": {"properties": {"decision_state_at_execution": {"properties": {"decision_confidence": {"type": "integer", "minimum": 1, "maximum": 5}, "outcome_uncertainty": {"type": "integer", "minimum": 1, "maximum": 5}, "gut_feeling": {"enum": ["very_negative", "negative", "mixed", "positive", "very_positive"]}, "state_provenance": {"const": "direct_contemporaneous"}}}}}
+    }
+  ]
+}
