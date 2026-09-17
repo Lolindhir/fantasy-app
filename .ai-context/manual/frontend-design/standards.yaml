@@ -1,6 +1,6 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: canonical
 purpose: >
   Canonical home for explicit, auditable frontend design standards. Standards are
   intended to support later repository and visual reviews that can distinguish
@@ -18,23 +18,9 @@ normativeLevels:
     reviewEffect: Absence is not a violation.
 
 standardRecord:
-  requiredFields:
-    - id
-    - level
-    - scope
-    - rule
-    - rationale
-    - review
-  optionalFields:
-    - exceptions
-    - examples
-    - counterExamples
-    - references
-    - supersedes
-    - implementationOwner
-  reviewFields:
-    - method
-    - evidence
+  requiredFields: [id, level, scope, rule, rationale, review]
+  optionalFields: [exceptions, examples, counterExamples, references, supersedes, implementationOwner]
+  reviewFields: [method, evidence]
 
 reviewOutcomes:
   compliant: Applicable rule is satisfied.
@@ -48,4 +34,98 @@ exceptionPolicy:
   - A feature-local exception does not weaken the app-wide rule for unrelated surfaces.
   - Repeated exceptions should trigger reconsideration of the standard or its scope.
 
-standards: []
+standards:
+  - id: FDS-001
+    level: MUST
+    scope: player-heavy surfaces showing both natural position and lineup/lifecycle state
+    rule: Natural position and lineup/lifecycle state use separate visual channels.
+    rationale: Position and temporal/roster state are different semantics and must not compete for one encoding.
+    review:
+      method: Inspect representative player rows/cards.
+      evidence: Position treatment remains distinct from Starter, Locked, Live, Final, Option or equivalent state treatment.
+    references: ["#436", "#497"]
+  - id: FDS-002
+    level: MUST
+    scope: compact player identity using a portrait
+    rule: The player portrait visually integrates the player's NFL-team identity as part of the same compact identity unit.
+    rationale: This is an explicitly adopted recurring player-identity pattern and preserves NFL orientation without adding a separate metadata block.
+    review:
+      method: Inspect compact portrait-based player identities.
+      evidence: A recognizable NFL-team mark is integrated with the portrait; the established default is a small team logo at the portrait's lower-right.
+    exceptions:
+      - Surfaces where NFL-team identity is intentionally unavailable or not applicable.
+    references: ["#436", "#497"]
+  - id: FDS-003
+    level: SHOULD
+    scope: player metadata rows
+    rule: Secondary lineup slot context such as FLEX is visually quieter than natural position and primary state.
+    rationale: Secondary slot is contextual metadata, not a second equal-weight identity/state chip.
+    review:
+      method: Compare position, secondary slot and state treatments.
+      evidence: Secondary slot does not receive equal visual weight without a documented reason.
+    references: ["#436"]
+  - id: FDS-004
+    level: MUST
+    scope: fantasy and NFL score presentation
+    rule: Scores are presented as primary sports information, not ordinary metadata pills or badges.
+    rationale: Scores are a core sports fact and require stronger hierarchy than metadata.
+    review:
+      method: Inspect score-bearing surfaces.
+      evidence: Score typography/placement has primary information hierarchy and is not reduced to tag-like metadata styling.
+    references: ["#436", "#509"]
+  - id: FDS-005
+    level: MUST
+    scope: lifecycle/state color semantics
+    rule: Gray/neutral means quiet or not active, blue means active/locked/current, green means authoritative Final/completed, red means problem/irreparable, and amber means unknown/review/fail-closed.
+    rationale: Stable color semantics prevent activity, success, failure and uncertainty from being conflated.
+    review:
+      method: Inspect state-bearing controls, accents and identity treatments.
+      evidence: Applicable lifecycle colors match the canonical semantic mapping.
+    references: ["#436", "#497", "#509"]
+  - id: FDS-006
+    level: SHOULD
+    scope: state-bearing score and identity surfaces
+    rule: Lifecycle state is expressed through tint, border, accent, ring or similarly local treatment rather than recoloring core score numerals when that could imply winner/loser or good/bad semantics.
+    rationale: State and competitive outcome are separate meanings.
+    review:
+      method: Inspect active/final/problem score and identity treatments.
+      evidence: Core score numerals remain semantically neutral unless a documented feature rule says otherwise.
+    references: ["#436", "#509"]
+  - id: FDS-007
+    level: SHOULD
+    scope: surfaces representing player, fantasy-team or NFL-game entities with corresponding detail views
+    rule: The entity identity itself should provide the predictable drilldown target for that same entity class.
+    rationale: Consistent entity navigation lowers interaction ambiguity.
+    review:
+      method: Inspect entity interaction targets.
+      evidence: Player identity opens Player Detail, fantasy-team identity opens Team Detail, and NFL-game identity opens NFL Game Detail where applicable.
+    exceptions:
+      - Dense summary surfaces may use one explicit parent target when nested targets would harm usability.
+    references: ["#436", "#507"]
+  - id: FDS-008
+    level: MUST
+    scope: responsive variants of the same product surface
+    rule: Mobile and desktop preserve the same product meaning, ranking and selected entity set unless an explicit feature contract defines otherwise.
+    rationale: Width should change density and composition, not silently change semantics.
+    review:
+      method: Compare supported responsive variants.
+      evidence: Semantic categories and ranked/selected entities do not change solely because viewport width changes.
+    references: ["#436", "#500"]
+  - id: FDS-009
+    level: SHOULD
+    scope: compact summary surfaces
+    rule: Preserve concrete sports identity while limiting exhaustive detail; use representative entities, counts and informational overflow instead of rendering every child entity inline.
+    rationale: Compact surfaces should remain scannable without becoming abstract database summaries.
+    review:
+      method: Inspect compact cards with multi-entity data.
+      evidence: High-level completeness and recognizable sports identity are both retained.
+    references: ["#436", "#507"]
+  - id: FDS-010
+    level: MUST
+    scope: user-facing primary sports copy
+    rule: Internal diagnostic cardinalities and raw scoring-path counts are not used as primary sports copy when a plain-language sports meaning is available.
+    rationale: Technical implementation counts are poor orientation language for end users.
+    review:
+      method: Inspect hero/summary copy on sports surfaces.
+      evidence: Primary copy describes user-facing sports meaning rather than internal path counts or diagnostic state.
+    references: ["#436"]
