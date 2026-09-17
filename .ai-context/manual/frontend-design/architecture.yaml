@@ -1,18 +1,95 @@
 schemaVersion: 1
 status: active
-contentStatus: scaffold
+contentStatus: initial
 purpose: >
   Canonical home for app-wide frontend design architecture: the relationships and
   boundaries between information hierarchy, entities, surfaces, interaction,
   responsive behavior and reusable design primitives.
 
 architectureAreas:
-  informationHierarchy: []
-  entityIdentityAndScale: []
-  surfaceAndContainerHierarchy: []
-  interactionGrammar: []
-  compactVsDetailComposition: []
-  responsiveBehavior: []
+  informationHierarchy:
+    - id: FDA-001
+      rule: >
+        Sports identity follows the primary represented entity before secondary
+        metadata; scores and concrete game/player impact sit above diagnostic or
+        database-style counts.
+      rationale: >
+        The app should read as football and fantasy football first rather than as a
+        projection of internal data structures.
+      scope: App-wide sports summary and detail surfaces.
+      references:
+        - "#436"
+
+  entityIdentityAndScale:
+    - id: FDA-002
+      rule: >
+        Use entity scale to communicate hierarchy: NFL-game identity uses the
+        strongest/largest team marks, fantasy-team identity uses medium avatars,
+        and player identity uses compact portraits with integrated NFL-team identity.
+      rationale: >
+        Stable scale relationships let users identify the level of the information
+        hierarchy before reading labels.
+      scope: Surfaces that combine NFL games, fantasy teams and players.
+      references:
+        - "#436"
+
+  surfaceAndContainerHierarchy:
+    - id: FDA-003
+      rule: >
+        Scores are primary sports information and remain structurally distinct from
+        metadata badges, pills and diagnostic state. NFL score and fantasy
+        score/contribution are separate presentation concepts.
+      rationale: >
+        Score meaning is central to sports orientation and should not be visually
+        flattened into the same grammar as secondary metadata.
+      scope: NFL game and fantasy matchup surfaces.
+      references:
+        - "#436"
+        - "#509"
+
+  interactionGrammar:
+    - id: FDA-004
+      rule: >
+        Entity identity owns the corresponding drilldown interaction: player identity
+        maps to Player Detail, fantasy-team identity maps to Team Detail and NFL-game
+        identity maps to NFL Game Detail.
+      rationale: >
+        A stable interaction grammar reduces ambiguity when the same entities recur
+        across overview, detail and timeline surfaces.
+      scope: Interactive entity identities.
+      exceptions:
+        - Dense summary surfaces may deliberately collapse nested targets to one parent-detail target when separate nested controls would reduce usability.
+      references:
+        - "#436"
+        - "#507"
+
+  compactVsDetailComposition:
+    - id: FDA-005
+      rule: >
+        Compact summaries preserve the complete high-level signal and enough
+        concrete identity to explain it, while the parent detail surface owns full
+        expansion and exhaustive evidence.
+      rationale: >
+        Progressive disclosure should reduce visible detail without turning a sports
+        summary into an abstract count-only surface.
+      scope: Overview cards, compact previews and corresponding detail surfaces.
+      references:
+        - "#436"
+        - "#507"
+
+  responsiveBehavior:
+    - id: FDA-006
+      rule: >
+        Mobile and desktop variants of the same surface keep the same product
+        meaning, ranking and selected entity set. Additional width is used for richer
+        metadata, spacing and parallel layout rather than additional semantic categories.
+      rationale: >
+        Responsive layout should change presentation density without creating
+        different products or prioritization rules by viewport size.
+      scope: Responsive variants of the same user-facing surface.
+      references:
+        - "#436"
+
   progressiveDisclosure: []
   accessibilityAndInput: []
   sharedPrimitivesAndTokens: []
