@@ -1,0 +1,17 @@
+name: Data • League Drafts
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-sync-league-drafts
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-drafts:
+    uses: ./.github/workflows/sync-league-source-data.yml
+    with:
+      materialization_scope: drafts
+    secrets: inherit
