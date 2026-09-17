@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Callable
 
 from league_source_data_lib.acquire import (
     fetch_sleeper_json,
@@ -12,6 +13,7 @@ from league_source_data_lib.acquire import (
     plan_raw_acquisition,
 )
 from league_source_data_lib.core import (
+    SleeperLeagueInstance,
     discover_sleeper_lineage,
     fetch_sleeper_league,
     load_bootstraps,
@@ -27,6 +29,10 @@ from league_source_data_lib.registry import load_league_registry
 from league_source_data_lib.transaction_materialize import (
     TRANSACTION_SCOPE_DEPENDENCIES,
     plan_transaction_materialization,
+)
+from league_source_data_lib.transaction_window import (
+    load_persisted_current_league_payload,
+    resolve_current_transaction_window,
 )
 
 
@@ -84,6 +90,14 @@ def parse_args() -> argparse.Namespace:
         help="Choose full League materialization or the transaction-only write scope.",
     )
     parser.add_argument(
+        "--current-transaction-window",
+        action="store_true",
+        help=(
+            "Use the source-owned current transaction window: current Sleeper week "
+            "plus the previous week, bounded by the canonical NFL regular-season schedule."
+        ),
+    )
+    parser.add_argument(
         "--offline",
         action="store_true",
         help="Read already persisted Sleeper raw files instead of fetching the API.",
@@ -102,8 +116,58 @@ def _target_set(values: list[int] | list[str] | None) -> set | None:
     return set(values)
 
 
+def _load_current_instance(
+    bootstrap,
+    fetcher: Callable[[str], dict],
+) -> SleeperLeagueInstance:
+    provider_league_id = bootstrap.current_provider_league_id
+    payload = fetcher(provider_league_id)
+    if not isinstance(payload, dict):
+        raise ValueError(
+            f"Current Sleeper league payload must be an object: {provider_league_id}"
+        )
+    payload_league_id = str(payload.get("league_id") or "").strip()
+    if payload_league_id != provider_league_id:
+        raise ValueError(
+            "Current Sleeper league payload identity mismatch: "
+            f"expected {provider_league_id!r}, got {payload_league_id!r}"
+        )
+    try:
+        season = int(payload.get("season"))
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"Current Sleeper league payload has invalid season: {payload.get('season')!r}"
+        ) from error
+    if season < 1:
+        raise ValueError(f"Current Sleeper league season must be positive: {season}")
+    previous = str(payload.get("previous_league_id") or "").strip() or None
+    return SleeperLeagueInstance(provider_league_id, season, previous, payload)
+
+
+def _validate_current_window_args(args: argparse.Namespace) -> None:
+    if not args.current_transaction_window:
+        return
+    if args.command == "validate":
+        raise ValueError("--current-transaction-window does not apply to validate")
+    if args.seasons or args.weeks:
+        raise ValueError(
+            "--current-transaction-window owns season/week targeting; do not combine it with --season/--week"
+        )
+    if args.command == "sync":
+        requested = set(args.dataset_ids or [])
+        if requested and requested != {"sleeper.transactions"}:
+            raise ValueError(
+                "--current-transaction-window sync supports only dataset=sleeper.transactions"
+            )
+    if args.command == "materialize" and args.materialization_scope != "transactions":
+        raise ValueError(
+            "--current-transaction-window materialization requires --materialization-scope transactions"
+        )
+
+
 def main() -> int:
     args = parse_args()
+    _validate_current_window_args(args)
     repo_root = args.repo_root.resolve()
     bootstraps = load_bootstraps(repo_root)
     registry = load_league_registry(repo_root)
@@ -150,14 +214,31 @@ def main() -> int:
         resolver = PlayerMappingResolver.load(repo_root)
         results = []
         for bootstrap in selected:
+            current_window = None
+            seasons = _target_set(args.seasons)
+            weeks = _target_set(args.weeks)
+            if args.current_transaction_window:
+                current_payload = load_persisted_current_league_payload(
+                    repo_root,
+                    bootstrap.current_provider_league_id,
+                )
+                current_window = resolve_current_transaction_window(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    bootstrap.current_provider_league_id,
+                    current_payload,
+                )
+                seasons = {current_window["Season"]}
+                weeks = set(current_window["Weeks"])
+
             if args.materialization_scope == "transactions":
                 outputs = plan_transaction_materialization(
                     repo_root,
                     bootstrap.canonical_league_id,
                     registry,
                     resolver,
-                    seasons=_target_set(args.seasons),
-                    weeks=_target_set(args.weeks),
+                    seasons=seasons,
+                    weeks=weeks,
                 )
             else:
                 outputs = plan_canonical_materialization(
@@ -167,18 +248,19 @@ def main() -> int:
                     resolver,
                 )
             result = persist_canonical_outputs(outputs)
-            results.append(
-                {
-                    "CanonicalLeagueID": bootstrap.canonical_league_id,
-                    "MaterializationScope": args.materialization_scope,
-                    "Dependencies": (
-                        list(TRANSACTION_SCOPE_DEPENDENCIES)
-                        if args.materialization_scope == "transactions"
-                        else []
-                    ),
-                    **result,
-                }
-            )
+            item = {
+                "CanonicalLeagueID": bootstrap.canonical_league_id,
+                "MaterializationScope": args.materialization_scope,
+                "Dependencies": (
+                    list(TRANSACTION_SCOPE_DEPENDENCIES)
+                    if args.materialization_scope == "transactions"
+                    else []
+                ),
+                **result,
+            }
+            if current_window is not None:
+                item["CurrentTransactionWindow"] = current_window
+            results.append(item)
         print(json.dumps({"Leagues": results}, indent=2))
         return 0
 
@@ -189,6 +271,38 @@ def main() -> int:
     )
     results = []
     for bootstrap in selected:
+        if args.current_transaction_window:
+            current_instance = _load_current_instance(bootstrap, lineage_fetcher)
+            current_window = resolve_current_transaction_window(
+                repo_root,
+                bootstrap.canonical_league_id,
+                bootstrap.current_provider_league_id,
+                current_instance.payload,
+            )
+            plans = plan_raw_acquisition(
+                repo_root,
+                [current_instance],
+                registry,
+                fetch_sleeper_json,
+                force=args.force,
+                offline=args.offline,
+                dataset_ids={"sleeper.league", "sleeper.transactions"},
+                seasons={current_window["Season"]},
+                weeks=set(current_window["Weeks"]),
+            )
+            raw = persist_raw_plans(plans)
+            results.append(
+                {
+                    "CanonicalLeagueID": bootstrap.canonical_league_id,
+                    "CurrentProviderLeagueID": bootstrap.current_provider_league_id,
+                    "AcquisitionScope": "current-transactions",
+                    "Dependencies": ["sleeper.league", "sleeper.transactions"],
+                    "CurrentTransactionWindow": current_window,
+                    **raw,
+                }
+            )
+            continue
+
         lineage = discover_sleeper_lineage(
             bootstrap.current_provider_league_id,
             lineage_fetcher,
