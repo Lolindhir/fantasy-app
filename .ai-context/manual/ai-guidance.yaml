@@ -121,6 +121,7 @@ guidance:
 
   postCommit:
     - After each commit, review whether manual AI context documentation or file-local documentation should be updated based on both the committed changes and the conversation that led to the commit.
+    - After frontend/UI/UX or design-system commits, explicitly review whether the work or its discussion established a new reusable app-wide design principle, architecture rule, normative standard, or durable design decision. Promote confirmed reusable design knowledge into the appropriate file under `.ai-context/manual/frontend-design/`; keep one-off observations or unresolved ideas in the owning Issue as hypotheses instead of silently turning them into rules.
     - After each commit associated with active Issue-tracked work, treat synchronization of the relevant GitHub Issue body as a mandatory lifecycle gate.
     - Before creating or updating a Pull Request, starting another work package, handing off the work, or reporting the commit/work step as complete, verify that the Issue body reflects the committed state.
     - The synchronized Issue body must include meaningful checklist/progress updates, the commit or durable result reference, validation performed, remaining work and the next handoff step.
