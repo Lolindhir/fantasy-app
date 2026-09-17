@@ -6,11 +6,18 @@ import argparse
 import json
 from pathlib import Path
 
-from transaction_canonical_shadow import (
-    build_roster_provider_lookup,
-    load_canonical_transactions,
-    load_json,
-)
+try:
+    from tools.transaction_canonical_shadow import (
+        build_roster_provider_lookup,
+        load_canonical_transactions,
+        load_json,
+    )
+except ModuleNotFoundError:
+    from transaction_canonical_shadow import (
+        build_roster_provider_lookup,
+        load_canonical_transactions,
+        load_json,
+    )
 
 
 def build_repo_canonical_transactions(
