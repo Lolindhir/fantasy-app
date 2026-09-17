@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Lolindhir/fantasy-app/fantasy-management/_ai/schemas/trade-decision-review.schema.json",
+  "title": "Trade Decision Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "type",
+    "review_id",
+    "review_date",
+    "review_kind",
+    "review_scope",
+    "record_refs",
+    "evidence_updates",
+    "thesis_reviews",
+    "process_assessment",
+    "outcome_assessment",
+    "redecision",
+    "confidence_calibration",
+    "lessons",
+    "next_review"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "type": {"const": "trade_decision_review"},
+    "review_id": {"type": "string", "minLength": 1},
+    "review_date": {"type": "string", "format": "date"},
+    "review_kind": {"enum": ["early_signal", "season_end", "year_1", "year_2", "year_3", "asset_resolution", "ad_hoc", "portfolio_review"]},
+    "review_scope": {"enum": ["single_trade", "portfolio"]},
+    "record_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trade_id", "decision_record_ref"],
+        "properties": {
+          "trade_id": {"type": "string", "minLength": 1},
+          "decision_record_ref": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "evidence_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["evidence_id", "as_of", "source_ref", "observation", "ex_ante_availability", "related_trade_ids", "related_thesis_ids"],
+        "properties": {
+          "evidence_id": {"type": "string", "minLength": 1},
+          "as_of": {"type": "string", "format": "date-time"},
+          "source_ref": {"type": "string", "minLength": 1},
+          "observation": {"type": "string", "minLength": 1},
+          "ex_ante_availability": {"enum": ["available_and_missed", "partially_available", "not_available", "unknown"]},
+          "related_trade_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+          "related_thesis_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+        }
+      }
+    },
+    "thesis_reviews": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trade_id", "thesis_id", "status", "evidence_summary", "process_implication"],
+        "properties": {
+          "trade_id": {"type": "string", "minLength": 1},
+          "thesis_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["supported", "weakened", "rejected", "unresolved", "not_testable"]},
+          "evidence_summary": {"type": "string", "minLength": 1},
+          "process_implication": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "process_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall", "cause_tags", "summary"],
+      "properties": {
+        "overall": {"enum": ["strong", "sound", "mixed", "weak", "insufficient_evidence"]},
+        "cause_tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["process_error", "information_missed", "valuation_error", "projection_error", "roster_construction_error", "negotiation_error", "bias_error", "reasonable_uncertainty", "external_shock", "variance", "no_error"]}
+        },
+        "summary": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"cause_tags": {"contains": {"const": "no_error"}}}},
+          "then": {"properties": {"cause_tags": {"maxItems": 1}}}
+        }
+      ]
+    },
+    "outcome_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall", "summary", "asset_outcomes"],
+      "properties": {
+        "overall": {"enum": ["strong_positive", "positive", "mixed", "negative", "strong_negative", "unresolved"]},
+        "summary": {"type": "string", "minLength": 1},
+        "asset_outcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trade_id", "asset_label", "status", "summary"],
+            "properties": {
+              "trade_id": {"type": "string", "minLength": 1},
+              "asset_label": {"type": "string", "minLength": 1},
+              "status": {"enum": ["favorable", "neutral", "unfavorable", "unresolved"]},
+              "summary": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "redecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["same_information", "current_information"],
+      "properties": {
+        "same_information": {"$ref": "#/$defs/redecision_answer"},
+        "current_information": {"$ref": "#/$defs/redecision_answer"}
+      }
+    },
+    "confidence_calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment", "summary"],
+      "properties": {
+        "assessment": {"enum": ["well_calibrated", "overconfident", "underconfident", "inconclusive"]},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "lessons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "statement", "promotion_status"],
+        "properties": {
+          "category": {"enum": ["process_candidate", "personal_calibration_candidate", "negotiation_candidate", "no_change"]},
+          "statement": {"type": "string", "minLength": 1},
+          "promotion_status": {"enum": ["observed", "proposed_for_promotion"]}
+        }
+      }
+    },
+    "next_review": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["review_kind", "trigger", "reason"],
+          "properties": {
+            "review_kind": {"enum": ["early_signal", "season_end", "year_1", "year_2", "year_3", "asset_resolution", "ad_hoc", "portfolio_review"]},
+            "trigger": {"type": "string", "minLength": 1},
+            "reason": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "redecision_answer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["answer", "rationale"],
+      "properties": {
+        "answer": {"enum": ["yes", "lean_yes", "uncertain", "lean_no", "no"]},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"review_scope": {"const": "single_trade"}}, "required": ["review_scope"]},
+      "then": {"properties": {"record_refs": {"maxItems": 1}}}
+    },
+    {
+      "if": {"properties": {"review_scope": {"const": "portfolio"}}, "required": ["review_scope"]},
+      "then": {"properties": {"record_refs": {"minItems": 2}, "review_kind": {"const": "portfolio_review"}}}
+    },
+    {
+      "if": {"properties": {"review_kind": {"const": "portfolio_review"}}, "required": ["review_kind"]},
+      "then": {"properties": {"review_scope": {"const": "portfolio"}, "record_refs": {"minItems": 2}}}
+    }
+  ]
+}
