@@ -42,10 +42,13 @@ function Assert-Before {
     }
 }
 
-# The transactions request must perform a true full rebuild and then rebuild
-# dependent drafts before any final draft-result enrichment can read local drafts.
+# The transactions request must rebuild current transactions from canonical
+# League source-data, retain the legacy historical compatibility rebuild, and
+# then rebuild dependent drafts before final draft-result enrichment.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
-Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory") -Message "RequestTransactions no longer rebuilds current and historical transaction base data."
+Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent") -Message "RequestTransactions no longer uses the canonical current-season transaction rebuild."
+Assert-True -Condition $requestTransactions.Contains("-ForceHistory") -Message "RequestTransactions no longer forces the historical compatibility rebuild."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "RequestTransactions still uses the legacy current-season transaction rebuild."
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "RequestTransactions does not force the coupled historical draft rebuild."
 Assert-True -Condition (-not $requestTransactions.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts")) -Message "RequestTransactions still enriches directly from potentially stale local drafts."
 

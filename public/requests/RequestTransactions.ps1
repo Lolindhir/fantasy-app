@@ -3,7 +3,7 @@
 # ===========================================================================
 
 try {
-    Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\CanonicalTransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -28,8 +28,14 @@ function Invoke-PastSeasonsIndexRefresh {
 # Logik
 # ===========================================================================
 
-# Full rebuild: Current + History werden aus kanonischen Inputs neu aufgebaut.
-Update-TransactionsAllSeasons -ForceCurrent -ForceHistory
+$CanonicalLeagueID = "nfl-reise"
+
+# Current season is rebuilt from canonical League source-data. Historical
+# transaction files remain on the existing Sleeper compatibility path until their
+# own Phase-2 migration checkpoint.
+Update-TransactionsAllSeasonsCanonicalCurrent `
+    -CanonicalLeagueID $CanonicalLeagueID `
+    -ForceHistory
 
 # Abhängige Draft-Outputs werden im selben Working Tree aus den frisch erzeugten
 # Transactions aufgebaut; erst danach werden konkrete Pickdetails zurückgeschrieben.
