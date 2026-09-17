@@ -1,0 +1,36 @@
+schemaVersion: 1
+status: active
+contentStatus: scaffold
+purpose: >
+  Canonical home for app-wide frontend design architecture: the relationships and
+  boundaries between information hierarchy, entities, surfaces, interaction,
+  responsive behavior and reusable design primitives.
+
+architectureAreas:
+  informationHierarchy: []
+  entityIdentityAndScale: []
+  surfaceAndContainerHierarchy: []
+  interactionGrammar: []
+  compactVsDetailComposition: []
+  responsiveBehavior: []
+  progressiveDisclosure: []
+  accessibilityAndInput: []
+  sharedPrimitivesAndTokens: []
+
+architectureRecord:
+  requiredFields:
+    - id
+    - rule
+    - rationale
+  optionalFields:
+    - scope
+    - constraints
+    - exceptions
+    - implementationNotes
+    - references
+    - supersedes
+
+boundaries:
+  - Architecture defines relationships and composition boundaries; exact reusable component APIs remain owned by code.
+  - Architecture may constrain implementation without prescribing every CSS value or component name.
+  - Repeated implementation structure should be promoted only when it represents an intentional app-wide design relationship.
