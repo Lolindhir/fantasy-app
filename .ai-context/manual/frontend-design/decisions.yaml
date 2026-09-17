@@ -68,3 +68,22 @@ decisions:
       - Feature-specific deviations require an explicit product contract.
       - Desktop may expose more metadata for the same entities without introducing extra ranked entities solely to fill space.
     references: ["#436", "#500"]
+  - id: FD-004
+    status: accepted
+    title: Preserve NFL-team identity across player-identity density
+    decision: >
+      Portrait-based player identity keeps NFL-team affiliation visible, but does not
+      require one universal portrait-overlay composition. Comfortable layouts may
+      show the NFL-team mark separately. Constrained layouts use an integrated mark
+      when the team identity would otherwise be omitted; the established compact
+      default is a small lower-right logo overlay on the portrait.
+    rationale: >
+      The user needs NFL affiliation to remain recognizable in compact player
+      identity, while forcing an overlay on roomy layouts would add an unnecessary
+      composition constraint rather than serving the underlying orientation goal.
+    consequences:
+      - Separate portrait and NFL-team-logo presentation is compliant when space comfortably supports both.
+      - A compact surface must not drop NFL-team identity merely to save space when portrait identity is retained.
+      - Design audits flag the missing team identity or missing constrained fallback, not the absence of an overlay on roomy layouts.
+      - Shared PlayerIdentity work should support both separate and integrated density variants.
+    references: ["#436"]
