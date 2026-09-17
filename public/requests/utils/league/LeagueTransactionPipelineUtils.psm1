@@ -5,7 +5,7 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalTransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftCompareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
@@ -23,39 +23,19 @@ catch {
 
 function Get-LeagueTransactionsCurrentSeasonInMemory {
     param(
-        [string]$leagueID = (Get-Config).LeagueID
+        [string]$leagueID = (Get-Config).LeagueID,
+        [string]$CanonicalLeagueID = "nfl-reise"
     )
 
-    Write-Host "Build current season transactions in memory for league refresh..." -ForegroundColor Yellow
-
-    $league = Get-SleeperLeague -leagueID $leagueID
-    $season = [string]$league.season
-    $maxWeekToFetch = Get-CurrentTransactionMaxWeek -league $league
-    $existingTransactions = Get-TransactionsLocalForCurrentSeason
-
-    $weeksToFetch = Get-WeeksToFetch `
-        -existingTransactions $existingTransactions `
-        -maxWeek $maxWeekToFetch
-
-    if (-not $weeksToFetch -or $weeksToFetch.Count -eq 0) {
-        Write-Host "No transaction weeks need to be refreshed." -ForegroundColor DarkCyan
-        return @($existingTransactions)
+    if ([string]$leagueID -ne [string](Get-Config).LeagueID) {
+        throw "Canonical current transaction consumer only supports the configured current league."
     }
 
-    Write-Host "Weeks to fetch: $($weeksToFetch -join ', ')" -ForegroundColor Yellow
-
-    $remoteTransactions = Get-TransactionsRemoteForWeeks `
-        -leagueID $leagueID `
-        -season $season `
-        -weeks $weeksToFetch
-
-    $mergedTransactions = Merge-TransactionsForWeeks `
-        -existingTransactions $existingTransactions `
-        -newTransactions $remoteTransactions `
-        -weeksToReplace $weeksToFetch
-
-    Write-Host "Current season transaction candidate built in memory." -ForegroundColor DarkCyan
-    return @($mergedTransactions)
+    Write-Host "Build current season transactions from canonical source-data for league refresh..." -ForegroundColor Yellow
+    $transactions = @(Get-CanonicalTransactionsCurrentSeasonInMemory `
+        -CanonicalLeagueID $CanonicalLeagueID)
+    Write-Host "Current season canonical transaction candidate built in memory." -ForegroundColor DarkCyan
+    return $transactions
 }
 
 function Resolve-LeagueTransactionDraftPickTypesInMemory {

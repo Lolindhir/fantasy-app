@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Stop"
 
+Import-Module "$PSScriptRoot\utils\league\CanonicalTransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
@@ -79,21 +80,70 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $matchupReadModelUtils -Needle "
 Assert-True -Condition $matchupReadModelUtils.Contains("Update-MatchupHistoryReadModels") -Message "MatchupReadModelUtils no longer exposes the approved public history API."
 
 # The dedicated helper must never publish Transactions.json itself. Drafts may
-# still be persisted by the draft step; only Transactions are delayed.
+# still be persisted by the draft step; only Transactions are delayed. The
+# in-memory current-season source must now be canonical, not a direct Sleeper
+# transactions fetch.
 $pipeline = Get-Content "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Raw
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-TransactionsCurrentSeason") -Expected 0 -Message "League in-memory helper unexpectedly persists Transactions.json."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-TransactionDraftPickTransactions") -Expected 0 -Message "League in-memory helper unexpectedly persists enriched Transactions.json."
+Assert-True -Condition $pipeline.Contains("Get-CanonicalTransactionsCurrentSeasonInMemory") -Message "League in-memory helper does not use canonical current-season transactions."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Get-TransactionsRemoteForWeeks") -Expected 0 -Message "League in-memory helper still fetches transactions directly from Sleeper."
 
-# Standalone/history requests retain their file-based contract, but orchestration
-# is centralized so Transactions and Drafts cannot drift in ordering.
+# Standalone/history requests retain the file-based draft contract, but current
+# Transactions.json generation is canonical while historical rebuilds remain on
+# the legacy compatibility path for this checkpoint.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
-Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory") -Message "Standalone transaction history rebuild contract changed."
+Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent") -Message "Standalone transaction rebuild no longer uses canonical current-season data."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "Standalone transaction rebuild still uses the legacy current-season source."
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "Standalone transaction request does not invoke the coupled draft/transaction rebuild."
 $emptyManualLookup = New-ManualTransactionBindingLookup -ManualTransactions $null
 Assert-Equal -Actual $emptyManualLookup.Count -Expected 0 -Message "A season without manual transactions must produce an empty binding lookup."
 $emptySleeperWeekLookup = New-SleeperTransactionWeekLookup -Transactions $null -SourceLabel "empty Sleeper week regression"
 Assert-Equal -Actual $emptySleeperWeekLookup.Count -Expected 0 -Message "A Sleeper week without transactions must produce an empty provider lookup."
 Assert-True -Condition (Test-TransactionIdentityInvariants -Transactions $null -SourceLabel "empty generated transaction regression") -Message "An empty generated transaction collection must pass identity validation."
+
+# Manual overlays remain a compatibility layer above canonical transaction facts.
+$canonicalFixture = [PSCustomObject][ordered]@{
+    Source        = "Sleeper"
+    TransactionID = "canonical-manual-fixture"
+    Type          = "trade"
+    Status        = "complete"
+    Season        = "2026"
+    Week          = 1
+    CreatedAt     = [Int64]1
+    CreatedDate   = "1970-01-01"
+    RosterIDs     = @(1, 6)
+    Adds          = @{}
+    Drops         = @{}
+    DraftPicks    = @()
+    Notes         = $null
+}
+$manualFixture = [PSCustomObject][ordered]@{
+    Season               = "2026"
+    Date                 = "2026-09-09"
+    Week                 = 1
+    SleeperTransactionID = "canonical-manual-fixture"
+    Picks                = @(
+        [PSCustomObject][ordered]@{
+            DraftKey = "2028_Free_Agent"
+            Round    = 4
+            Original = "Tim"
+            From     = "Tim"
+            To       = "Robert"
+        }
+    )
+}
+$mergedFixture = @(Merge-CanonicalTransactionsWithManual `
+    -canonicalTransactions @($canonicalFixture) `
+    -manualTransactions @($manualFixture) `
+    -season "2026")
+Assert-Equal -Actual $mergedFixture.Count -Expected 1 -Message "Canonical/manual overlay changed the transaction count unexpectedly."
+Assert-Equal -Actual $mergedFixture[0].Source -Expected "Sleeper_Manual" -Message "Canonical/manual overlay did not preserve the combined source marker."
+Assert-Equal -Actual $mergedFixture[0].DraftPicks.Count -Expected 1 -Message "Canonical/manual overlay did not append the manual draft pick."
+Assert-Equal -Actual $mergedFixture[0].DraftPicks[0].PreviousOwnerRosterID -Expected 6 -Message "Canonical/manual overlay lost the manual previous owner."
+Assert-Equal -Actual $mergedFixture[0].DraftPicks[0].NewOwnerRosterID -Expected 1 -Message "Canonical/manual overlay lost the manual new owner."
+Assert-True -Condition ($mergedFixture[0].RosterIDs -contains 1) -Message "Canonical/manual overlay lost the destination roster."
+Assert-True -Condition ($mergedFixture[0].RosterIDs -contains 6) -Message "Canonical/manual overlay lost the source roster."
 
 $requestDrafts = Get-Content "$PSScriptRoot\RequestDrafts.ps1" -Raw
 Assert-True -Condition $requestDrafts.Contains("Invoke-DraftTransactionRebuild") -Message "Standalone draft request does not use the shared rebuild orchestration."

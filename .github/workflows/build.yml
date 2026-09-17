@@ -38,6 +38,11 @@ jobs:
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
           python -m unittest tools.tests.test_historical_fantasy_scoring -v
 
+      - name: Run transaction consumer regression tests
+        run: |
+          python -m unittest tools.tests.test_league_source_transaction_shadow -v
+          python -m unittest tools.tests.test_league_source_transaction_consumer -v
+
       - name: Run PowerShell data regression tests
         shell: pwsh
         run: |
