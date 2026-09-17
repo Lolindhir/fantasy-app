@@ -46,15 +46,26 @@ standards:
     references: ["#436", "#497"]
   - id: FDS-002
     level: MUST
-    scope: compact player identity using a portrait
-    rule: The player portrait visually integrates the player's NFL-team identity as part of the same compact identity unit.
-    rationale: This is an explicitly adopted recurring player-identity pattern and preserves NFL orientation without adding a separate metadata block.
+    scope: portrait-based player identity where NFL-team affiliation is applicable
+    rule: >
+      NFL-team identity remains visibly represented alongside the player portrait.
+      When space comfortably permits, the team mark may be shown separately. When
+      constrained space would otherwise cause the team mark to be omitted, a small
+      NFL-team mark must be integrated into the portrait identity.
+    rationale: >
+      NFL affiliation should not disappear merely because a surface becomes compact,
+      while larger layouts should remain free to use a separate team mark when that
+      composition is clearer.
     review:
-      method: Inspect compact portrait-based player identities.
-      evidence: A recognizable NFL-team mark is integrated with the portrait; the established default is a small team logo at the portrait's lower-right.
+      method: Inspect portrait-based player identities across comfortable and constrained densities.
+      evidence: >
+        A recognizable NFL-team mark remains visible. Separate portrait and team-logo
+        presentation is compliant where space permits; the established constrained
+        fallback is a small team logo overlaid at the portrait's lower-right when a
+        separate mark would otherwise be dropped.
     exceptions:
       - Surfaces where NFL-team identity is intentionally unavailable or not applicable.
-    references: ["#436", "#497"]
+    references: ["#436"]
   - id: FDS-003
     level: SHOULD
     scope: player metadata rows
