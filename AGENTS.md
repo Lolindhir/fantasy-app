@@ -44,6 +44,8 @@ Before making architecture, data model, generation or frontend changes, read:
 8. `.ai-context/manual/data-sources.yaml`
 9. `.ai-context/manual/decisions.yaml`
 
+For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
+
 ## Source-of-truth rules
 
 - `public/data/Metadata.json` owns league-specific inputs and rules.
@@ -58,6 +60,7 @@ Before making architecture, data model, generation or frontend changes, read:
 - `CHAT_START.md` is a static external/project entry pointer. Do not modify it as part of normal rule, workflow, routing or documentation changes; update it only when the user explicitly requests a change to that entry pointer itself.
 - `AGENTS.md` is the first file agents must read before making repository changes.
 - `.ai-context` is the canonical root for application AI context documentation.
+- `.ai-context/manual/frontend-design/index.yaml` is the canonical entry point for app-wide frontend design governance and routes design principles, architecture, standards and decisions.
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
@@ -70,6 +73,7 @@ Before making architecture, data model, generation or frontend changes, read:
   - work-tracking and label semantics go to `.ai-context/manual/work-tracking.yaml`
   - workflow publication and branch-writer race-safety rules go to `.ai-context/manual/workflow-publication.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
+  - frontend design principles, architecture, standards and design decisions go under `.ai-context/manual/frontend-design/`
   - domain rules go to `.ai-context/manual/domain.yaml`
   - data sources and data flow go to `.ai-context/manual/data-sources.yaml`
   - file-local documentation goes to file headers or sidecar `.ai-doc.yaml` files
@@ -123,6 +127,7 @@ Exception:
 
 - Keep root `AGENTS.md` short and use it as a pointer to `.ai-context` and `fantasy-management/AGENTS.md`.
 - Put durable application architecture and domain decisions into `.ai-context/manual`.
+- Put durable app-wide frontend design governance into `.ai-context/manual/frontend-design/`.
 - Put durable Fantasy Management rules, source maps, workflows and analysis-storage conventions into `fantasy-management/_ai`.
 - Prefer small, focused commits.
 - Before updating an existing file, compare the intended complete content with the current file content or blob. If they are identical, skip the write and do not create a commit whose only effect would be a no-op file update.

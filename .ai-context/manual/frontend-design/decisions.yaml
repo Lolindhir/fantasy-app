@@ -1,0 +1,52 @@
+schemaVersion: 1
+status: active
+purpose: >
+  Canonical decision log for durable frontend design-governance and app-wide design
+  decisions. Use this file to retain why a rule or structural choice exists and how
+  later decisions supersede it.
+
+decisionStatuses:
+  proposed: Not yet accepted as canonical.
+  accepted: Current canonical decision.
+  superseded: Replaced by a later decision.
+  rejected: Considered and intentionally not adopted.
+
+decisionRecord:
+  requiredFields:
+    - id
+    - status
+    - title
+    - decision
+    - rationale
+    - consequences
+  optionalFields:
+    - date
+    - alternatives
+    - references
+    - supersedes
+    - supersededBy
+
+decisions:
+  - id: FD-001
+    status: accepted
+    title: Use layered frontend design governance
+    decision: >
+      Store durable app-wide frontend design governance under
+      .ai-context/manual/frontend-design/ with a canonical index and separate
+      principles, architecture, standards and decisions files. Normative standards
+      use MUST, SHOULD and MAY strength so later design reviews can distinguish
+      violations from recommendations and allowed options.
+    rationale: >
+      Frontend design knowledge is expected to grow beyond one visual-language file.
+      Separating directional guidance, structural design architecture, auditable
+      rules and rationale keeps the contract scalable and reviewable while avoiding
+      a single mixed document of hard requirements, recommendations and hypotheses.
+    consequences:
+      - Frontend/UI/UX work must enter through frontend-design/index.yaml and follow its reading order.
+      - App-wide design audits can evaluate documented standards without treating all design prose as equally binding.
+      - Concrete design rules can be added incrementally without requiring an app-wide restyle.
+      - "GitHub Issue #436 remains the discovery and rollout anchor while promoted durable rules move into this directory."
+    references:
+      - "#436"
+      - "#497"
+      - "#531"

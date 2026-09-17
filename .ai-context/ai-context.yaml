@@ -81,11 +81,25 @@ contextModel:
       - The repository snapshotter evaluates run metadata deterministically and writes only the isolated workflow-health-state branch.
       - The external monitor remains read-only and decides user notification from the current snapshot and its freshness.
 
+  frontendDesign:
+    description: >
+      Human-maintained app-wide frontend design governance separated into durable
+      principles, design architecture, auditable standards and decision rationale.
+    entryPoint: .ai-context/manual/frontend-design/index.yaml
+    directory: .ai-context/manual/frontend-design
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+    rules:
+      - Frontend/UI/UX and design-system work must read the entry point and follow its internal reading order before analysis or mutation.
+      - Keep principles, architecture, standards and decisions semantically distinct instead of mixing recommendations and hard requirements in one file.
+      - Use documented normative strength and exception semantics when reviewing compliance; do not invent hidden design requirements during an audit.
+
 readingOrder:
   - .ai-context/manual/ai-guidance.yaml
   - .ai-context/manual/work-tracking.yaml
   - .ai-context/manual/workflow-monitoring.yaml
   - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/frontend-design/index.yaml
   - .ai-context/manual/domain.yaml
   - .ai-context/manual/draft-identity.yaml
   - .ai-context/manual/player-identity.yaml
@@ -106,6 +120,7 @@ shortContext:
   fantasy-management/AGENTS.md: Isolated Fantasy Management agent entry point for NFL Dynasty, Mighty Giants, StonedLack, Relevant Players, analyses, boards and decisions
   .ai-context/manual/work-tracking.yaml: Kanonischer Vertrag für GitHub-Issue-Work-Tracking, Label-Semantik, Prioritäten, Handoff und Drift-Governance
   .ai-context/manual/workflow-monitoring.yaml: Kanonischer fail-closed Vertrag für Workflow-Klassifizierung, Failure-/Staleness-Auswertung, isolierten Health-Snapshot und externe Alarmierung
+  .ai-context/manual/frontend-design/index.yaml: Kanonischer Einstiegspunkt für app-weite Frontend-Design-Governance mit getrennten Principles, Architecture, Standards und Decisions sowie MUST/SHOULD/MAY-Review-Semantik
   public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag

@@ -1,0 +1,75 @@
+schemaVersion: 1
+status: active
+purpose: >
+  Canonical entry point for app-wide frontend design governance. This directory
+  separates durable design principles, design architecture, normative standards
+  and design decisions so frontend/UI/UX work can be reasoned about and reviewed
+  against explicit repository-owned contracts rather than implicit taste.
+
+scope:
+  owns:
+    - app-wide frontend design principles
+    - app-wide design architecture and composition rules
+    - auditable normative frontend design standards
+    - durable frontend design decisions and rationale
+    - design review semantics and exception handling
+  doesNotOwn:
+    - feature-specific product requirements that do not generalize app-wide
+    - domain truth or generated data semantics
+    - concrete Angular/CSS implementation details when code is the better owner
+    - work tracking, backlog state or implementation progress
+
+readingOrder:
+  - .ai-context/manual/frontend-design/principles.yaml
+  - .ai-context/manual/frontend-design/architecture.yaml
+  - .ai-context/manual/frontend-design/standards.yaml
+  - .ai-context/manual/frontend-design/decisions.yaml
+
+governanceLayers:
+  principles:
+    purpose: Long-lived directional guidance used when choosing between otherwise valid design options.
+    normativeByDefault: false
+  architecture:
+    purpose: Defines how frontend design concepts, entities, surfaces, interactions and reusable primitives relate to each other.
+    normativeByDefault: false
+  standards:
+    purpose: Defines explicit reviewable rules with normative strength, scope, rationale and exception semantics.
+    normativeByDefault: true
+  decisions:
+    purpose: Records accepted design-governance and design decisions with rationale, consequences and supersession history.
+    normativeByDefault: false
+
+normativeLanguage:
+  MUST: Required. A non-exempt deviation is a design-contract violation.
+  SHOULD: Expected default. Deviation requires an explicit contextual rationale.
+  MAY: Allowed option or pattern. Absence is not a violation.
+
+sourceOfTruth:
+  discovery: >
+    GitHub Issues such as #436 may collect live design observations, hypotheses,
+    candidate rules and rollout work while design language is still being discovered.
+  canonical: >
+    Once promoted, durable app-wide design knowledge lives in this directory.
+    Issue text does not supersede a conflicting accepted rule or decision here.
+  implementation: >
+    Shared Angular components, utilities, CSS tokens and styles own concrete implementation.
+    The design contract owns intent, semantics, constraints and reviewability.
+
+promotionRules:
+  - Do not promote an observation into a durable principle, architecture rule or standard merely because it appeared once in a feature.
+  - Promote only when the user explicitly adopts the rule or repeated validated usage establishes it as an intentional app-wide pattern.
+  - Preserve unresolved ideas as Issue-level hypotheses until a decision is made.
+  - Do not move feature-local product requirements into this directory unless a reusable app-wide rule is intentionally extracted.
+
+reviewContract:
+  - Design reviews must evaluate only documented applicable standards and accepted architecture/decision constraints; they must not invent hidden requirements during the audit.
+  - Report each applicable standard as compliant, violation, justified-exception, not-applicable or unresolved when evidence is insufficient.
+  - MUST violations require a fix or an explicitly documented accepted exception.
+  - SHOULD deviations require a concrete rationale but are not automatically defects.
+  - A review may identify candidate new rules separately, but candidate rules are not retroactive violations.
+  - Review findings do not authorize repository mutation unless the user separately authorizes fixes.
+
+relationships:
+  designDiscoveryIssue: "#436"
+  semanticVisualVocabularyIssue: "#497"
+  iconSystemMigrationIssue: "#531"

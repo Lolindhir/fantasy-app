@@ -1,0 +1,51 @@
+schemaVersion: 1
+status: active
+contentStatus: scaffold
+purpose: >
+  Canonical home for explicit, auditable frontend design standards. Standards are
+  intended to support later repository and visual reviews that can distinguish
+  required rules from recommendations and permitted options.
+
+normativeLevels:
+  MUST:
+    meaning: Required design contract.
+    reviewEffect: Non-exempt deviation is a violation.
+  SHOULD:
+    meaning: Expected default design choice.
+    reviewEffect: Deviation is allowed only with a concrete contextual rationale.
+  MAY:
+    meaning: Permitted design pattern or option.
+    reviewEffect: Absence is not a violation.
+
+standardRecord:
+  requiredFields:
+    - id
+    - level
+    - scope
+    - rule
+    - rationale
+    - review
+  optionalFields:
+    - exceptions
+    - examples
+    - counterExamples
+    - references
+    - supersedes
+    - implementationOwner
+  reviewFields:
+    - method
+    - evidence
+
+reviewOutcomes:
+  compliant: Applicable rule is satisfied.
+  violation: Applicable MUST or unjustified SHOULD expectation is not satisfied.
+  justified-exception: Documented exception or accepted contextual deviation applies.
+  not-applicable: Rule does not apply to the reviewed surface.
+  unresolved: Available evidence is insufficient for a reliable judgment.
+
+exceptionPolicy:
+  - Exceptions must be explicit enough that later reviews do not repeatedly rediscover the same intended deviation.
+  - A feature-local exception does not weaken the app-wide rule for unrelated surfaces.
+  - Repeated exceptions should trigger reconsideration of the standard or its scope.
+
+standards: []
