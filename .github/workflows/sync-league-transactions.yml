@@ -1,0 +1,17 @@
+name: Data • League Transactions
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-sync-league-transactions
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-transactions:
+    uses: ./.github/workflows/sync-league-source-data.yml
+    with:
+      materialization_scope: transactions
+    secrets: inherit

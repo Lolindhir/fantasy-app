@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/sync-league-source-data.yml"
+      - ".github/workflows/sync-league-transactions.yml"
       - "source-data/league-registry.json"
       - "source-data/leagues/_bootstrap/**"
       - "tools/league_source_data.py"
@@ -25,11 +26,34 @@ on:
       - scheduler-sync-league-source-data
   workflow_dispatch:
     inputs:
+      materialization_scope:
+        description: "League source materialization scope"
+        required: false
+        type: choice
+        options:
+          - full
+          - transactions
+        default: full
       force:
         description: "Explicitly refetch/repair historical Sleeper partitions"
         required: false
         type: boolean
         default: false
+  workflow_call:
+    inputs:
+      materialization_scope:
+        description: "League source materialization scope"
+        required: false
+        type: string
+        default: full
+      force:
+        description: "Explicitly refetch/repair historical Sleeper partitions"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      PAT_PUSH:
+        required: true
 
 permissions:
   contents: write
@@ -42,6 +66,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -52,7 +78,24 @@ jobs:
           python-version: "3.12"
 
       - name: Test League source-data tooling
-        run: python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${MATERIALIZATION_SCOPE:-full}" in
+            full)
+              python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
+              ;;
+            transactions)
+              python -m unittest \
+                tools.tests.test_league_source_transaction_targeting \
+                tools.tests.test_league_source_transaction_window \
+                -v
+              ;;
+            *)
+              echo "Unsupported League materialization scope: ${MATERIALIZATION_SCOPE}" >&2
+              exit 2
+              ;;
+          esac
 
       - name: Validate League source-data registry and bootstrap
         run: python tools/league_source_data.py validate
@@ -62,6 +105,8 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v7
@@ -83,15 +128,42 @@ jobs:
         run: |
           set -euo pipefail
 
+          materialization_scope="${MATERIALIZATION_SCOPE:-full}"
+          case "$materialization_scope" in
+            full|transactions) ;;
+            *)
+              echo "Unsupported League materialization scope: $materialization_scope" >&2
+              exit 2
+              ;;
+          esac
+
           if [[ -z "${PAT_PUSH:-}" ]]; then
             echo "PAT_PUSH is required for repository-consistent write semantics." >&2
             exit 1
           fi
 
           sync_args=(sync)
+          materialize_args=(materialize)
+          if [[ "$materialization_scope" == "transactions" ]]; then
+            sync_args+=(--dataset sleeper.transactions --current-transaction-window)
+            materialize_args+=(--materialization-scope transactions --current-transaction-window)
+          fi
           if [[ "${FORCE:-false}" == "true" ]]; then
             sync_args+=(--force)
           fi
+
+          {
+            echo "## League Source Sync"
+            echo "- Materialization scope: $materialization_scope"
+            if [[ "$materialization_scope" == "transactions" ]]; then
+              echo "- Raw scope: current Sleeper league evidence + current/previous transaction week"
+              echo "- Canonical write-set: addressed current-season transaction partitions only"
+            else
+              echo "- Raw scope: full registered League Source acquisition"
+              echo "- Canonical write-set: full League Source materialization"
+            fi
+            echo "- Force raw sync: ${FORCE:-false}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -107,8 +179,12 @@ jobs:
               source-data/_sync
           }
 
+          changed_paths() {
+            git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //'
+          }
+
           assert_league_source_only() {
-            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
+            mapfile -t changed < <(changed_paths)
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
@@ -126,6 +202,49 @@ jobs:
             fi
           }
 
+          assert_transaction_raw_only() {
+            mapfile -t changed < <(changed_paths)
+            unexpected=()
+            for path in "${changed[@]}"; do
+              case "$path" in
+                source-data/providers/sleeper/leagues/*/league.json|\
+                source-data/providers/sleeper/leagues/*/league.metadata.json|\
+                source-data/providers/sleeper/leagues/*/transactions/week-*.json|\
+                source-data/providers/sleeper/leagues/*/transactions/week-*.metadata.json|\
+                source-data/_sync/last-league-failure.json)
+                  ;;
+                *)
+                  unexpected+=("$path")
+                  ;;
+              esac
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Scoped transaction acquisition touched an unexpected path:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
+          assert_transaction_canonical_only() {
+            mapfile -t changed < <(changed_paths)
+            unexpected=()
+            for path in "${changed[@]}"; do
+              case "$path" in
+                source-data/leagues/*/seasons/*/transactions/week-*.json|\
+                source-data/_sync/last-league-failure.json)
+                  ;;
+                *)
+                  unexpected+=("$path")
+                  ;;
+              esac
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Scoped transaction materialization touched an unexpected path:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
           write_failure_diagnostic() {
             local phase="$1"
             local exit_code="$2"
@@ -135,7 +254,7 @@ jobs:
               reset_to_main
               mkdir -p source-data/_sync
 
-              PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
+              PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" MATERIALIZATION_SCOPE="$materialization_scope" \
                 python - <<'PY'
           import json
           import os
@@ -153,6 +272,7 @@ jobs:
               "workflow": "Data • League Source Sync",
               "runId": os.environ.get("GITHUB_RUN_ID"),
               "runAttempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+              "materializationScope": os.environ.get("MATERIALIZATION_SCOPE") or "full",
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
@@ -182,19 +302,48 @@ jobs:
             echo "League source publish attempt $attempt/$max_attempts"
             reset_to_main
 
+            raw_stdout="$(mktemp)"
+            raw_stderr="$(mktemp)"
             raw_log="$(mktemp)"
             set +e
-            python tools/league_source_data.py "${sync_args[@]}" 2>&1 | tee "$raw_log"
-            raw_status=${PIPESTATUS[0]}
+            python tools/league_source_data.py "${sync_args[@]}" >"$raw_stdout" 2>"$raw_stderr"
+            raw_status=$?
             set -e
+            cat "$raw_stdout"
+            cat "$raw_stderr" >&2
+            cat "$raw_stdout" "$raw_stderr" > "$raw_log"
             if (( raw_status != 0 )); then
               echo "League provider raw sync failed." >&2
               write_failure_diagnostic "raw-sync" "$raw_status" "$raw_log"
               exit "$raw_status"
             fi
 
-            assert_league_source_only
-            git add -- source-data/providers/sleeper/leagues source-data/leagues
+            if [[ "$materialization_scope" == "transactions" ]]; then
+              python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          leagues = result.get("Leagues")
+          if not isinstance(leagues, list) or not leagues:
+              raise SystemExit("Current transaction window sync returned no leagues")
+          for item in leagues:
+              window = item.get("CurrentTransactionWindow") or {}
+              print(
+                  "- Transaction window "
+                  f"{item.get('CanonicalLeagueID')}: season={window.get('Season')}, "
+                  f"currentWeek={window.get('CurrentWeek')}, weeks={window.get('Weeks')}, "
+                  f"evidence={window.get('Evidence')}"
+              )
+          PY
+              assert_transaction_raw_only
+              git add -- source-data/providers/sleeper/leagues
+            else
+              assert_league_source_only
+              git add -- source-data/providers/sleeper/leagues source-data/leagues
+            fi
+
             if ! git diff --cached --quiet; then
               timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
               git commit -m "data(league-source): refresh Sleeper league raw sources • $timestamp"
@@ -211,7 +360,7 @@ jobs:
             reset_to_main
             materialize_log="$(mktemp)"
             set +e
-            python tools/league_source_data.py materialize 2>&1 | tee "$materialize_log"
+            python tools/league_source_data.py "${materialize_args[@]}" 2>&1 | tee "$materialize_log"
             materialize_status=${PIPESTATUS[0]}
             set -e
             if (( materialize_status != 0 )); then
@@ -222,7 +371,7 @@ jobs:
 
             noop_log="$(mktemp)"
             set +e
-            python tools/league_source_data.py materialize 2>&1 | tee "$noop_log"
+            python tools/league_source_data.py "${materialize_args[@]}" 2>&1 | tee "$noop_log"
             noop_status=${PIPESTATUS[0]}
             if (( noop_status == 0 )); then
               python - "$noop_log" <<'PY'
@@ -255,9 +404,13 @@ jobs:
 
             mkdir -p source-data/_sync
             rm -f source-data/_sync/last-league-failure.json
-            assert_league_source_only
+            if [[ "$materialization_scope" == "transactions" ]]; then
+              assert_transaction_canonical_only
+            else
+              assert_league_source_only
+            fi
 
-            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
+            mapfile -t changed < <(changed_paths)
             if (( ${#changed[@]} == 0 )); then
               echo "No canonical League source-data changes detected."
               exit 0
