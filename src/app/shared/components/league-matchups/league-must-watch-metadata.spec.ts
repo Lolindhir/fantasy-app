@@ -145,7 +145,6 @@ function makeContext(): FantasyGameContextReadModel {
 describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
   let fixture: ComponentFixture<LeagueMatchupsComponent>;
   let teamDialog: jasmine.SpyObj<TeamDetailDialogService>;
-  let gameDialog: jasmine.SpyObj<MatDialog>;
 
   beforeEach(async () => {
     const dataService = jasmine.createSpyObj<DataService>('DataService', [
@@ -165,15 +164,13 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
     dataService.getWeeklyRecaps.and.returnValue(of({ SchemaVersion: 1 as const, Season: '2026', Weeks: [] }));
 
     teamDialog = jasmine.createSpyObj<TeamDetailDialogService>('TeamDetailDialogService', ['open']);
-    gameDialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
 
     await TestBed.configureTestingModule({
       imports: [LeagueMatchupsComponent],
       providers: [
         provideRouter([]),
         { provide: DataService, useValue: dataService },
-        { provide: TeamDetailDialogService, useValue: teamDialog },
-        { provide: MatDialog, useValue: gameDialog }
+        { provide: TeamDetailDialogService, useValue: teamDialog }
       ]
     }).compileComponents();
 
@@ -213,16 +210,18 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
     const host: HTMLElement = fixture.nativeElement;
     const firstAvatar = host.querySelector<HTMLButtonElement>('.fantasy-pulse-team-avatar');
     const gameTarget = host.querySelector<HTMLButtonElement>('.fantasy-pulse-card-main');
+    const resolvedDialog = fixture.debugElement.injector.get(MatDialog);
+    const openSpy = spyOn(resolvedDialog, 'open');
 
     expect(firstAvatar).not.toBeNull();
     expect(gameTarget).not.toBeNull();
 
     firstAvatar!.click();
     expect(teamDialog.open).toHaveBeenCalledOnceWith(1);
-    expect(gameDialog.open).not.toHaveBeenCalled();
+    expect(openSpy).not.toHaveBeenCalled();
 
     gameTarget!.click();
-    expect(gameDialog.open).toHaveBeenCalledTimes(1);
+    expect(openSpy).toHaveBeenCalledTimes(1);
     expect(teamDialog.open).toHaveBeenCalledTimes(1);
   });
 
@@ -247,7 +246,7 @@ describe('LeagueMatchupsComponent #572 compact Must Watch metadata', () => {
         }
 
         const reset = frameDocument.createElement('style');
-        reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}';
+        reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}*,*::before,*::after{box-sizing:border-box;}';
         frameDocument.head.appendChild(reset);
         frameDocument.body.appendChild(sourceCard.cloneNode(true));
 
