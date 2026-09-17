@@ -50,3 +50,44 @@ decisions:
       - "#436"
       - "#497"
       - "#531"
+
+  - id: FD-002
+    status: accepted
+    title: Separate visual channels for separate semantics
+    decision: >
+      Represent natural player position, roster role, lifecycle/temporal state and
+      exceptional problem/review state through distinct visual channels that may
+      compose together instead of overloading one color, chip or icon system.
+    rationale: >
+      These meanings are independent and can coexist for one player. A single
+      overloaded channel makes dense rows ambiguous and causes position, activity
+      and problem semantics to drift between features.
+    consequences:
+      - Natural position keeps its established position-color language.
+      - Role and roster placement may use compact semantic shorthand.
+      - Lifecycle state uses the canonical lifecycle color family.
+      - Problem/review modifiers remain distinguishable from ordinary activity.
+      - Shared primitives should centralize mappings instead of introducing feature-local alternatives.
+    references:
+      - "#436"
+      - "#497"
+
+  - id: FD-003
+    status: accepted
+    title: Responsive width changes density, not product meaning
+    decision: >
+      Treat responsive variants of the same product surface as one semantic
+      contract. Mobile and desktop keep the same selected entities, ranking and
+      meaning; additional width may reveal richer metadata, spacing or parallel
+      composition without adding semantic categories merely to fill space.
+    rationale: >
+      Users should not receive a different prioritization model because their
+      viewport changed. Width is a presentation constraint, not a source of new
+      product semantics.
+    consequences:
+      - Responsive reviews compare semantic parity before visual density.
+      - Compact surfaces may delegate detail through progressive disclosure.
+      - Desktop can become richer without changing selection or ranking rules.
+    references:
+      - "#436"
+      - "#507"
