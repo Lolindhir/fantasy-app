@@ -316,6 +316,48 @@ Assert-True -Condition ($null -ne (Get-Command Get-Teams -ErrorAction SilentlyCo
 Assert-True -Condition ($null -ne (Get-Command Get-StandingsRemote -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-StandingsRemote from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical historical standings consumer."
 
+# Cross-source previous-season award joins must not depend on the CLR numeric
+# type used to materialize the same provider roster ID.
+$mixedTypePreviousSeason = [PSCustomObject]@{
+    RegularSeason = @(
+        [PSCustomObject]@{
+            TeamID         = [int]42
+            Wins           = 6
+            Points         = 1300
+            WinPercentage  = 0.5
+            PointsPerGame  = 100.0
+        }
+    )
+}
+$mixedTypeCurrentStandings = @(
+    [PSCustomObject]@{
+        Place                         = 1
+        PlaceOrdinal                  = "1st"
+        TeamID                        = [long]42
+        Owner                         = "MixedTypeOwner"
+        TeamName                      = "Mixed Type Team"
+        Wins                          = 8
+        Losses                        = 2
+        Ties                          = 0
+        Points                        = 1450
+        PointsPerGame                 = 110.0
+        Record                        = "WWWWLWWWWL"
+        LongestWinStreak              = 4
+        WinStreakScore                = 4.1
+        PointDifference               = 120
+        EfficiencyScore               = 5.0
+        PointsAgainstPerGame          = 95.0
+        PointsAgainstPerGameDiffLeagueAvg = -3.0
+        IronWillScore                 = 2.0
+    }
+)
+$mixedTypeAwards = @(Get-Awards -regularSeasonStandings $mixedTypeCurrentStandings -playoffsStandings @() -previousSeasonStandings $mixedTypePreviousSeason)
+Assert-Equal -Actual $mixedTypeCurrentStandings[0].ImprovementScore -Expected 0.35 -Message "Previous-season standings join still depends on numeric TeamID runtime type."
+$mixedTypeMostImproved = @($mixedTypeAwards | Where-Object { $_.Name -eq "Most Improved" })
+Assert-Equal -Actual $mixedTypeMostImproved.Count -Expected 1 -Message "Mixed-type previous-season join did not produce exactly one Most Improved award."
+Assert-Equal -Actual $mixedTypeMostImproved[0].TeamID -Expected ([long]42) -Message "Mixed-type previous-season join resolved the wrong team."
+Assert-Equal -Actual $mixedTypeMostImproved[0].StatDisplay -Expected "Wins: 6 to 8 | Points: 1300 to 1450" -Message "Mixed-type previous-season join lost previous-season award facts."
+
 
 $discoveredHistoricalSeasons = @(Get-CanonicalHistoricalStandingSeasons -CanonicalLeagueID "nfl-reise")
 Assert-Equal -Actual ($discoveredHistoricalSeasons -join ",") -Expected "2024,2025" -Message "Canonical historical standings discovery changed unexpectedly."
