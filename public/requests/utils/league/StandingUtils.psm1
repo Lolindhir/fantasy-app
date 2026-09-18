@@ -635,11 +635,14 @@ function Get-Awards {
     #===========================================#
     if($previousSeasonStandings){
 
-        # Mapping: Teams zwischen Seasons matchen (über TeamID)
+        # Mapping: Teams zwischen Seasons matchen (über TeamID).
+        # Canonical and live provider objects can materialize the same numeric ID
+        # with different CLR numeric types (for example Int32 vs Int64). Hashtable
+        # keys are type-sensitive, so normalize cross-source IDs to strings.
         $previousByTeamId = @{}
         if ($previousSeasonStandings -and $previousSeasonStandings.RegularSeason) {
             foreach ($team in $previousSeasonStandings.RegularSeason) {
-                $previousByTeamId[$team.TeamID] = $team
+                $previousByTeamId[[string]$team.TeamID] = $team
             }
         }
 
@@ -647,7 +650,7 @@ function Get-Awards {
         ###############
         # Score Berechnung
         foreach ($team in $regularSeasonStandings) {
-            $prev = $previousByTeamId[$team.TeamID]
+            $prev = $previousByTeamId[[string]$team.TeamID]
 
             if ($prev) {
                 $team | Add-Member -NotePropertyName ImprovementScore -NotePropertyValue (
@@ -660,7 +663,7 @@ function Get-Awards {
         }
         # Award-Vergabe        
         $mostImproved = $regularSeasonStandings | Where-Object { $null -ne $_.ImprovementScore } | Sort-Object ImprovementScore -Descending | Select-Object -First 1
-        $prev = $previousByTeamId[$mostImproved.TeamID]
+        $prev = $previousByTeamId[[string]$mostImproved.TeamID]
         if (-not $prev) {
             $prevWins = "N/A"
             $prevPoints = "N/A"
