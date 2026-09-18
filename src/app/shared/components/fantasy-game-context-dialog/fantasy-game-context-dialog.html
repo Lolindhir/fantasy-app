@@ -166,9 +166,9 @@
 
     <ng-container *ngIf="matchup as selectedMatchup">
       <section class="fgc-matchup-hero">
-        <button type="button" class="fgc-matchup-team" (click)="openTeam(selectedMatchup.TeamIDs[0])">
-          <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[0]) as leftAvatar" [src]="leftAvatar" alt="" />
-          <strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong>
+        <button type="button" class="fgc-matchup-team" (click)="openTeam(matchupTeamID(selectedMatchup, 'left'))">
+          <img *ngIf="teamAvatar(matchupTeamID(selectedMatchup, 'left')) as leftAvatar" [src]="leftAvatar" alt="" />
+          <strong>{{ teamShortName(matchupTeamID(selectedMatchup, 'left')) }}</strong>
           <small *ngIf="remainingPathCount(selectedMatchup, 'left') as leftPaths">{{ leftPaths }} path{{ leftPaths === 1 ? '' : 's' }} left</small>
         </button>
 
@@ -184,9 +184,9 @@
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
         </div>
 
-        <button type="button" class="fgc-matchup-team" (click)="openTeam(selectedMatchup.TeamIDs[1])">
-          <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[1]) as rightAvatar" [src]="rightAvatar" alt="" />
-          <strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong>
+        <button type="button" class="fgc-matchup-team" (click)="openTeam(matchupTeamID(selectedMatchup, 'right'))">
+          <img *ngIf="teamAvatar(matchupTeamID(selectedMatchup, 'right')) as rightAvatar" [src]="rightAvatar" alt="" />
+          <strong>{{ teamShortName(matchupTeamID(selectedMatchup, 'right')) }}</strong>
           <small *ngIf="remainingPathCount(selectedMatchup, 'right') as rightPaths">{{ rightPaths }} path{{ rightPaths === 1 ? '' : 's' }} left</small>
         </button>
       </section>
@@ -238,12 +238,12 @@
 
             <div class="fgc-matchup-exposure-grid">
               <div class="fgc-matchup-side">
-                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(selectedMatchup.TeamIDs[0])">
-                  <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[0]) as avatar" [src]="avatar" alt="" />
-                  <strong>{{ teamShortName(selectedMatchup.TeamIDs[0]) }}</strong>
+                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(matchupTeamID(selectedMatchup, 'left'))">
+                  <img *ngIf="teamAvatar(matchupTeamID(selectedMatchup, 'left')) as avatar" [src]="avatar" alt="" />
+                  <strong>{{ teamShortName(matchupTeamID(selectedMatchup, 'left')) }}</strong>
                 </button>
                 <button
-                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0])"
+                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left'))"
                   type="button"
                   class="fgc-mini-player"
                   (click)="openPlayer(player.PlayerID)"
@@ -267,16 +267,16 @@
                     </span>
                   </span>
                 </button>
-                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[0]).length === 0" class="fgc-no-exposure">No scoring path</span>
+                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left')).length === 0" class="fgc-no-exposure">No scoring path</span>
               </div>
 
               <div class="fgc-matchup-side">
-                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(selectedMatchup.TeamIDs[1])">
-                  <img *ngIf="teamAvatar(selectedMatchup.TeamIDs[1]) as avatar" [src]="avatar" alt="" />
-                  <strong>{{ teamShortName(selectedMatchup.TeamIDs[1]) }}</strong>
+                <button type="button" class="fgc-matchup-side-heading" (click)="openTeam(matchupTeamID(selectedMatchup, 'right'))">
+                  <img *ngIf="teamAvatar(matchupTeamID(selectedMatchup, 'right')) as avatar" [src]="avatar" alt="" />
+                  <strong>{{ teamShortName(matchupTeamID(selectedMatchup, 'right')) }}</strong>
                 </button>
                 <button
-                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1])"
+                  *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right'))"
                   type="button"
                   class="fgc-mini-player"
                   (click)="openPlayer(player.PlayerID)"
@@ -300,18 +300,18 @@
                     </span>
                   </span>
                 </button>
-                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, selectedMatchup.TeamIDs[1]).length === 0" class="fgc-no-exposure">No scoring path</span>
+                <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right')).length === 0" class="fgc-no-exposure">No scoring path</span>
               </div>
             </div>
 
             <div *ngIf="hasMatchupGameScoring(row)" class="fgc-timeline-score-wrap">
               <div class="fgc-timeline-score-grid" aria-label="Fantasy starter points from this NFL game">
                 <span class="fgc-timeline-side-score">
-                  <strong>{{ formatFantasyPoints(row.LeftStarterPoints) }}</strong>
+                  <strong>{{ formatFantasyPoints(matchupGameStarterPoints(selectedMatchup, row, 'left')) }}</strong>
                   <small>starter pts</small>
                 </span>
                 <span class="fgc-timeline-side-score fgc-timeline-side-score--right">
-                  <strong>{{ formatFantasyPoints(row.RightStarterPoints) }}</strong>
+                  <strong>{{ formatFantasyPoints(matchupGameStarterPoints(selectedMatchup, row, 'right')) }}</strong>
                   <small>starter pts</small>
                 </span>
               </div>

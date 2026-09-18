@@ -26,6 +26,7 @@ import {
   isFantasyGameImpactVisible,
   isFantasyMatchupFinalWindowGame
 } from '../../utils/fantasy-game-context.util';
+import { orderOverviewCurrentMatchups } from '../../utils/overview-weekly-dashboard.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
@@ -37,6 +38,76 @@ interface FantasyGamePlayerDisplay {
   LineupSlotType: string | null;
   EligibleUnlockedSlotIDs: string[];
   Points: number | null;
+}
+
+export type MatchupDisplaySide = 'left' | 'right';
+export type MatchupDisplayTeamIDs = [string | number, string | number];
+
+export function resolveMatchupDisplayTeamIDs(
+  league: League,
+  readModel: MatchupsReadModel | null | undefined,
+  season: string,
+  week: number,
+  matchup: FantasyGameContextMatchup
+): MatchupDisplayTeamIDs {
+  const fallback = [matchup.TeamIDs[0], matchup.TeamIDs[1]] as MatchupDisplayTeamIDs;
+  if (!readModel || readModel.Season !== season) return fallback;
+
+  const weekModel = readModel.Weeks.find(candidate => candidate.Week === week);
+  const officialMatchup = weekModel?.Matchups.find(
+    candidate => candidate.FantasyMatchupID === matchup.FantasyMatchupID
+  );
+  if (!officialMatchup || officialMatchup.Participants.length !== 2) return fallback;
+
+  const oriented = orderOverviewCurrentMatchups(league, [officialMatchup])[0];
+  if (!oriented || oriented.Participants.length !== 2) return fallback;
+
+  const candidate = [
+    oriented.Participants[0].TeamID,
+    oriented.Participants[1].TeamID
+  ] as MatchupDisplayTeamIDs;
+  const sourceTeamIDs = new Set(matchup.TeamIDs.map(teamID => String(teamID)));
+
+  return candidate.every(teamID => sourceTeamIDs.has(String(teamID)))
+    ? candidate
+    : fallback;
+}
+
+export function matchupDisplaySideSourceIndex(
+  matchup: FantasyGameContextMatchup,
+  displayTeamIDs: MatchupDisplayTeamIDs,
+  side: MatchupDisplaySide
+): 0 | 1 {
+  const displayIndex = side === 'left' ? 0 : 1;
+  const sourceIndex = matchup.TeamIDs.findIndex(
+    teamID => String(teamID) === String(displayTeamIDs[displayIndex])
+  );
+  return sourceIndex === 0 || sourceIndex === 1 ? sourceIndex : displayIndex;
+}
+
+export function matchupDisplaySideValue<T>(
+  matchup: FantasyGameContextMatchup,
+  displayTeamIDs: MatchupDisplayTeamIDs,
+  side: MatchupDisplaySide,
+  leftValue: T,
+  rightValue: T
+): T {
+  return matchupDisplaySideSourceIndex(matchup, displayTeamIDs, side) === 0
+    ? leftValue
+    : rightValue;
+}
+
+export function orientMatchupScore(
+  matchup: FantasyGameContextMatchup,
+  displayTeamIDs: MatchupDisplayTeamIDs,
+  score: FantasyGameContextCounterfactualScore | null
+): FantasyGameContextCounterfactualScore | null {
+  if (!score) return null;
+
+  return {
+    Left: matchupDisplaySideValue(matchup, displayTeamIDs, 'left', score.Left, score.Right),
+    Right: matchupDisplaySideValue(matchup, displayTeamIDs, 'right', score.Left, score.Right)
+  };
 }
 
 export interface FantasyGameContextDialogData {
@@ -71,6 +142,7 @@ export class FantasyGameContextDialogComponent {
 
   readonly game: FantasyGameContextGame | null;
   readonly matchup: FantasyGameContextMatchup | null;
+  readonly matchupTeamIDs: MatchupDisplayTeamIDs | null;
 
   constructor(@Inject(MAT_DIALOG_DATA) readonly data: FantasyGameContextDialogData) {
     this.game = data.gameId
@@ -78,6 +150,15 @@ export class FantasyGameContextDialogComponent {
       : null;
     this.matchup = data.fantasyMatchupId
       ? data.context.FantasyMatchups.find(matchup => matchup.FantasyMatchupID === data.fantasyMatchupId) ?? null
+      : null;
+    this.matchupTeamIDs = this.matchup
+      ? resolveMatchupDisplayTeamIDs(
+          data.league,
+          data.matchups,
+          data.context.Season,
+          data.context.Week,
+          this.matchup
+        )
       : null;
   }
 
@@ -153,13 +234,18 @@ export class FantasyGameContextDialogComponent {
   }
 
   fantasyMatchupScore(matchup: FantasyGameContextMatchup): FantasyGameContextCounterfactualScore | null {
+    const displayTeamIDs = this.displayTeamIDsFor(matchup);
     const readModel = this.data.matchups;
     if (readModel && readModel.Season === this.data.context.Season) {
       const week = readModel.Weeks.find(candidate => candidate.Week === this.data.context.Week);
       const officialMatchup = week?.Matchups.find(candidate => candidate.FantasyMatchupID === matchup.FantasyMatchupID);
       if (officialMatchup) {
-        const left = officialMatchup.Participants.find(participant => String(participant.TeamID) === String(matchup.TeamIDs[0]));
-        const right = officialMatchup.Participants.find(participant => String(participant.TeamID) === String(matchup.TeamIDs[1]));
+        const left = officialMatchup.Participants.find(
+          participant => String(participant.TeamID) === String(displayTeamIDs[0])
+        );
+        const right = officialMatchup.Participants.find(
+          participant => String(participant.TeamID) === String(displayTeamIDs[1])
+        );
         if (left?.Points !== null && left?.Points !== undefined && right?.Points !== null && right?.Points !== undefined) {
           const leftPoints = Number(left.Points);
           const rightPoints = Number(right.Points);
@@ -169,7 +255,12 @@ export class FantasyGameContextDialogComponent {
         }
       }
     }
-    return matchup.FinalScores;
+    return orientMatchupScore(matchup, displayTeamIDs, matchup.FinalScores);
+  }
+
+  matchupTeamID(matchup: FantasyGameContextMatchup, side: MatchupDisplaySide): string | number {
+    const teamIDs = this.displayTeamIDsFor(matchup);
+    return teamIDs[side === 'left' ? 0 : 1];
   }
 
   showCounterfactual(matchup: FantasyGameContextMatchup): boolean {
@@ -293,10 +384,31 @@ export class FantasyGameContextDialogComponent {
     }
   }
 
-  remainingPathCount(matchup: FantasyGameContextMatchup, side: 'left' | 'right'): number | null {
+  remainingPathCount(matchup: FantasyGameContextMatchup, side: MatchupDisplaySide): number | null {
     const remaining = matchup.RemainingRelevance;
     if (!remaining) return null;
-    return side === 'left' ? remaining.LeftRemainingPathCount : remaining.RightRemainingPathCount;
+
+    return matchupDisplaySideValue(
+      matchup,
+      this.displayTeamIDsFor(matchup),
+      side,
+      remaining.LeftRemainingPathCount,
+      remaining.RightRemainingPathCount
+    );
+  }
+
+  matchupGameStarterPoints(
+    matchup: FantasyGameContextMatchup,
+    row: FantasyGameContextMatchupGame,
+    side: MatchupDisplaySide
+  ): number {
+    return matchupDisplaySideValue(
+      matchup,
+      this.displayTeamIDsFor(matchup),
+      side,
+      row.LeftStarterPoints,
+      row.RightStarterPoints
+    );
   }
 
   isFinalWindow(matchup: FantasyGameContextMatchup, gameID: string): boolean {
@@ -380,6 +492,20 @@ export class FantasyGameContextDialogComponent {
       restoreFocus: true,
       panelClass: 'fantasy-context-dialog-panel'
     });
+  }
+
+  private displayTeamIDsFor(matchup: FantasyGameContextMatchup): MatchupDisplayTeamIDs {
+    if (this.matchup?.FantasyMatchupID === matchup.FantasyMatchupID && this.matchupTeamIDs) {
+      return this.matchupTeamIDs;
+    }
+
+    return resolveMatchupDisplayTeamIDs(
+      this.data.league,
+      this.data.matchups,
+      this.data.context.Season,
+      this.data.context.Week,
+      matchup
+    );
   }
 
   private hasDecisionRelevance(): boolean {
