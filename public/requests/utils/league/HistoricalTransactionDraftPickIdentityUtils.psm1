@@ -8,7 +8,6 @@ try {
     Import-Module "$PSScriptRoot\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -44,15 +43,18 @@ function New-HistoricalTransactionDraftPickSleeperContext {
 }
 
 function Get-HistoricalTransactionDraftPickSleeperContexts {
-    param([string]$leagueID = (Get-Config).LeagueID)
-
     $draftTypeConfigs = Get-DraftHistoryTypeConfigs
-    $leagues = ConvertTo-DraftSafeArray -value (Get-LeaguesRecursive -leagueID $leagueID)
     $contextsByIdentity = @{}
+    $seasons = @(
+        Get-TransactionDraftPickTransactionFiles |
+            ForEach-Object { [string]$_.Season } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object { [int]$_ } -Unique
+    )
 
-    foreach ($league in $leagues) {
-        $definitions = Get-SleeperCompletedDraftDefinitionsForLeagueSafe `
-            -league $league `
+    foreach ($season in $seasons) {
+        $definitions = Get-SleeperCompletedDraftDefinitionsForSeasonSafe `
+            -season $season `
             -draftTypeConfigs $draftTypeConfigs
 
         foreach ($definition in (ConvertTo-DraftSafeArray -value $definitions)) {
@@ -84,11 +86,10 @@ function Get-HistoricalTransactionDraftPickSleeperContexts {
 }
 
 function Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts {
-    param([string]$leagueID = (Get-Config).LeagueID)
 
     Write-Host "Resolve historical transaction draft identities from completed draft definitions..." -ForegroundColor Yellow
 
-    $contexts = Get-HistoricalTransactionDraftPickSleeperContexts -leagueID $leagueID
+    $contexts = Get-HistoricalTransactionDraftPickSleeperContexts
     if ($contexts.Count -eq 0) {
         Write-Host "No completed draft contexts found for historical transaction identity resolution." -ForegroundColor DarkGray
         return

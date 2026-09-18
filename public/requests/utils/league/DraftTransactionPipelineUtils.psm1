@@ -28,12 +28,12 @@ function Invoke-DraftTransactionRebuild {
     )
 
     Write-Host "Resolve transaction draft identities..." -ForegroundColor Yellow
-    Update-AllTransactionDraftPickTypesFromSleeper -leagueID $leagueID
+    Update-AllTransactionDraftPickTypesFromSleeper
 
     # Historical transaction picks must use the exact same completed-draft
     # definitions that the following historical draft generation step uses.
     # This corrects classification drift before Draft ownership/TradeHistory is built.
-    Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts -leagueID $leagueID
+    Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts
 
     Write-Host "Rebuild current and open drafts from refreshed transactions..." -ForegroundColor Yellow
     $drafts = Update-DraftsOrderAware -leagueID $leagueID

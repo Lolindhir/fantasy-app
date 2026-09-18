@@ -123,7 +123,7 @@ draftIdentity:
       historical rebuild regenerates them from canonical inputs and must not use a
       stale previous generated Drafts_<season>.json as an enrichment source.
     order:
-      - Rebuild current and historical transaction base data from Sleeper plus manual input.
+      - Rebuild current and historical transaction base data from Canonical League source-data plus the explicit manual overlay.
       - Resolve canonical DraftType, DraftInstance, DraftCode, DraftKey and SleeperDraftID on transaction picks.
       - Rebuild current/open drafts and completed historical drafts from those freshly generated transactions in the same working tree.
       - Enrich transaction picks with position, selected-player and pick-result details only after the fresh draft outputs exist.
@@ -146,3 +146,4 @@ draftIdentity:
       - The former source-based defaults Sleeper=>Rookie and Manual=>Free_Agent are removed from the generator contract.
       - Future Sleeper picks use the explicit SleeperFuturePickPool role instead of restoring a source-based Rookie default.
       - Historical generated outputs are regenerated through the coupled full-rebuild contract rather than migrated in place.
+      - Transaction/draft identity resolution derives season scope from current/historical generated transaction partitions and canonical draft data; it does not rediscover historical seasons through Sleeper league lineage.
