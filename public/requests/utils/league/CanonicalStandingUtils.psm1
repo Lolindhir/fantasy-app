@@ -14,7 +14,7 @@ catch {
 }
 
 # ===========================================================================
-# Canonical historical standings shadow adapter
+# Canonical historical standings consumer
 # ===========================================================================
 
 function Get-CanonicalStandingRepoRoot {
@@ -284,7 +284,7 @@ function Get-CanonicalStandingSourceForSeason {
         throw "Canonical standings season mismatch: requested '$Season', league.json contains '$($league.Season)'."
     }
     if ([string]$league.Status -ne "complete") {
-        throw "Canonical standings shadow only accepts completed seasons; $CanonicalLeagueID/$Season has status '$($league.Status)'."
+        throw "Canonical historical standings only accept completed seasons; $CanonicalLeagueID/$Season has status '$($league.Status)'."
     }
 
     $playoffStartWeek = [int](Get-CanonicalStandingPropertyValue -Object $league.Settings -PropertyName "playoff_week_start" -DefaultValue 0)
@@ -308,11 +308,59 @@ function Get-CanonicalStandingSourceForSeason {
     }
 }
 
-function Get-CanonicalHistoricalStandingsShadow {
+function Get-CanonicalHistoricalStandingSeasons {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise"
+    )
+
+    $repoRoot = Get-CanonicalStandingRepoRoot
+    $seasonsRoot = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons"
+    if (-not (Test-Path $seasonsRoot)) {
+        throw "Canonical League seasons directory missing at '$seasonsRoot'."
+    }
+
+    $currentSeason = [int](Get-Config).LeagueYear
+    $requiredFiles = @(
+        "league.json",
+        "members.json",
+        "rosters.json",
+        "winners-bracket.json",
+        "losers-bracket.json"
+    )
+    $seasons = @()
+
+    foreach ($directory in (Get-ChildItem -Path $seasonsRoot -Directory)) {
+        $seasonNumber = 0
+        if (-not [int]::TryParse([string]$directory.Name, [ref]$seasonNumber)) { continue }
+        if ($seasonNumber -ge $currentSeason) { continue }
+
+        foreach ($fileName in $requiredFiles) {
+            $path = Join-Path $directory.FullName $fileName
+            if (-not (Test-Path $path)) {
+                throw "Canonical historical standings source is incomplete for $CanonicalLeagueID/$seasonNumber; missing '$fileName'."
+            }
+        }
+
+        $league = Get-CanonicalStandingJson -CanonicalLeagueID $CanonicalLeagueID -Season ([string]$seasonNumber) -FileName "league.json"
+        if ([string]$league.Status -ne "complete") {
+            throw "Canonical historical standings source $CanonicalLeagueID/$seasonNumber is not complete (status '$($league.Status)')."
+        }
+
+        $seasons += [string]$seasonNumber
+    }
+
+    return @($seasons | Sort-Object { [int]$_ })
+}
+
+function Get-CanonicalHistoricalStandings {
     param(
         [string]$CanonicalLeagueID = "nfl-reise",
-        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Seasons
+        [AllowNull()][AllowEmptyCollection()][array]$Seasons = $null
     )
+
+    if ($null -eq $Seasons) {
+        $Seasons = @(Get-CanonicalHistoricalStandingSeasons -CanonicalLeagueID $CanonicalLeagueID)
+    }
 
     $seasonOutputs = @()
     $previousSeasonStandings = $null
@@ -344,5 +392,6 @@ function Get-CanonicalHistoricalStandingsShadow {
 
 Export-ModuleMember -Function @(
     "Get-CanonicalStandingSourceForSeason",
-    "Get-CanonicalHistoricalStandingsShadow"
+    "Get-CanonicalHistoricalStandingSeasons",
+    "Get-CanonicalHistoricalStandings"
 )
