@@ -30,10 +30,9 @@ function Invoke-PastSeasonsIndexRefresh {
 
 $CanonicalLeagueID = "nfl-reise"
 
-# Current season is rebuilt from canonical League source-data. Historical
-# transaction files remain on the existing Sleeper compatibility path until their
-# own Phase-2 migration checkpoint.
-Update-TransactionsAllSeasonsCanonicalCurrent `
+# Current and historical transaction bases are rebuilt from canonical League
+# source-data. Draft/pick identity enrichment remains a separate coupled step.
+Update-TransactionsAllSeasonsCanonical `
     -CanonicalLeagueID $CanonicalLeagueID `
     -ForceHistory
 

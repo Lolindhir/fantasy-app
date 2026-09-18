@@ -42,15 +42,23 @@ function Assert-Before {
     }
 }
 
-# The transactions request must rebuild current transactions from canonical
-# League source-data, retain the legacy historical compatibility rebuild, and
-# then rebuild dependent drafts before final draft-result enrichment.
+# The transactions request must rebuild current and historical transaction bases
+# from canonical League source-data, then rebuild dependent drafts before final
+# draft-result enrichment.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
-Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent") -Message "RequestTransactions no longer uses the canonical current-season transaction rebuild."
-Assert-True -Condition $requestTransactions.Contains("-ForceHistory") -Message "RequestTransactions no longer forces the historical compatibility rebuild."
-Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "RequestTransactions still uses the legacy current-season transaction rebuild."
+Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "RequestTransactions no longer uses the canonical all-season transaction rebuild."
+Assert-True -Condition $requestTransactions.Contains("-ForceHistory") -Message "RequestTransactions no longer forces the historical canonical rebuild."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent")) -Message "RequestTransactions still references the transitional canonical-current-only rebuild."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "RequestTransactions still uses the fully legacy transaction rebuild."
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "RequestTransactions does not force the coupled historical draft rebuild."
 Assert-True -Condition (-not $requestTransactions.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts")) -Message "RequestTransactions still enriches directly from potentially stale local drafts."
+
+$canonicalTransactionUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalTransactionUtils.psm1" -Raw
+Assert-True -Condition $canonicalTransactionUtils.Contains("Get-CanonicalTransactionsForSeasonInMemory") -Message "Historical transactions do not share the season-aware canonical adapter."
+Assert-True -Condition $canonicalTransactionUtils.Contains("Update-TransactionsHistoricalSeasonsFromCanonical") -Message "Historical transaction rebuild is not canonical."
+Assert-True -Condition (-not $canonicalTransactionUtils.Contains("Update-TransactionsHistoricalSeasonsLegacy")) -Message "Legacy historical transaction rebuild is still present."
+Assert-True -Condition (-not $canonicalTransactionUtils.Contains("Get-TransactionsRemoteForSeason")) -Message "Canonical historical transaction rebuild still fetches a season directly from Sleeper."
+Assert-True -Condition (-not $canonicalTransactionUtils.Contains("Get-LeaguesRecursive")) -Message "Canonical historical transaction rebuild still discovers history through Sleeper lineage."
 
 # Both standalone requests must share one orchestration path so ordering cannot drift.
 $requestDrafts = Get-Content "$PSScriptRoot\RequestDrafts.ps1" -Raw

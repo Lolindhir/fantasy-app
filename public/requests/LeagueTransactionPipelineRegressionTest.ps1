@@ -90,12 +90,12 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Save-Transact
 Assert-True -Condition $pipeline.Contains("Get-CanonicalTransactionsCurrentSeasonInMemory") -Message "League in-memory helper does not use canonical current-season transactions."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Get-TransactionsRemoteForWeeks") -Expected 0 -Message "League in-memory helper still fetches transactions directly from Sleeper."
 
-# Standalone/history requests retain the file-based draft contract, but current
-# Transactions.json generation is canonical while historical rebuilds remain on
-# the legacy compatibility path for this checkpoint.
+# Standalone/history requests retain the file-based draft contract while both
+# current and historical transaction bases come from canonical League source-data.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
-Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent") -Message "Standalone transaction rebuild no longer uses canonical current-season data."
-Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "Standalone transaction rebuild still uses the legacy current-season source."
+Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "Standalone transaction rebuild no longer uses canonical all-season data."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent")) -Message "Standalone transaction rebuild still uses the transitional current-only canonical path."
+Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasons -ForceCurrent -ForceHistory")) -Message "Standalone transaction rebuild still uses the fully legacy source."
 Assert-True -Condition $requestTransactions.Contains("Invoke-DraftTransactionRebuild -ForceHistory") -Message "Standalone transaction request does not invoke the coupled draft/transaction rebuild."
 $emptyManualLookup = New-ManualTransactionBindingLookup -ManualTransactions $null
 Assert-Equal -Actual $emptyManualLookup.Count -Expected 0 -Message "A season without manual transactions must produce an empty binding lookup."
