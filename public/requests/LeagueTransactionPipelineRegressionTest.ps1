@@ -351,7 +351,7 @@ $mixedTypeCurrentStandings = @(
         IronWillScore                 = 2.0
     }
 )
-$mixedTypeAwards = @(Get-Awards -regularSeasonStandings $mixedTypeCurrentStandings -playoffsStandings @() -previousSeasonStandings $mixedTypePreviousSeason)
+$mixedTypeAwards = @(Get-Awards -regularSeasonStandings $mixedTypeCurrentStandings -playoffsStandings $null -previousSeasonStandings $mixedTypePreviousSeason)
 Assert-Equal -Actual $mixedTypeCurrentStandings[0].ImprovementScore -Expected 0.35 -Message "Previous-season standings join still depends on numeric TeamID runtime type."
 $mixedTypeMostImproved = @($mixedTypeAwards | Where-Object { $_.Name -eq "Most Improved" })
 Assert-Equal -Actual $mixedTypeMostImproved.Count -Expected 1 -Message "Mixed-type previous-season join did not produce exactly one Most Improved award."
