@@ -74,7 +74,7 @@ Der 3rd fühlte sich nicht kostenlos an: eher „okay, nachvollziehbar, tut etwa
 - Der Deal wurde exakt am eigenen Price Ceiling abgeschlossen.
 
 ## Decision State at Execution
-- **Decision Confidence: vorläufig 3/5**
+- **Decision Confidence: 4/5**
 - **Outcome Uncertainty: 3/5**
 - **Gut Feeling: positive**
 - **Decision Margin: moderate**
@@ -82,7 +82,7 @@ Der 3rd fühlte sich nicht kostenlos an: eher „okay, nachvollziehbar, tut etwa
 Intuitives Gefühl ungefähr:
 **„Cool, McConkey gehört mir. Hoffentlich war Kraft nicht zu viel und hoffentlich wird McConkey das, was ich mir davon verspreche.“**
 
-Robert ist bei 3/5 Decision Confidence etwas weniger sicher als bei den übrigen rekonstruierten Skalenwerten; deshalb bleibt der Record vor dem Seal noch als Draft.
+Robert bestätigt die rekonstruierte Decision Confidence abschließend mit **4/5**.
 
 ## Seal-Status
-Noch nicht versiegelt.
+Inhaltlich vollständig rekonstruiert und seal-ready. Noch nicht versiegelt.
