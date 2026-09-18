@@ -5,7 +5,7 @@
 - Trade-ID: `sleeper-1157812155304140800`
 - Trade-Datum: 2024-10-31
 - Record-Ursprung: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Rekonstruktions-Confidence: 4/5
 - Outcome-Firewall: bestätigt
 
@@ -84,5 +84,7 @@ Intuitives Gefühl ungefähr:
 
 Robert bestätigt die rekonstruierte Decision Confidence abschließend mit **4/5**.
 
-## Seal-Status
-Inhaltlich vollständig rekonstruiert und seal-ready. Noch nicht versiegelt.
+## Seal
+- Status: `sealed`
+- Sealed at: `2026-09-18T20:59:00Z`
+- User confirmation: ja
