@@ -5,6 +5,7 @@ Import-Module "$PSScriptRoot\utils\league\CanonicalDraftUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Force
 
 function Assert-True {
     param(
@@ -278,5 +279,80 @@ Assert-Equal -Actual $pick.PickKey -Expected "2026_Rookie_R1_OO1" -Message "In-m
 Assert-Equal -Actual $pick.DisplayPick -Expected "1.03" -Message "In-memory pick enrichment did not propagate DisplayPick."
 Assert-Equal -Actual $pick.PlayerID -Expected "player-1" -Message "In-memory pick enrichment did not propagate selected player."
 Assert-Equal -Actual (Compare-Transactions -oldTransactions $enriched -newTransactions $enriched) -Expected $false -Message "A fully enriched no-op transaction snapshot is not semantically stable."
+
+
+# Canonical historical standings shadow must reproduce the published 2024/2025
+# historical season blocks and the completed-season AllTime aggregate exactly,
+# without changing the productive RequestStandings provider path yet.
+$canonicalStandingUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Raw
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical standings shadow still performs a direct Sleeper league read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical standings shadow still performs a direct Sleeper team read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical standings shadow still performs a direct Sleeper winners-bracket read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical standings shadow still performs a direct Sleeper losers-bracket read."
+
+$requestStandingsShadowGuard = Get-Content "$PSScriptRoot\RequestStandings.ps1" -Raw
+Assert-True -Condition (-not $requestStandingsShadowGuard.Contains("CanonicalStandingUtils")) -Message "Checkpoint 6D must remain shadow-only and must not cut over RequestStandings."
+Assert-True -Condition $requestStandingsShadowGuard.Contains("Get-SeasonDataRecursive") -Message "Checkpoint 6D unexpectedly changed the productive standings orchestration."
+
+$publishedStandings = @(Get-Content (Get-Config).StandingsFile -Raw | ConvertFrom-Json)
+$shadowStandings = Get-CanonicalHistoricalStandingsShadow -CanonicalLeagueID "nfl-reise" -Seasons @("2024", "2025")
+
+function ConvertTo-StandingsComparableValue {
+    param([AllowNull()]$Value)
+
+    if ($null -eq $Value) { return $null }
+
+    if ($Value -is [string] -or $Value -is [char] -or $Value -is [bool] -or $Value -is [ValueType]) {
+        return $Value
+    }
+
+    if ($Value -is [System.Collections.IDictionary]) {
+        $ordered = [ordered]@{}
+        foreach ($key in @($Value.Keys | ForEach-Object { [string]$_ } | Sort-Object)) {
+            $ordered[$key] = ConvertTo-StandingsComparableValue -Value $Value[$key]
+        }
+        return [PSCustomObject]$ordered
+    }
+
+    if ($Value -is [pscustomobject]) {
+        $ordered = [ordered]@{}
+        foreach ($property in @($Value.PSObject.Properties | Sort-Object Name)) {
+            $ordered[$property.Name] = ConvertTo-StandingsComparableValue -Value $property.Value
+        }
+        return [PSCustomObject]$ordered
+    }
+
+    if ($Value -is [System.Collections.IEnumerable]) {
+        return @($Value | ForEach-Object { ConvertTo-StandingsComparableValue -Value $_ })
+    }
+
+    return $Value
+}
+
+function Assert-StandingsJsonEqual {
+    param(
+        [AllowNull()]$Actual,
+        [AllowNull()]$Expected,
+        [Parameter(Mandatory = $true)][string]$Message
+    )
+
+    $actualJson = ConvertTo-StandingsComparableValue -Value $Actual | ConvertTo-Json -Depth 100 -Compress
+    $expectedJson = ConvertTo-StandingsComparableValue -Value $Expected | ConvertTo-Json -Depth 100 -Compress
+    if ($actualJson -ne $expectedJson) {
+        throw "$Message Canonical shadow differs from the published read model."
+    }
+}
+
+foreach ($season in @("2024", "2025")) {
+    $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
+    $shadowSeason = @($shadowStandings.Seasons | Where-Object { [string]$_.Season -eq $season })
+    Assert-Equal -Actual $publishedSeason.Count -Expected 1 -Message "Published standings must contain season $season exactly once."
+    Assert-Equal -Actual $shadowSeason.Count -Expected 1 -Message "Canonical shadow must contain season $season exactly once."
+    Assert-StandingsJsonEqual -Actual $shadowSeason[0] -Expected $publishedSeason[0] -Message "Canonical historical standings parity failed for $season."
+}
+
+$publishedAllTime = @($publishedStandings | Where-Object { [string]$_.Season -eq "AllTime" })
+Assert-Equal -Actual $publishedAllTime.Count -Expected 1 -Message "Published standings must contain AllTime exactly once."
+Assert-StandingsJsonEqual -Actual $shadowStandings.AllTime -Expected $publishedAllTime[0] -Message "Canonical historical standings AllTime parity failed."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green
