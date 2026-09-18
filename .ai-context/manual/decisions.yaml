@@ -1079,3 +1079,88 @@ decisions:
         - The initial current implementation temporarily depends on transitional generated/live inputs until #347 migrates the consumer.
         - Historical player-to-game association must fail closed when week-specific team evidence cannot be proven.
         - Consumers must distinguish Decision Windows from any later broader viewing-slot grouping.
+
+  - id: ADR-037
+    title: Shared Data Platform separates evidence, normalized observations, shared derivations and consumer insights
+    status: accepted
+    context: >
+      The repository has grown beyond one Angular app data pipeline. Canonical NFL
+      and fantasy-league facts are already shared through source-data, while other
+      potentially cross-consumer inputs such as FantasyPros/FantasyCalc rankings,
+      projections and podcast transcripts/takes currently live under
+      fantasy-management. At the same time, league-owned derivations such as Salary,
+      SalaryProjected, Salary Cap, Standings, Awards and early player Grading logic
+      are embedded in app-oriented generator scripts under public/requests even
+      though Fantasy Management and future consumers may need the same values.
+      Treating public/ or fantasy-management/ as the owner merely because one
+      consumer first needed the data would create circular dependencies and hide the
+      product's reusable domain logic.
+    decision: >
+      Adopt a logical Shared Data Platform with four ordered data classes:
+      (1) Source Evidence preserves validated external/provider/content evidence and
+      provenance; (2) Canonical / Normalized Data resolves identity, schema and
+      source semantics without turning subjective observations into objective truth;
+      (3) Shared Derived Data contains deterministic, reproducible, consumer-neutral
+      results calculated from known inputs plus explicit/versioned domain rules; and
+      (4) Consumer Data / Insights contains delivery read models and
+      consumer-specific interpretation. App and Fantasy Management are peer
+      consumers of the shared layers. A reusable datum must not remain owned by a
+      consumer namespace solely because that consumer introduced it first.
+      Subjective external sources remain attributed observations: a FantasyPros rank,
+      FantasyCalc trade value or podcast take records what that named source said,
+      for which format/context and at which observation/publication time. Canonical
+      normalization for such data means normalized representation plus identity and
+      provenance, never "the correct ranking" or "the correct opinion". Raw podcast
+      transcripts are Source Evidence; normalized mentions/takes may become shared
+      source observations; cross-source sentiment or consensus is a separate derived
+      product. Storage and public-publishing rights are separate policies, so
+      retaining source evidence never implies that full source content may be exposed
+      through the public app.
+      League Rules, Derived Metrics and Product Semantics are distinct concepts.
+      League Rules define explicit league-owned parameters and policies; algorithms
+      remain tested code and configurable parameters may be declarative/versioned.
+      Shared Derived Data may include Salary, SalaryProjected, Salary Cap, Standings,
+      Awards, player Grades, aggregated Dynasty rankings/trade values and other
+      reproducible cross-consumer metrics. Product Semantics such as lifecycle,
+      Decision Windows and Repairability may also be shared when their meaning is
+      consumer-neutral. Team-/strategy-specific recommendations, roster fit,
+      retention judgments, analysis and final decisions remain consumer-owned
+      Insights/Decisions rather than Shared Derived Data.
+      Pipeline responsibilities should converge on explicit verbs:
+      acquire -> normalize/materialize -> derive -> publish. Scheduling, trigger
+      frequency, freshness polling and dependency orchestration are technical
+      pipeline concerns and must not be encoded as Domain Rules. A later dependency
+      DAG may use these boundaries to trigger only the affected derivations.
+      This ADR fixes logical ownership and boundaries, not the final physical
+      repository directory names. Existing source-data/**, public/data/**,
+      public/requests/**, Metadata.json and fantasy-management/** paths remain valid
+      current-state contracts until separately migrated. ADR-002 remains the current
+      physical owner for league-specific manual rules until an explicit rule-storage
+      migration is approved.
+      During #347 and similar migrations, each field/behavior must be classified
+      before movement as Source Fact/Observation, Canonical/Normalized, Shared
+      Derived or Consumer-only. In particular, RequestPlayers.ps1 must not be
+      migrated monolithically: Salary, Grading and other league-owned derivations
+      must not be materialized into source-data/nfl/** merely because the player
+      source facts feeding them become canonical.
+    rationale: >
+      The durable product is becoming a small fantasy-football data platform with
+      multiple consumers, not an Angular app whose generated files happen to feed
+      other workflows. Separating evidence, normalized observations, reusable
+      derivations and consumer interpretation makes ownership explicit, prevents
+      consumer-to-consumer dependencies, preserves attribution for subjective
+      sources, enables the App to display the same market/media/derived values used
+      by Fantasy Management, and gives scheduler/orchestration work an explicit
+      dependency graph rather than monolithic refresh jobs.
+    consequences:
+      positive:
+        - App and Fantasy Management can consume the same Salary, rankings, market values, media observations and other shared data without depending on each other's output trees.
+        - Provider opinions and market values retain source, context, time and provenance instead of being mistaken for objective player truth.
+        - Salary, Awards, Grading and similar product logic become identifiable domain assets rather than hidden generator implementation details.
+        - Consumer-neutral aggregations can be reused in UI, Operations and future products.
+        - Future pipeline scheduling can follow actual dependency/freshness edges.
+        - The current #347 migration gains a clear guardrail before the Players consumer is decomposed.
+      negative:
+        - Existing consumer-owned paths now contain recognized transitional shared responsibilities that will need staged migration.
+        - A future physical data-platform layout, rule storage model and derivation registry still require separate design and migration work.
+        - Rights/publication policy must be modeled independently for retained media/source evidence.

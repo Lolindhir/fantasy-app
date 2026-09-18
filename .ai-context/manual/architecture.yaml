@@ -2,12 +2,14 @@ schemaVersion: 1
 
 architecture:
   summary: >
-    fantasy-app separates league/domain configuration, technical generation
-    configuration, a shared persistent provider-backed source-data layer,
-    generated app read models, Fantasy Management derivations and frontend
-    rendering. The shared source layer is split into provider-independent NFL
-    facts under source-data/nfl and canonical fantasy-league facts under
-    source-data/leagues.
+    fantasy-app is evolving toward a shared fantasy-football data platform with
+    App and Fantasy Management as peer consumers. The current repository separates
+    league/domain configuration, technical generation configuration, persistent
+    provider-backed source data, generated app read models, Fantasy Management
+    derivations and frontend rendering. ADR-037 adds the durable logical target:
+    Source Evidence -> Canonical/Normalized Data -> Shared Derived Data ->
+    Consumer Data/Insights. Existing physical paths remain transitional contracts
+    until separately migrated.
 
 layers:
   - name: manual-domain-config
@@ -188,6 +190,138 @@ sourceDataTarget:
     multiLeague: >
       The source-data model supports multiple independent CanonicalLeagueID values;
       no shared-source contract may assume exactly one fantasy league globally.
+
+
+dataPlatformTarget:
+  architectureDecision: ADR-037
+  status: logical-target-current-paths-transitional
+
+  principle: >
+    Repository location does not define domain ownership. Data that can serve
+    multiple consumers belongs conceptually to a shared layer even when its current
+    implementation still lives under public/** or fantasy-management/**. Physical
+    directory migration is intentionally deferred until a dedicated inventory and
+    migration plan approves concrete target paths.
+
+  logicalFlow: |
+    external providers / publications / media
+                    |
+                    v
+            Source Evidence
+                    |
+                    v
+       Canonical / Normalized Data
+                    |
+                    v
+          Shared Derived Data
+             /              \
+            v                v
+      App read models    Fantasy Operations
+            |                |
+            v                v
+          Angular      Insights / Decisions
+
+  layers:
+    sourceEvidence:
+      responsibility: >
+        Preserve validated provider, publication or content evidence with enough
+        provenance to reproduce and audit downstream normalization.
+      examples:
+        - NFLverse and Sleeper raw inputs
+        - FantasyPros/FantasyCalc/FFC/CBS/FFToday ranking or projection snapshots
+        - podcast episode metadata and raw transcripts
+      rules:
+        - Evidence may be objective facts, market observations or subjective source statements.
+        - Source, format/context, observation/publication time and provenance must remain attributable.
+        - Persisting source evidence does not automatically authorize public redistribution.
+
+    canonicalNormalized:
+      responsibility: >
+        Normalize identity, schema, units, temporal context and source semantics
+        without erasing attribution or upgrading opinions into objective truth.
+      examples:
+        - provider-independent NFL and League facts
+        - normalized FantasyCalc market-value observations keyed to CanonicalPlayerID
+        - normalized FantasyPros ranking observations
+        - podcast mentions/takes resolved to canonical entities
+      rules:
+        - "Canonical" for an attributed opinion means canonical representation of what the source said, not canonical correctness of the opinion.
+        - Cross-provider entity joins follow the repository's fail-closed identity rules.
+
+    sharedDerived:
+      responsibility: >
+        Materialize deterministic, reproducible and consumer-neutral results from
+        known shared inputs plus explicit/versioned domain rules.
+      categories:
+        leagueRules:
+          examples:
+            - Salary/Salary Cap policy
+            - Award definitions
+            - Draft rules
+          rule: >
+            Parameters/policies should be explicit and versionable; algorithms
+            remain tested implementation code rather than formula strings hidden in config.
+        derivedMetrics:
+          examples:
+            - Salary
+            - SalaryProjected
+            - Salary Cap
+            - ImprovementScore
+            - player Grade
+            - aggregated Dynasty rank
+            - aggregated Trade Value
+            - cross-source expert/media sentiment
+        productSemantics:
+          examples:
+            - League lifecycle state
+            - Decision Windows
+            - Lineup Repairability
+          rule: >
+            Shared only when semantics are consumer-neutral and reproducible from
+            the same facts/rules.
+      doesNotOwn:
+        - Mighty-Giants-specific roster fit or recommendation
+        - final trade/cut/add decisions
+        - free-form analysis whose answer depends on a consumer strategy
+
+    consumerDataInsights:
+      responsibility: >
+        Adapt shared facts/derivations into consumer delivery contracts and add
+        consumer-specific interpretation.
+      app:
+        currentDeliveryPath: public/data/**
+        role: Angular-facing read models and app-specific delivery shape
+      fantasyOperations:
+        currentPath: fantasy-management/generated/operations/**
+        role: operations-specific inputs/signals that prepare Fantasy Management decisions
+      fantasyManagement:
+        currentPath: fantasy-management/**
+        role: strategy, roster fit, analysis, Knowledge and final decisions
+      rule: >
+        Consumer outputs may combine shared data but must not become the upstream
+        owner of a datum needed by another consumer.
+
+  pipelineResponsibilities:
+    orderedVerbs:
+      - acquire
+      - normalize/materialize
+      - derive
+      - publish
+    orchestration: >
+      Scheduler cadence, event triggers, freshness checks and dependency invalidation
+      are technical pipeline concerns. They must remain separate from Domain Rules.
+      Future orchestration may model a dependency DAG so a source change runs only
+      the derivations and publishers it can affect.
+
+  migrationGuardrails:
+    - Do not move league-owned calculations such as Salary or Grading into source-data/nfl merely because their input facts are migrated there.
+    - Do not leave reusable market/media source acquisition permanently under fantasy-management merely because Fantasy Management was the first consumer.
+    - Raw podcast transcripts and normalized/extracted takes are different data products with separate provenance and publication policy.
+    - Keep provider rankings/values attributed; only an explicit derived aggregation may produce an application-owned consensus metric.
+    - Before the Players portion of #347, decompose RequestPlayers responsibilities by logical layer instead of treating the script as one canonical consumer.
+    - public/data remains an App delivery contract, not the long-term shared domain-data store.
+    - Exact future top-level directory names and physical migration sequencing require a separate approved design step.
+
 
 frontendStructure:
   current:
