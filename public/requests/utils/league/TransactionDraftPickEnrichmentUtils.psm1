@@ -140,10 +140,13 @@ function Save-TransactionDraftPickTransactions {
 # ===========================================================================
 
 function Get-TransactionDraftPickSleeperDraftContexts {
-    param([Parameter(Mandatory = $true)][string]$leagueID)
+    param(
+        [Parameter(Mandatory = $true)][string]$leagueID,
+        [AllowNull()][string]$season = $null
+    )
 
     $draftTypeConfigs = Get-DraftHistoryTypeConfigs
-    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID
+    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID -season $season
     $contexts = @()
 
     foreach ($draftKey in @($sleeperDraftMap.Keys | Sort-Object)) {
@@ -455,7 +458,7 @@ function Update-AllTransactionDraftPickTypesFromSleeper {
 
         $seasonLeagueID = [string]$leagueBySeason[$season].league_id
         if (-not $contextsByLeagueID.ContainsKey($seasonLeagueID)) {
-            $contextsByLeagueID[$seasonLeagueID] = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID $seasonLeagueID)
+            $contextsByLeagueID[$seasonLeagueID] = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID $seasonLeagueID -season $season)
         }
 
         $result = Resolve-TransactionDraftPickTypesFromContexts -transactions $transactions -contexts @($contextsByLeagueID[$seasonLeagueID])
