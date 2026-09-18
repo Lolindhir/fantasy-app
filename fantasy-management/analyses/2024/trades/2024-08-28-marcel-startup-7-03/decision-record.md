@@ -21,13 +21,7 @@ Robert gab ab:
 ## Ziel
 **Kenneth Walker war ein klarer direkter Target.**
 
-Der Marcel-Trade war damit nicht nur abstrakt „Kontrolle eines Target-Fensters“, sondern konkret der Move, der 7.03 und damit den Walker-Zugriff innerhalb des kontrollierten 7.01–7.03-Blocks absicherte.
-
-Die beiden klaren ursprünglichen Targets des Gesamtmanövers waren nach Roberts heutiger Erinnerung:
-- Trey McBride
-- Kenneth Walker
-
-Der zweite TE kam als zusätzliche Live-Draft-Idee hinzu, als sichtbar wurde, dass Robert den ganzen Dreierblock kontrollieren konnte.
+Der Marcel-Trade sicherte 7.03 als hinteres Ende des gemeinsam kontrollierten 7.01–7.03-Blocks. Die beiden klaren ursprünglichen Targets des Gesamtmanövers waren Trey McBride und Kenneth Walker; die Idee eines zweiten Top-TE entwickelte sich zusätzlich im laufenden Draft.
 
 ## Preis und Verhandlung
 Marcels Opening:
@@ -39,21 +33,24 @@ Robert wollte noch einen späten Pick zurück.
 - Marcel bot 12.04
 - Robert akzeptierte
 
-Roberts heutige Erinnerung an den damaligen Preis:
-**fair**.
-
-Der 12.04-Return sorgte dafür, dass sich der Deal **gut** anfühlte. Robert erinnert den Preis ausdrücklich nicht als teuer oder grenzwertig.
+Der finale Preis fühlte sich **fair** an. Dass 12.04 zurückkam, sorgte dafür, dass sich die Konstruktion gut anfühlte.
 
 ## Rekonstruierte Thesen
 - **T1 – 5/5:** 7.03 war den Move wert, weil Kenneth Walker ein klarer Target war und der Pick den Dreierblock komplettierte.
-- **T2 – 4/5:** Kontrolle über alle drei Picks erzeugte zusätzliche Live-Board-Optionality, die letztlich den zweiten TE ermöglichte.
+- **T2 – 4/5:** Kontrolle über alle drei Picks erzeugte zusätzliche Live-Board-Optionality.
 - **T3 – 5/5:** Der Return von 12.04 machte den finalen Preis fair und komfortabel.
 
 ## Decision State at Execution
-- Decision Confidence: noch nicht numerisch festgelegt
-- Outcome Uncertainty: noch offen
+- **Decision Confidence: 5/5**
+- **Outcome Uncertainty: 2/5**
 - Gut Feeling: **positive**
 - Decision Margin: **moderate**
-- Preiswahrnehmung: **fair; mit 12.04 zurück fühlte sich der Deal gut an**
+- Primärer Confidence-Treiber: Walker als klarer Target + kompletter 7.01–7.03-Kontrollblock + fairer Preis.
+- Primäre Zweifel: keine wesentlichen Zweifel an der Trade-Ausführung erinnert; nur normale Ergebnisunsicherheit.
+- Provenienz: `mixed_reconstruction`
 
-Noch nicht seal-ready, bis Confidence und Outcome Uncertainty separat kalibriert sind.
+## Linked Decision
+Direkt mit Tim `sleeper-1134414409062936576` als `same_strategy` verknüpft.
+
+## Seal-Status
+Inhaltlich weitgehend vollständig rekonstruiert. Noch nicht versiegelt.
