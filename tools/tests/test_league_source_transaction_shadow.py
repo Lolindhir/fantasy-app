@@ -10,6 +10,9 @@ from tools.transaction_canonical_shadow import (
     build_roster_provider_lookup,
     build_shadow_report,
     convert_canonical_transaction,
+    load_canonical_transactions,
+    load_json,
+    manual_binding_ids,
 )
 
 
@@ -256,3 +259,43 @@ class CurrentRepositoryTransactionShadowIntegrationTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[2]
         report = build_repo_shadow_report(repo_root, canonical_league_id="nfl-reise", season=2026)
         self.assertTrue(report["StrictParity"], json.dumps(report, indent=2, sort_keys=True))
+
+    def test_historical_nfl_reise_transactions_match_canonical_owned_fields(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        manual = load_json(repo_root / "public" / "data" / "Transactions_Manual.json")
+
+        for season in (2024, 2025):
+            with self.subTest(season=season):
+                season_dir = (
+                    repo_root
+                    / "source-data"
+                    / "leagues"
+                    / "nfl-reise"
+                    / "seasons"
+                    / str(season)
+                )
+                rosters = load_json(season_dir / "rosters.json")
+                canonical = load_canonical_transactions(
+                    season_dir,
+                    build_roster_provider_lookup(rosters),
+                    season=season,
+                )
+                legacy = load_json(
+                    repo_root
+                    / "public"
+                    / "data"
+                    / "past_seasons"
+                    / "Transactions"
+                    / f"Transactions_{season}.json"
+                )
+                report = build_shadow_report(
+                    canonical,
+                    legacy,
+                    canonical_league_id="nfl-reise",
+                    season=season,
+                    manual_bound_ids=manual_binding_ids(manual, season=season),
+                )
+                self.assertTrue(
+                    report["StrictParity"],
+                    json.dumps(report, indent=2, sort_keys=True),
+                )
