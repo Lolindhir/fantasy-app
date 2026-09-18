@@ -281,21 +281,30 @@ Assert-Equal -Actual $pick.PlayerID -Expected "player-1" -Message "In-memory pic
 Assert-Equal -Actual (Compare-Transactions -oldTransactions $enriched -newTransactions $enriched) -Expected $false -Message "A fully enriched no-op transaction snapshot is not semantically stable."
 
 
-# Canonical historical standings shadow must reproduce the published 2024/2025
-# historical season blocks and the completed-season AllTime aggregate exactly,
-# without changing the productive RequestStandings provider path yet.
+# Canonical historical standings are productive for completed seasons, while
+# the current season must remain on the existing live Sleeper-backed path.
 $canonicalStandingUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Raw
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical standings shadow still performs a direct Sleeper league read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical standings shadow still performs a direct Sleeper team read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical standings shadow still performs a direct Sleeper winners-bracket read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical standings shadow still performs a direct Sleeper losers-bracket read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical historical standings consumer performs a direct Sleeper league read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical historical standings consumer performs a direct Sleeper team read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical historical standings consumer performs a direct Sleeper winners-bracket read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical historical standings consumer performs a direct Sleeper losers-bracket read."
 
-$requestStandingsShadowGuard = Get-Content "$PSScriptRoot\RequestStandings.ps1" -Raw
-Assert-True -Condition (-not $requestStandingsShadowGuard.Contains("CanonicalStandingUtils")) -Message "Checkpoint 6D must remain shadow-only and must not cut over RequestStandings."
-Assert-True -Condition $requestStandingsShadowGuard.Contains("Get-SeasonDataRecursive") -Message "Checkpoint 6D unexpectedly changed the productive standings orchestration."
+$requestStandingsCutover = Get-Content "$PSScriptRoot\RequestStandings.ps1" -Raw
+Assert-True -Condition $requestStandingsCutover.Contains("CanonicalStandingUtils.psm1") -Message "RequestStandings does not import the canonical historical standings consumer."
+Assert-True -Condition $requestStandingsCutover.Contains("Get-CanonicalHistoricalStandings") -Message "RequestStandings does not consume canonical historical standings."
+Assert-True -Condition $requestStandingsCutover.Contains("Get-CurrentSeasonData") -Message "RequestStandings no longer has an explicit current-season live boundary."
+Assert-True -Condition $requestStandingsCutover.Contains("Get-LeagueRaw -leagueID `$leagueID") -Message "Current standings no longer read current live league state."
+Assert-True -Condition $requestStandingsCutover.Contains("Get-Teams -leagueID `$leagueID") -Message "Current standings no longer read current live team state."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-SeasonDataRecursive")) -Message "RequestStandings still recursively traverses historical Sleeper leagues."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("previous_league_id")) -Message "RequestStandings still discovers historical seasons through Sleeper previous_league_id."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-LeagueRaw -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live league read."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-Teams -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live team read."
+
+$discoveredHistoricalSeasons = @(Get-CanonicalHistoricalStandingSeasons -CanonicalLeagueID "nfl-reise")
+Assert-Equal -Actual ($discoveredHistoricalSeasons -join ",") -Expected "2024,2025" -Message "Canonical historical standings discovery changed unexpectedly."
 
 $publishedStandings = @(Get-Content (Get-Config).StandingsFile -Raw | ConvertFrom-Json)
-$shadowStandings = Get-CanonicalHistoricalStandingsShadow -CanonicalLeagueID "nfl-reise" -Seasons @("2024", "2025")
+$canonicalStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID "nfl-reise" -Seasons @("2024", "2025")
 
 function ConvertTo-StandingsComparableValue {
     param([AllowNull()]$Value)
@@ -339,20 +348,20 @@ function Assert-StandingsJsonEqual {
     $actualJson = ConvertTo-StandingsComparableValue -Value $Actual | ConvertTo-Json -Depth 100 -Compress
     $expectedJson = ConvertTo-StandingsComparableValue -Value $Expected | ConvertTo-Json -Depth 100 -Compress
     if ($actualJson -ne $expectedJson) {
-        throw "$Message Canonical shadow differs from the published read model."
+        throw "$Message Canonical historical output differs from the published read model."
     }
 }
 
 foreach ($season in @("2024", "2025")) {
     $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
-    $shadowSeason = @($shadowStandings.Seasons | Where-Object { [string]$_.Season -eq $season })
+    $canonicalSeason = @($canonicalStandings.Seasons | Where-Object { [string]$_.Season -eq $season })
     Assert-Equal -Actual $publishedSeason.Count -Expected 1 -Message "Published standings must contain season $season exactly once."
-    Assert-Equal -Actual $shadowSeason.Count -Expected 1 -Message "Canonical shadow must contain season $season exactly once."
-    Assert-StandingsJsonEqual -Actual $shadowSeason[0] -Expected $publishedSeason[0] -Message "Canonical historical standings parity failed for $season."
+    Assert-Equal -Actual $canonicalSeason.Count -Expected 1 -Message "Canonical historical consumer must contain season $season exactly once."
+    Assert-StandingsJsonEqual -Actual $canonicalSeason[0] -Expected $publishedSeason[0] -Message "Canonical historical standings parity failed for $season."
 }
 
 $publishedAllTime = @($publishedStandings | Where-Object { [string]$_.Season -eq "AllTime" })
 Assert-Equal -Actual $publishedAllTime.Count -Expected 1 -Message "Published standings must contain AllTime exactly once."
-Assert-StandingsJsonEqual -Actual $shadowStandings.AllTime -Expected $publishedAllTime[0] -Message "Canonical historical standings AllTime parity failed."
+Assert-StandingsJsonEqual -Actual $canonicalStandings.AllTime -Expected $publishedAllTime[0] -Message "Canonical historical standings AllTime parity failed."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green

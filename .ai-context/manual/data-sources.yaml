@@ -140,6 +140,36 @@ dataSources:
     timestamped: true
     backup: true
 
+
+  standings:
+    path: public/data/Standings.json
+    generator: public/requests/RequestStandings.ps1
+    helpers:
+      - public/requests/utils/league/CanonicalStandingUtils.psm1
+      - public/requests/utils/league/StandingUtils.psm1
+      - public/requests/utils/league/TeamUtils.psm1
+      - public/requests/utils/league/LeagueUtils.psm1
+    category: generated-output
+    role: Hybrid current plus historical standings read model
+    description: >
+      Historical completed seasons are derived from Canonical League source-data
+      under source-data/leagues/<CanonicalLeagueID>/seasons/<season> using league,
+      member, roster and playoff-bracket facts. The current season intentionally
+      remains on the existing live Sleeper-backed League/Team/Bracket path until
+      bounded current League freshness is migrated separately. Existing
+      StandingUtils derivation owns Regular Season standings, Playoffs, Awards and
+      AllTime; the public Standings.json contract is unchanged.
+    historicalSource:
+      canonicalLeagueID: nfl-reise
+      consumer: public/requests/utils/league/CanonicalStandingUtils.psm1
+      seasonDiscovery: completed canonical seasons strictly before Metadata.LeagueYear
+      providerFallback: none
+    currentSource:
+      mode: legacy-live
+      reason: current League/member/roster/bracket canonical freshness is not yet aligned to the live standings refresh cadence
+    timestamped: true
+    backup: true
+
   decisionWindows:
     path: public/data/DecisionWindows.json
     generator: public/requests/RequestLeague.ps1

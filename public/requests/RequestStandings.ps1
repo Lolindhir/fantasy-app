@@ -8,6 +8,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -24,49 +25,34 @@ catch {
 # 3. Funktionen
 # ===========================================================================
 
-function Get-SeasonDataRecursive {
+function Get-CurrentSeasonData {
     param(
         [string]$leagueID = (Get-Config).LeagueID,
-        $accumulatedData = $null
+        [AllowNull()]$previousSeasonStandings = $null
     )
 
-    # Initialisierung nur beim ersten Aufruf
-    if (-not $accumulatedData) {
-        $accumulatedData = [PSCustomObject]@{
-            AllSeasonsCompleted = @()
-            AllSeasons          = @()
-            PreviousSeason      = $null
-        }
-    }
-
-    Write-Host "Fetching data for league ID $leagueID..." -ForegroundColor Cyan
+    Write-Host "Fetching current standings data for league ID $leagueID..." -ForegroundColor Cyan
 
     $league = Get-LeagueRaw -leagueID $leagueID
     $teamData = Get-Teams -leagueID $leagueID
+    $standings = Get-StandingsRemote `
+        -leagueID $leagueID `
+        -teamData $teamData `
+        -regularSeasonGames ($league.settings.playoff_week_start - 1) `
+        -previousSeasonStandings $previousSeasonStandings
 
-    $standingsPreviousLeague = $null
-    # Rekursiv weitere Seasons holen, falls vorhanden (Abbruch, wenn keine PreviousLeagueID mehr vorhanden ist)
-    if ($league.previous_league_id -and $league.previous_league_id -ne "") {
-        $accumulatedData = Get-SeasonDataRecursive -leagueID $league.previous_league_id -accumulatedData $accumulatedData
-        $standingsPreviousLeague = $accumulatedData.PreviousSeason
+    $output = Get-OutputStandingsForSeason `
+        -season $league.season `
+        -standingsPlayoffs $standings.Playoffs `
+        -standingsRegularSeason $standings.RegularSeason `
+        -awards $standings.Awards
+
+    Write-Host "Fetched current standings data for season $($league.season)." -ForegroundColor Cyan
+
+    return [PSCustomObject][ordered]@{
+        Output      = $output
+        IsCompleted = ([string]$league.status -eq "complete")
     }
-
-    #berechne Standings
-    $standings = Get-StandingsRemote -leagueID $leagueID -teamData $teamData -regularSeasonGames ($league.settings.playoff_week_start - 1) -previousSeasonStandings $standingsPreviousLeague
-
-    #bereite den Output der Standings vor
-    $output = Get-OutputStandingsForSeason -season $league.season -standingsPlayoffs $standings.Playoffs -standingsRegular $standings.RegularSeason -awards $standings.Awards
-    
-    #baue accumulatedData
-    if($league.status -eq "complete"){
-        $accumulatedData.AllSeasonsCompleted += $output
-    }
-    $accumulatedData.AllSeasons += $output
-    $accumulatedData.PreviousSeason = $output
-
-    Write-Host "Fetched data for season $($league.season)." -ForegroundColor Cyan
-
-    return $accumulatedData
 }
 
 function Get-Compare {
@@ -131,9 +117,27 @@ try {
 
     Write-Host "Starting to fetch and build standings data..." -ForegroundColor Yellow
 
-    # Array mit allen Seasons holen
-    $allSeasonData += (Get-SeasonDataRecursive).AllSeasons
-    $allSeasonCompletedData += (Get-SeasonDataRecursive).AllSeasonsCompleted
+    # Historical seasons are rebuilt from Canonical League source-data.
+    # Current season remains on the existing live Sleeper-backed path.
+    $canonicalLeagueID = "nfl-reise"
+    $historicalStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID $canonicalLeagueID
+    $historicalSeasons = @($historicalStandings.Seasons)
+
+    $previousSeasonStandings = $historicalSeasons |
+        Sort-Object { [int]$_.Season } -Descending |
+        Select-Object -First 1
+
+    $currentSeasonData = Get-CurrentSeasonData -previousSeasonStandings $previousSeasonStandings
+
+    if (@($historicalSeasons | Where-Object { [string]$_.Season -eq [string]$currentSeasonData.Output.Season }).Count -gt 0) {
+        throw "Current standings season '$($currentSeasonData.Output.Season)' is also present in canonical historical standings."
+    }
+
+    $allSeasonData = @($historicalSeasons) + @($currentSeasonData.Output)
+    $allSeasonCompletedData = @($historicalSeasons)
+    if ($currentSeasonData.IsCompleted) {
+        $allSeasonCompletedData += $currentSeasonData.Output
+    }
 
     if (-not $allSeasonData -or $allSeasonData.Count -eq 0) {
         Write-Error "No season data available!"

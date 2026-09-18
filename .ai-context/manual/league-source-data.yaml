@@ -288,7 +288,11 @@ productiveAcceptance:
       TradeDeadlineWeek: null
   totalNoOpVerified: true
   productiveWorkflow: .github/workflows/sync-league-source-data.yml
-  consumerMigrationState: deferred-to-phase2
+  consumerMigrationState: phase2-in-progress
+  consumerMigrationNotes:
+    historicalStandings: canonical-active
+    currentStandings: legacy-live-pending-current-league-freshness
+    transactionsAndDrafts: canonical-active
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
@@ -309,7 +313,6 @@ phase1BInventory:
           - current League metadata/settings
           - current transaction season/week bounds
           - historical season discovery through previous_league_id
-          - historical standings traversal
       - dataset: members
         function: Get-SleeperMembers
         endpoint: /v1/league/<league_id>/users
@@ -383,8 +386,9 @@ phase1BInventory:
       - public/requests/utils/league/LeagueOverviewUtils.psm1
     standingsAndHistory:
       - public/requests/RequestStandings.ps1
+      - public/requests/utils/league/CanonicalStandingUtils.psm1
       - public/requests/utils/league/StandingUtils.psm1
-      - public/requests/utils/league/LeagueUtils.psm1::Get-LeaguesRecursive
+      - current season still uses public/requests/utils/league/LeagueUtils.psm1 and TeamUtils.psm1 live
     transactions:
       - public/requests/RequestTransactions.ps1
       - public/requests/utils/league/TransactionUtils.psm1
@@ -503,9 +507,11 @@ phase1BInventory:
 
   currentConsumerDependencies:
     app: >
-      Die App-Generatoren lesen die Sleeper-Domaenen heute direkt ueber SleeperUtils
-      und erzeugen public/data Readmodels. Phase 1B aendert diesen produktiven Pfad
-      nicht; die Consumer-Migration ist Phase 2.
+      Phase 2 migriert App-Consumer schrittweise auf Canonical League Source Data.
+      Transactions, Draft/Pick-Basis und historische Standings sind bereits
+      canonical aktiv. Current League/Teams/Standings bleiben dort live auf
+      Sleeper, wo die Canonical-Source-Freshness den produktiven Refresh-Takt noch
+      nicht abdeckt.
     fantasyManagement: >
       Fantasy Management liest den aktuellen League-/Ownership-/Draft-/Transaction-
       Zustand heute noch aus public/data. Phase 2 soll diese Basisfakten direkt aus
