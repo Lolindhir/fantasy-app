@@ -77,7 +77,7 @@ Robert war bei der **Tradeentscheidung** relativ sicher. Die Unsicherheit lag st
 
 ## Noch offen vor Seal
 - Bestätigung, ob `Decision Margin = clear` deine Erinnerung richtig trifft.
-- Die vage Erinnerung "Dart wurde mir im Rookie Draft weggepickt" bleibt **nicht** Teil der Kernthese, solange sie nicht besser belegt oder von dir sicherer erinnert wird.
+- Draft-Reihenfolge bestätigt: Tim nahm Dart an **4.03**, Robert war direkt danach an **4.04** dran. Das stützt die Erinnerung, dass Dart unmittelbar vor Roberts Pick vom Board ging, beweist aber nicht allein, dass Dart zwingend Roberts geplanter 4.04-Pick war.
 
 ## Seal-Status
 Noch nicht versiegelt.
