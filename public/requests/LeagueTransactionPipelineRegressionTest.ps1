@@ -151,6 +151,8 @@ Assert-True -Condition $requestDrafts.Contains("Invoke-DraftTransactionRebuild")
 
 $standalonePipeline = Get-Content "$PSScriptRoot\utils\league\DraftTransactionPipelineUtils.psm1" -Raw
 Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftPickTypesFromSleeper") -Message "Shared standalone pipeline no longer prepares persisted transaction identities."
+Assert-True -Condition (-not $standalonePipeline.Contains("Update-AllTransactionDraftPickTypesFromSleeper -leagueID")) -Message "Standalone transaction identity still depends on a Sleeper league ID."
+Assert-True -Condition (-not $standalonePipeline.Contains("Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts -leagueID")) -Message "Historical identity correction still depends on a Sleeper league ID."
 Assert-True -Condition $standalonePipeline.Contains("Update-DraftsOrderAware") -Message "Shared standalone pipeline no longer generates current drafts."
 Assert-True -Condition $standalonePipeline.Contains("Update-DraftsHistoricalSeasonsSafeOrderAware") -Message "Shared standalone pipeline no longer generates historical drafts."
 Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts") -Message "Shared standalone pipeline no longer enriches persisted transaction details."
@@ -175,8 +177,12 @@ Assert-True -Condition $draftPickResultUtils.Contains("Get-CanonicalSleeperDraft
 Assert-True -Condition (-not $draftPickResultUtils.Contains("Get-SleeperDraftPicks -draftID")) -Message "Draft pick result enrichment still performs a direct Sleeper pick read."
 Assert-True -Condition $transactionPickUtils.Contains("Get-CanonicalSleeperDraftTradedPicks") -Message "Current transaction draft-pick identity is not backed by Canonical League Source Data."
 Assert-True -Condition (-not $transactionPickUtils.Contains("Get-SleeperDraftTradedPicks -draftID")) -Message "Current transaction draft-pick identity still performs a direct Sleeper traded-pick read."
+Assert-True -Condition (-not $transactionPickUtils.Contains("Get-LeaguesRecursive")) -Message "Transaction draft-pick identity still discovers seasons through Sleeper league lineage."
+Assert-True -Condition (-not $transactionPickUtils.Contains("LeagueUtils.psm1")) -Message "Transaction draft-pick identity still imports legacy league discovery utilities."
 Assert-True -Condition $historicalIdentityUtils.Contains("Get-CanonicalSleeperDraftTradedPicks") -Message "Historical transaction draft-pick identity is not backed by Canonical League Source Data."
 Assert-True -Condition (-not $historicalIdentityUtils.Contains("Get-SleeperDraftTradedPicks -draftID")) -Message "Historical transaction draft-pick identity still performs a direct Sleeper traded-pick read."
+Assert-True -Condition (-not $historicalIdentityUtils.Contains("Get-LeaguesRecursive")) -Message "Historical transaction draft-pick identity still discovers seasons through Sleeper league lineage."
+Assert-True -Condition (-not $historicalIdentityUtils.Contains("LeagueUtils.psm1")) -Message "Historical transaction draft-pick identity still imports legacy league discovery utilities."
 
 Clear-CanonicalDraftPayloadCache
 $canonical2024 = Get-CanonicalDraftLegacyPayload -Season "2024"
@@ -190,9 +196,9 @@ Assert-True -Condition (@($canonical2026.Drafts.draft_id) -contains "13826069632
 
 # Historical transaction identity must pass the explicit transaction-file season
 # into the canonical draft adapter while the current path retains its default.
-$historical2024Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID "1133541805053714432" -season "2024")
-$historical2025Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID "1257421353431080960" -season "2025")
-$current2026Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID (Get-Config).LeagueID)
+$historical2024Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -season "2024")
+$historical2025Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -season "2025")
+$current2026Contexts = @(Get-TransactionDraftPickSleeperDraftContexts)
 Assert-True -Condition ($historical2024Contexts.Count -gt 0) -Message "Historical 2024 canonical draft contexts could not be built from an explicit season."
 Assert-True -Condition ($historical2025Contexts.Count -gt 0) -Message "Historical 2025 canonical draft contexts could not be built from an explicit season."
 Assert-True -Condition ($current2026Contexts.Count -gt 0) -Message "Current canonical draft context default stopped working."
