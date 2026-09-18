@@ -7,6 +7,7 @@
 - Record-Ursprung: `reconstructed`
 - Status: `draft`
 - Rekonstruktions-Confidence: 4/5
+- Outcome-Firewall: bestätigt
 
 ## Exakte Transaktion
 Robert erhielt:
@@ -16,35 +17,72 @@ Robert gab ab:
 - Tucker Kraft
 - Roberts 2025 Rookie 3rd
 
-Die spätere Auflösung des Picks zu 3.04 / Tre' Harris ist Outcome-/Asset-Resolution und gehört nicht in die damalige Trade-Definition.
+Die spätere Auflösung des Picks zu 3.04 / Tre' Harris gehört ausschließlich zur späteren Asset Resolution.
 
-## Evidenzbasis
-Roberts Erinnerung vom 18.09.2026 ist detailliert:
-- McConkey war ein klarer Target-Spieler nach wiederholt positiver Podcast-Berichterstattung.
-- Robert wollte zusätzlich WR-Stärke.
-- Robert erinnert sich, McConkey möglicherweise zuvor schon über Waiver versucht zu haben; dieser Teil ist weniger sicher.
-- Kraft war bereits als guter, aufkommender TE erkannt und sollte eigentlich als dritter TE hinter McBride/Kincaid bleiben.
-- Robert hätte lieber Josh Downs abgegeben.
-- Flo argumentierte nach Roberts Erinnerung, ein WR sei wertvoller als ein TE; deshalb kam der Rookie 3rd hinzu.
+## McConkey war bereits vor dem Trade ein dokumentierter Target
+Die historische Transaktionsdatei bestätigt:
+- **15.10.2024:** Flo / TeamID 3 nimmt McConkey erfolgreich per Waiver auf.
+- **15.10.2024:** Robert / TeamID 1 hat einen fehlgeschlagenen Waiver-Versuch auf McConkey.
+- **16.10.2024:** Robert hat einen zweiten fehlgeschlagenen Waiver-Versuch auf McConkey.
+- **31.10.2024:** Trade mit Flo.
+
+Damit ist die frühere vage Erinnerung „ich glaube, ich hatte ihn vorher schon auf Waiver versucht“ kanonisch bestätigt.
+
+## Ex-ante Thesis
+McConkey war Ende Oktober nicht nur ein Podcast-Hype-Target. Robert erinnert:
+- mehrere bereits gute Rookie-Spiele
+- starke Opportunity bei den Chargers / Wahrnehmung als wichtigste junge Receiving-Option
+- attraktives Slot-Receiver-Profil mit erwartbar vielen Targets/Punkten
+- zusätzlicher positiver Buzz u. a. bei Stoned Lack und Dynasty Talk
+- Überraschung, dass Flo ihn überhaupt abgeben würde
+
+Diese externe Berichterstattung bleibt ein möglicher Bias-Verstärker, war aber nicht die einzige Entscheidungsgrundlage.
+
+## Verhandlung
+1. Robert bot **Josh Downs** als Gegenstück an.
+2. Flo lehnte Downs konkret ab und wollte **Tucker Kraft**.
+3. Kraft allein reichte Flo nicht.
+4. Robert erinnert, dass Flo zunächst zusätzlich einen **2025 Rookie 2nd** verlangte.
+5. Robert handelte den Zusatzpreis auf seinen **2025 Rookie 3rd** herunter.
+6. Final: McConkey gegen Kraft + 3rd.
+
+## Geschützte Assets
+- **Trey McBride:** nicht verfügbar.
+- **Dalton Kincaid:** nicht verfügbar.
+
+Robert hätte keinen der beiden in den McConkey-Deal eingebaut.
+
+## Price Ceiling
+**Kraft + 2025 Rookie 3rd war das harte Ceiling.**
+
+Robert hätte **nicht mehr bezahlt**. Insbesondere der erinnerte 2nd-Round-Ask lag oberhalb seines akzeptablen Preises.
+
+- Ceiling known: ja
+- Execution vs. Ceiling: **at**
+
+Der 3rd fühlte sich nicht kostenlos an: eher „okay, nachvollziehbar, tut etwas weh“ als „gerne noch dazu“.
 
 ## Decision Thesis
-- **T1 (4/5):** McConkeys junge WR-Upside und der WR-Bedarf rechtfertigten einen aggressiveren Kauf.
-- **T2 (3/5):** Die TE-Tiefe erlaubte Kraft abzugeben, obwohl Robert bereits an Kraft glaubte.
-- **T3 (3/5):** Der zukünftige Rookie 3rd war ein akzeptabler Zusatzpreis, um den konkreten McConkey-Target zu bekommen.
+- **T1 – 4/5:** McConkeys frühe NFL-Leistung, Opportunity und Slot-Profil rechtfertigten einen aggressiven Kauf als jungen WR.
+- **T2 – 3/5:** Die TE-Struktur erlaubte Kraft abzugeben, obwohl Robert Kraft bereits für einen guten aufsteigenden TE hielt.
+- **T3 – 4/5:** Der 3rd war als finaler Zusatz akzeptabel; Kraft + 3rd war aber die Obergrenze.
+
+## Bekannte Risiken
+- Kraft war bereits am Durchstarten.
+- McConkey war weiterhin ein Rookie mit kleiner NFL-Sample.
+- Zwei vorherige Waiver-Versuche plus positiver Podcast-Buzz konnten Target-Attachment / Confirmation Bias verstärken.
+- Der Deal wurde exakt am eigenen Price Ceiling abgeschlossen.
 
 ## Decision State at Execution
-- Decision Confidence: **4/5**
-- Gut Feeling: **positive**
-- Decision Margin: **moderate**
-- Outcome Uncertainty: noch offen
-- Primärer Confidence-Treiber: starke McConkey-Überzeugung + WR-Bedarf
-- Primärer Zweifel: Kraft war bereits erkennbar gut/up-and-coming und Robert wollte ihn eigentlich behalten.
+- **Decision Confidence: vorläufig 3/5**
+- **Outcome Uncertainty: 3/5**
+- **Gut Feeling: positive**
+- **Decision Margin: moderate**
 
-## Potenzieller Bias
-Podcast-getriebene Target-Attachment bei McConkey ist als mögliches Bias-Risiko markiert, aber noch nicht als gesicherter Fehler.
+Intuitives Gefühl ungefähr:
+**„Cool, McConkey gehört mir. Hoffentlich war Kraft nicht zu viel und hoffentlich wird McConkey das, was ich mir davon verspreche.“**
 
-## Offene Seal-Punkte
-- Hat Flo Josh Downs konkret abgelehnt oder verlief die Alternative anders?
-- Wie würdest du Outcome Uncertainty 1–5 einordnen?
-- War Kraft + 3rd ungefähr dein Maximum oder hättest du für McConkey noch mehr bezahlt?
-- War das Bauchgefühl eher klar positiv oder schon gemischt, weil Kraft wehtat?
+Robert ist bei 3/5 Decision Confidence etwas weniger sicher als bei den übrigen rekonstruierten Skalenwerten; deshalb bleibt der Record vor dem Seal noch als Draft.
+
+## Seal-Status
+Noch nicht versiegelt.
