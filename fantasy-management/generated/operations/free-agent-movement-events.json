@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-18T17:34:54Z",
-  "input_fingerprint": "26453215afc0c6f0668cb2f159212ff8b3f86f813dbba2e9f103afb682179236",
+  "generated_at": "2026-09-18T17:40:39Z",
+  "input_fingerprint": "efcecf66be216a9be8f4e66fc98d9f8496e52fd78e955a3b067c2ab99e3a0e78",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "544949d0c35360a51d6dc9d66cc8232aaa8303a02427a699b9197565480e2445"
+      "input_fingerprint": "2455cef019b756e3a9e302683ef3581241cf616c52105df5e198f66f793ab507"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "187795eaa715d18054bf695041cdf2474a376c50011b2878f69775eefb45bcfb"
+      "input_fingerprint": "544949d0c35360a51d6dc9d66cc8232aaa8303a02427a699b9197565480e2445"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,15 +23,15 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 254,
-    "previous_discovery_count": 252,
+    "current_discovery_count": 252,
+    "previous_discovery_count": 254,
     "event_count": 3,
     "event_type_counts": {
       "changed": 1,
-      "new": 2
+      "resolved": 2
     },
     "event_priority_counts": {
-      "high": 2,
+      "low": 2,
       "medium": 1
     },
     "baseline_mode": "comparison"
@@ -40,8 +40,8 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "4376c177a4305fd669a2c6dc15584a2683a157bf55116b9e2372cc32d9c601dc",
-    "previous_evidence_fingerprint": "5384b02a69ba4ef76e8e2e464f67205ff0ab0f3c60107708f5e79758b4fcd9cc",
+    "current_evidence_fingerprint": "f055053dd19c6eb2d95f1876d42c47a4c0eb506ab842d56121d44fe547e7e349",
+    "previous_evidence_fingerprint": "4376c177a4305fd669a2c6dc15584a2683a157bf55116b9e2372cc32d9c601dc",
     "contract_changed": false,
     "evidence_changed": true,
     "comparison_event_count_before_suppression": 3,
@@ -54,21 +54,20 @@
       "name": "Ashton Dulin",
       "position": "WR",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "215b6e1aaff4e652e2216ec23046a23155c4ce6f27f6dfee47f72f8e6c7d379b",
-      "previous_state_hash": "e1e7c4bc0e95bbfbe381a515bc8eee71c4357fd332e4a78655098403ab3b95ca",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "e1e7c4bc0e95bbfbe381a515bc8eee71c4357fd332e4a78655098403ab3b95ca",
+      "previous_state_hash": "215b6e1aaff4e652e2216ec23046a23155c4ce6f27f6dfee47f72f8e6c7d379b",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "injury_availability"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -98,95 +97,55 @@
           ]
         }
       ],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Questionable",
-          "to": "Out"
-        },
-        {
-          "family": "injury_availability",
-          "kind": "return_timeline_change",
-          "severity": "medium",
-          "from": "20260920",
-          "to": "20260927"
-        }
-      ],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "12523",
-      "name": "Jimmy Horn",
-      "position": "WR",
-      "event_type": "new",
-      "event_priority": "high",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
-      "previous_state_hash": null,
-      "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
-      ],
-      "current_material_families": [
-        "team_transaction"
-      ],
-      "previous_material_families": [],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "team_transaction",
-          "kind": "nfl_team_change",
-          "severity": "high",
-          "from": "CAR",
-          "to": "CLE"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "7720",
       "name": "Kene Nwangwu",
       "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Questionable",
-          "to": "Out"
-        },
-        {
-          "family": "injury_availability",
-          "kind": "return_timeline_change",
-          "severity": "medium",
-          "from": "20260920",
-          "to": "20260927"
-        }
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12523",
+      "name": "Jimmy Horn",
+      "position": "WR",
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
+      "changed_dimensions": [
+        "resolved_discovery"
       ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "team_transaction"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
