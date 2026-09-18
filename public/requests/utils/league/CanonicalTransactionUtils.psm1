@@ -6,7 +6,6 @@ try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\TransactionUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -15,7 +14,7 @@ catch {
 }
 
 # ===========================================================================
-# Canonical current-season consumer
+# Canonical transaction consumer
 # ===========================================================================
 
 function Get-TransactionCanonicalRepoRoot {
@@ -152,26 +151,67 @@ function Merge-CanonicalTransactionsWithManual {
     return $result
 }
 
+function Get-CanonicalTransactionsForSeasonInMemory {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise",
+        [Parameter(Mandatory = $true)][string]$Season
+    )
+
+    Write-Host "Build season $Season transactions from canonical League source-data..." -ForegroundColor Yellow
+
+    $canonicalTransactions = @(Invoke-TransactionCanonicalConsumer `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -Season $Season)
+    $manualTransactions = @(ConvertTo-SafeArray -value (Get-ManualTransactions -season $Season))
+    $transactions = @(Merge-CanonicalTransactionsWithManual `
+        -canonicalTransactions $canonicalTransactions `
+        -manualTransactions $manualTransactions `
+        -season $Season)
+
+    Write-Host "Canonical season $Season transaction candidate built in memory." -ForegroundColor DarkCyan
+    return $transactions
+}
+
 function Get-CanonicalTransactionsCurrentSeasonInMemory {
     param(
         [string]$CanonicalLeagueID = "nfl-reise"
     )
 
-    $config = Get-Config
-    $season = [string]$config.LeagueYear
-    Write-Host "Build current season transactions from canonical League source-data..." -ForegroundColor Yellow
-
-    $canonicalTransactions = @(Invoke-TransactionCanonicalConsumer `
+    $season = [string](Get-Config).LeagueYear
+    return @(Get-CanonicalTransactionsForSeasonInMemory `
         -CanonicalLeagueID $CanonicalLeagueID `
         -Season $season)
-    $manualTransactions = @(ConvertTo-SafeArray -value (Get-ManualTransactions -season $season))
-    $transactions = @(Merge-CanonicalTransactionsWithManual `
-        -canonicalTransactions $canonicalTransactions `
-        -manualTransactions $manualTransactions `
-        -season $season)
+}
 
-    Write-Host "Canonical current season transaction candidate built in memory." -ForegroundColor DarkCyan
-    return $transactions
+function Get-CanonicalHistoricalTransactionSeasons {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise"
+    )
+
+    $repoRoot = Get-TransactionCanonicalRepoRoot
+    $seasonsRoot = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons"
+    if (-not (Test-Path $seasonsRoot)) {
+        throw "Canonical League season directory missing at '$seasonsRoot'."
+    }
+
+    $currentSeason = [int](Get-Config).LeagueYear
+    $seasons = @()
+
+    foreach ($directory in (Get-ChildItem -Path $seasonsRoot -Directory)) {
+        $seasonNumber = 0
+        if (-not [int]::TryParse([string]$directory.Name, [ref]$seasonNumber)) { continue }
+        if ($seasonNumber -ge $currentSeason) { continue }
+
+        $rostersFile = Join-Path $directory.FullName "rosters.json"
+        $transactionsDirectory = Join-Path $directory.FullName "transactions"
+        if (-not (Test-Path $rostersFile) -or -not (Test-Path $transactionsDirectory)) {
+            throw "Canonical historical transaction source is incomplete for $CanonicalLeagueID/$seasonNumber."
+        }
+
+        $seasons += [string]$seasonNumber
+    }
+
+    return @($seasons | Sort-Object { [int]$_ })
 }
 
 function Update-TransactionsCurrentSeasonFromCanonical {
@@ -186,69 +226,63 @@ function Update-TransactionsCurrentSeasonFromCanonical {
 }
 
 # ===========================================================================
-# Transitional historical compatibility path
+# Canonical historical transaction consumer
 # ===========================================================================
 
-function Update-TransactionsHistoricalSeasonsLegacy {
+function Update-TransactionsHistoricalSeasonsFromCanonical {
     param(
-        [string]$leagueID = (Get-Config).LeagueID,
-        [switch]$ForceHistory
-    )
-
-    Write-Host "Update historical transactions from the legacy Sleeper compatibility path..." -ForegroundColor Yellow
-    $leagues = Get-LeaguesRecursive -leagueID $leagueID
-
-    foreach ($league in $leagues) {
-        $isCurrentLeague = ([string]$league.league_id -eq [string](Get-Config).LeagueID)
-        if ($isCurrentLeague) { continue }
-
-        $historicalFile = Get-TransactionsHistoricalFilePath -season $league.season
-        if ((Test-Path $historicalFile) -and -not $ForceHistory) {
-            Write-Host "Historical transactions for season $($league.season) already exist. Skipping." -ForegroundColor DarkGray
-            continue
-        }
-
-        Write-Host "Fetching historical transactions for season $($league.season)..." -ForegroundColor Yellow
-        if ($ForceHistory) {
-            $transactions = Get-TransactionsRemoteForSeason `
-                -leagueID $league.league_id `
-                -league $league `
-                -Force
-            Save-TransactionsHistoricalSeason `
-                -season $league.season `
-                -transactions $transactions `
-                -Force
-        }
-        else {
-            $transactions = Get-TransactionsRemoteForSeason `
-                -leagueID $league.league_id `
-                -league $league
-            Save-TransactionsHistoricalSeason `
-                -season $league.season `
-                -transactions $transactions
-        }
-    }
-
-    Write-Host "Historical transaction compatibility rebuild finished." -ForegroundColor DarkCyan
-}
-
-function Update-TransactionsAllSeasonsCanonicalCurrent {
-    param(
-        [string]$leagueID = (Get-Config).LeagueID,
         [string]$CanonicalLeagueID = "nfl-reise",
         [switch]$ForceHistory
     )
 
-    Write-Host "Update transactions with canonical current-season ownership..." -ForegroundColor Yellow
+    Write-Host "Update historical transactions from canonical League source-data..." -ForegroundColor Yellow
+    $seasons = @(Get-CanonicalHistoricalTransactionSeasons -CanonicalLeagueID $CanonicalLeagueID)
+
+    if ($seasons.Count -eq 0) {
+        Write-Host "No canonical historical transaction seasons found." -ForegroundColor DarkGray
+        return
+    }
+
+    foreach ($season in $seasons) {
+        $historicalFile = Get-TransactionsHistoricalFilePath -season $season
+        if ((Test-Path $historicalFile) -and -not $ForceHistory) {
+            Write-Host "Historical transactions for season $season already exist. Skipping." -ForegroundColor DarkGray
+            continue
+        }
+
+        Write-Host "Building historical transactions for season $season from canonical source-data..." -ForegroundColor Yellow
+        $transactions = @(Get-CanonicalTransactionsForSeasonInMemory `
+            -CanonicalLeagueID $CanonicalLeagueID `
+            -Season $season)
+        Save-TransactionsHistoricalSeason `
+            -season $season `
+            -transactions $transactions `
+            -Force:$ForceHistory
+    }
+
+    Write-Host "Canonical historical transaction rebuild finished." -ForegroundColor DarkCyan
+}
+
+function Update-TransactionsAllSeasonsCanonical {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise",
+        [switch]$ForceHistory
+    )
+
+    Write-Host "Update current and historical transactions from canonical League source-data..." -ForegroundColor Yellow
     Update-TransactionsCurrentSeasonFromCanonical -CanonicalLeagueID $CanonicalLeagueID | Out-Null
-    Update-TransactionsHistoricalSeasonsLegacy -leagueID $leagueID -ForceHistory:$ForceHistory
-    Write-Host "Canonical-current transaction rebuild finished." -ForegroundColor DarkCyan
+    Update-TransactionsHistoricalSeasonsFromCanonical `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -ForceHistory:$ForceHistory
+    Write-Host "Canonical all-season transaction rebuild finished." -ForegroundColor DarkCyan
 }
 
 Export-ModuleMember -Function @(
+    "Get-CanonicalTransactionsForSeasonInMemory",
     "Get-CanonicalTransactionsCurrentSeasonInMemory",
+    "Get-CanonicalHistoricalTransactionSeasons",
     "Merge-CanonicalTransactionsWithManual",
     "Update-TransactionsCurrentSeasonFromCanonical",
-    "Update-TransactionsHistoricalSeasonsLegacy",
-    "Update-TransactionsAllSeasonsCanonicalCurrent"
+    "Update-TransactionsHistoricalSeasonsFromCanonical",
+    "Update-TransactionsAllSeasonsCanonical"
 )
