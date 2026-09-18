@@ -18,52 +18,42 @@ Robert gab ab:
 - 8.05
 - 9.02
 
-## Gemeinsamer Draft-Plan 7.01–7.03
-Der Marcel-Trade war die erste der beiden nahezu gleichzeitigen Transaktionen:
-- Marcel: 08:50:32
-- Tim: 08:53:00
-- Abstand: **2 Minuten 28 Sekunden**
+## Ziel
+**Kenneth Walker war ein klarer direkter Target.**
 
-Zusammen mit Roberts eigenem 7.02 entstand dadurch die Kontrolle über **7.01, 7.02 und 7.03**.
+Der Marcel-Trade war damit nicht nur abstrakt „Kontrolle eines Target-Fensters“, sondern konkret der Move, der 7.03 und damit den Walker-Zugriff innerhalb des kontrollierten 7.01–7.03-Blocks absicherte.
 
-Robert erinnert sehr klar, dass genau diese Kontrolle Teil des Plans und des Reizes war: mehrere Wunschspieler direkt nacheinander sichern und anschließend wieder Ruhe im Draft haben.
+Die beiden klaren ursprünglichen Targets des Gesamtmanövers waren nach Roberts heutiger Erinnerung:
+- Trey McBride
+- Kenneth Walker
 
-Der erinnerte Target-Cluster:
-- zwei Top-Tight-Ends
-- ein weiterer priorisierter Target, den Robert als **Kenneth Walker** erinnert
+Der zweite TE kam als zusätzliche Live-Draft-Idee hinzu, als sichtbar wurde, dass Robert den ganzen Dreierblock kontrollieren konnte.
 
-Die spezifische Walker-Zuordnung ist etwas weniger sicher als die Erinnerung an den Dreierblock selbst und wird deshalb mit niedrigerer Rekonstruktions-Confidence geführt.
+## Preis und Verhandlung
+Marcels Opening:
+- Robert gibt 8.05 + 9.02
+- Robert erhält 7.03
 
-## Kontext
-2024 hatte die Liga **zwei feste TE-Startplätze**. Der Gesamtplan war damit nicht nur Depth-Aufbau, sondern sollte zwei Starting-TE-Positionen langfristig absichern und gleichzeitig einen weiteren priorisierten Spieler im selben Fenster sichern.
+Robert wollte noch einen späten Pick zurück.
+- Wunsch: 11.03
+- Marcel bot 12.04
+- Robert akzeptierte
 
-## Verhandlung
-- Marcel eröffnete mit 7.03 für 8.05 + 9.02.
-- Robert wollte einen späten Pick zurück.
-- Wunsch: 11.03.
-- Marcel bot stattdessen 12.04.
-- Robert akzeptierte.
+Roberts heutige Erinnerung an den damaligen Preis:
+**fair**.
 
-Der Return-Pick zeigt, dass Robert trotz der aggressiven Konsolidierung nicht sämtliche spätere Draft-Optionality aufgeben wollte.
+Der 12.04-Return sorgte dafür, dass sich der Deal **gut** anfühlte. Robert erinnert den Preis ausdrücklich nicht als teuer oder grenzwertig.
 
 ## Rekonstruierte Thesen
-- **T1 – 4/5:** 7.03 komplettierte den kontrollierten Dreierblock und war deshalb den Move von 8.05/9.02 wert.
-- **T2 – 3/5:** Der dritte Pick war bereits für einen weiteren priorisierten Target vorgesehen, erinnert als Kenneth Walker.
-- **T3 – 4/5:** 12.04 zurückzubekommen erhielt wichtige spätere Selection-Optionality.
+- **T1 – 5/5:** 7.03 war den Move wert, weil Kenneth Walker ein klarer Target war und der Pick den Dreierblock komplettierte.
+- **T2 – 4/5:** Kontrolle über alle drei Picks erzeugte zusätzliche Live-Board-Optionality, die letztlich den zweiten TE ermöglichte.
+- **T3 – 5/5:** Der Return von 12.04 machte den finalen Preis fair und komfortabel.
 
 ## Decision State at Execution
-Für den **Marcel-Anteil isoliert** noch bewusst offen:
-- Decision Confidence: noch nicht separat kalibriert
-- Outcome Uncertainty: offen
-- Gut Feeling: offen
-- Decision Margin: offen
+- Decision Confidence: noch nicht numerisch festgelegt
+- Outcome Uncertainty: noch offen
+- Gut Feeling: **positive**
+- Decision Margin: **moderate**
+- Preiswahrnehmung: **fair; mit 12.04 zurück fühlte sich der Deal gut an**
 
-Die übergeordnete Drei-Pick-Strategie ist dagegen inzwischen gut rekonstruiert.
-
-## Linked Decision
-Direkt mit Tim `sleeper-1134414409062936576` als `same_strategy` verknüpft.
-
-## Noch offen vor Seal
-- Wie sicher fühlte sich speziell der Preis 8.05 + 9.02 gegen 7.03 + 12.04 an?
-- War 12.04 für dich relevant für die Zustimmung oder eher ein Bonus, den du einfach noch herausverhandelt hast?
-- Individuelle Decision Confidence / Outcome Uncertainty / Gut Feeling des Marcel-Deals.
+Noch nicht seal-ready, bis Confidence und Outcome Uncertainty separat kalibriert sind.
