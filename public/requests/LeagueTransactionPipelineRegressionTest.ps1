@@ -339,6 +339,7 @@ $mixedTypeCurrentStandings = @(
         Wins                          = 8
         Losses                        = 2
         Ties                          = 0
+        WinPercentage                 = 0.75
         Points                        = 1450
         PointsPerGame                 = 110.0
         Record                        = "WWWWLWWWWL"
