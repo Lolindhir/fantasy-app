@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 Import-Module "$PSScriptRoot\utils\league\CanonicalTransactionUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\CanonicalDraftUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
@@ -153,6 +154,39 @@ Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftP
 Assert-True -Condition $standalonePipeline.Contains("Update-DraftsOrderAware") -Message "Shared standalone pipeline no longer generates current drafts."
 Assert-True -Condition $standalonePipeline.Contains("Update-DraftsHistoricalSeasonsSafeOrderAware") -Message "Shared standalone pipeline no longer generates historical drafts."
 Assert-True -Condition $standalonePipeline.Contains("Update-AllTransactionDraftPickDetailsFromLocalDrafts") -Message "Shared standalone pipeline no longer enriches persisted transaction details."
+
+# Draft/Pick provider reads must come from persisted Canonical League Source Data.
+$draftUtils = Get-Content "$PSScriptRoot\utils\league\DraftUtils.psm1" -Raw
+$draftHistoryUtils = Get-Content "$PSScriptRoot\utils\league\DraftHistoryUtils.psm1" -Raw
+$draftHistoryFix = Get-Content "$PSScriptRoot\utils\league\DraftHistoryEmptyDefinitionsFix.psm1" -Raw
+$draftPickResultUtils = Get-Content "$PSScriptRoot\utils\league\DraftPickResultUtils.psm1" -Raw
+$transactionPickUtils = Get-Content "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -Raw
+$historicalIdentityUtils = Get-Content "$PSScriptRoot\utils\league\HistoricalTransactionDraftPickIdentityUtils.psm1" -Raw
+
+Assert-True -Condition $draftUtils.Contains("Get-CanonicalSleeperDrafts") -Message "Current draft mapping is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $draftUtils.Contains("Get-SleeperDrafts -leagueID")) -Message "Current draft mapping still performs a direct Sleeper draft-index read."
+Assert-True -Condition (-not $draftUtils.Contains("Get-SleeperDraft -draftID")) -Message "Current draft mapping still performs a direct Sleeper draft-detail read."
+Assert-True -Condition $draftHistoryUtils.Contains("Get-CanonicalSleeperDrafts -Season") -Message "Historical draft generation is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $draftHistoryUtils.Contains("Get-SleeperDrafts -leagueID")) -Message "Historical draft generation still performs a direct Sleeper draft-index read."
+Assert-True -Condition (-not $draftHistoryUtils.Contains("Get-SleeperDraft -draftID")) -Message "Historical draft generation still performs a direct Sleeper draft-detail read."
+Assert-True -Condition $draftHistoryFix.Contains("Get-CanonicalSleeperDrafts -Season") -Message "Historical safe-order draft generation is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $draftHistoryFix.Contains("Get-SleeperDrafts -leagueID")) -Message "Historical safe-order draft generation still performs a direct Sleeper draft-index read."
+Assert-True -Condition $draftPickResultUtils.Contains("Get-CanonicalSleeperDraftPicks") -Message "Draft pick result enrichment is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $draftPickResultUtils.Contains("Get-SleeperDraftPicks -draftID")) -Message "Draft pick result enrichment still performs a direct Sleeper pick read."
+Assert-True -Condition $transactionPickUtils.Contains("Get-CanonicalSleeperDraftTradedPicks") -Message "Current transaction draft-pick identity is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $transactionPickUtils.Contains("Get-SleeperDraftTradedPicks -draftID")) -Message "Current transaction draft-pick identity still performs a direct Sleeper traded-pick read."
+Assert-True -Condition $historicalIdentityUtils.Contains("Get-CanonicalSleeperDraftTradedPicks") -Message "Historical transaction draft-pick identity is not backed by Canonical League Source Data."
+Assert-True -Condition (-not $historicalIdentityUtils.Contains("Get-SleeperDraftTradedPicks -draftID")) -Message "Historical transaction draft-pick identity still performs a direct Sleeper traded-pick read."
+
+Clear-CanonicalDraftPayloadCache
+$canonical2024 = Get-CanonicalDraftLegacyPayload -Season "2024"
+$canonical2025 = Get-CanonicalDraftLegacyPayload -Season "2025"
+$canonical2026 = Get-CanonicalDraftLegacyPayload -Season "2026"
+Assert-Equal -Actual @($canonical2024.Drafts).Count -Expected 1 -Message "Canonical draft adapter lost the 2024 historical draft."
+Assert-Equal -Actual @($canonical2025.Drafts).Count -Expected 1 -Message "Canonical draft adapter lost the 2025 historical draft."
+Assert-Equal -Actual @($canonical2026.Drafts).Count -Expected 2 -Message "Canonical draft adapter lost one of the configured 2026 drafts."
+Assert-True -Condition (@($canonical2026.Drafts.draft_id) -contains "1354177383996866560") -Message "Canonical draft adapter lost the configured 2026 Rookie draft."
+Assert-True -Condition (@($canonical2026.Drafts.draft_id) -contains "1382606963258454016") -Message "Canonical draft adapter lost the configured 2026 Free Agent draft."
 
 # Pure in-memory detail enrichment must yield the same canonical transaction
 # shape that Compare-Transactions considers stable on the next no-op run.

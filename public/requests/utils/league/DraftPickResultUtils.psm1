@@ -7,7 +7,7 @@
 
 try {
     Import-Module "$PSScriptRoot\DraftUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -20,11 +20,13 @@ function Get-DraftSleeperPicksSafe {
     $draftID = Get-DraftObjectProperty -object $sleeperDraft -propertyName "draft_id" -defaultValue $null
     if ([string]::IsNullOrWhiteSpace($draftID)) { return @() }
 
-    try { return ConvertTo-DraftSafeArray -value (Get-SleeperDraftPicks -draftID $draftID) }
-    catch {
-        Write-Warning "Could not load Sleeper draft picks for draft '$draftID'. Keeping generated picks without result enrichment. $_"
-        return @()
+    $season = [string](Get-DraftObjectProperty -object $sleeperDraft -propertyName "season" -defaultValue "")
+    if ([string]::IsNullOrWhiteSpace($season)) {
+        throw "Canonical draft '$draftID' has no season for pick-result lookup."
     }
+
+    try { return ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDraftPicks -Season $season -DraftID ([string]$draftID)) }
+    catch { throw "Could not load canonical draft picks for draft '$draftID' / season '$season'. $_" }
 }
 
 function Get-DraftPlayerNameFromSleeperPick {

@@ -6,6 +6,14 @@
 # intentionally delegated to the canonical DraftHistory/DraftUtils helpers so
 # current and historical drafts cannot drift into different key schemes.
 
+try {
+    Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
+}
+catch {
+    Write-Error "Fehler beim Laden des Canonical-Draft-Moduls: $_"
+    throw $_
+}
+
 function Set-DraftHistoryTypeOccurrencesSafe {
     param(
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$definitions,
@@ -26,11 +34,8 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
     $season = [string]$league.season
     $definitions = @()
 
-    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID) }
-    catch {
-        Write-Warning "Could not load Sleeper drafts for league '$leagueID' / season '$season'. $_"
-        return @()
-    }
+    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDrafts -Season $season) }
+    catch { throw "Could not load canonical drafts for historical season '$season'. $_" }
 
     if ($sleeperDrafts.Count -eq 0) { return @() }
 

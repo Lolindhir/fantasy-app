@@ -7,7 +7,7 @@ try {
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\TeamUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -494,11 +494,13 @@ function Get-SleeperDraftMap {
     Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
     $map = @{}
 
-    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID) }
-    catch {
-        Write-Warning "Could not load Sleeper drafts. Upcoming drafts will be generated as virtual drafts. $_"
-        return $map
+    if ([string]$leagueID -ne [string](Get-Config).LeagueID) {
+        throw "Canonical current draft mapping only supports the configured current league."
     }
+
+    $season = [string](Get-Config).LeagueYear
+    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDrafts -Season $season) }
+    catch { throw "Could not load canonical drafts for current season '$season'. $_" }
 
     if ($sleeperDrafts.Count -eq 0) { return $map }
 
@@ -525,9 +527,6 @@ function Get-SleeperDraftMap {
 
             $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
             $draftKey = New-DraftKey -season $season -draftType ([string]$draftTypeConfig.DraftType) -draftInstance $draftInstance
-            try { $draftToStore = Get-SleeperDraft -draftID $configuredDraftID }
-            catch { Write-Warning "Could not load Sleeper draft detail for '$configuredDraftID'. Falling back to draft list object. $_" }
-
             $map[$draftKey] = $draftToStore
             $unboundDrafts = @($unboundDrafts | Where-Object { [string]$_.draft_id -ne $configuredDraftID })
             $unboundConfigs = @($unboundConfigs | Where-Object { $_ -ne $draftTypeConfig })
@@ -560,11 +559,6 @@ function Get-SleeperDraftMap {
             $draftInstance = Get-DraftInstanceFromConfig -draftTypeConfig $draftTypeConfig
             $draftKey = New-DraftKey -season $season -draftType ([string]$draftTypeConfig.DraftType) -draftInstance $draftInstance
             $draftToStore = $draft
-
-            if (-not [string]::IsNullOrWhiteSpace($draftID)) {
-                try { $draftToStore = Get-SleeperDraft -draftID $draftID }
-                catch { Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_" }
-            }
 
             $map[$draftKey] = $draftToStore
             $unboundConfigs = @($unboundConfigs | Where-Object { $_ -ne $draftTypeConfig })
