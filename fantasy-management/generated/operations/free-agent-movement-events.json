@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-18T16:34:37Z",
-  "input_fingerprint": "3398d27af9ca1495fea73179c5f2e53f679228569c45cb6173f7736fc37a6797",
+  "generated_at": "2026-09-18T17:34:54Z",
+  "input_fingerprint": "26453215afc0c6f0668cb2f159212ff8b3f86f813dbba2e9f103afb682179236",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "187795eaa715d18054bf695041cdf2474a376c50011b2878f69775eefb45bcfb"
+      "input_fingerprint": "544949d0c35360a51d6dc9d66cc8232aaa8303a02427a699b9197565480e2445"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "75900f10863d0eb1f8ca28e9e3b8e3e6099c8a93cceb4af8f43a9f4735165e35"
+      "input_fingerprint": "187795eaa715d18054bf695041cdf2474a376c50011b2878f69775eefb45bcfb"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,173 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 252,
+    "current_discovery_count": 254,
     "previous_discovery_count": 252,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 3,
+    "event_type_counts": {
+      "changed": 1,
+      "new": 2
+    },
+    "event_priority_counts": {
+      "high": 2,
+      "medium": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "5384b02a69ba4ef76e8e2e464f67205ff0ab0f3c60107708f5e79758b4fcd9cc",
+    "current_evidence_fingerprint": "4376c177a4305fd669a2c6dc15584a2683a157bf55116b9e2372cc32d9c601dc",
     "previous_evidence_fingerprint": "5384b02a69ba4ef76e8e2e464f67205ff0ab0f3c60107708f5e79758b4fcd9cc",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 3,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "6427",
+      "name": "Ashton Dulin",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "215b6e1aaff4e652e2216ec23046a23155c4ce6f27f6dfee47f72f8e6c7d379b",
+      "previous_state_hash": "e1e7c4bc0e95bbfbe381a515bc8eee71c4357fd332e4a78655098403ab3b95ca",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "dynasty_market"
+          ]
+        }
+      ],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20260920",
+          "to": "20260927"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12523",
+      "name": "Jimmy Horn",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "team_transaction"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "team_transaction",
+          "kind": "nfl_team_change",
+          "severity": "high",
+          "from": "CAR",
+          "to": "CLE"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7720",
+      "name": "Kene Nwangwu",
+      "position": "RB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20260920",
+          "to": "20260927"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "ok",
     "movement_quality_status": "ok",
