@@ -9,7 +9,6 @@ try {
     Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftHistoryUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
@@ -141,12 +140,15 @@ function Save-TransactionDraftPickTransactions {
 
 function Get-TransactionDraftPickSleeperDraftContexts {
     param(
-        [Parameter(Mandatory = $true)][string]$leagueID,
         [AllowNull()][string]$season = $null
     )
 
+    if ([string]::IsNullOrWhiteSpace($season)) {
+        $season = [string](Get-Config).LeagueYear
+    }
+
     $draftTypeConfigs = Get-DraftHistoryTypeConfigs
-    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -leagueID $leagueID -season $season
+    $sleeperDraftMap = Get-SleeperDraftMap -draftTypeConfigs $draftTypeConfigs -season $season
     $contexts = @()
 
     foreach ($draftKey in @($sleeperDraftMap.Keys | Sort-Object)) {
@@ -411,8 +413,7 @@ function Resolve-TransactionDraftPickTypesFromContexts {
 
 function Update-CurrentTransactionDraftPickTypesFromSleeper {
     param(
-        [AllowNull()]$transactions = $null,
-        [string]$leagueID = (Get-Config).LeagueID
+        [AllowNull()]$transactions = $null
     )
 
     $config = Get-Config
@@ -423,7 +424,7 @@ function Update-CurrentTransactionDraftPickTypesFromSleeper {
         $transactions = ConvertTo-SafeArray -value $transactions
     }
 
-    $contexts = Get-TransactionDraftPickSleeperDraftContexts -leagueID $leagueID
+    $contexts = Get-TransactionDraftPickSleeperDraftContexts
     $result = Resolve-TransactionDraftPickTypesFromContexts -transactions $transactions -contexts $contexts
 
     if ($result.Changed) {
@@ -434,34 +435,20 @@ function Update-CurrentTransactionDraftPickTypesFromSleeper {
 }
 
 function Update-AllTransactionDraftPickTypesFromSleeper {
-    param([string]$leagueID = (Get-Config).LeagueID)
-
-    $leagues = ConvertTo-SafeArray -value (Get-LeaguesRecursive -leagueID $leagueID)
-    $leagueBySeason = New-UniqueObjectLookup `
-        -Items $leagues `
-        -KeyProperty "season" `
-        -SourceLabel "recursive Sleeper leagues for transaction draft identity" `
-        -KeyLabel "season" `
-        -DescriptionProperties @("season", "league_id", "previous_league_id")
-
-    $contextsByLeagueID = @{}
+    $contextsBySeason = @{}
 
     foreach ($file in (Get-TransactionDraftPickTransactionFiles)) {
         $transactions = Get-TransactionDraftPickJsonFileContent -filePath $file.Path -description "Transactions"
         if ($transactions.Count -eq 0) { continue }
 
         $season = [string]$file.Season
-        if (-not $leagueBySeason.ContainsKey($season)) {
-            Write-Warning "Could not find Sleeper league for transaction season '$season'."
-            continue
+        if (-not $contextsBySeason.ContainsKey($season)) {
+            $contextsBySeason[$season] = @(Get-TransactionDraftPickSleeperDraftContexts -season $season)
         }
 
-        $seasonLeagueID = [string]$leagueBySeason[$season].league_id
-        if (-not $contextsByLeagueID.ContainsKey($seasonLeagueID)) {
-            $contextsByLeagueID[$seasonLeagueID] = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID $seasonLeagueID -season $season)
-        }
-
-        $result = Resolve-TransactionDraftPickTypesFromContexts -transactions $transactions -contexts @($contextsByLeagueID[$seasonLeagueID])
+        $result = Resolve-TransactionDraftPickTypesFromContexts `
+            -transactions $transactions `
+            -contexts @($contextsBySeason[$season])
         if ($result.Changed) {
             Save-TransactionDraftPickTransactions -filePath $file.Path -transactions @($result.Transactions) -isCurrent ([bool]$file.IsCurrent)
         }
