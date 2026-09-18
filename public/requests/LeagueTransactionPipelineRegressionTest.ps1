@@ -308,7 +308,8 @@ $requestImportLines = @(
         Where-Object { $_ -match '^\s*Import-Module ' }
 )
 foreach ($importLine in $requestImportLines) {
-    Invoke-Expression $importLine
+    $resolvedImportLine = $importLine.Replace('$PSScriptRoot', $PSScriptRoot)
+    Invoke-Expression $resolvedImportLine
 }
 Assert-True -Condition ($null -ne (Get-Command Get-LeagueRaw -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-LeagueRaw from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-Teams -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-Teams from the caller scope."
