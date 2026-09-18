@@ -5,7 +5,7 @@
 - Trade-ID: `sleeper-1287465051015368704`
 - Trade-Datum: 2025-10-24
 - Record-Ursprung: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Rekonstruktions-Confidence: 4/5
 - Outcome-Firewall: bestätigt
 
@@ -75,9 +75,13 @@ Robert war bei der **Tradeentscheidung** relativ sicher. Die Unsicherheit lag st
 - Fannin selbst war bereits ein aufsteigendes TE-Asset
 - mögliche Overbid-/Anchoring-Frage durch Tims sofortige Annahme
 
-## Noch offen vor Seal
-- Bestätigung, ob `Decision Margin = clear` deine Erinnerung richtig trifft.
-- Draft-Reihenfolge bestätigt: Tim nahm Dart an **4.03**, Robert war direkt danach an **4.04** dran. Das stützt die Erinnerung, dass Dart unmittelbar vor Roberts Pick vom Board ging, beweist aber nicht allein, dass Dart zwingend Roberts geplanter 4.04-Pick war.
+## Finaler Decision State
+- Decision Confidence: **4/5**
+- Outcome Uncertainty: **3/5**
+- Gut Feeling: **positive**
+- Decision Margin: **clear**
 
-## Seal-Status
-Noch nicht versiegelt.
+## Seal
+- Status: `sealed`
+- Sealed at: `2026-09-18T23:08:00Z`
+- User confirmation: ja
