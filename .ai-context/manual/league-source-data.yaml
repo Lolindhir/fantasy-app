@@ -293,6 +293,55 @@ productiveAcceptance:
     historicalStandings: canonical-active
     currentStandings: legacy-live-pending-current-league-freshness
     transactionsAndDrafts: canonical-active
+    currentLeagueCoreScope: source-tooling-ready-workflow-not-approved
+
+phase2TargetedFreshnessScopes:
+  currentLeagueCore:
+    status: source-tooling-ready-not-scheduled
+    purpose: >
+      Bounded current-season freshness for the canonical League Core facts required
+      before a later Current Standings or Current League consumer cutover.
+    cli:
+      acquisition: tools/league_source_data.py sync --current-league-core-scope
+      materialization: tools/league_source_data.py materialize --materialization-scope league-core --current-league-core-scope
+    rawDatasets:
+      - sleeper.league
+      - sleeper.league-members
+      - sleeper.league-rosters
+      - sleeper.winners-bracket
+      - sleeper.losers-bracket
+    canonicalWriteSet:
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
+    excluded:
+      - matchups
+      - transactions
+      - drafts
+      - consumer publication
+      - scheduler/workflow wiring
+    weekStructureRule: >
+      WeekStructure is intentionally outside the fast League Core scope because it
+      depends on broader matchup/history evidence. The scoped materializer preserves
+      the already accepted canonical WeekStructure from the target season's existing
+      league.json and fails closed if that baseline or its League/Season/Provider
+      identity is missing or contradictory. Full League Source materialization remains
+      the owner of recomputing WeekStructure.
+    identityGuard: >
+      Bootstrap CurrentProviderLeagueID, manifest CurrentProviderLeagueID, exactly one
+      canonical season mapping and the live/persisted current Sleeper league season
+      must agree. Any drift fails closed.
+    acceptance:
+      - raw acquisition is limited to exactly the five League Core datasets
+      - canonical write set is limited to exactly five current-season Core files
+      - repeat materialization is a no-op
+      - current nfl-reise Core outputs are parity-checked against accepted canonical files
+    productionNote: >
+      This source capability alone does not close the Current Standings freshness gap.
+      Scheduling or GitHub Actions wiring is a separate Phase-2 step and requires the
+      repository's explicit workflow-change approval before implementation.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
