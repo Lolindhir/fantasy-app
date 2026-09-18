@@ -96,9 +96,9 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
         [Parameter(Mandatory = $true)][array]$draftTypeConfigs
     )
 
-    return @(Get-SleeperCompletedDraftDefinitionsForSeasonSafe \
-        -season ([string]$league.season) \
-        -draftTypeConfigs $draftTypeConfigs \
+    return @(Get-SleeperCompletedDraftDefinitionsForSeasonSafe `
+        -season ([string]$league.season) `
+        -draftTypeConfigs $draftTypeConfigs `
         -leagueID ([string]$league.league_id))
 }
 function ConvertTo-DraftHistoryNumericOwnerIdSafe {
