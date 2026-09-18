@@ -24,14 +24,13 @@ function Set-DraftHistoryTypeOccurrencesSafe {
     return Set-DraftHistoryTypeOccurrences -definitions $definitions -draftTypeConfigs $draftTypeConfigs
 }
 
-function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
+function Get-SleeperCompletedDraftDefinitionsForSeasonSafe {
     param(
-        [Parameter(Mandatory = $true)][object]$league,
-        [Parameter(Mandatory = $true)][array]$draftTypeConfigs
+        [Parameter(Mandatory = $true)][string]$season,
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
+        [AllowNull()][string]$leagueID = $null
     )
 
-    $leagueID = [string]$league.league_id
-    $season = [string]$league.season
     $definitions = @()
 
     try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDrafts -Season $season) }
@@ -91,6 +90,17 @@ function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
     return @($definitions | Sort-Object @{ Expression = { [int]$_.Season }; Ascending = $true }, DraftNo, DraftKey)
 }
 
+function Get-SleeperCompletedDraftDefinitionsForLeagueSafe {
+    param(
+        [Parameter(Mandatory = $true)][object]$league,
+        [Parameter(Mandatory = $true)][array]$draftTypeConfigs
+    )
+
+    return @(Get-SleeperCompletedDraftDefinitionsForSeasonSafe \
+        -season ([string]$league.season) \
+        -draftTypeConfigs $draftTypeConfigs \
+        -leagueID ([string]$league.league_id))
+}
 function ConvertTo-DraftHistoryNumericOwnerIdSafe {
     param(
         [AllowNull()]$value,
