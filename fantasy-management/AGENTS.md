@@ -49,6 +49,8 @@ For Fantasy workspace tasks, read these files as needed:
 
 For any trade negotiation, trade outreach, counteroffer, follow-up, manager-tendency or counterparty-communication task, `fantasy-management/_ai/TRADE_NEGOTIATION_RULES.md` is additionally mandatory and must be read before applying owner profiles or negotiation history.
 
+For any Trade Decision Record creation or sealing, historical trade reconstruction, trade review or portfolio-level trade process review, `fantasy-management/_ai/TRADE_DECISION_RECORDS.md` is additionally mandatory and must be read before persisting or evaluating the decision state.
+
 For any Fantasy Operations, Daily Monitoring, Free-Agent Monitoring, Weekly Lineup/Waiver separation or monitoring-triggered watchlist task, `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` is additionally mandatory and must be read before evaluating monitoring materiality, proposing durable watch targets or separating monitoring from final roster decisions.
 
 For any `entity-observation` baseline read/write, monitoring-triggered durable observation proposal, approved qualitative baseline persistence or Observation-State repair/migration, `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is additionally mandatory. It is authoritative for the current bounded-header + canonical Target-Shard storage contract. `fantasy-management/automation/state/entity-observation.json` contains only bounded global job metadata; qualitative target baselines live exclusively under `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`.
@@ -173,6 +175,7 @@ fantasy-management/
     DRAFT_STRATEGY_RULES.md
     ROSTER_ARCHITECTURE.md
     TRADE_NEGOTIATION_RULES.md
+    TRADE_DECISION_RECORDS.md
     PODCAST_SOURCE_MODEL.md
     PODCAST_EXTRACTION_RULES.md
     PODCAST_PACKAGE_STORAGE.md

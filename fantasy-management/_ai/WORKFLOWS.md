@@ -49,7 +49,42 @@ Use this workflow when an analysis produces a plausible but not yet durable empi
 8. Compare points, long-term value, roster construction, salary, liquidity and counterparty fit.
 9. Add current market context when needed.
 10. Give a clear Mighty Giants recommendation.
-11. Store under `analyses/YYYY/trades/` when requested.
+11. Store normal trade analyses under `analyses/YYYY/trades/` when requested. For an executed-trade Decision Record or a later trade review, use the separate workflow below and `TRADE_DECISION_RECORDS.md`; a normal analysis is not the sealed record.
+
+## Trade Decision Record and review workflow
+
+Use `fantasy-management/_ai/TRADE_DECISION_RECORDS.md` as the canonical contract.
+
+### Contemporaneous executed trade
+
+1. Confirm the final executed transaction from canonical league/transaction data.
+2. Require explicit approval before durable Decision Record persistence or sealing.
+3. Create the trade folder under `analyses/<year>/trades/<yyyy-mm-dd-short-slug>/`.
+4. Build `decision-record.json` as the canonical structured record and `decision-record.md` as its human-readable companion.
+5. Capture only the ex-ante state: exact assets, objective/context, evidence basis, testable theses, alternatives, protected assets, price ceiling, known risks, decision confidence, outcome uncertainty, gut feeling, decision margin and known bias risks.
+6. Use `record_origin: contemporaneous` and preserve direct-contemporaneous state provenance.
+7. Validate the JSON against `schemas/trade-decision-record.schema.json`.
+8. Seal only after the final trade state and user confirmation are known.
+9. After sealing, never rewrite ex-ante judgment fields because of later results; factual/provenance corrections use the structured correction log.
+
+### Historical reconstruction
+
+1. Resolve the exact historical transaction and pick lifecycle from canonical data first.
+2. Use `record_origin: reconstructed`, reconstruction date/confidence, limitations and the explicit outcome firewall.
+3. Prefer contemporary transaction/chat/analysis evidence over later recollection; mark provenance for every material reconstructed conclusion.
+4. Use later outcomes only as later evidence, never to invent original confidence, theses, risks or rationale.
+5. Validate and seal only after user review/approval.
+
+### Later trade review
+
+1. Create a new review artifact under the trade's `reviews/` folder; never append review conclusions into the sealed Decision Record.
+2. Record new evidence and whether it was available, partially available or unavailable at the original decision date.
+3. Review each original thesis as `supported`, `weakened`, `rejected`, `unresolved` or `not_testable`.
+4. Assess process and outcome separately and apply cause tags only where evidence supports them.
+5. Answer both the same-information and current-information re-decision questions.
+6. Assess confidence calibration without promoting a durable lesson from one trade.
+7. Validate against `schemas/trade-decision-review.schema.json`.
+8. Use portfolio reviews only when several linked trades genuinely form one strategic chain; preserve each underlying trade's individual process assessment.
 
 ## Roster audit workflow
 

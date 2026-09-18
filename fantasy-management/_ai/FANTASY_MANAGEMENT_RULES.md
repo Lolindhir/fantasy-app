@@ -11,8 +11,9 @@ For any new Fantasy Management task:
 1. read `fantasy-management/AGENTS.md`
 2. read `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
 3. read this file
-4. read `fantasy-management/_ai/WORKFLOWS.md` when the task involves extraction, analysis storage or repeated workflow steps
-5. load current repo data when dynamic facts are needed
+4. read `fantasy-management/_ai/TRADE_DECISION_RECORDS.md` when the task creates, seals, reconstructs or reviews a Trade Decision Record
+5. read `fantasy-management/_ai/WORKFLOWS.md` when the task involves extraction, analysis storage or repeated workflow steps
+6. load current repo data when dynamic facts are needed
 
 Do not answer dynamic roster, trade, salary, draft or player questions from memory alone.
 
@@ -460,6 +461,16 @@ For a strong Mighty Giants team:
 - do not burn future picks casually
 - keep bench depth only when it is format-relevant, young/upside-heavy or strong injury insurance
 - identify roster cloggers early
+
+### Trade Decision Records and retrospectives
+
+When an executed Mighty Giants trade is durably recorded, historically reconstructed, or later reviewed, follow `fantasy-management/_ai/TRADE_DECISION_RECORDS.md`.
+
+- Keep negotiation history, the sealed ex-ante Decision Record, later trade reviews and any short durable decision log as separate artifacts.
+- Do not rewrite sealed confidence, uncertainty, gut feeling, theses, alternatives, protected assets, risks or price-ceiling state because later outcomes changed.
+- Historical backfills must use reconstructed provenance and an explicit outcome firewall; later results may describe what happened but must not be used to invent the original decision state.
+- Review process quality and realized outcome separately, including same-information and current-information re-decision when the review is substantive.
+- Persist or seal these durable artifacts only under the existing explicit-approval rules; a normal trade analysis or negotiation does not automatically create a Trade Decision Record.
 
 ## 19. Position logic
 

@@ -4,6 +4,8 @@ Purpose: define how Fantasy Management should use direct manager communication, 
 
 This file is canonical for trade negotiation behavior. Use it together with `FANTASY_MANAGEMENT_RULES.md`, current league data and the league-context files. It does not replace current player, roster, pick, salary or market analysis.
 
+For creation, sealing, historical reconstruction or retrospective review of a Trade Decision Record, also read `TRADE_DECISION_RECORDS.md`. Negotiation history owns the offer/counter/communication path; it does not own the sealed ex-ante decision state or later process/outcome review.
+
 ## 1. Scope
 
 Read and apply these rules whenever the task involves:
@@ -152,6 +154,8 @@ Durable negotiation context belongs in:
 - `fantasy-management/league-context/trade-negotiation-history.md` for concrete chronological offer paths, counters, refusals, reasons and outcomes.
 
 Persist successful and failed negotiations when they reveal useful price or process information.
+
+Do not collapse Decision Record content into negotiation history. Confidence, outcome uncertainty, gut feeling, testable trade theses and later process/outcome grades belong in the Trade Decision Record/review artifacts defined by `TRADE_DECISION_RECORDS.md` when their persistence is explicitly approved.
 
 Promote a tendency to an owner profile only when the evidence level is appropriate. Keep one-off or highly asset-specific observations in negotiation history when they do not justify a general tendency.
 
