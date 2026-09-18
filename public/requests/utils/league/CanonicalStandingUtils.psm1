@@ -326,7 +326,11 @@ function Get-CanonicalHistoricalStandingsShadow {
     }
 
     $allTime = if ($seasonOutputs.Count -gt 0) {
-        Get-OutputStandingsForAllTime -allSeasonStandings @($seasonOutputs)
+        # Productive RequestStandings sorts completed seasons newest-first before
+        # building AllTime, while Previous-Season awards require chronological
+        # generation. Preserve both order contracts in the shadow.
+        $allTimeInput = @($seasonOutputs | Sort-Object -Property Season -Descending)
+        Get-OutputStandingsForAllTime -allSeasonStandings $allTimeInput
     }
     else {
         $null
