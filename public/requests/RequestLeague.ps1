@@ -167,8 +167,7 @@ try {
 
     $transactionsCurrentSeason = Get-LeagueTransactionsCurrentSeasonInMemory -leagueID $LeagueID
     $transactionsCurrentSeason = Resolve-LeagueTransactionDraftPickTypesInMemory `
-        -transactions $transactionsCurrentSeason `
-        -leagueID $LeagueID
+        -transactions $transactionsCurrentSeason
 
     if ($transactionsCurrentSeason) {
         Write-Host "Transactions for current season prepared in memory." -ForegroundColor Green
