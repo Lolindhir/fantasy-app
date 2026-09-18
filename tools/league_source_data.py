@@ -26,6 +26,12 @@ from league_source_data_lib.draft_materialize import (
     plan_draft_materialization,
     resolve_current_draft_season,
 )
+from league_source_data_lib.league_core_materialize import (
+    LEAGUE_CORE_DATASET_IDS,
+    LEAGUE_CORE_SCOPE_DEPENDENCIES,
+    plan_league_core_materialization,
+    resolve_current_league_core_season,
+)
 from league_source_data_lib.materialize import (
     PlayerMappingResolver,
     persist_canonical_outputs,
@@ -91,9 +97,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--materialization-scope",
-        choices=("full", "transactions", "drafts"),
+        choices=("full", "league-core", "transactions", "drafts"),
         default="full",
-        help="Choose full League materialization or a bounded transaction/draft write scope.",
+        help="Choose full League materialization or a bounded League Core/transaction/draft write scope.",
+    )
+    parser.add_argument(
+        "--current-league-core-scope",
+        action="store_true",
+        help=(
+            "Use the source-owned current League Core scope: league metadata/settings, "
+            "members, rosters and winners/losers brackets for the current Sleeper league."
+        ),
     )
     parser.add_argument(
         "--current-transaction-window",
@@ -159,10 +173,29 @@ def _load_current_instance(
 
 
 def _validate_current_scope_args(args: argparse.Namespace) -> None:
-    if args.current_transaction_window and args.current_draft_scope:
-        raise ValueError(
-            "--current-transaction-window and --current-draft-scope are mutually exclusive"
-        )
+    active_current_scopes = [
+        args.current_league_core_scope,
+        args.current_transaction_window,
+        args.current_draft_scope,
+    ]
+    if sum(bool(value) for value in active_current_scopes) > 1:
+        raise ValueError("Current League source scopes are mutually exclusive")
+
+    if args.current_league_core_scope:
+        if args.command == "validate":
+            raise ValueError("--current-league-core-scope does not apply to validate")
+        if args.seasons or args.weeks:
+            raise ValueError(
+                "--current-league-core-scope owns season targeting; do not combine it with --season/--week"
+            )
+        if args.command == "sync" and args.dataset_ids:
+            raise ValueError(
+                "--current-league-core-scope owns its dataset set; do not combine it with --dataset"
+            )
+        if args.command == "materialize" and args.materialization_scope != "league-core":
+            raise ValueError(
+                "--current-league-core-scope materialization requires --materialization-scope league-core"
+            )
 
     if args.current_transaction_window:
         if args.command == "validate":
@@ -243,17 +276,31 @@ def main() -> int:
             raise ValueError(
                 "--season/--week materialization targeting requires a bounded materialization scope"
             )
-        if args.materialization_scope == "drafts" and args.weeks:
-            raise ValueError("--week does not apply to draft materialization")
+        if args.materialization_scope in {"league-core", "drafts"} and args.weeks:
+            raise ValueError(
+                f"--week does not apply to {args.materialization_scope} materialization"
+            )
 
         resolver = PlayerMappingResolver.load(repo_root)
         results = []
         for bootstrap in selected:
+            current_league_core_scope = None
             current_window = None
             current_draft_scope = None
             seasons = _target_set(args.seasons)
             weeks = _target_set(args.weeks)
-            if args.current_transaction_window:
+            if args.current_league_core_scope:
+                season = resolve_current_league_core_season(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    bootstrap.current_provider_league_id,
+                )
+                seasons = {season}
+                current_league_core_scope = {
+                    "Season": season,
+                    "ProviderLeagueID": bootstrap.current_provider_league_id,
+                }
+            elif args.current_transaction_window:
                 current_payload = load_persisted_current_league_payload(
                     repo_root,
                     bootstrap.current_provider_league_id,
@@ -278,7 +325,16 @@ def main() -> int:
                     "ProviderLeagueID": bootstrap.current_provider_league_id,
                 }
 
-            if args.materialization_scope == "transactions":
+            if args.materialization_scope == "league-core":
+                outputs = plan_league_core_materialization(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    registry,
+                    resolver,
+                    seasons=seasons,
+                )
+                dependencies = list(LEAGUE_CORE_SCOPE_DEPENDENCIES)
+            elif args.materialization_scope == "transactions":
                 outputs = plan_transaction_materialization(
                     repo_root,
                     bootstrap.canonical_league_id,
@@ -312,6 +368,8 @@ def main() -> int:
                 "Dependencies": dependencies,
                 **result,
             }
+            if current_league_core_scope is not None:
+                item["CurrentLeagueCoreScope"] = current_league_core_scope
             if current_window is not None:
                 item["CurrentTransactionWindow"] = current_window
             if current_draft_scope is not None:
@@ -327,6 +385,44 @@ def main() -> int:
     )
     results = []
     for bootstrap in selected:
+        if args.current_league_core_scope:
+            current_instance = _load_current_instance(bootstrap, lineage_fetcher)
+            manifest_season = resolve_current_league_core_season(
+                repo_root,
+                bootstrap.canonical_league_id,
+                bootstrap.current_provider_league_id,
+            )
+            if current_instance.season != manifest_season:
+                raise ValueError(
+                    "Current Sleeper league season does not match canonical manifest for League Core scope: "
+                    f"{current_instance.season} != {manifest_season}"
+                )
+            plans = plan_raw_acquisition(
+                repo_root,
+                [current_instance],
+                registry,
+                fetch_sleeper_json,
+                force=args.force,
+                offline=args.offline,
+                dataset_ids=set(LEAGUE_CORE_DATASET_IDS),
+                seasons={manifest_season},
+            )
+            raw = persist_raw_plans(plans)
+            results.append(
+                {
+                    "CanonicalLeagueID": bootstrap.canonical_league_id,
+                    "CurrentProviderLeagueID": bootstrap.current_provider_league_id,
+                    "AcquisitionScope": "current-league-core",
+                    "Dependencies": list(LEAGUE_CORE_DATASET_IDS),
+                    "CurrentLeagueCoreScope": {
+                        "Season": manifest_season,
+                        "ProviderLeagueID": bootstrap.current_provider_league_id,
+                    },
+                    **raw,
+                }
+            )
+            continue
+
         if args.current_transaction_window:
             current_instance = _load_current_instance(bootstrap, lineage_fetcher)
             current_window = resolve_current_transaction_window(
