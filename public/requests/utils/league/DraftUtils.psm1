@@ -488,19 +488,24 @@ function Get-ConfiguredSleeperDraftMatch {
 function Get-SleeperDraftMap {
     param(
         [Parameter(Mandatory = $true)][array]$draftTypeConfigs,
-        [string]$leagueID = (Get-Config).LeagueID
+        [string]$leagueID = (Get-Config).LeagueID,
+        [AllowNull()][string]$season = $null
     )
 
     Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
     $map = @{}
 
-    if ([string]$leagueID -ne [string](Get-Config).LeagueID) {
-        throw "Canonical current draft mapping only supports the configured current league."
+    $config = Get-Config
+    $isCurrentLeague = ([string]$leagueID -eq [string]$config.LeagueID)
+    if ([string]::IsNullOrWhiteSpace($season)) {
+        if (-not $isCurrentLeague) {
+            throw "Canonical historical draft mapping requires an explicit season for league '$leagueID'."
+        }
+        $season = [string]$config.LeagueYear
     }
 
-    $season = [string](Get-Config).LeagueYear
     try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDrafts -Season $season) }
-    catch { throw "Could not load canonical drafts for current season '$season'. $_" }
+    catch { throw "Could not load canonical drafts for season '$season'. $_" }
 
     if ($sleeperDrafts.Count -eq 0) { return $map }
 

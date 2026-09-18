@@ -188,6 +188,18 @@ Assert-Equal -Actual @($canonical2026.Drafts).Count -Expected 2 -Message "Canoni
 Assert-True -Condition (@($canonical2026.Drafts.draft_id) -contains "1354177383996866560") -Message "Canonical draft adapter lost the configured 2026 Rookie draft."
 Assert-True -Condition (@($canonical2026.Drafts.draft_id) -contains "1382606963258454016") -Message "Canonical draft adapter lost the configured 2026 Free Agent draft."
 
+# Historical transaction identity must pass the explicit transaction-file season
+# into the canonical draft adapter while the current path retains its default.
+$historical2024Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID "1133541805053714432" -season "2024")
+$historical2025Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID "1257421353431080960" -season "2025")
+$current2026Contexts = @(Get-TransactionDraftPickSleeperDraftContexts -leagueID (Get-Config).LeagueID)
+Assert-True -Condition ($historical2024Contexts.Count -gt 0) -Message "Historical 2024 canonical draft contexts could not be built from an explicit season."
+Assert-True -Condition ($historical2025Contexts.Count -gt 0) -Message "Historical 2025 canonical draft contexts could not be built from an explicit season."
+Assert-True -Condition ($current2026Contexts.Count -gt 0) -Message "Current canonical draft context default stopped working."
+Assert-True -Condition (@($historical2024Contexts.Season) -contains "2024") -Message "Historical 2024 context lost its explicit canonical season."
+Assert-True -Condition (@($historical2025Contexts.Season) -contains "2025") -Message "Historical 2025 context lost its explicit canonical season."
+Assert-True -Condition (@($current2026Contexts.Season) -contains "2026") -Message "Current canonical draft context no longer defaults to LeagueYear."
+
 # Pure in-memory detail enrichment must yield the same canonical transaction
 # shape that Compare-Transactions considers stable on the next no-op run.
 $transaction = [PSCustomObject][ordered]@{
