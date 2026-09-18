@@ -5,7 +5,7 @@
 - Trade-ID: `sleeper-1134413786468802560`
 - Trade-Datum: 2024-08-28
 - Record-Ursprung: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Rekonstruktions-Confidence: 4/5
 - Outcome-Firewall: bestätigt
 
@@ -44,7 +44,7 @@ Der finale Preis fühlte sich **fair** an. Dass 12.04 zurückkam, sorgte dafür,
 - **Decision Confidence: 5/5**
 - **Outcome Uncertainty: 2/5**
 - Gut Feeling: **positive**
-- Decision Margin: **moderate**
+- Decision Margin: **clear**
 - Primärer Confidence-Treiber: Walker als klarer Target + kompletter 7.01–7.03-Kontrollblock + fairer Preis.
 - Primäre Zweifel: keine wesentlichen Zweifel an der Trade-Ausführung erinnert; nur normale Ergebnisunsicherheit.
 - Provenienz: `mixed_reconstruction`
@@ -53,4 +53,9 @@ Der finale Preis fühlte sich **fair** an. Dass 12.04 zurückkam, sorgte dafür,
 Direkt mit Tim `sleeper-1134414409062936576` als `same_strategy` verknüpft.
 
 ## Seal-Status
-Inhaltlich weitgehend vollständig rekonstruiert. Noch nicht versiegelt.
+Inhaltlich weitgehend vollständig rekonstruiert. Versiegelt mit expliziter User-Freigabe.
+
+## Seal
+- Status: `sealed`
+- Sealed at: `2026-09-18T18:47:00Z`
+- User confirmation: ja

@@ -5,7 +5,7 @@
 - Trade-ID: `sleeper-1134212109669441536`
 - Trade-Datum: 2024-08-27
 - Record-Ursprung: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Rekonstruktions-Confidence: 4/5
 - Outcome-Firewall: bestätigt
 
@@ -68,4 +68,9 @@ Der Record bewertet ausdrücklich nur die Entscheidung, 1.01 zu erwerben.
 Die anschließende Frage **Mahomes oder Josh Allen?** war eine eigenständige Draftentscheidung. Dass Robert bei dieser Wahl deutlich weniger sicher war, darf die rekonstruierte 5/5-Confidence des Trades nicht nachträglich reduzieren.
 
 ## Seal-Status
-Inhaltlich vollständig rekonstruiert und seal-ready. Noch nicht versiegelt; `seal.status` bleibt bis zur expliziten User-Bestätigung `draft`.
+Inhaltlich vollständig rekonstruiert und mit expliziter User-Freigabe versiegelt.
+
+## Seal
+- Status: `sealed`
+- Sealed at: `2026-09-18T18:47:00Z`
+- User confirmation: ja
