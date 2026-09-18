@@ -300,6 +300,22 @@ Assert-True -Condition (-not $requestStandingsCutover.Contains("previous_league_
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-LeagueRaw -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live league read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-Teams -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live team read."
 
+# Reproduce RequestStandings' import block in a clean module state. Nested -Force
+# imports must not hide the direct commands needed by the current live boundary.
+Remove-Module CanonicalStandingUtils, TeamUtils, StandingUtils, LeagueUtils -Force -ErrorAction SilentlyContinue
+$requestImportLines = @(
+    $requestStandingsCutover -split "`n" |
+        Where-Object { $_ -match '^\s*Import-Module ' }
+)
+foreach ($importLine in $requestImportLines) {
+    Invoke-Expression $importLine
+}
+Assert-True -Condition ($null -ne (Get-Command Get-LeagueRaw -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-LeagueRaw from the caller scope."
+Assert-True -Condition ($null -ne (Get-Command Get-Teams -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-Teams from the caller scope."
+Assert-True -Condition ($null -ne (Get-Command Get-StandingsRemote -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-StandingsRemote from the caller scope."
+Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical historical standings consumer."
+
+
 $discoveredHistoricalSeasons = @(Get-CanonicalHistoricalStandingSeasons -CanonicalLeagueID "nfl-reise")
 Assert-Equal -Actual ($discoveredHistoricalSeasons -join ",") -Expected "2024,2025" -Message "Canonical historical standings discovery changed unexpectedly."
 
