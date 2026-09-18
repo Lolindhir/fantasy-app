@@ -10,44 +10,60 @@
 - Outcome-Firewall: bestätigt
 
 ## Exakte Transaktion
-
 Robert erhielt:
-- 2024 Startup 7.03 (Marcel original)
-- 2024 Startup 12.04 (Marcel original)
+- 7.03
+- 12.04
 
 Robert gab ab:
-- 2024 Startup 8.05 (Robert original)
-- 2024 Startup 9.02 (Robert original)
+- 8.05
+- 9.02
 
-Die später mit diesen Picks ausgewählten Spieler gehören **nicht** zur Definition des ursprünglichen Trades und werden in diesem Ex-ante-Record nicht zur Begründung verwendet.
+## Gemeinsamer Draft-Plan 7.01–7.03
+Der Marcel-Trade war die erste der beiden nahezu gleichzeitigen Transaktionen:
+- Marcel: 08:50:32
+- Tim: 08:53:00
+- Abstand: **2 Minuten 28 Sekunden**
 
-## Evidenzbasis
-- Kanonische historische Transaktion `1134413786468802560`.
-- Gespeicherte Negotiation History, aus dem zeitgenössischen WhatsApp-Export verdichtet.
-- Die Negotiation History belegt: Robert wollte 7.03 in einem konzentrierten Target-Fenster; Marcel verlangte zunächst 8.05 + 9.02; Robert wollte einen späten Pick zurück; Marcel bot 12.04 statt des gewünschten 11.03; Robert nahm an.
+Zusammen mit Roberts eigenem 7.02 entstand dadurch die Kontrolle über **7.01, 7.02 und 7.03**.
 
-## Entscheidungskontext
-Ziel war ein Move-up auf 7.03, um mehrere priorisierte Targets in kurzer Folge besser erreichen zu können. Gleichzeitig wollte Robert nicht die gesamte spätere Auswahlbreite verlieren und verlangte deshalb einen Return-Pick.
+Robert erinnert sehr klar, dass genau diese Kontrolle Teil des Plans und des Reizes war: mehrere Wunschspieler direkt nacheinander sichern und anschließend wieder Ruhe im Draft haben.
+
+Der erinnerte Target-Cluster:
+- zwei Top-Tight-Ends
+- ein weiterer priorisierter Target, den Robert als **Kenneth Walker** erinnert
+
+Die spezifische Walker-Zuordnung ist etwas weniger sicher als die Erinnerung an den Dreierblock selbst und wird deshalb mit niedrigerer Rekonstruktions-Confidence geführt.
+
+## Kontext
+2024 hatte die Liga **zwei feste TE-Startplätze**. Der Gesamtplan war damit nicht nur Depth-Aufbau, sondern sollte zwei Starting-TE-Positionen langfristig absichern und gleichzeitig einen weiteren priorisierten Spieler im selben Fenster sichern.
+
+## Verhandlung
+- Marcel eröffnete mit 7.03 für 8.05 + 9.02.
+- Robert wollte einen späten Pick zurück.
+- Wunsch: 11.03.
+- Marcel bot stattdessen 12.04.
+- Robert akzeptierte.
+
+Der Return-Pick zeigt, dass Robert trotz der aggressiven Konsolidierung nicht sämtliche spätere Draft-Optionality aufgeben wollte.
 
 ## Rekonstruierte Thesen
-- **T1:** Der Move auf 7.03 war den Preis aus 8.05 + 9.02 wert, weil das frühere Fenster den Zugriff auf Roberts konzentrierten Target-Cluster verbesserte.
-- **T2:** Der zurückkommende späte Pick erhielt genug Selection-Optionality, damit die Konsolidierung für Robert akzeptabel blieb.
-
-Die damalige Thesis-Confidence ist nicht dokumentiert und wird nicht rückwirkend geschätzt.
-
-## Alternativen
-- Marcels Opening ohne Return-Pick: von Robert nicht unverändert akzeptiert.
-- 11.03 als Return-Pick: von Robert angefragt, von Marcel durch 12.04 ersetzt.
+- **T1 – 4/5:** 7.03 komplettierte den kontrollierten Dreierblock und war deshalb den Move von 8.05/9.02 wert.
+- **T2 – 3/5:** Der dritte Pick war bereits für einen weiteren priorisierten Target vorgesehen, erinnert als Kenneth Walker.
+- **T3 – 4/5:** 12.04 zurückzubekommen erhielt wichtige spätere Selection-Optionality.
 
 ## Decision State at Execution
-- Decision Confidence: unbekannt
-- Outcome Uncertainty: unbekannt
-- Gut Feeling: unbekannt
-- Decision Margin: unbekannt
-- Hard Price Ceiling: nicht rekonstruierbar
+Für den **Marcel-Anteil isoliert** noch bewusst offen:
+- Decision Confidence: noch nicht separat kalibriert
+- Outcome Uncertainty: offen
+- Gut Feeling: offen
+- Decision Margin: offen
+
+Die übergeordnete Drei-Pick-Strategie ist dagegen inzwischen gut rekonstruiert.
 
 ## Linked Decision
-Direkt mit dem Tim-Trade `sleeper-1134414409062936576` verknüpft: Im Tim-Chat sagte Robert, dass Pick 9 bereits in der Marcel-Verhandlung steckte. Beide Deals gehörten damit zum gleichen Startup-Target-Fenster.
+Direkt mit Tim `sleeper-1134414409062936576` als `same_strategy` verknüpft.
 
-## Rekonstruktionsgrenzen
-Die damalige explizite Confidence, Outcome-Uncertainty, das Bauchgefühl und ein möglicher harter Walk-away-Preis sind in der aktuell verfügbaren zeitgenössischen Evidenz nicht enthalten. Spätere Spielergebnisse werden bewusst nicht zur Rekonstruktion verwendet.
+## Noch offen vor Seal
+- Wie sicher fühlte sich speziell der Preis 8.05 + 9.02 gegen 7.03 + 12.04 an?
+- War 12.04 für dich relevant für die Zustimmung oder eher ein Bonus, den du einfach noch herausverhandelt hast?
+- Individuelle Decision Confidence / Outcome Uncertainty / Gut Feeling des Marcel-Deals.

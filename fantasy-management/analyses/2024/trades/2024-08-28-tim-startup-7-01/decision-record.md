@@ -10,44 +10,66 @@
 - Outcome-Firewall: bestätigt
 
 ## Exakte Transaktion
-
 Robert erhielt:
 - 2024 Startup 7.01 (Tim original)
 
 Robert gab ab:
-- 2024 Startup 10.05 (Robert original)
-- 2024 Startup 11.02 (Robert original)
-- 2024 Startup 12.05 (Robert original)
+- 10.05
+- 11.02
+- 12.05
 
-Die später mit diesen Picks ausgewählten Spieler gehören **nicht** zur Definition des ursprünglichen Trades und werden in diesem Ex-ante-Record nicht zur Begründung verwendet.
+## Gemeinsamer Draft-Plan 7.01–7.03
+Dieser Trade ist nicht sinnvoll isoliert zu lesen. Robert hatte bereits 7.02 und arbeitete nahezu gleichzeitig an Marcels 7.03.
 
-## Evidenzbasis
-- Kanonische historische Transaktion `1134414409062936576`.
-- Gespeicherte Negotiation History, aus dem zeitgenössischen WhatsApp-Export verdichtet.
-- Die Negotiation History belegt: Robert bot zunächst Picks 10 + 11; Tim sah das als leicht zu wenig; Tim fragte nach 9 + 11; Robert erklärte, dass Pick 9 bereits in der Marcel-Verhandlung steckte; Robert ergänzte Pick 12; Tim akzeptierte.
+- Marcel-Trade abgeschlossen: 08:50:32
+- Tim-Trade abgeschlossen: 08:53:00
+- Abstand: **2 Minuten 28 Sekunden**
 
-## Entscheidungskontext
-Robert wollte während des laufenden Startups einen früheren Pick und war parallel bereits in der Marcel-Verhandlung. Die Konstruktion musste daher Tims Preis erreichen, ohne den gleichzeitig benötigten Pick 9 aus dem Marcel-Pfad zu ziehen.
+Die rekonstruierte Strategie war ausdrücklich, **drei Picks hintereinander zu kontrollieren**. Genau diese Kontrolle war Teil des Reizes: Targets sichern, danach wieder Ruhe im Draft haben.
+
+Robert erinnert:
+- 7.01 war explizit für **Trey McBride** gedacht.
+- Danach sollte ein zweiter Top-TE folgen.
+- Der dritte kontrollierte Pick war für einen weiteren priorisierten Target gedacht, erinnert als **Kenneth Walker**.
+- 2024 hatte die Liga **zwei feste TE-Startplätze**.
+
+## Verhandlung
+Zeitgenössische Negotiation History:
+- Robert bot zunächst Picks 10 + 11.
+- Tim fand das leicht zu wenig.
+- Tim fragte nach 9 + 11.
+- Robert erklärte, Pick 9 stecke bereits in der Marcel-Verhandlung.
+- Robert ergänzte Pick 12.
+- Tim akzeptierte 10 + 11 + 12 für 7.01.
+
+Damit ist auch zeitgenössisch dokumentiert, dass Tim- und Marcel-Trade miteinander verzahnt waren.
 
 ## Rekonstruierte Thesen
-- **T1:** 7.01 war drei spätere Picks wert, weil der frühere Slot den Zugang zu Roberts priorisiertem Target-Fenster materiell verbesserte.
-- **T2:** Das Paket 10 + 11 + 12 erlaubte den Tim-Move, ohne die parallele Marcel-Verhandlung um Pick 9 zu zerstören.
+- **T1 – 4/5:** 7.01 war den Move wert, weil er den Dreierblock eröffnete und McBride absicherte.
+- **T2 – 4/5:** Drei deutlich spätere Picks waren ein akzeptabler Preis für unmittelbare Kontrolle über den priorisierten Draftbereich.
+- **T3 – 5/5:** Das Paket ohne Pick 9 hielt den parallelen Marcel-Trade am Leben und ermöglichte damit die Gesamtstrategie.
 
-Die damalige Thesis-Confidence ist nicht dokumentiert und wird nicht rückwirkend geschätzt.
+## Preisgefühl
+Robert erinnert **nicht**: „Wow, drei Picks, das ist teuer.“
 
-## Alternativen
-- Picks 10 + 11: von Tim als leicht zu wenig abgelehnt.
-- Picks 9 + 11: von Tim angesprochen, aber für Robert wegen der laufenden Marcel-Verhandlung nicht verfügbar.
+Eher:
+> Das sind spätere Picks; dafür kann ich den früheren Pick jetzt sofort bekommen.
+
+Es gab keinen erinnerbaren harten Walk-away-Preis. Gleichzeitig war Robert nicht völlig frei von Zweifel, ob die aggressive Konsolidierung wirklich optimal war.
 
 ## Decision State at Execution
-- Decision Confidence: unbekannt
-- Outcome Uncertainty: unbekannt
-- Gut Feeling: unbekannt
-- Decision Margin: unbekannt
-- Hard Price Ceiling: nicht rekonstruierbar
+- **Decision Confidence: 4/5**
+- Outcome Uncertainty: noch offen
+- Gut Feeling: **positive**
+- Decision Margin: **moderate**
+- Confidence-Treiber: Kontrolle des 7.01–7.03-Fensters und McBride sicher bekommen.
+- Zweifel: Verlust von drei späteren Picks / Frage, ob die starke Konsolidierung komplett richtig war.
+- Provenienz: `mixed_reconstruction`
 
 ## Linked Decision
-Direkt mit dem Marcel-Trade `sleeper-1134413786468802560` verknüpft. Die zeitgenössische Verhandlung nennt die parallele Nutzung von Pick 9 ausdrücklich.
+Direkt mit Marcel `sleeper-1134413786468802560` als `same_strategy` verknüpft.
 
-## Rekonstruktionsgrenzen
-Die damalige explizite Confidence, Outcome-Uncertainty, das Bauchgefühl und ein möglicher harter Walk-away-Preis sind in der aktuell verfügbaren zeitgenössischen Evidenz nicht enthalten. Spätere Spielergebnisse werden bewusst nicht zur Rekonstruktion verwendet.
+## Noch offen vor Seal
+- Outcome Uncertainty 1–5.
+- Ob 4/5 Decision Confidence deine Erinnerung exakt trifft.
+- Individuelle Abgrenzung zum Marcel-Trade im gemeinsamen Manöver.

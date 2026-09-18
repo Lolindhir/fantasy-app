@@ -11,9 +11,10 @@
     "reconstruction_confidence": 4,
     "outcome_firewall_acknowledged": true,
     "limitations": [
-      "The original numeric decision confidence, outcome uncertainty, gut feeling and hard price ceiling were not preserved in the currently available contemporary evidence.",
-      "Later player identities selected with the traded startup picks are asset-resolution evidence only and are excluded from the reconstructed ex-ante thesis.",
-      "The repository contains a distilled negotiation-history entry sourced from the contemporary WhatsApp export, not the raw chat export itself."
+      "The exact transaction and negotiation path are supported by canonical data and stored contemporary negotiation history, while the target-cluster rationale and decision state are reconstructed from Robert's 2026 recollection.",
+      "Robert remembers being very confident in the move and not perceiving three later picks as an alarming price, but he also remembers some uncertainty about whether the consolidation was ultimately the right call; outcome uncertainty is therefore still left open pending explicit calibration.",
+      "A separately defined hard walk-away ceiling is not remembered.",
+      "Later player performance is excluded from the ex-ante reconstruction."
     ]
   },
   "transaction": {
@@ -98,40 +99,69 @@
       "ex_ante_relevant": true,
       "evidence_confidence": 4,
       "note": "Distilled from the contemporary WhatsApp export: Robert first offered picks 10 + 11 for Tim's earlier pick; Tim wanted more and explored 9 + 11; Robert said pick 9 was already involved with Marcel; Robert added pick 12 and Tim accepted 10 + 11 + 12 for pick 7."
+    },
+    {
+      "evidence_id": "E3",
+      "source_type": "user_recollection",
+      "source_ref": "user_recollection:2026-09-18:current-chat:startup-round-7-cluster",
+      "as_of": "2026-09-18T17:46:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Robert remembers the two 28 Aug trades as one coordinated maneuver whose appeal was controlling three consecutive startup picks 7.01-7.03. The plan was to secure two top tight ends and Kenneth Walker, with 7.01 specifically intended to secure Trey McBride before using his own 7.02 on another TE."
+    },
+    {
+      "evidence_id": "E4",
+      "source_type": "repository_snapshot",
+      "source_ref": "source-data/providers/sleeper/leagues/1133541805053714432/league.json#roster_positions",
+      "as_of": null,
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "The 2024 league configuration had two dedicated TE starting slots, supporting the contemporaneous roster-building relevance of intentionally securing two top tight ends."
     }
   ],
   "decision_context": {
-    "objective": "Consolidate three later startup selections into Tim's earlier 7.01 selection during Robert's concentrated target window.",
+    "objective": "Acquire startup 7.01 as the first piece of a coordinated plan to control 7.01-7.03, secure Trey McBride, then use the next two controlled picks on another top TE and Kenneth Walker.",
     "season_phase": "draft",
-    "roster_context": "The startup draft was in progress, so the decision concerned target access and the trade-off between earlier selection quality and later selection quantity.",
+    "roster_context": "The 2024 league had two dedicated TE starting slots. Robert wanted to establish both TE positions with high-end dynasty options and then have positional stability, while also securing Kenneth Walker in the same controlled three-pick window.",
     "cap_salary_context": "No contemporaneous salary or cap rationale is preserved in the currently available evidence and none is used in this reconstruction.",
-    "team_window": "No stable contender/rebuild window can be responsibly reconstructed from the available startup-draft evidence.",
-    "market_context": "Tim rejected the initial two-pick construction as slightly too light, explored a structure involving Robert's pick 9, and accepted when Robert added pick 12 after explaining that pick 9 was already involved in the Marcel negotiation.",
-    "why_now": "Robert wanted Tim's earlier selection during the live startup and was simultaneously working another move-up with Marcel, indicating a concentrated target-window strategy.",
+    "team_window": "This was foundational startup roster construction: Robert was deliberately front-loading certainty at TE and RB rather than preserving more quantity in later startup rounds.",
+    "market_context": "Robert and Tim negotiated while Robert was simultaneously finalizing the Marcel 7.03 move. Tim rejected 10 + 11 as slightly too light, explored 9 + 11, and accepted 10 + 11 + 12 because pick 9 was already tied to Marcel. Robert remembers the combined maneuver as attractive because it let him control the entire 7.01-7.03 block.",
+    "why_now": "The live draft created a narrow opportunity to own three consecutive picks before the preferred TE/RB target window passed. Robert specifically wanted 7.01 for McBride and then intended to continue through his own 7.02 and the acquired 7.03.",
     "constraints": [
-      "Robert's pick 9 was already committed to the active Marcel negotiation and was not available for Tim's preferred 9 + 11 construction.",
-      "The acceptable bridge therefore had to use other later selections without breaking the simultaneous Marcel path."
+      "Robert's 9th-round pick was already committed to the simultaneous Marcel negotiation.",
+      "Tim required more than the initial two-pick offer, so Robert added a 12th-round pick.",
+      "The move sacrificed later selection quantity in exchange for immediate control of the target window."
     ]
   },
   "theses": [
     {
       "thesis_id": "T1",
-      "statement": "Acquiring Tim's 7.01 was worth giving up three later startup selections because the earlier slot materially improved Robert's access to his priority target window.",
-      "confidence": null,
+      "statement": "Controlling 7.01 was worth consolidating later picks because it completed the first leg of a three-pick 7.01-7.03 control block and secured Trey McBride before Robert's own 7.02 selection.",
+      "confidence": 4,
       "horizon": "immediate",
       "falsification_conditions": [
-        "Robert's priority target or equivalent target tier would have remained available through the later 10.05/11.02/12.05 selections.",
-        "The earlier 7.01 slot did not materially improve Robert's intended startup construction."
+        "Robert could have remained at his later picks and still reliably secured the same preferred TE/RB target cluster.",
+        "Control of 7.01 did not materially improve the probability of executing the intended three-pick sequence."
       ]
     },
     {
       "thesis_id": "T2",
-      "statement": "Using three later picks rather than the already-committed pick 9 preserved the simultaneously negotiated Marcel move while still meeting Tim's price for 7.01.",
-      "confidence": null,
+      "statement": "Three later startup picks were an acceptable price for 7.01 because Robert valued immediate access to the preferred target window more than preserving selection quantity in Rounds 10-12.",
+      "confidence": 4,
+      "horizon": "asset_lifecycle",
+      "falsification_conditions": [
+        "The lost later-pick quantity created more expected roster value than the earlier controlled selection.",
+        "A materially cheaper route to 7.01 was realistically available and known at the time."
+      ]
+    },
+    {
+      "thesis_id": "T3",
+      "statement": "Using 10.05 + 11.02 + 12.05 instead of the 9th-round pick preserved the simultaneous Marcel trade and therefore enabled the broader three-consecutive-pick strategy.",
+      "confidence": 5,
       "horizon": "immediate",
       "falsification_conditions": [
-        "The Marcel path did not require preserving pick 9.",
-        "A materially cheaper construction excluding pick 9 was available and known at the time."
+        "The Marcel trade did not actually depend on retaining the 9th-round pick.",
+        "The two negotiations were independent rather than parts of the same planned draft maneuver."
       ]
     }
   ],
@@ -150,27 +180,42 @@
   "protected_assets": [],
   "price_ceiling": {
     "known": false,
-    "description": "No explicit hard ceiling survives in the available contemporary evidence beyond Robert's willingness to add pick 12 and execute 10 + 11 + 12 for Tim's earlier selection.",
+    "description": "Robert does not remember a pre-defined hard ceiling. He remembers the executed 10.05 + 11.02 + 12.05 price as three later picks he was comfortable consolidating, not as an alarming overpay.",
     "execution_vs_ceiling": "unknown",
     "reason_if_above": null
   },
-  "known_risks": [],
+  "known_risks": [
+    {
+      "risk_id": "R1",
+      "description": "Consolidating three later picks into one earlier selection materially reduced later startup selection quantity.",
+      "likelihood": "high",
+      "impact": "medium"
+    },
+    {
+      "risk_id": "R2",
+      "description": "Robert remembers some contemporaneous uncertainty about whether the aggressive consolidation was ultimately the right move, even though he strongly liked the resulting control of the draft window.",
+      "likelihood": "medium",
+      "impact": "medium"
+    }
+  ],
   "decision_state_at_execution": {
-    "decision_confidence": null,
+    "decision_confidence": 4,
     "outcome_uncertainty": null,
-    "gut_feeling": "unknown",
-    "decision_margin": "unknown",
-    "confidence_rationale": "The contemporary evidence preserves the objective, rejected opening and final bridge, but not Robert's explicit confidence level.",
-    "primary_confidence_driver": "The need for an earlier selection in a concentrated target window is supported by the negotiation path; no original confidence rating is preserved.",
-    "primary_source_of_doubt": "No direct contemporaneous statement of Robert's doubts survives in the currently available evidence.",
-    "known_personal_biases": [],
-    "state_provenance": "reconstructed_contemporary_evidence"
+    "gut_feeling": "positive",
+    "decision_margin": "moderate",
+    "confidence_rationale": "Robert remembers the move as a 'mega move' because it helped him control three consecutive picks and lock in the desired target window. He did not experience the three later picks as an excessive price, but he also remembers some uncertainty about whether the consolidation was fully correct.",
+    "primary_confidence_driver": "Control of the 7.01-7.03 window, with 7.01 specifically securing McBride and enabling the planned two-TE-plus-Kenneth-Walker sequence.",
+    "primary_source_of_doubt": "Giving up three later selections for one earlier pick created some uncertainty about whether the consolidation sacrificed too much future draft quantity.",
+    "known_personal_biases": [
+      "Preference for locking in positional security and controlling a target window rather than tolerating the uncertainty of waiting for later picks."
+    ],
+    "state_provenance": "mixed_reconstruction"
   },
   "portfolio_links": [
     {
       "linked_trade_id": "sleeper-1134413786468802560",
       "relationship": "same_strategy",
-      "description": "The Tim negotiation explicitly references Robert's simultaneous Marcel pick discussion; both trades were used to move earlier within the same startup target window."
+      "description": "Executed 2 minutes 28 seconds after the Marcel trade. Together with Robert's own 7.02, the two trades gave Robert control of startup picks 7.01-7.03 for a planned sequence of two top TEs plus Kenneth Walker."
     }
   ],
   "review_plan": [],
