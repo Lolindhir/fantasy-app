@@ -42,12 +42,10 @@ function Resolve-LeagueTransactionDraftPickTypesInMemory {
     param(
         [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
-        [array]$transactions,
-
-        [string]$leagueID = (Get-Config).LeagueID
+        [array]$transactions
     )
 
-    $contexts = Get-TransactionDraftPickSleeperDraftContexts -leagueID $leagueID
+    $contexts = Get-TransactionDraftPickSleeperDraftContexts
     $result = Resolve-TransactionDraftPickTypesFromContexts `
         -transactions $transactions `
         -contexts $contexts
