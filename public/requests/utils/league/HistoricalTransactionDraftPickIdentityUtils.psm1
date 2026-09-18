@@ -9,7 +9,7 @@ try {
     Import-Module "$PSScriptRoot\DraftHistoryEmptyDefinitionsFix.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\LeagueUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -60,12 +60,9 @@ function Get-HistoricalTransactionDraftPickSleeperContexts {
             $tradedPicks = @()
 
             if (-not [string]::IsNullOrWhiteSpace($draftID)) {
-                try {
-                    $tradedPicks = ConvertTo-DraftSafeArray -value (Get-SleeperDraftTradedPicks -draftID $draftID)
-                }
-                catch {
-                    Write-Warning "Could not load traded picks for completed Sleeper draft '$draftID'. $_"
-                }
+                $tradedPicks = ConvertTo-DraftSafeArray -value (
+                    Get-CanonicalSleeperDraftTradedPicks -Season ([string]$definition.Season) -DraftID $draftID
+                )
             }
 
             $context = New-HistoricalTransactionDraftPickSleeperContext `

@@ -7,7 +7,7 @@ try {
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\LeagueUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -112,14 +112,8 @@ function Get-DraftHistoryTransactionsAllLocal {
 function Get-SleeperDraftDetailOrDefault {
     param([Parameter(Mandatory = $true)][object]$sleeperDraft)
 
-    $draftID = Get-DraftObjectProperty -object $sleeperDraft -propertyName "draft_id" -defaultValue $null
-    if ([string]::IsNullOrWhiteSpace($draftID)) { return $sleeperDraft }
-
-    try { return Get-SleeperDraft -draftID $draftID }
-    catch {
-        Write-Warning "Could not load Sleeper draft detail for '$draftID'. Falling back to draft list object. $_"
-        return $sleeperDraft
-    }
+    # Canonical draft payloads already contain the persisted detail contract.
+    return $sleeperDraft
 }
 
 function Get-DraftHistoryDisplaySuffix {
@@ -356,11 +350,8 @@ function Get-SleeperCompletedDraftDefinitionsForLeague {
     $season = [string]$league.season
     $definitions = @()
 
-    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-SleeperDrafts -leagueID $leagueID) }
-    catch {
-        Write-Warning "Could not load Sleeper drafts for league '$leagueID' / season '$season'. $_"
-        return @()
-    }
+    try { $sleeperDrafts = ConvertTo-DraftSafeArray -value (Get-CanonicalSleeperDrafts -Season $season) }
+    catch { throw "Could not load canonical drafts for historical season '$season'. $_" }
 
     if ($sleeperDrafts.Count -eq 0) { return @() }
 
