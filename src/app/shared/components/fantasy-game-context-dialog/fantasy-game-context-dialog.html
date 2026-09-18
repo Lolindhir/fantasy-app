@@ -246,6 +246,7 @@
                   *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left'))"
                   type="button"
                   class="fgc-mini-player"
+                  [class.fgc-mini-player--with-points]="hasMatchupGameScoring(row) && player.Points != null"
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
@@ -265,6 +266,9 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                  </span>
+                  <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
+                    {{ formatFantasyPoints(player.Points) }}
                   </span>
                 </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left')).length === 0" class="fgc-no-exposure">No scoring path</span>
@@ -279,6 +283,7 @@
                   *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right'))"
                   type="button"
                   class="fgc-mini-player"
+                  [class.fgc-mini-player--with-points]="hasMatchupGameScoring(row) && player.Points != null"
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
@@ -298,6 +303,9 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                  </span>
+                  <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
+                    {{ formatFantasyPoints(player.Points) }}
                   </span>
                 </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right')).length === 0" class="fgc-no-exposure">No scoring path</span>

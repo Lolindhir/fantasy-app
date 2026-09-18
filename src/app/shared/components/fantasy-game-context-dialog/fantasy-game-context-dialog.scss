@@ -553,6 +553,10 @@
   margin-top: 3px;
 }
 
+.fgc-mini-player--with-points {
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+}
+
 .fgc-mini-player img {
   width: 25px;
   height: 25px;
@@ -573,6 +577,20 @@
   font-size: 0.63rem;
   font-weight: 850;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fgc-mini-player > .fgc-mini-player-points {
+  display: block;
+  align-self: start;
+  justify-self: end;
+  min-width: 0;
+  padding-top: 1px;
+  color: #263247;
+  font-size: 0.61rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
   white-space: nowrap;
 }
 
@@ -653,6 +671,8 @@
   .fgc-timeline-meta { justify-content: flex-start; }
   .fgc-matchup-exposure-grid { gap: 5px; }
   .fgc-matchup-side { padding: 6px; }
+  .fgc-mini-player--with-points { gap: 4px; }
+  .fgc-mini-player > .fgc-mini-player-points { font-size: 0.58rem; }
 }
 
 @media (min-width: 680px) {
