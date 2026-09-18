@@ -10,51 +10,74 @@
 - Outcome-Firewall: bestätigt
 
 ## Exakte Transaktion
-Robert erhielt:
-- **Jaxson Dart**
+Robert erhielt **Jaxson Dart** und gab **Harold Fannin** ab. Keine Picks oder Add-ons.
 
-Robert gab ab:
-- **Harold Fannin**
+## Warum Dart?
+Dart war kein abstrakter QB-Lottoschein.
 
-Keine Picks oder Add-ons.
+Robert erinnert drei zusammenwirkende Motive:
+- 2025 war die Liga auf **zwei feste QB-Starter** umgestellt; junge QB-Tiefe wurde dadurch deutlich wichtiger.
+- Dart hatte vor dem Trade bereits mehrere NFL-Starts mit erkennbarer positiver Entwicklung gezeigt.
+- Dart war Quarterback der **New York Giants**, was für Robert als Giants-Fan zusätzlichen persönlichen Reiz hatte.
 
-## Zeitgenössische Negotiation History
-Aus dem WhatsApp-Export vom 24.10.2025 ist verdichtet erhalten:
+Die Giants-Präferenz wird als möglicher Bias transparent dokumentiert, nicht als objektive Value-Begründung.
 
-- Robert fragte Tim nach Jaxson Dart auf dessen Bank.
-- Robert bot Harold Fannin direkt für Dart an.
-- Robert pitchte Fannin als jungen TE für Tims vergleichsweise ältere TE-Situation und im Kontext von David Njoku.
-- Tim nahm **sofort** an und verlangte keinen Zusatz.
-- Tim erklärte, Dart sei wegen seiner QB-Tiefe entbehrlich; er nannte Maye, Williams, Love und Stroud als seine Zukunftsgruppe.
+## Warum Fannin?
+Fannin war für Robert **kein wertloser Waiver-Fund**. Robert hatte bereits gesehen, dass Fannin Potenzial hatte und "up and coming" war.
 
-## Kanonischer Kontext
-- 2025 hatte die Liga **zwei feste QB-Startplätze**.
-- Robert hatte Fannin am **10.09.2025 per Waiver** aufgenommen.
-- Tim hatte Dart im 2025 Rookie Draft an **4.03 (Overall 21)** ausgewählt.
-- Der Trade ist in Public History, kanonischem League Source-Data und Raw Sleeper vorhanden.
+Gleichzeitig war TE eine klare Depth-Position. Robert erinnert seinen damaligen Raum mit:
+- Trey McBride
+- Dalton Kincaid
+- Tyler Warren
+- Colston Loveland
+- Harold Fannin
 
-## Vorläufige Decision Thesis
-- **T1:** In einem 2-QB-Dynasty-Format konnte der Tausch Fannin → Dart langfristige QB-Optionality schaffen.
-- **T2:** Der Deal nutzte eine klare Roster-Asymmetrie: Tim hatte QB-Surplus; Fannin passte als junger TE zu seiner dünneren/älteren TE-Seite.
+Dadurch konnte ein guter junger TE gegen QB-Upside bewegt werden, ohne dass Robert seine TE-Kernposition neu öffnen musste.
 
-Die damalige Thesis-Confidence wird noch nicht rückwirkend geschätzt.
+## Zeitgenössische Verhandlung
+- Robert fragte Tim nach Dart.
+- Robert bot Fannin direkt.
+- Robert pitchte Fannin selbst als jungen aufkommenden TE und guten Fit zu Tims älterer TE/Njoku-Situation.
+- Tim nahm **sofort** an.
+- Tim verlangte keinen Zusatz und erklärte Dart wegen seiner QB-Tiefe für entbehrlich.
 
-## Alternative
-- Fannin behalten und Dart nicht kaufen.
+Roberts unmittelbare Reaktion war zweigeteilt:
+- **positiv:** "Cool, das klappt."
+- gleichzeitig leichter Ärger: **"Verdammt, vielleicht hätte ich weniger geben können."**
 
-Robert initiierte den Dart-Trade aktiv und bevorzugte die ausgeführte Eins-zu-eins-Struktur.
+Der Zweifel bezog sich damit stärker auf **Verhandlungseffizienz** als auf die grundsätzliche Entscheidung, Dart zu holen.
 
-## Noch offen
-- Warum wolltest du Dart konkret?
-- Wie hast du Dart und Fannin damals jeweils bewertet?
-- Fühlte sich Fannin-for-Dart **günstig, fair oder teuer** an?
-- Hat Tims sofortige Annahme bei dir irgendeine Reaktion ausgelöst?
-- Decision Confidence 1–5
-- Outcome Uncertainty 1–5
-- Gut Feeling
-- Decision Margin
-- Hard Price Ceiling / hättest du mehr als Fannin bezahlt?
-- Gab es Spieler/Picks, die du für Dart ausdrücklich nicht abgegeben hättest?
+## Preis / Ceiling
+Fannin-for-Dart fühlte sich **fair** an.
+
+Fannin war bereits ein starkes Angebot. Robert hätte vermutlich nicht materiell mehr bezahlt; denkbar wäre höchstens noch ein kleiner später Pick gewesen.
+
+- Hard Ceiling: ungefähr **Fannin + kleiner Late Pick**
+- Ausführung: **leicht unter Ceiling**
+- kein Interesse an einem deutlich größeren Paket
+
+## Decision Thesis
+- **T1 – 4/5:** Darts Entwicklung + junge QB-Optionality im 2-QB-Format rechtfertigten den Einsatz eines bedeutenden TE-Assets.
+- **T2 – 4/5:** Die enorme TE-Tiefe machte Fannin zum passenden Bridge-Asset, obwohl Robert ihn selbst bereits positiv bewertete.
+- **T3 – 4/5:** Der direkte Preis war fair, aber Tims Sofortannahme ließ offen, ob Robert etwas günstiger hätte eröffnen können.
+
+## Decision State at Execution
+- **Decision Confidence: 4/5**
+- **Outcome Uncertainty: 3/5**
+- **Gut Feeling: positive**
+- **Decision Margin: clear**
+
+Robert war bei der **Tradeentscheidung** relativ sicher. Die Unsicherheit lag stärker darin, ob Dart tatsächlich die erhoffte Entwicklung nimmt und ob Fannin als Opening vielleicht etwas großzügig war.
+
+## Bias / Risiko
+- Giants-Fandom als persönlicher Dart-Bias
+- kleines NFL-Sample bei Dart
+- Fannin selbst war bereits ein aufsteigendes TE-Asset
+- mögliche Overbid-/Anchoring-Frage durch Tims sofortige Annahme
+
+## Noch offen vor Seal
+- Bestätigung, ob `Decision Margin = clear` deine Erinnerung richtig trifft.
+- Die vage Erinnerung "Dart wurde mir im Rookie Draft weggepickt" bleibt **nicht** Teil der Kernthese, solange sie nicht besser belegt oder von dir sicherer erinnert wird.
 
 ## Seal-Status
 Noch nicht versiegelt.
