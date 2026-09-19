@@ -38,9 +38,9 @@ matchupBoundary:
   dedicatedContract: public/data/Matchups.json
   rule: >
     LeagueOverviewUtils no longer builds or loads a League.Matchups compatibility
-    snapshot. RequestLeague may load current provider matchup rows once as generation
-    evidence for Matchups.json and FantasyGameContext.json, but League.json must not
-    republish a duplicate matchup scoreboard contract.
+    snapshot. RequestLeague loads the active canonical matchup partition once as
+    generation evidence for Matchups.json and FantasyGameContext.json, but League.json
+    must not republish a duplicate matchup scoreboard contract.
 
 regressionCoverage:
   script: public/requests/LeagueTransactionPipelineRegressionTest.ps1
