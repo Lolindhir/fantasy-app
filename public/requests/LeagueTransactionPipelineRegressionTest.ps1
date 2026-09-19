@@ -57,15 +57,18 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "RequestLeague still builds the legacy League.Matchups snapshot."
 Assert-True -Condition $requestLeague.Contains("Update-MatchupHistoryReadModels") -Message "RequestLeague does not use the public Matchups history API."
 Assert-True -Condition $requestLeague.Contains("CanonicalLeagueCoreUtils.psm1") -Message "RequestLeague does not import the canonical League Core consumer."
+Assert-True -Condition $requestLeague.Contains("CanonicalPlayoffUtils.psm1") -Message "RequestLeague does not import the canonical Playoff consumer."
+Assert-True -Condition (-not $requestLeague.Contains("PlayoffUtils.psm1")) -Message "RequestLeague still imports the legacy live Playoff adapter."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current League metadata/settings."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current Members/Rosters team data."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-LeagueRaw") -Expected 0 -Message "RequestLeague still performs a direct current League provider read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-TeamsForLeague") -Expected 0 -Message "RequestLeague still performs the legacy current Teams provider read."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live Playoffs read until the separate productive canonical Playoff cutover checkpoint."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 0 -Message "RequestLeague still performs the legacy live Playoffs read."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentPlayoffs") -Expected 1 -Message "RequestLeague must use exactly one canonical current Playoffs read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live current-matchup score overlay."
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
-Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType')") -Message "RequestLeague change detection does not track canonical Settings and ScoringType structurally."
-Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical Settings/ScoringType comparison is not structural."
+Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
+Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
 
 # League overview read-model helpers normalize optional deadline settings and
 # deterministic kickoff facts without frontend derivation.
