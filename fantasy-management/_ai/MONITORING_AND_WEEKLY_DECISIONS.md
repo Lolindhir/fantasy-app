@@ -212,11 +212,11 @@ Wenn ein zuvor über den Managed-Roster-Pfad qualitativ beobachteter Spieler aus
 Der Übergang wird als eigener **Handoff-Kandidat** behandelt:
 
 1. Aktuellen Ownership-/Availability-Status vollständig neu auflösen. Eine Free-Agent-Begründung ist nur zulässig, wenn der aktuelle fail-closed Availability-Gate den Spieler positiv als verfügbar bestätigt.
-2. Die bisherige Managed-Roster-Baseline als historischen Kontext und Evidenz lesen, aber weder deren Target-ID noch deren Target-Shard als aktives Free-Agent-Target umwidmen.
+2. Die bisherige Managed-Roster-Baseline als historischen Kontext und Evidenz lesen. Der qualitative State darf dabei nicht doppelt kanonisch geführt werden: Der Storage-Contract erlaubt pro `entity_fingerprint` genau einen aktiven Target-Shard.
 3. Prüfen, ob die vor dem Drop bestehende These nach aktuellem Rollen-, Usage-, Injury-, Competition-, Markt- und Replacement-Kontext weiterhin materiell genug ist, um eine spätere Re-Add-/Stash-/Waiver-Entscheidung neu öffnen zu können.
-4. Wenn ja, ein separates stabiles `player-role-watch`-Target mit passender Free-Agent-Rationale, relevanten Profilen und Beobachtungshorizont vorschlagen. Die alte Managed-Roster-Shard bleibt als historische Baseline erhalten.
+4. Wenn ja, ein stabiles `player-role-watch`-Target mit passender Free-Agent-Rationale, relevanten Profilen und Beobachtungshorizont vorschlagen. Bei einem Target-ID-Wechsel muss der Handoff als kontrollierte Migration des **einen** kanonischen Shards erfolgen: neuer Ziel-Shard und Entfernung des bisherigen aktiven Shards gehören in denselben freigegebenen logischen Vorgang; die frühere Version bleibt über Git-Historie nachvollziehbar. Alternativ kann die bestehende stabile Target-ID weiterverwendet werden, wenn sie semantisch tragfähig bleibt.
 5. Wenn nein, keinen dauerhaften Watch nur aus Besitzhistorie, Sunk Cost oder früherem Nutzerinteresse erzeugen.
-6. Ein Handoff-Vorschlag darf Research und eine konkrete Persistierungsänderung vorbereiten, aber Scheduled Monitoring darf Target-Konfiguration oder qualitative Baseline niemals autonom schreiben. Die dauerhafte Aufnahme bleibt ausdrücklich genehmigungspflichtig.
+6. Ein Handoff-Vorschlag darf Research und eine konkrete Persistierungsänderung vorbereiten, aber Scheduled Monitoring darf Target-Konfiguration, Shard-Migration oder qualitative Baseline niemals autonom schreiben. Die dauerhafte Aufnahme bleibt ausdrücklich genehmigungspflichtig.
 7. Der Handoff selbst ist keine Re-Add-, Waiver- oder Roster-Empfehlung. Eine spätere Transaktion gehört weiterhin in den übergeordneten Weekly-/Roster-Entscheidungsprozess und muss den tatsächlichen Drop-/Slot-Preis des Gesamtrosters berücksichtigen.
 
 Ein Handoff-Vorschlag soll mindestens enthalten:
