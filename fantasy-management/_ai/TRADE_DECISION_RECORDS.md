@@ -171,17 +171,25 @@ The sealed Decision Record must preserve Robert's decision state independently f
 
 `decision_confidence` measures:
 
-> How convinced was Robert at execution that this was the right Mighty Giants decision?
+> How strongly was Robert convinced at execution that **this exact trade construction at this exact price** was the right available Mighty Giants decision?
+
+Do **not** interpret this as merely:
+
+> "Was Robert willing to make the trade?"
+
+An executed trade will naturally usually clear that weaker threshold. The purpose of the scale is to distinguish how strong the conviction was in the **specific construction, price and decision relative to realistic alternatives**.
 
 Use the 1–5 scale:
 
-1. **Very low** — mostly speculative; major unresolved doubt.
-2. **Low** — leaning toward the trade, but substantial doubt remains.
-3. **Moderate** — more likely right than wrong, with meaningful uncertainty.
-4. **High** — strong conviction; remaining doubts are secondary.
-5. **Very high** — unusually strong conviction that the decision is correct.
+1. **Very low** — Robert would execute only because of an unusual constraint, deadline or lack of alternatives; major unresolved doubt remains about the trade itself.
+2. **Low** — weak lean toward executing; Robert sees substantial reasons that the trade or price may be wrong.
+3. **Moderate / close call** — genuine decision tension. Robert chooses the trade, but a reasonable alternative path or walking away feels comparably defensible.
+4. **High** — clear conviction that the trade and price are right, but at least one substantial counterargument, valuation concern or alternative remains.
+5. **Very high** — unusually strong conviction that this exact trade at this price is the correct decision; Robert sees no meaningful alternative as comparably attractive.
 
-This is not a prediction that the acquired assets will outperform every outgoing asset.
+A completed trade may therefore still be a **3/5** or **4/5** decision-confidence trade. Execution itself is not evidence for 5/5 confidence.
+
+This is also not a prediction that the acquired assets will outperform every outgoing asset. That future-result width belongs in `outcome_uncertainty`, which is independent from decision confidence.
 
 ### Outcome uncertainty
 

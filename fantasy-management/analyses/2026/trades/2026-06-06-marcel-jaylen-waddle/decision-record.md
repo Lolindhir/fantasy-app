@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -63,9 +63,15 @@ Interessant für die Portfolio-Kette: Es war Roberts eigener FA 2.04, den er im 
 
 Die Trade-These war klar pro Waddle. Die hohe Outcome Uncertainty bildet ab, dass sowohl Waddle als auch Watson/Kincaid plausible, deutlich unterschiedliche Entwicklungspfade hatten.
 
-## Noch offen vor Seal
-Nur Roberts Bestätigung oder Anpassung von:
-**4/5 Confidence · 4/5 Outcome Uncertainty · positive · moderate**
+## Finaler Decision State
+- **Decision Confidence: 4/5**
+- **Outcome Uncertainty: 4/5**
+- **Gut Feeling: positive**
+- **Decision Margin: moderate**
+
+Die Überzeugung bezog sich auf die konkrete Konstruktion und den Preis: Waddle war klarer Target, die Rankings und Contender-Logik sprachen für ihn, und der FA-2nd schützte den Preis. Die hohe Outcome-Uncertainty blieb wegen Watsons Breakout-Pfad, Kincaids Upside und Waddles noch nicht bewiesener Broncos-Rolle bestehen.
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T06:40:00Z`
+- User confirmation: ja
