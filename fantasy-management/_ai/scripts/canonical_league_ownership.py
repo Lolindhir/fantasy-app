@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canonical League ownership adapter for Fantasy Management shadow validation.
+"""Canonical League ownership adapter for Fantasy Management consumers.
 
 This module exposes only shared league basis facts that already belong to
 `source-data/leagues/**`. It deliberately does not reproduce App/Fantasy
