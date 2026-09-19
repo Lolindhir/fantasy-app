@@ -101,12 +101,8 @@ The current synthetic test package covers:
 
 Synthetic fixtures test the process without imposing new rules on historical episodes.
 
-## Remaining implementation phases
+## Operational tracking
 
-Before normal production use:
+This file documents implemented commands and tool behavior only. It does not maintain the mutable rollout roadmap.
 
-1. run one deliberate manual end-to-end pilot with a new or throwaway episode;
-2. inspect the authored Content Map, take depth, article quality and generated package manually;
-3. adjust schemas, profiles or tooling only through explicit approved changes;
-4. only then define and approve the narrowly scoped GitHub Actions publication workflow;
-5. after the complete process is stable, regenerate Stoned Lack episode 571 and compare it with the previous extract.
+Current production-readiness progress, the real end-to-end pilot, manual quality review, Stoned Lack 571 comparison and any later publication-workflow handoff are tracked in GitHub Issue #621.
