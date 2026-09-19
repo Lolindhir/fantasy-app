@@ -215,8 +215,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 )
     ops.validate_catalog(merged_catalog)
 
-    league = real_load_json(root / config["sources"]["league"])
-    scoring = league.get("ScoringType") if isinstance(league.get("ScoringType"), dict) else {}
+    league_display = real_load_json(root / config["sources"]["league_display"])
+    scoring = (
+        league_display.get("ScoringType")
+        if isinstance(league_display.get("ScoringType"), dict)
+        else {}
+    )
 
     def load_json_with_merged_catalog(path: Path) -> Any:
         if Path(path).resolve() == base_catalog_path.resolve():
