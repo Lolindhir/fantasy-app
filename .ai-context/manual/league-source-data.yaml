@@ -340,14 +340,16 @@ phase2TargetedFreshnessScopes:
       - sleeper.league-rosters
       - sleeper.winners-bracket
       - sleeper.losers-bracket
+      - sleeper.matchups / exactly CurrentWeek
     canonicalWriteSet:
       - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
       - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
       - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
       - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
       - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
     excluded:
-      - matchups
+      - non-current matchup weeks
       - transactions
       - drafts
       - consumer publication
@@ -359,7 +361,7 @@ phase2TargetedFreshnessScopes:
       eventType: scheduler-sync-league-core
       timezone: Europe/Berlin
       cron: 2-59/10 * * * *
-      ordering: League Core :02 -> Transactions :05 -> Drafts :08 -> App League :10
+      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League :10
       monitoring: important / repository_dispatch / 45-minute staleness
       publication: rebuild-and-retry via delegated League Source producer
     weekStructureRule: >
@@ -391,7 +393,7 @@ phase2TargetedFreshnessScopes:
       live boundary until a separately authorized cutover.
 
   currentMatchups:
-    status: productive-scheduled-shadow-parity
+    status: productive-freshness-via-league-core-shadow-parity
     purpose: >
       Bounded current-season freshness for the single active Sleeper matchup week
       required by the current League/FantasyGameContext score overlay before a
@@ -418,15 +420,16 @@ phase2TargetedFreshnessScopes:
       - drafts
       - consumer publication
     workflow:
-      wrapper: .github/workflows/sync-league-matchups.yml
+      wrapper: .github/workflows/sync-league-core.yml
       delegatedProducer: .github/workflows/sync-league-source-data.yml
-      materializationScope: matchups
-      schedulerTarget: league-matchup-source
-      eventType: scheduler-sync-league-matchups
+      productionMaterializationScope: league-core
+      isolatedManualMaterializationScope: matchups
+      schedulerTarget: league-core-source
+      eventType: scheduler-sync-league-core
       timezone: Europe/Berlin
-      cron: 9-59/10 * * * *
-      ordering: League Core :02 -> Transactions :05 -> Drafts :08 -> Current Matchups :09 -> App League scheduler :10
-      monitoring: important / repository_dispatch / 45-minute staleness
+      cron: 2-59/10 * * * *
+      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League scheduler :10
+      monitoring: important / repository_dispatch + narrow push / 45-minute staleness
       publication: rebuild-and-retry via delegated League Source producer
     identityGuard: >
       Current Sleeper payload ProviderLeagueID/Season, bootstrap CurrentProviderLeagueID,
