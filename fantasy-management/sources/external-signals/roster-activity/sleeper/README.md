@@ -100,7 +100,7 @@ After every successful source refresh, the Fantasy Operations materialization wo
 fantasy-management/generated/operations/external-signal-relevance.json
 ```
 
-This is the human- and monitoring-facing dataset. It joins the Sleeper ID to the active Canonical Identity bridge in `source-data/nfl/identities/players.json`, takes current position and NFL team from `source-data/nfl/platform/sleeper/players.json`, and derives fantasy ownership from the Canonical League Roster/Reserve/Taxi union. `public/data/League.json` remains display enrichment for fantasy-team names/abbreviations; `public/data/Players.json` is not an input to this materializer.
+This is the human- and monitoring-facing dataset. It joins the Sleeper ID to the active Canonical Identity bridge in `source-data/nfl/identities/players.json`, takes fantasy-relevant position and current NFL team from `source-data/nfl/platform/sleeper/players.json`, and derives fantasy ownership from the Canonical League Roster/Reserve/Taxi union. `public/data/League.json` remains display enrichment for fantasy-team names/abbreviations; `public/data/Players.json` is not an input to this materializer. For position, the materializer prefers the first provider-ordered QB/RB/WR/TE/K value in Sleeper `FantasyPositions`; if none exists it falls back to Sleeper's raw `Position`. This preserves a fantasy-relevant WR label for dual-role players such as Travis Hunter while retaining raw IDP positions for defensive-only players.
 
 It includes:
 

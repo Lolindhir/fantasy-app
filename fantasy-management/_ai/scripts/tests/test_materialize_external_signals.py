@@ -14,6 +14,7 @@ from materialize_external_signals import (  # noqa: E402
     ExternalSignalMaterializationError,
     build,
     build_ownership,
+    canonical_fantasy_position,
     canonical_json,
     ownership_for,
     sha256,
@@ -206,6 +207,37 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 f"ownership drift for player {player['player_id']}",
             )
 
+
+
+    def test_canonical_fantasy_position_prefers_offensive_fantasy_role(self) -> None:
+        self.assertEqual(
+            "WR",
+            canonical_fantasy_position(
+                {
+                    "Position": "DB",
+                    "FantasyPositions": ["DB", "WR"],
+                }
+            ),
+        )
+        self.assertEqual(
+            "LB",
+            canonical_fantasy_position(
+                {
+                    "Position": "LB",
+                    "FantasyPositions": ["LB"],
+                }
+            ),
+        )
+        with self.assertRaisesRegex(
+            ExternalSignalMaterializationError,
+            "FantasyPositions must be an array",
+        ):
+            canonical_fantasy_position(
+                {
+                    "Position": "WR",
+                    "FantasyPositions": "WR",
+                }
+            )
 
     def test_legacy_players_do_not_control_canonical_identity_or_platform_fields(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -27,6 +27,7 @@ SIGNAL_TYPES = {"text", "number", "boolean"}
 NON_PLAYER_HANDLINGS = {"exclude"}
 ROSTER_SECTIONS = ("Roster", "Reserve", "Taxi")
 QUALITY_DOMAIN = "external_signal_materialization"
+FANTASY_RELEVANT_POSITIONS = {"QB", "RB", "WR", "TE", "K"}
 
 
 class ExternalSignalMaterializationError(RuntimeError):
@@ -403,6 +404,33 @@ def count_by_key(
 
 
 
+
+def canonical_fantasy_position(player: dict[str, Any] | None) -> str | None:
+    if not player:
+        return None
+    raw_position = text(player.get("Position"))
+    fantasy_positions = player.get("FantasyPositions")
+    if fantasy_positions is None:
+        return raw_position
+    if not isinstance(fantasy_positions, list):
+        raise ExternalSignalMaterializationError(
+            "Canonical Sleeper player FantasyPositions must be an array"
+        )
+
+    normalized = [
+        value
+        for value in (
+            text(position).upper() if text(position) else None
+            for position in fantasy_positions
+        )
+        if value
+    ]
+    for position in normalized:
+        if position in FANTASY_RELEVANT_POSITIONS:
+            return position
+    return raw_position or (normalized[0] if normalized else None)
+
+
 def build_canonical_identity_by_sleeper(
     document: Any,
 ) -> dict[str, dict[str, Any]]:
@@ -669,7 +697,7 @@ def build(
                 {
                     "player_id": player_id,
                     "name": text((identity or {}).get("Name")),
-                    "position": text((sleeper_player or {}).get("Position")),
+                    "position": canonical_fantasy_position(sleeper_player),
                     "nfl_team": text((sleeper_player or {}).get("Team")),
                     "identity_status": "resolved" if identity else "unresolved",
                     "ownership": owner,
