@@ -9,7 +9,7 @@ This document complements:
 - `PODCAST_PACKAGE_STORAGE.md`
 - `WORKFLOWS.md`
 
-It defines the future working pipeline. Existing episode packages remain valid and are not retroactively required to adopt this architecture unless they are explicitly reworked.
+It defines the durable working-pipeline architecture. Operative progress, remaining implementation work and handoff state are tracked in GitHub Issue #621. Existing episode packages remain valid and are not retroactively required to adopt this architecture unless they are explicitly reworked.
 
 ## Core outcome
 
@@ -339,24 +339,21 @@ This allows long extractions to survive interrupted chats and lets multiple agen
 
 ## Publication builder
 
-A future deterministic builder must:
+The implemented local builder must:
 
-1. trigger only for an explicit `ready_for_publish` request
-2. validate work identity, paths, Content Map and authored files
-3. aggregate one-file-per-take inputs into `takes.json`
-4. aggregate mention segment files into `mentions.json`
-5. concatenate article sections into `episode.md`
-6. calculate `index.json`
-7. run package, coverage and pipeline validation
-8. publish only when every blocking check passes
-9. write no partial published package on failure
-10. prevent recursive workflow triggering
-11. use an episode-scoped concurrency group
-12. commit the finished package directly to `main`
+1. validate an explicit `ready_for_publish` request and work identity;
+2. validate paths, Content Map and authored files;
+3. aggregate one-file-per-take inputs into `takes.json`;
+4. aggregate mention segment files into `mentions.json`;
+5. concatenate article sections into `episode.md`;
+6. calculate `index.json`;
+7. run package, coverage and pipeline validation;
+8. publish only when every blocking check passes;
+9. write no partial published package on failure.
 
 The builder is deterministic. It must not summarize, rewrite, infer or otherwise create editorial source content.
 
-The publication workflow requires a separately approved GitHub Actions change because it needs narrowly scoped `contents: write` access. Do not implement or modify the workflow until its trigger, path scope, failure behavior, recursion guard and commit identity have been explicitly approved.
+A future GitHub Actions publication workflow is a separate execution layer. If approved, it must trigger only for an explicit ready request, prevent recursive triggering, use episode-scoped concurrency and commit only the finished validated package to `main`. It requires a separately approved workflow change because it needs narrowly scoped `contents: write` access. Do not implement or modify that workflow until its trigger, path scope, failure behavior, recursion guard and commit identity have been explicitly approved.
 
 ## Validation scope
 
@@ -370,16 +367,10 @@ Validation applies to:
 
 Technical schemas still validate their declared schema versions. New editorial quality gates must not force archive-wide migration.
 
-## Implementation sequence
+## Operational tracking
 
-Implement this target in focused phases:
+This document does not maintain the mutable rollout checklist or current handoff.
 
-1. Content Map, work-status, take-item, article-manifest and process-review schemas
-2. Golden Set profile format and initial general profiles
-3. pipeline validation and deterministic local builder
-4. tests using synthetic fixtures and selected optional reference cases
-5. one manual end-to-end pilot episode
-6. publication workflow with explicit approval
-7. normal use on new episodes
+The canonical operative state for production-readiness work is GitHub Issue #621, including the real end-to-end pilot, manual quality review, Stoned Lack 571 comparison and any later publication-workflow handoff.
 
-Do not begin by reworking existing episodes. Build and prove the general pipeline first, then choose a pilot episode deliberately.
+Keep architecture and durable behavioral contracts here. Keep changing progress, priorities, remaining tasks, validation state and handoff in the Issue body according to the repository work-tracking contract.
