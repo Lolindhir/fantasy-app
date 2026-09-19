@@ -14,10 +14,38 @@ from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
     compare_to_app_league,
+    resolve_current_canonical_season,
 )
 
 
 class CanonicalLeagueOwnershipTests(unittest.TestCase):
+    def test_current_season_resolves_only_from_canonical_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            self.assertEqual(
+                2026,
+                resolve_current_canonical_season(
+                    root,
+                    canonical_league_id="test-league",
+                ),
+            )
+
+            manifest_path = root / "source-data/leagues/test-league/manifest.json"
+            manifest = self._read_json(manifest_path)
+            manifest["CurrentCanonicalLeagueSeasonID"] = "missing-season"
+            self._write_json(manifest_path, manifest)
+
+            with self.assertRaisesRegex(
+                CanonicalOwnershipError,
+                "must resolve to exactly one manifest season",
+            ):
+                resolve_current_canonical_season(
+                    root,
+                    canonical_league_id="test-league",
+                )
+
     def test_team_id_is_bridged_by_canonical_member_not_provider_roster_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -219,6 +247,19 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
                 "version": 3,
                 "canonical_league_id": "test-league",
                 "owners": owners,
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/manifest.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": "test-league-2026",
+                "Seasons": [
+                    {
+                        "CanonicalLeagueSeasonID": "test-league-2026",
+                        "Season": 2026,
+                    }
+                ],
             },
         )
         self._write_json(
