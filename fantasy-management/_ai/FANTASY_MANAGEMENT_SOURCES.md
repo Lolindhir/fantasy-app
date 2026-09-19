@@ -22,7 +22,7 @@ Important files:
 
 ## League source rules
 
-`public/data/League.json` is the primary current source for league settings, team rosters, reserve lists, taxi lists, starters when in season, draft-pick references, roster size, lineup settings, scoring, salary cap fields and current league phase/status fields.
+`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and every ownership consumer not yet migrated. The scoped exception is `managed-roster-signals.json`: since Checkpoint 6Q, TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership are read from Canonical League Source Data through `canonical_league_ownership.py`, while `League.json` supplies only current display enrichment for that consumer.
 
 The user team is:
 
@@ -31,13 +31,17 @@ The user team is:
 
 For Mighty Giants analysis, always identify the team by `TeamID = 1` in current data.
 
-### Canonical League ownership shadow
+### Canonical League ownership adapter and first productive consumer
 
-Checkpoint 6P establishes a **shadow-only** Canonical League ownership adapter at:
+Checkpoint 6P established the fail-closed Canonical League ownership adapter at:
 
 `fantasy-management/_ai/scripts/canonical_league_ownership.py`
 
-It reads the accepted current-season basis facts from:
+It resolves the active League season from:
+
+- `source-data/leagues/nfl-reise/manifest.json`
+
+and reads the accepted current-season basis facts from:
 
 - `source-data/leagues/nfl-reise/seasons/<season>/league.json`
 - `source-data/leagues/nfl-reise/seasons/<season>/members.json`
@@ -47,14 +51,20 @@ The stable Fantasy Management `TeamID` remains an application/Fantasy-owned iden
 `fantasy-management/league-context/owner-registry.json -> owners[].canonical_league_member_id`.
 Never infer `TeamID` from Sleeper `roster_id` or another provider roster identifier.
 
-The shadow adapter may expose current member/ownership basis facts needed for parity:
+The adapter exposes current member/ownership basis facts such as
 `Owner`/`OwnerID`, `Roster`, `Reserve`, `Taxi` and `Starter`.
 It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
 team windows or other App/Fantasy-derived state.
 
-Checkpoint 6P does not change the productive Fantasy Management source contract:
-`public/data/League.json` remains the active current league source until a separately authorized productive consumer cutover is completed.
-The shadow exists to prove canonical parity and a safe identity bridge before that cutover.
+Checkpoint 6Q activates this adapter for exactly one productive consumer:
+`fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py` / `managed-roster-signals.json`.
+That consumer now gets TeamID 1 membership and starter facts from Canonical League Source Data.
+`public/data/League.json` remains an input there only for current display enrichment (`Team`, `TeamAbbr`)
+and for the existing League-trigger/freshness bridge.
+
+This is **not** a wholesale Fantasy Management ownership cutover. External-signal ownership,
+league-wide player-signal ownership, FA-board ownership/capacity, Drafts, Transactions and all other
+unmigrated consumers retain their currently documented source contracts until separately migrated.
 
 
 ## Metadata source rules
