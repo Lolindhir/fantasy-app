@@ -4,14 +4,9 @@
 # ===========================================================================
 
 try {
-    # Import nested consumers first. Their -Force dependency imports can replace
-    # caller-visible module exports; import the modules used directly by this
-    # script afterwards so the Current-Season live boundary remains available.
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -27,36 +22,6 @@ catch {
 # ===========================================================================
 # 3. Funktionen
 # ===========================================================================
-
-function Get-CurrentSeasonData {
-    param(
-        [string]$leagueID = (Get-Config).LeagueID,
-        [AllowNull()]$previousSeasonStandings = $null
-    )
-
-    Write-Host "Fetching current standings data for league ID $leagueID..." -ForegroundColor Cyan
-
-    $league = Get-LeagueRaw -leagueID $leagueID
-    $teamData = Get-Teams -leagueID $leagueID
-    $standings = Get-StandingsRemote `
-        -leagueID $leagueID `
-        -teamData $teamData `
-        -regularSeasonGames ($league.settings.playoff_week_start - 1) `
-        -previousSeasonStandings $previousSeasonStandings
-
-    $output = Get-OutputStandingsForSeason `
-        -season $league.season `
-        -standingsPlayoffs $standings.Playoffs `
-        -standingsRegularSeason $standings.RegularSeason `
-        -awards $standings.Awards
-
-    Write-Host "Fetched current standings data for season $($league.season)." -ForegroundColor Cyan
-
-    return [PSCustomObject][ordered]@{
-        Output      = $output
-        IsCompleted = ([string]$league.status -eq "complete")
-    }
-}
 
 function Get-Compare {
     
@@ -120,8 +85,8 @@ try {
 
     Write-Host "Starting to fetch and build standings data..." -ForegroundColor Yellow
 
-    # Historical seasons are rebuilt from Canonical League source-data.
-    # Current season remains on the existing live Sleeper-backed path.
+    # Historical and current standings are rebuilt from Canonical League source-data.
+    # Current inputs are refreshed by the bounded League Core producer before app consumers.
     $canonicalLeagueID = "nfl-reise"
     $historicalStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID $canonicalLeagueID
     $historicalSeasons = @($historicalStandings.Seasons)
@@ -130,7 +95,9 @@ try {
         Sort-Object { [int]$_.Season } -Descending |
         Select-Object -First 1
 
-    $currentSeasonData = Get-CurrentSeasonData -previousSeasonStandings $previousSeasonStandings
+    $currentSeasonData = Get-CanonicalCurrentSeasonData `
+        -CanonicalLeagueID $canonicalLeagueID `
+        -PreviousSeasonStandings $previousSeasonStandings
 
     if (@($historicalSeasons | Where-Object { [string]$_.Season -eq [string]$currentSeasonData.Output.Season }).Count -gt 0) {
         throw "Current standings season '$($currentSeasonData.Output.Season)' is also present in canonical historical standings."
