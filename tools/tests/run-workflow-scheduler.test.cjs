@@ -23,6 +23,7 @@ const EXPECTED = {
   'sync-league-core.yml': { timezone: 'Europe/Berlin', cron: ['2-59/10 * * * *'] },
   'sync-league-transactions.yml': { timezone: 'Europe/Berlin', cron: ['5-59/10 * * * *'] },
   'sync-league-drafts.yml': { timezone: 'Europe/Berlin', cron: ['8-59/10 * * * *'] },
+  'sync-league-matchups.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
   'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'update-fantasycalc-rankings.yml': { timezone: 'Europe/Berlin', cron: ['32 5 * * *'] },
@@ -73,10 +74,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 22);
+  assert.equal(config.targets.length, 23);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 22);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 23);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -85,7 +86,7 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 19);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 20);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
@@ -132,6 +133,19 @@ test('draft source cadence is phased after transactions and before the next Leag
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-league-drafts.yml'), 'utf8');
   assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-league-source-data\.yml/);
   assert.match(workflow, /materialization_scope:\s+drafts/);
+});
+
+test('current matchup source cadence is phased after drafts and before the next League refresh', () => {
+  const config = loadConfig();
+  const target = config.targets.find((item) => item.id === 'league-matchup-source');
+  assert.ok(target);
+  assert.equal(target.workflow, 'sync-league-matchups.yml');
+  assert.equal(target.profile, 'productive');
+  assert.deepEqual(target.cron, ['9-59/10 * * * *']);
+
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-league-matchups.yml'), 'utf8');
+  assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-league-source-data\.yml/);
+  assert.match(workflow, /materialization_scope:\s+matchups/);
 });
 
 test('NFL game finality uses targeted seasonal polling and event-driven Games publication', () => {
