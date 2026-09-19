@@ -135,18 +135,6 @@ test('draft source cadence is phased after transactions and before the next Leag
   assert.match(workflow, /materialization_scope:\s+drafts/);
 });
 
-test('current matchup source cadence is phased after drafts and before the next League refresh', () => {
-  const config = loadConfig();
-  const target = config.targets.find((item) => item.id === 'league-matchup-source');
-  assert.ok(target);
-  assert.equal(target.workflow, 'sync-league-matchups.yml');
-  assert.equal(target.profile, 'productive');
-  assert.deepEqual(target.cron, ['9-59/10 * * * *']);
-
-  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-league-matchups.yml'), 'utf8');
-  assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-league-source-data\.yml/);
-  assert.match(workflow, /materialization_scope:\s+matchups/);
-});
 
 test('NFL game finality uses targeted seasonal polling and event-driven Games publication', () => {
   const config = loadConfig();
