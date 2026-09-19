@@ -323,6 +323,7 @@ productiveAcceptance:
     currentLeagueCoreScope: productive-freshness-scheduled
     currentLeagueCoreConsumer: canonical-active / RequestLeague League+Teams core
     currentPlayoffBracketConsumer: canonical-active / RequestLeague Get-CanonicalCurrentPlayoffs
+    currentMatchupConsumer: canonical-shadow-parity / productive-Get-FgcCurrentMatchupLoad-still-live
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -388,6 +389,61 @@ phase2TargetedFreshnessScopes:
       Get-CanonicalCurrentPlayoffs while preserving the public League.json::Playoffs
       shape. The current matchup score overlay intentionally remains on its separate
       live boundary until a separately authorized cutover.
+
+  currentMatchups:
+    status: productive-scheduled-shadow-parity
+    purpose: >
+      Bounded current-season freshness for the single active Sleeper matchup week
+      required by the current League/FantasyGameContext score overlay before a
+      separately authorized productive consumer cutover.
+    cli:
+      acquisition: tools/league_source_data.py sync --current-matchup-scope
+      materialization: tools/league_source_data.py materialize --materialization-scope matchups --current-matchup-scope
+    currentWeekRule: >
+      Reuse the existing source-owned current-week resolver: validate bootstrap,
+      manifest and provider identity; use settings.leg when positive, otherwise
+      last_scored_leg + 1, fall back to week 1 and clamp to the canonical NFL
+      regular-season week ceiling. The matchup scope writes only CurrentWeek,
+      unlike the transaction scope which intentionally keeps current+previous.
+    rawDatasets:
+      - sleeper.league
+      - sleeper.matchups
+    canonicalWriteSet:
+      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
+    excluded:
+      - members
+      - rosters
+      - playoff brackets
+      - transactions
+      - drafts
+      - consumer publication
+    workflow:
+      wrapper: .github/workflows/sync-league-matchups.yml
+      delegatedProducer: .github/workflows/sync-league-source-data.yml
+      materializationScope: matchups
+      schedulerTarget: league-matchup-source
+      eventType: scheduler-sync-league-matchups
+      timezone: Europe/Berlin
+      cron: 9-59/10 * * * *
+      ordering: League Core :02 -> Transactions :05 -> Drafts :08 -> Current Matchups :09 -> App League scheduler :10
+      monitoring: important / repository_dispatch / 45-minute staleness
+      publication: rebuild-and-retry via delegated League Source producer
+    identityGuard: >
+      Current Sleeper payload ProviderLeagueID/Season, bootstrap CurrentProviderLeagueID,
+      manifest current ProviderLeagueID/CanonicalLeagueSeasonID and the canonical NFL
+      week ceiling must agree. Drift or an invalid requested week fails closed.
+    parity:
+      - bounded planner reproduces exactly the accepted current canonical matchup partition
+      - CanonicalMatchupUtils reconstructs persisted Sleeper provider semantics without live reads
+      - reconstructed rows feed ConvertTo-FgcCurrentMatchupFacts identically to persisted raw Sleeper rows
+    consumerStatus: >
+      RequestLeague still performs exactly one Get-FgcCurrentMatchupLoad live provider
+      read in checkpoint 6N. Productive cutover is intentionally deferred.
+    publicationOrderingNote: >
+      The :09 scheduler provides bounded source freshness but 6N does not make App League
+      correctness depend on completion before the :10 scheduler tick because the app remains
+      live. A later productive cutover should add a narrow App League push trigger for canonical
+      current-matchup partition changes so publication remains race-safe rather than timing-only.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
