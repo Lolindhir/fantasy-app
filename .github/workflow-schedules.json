@@ -162,6 +162,16 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
+      "id": "league-matchup-source",
+      "workflow": "sync-league-matchups.yml",
+      "path": ".github/workflows/sync-league-matchups.yml",
+      "eventType": "scheduler-sync-league-matchups",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": ["9-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
+    },
+    {
       "id": "source-data-readiness",
       "workflow": "source-data-readiness.yml",
       "path": ".github/workflows/source-data-readiness.yml",
