@@ -23,6 +23,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from canonical_league_ownership import (
+    CanonicalOwnershipError,
+    build_canonical_ownership_snapshot,
+    resolve_current_canonical_season,
+)
+
 
 SCHEMA_VERSION = 1
 CATALOG_SCHEMA_VERSION = 1
@@ -603,12 +609,12 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     if config.get("schema_version") != 2:
         raise MaterializationError("Unexpected input materialization config schema version")
     core_sources = config["sources"]
-    league_path = root / core_sources["league"]
+    league_display_path = root / core_sources["league_display"]
     players_path = root / core_sources["players"]
     timestamps_path = root / core_sources["timestamps"]
     catalog_path = root / config["source_catalog"]
 
-    league = load_json(league_path)
+    league_display = load_json(league_display_path)
     players = load_json(players_path)
     timestamps = load_json(timestamps_path)
     catalog = load_json(catalog_path)
@@ -617,14 +623,60 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         raise MaterializationError("Players input must be a JSON array")
 
     managed_config = config["managed_team"]
+    if managed_config.get("identity_field") != "TeamID":
+        raise MaterializationError(
+            "Canonical managed-roster cutover requires managed_team.identity_field = TeamID"
+        )
     team_id = str(managed_config["team_id"])
-    teams = league.get("Teams") or []
+
+    canonical_config = config.get("canonical_league") or {}
+    canonical_league_id = optional_text(canonical_config.get("canonical_league_id"))
+    if not canonical_league_id:
+        raise MaterializationError(
+            "canonical_league.canonical_league_id is required for managed-roster ownership"
+        )
+    try:
+        canonical_season = resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+        canonical_ownership = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id=canonical_league_id,
+            season=canonical_season,
+        )
+    except CanonicalOwnershipError as exc:
+        raise MaterializationError(
+            f"Canonical managed-roster ownership is unavailable: {exc}"
+        ) from exc
+
+    canonical_teams = canonical_ownership.get("Teams") or []
     managed_team = next(
-        (team for team in teams if str(team.get(managed_config["identity_field"])) == team_id),
+        (team for team in canonical_teams if str(team.get("TeamID")) == team_id),
         None,
     )
     if managed_team is None:
-        raise MaterializationError(f"Managed team {team_id} not found")
+        raise MaterializationError(
+            f"Managed team {team_id} not found in canonical ownership snapshot"
+        )
+
+    display_teams = (
+        league_display.get("Teams")
+        if isinstance(league_display, dict) and isinstance(league_display.get("Teams"), list)
+        else []
+    )
+    managed_display_team = next(
+        (
+            team
+            for team in display_teams
+            if str(team.get(managed_config["identity_field"])) == team_id
+        ),
+        None,
+    )
+    if managed_display_team is None:
+        raise MaterializationError(
+            f"Managed team {team_id} not found in League.json display enrichment"
+        )
 
     loaded_sources = [
         resolve_catalog_source(root, definition)
@@ -634,8 +686,35 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
 
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
+    canonical_league_root = (
+        root
+        / "source-data"
+        / "leagues"
+        / canonical_league_id
+    )
+    canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     source_files = [
-        source_file("league", league_path, root, league_timestamp),
+        source_file("league_display", league_display_path, root, league_timestamp),
+        source_file(
+            "canonical_league_manifest",
+            canonical_league_root / "manifest.json",
+            root,
+        ),
+        source_file(
+            "canonical_league",
+            canonical_season_root / "league.json",
+            root,
+        ),
+        source_file(
+            "canonical_league_members",
+            canonical_season_root / "members.json",
+            root,
+        ),
+        source_file(
+            "canonical_league_rosters",
+            canonical_season_root / "rosters.json",
+            root,
+        ),
         source_file("players", players_path, root, player_timestamp),
         source_file(
             "timestamps",
@@ -787,9 +866,9 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         "generated_at": generated_at,
         "input_fingerprint": input_fingerprint,
         "managed_team": {
-            "team_id": managed_team.get(managed_config["identity_field"]),
-            "name": optional_text(managed_team.get("Team")),
-            "abbreviation": optional_text(managed_team.get("TeamAbbr")),
+            "team_id": managed_team.get("TeamID"),
+            "name": optional_text(managed_display_team.get("Team")),
+            "abbreviation": optional_text(managed_display_team.get("TeamAbbr")),
             "player_count": len(output_players),
         },
         "sources": source_records,
