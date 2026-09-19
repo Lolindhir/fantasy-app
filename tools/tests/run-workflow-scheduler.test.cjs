@@ -23,7 +23,6 @@ const EXPECTED = {
   'sync-league-core.yml': { timezone: 'Europe/Berlin', cron: ['2-59/10 * * * *'] },
   'sync-league-transactions.yml': { timezone: 'Europe/Berlin', cron: ['5-59/10 * * * *'] },
   'sync-league-drafts.yml': { timezone: 'Europe/Berlin', cron: ['8-59/10 * * * *'] },
-  'sync-league-matchups.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
   'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'update-fantasycalc-rankings.yml': { timezone: 'Europe/Berlin', cron: ['32 5 * * *'] },
