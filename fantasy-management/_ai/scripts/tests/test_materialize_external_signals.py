@@ -50,6 +50,10 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 "fantasy_free_agent",
                 players["5"]["ownership"]["status"],
             )
+            self.assertEqual("QB One", players["1"]["name"])
+            self.assertEqual("QB", players["1"]["position"])
+            self.assertEqual("AAA", players["1"]["nfl_team"])
+            self.assertEqual("resolved", players["1"]["identity_status"])
             self.assertEqual(
                 "unresolved",
                 players["999"]["identity_status"],
@@ -201,6 +205,75 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 player["ownership"],
                 f"ownership drift for player {player['player_id']}",
             )
+
+
+    def test_legacy_players_do_not_control_canonical_identity_or_platform_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+
+            data, _ = build(root, config_path)
+            players = {player["player_id"]: player for player in data["players"]}
+            self.assertEqual("QB One", players["1"]["name"])
+            self.assertEqual("QB", players["1"]["position"])
+            self.assertEqual("AAA", players["1"]["nfl_team"])
+            self.assertEqual("resolved", players["1"]["identity_status"])
+
+            source_ids = {source["id"] for source in data["sources"]}
+            self.assertIn("canonical_player_identities", source_ids)
+            self.assertIn("canonical_sleeper_players", source_ids)
+            self.assertNotIn("players", source_ids)
+
+    def test_duplicate_active_canonical_sleeper_identity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+            identity_path = root / "source-data/nfl/identities/players.json"
+            identities = json.loads(identity_path.read_text(encoding="utf-8"))
+            identities["Players"].append(
+                {
+                    "CanonicalPlayerID": "canonical-duplicate",
+                    "Name": "Duplicate One",
+                    "IDs": {"Sleeper": "1"},
+                }
+            )
+            self._write_json(identity_path, identities)
+
+            with self.assertRaisesRegex(
+                ExternalSignalMaterializationError,
+                "duplicate active Sleeper ID 1",
+            ):
+                build(root, config_path)
+
+    def test_duplicate_canonical_sleeper_platform_id_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"].append(dict(sleeper["Records"][0]))
+            self._write_json(sleeper_path, sleeper)
+
+            with self.assertRaisesRegex(
+                ExternalSignalMaterializationError,
+                "duplicate SleeperPlayerID 1",
+            ):
+                build(root, config_path)
+
+    def test_canonical_sleeper_platform_identity_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["CanonicalPlayerID"] = "canonical-other"
+            self._write_json(sleeper_path, sleeper)
+
+            with self.assertRaisesRegex(
+                ExternalSignalMaterializationError,
+                "identity mismatch for 1",
+            ):
+                build(root, config_path)
 
     def test_duplicate_source_ids_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -367,26 +440,69 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             ],
         )
         self._write_json(
+            root / "source-data/nfl/identities/players.json",
+            {
+                "SchemaVersion": 2,
+                "Players": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "Name": "QB One",
+                        "Position": "QB",
+                        "LatestTeam": "AAA",
+                        "IDs": {"Sleeper": "1"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-4",
+                        "Name": "WR Four",
+                        "Position": "WR",
+                        "LatestTeam": "BBB",
+                        "IDs": {"Sleeper": "4"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-5",
+                        "Name": "WR Five",
+                        "Position": "WR",
+                        "LatestTeam": "CCC",
+                        "IDs": {"Sleeper": "5"},
+                    },
+                ],
+            },
+        )
+        self._write_json(
+            root / "source-data/nfl/platform/sleeper/players.json",
+            {
+                "SchemaVersion": 2,
+                "Records": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "SleeperPlayerID": "1",
+                        "Position": "QB",
+                        "Team": "AAA",
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-4",
+                        "SleeperPlayerID": "4",
+                        "Position": "WR",
+                        "Team": "BBB",
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-5",
+                        "SleeperPlayerID": "5",
+                        "Position": "WR",
+                        "Team": "CCC",
+                    },
+                ],
+            },
+        )
+        self._write_json(
             root / "public/data/Players.json",
             [
                 {
                     "ID": "1",
-                    "Name": "QB One",
-                    "Position": "QB",
-                    "TeamAbbr": "AAA",
-                },
-                {
-                    "ID": "4",
-                    "Name": "WR Four",
-                    "Position": "WR",
-                    "TeamAbbr": "BBB",
-                },
-                {
-                    "ID": "5",
-                    "Name": "WR Five",
-                    "Position": "WR",
-                    "TeamAbbr": "CCC",
-                },
+                    "Name": "Legacy Wrong Name",
+                    "Position": "RB",
+                    "TeamAbbr": "ZZZ",
+                }
             ],
         )
         self._write_json(
@@ -486,7 +602,12 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 },
                 "sources": {
                     "league_display": "public/data/League.json",
-                    "players": "public/data/Players.json",
+                    "canonical_player_identities": (
+                        "source-data/nfl/identities/players.json"
+                    ),
+                    "canonical_sleeper_players": (
+                        "source-data/nfl/platform/sleeper/players.json"
+                    ),
                     "base_quality": (
                         "fantasy-management/generated/operations/"
                         "data-quality.json"
