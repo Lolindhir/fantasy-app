@@ -111,6 +111,99 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
+            "fantasy-management/league-context/owner-registry.json",
+            {
+                "version": 3,
+                "canonical_league_id": "test-league",
+                "owners": [
+                    {
+                        "name": "Owner One",
+                        "team_id": 1,
+                        "canonical_league_member_id": "member-1",
+                    },
+                    {
+                        "name": "Owner Two",
+                        "team_id": 2,
+                        "canonical_league_member_id": "member-2",
+                    },
+                ],
+            },
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test-league/manifest.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": "test-league-2026",
+                "Seasons": [
+                    {
+                        "CanonicalLeagueSeasonID": "test-league-2026",
+                        "Season": 2026,
+                    }
+                ],
+            },
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test-league/seasons/2026/league.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "Season": 2026,
+                "Settings": {"num_teams": 2},
+            },
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test-league/seasons/2026/members.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": "member-1",
+                    "DisplayName": "owner-one",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": "user-1"}
+                    ],
+                },
+                {
+                    "CanonicalLeagueMemberID": "member-2",
+                    "DisplayName": "owner-two",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": "user-2"}
+                    ],
+                },
+            ],
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test-league/seasons/2026/rosters.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": "member-1",
+                    "CanonicalLeagueRosterID": "roster-1",
+                    "ProviderOwnerUserID": "user-1",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderRosterID": "91"}
+                    ],
+                    "Players": [self.canonical_player("1")],
+                    "Reserve": [],
+                    "Taxi": [],
+                    "Starters": [self.canonical_player("1")],
+                },
+                {
+                    "CanonicalLeagueMemberID": "member-2",
+                    "CanonicalLeagueRosterID": "roster-2",
+                    "ProviderOwnerUserID": "user-2",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderRosterID": "92"}
+                    ],
+                    "Players": [],
+                    "Reserve": [],
+                    "Taxi": [],
+                    "Starters": [],
+                },
+            ],
+        )
+        self.write_json(
+            root,
             "public/data/Players.json",
             [
                 {
@@ -312,8 +405,9 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 "schema_version": 1,
                 "materialization_id": "test-player-signals",
                 "managed_team": {"team_id": 1},
+                "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
-                    "league": "public/data/League.json",
+                    "league_display": "public/data/League.json",
                     "players": "public/data/Players.json",
                     "timestamps": "public/data/Timestamps.json",
                     "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json",
@@ -324,6 +418,15 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             },
         )
         return config_path
+
+    @staticmethod
+    def canonical_player(player_id: str) -> dict[str, object]:
+        return {
+            "CanonicalPlayerID": f"canonical-{player_id}",
+            "ProviderMappings": [
+                {"Provider": "Sleeper", "ProviderPlayerID": player_id}
+            ],
+        }
 
     def test_builds_free_agent_kicker_signals_without_averaging_provider_points(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -356,6 +459,31 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual(projections["providers"]["fftoday"]["projected_fantasy_points"], 150)
             self.assertEqual(projections["providers"]["cbs_sports"]["projected_fantasy_points"], 145)
             self.assertNotIn("projected_fantasy_points", projections["summary"])
+
+    def test_legacy_league_rosters_do_not_control_player_signal_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            league_path = root / "public/data/League.json"
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            league["Teams"][0]["Roster"] = []
+            league["Teams"][1]["Roster"] = ["1", "2"]
+            league_path.write_text(json.dumps(league, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            players = {player["player_id"]: player for player in result["players"]}
+
+            self.assertEqual("mighty_giants", players["1"]["ownership"]["status"])
+            self.assertEqual("fantasy_free_agent", players["2"]["ownership"]["status"])
+            self.assertIn("league_owned", players["1"]["population_reasons"])
+            self.assertNotIn("league_owned", players["2"]["population_reasons"])
+            self.assertEqual("Mighty Giants", result["managed_team"]["name"])
+
+            source_ids = {source["id"] for source in result["sources"]}
+            self.assertIn("league_display", source_ids)
+            self.assertIn("canonical_league_manifest", source_ids)
+            self.assertIn("canonical_league_rosters", source_ids)
 
     def test_preserves_top_n_absence_and_nominal_role_semantics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -390,6 +518,40 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         self.assertTrue(
             any(player["projections"]["summary"]["listed_provider_count"] >= 1 for player in kickers)
         )
+
+    def test_current_repository_ownership_and_population_reasons_match_published_state(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        config_path = root / "fantasy-management/automation/player-signal-materialization.json"
+        published_path = root / "fantasy-management/generated/operations/player-signals.json"
+
+        result = MODULE.build(root, config_path)
+        published = json.loads(published_path.read_text(encoding="utf-8"))
+        published_by_id = {
+            str(player["player_id"]): player
+            for player in published["players"]
+        }
+        result_by_id = {
+            str(player["player_id"]): player
+            for player in result["players"]
+        }
+
+        common_ids = set(published_by_id) & set(result_by_id)
+        self.assertGreater(len(common_ids), 100)
+        for player_id in common_ids:
+            published_player = published_by_id[player_id]
+            result_player = result_by_id[player_id]
+            self.assertEqual(
+                published_player["ownership"],
+                result_player["ownership"],
+                f"ownership drift for player {player_id}",
+            )
+            self.assertEqual(
+                "league_owned" in published_player["population_reasons"],
+                "league_owned" in result_player["population_reasons"],
+                f"league_owned population reason drift for player {player_id}",
+            )
+
+        self.assertEqual(published["managed_team"], result["managed_team"])
 
     def test_production_workflow_materializes_player_signals_after_external_signals(self) -> None:
         root = SCRIPT_PATH.parents[3]
