@@ -157,6 +157,18 @@ dataSources:
         - standings enrichment
         - Decision Windows and Matchups derivation
         - salary-cap and lifecycle derivation
+      persistenceDetection:
+        scalarFieldsInclude: LeagueIDPrevious
+        structuredFields:
+          - Settings
+          - ScoringType
+        note: >
+          RequestLeague change detection must treat canonical source-owned Settings
+          and ScoringType as publish-relevant structured fields. The repository
+          parity regression excludes only settings.daily_waivers_last_ran because
+          League Core and App League intentionally refresh at different points in
+          the ten-minute cycle; productive RequestLeague still persists that field
+          when its value changes.
     timestamped: true
     backup: true
 
