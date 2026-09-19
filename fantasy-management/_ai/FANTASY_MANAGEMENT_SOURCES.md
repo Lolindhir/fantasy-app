@@ -31,6 +31,32 @@ The user team is:
 
 For Mighty Giants analysis, always identify the team by `TeamID = 1` in current data.
 
+### Canonical League ownership shadow
+
+Checkpoint 6P establishes a **shadow-only** Canonical League ownership adapter at:
+
+`fantasy-management/_ai/scripts/canonical_league_ownership.py`
+
+It reads the accepted current-season basis facts from:
+
+- `source-data/leagues/nfl-reise/seasons/<season>/league.json`
+- `source-data/leagues/nfl-reise/seasons/<season>/members.json`
+- `source-data/leagues/nfl-reise/seasons/<season>/rosters.json`
+
+The stable Fantasy Management `TeamID` remains an application/Fantasy-owned identity. Its bridge to Canonical League data is explicit through
+`fantasy-management/league-context/owner-registry.json -> owners[].canonical_league_member_id`.
+Never infer `TeamID` from Sleeper `roster_id` or another provider roster identifier.
+
+The shadow adapter may expose current member/ownership basis facts needed for parity:
+`Owner`/`OwnerID`, `Roster`, `Reserve`, `Taxi` and `Starter`.
+It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
+team windows or other App/Fantasy-derived state.
+
+Checkpoint 6P does not change the productive Fantasy Management source contract:
+`public/data/League.json` remains the active current league source until a separately authorized productive consumer cutover is completed.
+The shadow exists to prove canonical parity and a safe identity bridge before that cutover.
+
+
 ## Metadata source rules
 
 `public/data/Metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
