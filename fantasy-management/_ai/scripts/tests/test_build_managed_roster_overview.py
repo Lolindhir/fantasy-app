@@ -146,6 +146,21 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             self.assertFalse(by_name["Rookie Runner"]["counts_as_general_churn"])
             self.assertTrue(by_name["Starting Receiver"]["counts_as_general_churn"])
 
+    def test_repository_current_overview_semantics_match_published_output(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+        published = json.loads(
+            (root / "fantasy-management/generated/operations/managed-roster-overview.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        for document in (result, published):
+            document.pop("input_fingerprint", None)
+            document.pop("sources", None)
+
+        self.assertEqual(published, result)
+
     def _write_fixture(self, root: Path) -> None:
         for path in (
             "public/data",
