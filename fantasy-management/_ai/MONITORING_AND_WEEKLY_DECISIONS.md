@@ -204,6 +204,30 @@ Die Aufnahme selbst ist eine **dauerhafte Konfigurationsänderung** und bleibt g
 
 Diese Regel soll insbesondere verhindern, dass neu entdeckte Kandidaten nach einem einzelnen Daily Run wieder aus dem qualitativen Blickfeld fallen, obwohl sich eine echte Rollen- oder Opportunity-These entwickelt hat.
 
+
+### Drop-Handoff aus dem Managed Roster
+
+Wenn ein zuvor über den Managed-Roster-Pfad qualitativ beobachteter Spieler aus dem verwalteten Roster gedroppt wird, darf seine bereits bestätigte Rollen-/Opportunity-These nicht allein durch den Ownership-Wechsel aus dem qualitativen Blickfeld verschwinden.
+
+Der Übergang wird als eigener **Handoff-Kandidat** behandelt:
+
+1. Aktuellen Ownership-/Availability-Status vollständig neu auflösen. Eine Free-Agent-Begründung ist nur zulässig, wenn der aktuelle fail-closed Availability-Gate den Spieler positiv als verfügbar bestätigt.
+2. Die bisherige Managed-Roster-Baseline als historischen Kontext und Evidenz lesen, aber weder deren Target-ID noch deren Target-Shard als aktives Free-Agent-Target umwidmen.
+3. Prüfen, ob die vor dem Drop bestehende These nach aktuellem Rollen-, Usage-, Injury-, Competition-, Markt- und Replacement-Kontext weiterhin materiell genug ist, um eine spätere Re-Add-/Stash-/Waiver-Entscheidung neu öffnen zu können.
+4. Wenn ja, ein separates stabiles `player-role-watch`-Target mit passender Free-Agent-Rationale, relevanten Profilen und Beobachtungshorizont vorschlagen. Die alte Managed-Roster-Shard bleibt als historische Baseline erhalten.
+5. Wenn nein, keinen dauerhaften Watch nur aus Besitzhistorie, Sunk Cost oder früherem Nutzerinteresse erzeugen.
+6. Ein Handoff-Vorschlag darf Research und eine konkrete Persistierungsänderung vorbereiten, aber Scheduled Monitoring darf Target-Konfiguration oder qualitative Baseline niemals autonom schreiben. Die dauerhafte Aufnahme bleibt ausdrücklich genehmigungspflichtig.
+7. Der Handoff selbst ist keine Re-Add-, Waiver- oder Roster-Empfehlung. Eine spätere Transaktion gehört weiterhin in den übergeordneten Weekly-/Roster-Entscheidungsprozess und muss den tatsächlichen Drop-/Slot-Preis des Gesamtrosters berücksichtigen.
+
+Ein Handoff-Vorschlag soll mindestens enthalten:
+
+- Spieleridentität und bisherigen Managed-Roster-Target-/Baseline-Bezug;
+- aktuellen bestätigten Ownership-/Availability-Status;
+- die fortbestehende oder neu bewertete Rollen-/Opportunity-These;
+- den konkreten Grund, warum eine dauerhafte Free-Agent-Beobachtung nach dem Drop weiterhin sinnvoll ist;
+- vorgeschlagene Target-ID, Priorität, Profile und Exit-/Recheck-Bedingung.
+
+
 ### Preseason-Usage-Signal-Klassifizierung
 
 Preseason-Ergebnisse werden nicht primär nach Boxscore-Produktion bewertet, sondern danach, ob sie belastbare Information über Rolle, Hierarchie oder Opportunity liefern. Das Monitoring soll Preseason-Evidenz deshalb mit stabilen Signaltypen erfassen und unterschiedliche Evidenzstärken nicht vermischen.
