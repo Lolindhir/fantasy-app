@@ -34,7 +34,7 @@ Robert hätte **Odunze für Hall 1:1 sofort gemacht** und akzeptierte Hall zu di
 Beide wurden im damaligen Verhandlungsverlauf ausdrücklich aus Hall-Konstruktionen herausgenommen.
 
 ## Preis / Ceiling
-Der finale Preis fühlte sich **fair** an.
+Der finale Preis fühlte sich **fair bis leicht overpaid** an.
 
 Robert versteht Marcels Wunsch nach einem Ausgleich über die 1:1-Basis hinaus, erinnert den finalen Deal aber ungefähr als sein **Ceiling**. Materiell mehr hätte er nicht zahlen wollen.
 
@@ -63,3 +63,10 @@ Interpretation:
 
 ## Outcome-Firewall
 Spätere Hall-/Odunze-Performance und die spätere Verwendung der erhaltenen Picks gehören nicht in die Originalentscheidung. Die spätere Asset-Kette wird separat über Portfolio Links / Reviews bewertet.
+
+
+## Post-Seal-Korrektur
+- 2026-09-19T05:30:00Z: Das historische Preisgefühl wurde von **fair** auf **fair bis leicht overpaid** präzisiert.
+- Grund: präzisere Erinnerung Roberts an die damalige subjektive Preiswahrnehmung.
+- Keine Änderung an Decision Confidence, Outcome Uncertainty, Gut Feeling, Decision Margin oder Price Ceiling.
+- Kein Outcome-Rewrite; spätere Ergebnisse spielten bei der Korrektur keine Rolle.
