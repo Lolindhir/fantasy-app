@@ -3,8 +3,9 @@
 
 Stores independent PPR 8-team and 2-QB 10-team redraft signals. The PPR payload
 also materializes a separate kicker-only ranking without an additional request.
-Each ranking keeps only the latest raw response and archives changed normalized
-rankings.
+Insufficient kicker coverage preserves the last-good kicker snapshot without
+blocking healthy PPR/2-QB publication. Each ranking keeps only the latest raw
+response and archives changed normalized rankings.
 """
 
 from __future__ import annotations
