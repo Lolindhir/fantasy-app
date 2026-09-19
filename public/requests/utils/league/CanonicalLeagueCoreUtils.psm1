@@ -288,7 +288,7 @@ function Get-CanonicalCurrentLeagueRaw {
 
     $configuredTeams = [int](Get-CanonicalLeagueCorePropertyValue -Object $league.Settings -PropertyName "num_teams" -DefaultValue 0)
     if ($configuredTeams -gt 0 -and $configuredTeams -ne $rosters.Count) {
-        throw "Canonical League Core team-count mismatch for $CanonicalLeagueID/$season: settings.num_teams=$configuredTeams, rosters=$($rosters.Count)."
+        throw "Canonical League Core team-count mismatch for $CanonicalLeagueID/${season}: settings.num_teams=$configuredTeams, rosters=$($rosters.Count)."
     }
 
     return [PSCustomObject][ordered]@{
