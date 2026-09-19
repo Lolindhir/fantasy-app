@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "external-signal-relevance",
   "generated_at": "2026-09-19T04:24:06.757599Z",
-  "input_fingerprint": "4b48ae3fa7ad0718589bb99292333de87a6bdbf4682d8e7f9823219dea4ad4cc",
+  "input_fingerprint": "a867a5799031a6c5b3520404e27adfb9c0f9af2a16cf97d8544b0900069951a1",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -40,9 +40,15 @@
       "source_timestamp": null
     },
     {
-      "id": "players",
-      "path": "public/data/Players.json",
-      "content_sha256": "b4b7031912e34f9f58c36369b690ae07bf85502200c2f9477294ec25e3e134ed",
+      "id": "canonical_player_identities",
+      "path": "source-data/nfl/identities/players.json",
+      "content_sha256": "191f2392184c960b84566fb35aec67d5c7467379d23b2aaf7774e6d28199b16e",
+      "source_timestamp": null
+    },
+    {
+      "id": "canonical_sleeper_players",
+      "path": "source-data/nfl/platform/sleeper/players.json",
+      "content_sha256": "c25a617906417756010cbd8d3a4bdbfa7837dcf2798ca74a6dff4067e85266b0",
       "source_timestamp": null
     },
     {
@@ -95,8 +101,8 @@
         "material_event_eligible": true,
         "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
       },
-      "resolved_players": 148,
-      "unresolved_players": 2,
+      "resolved_players": 150,
+      "unresolved_players": 0,
       "ownership": {
         "fantasy_free_agent": 68,
         "mighty_giants": 12,
@@ -106,8 +112,8 @@
   ],
   "summary": {
     "players": 150,
-    "resolved_players": 148,
-    "unresolved_players": 2,
+    "resolved_players": 150,
+    "unresolved_players": 0,
     "excluded_non_player_entities": 12,
     "excluded_non_player_entities_by_type": {
       "team_defense": 12
@@ -437,7 +443,7 @@
           "player_id": "3321",
           "name": "Tyreek Hill",
           "position": "WR",
-          "nfl_team": "MIA",
+          "nfl_team": null,
           "count": 27576,
           "ownership_status": "fantasy_free_agent",
           "owner_teams": []
@@ -648,7 +654,7 @@
           "player_id": "12533",
           "name": "Jacory Croskey-Merritt",
           "position": "RB",
-          "nfl_team": "WSH",
+          "nfl_team": "WAS",
           "count": 19854,
           "ownership_status": "opponent_rostered",
           "owner_teams": [
@@ -918,7 +924,7 @@
           "player_id": "13301",
           "name": "Antonio Williams",
           "position": "WR",
-          "nfl_team": "WSH",
+          "nfl_team": "WAS",
           "count": 11202,
           "ownership_status": "mighty_giants",
           "owner_teams": [
@@ -1109,7 +1115,7 @@
         {
           "rank": 70,
           "player_id": "10219",
-          "name": "Chris Rodriguez",
+          "name": "Chris Rodriguez Jr.",
           "position": "RB",
           "nfl_team": "JAX",
           "count": 8244,
@@ -1167,7 +1173,7 @@
         {
           "rank": 75,
           "player_id": "12509",
-          "name": "Tre' Harris",
+          "name": "Tre Harris",
           "position": "WR",
           "nfl_team": "LAC",
           "count": 7872,
@@ -1558,7 +1564,7 @@
         {
           "rank": 5,
           "player_id": "10219",
-          "name": "Chris Rodriguez",
+          "name": "Chris Rodriguez Jr.",
           "position": "RB",
           "nfl_team": "JAX",
           "count": 37071,
@@ -1732,7 +1738,7 @@
           "rank": 17,
           "player_id": "12530",
           "name": "Travis Hunter",
-          "position": "WR",
+          "position": "DB",
           "nfl_team": "JAX",
           "count": 25044,
           "ownership_status": "opponent_rostered",
@@ -1922,7 +1928,7 @@
         {
           "rank": 30,
           "player_id": "12493",
-          "name": "Oronde Gadsden",
+          "name": "Oronde Gadsden II",
           "position": "TE",
           "nfl_team": "LAC",
           "count": 20135,
@@ -2164,7 +2170,7 @@
         {
           "rank": 46,
           "player_id": "13276",
-          "name": "Omar Cooper",
+          "name": "Omar Cooper Jr.",
           "position": "WR",
           "nfl_team": "NYJ",
           "count": 16824,
@@ -2424,7 +2430,7 @@
         {
           "rank": 63,
           "player_id": "2078",
-          "name": "Odell Beckham",
+          "name": "Odell Beckham Jr.",
           "position": "WR",
           "nfl_team": "NYG",
           "count": 12971,
@@ -2494,7 +2500,7 @@
           "player_id": "3321",
           "name": "Tyreek Hill",
           "position": "WR",
-          "nfl_team": "MIA",
+          "nfl_team": null,
           "count": 12768,
           "ownership_status": "fantasy_free_agent",
           "owner_teams": []
@@ -2551,7 +2557,7 @@
         {
           "rank": 73,
           "player_id": "11631",
-          "name": "Brian Thomas",
+          "name": "Brian Thomas Jr.",
           "position": "WR",
           "nfl_team": "JAX",
           "count": 12045,
@@ -2591,7 +2597,7 @@
           "player_id": "8136",
           "name": "Rachaad White",
           "position": "RB",
-          "nfl_team": "WSH",
+          "nfl_team": "WAS",
           "count": 11922,
           "ownership_status": "opponent_rostered",
           "owner_teams": [
@@ -2627,7 +2633,7 @@
         {
           "rank": 77,
           "player_id": "12506",
-          "name": "Harold Fannin",
+          "name": "Harold Fannin Jr.",
           "position": "TE",
           "nfl_team": "CLE",
           "count": 11705,
@@ -2783,7 +2789,7 @@
         {
           "rank": 86,
           "player_id": "11655",
-          "name": "Tyrone Tracy",
+          "name": "Tyrone Tracy Jr.",
           "position": "RB",
           "nfl_team": "NYG",
           "count": 10130,
@@ -2957,7 +2963,7 @@
         {
           "rank": 98,
           "player_id": "9494",
-          "name": "Marvin Mims",
+          "name": "Marvin Mims Jr.",
           "position": "WR",
           "nfl_team": "DEN",
           "count": 8091,
@@ -3280,7 +3286,7 @@
       "player_id": "13301",
       "name": "Antonio Williams",
       "position": "WR",
-      "nfl_team": "WSH",
+      "nfl_team": "WAS",
       "identity_status": "resolved",
       "ownership": {
         "status": "mighty_giants",
@@ -3643,7 +3649,7 @@
     },
     {
       "player_id": "11631",
-      "name": "Brian Thomas",
+      "name": "Brian Thomas Jr.",
       "position": "WR",
       "nfl_team": "JAX",
       "identity_status": "resolved",
@@ -4381,7 +4387,7 @@
     },
     {
       "player_id": "10219",
-      "name": "Chris Rodriguez",
+      "name": "Chris Rodriguez Jr.",
       "position": "RB",
       "nfl_team": "JAX",
       "identity_status": "resolved",
@@ -4784,7 +4790,7 @@
       "player_id": "6149",
       "name": "Darius Slayton",
       "position": "WR",
-      "nfl_team": "NYG",
+      "nfl_team": null,
       "identity_status": "resolved",
       "ownership": {
         "status": "fantasy_free_agent",
@@ -5453,6 +5459,46 @@
       }
     },
     {
+      "player_id": "12556",
+      "name": "Donovan Ezeiruaku",
+      "position": "DL",
+      "nfl_team": "DAL",
+      "identity_status": "resolved",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "source_signals": {
+        "sleeper-trending": {
+          "provider": "sleeper",
+          "dataset_id": "nfl-roster-activity-24h-top100",
+          "source_timestamp": "2026-09-19T04:24:06.757599Z",
+          "listed_in_current_source_union": false,
+          "signals": {
+            "add_status": null,
+            "add_rank": null,
+            "add_count": null,
+            "drop_status": null,
+            "drop_rank": null,
+            "drop_count": null
+          },
+          "changes": {
+            "add": {
+              "left_top_n": true
+            }
+          },
+          "comparison": {
+            "baseline": false,
+            "comparable": true,
+            "reason": "same_configuration_previous_snapshot_available",
+            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
+            "material_event_eligible": true,
+            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+          }
+        }
+      }
+    },
+    {
       "player_id": "9486",
       "name": "Dontayvion Wicks",
       "position": "WR",
@@ -5879,7 +5925,7 @@
     },
     {
       "player_id": "12506",
-      "name": "Harold Fannin",
+      "name": "Harold Fannin Jr.",
       "position": "TE",
       "nfl_team": "CLE",
       "identity_status": "resolved",
@@ -6254,7 +6300,7 @@
       "player_id": "12533",
       "name": "Jacory Croskey-Merritt",
       "position": "RB",
-      "nfl_team": "WSH",
+      "nfl_team": "WAS",
       "identity_status": "resolved",
       "ownership": {
         "status": "opponent_rostered",
@@ -9030,7 +9076,7 @@
     },
     {
       "player_id": "9494",
-      "name": "Marvin Mims",
+      "name": "Marvin Mims Jr.",
       "position": "WR",
       "nfl_team": "DEN",
       "identity_status": "resolved",
@@ -9545,7 +9591,7 @@
     },
     {
       "player_id": "2078",
-      "name": "Odell Beckham",
+      "name": "Odell Beckham Jr.",
       "position": "WR",
       "nfl_team": "NYG",
       "identity_status": "resolved",
@@ -9596,7 +9642,7 @@
     },
     {
       "player_id": "13276",
-      "name": "Omar Cooper",
+      "name": "Omar Cooper Jr.",
       "position": "WR",
       "nfl_team": "NYJ",
       "identity_status": "resolved",
@@ -9657,7 +9703,7 @@
     },
     {
       "player_id": "12493",
-      "name": "Oronde Gadsden",
+      "name": "Oronde Gadsden II",
       "position": "TE",
       "nfl_team": "LAC",
       "identity_status": "resolved",
@@ -9907,7 +9953,7 @@
       "player_id": "8136",
       "name": "Rachaad White",
       "position": "RB",
-      "nfl_team": "WSH",
+      "nfl_team": "WAS",
       "identity_status": "resolved",
       "ownership": {
         "status": "opponent_rostered",
@@ -10698,6 +10744,46 @@
       }
     },
     {
+      "player_id": "8311",
+      "name": "Terrel Bernard",
+      "position": "LB",
+      "nfl_team": "BUF",
+      "identity_status": "resolved",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "source_signals": {
+        "sleeper-trending": {
+          "provider": "sleeper",
+          "dataset_id": "nfl-roster-activity-24h-top100",
+          "source_timestamp": "2026-09-19T04:24:06.757599Z",
+          "listed_in_current_source_union": false,
+          "signals": {
+            "add_status": null,
+            "add_rank": null,
+            "add_count": null,
+            "drop_status": null,
+            "drop_rank": null,
+            "drop_count": null
+          },
+          "changes": {
+            "add": {
+              "left_top_n": true
+            }
+          },
+          "comparison": {
+            "baseline": false,
+            "comparable": true,
+            "reason": "same_configuration_previous_snapshot_available",
+            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
+            "material_event_eligible": true,
+            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+          }
+        }
+      }
+    },
+    {
       "player_id": "5967",
       "name": "Tony Pollard",
       "position": "RB",
@@ -10760,7 +10846,7 @@
     {
       "player_id": "12530",
       "name": "Travis Hunter",
-      "position": "WR",
+      "position": "DB",
       "nfl_team": "JAX",
       "identity_status": "resolved",
       "ownership": {
@@ -10803,6 +10889,57 @@
                 "old_count": 58950,
                 "new_count": 25044,
                 "count_delta": -33906
+              }
+            }
+          },
+          "comparison": {
+            "baseline": false,
+            "comparable": true,
+            "reason": "same_configuration_previous_snapshot_available",
+            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
+            "material_event_eligible": true,
+            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+          }
+        }
+      }
+    },
+    {
+      "player_id": "12509",
+      "name": "Tre Harris",
+      "position": "WR",
+      "nfl_team": "LAC",
+      "identity_status": "resolved",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "source_signals": {
+        "sleeper-trending": {
+          "provider": "sleeper",
+          "dataset_id": "nfl-roster-activity-24h-top100",
+          "source_timestamp": "2026-09-19T04:24:06.757599Z",
+          "listed_in_current_source_union": true,
+          "signals": {
+            "add_status": "listed",
+            "add_rank": 75,
+            "add_count": 7872,
+            "drop_status": "not_listed",
+            "drop_rank": null,
+            "drop_count": null
+          },
+          "changes": {
+            "add": {
+              "rank_changed": {
+                "sleeper_player_id": "12509",
+                "old_rank": 91,
+                "new_rank": 75,
+                "rank_delta": 16
+              },
+              "count_changed": {
+                "sleeper_player_id": "12509",
+                "old_count": 10620,
+                "new_count": 7872,
+                "count_delta": -2748
               }
             }
           },
@@ -10866,57 +11003,6 @@
                 "old_count": 51480,
                 "new_count": 27144,
                 "count_delta": -24336
-              }
-            }
-          },
-          "comparison": {
-            "baseline": false,
-            "comparable": true,
-            "reason": "same_configuration_previous_snapshot_available",
-            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
-            "material_event_eligible": true,
-            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-          }
-        }
-      }
-    },
-    {
-      "player_id": "12509",
-      "name": "Tre' Harris",
-      "position": "WR",
-      "nfl_team": "LAC",
-      "identity_status": "resolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-09-19T04:24:06.757599Z",
-          "listed_in_current_source_union": true,
-          "signals": {
-            "add_status": "listed",
-            "add_rank": 75,
-            "add_count": 7872,
-            "drop_status": "not_listed",
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {
-            "add": {
-              "rank_changed": {
-                "sleeper_player_id": "12509",
-                "old_rank": 91,
-                "new_rank": 75,
-                "rank_delta": 16
-              },
-              "count_changed": {
-                "sleeper_player_id": "12509",
-                "old_count": 10620,
-                "new_count": 7872,
-                "count_delta": -2748
               }
             }
           },
@@ -11268,7 +11354,7 @@
       "player_id": "3321",
       "name": "Tyreek Hill",
       "position": "WR",
-      "nfl_team": "MIA",
+      "nfl_team": null,
       "identity_status": "resolved",
       "ownership": {
         "status": "fantasy_free_agent",
@@ -11331,7 +11417,7 @@
     },
     {
       "player_id": "11655",
-      "name": "Tyrone Tracy",
+      "name": "Tyrone Tracy Jr.",
       "position": "RB",
       "nfl_team": "NYG",
       "identity_status": "resolved",
@@ -11607,106 +11693,11 @@
           }
         }
       }
-    },
-    {
-      "player_id": "12556",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-09-19T04:24:06.757599Z",
-          "listed_in_current_source_union": false,
-          "signals": {
-            "add_status": null,
-            "add_rank": null,
-            "add_count": null,
-            "drop_status": null,
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {
-            "add": {
-              "left_top_n": true
-            }
-          },
-          "comparison": {
-            "baseline": false,
-            "comparable": true,
-            "reason": "same_configuration_previous_snapshot_available",
-            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
-            "material_event_eligible": true,
-            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-          }
-        }
-      }
-    },
-    {
-      "player_id": "8311",
-      "name": null,
-      "position": null,
-      "nfl_team": null,
-      "identity_status": "unresolved",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "source_signals": {
-        "sleeper-trending": {
-          "provider": "sleeper",
-          "dataset_id": "nfl-roster-activity-24h-top100",
-          "source_timestamp": "2026-09-19T04:24:06.757599Z",
-          "listed_in_current_source_union": false,
-          "signals": {
-            "add_status": null,
-            "add_rank": null,
-            "add_count": null,
-            "drop_status": null,
-            "drop_rank": null,
-            "drop_count": null
-          },
-          "changes": {
-            "add": {
-              "left_top_n": true
-            }
-          },
-          "comparison": {
-            "baseline": false,
-            "comparable": true,
-            "reason": "same_configuration_previous_snapshot_available",
-            "previous_generated_at": "2026-09-18T04:23:36.625922+00:00",
-            "material_event_eligible": true,
-            "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
-          }
-        }
-      }
     }
   ],
   "quality": {
     "status": "ok",
-    "issue_count": 2,
-    "issues": [
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "8311"
-      },
-      {
-        "domain": "external_signal_materialization",
-        "severity": "info",
-        "kind": "unresolved_external_signal_player",
-        "source": "sleeper-trending",
-        "player_id": "12556"
-      }
-    ]
+    "issue_count": 0,
+    "issues": []
   }
 }
