@@ -324,6 +324,15 @@ Mindestens:
    - Injury-Kontext;
    - relevante positionsspezifische Faktoren.
 
+   **In-Season-Usage-Guardrail für Grenzentscheidungen:** Sobald Regular-Season-Spiele der aktuellen Saison vorliegen, müssen bei knappen Start/Sit-Entscheidungen aktuelle Usage-Signale ausdrücklich neben Rankings und Projektionen ausgewiesen und für die relevante Vergleichsgruppe nach denselben Kriterien bewertet werden. Soweit belastbar verfügbar, gehören dazu insbesondere:
+   - Snaps bzw. Snap Share;
+   - Routes bzw. Route Participation;
+   - Targets und Target Share;
+   - bei Passfängern Air Yards und Air-Yards-Share;
+   - positionsabhängig Carries, Goal-Line-, Third-Down-, Two-Minute- oder andere rollenrelevante Opportunities.
+
+   Diese Signale sind ein eigenständiger Evidenzblock und dürfen eine Abweichung von Consensus Rankings oder Projektionen begründen, ersetzen diese aber nicht automatisch. Ein einzelnes Spiel bleibt eine kleine Stichprobe; Game Script, Verletzungen oder Ausfälle von Mitspielern, Opportunity-Provenance, aktuelle Practice-/Availability-Evidenz und das Matchup müssen gemeinsam berücksichtigt werden. Alte Preseason-, Camp- oder nominale Depth-Chart-Annahmen dürfen aktuelle belastbare Regular-Season-Usage nicht ungeprüft überstimmen. Wenn Usage und Rankings/Projektionen materiell auseinanderlaufen, muss die Weekly-Analyse den Konflikt und die daraus entstehende Unsicherheit sichtbar machen. Neue Usage-Evidenz darf außerdem nicht nur den gerade diskutierten Spieler verschieben; der vollständige relevante Start/Sit-Vergleichspool ist konsistent neu zu bewerten.
+
 4. **Beste legale Startaufstellung bestimmen**
    - 2 QB;
    - 2 RB;
