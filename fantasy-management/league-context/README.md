@@ -11,6 +11,6 @@ Use this folder for:
 - trade negotiation history
 - negotiation strategy notes
 
-Productive current league state still comes from `public/data/League.json` and `public/data/Metadata.json` until the corresponding Canonical Source consumer cutover is explicitly completed. `owner-registry.json` additionally carries the explicit stable `TeamID -> CanonicalLeagueMemberID` identity bridge used by the Checkpoint-6P canonical ownership shadow; provider roster IDs are provenance only and must not be treated as stable TeamIDs.
+Productive current league state is now consumer-scoped during Phase 2. `public/data/League.json` and `public/data/Metadata.json` remain the active contract for unmigrated league, salary, draft, standings and ownership consumers. `owner-registry.json` carries the explicit stable `TeamID -> CanonicalLeagueMemberID` bridge; provider roster IDs are provenance only and must not be treated as stable TeamIDs. Since Checkpoint 6Q, `managed-roster-signals` uses that bridge plus Canonical League Source Data productively for TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter`, while `League.json` remains display enrichment for that consumer.
 
-Files in this folder are strategic or identity context. Re-check current generated data before dynamic roster, pick, salary, trade or standings conclusions; the 6P canonical ownership adapter is shadow/parity evidence only and does not yet replace the productive App readmodel.
+Files in this folder are strategic or identity context. Re-check the current source contract for the specific consumer before dynamic roster, pick, salary, trade or standings conclusions; the canonical ownership adapter does not by itself migrate every Fantasy Management ownership path.
