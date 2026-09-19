@@ -1,6 +1,14 @@
 name: APP • Data • Standings
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-standings.yml"
+      - "public/requests/RequestStandings.ps1"
+      - "public/requests/utils/league/CanonicalStandingUtils.psm1"
+      - "public/requests/utils/league/StandingUtils.psm1"
   repository_dispatch:
     types:
       - scheduler-update-standings
