@@ -331,7 +331,7 @@ Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migra
 
 - `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership productively from Canonical League Source Data through `canonical_league_ownership.py`; `League.json` remains display enrichment for team name/abbreviation in that materializer.
 - `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data through the same adapter; `League.json` remains Team/TeamAbbr display enrichment in that materializer.
-- `player-signals.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data; `League.json` remains managed-team display enrichment and the existing trigger/freshness bridge for this consumer.
+- `player-signals.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data; `League.json` remains a non-membership App enrichment input for managed-team display and `ScoringType` used by projection scoring, plus the existing trigger/freshness bridge for this consumer.
 - Free-Agent population/availability, FA-board and the other not-yet-migrated ownership consumers still derive current league ownership from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
 - The stable Fantasy `TeamID` is bridged explicitly to `CanonicalLeagueMemberID` in `league-context/owner-registry.json`; provider roster IDs are not stable TeamIDs.
 
