@@ -223,6 +223,19 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     return [{"roster_id": 1, "owner_id": "u1"}]
                 if url.endswith("/winners_bracket") or url.endswith("/losers_bracket"):
                     return []
+                if url.endswith("/matchups/2"):
+                    return [
+                        {
+                            "roster_id": 1,
+                            "matchup_id": 1,
+                            "points": 7.0,
+                            "custom_points": None,
+                            "players": ["p1"],
+                            "starters": ["p1"],
+                            "players_points": {"p1": 7.0},
+                            "starters_points": [7.0],
+                        }
+                    ]
                 raise AssertionError(f"Unexpected URL: {url}")
 
             plans = plan_raw_acquisition(
