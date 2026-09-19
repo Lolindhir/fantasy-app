@@ -38,7 +38,8 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             self.assertFalse(quarterback["churn_eligible"])
             self.assertEqual("prospect", prospect["roster_role"])
             self.assertEqual("conditional", prospect["roster_security"])
-            self.assertTrue(prospect["potential_churn_after_taxi_reassignment"])
+            self.assertTrue(prospect["potential_comparison_boundary_after_taxi_reassignment"])
+            self.assertFalse(prospect["potential_churn_after_taxi_reassignment"])
             self.assertEqual("warning", result["quality"]["status"])
             self.assertEqual(1, result["evaluation"]["unclassified_count"])
 
@@ -69,6 +70,50 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             self.assertTrue(prospect["classification"]["user_override"])
             self.assertFalse(prospect["potential_churn_after_taxi_reassignment"])
             self.assertEqual(1, result["evaluation"]["user_override_count"])
+
+    def test_conditional_boundary_is_visible_but_not_general_churn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            league_path = root / "public/data/League.json"
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            league["Status"] = "in_season"
+            league["Phase"] = "regular season"
+            league["FinalScoredWeek"] = 1
+            league["Teams"][0]["Taxi"] = []
+            league_path.write_text(json.dumps(league), encoding="utf-8")
+
+            state_path = root / "fantasy-management/automation/roster-evaluation-state.json"
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            rookie = next(item for item in state["classifications"] if item["name"] == "Rookie Runner")
+            rookie["boundary_priority"] = 10
+            state["classifications"].append(
+                {
+                    "name": "Starting Receiver",
+                    "position": "WR",
+                    "roster_role": "prospect",
+                    "roster_security": "churn",
+                    "boundary_priority": 20,
+                }
+            )
+            state_path.write_text(json.dumps(state), encoding="utf-8")
+
+            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            rookie_result = next(item for item in result["players"] if item["name"] == "Rookie Runner")
+            churn_result = next(item for item in result["players"] if item["name"] == "Starting Receiver")
+
+            self.assertTrue(rookie_result["comparison_boundary_eligible"])
+            self.assertFalse(rookie_result["churn_eligible"])
+            self.assertTrue(churn_result["comparison_boundary_eligible"])
+            self.assertTrue(churn_result["churn_eligible"])
+            self.assertEqual(2, result["structure"]["churn"]["current_active_candidate_count"])
+            self.assertEqual(1, result["structure"]["churn"]["current_active_general_churn_count"])
+            self.assertEqual("below_target", result["structure"]["churn"]["guardrail_status"])
+            self.assertEqual("ready", result["structure"]["churn"]["decision_readiness"])
+            by_name = {item["name"]: item for item in result["structure"]["churn"]["candidate_pool"]}
+            self.assertFalse(by_name["Rookie Runner"]["counts_as_general_churn"])
+            self.assertTrue(by_name["Starting Receiver"]["counts_as_general_churn"])
 
     def _write_fixture(self, root: Path) -> None:
         for path in (
