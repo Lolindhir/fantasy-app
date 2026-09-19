@@ -60,6 +60,7 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertT
 Assert-True -Condition $requestLeague.Contains("Update-MatchupHistoryReadModels") -Message "RequestLeague does not use the public Matchups history API."
 Assert-True -Condition $requestLeague.Contains("CanonicalLeagueCoreUtils.psm1") -Message "RequestLeague does not import the canonical League Core consumer."
 Assert-True -Condition $requestLeague.Contains("CanonicalPlayoffUtils.psm1") -Message "RequestLeague does not import the canonical Playoff consumer."
+Assert-True -Condition $requestLeague.Contains("CanonicalMatchupUtils.psm1") -Message "RequestLeague does not import the canonical current Matchup consumer."
 Assert-True -Condition (-not $requestLeague.Contains("\utils\league\PlayoffUtils.psm1")) -Message "RequestLeague still imports the legacy live Playoff adapter."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current League metadata/settings."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current Members/Rosters team data."
@@ -67,8 +68,9 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Leag
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-TeamsForLeague") -Expected 0 -Message "RequestLeague still performs the legacy current Teams provider read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 0 -Message "RequestLeague still performs the legacy live Playoffs read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentPlayoffs") -Expected 1 -Message "RequestLeague must use exactly one canonical current Playoffs read."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live current-matchup score overlay during 6N shadow/parity."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 0 -Message "RequestLeague must not cut over the current matchup overlay during 6N."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 0 -Message "RequestLeague still performs the legacy live current-matchup provider read after the 6O cutover."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must use exactly one canonical current Matchup read."
+Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID `$CanonicalLeagueID -Season ([int]`$league.season) -Week `$matchupWeek") -Message "RequestLeague canonical current Matchup read does not bind canonical league, season and active week explicitly."
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
@@ -502,8 +504,8 @@ $shadowLosers = @($canonicalPlayoffs.LosersBracket)
 Assert-StandingsJsonEqual -Actual $shadowWinners -Expected $rawWinners -Message "Canonical current winners bracket does not reconstruct raw Sleeper routing."
 Assert-StandingsJsonEqual -Actual $shadowLosers -Expected $rawLosers -Message "Canonical current losers bracket does not reconstruct raw Sleeper routing."
 
-# Current matchup shadow must reconstruct the persisted Sleeper provider semantics
-# from canonical week-partitioned source-data while RequestLeague remains live.
+# Current matchup adapter must reconstruct the persisted Sleeper provider semantics
+# from canonical week-partitioned source-data without live-provider fallback.
 $canonicalMatchupUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Raw
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Get-SleeperMatchups")) -Message "Canonical current matchup shadow performs a live Sleeper matchup read."
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Invoke-RestMethod")) -Message "Canonical current matchup shadow performs a direct HTTP read."
