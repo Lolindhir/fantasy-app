@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -57,9 +57,13 @@ Robert erinnert die Entscheidung selbst als nahezu eindeutig. Die geringe Restun
 ## Portfolio Link
 Die abgegebene Rookie 3.05 stammt aus dem Hall/Odunze-Trade vom 07.05.2026. Das ist eine Asset-Kette, keine rückwirkende Rechtfertigung des Hall-Trades.
 
-## Noch offen vor Seal
-Nur Roberts explizite Freigabe der finalen Kalibrierung:
-**5/5 Confidence · 2/5 Outcome Uncertainty · very_positive · clear**
+## Finaler Decision State
+- **Decision Confidence: 5/5**
+- **Outcome Uncertainty: 2/5**
+- **Gut Feeling: very_positive**
+- **Decision Margin: clear**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T05:50:00Z`
+- User confirmation: ja
