@@ -132,6 +132,16 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
+      "id": "league-core-source",
+      "workflow": "sync-league-core.yml",
+      "path": ".github/workflows/sync-league-core.yml",
+      "eventType": "scheduler-sync-league-core",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": ["2-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
+    },
+    {
       "id": "league-transaction-source",
       "workflow": "sync-league-transactions.yml",
       "path": ".github/workflows/sync-league-transactions.yml",

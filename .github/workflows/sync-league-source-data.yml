@@ -6,6 +6,7 @@ on:
       - ".github/workflows/sync-league-source-data.yml"
       - ".github/workflows/sync-league-transactions.yml"
       - ".github/workflows/sync-league-drafts.yml"
+      - ".github/workflows/sync-league-core.yml"
       - "source-data/league-registry.json"
       - "source-data/leagues/_bootstrap/**"
       - "tools/league_source_data.py"
@@ -17,6 +18,7 @@ on:
     paths:
       - ".github/workflows/sync-league-source-data.yml"
       - ".github/workflows/sync-league-drafts.yml"
+      - ".github/workflows/sync-league-core.yml"
       - "source-data/league-registry.json"
       - "source-data/leagues/_bootstrap/**"
       - "source-data/nfl/schedules/**"
@@ -36,6 +38,7 @@ on:
           - full
           - transactions
           - drafts
+          - league-core
         default: full
       force:
         description: "Explicitly refetch/repair historical Sleeper partitions"
@@ -97,6 +100,9 @@ jobs:
             drafts)
               python -m unittest tools.tests.test_league_source_draft_targeting -v
               ;;
+            league-core)
+              python -m unittest tools.tests.test_league_source_league_core_targeting -v
+              ;;
             *)
               echo "Unsupported League materialization scope: ${MATERIALIZATION_SCOPE}" >&2
               exit 2
@@ -136,7 +142,7 @@ jobs:
 
           materialization_scope="${MATERIALIZATION_SCOPE:-full}"
           case "$materialization_scope" in
-            full|transactions|drafts) ;;
+            full|transactions|drafts|league-core) ;;
             *)
               echo "Unsupported League materialization scope: $materialization_scope" >&2
               exit 2
@@ -156,6 +162,9 @@ jobs:
           elif [[ "$materialization_scope" == "drafts" ]]; then
             sync_args+=(--current-draft-scope)
             materialize_args+=(--materialization-scope drafts --current-draft-scope)
+          elif [[ "$materialization_scope" == "league-core" ]]; then
+            sync_args+=(--current-league-core-scope)
+            materialize_args+=(--materialization-scope league-core --current-league-core-scope)
           fi
           if [[ "${FORCE:-false}" == "true" ]]; then
             sync_args+=(--force)
@@ -170,6 +179,9 @@ jobs:
             elif [[ "$materialization_scope" == "drafts" ]]; then
               echo "- Raw scope: current Sleeper draft index + discovered draft detail/picks/traded-picks"
               echo "- Canonical write-set: current-season drafts.json only"
+            elif [[ "$materialization_scope" == "league-core" ]]; then
+              echo "- Raw scope: current Sleeper league + members + rosters + winners/losers brackets"
+              echo "- Canonical write-set: current-season league.json + members.json + rosters.json + winners/losers-bracket.json only"
             else
               echo "- Raw scope: full registered League Source acquisition"
               echo "- Canonical write-set: full League Source materialization"
@@ -304,6 +316,59 @@ jobs:
             fi
           }
 
+          assert_league_core_raw_only() {
+            mapfile -t changed < <(changed_paths)
+            unexpected=()
+            for path in "${changed[@]}"; do
+              case "$path" in
+                source-data/providers/sleeper/leagues/*/league.json|\
+                source-data/providers/sleeper/leagues/*/league.metadata.json|\
+                source-data/providers/sleeper/leagues/*/members.json|\
+                source-data/providers/sleeper/leagues/*/members.metadata.json|\
+                source-data/providers/sleeper/leagues/*/rosters.json|\
+                source-data/providers/sleeper/leagues/*/rosters.metadata.json|\
+                source-data/providers/sleeper/leagues/*/winners-bracket.json|\
+                source-data/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
+                source-data/providers/sleeper/leagues/*/losers-bracket.json|\
+                source-data/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
+                source-data/_sync/last-league-failure.json)
+                  ;;
+                *)
+                  unexpected+=("$path")
+                  ;;
+              esac
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Scoped League Core acquisition touched an unexpected path:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
+          assert_league_core_canonical_only() {
+            mapfile -t changed < <(changed_paths)
+            unexpected=()
+            for path in "${changed[@]}"; do
+              case "$path" in
+                source-data/leagues/*/seasons/*/league.json|\
+                source-data/leagues/*/seasons/*/members.json|\
+                source-data/leagues/*/seasons/*/rosters.json|\
+                source-data/leagues/*/seasons/*/winners-bracket.json|\
+                source-data/leagues/*/seasons/*/losers-bracket.json|\
+                source-data/_sync/last-league-failure.json)
+                  ;;
+                *)
+                  unexpected+=("$path")
+                  ;;
+              esac
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Scoped League Core materialization touched an unexpected path:\n' >&2
+              printf ' - %s\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
           write_failure_diagnostic() {
             local phase="$1"
             local exit_code="$2"
@@ -418,6 +483,26 @@ jobs:
           PY
               assert_draft_raw_only
               git add -- source-data/providers/sleeper/leagues
+            elif [[ "$materialization_scope" == "league-core" ]]; then
+              python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          result = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          leagues = result.get("Leagues")
+          if not isinstance(leagues, list) or not leagues:
+              raise SystemExit("Current League Core scope sync returned no leagues")
+          for item in leagues:
+              scope = item.get("CurrentLeagueCoreScope") or {}
+              print(
+                  "- League Core scope "
+                  f"{item.get('CanonicalLeagueID')}: season={scope.get('Season')}, "
+                  f"providerLeagueID={scope.get('ProviderLeagueID')}"
+              )
+          PY
+              assert_league_core_raw_only
+              git add -- source-data/providers/sleeper/leagues
             else
               assert_league_source_only
               git add -- source-data/providers/sleeper/leagues source-data/leagues
@@ -487,6 +572,8 @@ jobs:
               assert_transaction_canonical_only
             elif [[ "$materialization_scope" == "drafts" ]]; then
               assert_draft_canonical_only
+            elif [[ "$materialization_scope" == "league-core" ]]; then
+              assert_league_core_canonical_only
             else
               assert_league_source_only
             fi
