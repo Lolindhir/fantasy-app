@@ -71,6 +71,9 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Cano
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 0 -Message "RequestLeague still performs the legacy live current-matchup provider read after the 6O cutover."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must use exactly one canonical current Matchup read."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID `$CanonicalLeagueID -Season ([int]`$league.season) -Week `$matchupWeek") -Message "RequestLeague canonical current Matchup read does not bind canonical league, season and active week explicitly."
+$updateLeagueWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-league.yml") -Raw
+Assert-True -Condition $updateLeagueWorkflow.Contains('"public/requests/utils/league/CanonicalMatchupUtils.psm1"') -Message "APP League workflow does not rebuild when the canonical current Matchup adapter changes."
+Assert-True -Condition $updateLeagueWorkflow.Contains('"source-data/leagues/nfl-reise/seasons/*/matchups/week-*.json"') -Message "APP League workflow does not rebuild when canonical current Matchup partitions change."
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
