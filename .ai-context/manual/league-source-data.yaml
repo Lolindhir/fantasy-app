@@ -291,7 +291,7 @@ productiveAcceptance:
   consumerMigrationState: phase2-in-progress
   consumerMigrationNotes:
     historicalStandings: canonical-active
-    currentStandings: canonical-shadow-parity / productive-consumer-still-legacy-live
+    currentStandings: canonical-active
     transactionsAndDrafts: canonical-active
     currentLeagueCoreScope: productive-freshness-scheduled
 
@@ -350,10 +350,9 @@ phase2TargetedFreshnessScopes:
       - current nfl-reise Core outputs are parity-checked against accepted canonical files
     productionNote: >
       The bounded League Core scope is productively scheduled every ten minutes, ahead
-      of the next App League refresh. Current Standings now has a CI-backed canonical
-      shadow/parity path over these exact Core inputs, but the productive
-      RequestStandings current-season consumer intentionally remains on the live
-      Sleeper boundary until a separate cutover checkpoint.
+      of the next App League refresh. Historical and Current Standings now consume
+      these canonical League Core facts directly; RequestStandings no longer performs
+      a live Sleeper league/team/bracket read for standings.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
