@@ -364,8 +364,9 @@ workflows:
     category: routine
     relevantEvents:
     - repository_dispatch
+    - push
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh dispatched by the central scheduler; alert after the weekly cycle has effectively been missed for about a day.
+    rationale: Weekly between-week standings refresh dispatched by the central scheduler, plus narrow main-push rebuilds when the Standings workflow or its canonical/current derivation code changes. Both are production health evidence; alert after the weekly cycle has effectively been missed for about a day.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:
