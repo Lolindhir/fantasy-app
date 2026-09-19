@@ -236,6 +236,33 @@ weekStructure:
     Evidenz derselben raw playoff_round_type-Konfiguration projizieren. Unbekannte
     oder widerspruechliche Provider-Werte werden nicht geraten.
 
+canonicalPlayoffBracketRouting:
+  purpose: >
+    Preserve unresolved playoff advancement paths as provider-neutral canonical
+    source facts so consumers can reconstruct the provider bracket shape without
+    performing a live bracket read.
+  rawEvidence:
+    provider: Sleeper
+    team1Field: t1_from
+    team2Field: t2_from
+    winnerKey: w
+    loserKey: l
+  canonicalFields:
+    team1: Team1Source
+    team2: Team2Source
+    shape:
+      Outcome: Winner | Loser
+      Match: positive integer
+  rules:
+    - Match numbers are globally unique within one bracket because provider routing references identify a source by match number only.
+    - A routing source must contain exactly one Winner/Loser outcome and a positive numeric match reference.
+    - The referenced match must exist in the same bracket and belong to an earlier round.
+    - Missing routing evidence is materialized as null; provider-specific w/l keys are not stored in the canonical source contract.
+    - Resolved Team1/Team2 roster facts and unresolved routing provenance may coexist after the provider fills a later-round participant.
+  failureBehavior: >
+    Ambiguous, malformed, unknown, self or forward routing references fail
+    materialization closed before canonical publication.
+
 canonicalProviderNormalization:
   tradeDeadline:
     rawEvidenceField: settings.trade_deadline
