@@ -104,13 +104,15 @@ boundaries:
   fantasyManagement:
     path: fantasy-management/**
     currentState: >
-      Fantasy Management liest fuer produktiven aktuellen League-State weiterhin
-      public/data als technischen App-Datenbestand. Checkpoint 6P hat zusaetzlich
-      einen Shadow-Adapter fuer Canonical League Ownership/Roster Facts etabliert:
-      stabile Fantasy-TeamID wird explizit ueber owner-registry.json auf
-      CanonicalLeagueMemberID gebrueckt; Sleeper roster_id bleibt reine Provenienz.
-      Der Shadow vergleicht Owner/OwnerID, Roster, Reserve, Taxi und Starter gegen
-      public/data/League.json, ohne produktive Consumer umzuschalten.
+      Fantasy Management ist waehrend Phase 2 bewusst gemischt. Checkpoint 6P hat
+      den fail-closed Canonical League Ownership/Roster Adapter und die explizite
+      TeamID->CanonicalLeagueMemberID-Bridge etabliert. Checkpoint 6Q nutzt diesen
+      Adapter nun produktiv fuer genau managed-roster-signals: TeamID 1 Roster,
+      Reserve, Taxi und Starter kommen direkt aus source-data/leagues; League.json
+      bleibt dort nur Display-Enrichment und bestehende Trigger-/Freshness-Bruecke.
+      League-weite Ownership-Consumer, FA-Availability, Drafts, Transactions und
+      weitere nicht migrierte FM-Pfade behalten bis zu eigenen Checkpoints ihre
+      bisherigen public/data-Vertraege. Sleeper roster_id bleibt reine Provenienz.
     targetState: >
       Basisfakten fuer Liga, Ownership, Drafts, Transactions und NFL-Zustand werden
       nach Consumer-Migration direkt aus source-data abgeleitet. Fantasy-Management-
