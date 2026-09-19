@@ -322,6 +322,7 @@ productiveAcceptance:
     transactionsAndDrafts: canonical-active
     currentLeagueCoreScope: productive-freshness-scheduled
     currentLeagueCoreConsumer: canonical-active / RequestLeague League+Teams core
+    currentPlayoffBracketConsumer: canonical-shadow-parity / productive-Get-Playoffs-still-live
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -381,9 +382,12 @@ phase2TargetedFreshnessScopes:
       of the next App League refresh. Historical and Current Standings consume these
       canonical League Core facts directly. RequestLeague now also consumes current
       League Metadata/Settings and Members/Rosters team inputs from league.json,
-      members.json and rosters.json. Playoff bracket publication and the current
-      matchup score overlay intentionally remain on their separate live boundaries
-      until those contracts are migrated independently.
+      members.json and rosters.json. The canonical winners/losers bracket contract
+      now preserves unresolved advancement routing through Team1Source/Team2Source,
+      and a non-publishing current Playoff shadow reconstructs the full legacy bracket
+      shape for parity. Productive playoff publication and the current matchup score
+      overlay intentionally remain on their separate live boundaries until separately
+      authorized cutovers.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
