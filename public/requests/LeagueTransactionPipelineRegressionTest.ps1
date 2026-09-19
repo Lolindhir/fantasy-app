@@ -7,6 +7,7 @@ Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 
 function Assert-True {
     param(
@@ -60,7 +61,7 @@ Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentLeagueRaw -C
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current Members/Rosters team data."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-LeagueRaw") -Expected 0 -Message "RequestLeague still performs a direct current League provider read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-TeamsForLeague") -Expected 0 -Message "RequestLeague still performs the legacy current Teams provider read."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live Playoffs read until the canonical bracket contract carries the full legacy routing shape."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live Playoffs read until the separate productive canonical Playoff cutover checkpoint."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live current-matchup score overlay."
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType')") -Message "RequestLeague change detection does not track canonical Settings and ScoringType structurally."
@@ -474,6 +475,26 @@ Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Invoke-RestMeth
 
 $publishedLeague = Get-Content (Get-Config).LeagueFile -Raw | ConvertFrom-Json
 $canonicalLeagueCoreShadow = Get-CanonicalCurrentLeagueCoreShadow -CanonicalLeagueID "nfl-reise"
+
+$canonicalPlayoffUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Raw
+Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical Playoff shadow performs a live Sleeper winners-bracket read."
+Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical Playoff shadow performs a live Sleeper losers-bracket read."
+Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-Playoffs")) -Message "Canonical Playoff shadow delegates to the legacy live Playoff adapter."
+Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Invoke-RestMethod")) -Message "Canonical Playoff shadow performs a direct HTTP read."
+
+$canonicalPlayoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID "nfl-reise"
+Assert-StandingsJsonEqual -Actual $canonicalPlayoffs -Expected $publishedLeague.Playoffs -Message "Canonical current Playoff shadow differs from published League.json::Playoffs."
+
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$providerLeagueID = [string]$canonicalLeagueCoreShadow.League.league_id
+$rawWinnersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/winners-bracket.json"
+$rawLosersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/losers-bracket.json"
+$rawWinners = @((Get-Content $rawWinnersPath -Raw | ConvertFrom-Json))
+$rawLosers = @((Get-Content $rawLosersPath -Raw | ConvertFrom-Json))
+$shadowWinners = @($canonicalPlayoffs.WinnersBracket)
+$shadowLosers = @($canonicalPlayoffs.LosersBracket)
+Assert-StandingsJsonEqual -Actual $shadowWinners -Expected $rawWinners -Message "Canonical current winners bracket does not reconstruct raw Sleeper routing."
+Assert-StandingsJsonEqual -Actual $shadowLosers -Expected $rawLosers -Message "Canonical current losers bracket does not reconstruct raw Sleeper routing."
 
 Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.league_id) -Expected ([string]$publishedLeague.LeagueID) -Message "Canonical League Core provider LeagueID parity failed."
 Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.name) -Expected ([string]$publishedLeague.Name) -Message "Canonical League Core name parity failed."
