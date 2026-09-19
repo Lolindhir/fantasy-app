@@ -69,6 +69,8 @@ Checkpoint 6T extends Canonical League ownership to `fa-board-readmodel.json`: a
 
 Checkpoint 6U removes the Managed-Roster-Overview's duplicate direct membership read from `League.json`. `managed-roster-overview.json` now derives held/active/reserve/taxi membership exclusively from `managed-roster-signals.json`; `League.json` remains non-membership enrichment for team display, `RosterSize`, lineup settings, Reserve-/Taxi slot counts and phase/status.
 
+Checkpoint 6V moves the Free-Agent Movement consumer's league-scoring input from `public/data/League.json -> ScoringType` to the active Canonical League `league.json -> ScoringSettings`. This is a scoring-only cutover: the Movement population and ownership remain inherited from canonical-active `player-signals.json`/`free-agent-signals.json`, while `player-signals` projection reconciliation and Kicker Streaming still retain their separately documented App `League.json` scoring enrichment until their own checkpoints.
+
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
 
 
