@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -88,9 +88,15 @@ Nach der geschärften Definition geht es um die Überzeugung in genau diese Kons
 ### Warum Uncertainty 3?
 Antonio blieb ein Rookie mit Entwicklungsrisiko. Zusätzlich war das Roster bereits übervoll, sodass offen war, ob ein weiterer junger WR für das Gesamtportfolio optimal war. Gleichzeitig half der Trade sogar etwas gegen den Cut-Druck, weil FA 3.04 als späterer zusätzlicher Roster-Zugang wegfiel. Das ergibt echte, aber noch **moderate** Unsicherheit – daher 3/5 statt 2/5 oder 4/5.
 
-## Noch offen vor Seal
-Bestätigung oder Anpassung von:
-**5/5 Confidence · 3/5 Outcome Uncertainty · very_positive · clear · fair · at ceiling**
+## Finaler Decision State
+- **Decision Confidence: 5/5**
+- **Outcome Uncertainty: 3/5**
+- **Gut Feeling: very_positive**
+- **Decision Margin: clear**
+- **Preisgefühl: fair**
+- **Execution vs Ceiling: at**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T07:30:00Z`
+- User confirmation: ja
