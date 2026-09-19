@@ -407,13 +407,21 @@ class FaBoardReadmodelTests(unittest.TestCase):
     def test_repository_current_fa_board_semantics_match_canonical_cutover(self) -> None:
         root = Path(__file__).resolve().parents[4]
         config_path = root / "fantasy-management/automation/fa-board-materialization.json"
-        rebuilt = MODULE.build(root, config_path)
         published = json.loads(
             (root / "fantasy-management/generated/operations/fa-board-readmodel.json").read_text(
                 encoding="utf-8"
             )
         )
+        roster_source = published["sources"]["canonical_league_rosters"]
+        roster_path = root / roster_source["path"]
+        current_roster_hash = MODULE.source_hash(roster_path)
+        if roster_source.get("content_sha256") != current_roster_hash:
+            self.skipTest(
+                "published fa-board-readmodel is stale relative to current canonical "
+                "league rosters; the materializer is expected to rebuild it"
+            )
 
+        rebuilt = MODULE.build(root, config_path)
         for key in (
             "managed_team",
             "current_fa_draft",

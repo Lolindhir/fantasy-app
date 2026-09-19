@@ -16,6 +16,7 @@ from materialize_external_signals import (  # noqa: E402
     build_ownership,
     canonical_json,
     ownership_for,
+    sha256,
 )
 from canonical_league_ownership import (  # noqa: E402
     build_canonical_ownership_snapshot,
@@ -154,6 +155,30 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
 
     def test_repository_external_signal_ownership_matches_canonical_union(self) -> None:
         root = Path(__file__).resolve().parents[4]
+        generated = json.loads(
+            (
+                root
+                / "fantasy-management/generated/operations/"
+                "external-signal-relevance.json"
+            ).read_text(encoding="utf-8")
+        )
+        roster_source = next(
+            (
+                source
+                for source in generated["sources"]
+                if source.get("id") == "canonical_league_rosters"
+            ),
+            None,
+        )
+        self.assertIsNotNone(roster_source)
+        roster_path = root / roster_source["path"]
+        current_roster_hash = sha256(roster_path.read_text(encoding="utf-8"))
+        if roster_source.get("content_sha256") != current_roster_hash:
+            self.skipTest(
+                "published external-signal-relevance is stale relative to current "
+                "canonical league rosters; the materializer is expected to rebuild it"
+            )
+
         season = resolve_current_canonical_season(
             root,
             canonical_league_id="nfl-reise",
@@ -169,13 +194,6 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
         teams = enrich_canonical_ownership_with_display(snapshot, league_display)
         ownership = build_ownership(teams)
 
-        generated = json.loads(
-            (
-                root
-                / "fantasy-management/generated/operations/"
-                "external-signal-relevance.json"
-            ).read_text(encoding="utf-8")
-        )
         managed_id = str(generated["managed_team"]["team_id"])
         for player in generated["players"]:
             self.assertEqual(

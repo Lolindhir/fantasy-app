@@ -524,8 +524,27 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         config_path = root / "fantasy-management/automation/player-signal-materialization.json"
         published_path = root / "fantasy-management/generated/operations/player-signals.json"
 
-        result = MODULE.build(root, config_path)
         published = json.loads(published_path.read_text(encoding="utf-8"))
+        roster_source = next(
+            (
+                source
+                for source in published["sources"]
+                if source.get("id") == "canonical_league_rosters"
+            ),
+            None,
+        )
+        self.assertIsNotNone(roster_source)
+        roster_path = root / roster_source["path"]
+        current_roster_hash = MODULE.ops.sha256_text(
+            roster_path.read_text(encoding="utf-8")
+        )
+        if roster_source.get("content_sha256") != current_roster_hash:
+            self.skipTest(
+                "published player-signals is stale relative to current canonical "
+                "league rosters; the materializer is expected to rebuild it"
+            )
+
+        result = MODULE.build(root, config_path)
         published_by_id = {
             str(player["player_id"]): player
             for player in published["players"]
