@@ -14,7 +14,7 @@ catch {
 }
 
 # ===========================================================================
-# Canonical historical standings consumer
+# Canonical standings consumer
 # ===========================================================================
 
 function Get-CanonicalStandingRepoRoot {
@@ -271,7 +271,8 @@ function ConvertTo-CanonicalStandingLegacyBracket {
 function Get-CanonicalStandingSourceForSeason {
     param(
         [string]$CanonicalLeagueID = "nfl-reise",
-        [Parameter(Mandatory = $true)][string]$Season
+        [Parameter(Mandatory = $true)][string]$Season,
+        [switch]$AllowActiveSeason
     )
 
     $league = Get-CanonicalStandingJson -CanonicalLeagueID $CanonicalLeagueID -Season $Season -FileName "league.json"
@@ -284,7 +285,13 @@ function Get-CanonicalStandingSourceForSeason {
         throw "Canonical standings season mismatch: requested '$Season', league.json contains '$($league.Season)'."
     }
     if ([string]$league.Status -ne "complete") {
-        throw "Canonical historical standings only accept completed seasons; $CanonicalLeagueID/$Season has status '$($league.Status)'."
+        $configuredCurrentSeason = [string](Get-Config).LeagueYear
+        if (-not $AllowActiveSeason) {
+            throw "Canonical historical standings only accept completed seasons; $CanonicalLeagueID/$Season has status '$($league.Status)'."
+        }
+        if ([string]$Season -ne $configuredCurrentSeason) {
+            throw "Canonical active standings only accept the configured current season '$configuredCurrentSeason'; requested '$Season' has status '$($league.Status)'."
+        }
     }
 
     $playoffStartWeek = [int](Get-CanonicalStandingPropertyValue -Object $league.Settings -PropertyName "playoff_week_start" -DefaultValue 0)
@@ -306,6 +313,23 @@ function Get-CanonicalStandingSourceForSeason {
         }
         RegularSeasonGames = $playoffStartWeek - 1
     }
+}
+
+function Get-CanonicalCurrentStandings {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise",
+        [AllowNull()]$PreviousSeasonStandings = $null
+    )
+
+    $currentSeason = [string](Get-Config).LeagueYear
+    $source = Get-CanonicalStandingSourceForSeason -CanonicalLeagueID $CanonicalLeagueID -Season $currentSeason -AllowActiveSeason
+    $standings = Get-StandingsRemote -playoffs $source.Playoffs -teamData @($source.TeamData) -regularSeasonGames ([int]$source.RegularSeasonGames) -previousSeasonStandings $PreviousSeasonStandings
+
+    return Get-OutputStandingsForSeason `
+        -season $currentSeason `
+        -standingsPlayoffs @($standings.Playoffs) `
+        -standingsRegularSeason @($standings.RegularSeason) `
+        -awards @($standings.Awards)
 }
 
 function Get-CanonicalHistoricalStandingSeasons {
@@ -392,6 +416,7 @@ function Get-CanonicalHistoricalStandings {
 
 Export-ModuleMember -Function @(
     "Get-CanonicalStandingSourceForSeason",
+    "Get-CanonicalCurrentStandings",
     "Get-CanonicalHistoricalStandingSeasons",
     "Get-CanonicalHistoricalStandings"
 )
