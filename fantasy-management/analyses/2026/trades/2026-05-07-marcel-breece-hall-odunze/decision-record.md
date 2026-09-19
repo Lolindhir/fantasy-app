@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -47,16 +47,19 @@ Das zentrale Risiko war kein fehlendes Hall-Vertrauen, sondern **Odunze-Regret**
 
 Hall selbst blieb ebenfalls kein sicherer Outcome.
 
-## Provisorischer Decision State
+## Finaler Decision State
 - Decision Confidence: **4/5**
 - Outcome Uncertainty: **4/5**
 - Gut Feeling: **positive**
 - Decision Margin: **moderate**
 
 Interpretation:
-**hohe Überzeugung in die Entscheidung, aber gleichzeitig eine breite Spanne plausibler Outcomes.**
+**Hohe Überzeugung in die Entscheidung bei gleichzeitig hoher Unsicherheit über die mögliche Ergebnisbandbreite.**
 
-Die numerischen Werte sind noch nicht versiegelt; Robert soll sie vor dem Seal ausdrücklich bestätigen.
+## Seal
+- Status: `sealed`
+- Sealed at: `2026-09-19T05:20:00Z`
+- User confirmation: ja
 
 ## Outcome-Firewall
 Spätere Hall-/Odunze-Performance und die spätere Verwendung der erhaltenen Picks gehören nicht in die Originalentscheidung. Die spätere Asset-Kette wird separat über Portfolio Links / Reviews bewertet.
