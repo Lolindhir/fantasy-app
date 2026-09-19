@@ -7,7 +7,6 @@ on:
       - ".github/workflows/sync-league-transactions.yml"
       - ".github/workflows/sync-league-drafts.yml"
       - ".github/workflows/sync-league-core.yml"
-      - ".github/workflows/sync-league-matchups.yml"
       - "source-data/league-registry.json"
       - "source-data/leagues/_bootstrap/**"
       - "tools/league_source_data.py"
@@ -189,8 +188,8 @@ jobs:
               echo "- Raw scope: current Sleeper draft index + discovered draft detail/picks/traded-picks"
               echo "- Canonical write-set: current-season drafts.json only"
             elif [[ "$materialization_scope" == "league-core" ]]; then
-              echo "- Raw scope: current Sleeper league + members + rosters + winners/losers brackets"
-              echo "- Canonical write-set: current-season league.json + members.json + rosters.json + winners/losers-bracket.json only"
+              echo "- Raw scope: current Sleeper league + members + rosters + winners/losers brackets + exactly the active matchup week"
+              echo "- Canonical write-set: current-season league.json + members.json + rosters.json + winners/losers-bracket.json + matchups/week-<CurrentWeek>.json only"
             elif [[ "$materialization_scope" == "matchups" ]]; then
               echo "- Raw scope: current Sleeper league evidence + exactly the active matchup week"
               echo "- Canonical write-set: current-season matchups/week-<CurrentWeek>.json only"
@@ -386,6 +385,8 @@ jobs:
                 source-data/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
                 source-data/providers/sleeper/leagues/*/losers-bracket.json|\
                 source-data/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
+                source-data/providers/sleeper/leagues/*/matchups/week-*.json|\
+                source-data/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
                 source-data/_sync/last-league-failure.json)
                   ;;
                 *)
@@ -410,6 +411,7 @@ jobs:
                 source-data/leagues/*/seasons/*/rosters.json|\
                 source-data/leagues/*/seasons/*/winners-bracket.json|\
                 source-data/leagues/*/seasons/*/losers-bracket.json|\
+                source-data/leagues/*/seasons/*/matchups/week-*.json|\
                 source-data/_sync/last-league-failure.json)
                   ;;
                 *)
