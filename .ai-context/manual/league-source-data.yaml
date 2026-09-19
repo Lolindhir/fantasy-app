@@ -293,11 +293,11 @@ productiveAcceptance:
     historicalStandings: canonical-active
     currentStandings: legacy-live-pending-current-league-freshness
     transactionsAndDrafts: canonical-active
-    currentLeagueCoreScope: source-tooling-ready-workflow-not-approved
+    currentLeagueCoreScope: productive-freshness-scheduled
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
-    status: source-tooling-ready-not-scheduled
+    status: productive-scheduled
     purpose: >
       Bounded current-season freshness for the canonical League Core facts required
       before a later Current Standings or Current League consumer cutover.
@@ -321,7 +321,17 @@ phase2TargetedFreshnessScopes:
       - transactions
       - drafts
       - consumer publication
-      - scheduler/workflow wiring
+    workflow:
+      wrapper: .github/workflows/sync-league-core.yml
+      delegatedProducer: .github/workflows/sync-league-source-data.yml
+      materializationScope: league-core
+      schedulerTarget: league-core-source
+      eventType: scheduler-sync-league-core
+      timezone: Europe/Berlin
+      cron: 2-59/10 * * * *
+      ordering: League Core :02 -> Transactions :05 -> Drafts :08 -> App League :10
+      monitoring: important / repository_dispatch / 45-minute staleness
+      publication: rebuild-and-retry via delegated League Source producer
     weekStructureRule: >
       WeekStructure is intentionally outside the fast League Core scope because it
       depends on broader matchup/history evidence. The scoped materializer preserves
@@ -339,9 +349,10 @@ phase2TargetedFreshnessScopes:
       - repeat materialization is a no-op
       - current nfl-reise Core outputs are parity-checked against accepted canonical files
     productionNote: >
-      This source capability alone does not close the Current Standings freshness gap.
-      Scheduling or GitHub Actions wiring is a separate Phase-2 step and requires the
-      repository's explicit workflow-change approval before implementation.
+      The bounded League Core scope is productively scheduled every ten minutes, ahead
+      of the next App League refresh. This still does not cut Current Standings or any
+      other consumer over to canonical data; consumer migration remains a separate
+      Phase-2 checkpoint.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
