@@ -6,6 +6,7 @@ Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 
 function Assert-True {
     param(
@@ -451,5 +452,71 @@ foreach ($season in @("2024", "2025")) {
 $publishedAllTime = @($publishedStandings | Where-Object { [string]$_.Season -eq "AllTime" })
 Assert-Equal -Actual $publishedAllTime.Count -Expected 1 -Message "Published standings must contain AllTime exactly once."
 Assert-StandingsJsonEqual -Actual $canonicalStandings.AllTime -Expected $publishedAllTime[0] -Message "Canonical historical standings AllTime parity failed."
+
+# Current League Core shadow must reconstruct the source-owned League/Team
+# inputs from canonical data without performing direct provider reads.
+$canonicalLeagueCoreUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Raw
+Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Get-LeagueRaw")) -Message "Canonical League Core shadow performs a legacy league read."
+Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Get-Teams")) -Message "Canonical League Core shadow performs a legacy team read."
+Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Get-SleeperMembers")) -Message "Canonical League Core shadow performs a direct Sleeper member read."
+Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Get-SleeperRosters")) -Message "Canonical League Core shadow performs a direct Sleeper roster read."
+Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Invoke-RestMethod")) -Message "Canonical League Core shadow performs a direct HTTP read."
+
+$publishedLeague = Get-Content (Get-Config).LeagueFile -Raw | ConvertFrom-Json
+$canonicalLeagueCoreShadow = Get-CanonicalCurrentLeagueCoreShadow -CanonicalLeagueID "nfl-reise"
+
+Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.league_id) -Expected ([string]$publishedLeague.LeagueID) -Message "Canonical League Core provider LeagueID parity failed."
+Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.name) -Expected ([string]$publishedLeague.Name) -Message "Canonical League Core name parity failed."
+Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.season) -Expected ([string]$publishedLeague.Season) -Message "Canonical League Core season parity failed."
+Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.season_type) -Expected ([string]$publishedLeague.SeasonType) -Message "Canonical League Core season type parity failed."
+Assert-Equal -Actual ([int]$canonicalLeagueCoreShadow.League.total_rosters) -Expected ([int]$publishedLeague.TotalTeams) -Message "Canonical League Core team-count parity failed."
+Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.previous_league_id) -Expected ([string]$publishedLeague.LeagueIDPrevious) -Message "Canonical League Core previous-LeagueID parity failed."
+
+$canonicalLeagueAvatar = if ([string]::IsNullOrWhiteSpace([string]$canonicalLeagueCoreShadow.League.avatar)) {
+    $null
+}
+else {
+    Get-SleeperAvatar ([string]$canonicalLeagueCoreShadow.League.avatar)
+}
+Assert-Equal -Actual ([string]$canonicalLeagueAvatar) -Expected ([string]$publishedLeague.Avatar) -Message "Canonical League Core avatar parity failed."
+
+Assert-StandingsJsonEqual -Actual $canonicalLeagueCoreShadow.League.settings -Expected $publishedLeague.Settings -Message "Canonical League Core settings parity failed."
+Assert-StandingsJsonEqual -Actual $canonicalLeagueCoreShadow.League.scoring_settings -Expected $publishedLeague.ScoringType -Message "Canonical League Core scoring settings parity failed."
+Assert-StandingsJsonEqual -Actual @($canonicalLeagueCoreShadow.League.roster_positions) -Expected @($publishedLeague.RosterSize) -Message "Canonical League Core roster-position parity failed."
+
+function Select-LeagueCoreTeamComparable {
+    param([Parameter(Mandatory = $true)]$Team)
+
+    return [PSCustomObject][ordered]@{
+        Owner          = $Team.Owner
+        OwnerID        = $Team.OwnerID
+        OwnerAvatar    = $Team.OwnerAvatar
+        Team           = $Team.Team
+        TeamAbbr       = $Team.TeamAbbr
+        TeamID         = $Team.TeamID
+        TeamAvatar     = $Team.TeamAvatar
+        MatchupID      = $Team.MatchupID
+        WaiverPosition = $Team.WaiverPosition
+        WaiverAdjusted = $Team.WaiverAdjusted
+        IsCommissioner = $Team.IsCommissioner
+        Roster         = @($Team.Roster)
+        Reserve        = @($Team.Reserve)
+        Taxi           = @($Team.Taxi)
+        Starter        = @($Team.Starter)
+    }
+}
+
+$canonicalCoreTeams = @(
+    $canonicalLeagueCoreShadow.Teams |
+        Sort-Object { [int]$_.TeamID } |
+        ForEach-Object { Select-LeagueCoreTeamComparable -Team $_ }
+)
+$publishedCoreTeams = @(
+    $publishedLeague.Teams |
+        Sort-Object { [int]$_.TeamID } |
+        ForEach-Object { Select-LeagueCoreTeamComparable -Team $_ }
+)
+Assert-Equal -Actual $canonicalCoreTeams.Count -Expected $publishedCoreTeams.Count -Message "Canonical League Core team count differs from published League.json."
+Assert-StandingsJsonEqual -Actual $canonicalCoreTeams -Expected $publishedCoreTeams -Message "Canonical League Core team-source parity failed."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green
