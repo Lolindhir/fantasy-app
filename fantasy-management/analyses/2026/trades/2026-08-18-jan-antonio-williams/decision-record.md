@@ -56,6 +56,15 @@ Robert wusste das am 18.08. **nicht**.
 
 Das wird ausdrücklich **nicht rückwirkend in die ursprüngliche These hineingeschrieben**. Der ursprüngliche Record muss abbilden, was Robert damals tatsächlich wusste und glaubte. Die Diggs-Information ist stattdessen ein sauber dokumentierter späterer Process-Review-Punkt: Eine relevante öffentlich verfügbare Information war beim Trade nicht in Roberts Informationssatz enthalten.
 
+## Roster-/Cut-Kontext
+Robert hatte zum Tradezeitpunkt bereits **ein übervolles Roster** und dachte aktiv darüber nach, wen er später cutten müsste.
+
+Das wirkte in zwei Richtungen:
+- **Gegen den Trade:** Antonio war noch ein weiterer junger WR in einem ohnehin tiefen Roster und erhöhte den Konkurrenzdruck um Rosterplätze.
+- **Für den Trade:** Robert gab mit FA 3.04 einen späteren zusätzlichen Zugang ab. Er musste also im Free-Agent-Draft **einen Spieler weniger aufnehmen**, was einen späteren Cut-Konflikt vermied.
+
+Diese Unsicherheit betraf deshalb weniger Antonio als Spieler, sondern die Frage, ob ein weiterer WR-Zugang für das Gesamtportfolio optimal war.
+
 ## Commanders-/Daniels-Bias
 Der Commanders-/Jayden-Daniels-Aspekt war laut Robert kein wesentlicher Grund, mehr zu bezahlen.
 
@@ -77,7 +86,7 @@ Er wurde eher in der Kommunikation mit Jan als nachvollziehbare Begründung verw
 Nach der geschärften Definition geht es um die Überzeugung in genau diese Konstruktion zu genau diesem Preis. FA 3.04 war schon vor Jans Forderung als Hard Ceiling definiert. Als Jan genau diesen Preis nannte, war die Entscheidung klar.
 
 ### Warum Uncertainty 3?
-Antonio blieb ein Rookie mit Entwicklungsrisiko. Robert sah aber einen relativ konkreten Upside-/Rollenpfad und war nicht völlig offen zwischen mehreren gleich plausiblen Zukunftsbildern. Deshalb moderate statt hohe Outcome-Uncertainty.
+Antonio blieb ein Rookie mit Entwicklungsrisiko. Zusätzlich war das Roster bereits übervoll, sodass offen war, ob ein weiterer junger WR für das Gesamtportfolio optimal war. Gleichzeitig half der Trade sogar etwas gegen den Cut-Druck, weil FA 3.04 als späterer zusätzlicher Roster-Zugang wegfiel. Das ergibt echte, aber noch **moderate** Unsicherheit – daher 3/5 statt 2/5 oder 4/5.
 
 ## Noch offen vor Seal
 Bestätigung oder Anpassung von:
