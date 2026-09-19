@@ -37,10 +37,9 @@ contract:
 sourceOfTruth:
   pairingAndScoreBase: >
     source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-*.json
-    owns durable pairing and score evidence. During the active lineup week the
-    existing direct Sleeper matchup fetch may overlay fresher score/custom-score
-    values only onto already-known canonical TeamIDs/pairings. This is transitional
-    compatibility until #347 migrates all consumers to canonical source data.
+    owns durable pairing and score evidence. During the active lineup week RequestLeague
+    consumes the productively refreshed canonical partition through CanonicalMatchupUtils;
+    there is no direct Sleeper matchup overlay in the app consumer.
   nflSchedule: source-data/nfl/schedules/<season>.json
   nflFinality: source-data/nfl/game-finality/<season>.json
   weeklyRosterEvidence: source-data/nfl/weekly-rosters/<season>/<week>.json
