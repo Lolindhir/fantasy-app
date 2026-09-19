@@ -26,6 +26,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_player_signal_dataset_with_projection_extensions as projection_ext  # noqa: E402
+import canonical_league_ownership as canonical_ownership  # noqa: E402
 import free_agent_movement_market_calibration as market_calibration  # noqa: E402
 
 SCHEMA_VERSION = 1
@@ -77,11 +78,49 @@ def validate_config(config: dict[str, Any]) -> None:
         raise FreeAgentMovementMaterializationError("owned_boundary_quantile must be between 0 and 1")
     if not isinstance(near_distance, (int, float)) or float(near_distance) < 0:
         raise FreeAgentMovementMaterializationError("near_distance_percentile_points must be non-negative")
+    canonical_league = config.get("canonical_league") if isinstance(config.get("canonical_league"), dict) else {}
+    canonical_league_id = canonical_league.get("canonical_league_id")
+    if not isinstance(canonical_league_id, str) or not canonical_league_id:
+        raise FreeAgentMovementMaterializationError("canonical_league.canonical_league_id is required")
     if config.get("market_value_materiality") is not None:
         try:
             market_calibration.validate_config(config.get("market_value_materiality"))
         except market_calibration.MarketCalibrationError as exc:
             raise FreeAgentMovementMaterializationError(str(exc)) from exc
+
+
+def load_canonical_league_scoring(root: Path, config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    canonical_league_id = str(config["canonical_league"]["canonical_league_id"])
+    try:
+        season = canonical_ownership.resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+    except canonical_ownership.CanonicalOwnershipError as exc:
+        raise FreeAgentMovementMaterializationError(str(exc)) from exc
+
+    relative_path = Path("source-data") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    league = load_json(root / relative_path)
+    if not isinstance(league, dict):
+        raise FreeAgentMovementMaterializationError("Canonical league scoring source must be a JSON object")
+    if league.get("CanonicalLeagueID") != canonical_league_id:
+        raise FreeAgentMovementMaterializationError("Canonical league scoring source identity mismatch")
+    try:
+        source_season = int(league.get("Season"))
+    except (TypeError, ValueError) as exc:
+        raise FreeAgentMovementMaterializationError("Canonical league scoring source has invalid Season") from exc
+    if source_season != season:
+        raise FreeAgentMovementMaterializationError(
+            f"Canonical league scoring season mismatch: expected {season}, found {league.get('Season')!r}"
+        )
+    scoring = league.get("ScoringSettings")
+    if not isinstance(scoring, dict):
+        raise FreeAgentMovementMaterializationError("Canonical league ScoringSettings is missing")
+    return scoring, {
+        "canonical_league_id": canonical_league_id,
+        "season": season,
+        "path": relative_path.as_posix(),
+    }
 
 
 def validate_source_documents(free_agents: dict[str, Any], players: dict[str, Any]) -> None:
@@ -890,10 +929,9 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
     source_cfg = config["source"]
     free_agent_path = root / source_cfg["free_agent_signals"]
     player_path = root / source_cfg["player_signals"]
-    league_path = root / source_cfg["league"]
     free_agents = load_json(free_agent_path)
     players = load_json(player_path)
-    league = load_json(league_path)
+    scoring, canonical_scoring_source = load_canonical_league_scoring(root, config)
     validate_source_documents(free_agents, players)
     evaluation_date = _extract_date(free_agents.get("generated_at"))
     if evaluation_date is None:
@@ -955,7 +993,6 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
 
     replacement_cfg = config["replacement_relevance"]
     boundaries = _replacement_boundaries(players.get("players") or [], float(replacement_cfg["owned_boundary_quantile"]))
-    scoring = league.get("ScoringType") if isinstance(league.get("ScoringType"), dict) else {}
     discoveries: list[dict[str, Any]] = []
     discovery_positions: Counter[str] = Counter()
     priority_counts: Counter[str] = Counter()
@@ -1063,6 +1100,7 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
         "previous_free_agent_input_fingerprint": (previous_free_agents or {}).get("input_fingerprint"),
         "source_records": source_records,
         "thresholds": thresholds,
+        "canonical_league_scoring": scoring,
         "replacement_boundaries": boundaries,
         "discoveries": [
             {
@@ -1089,7 +1127,7 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
         "source": {
             "free_agent_signals": {"path": source_cfg["free_agent_signals"], "dataset_id": FREE_AGENT_DATASET_ID, "input_fingerprint": free_agents.get("input_fingerprint")},
             "player_signals": {"path": source_cfg["player_signals"], "dataset_id": PLAYER_DATASET_ID, "input_fingerprint": players.get("input_fingerprint")},
-            "league": source_cfg["league"],
+            "canonical_league_scoring": canonical_scoring_source,
             "source_catalog": source_cfg["source_catalog"],
             "source_catalog_extensions": source_cfg.get("source_catalog_extensions") or [],
             "materiality_profiles": config["materiality_profiles"],
