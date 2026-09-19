@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -60,7 +60,7 @@ Robert erkennt im damaligen Prozess einen realen Bias-Risikofaktor:
 Das wird als **ex-ante Prozessrisiko** dokumentiert, nicht als späteres Outcome-Urteil.
 
 ## Preis / Ceiling
-- Preisgefühl: **bewusster leichter Overpay**
+- Preisgefühl: **moderater, bewusst akzeptierter Overpay**
 - beide 2.05er waren teuer
 - zurückkommende Fourths waren wichtig
 - Execution vs Ceiling: **at**
@@ -68,17 +68,22 @@ Das wird als **ex-ante Prozessrisiko** dokumentiert, nicht als späteres Outcome
 
 ## Vorgeschlagener Decision State
 - **Decision Confidence: 4/5**
-- **Outcome Uncertainty: 4/5**
+- **Outcome Uncertainty: 3/5**
 - **Gut Feeling: positive**
 - **Decision Margin: moderate**
 
 Die 4 bei Confidence bedeutet nach der geschärften Definition: klare Überzeugung, dass Robert diesen Trade machen wollte, aber mit einem substanziellen Gegenargument zur **konkreten Preisgestaltung**.
 
-Die 4 bei Outcome Uncertainty bildet die breite Zukunftsspanne ab: Fannin-Upside, Marks-Upside, zwei wertvolle 2.05-Chancen und der noch nicht vollständig geklärte Fannin-Situations-/Rollenpfad.
+Die **3/5 Outcome Uncertainty** bildet ab, dass trotz echter Entwicklungsspanne bei Fannin, Marks und den beiden 2.05-Assets Roberts Zukunftsbild nicht völlig offen war: Er hatte eine klare Fannin-These und akzeptierte bewusst das Risiko.
 
-## Noch offen vor Seal
-Explizite Bestätigung oder Anpassung von:
-**4/5 Confidence · 4/5 Outcome Uncertainty · positive · moderate**
+## Finaler Decision State
+- **Decision Confidence: 4/5**
+- **Outcome Uncertainty: 3/5**
+- **Gut Feeling: positive**
+- **Decision Margin: moderate**
+- **Preisgefühl: moderater, bewusst akzeptierter Overpay**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T06:58:00Z`
+- User confirmation: ja
