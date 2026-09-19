@@ -119,7 +119,15 @@ def draft(picks: list[dict] | None = None) -> list[dict]:
 
 
 class Fixture:
-    def __init__(self, root: Path, players: list[dict], league_data: dict, draft_data: list[dict]):
+    def __init__(
+        self,
+        root: Path,
+        players: list[dict],
+        league_data: dict,
+        draft_data: list[dict],
+        *,
+        canonical_membership: dict | None = None,
+    ):
         self.root = root
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
         self.write("public/data/League.json", league_data)
@@ -129,20 +137,115 @@ class Fixture:
             "fantasy-management/generated/operations/player-signals.json",
             {"schema_version": 1, "dataset_id": "player-signals", "generated_at": NOW, "input_fingerprint": "a" * 64, "players": players, "quality": {"status": "ok"}},
         )
+        self.write_canonical_league(canonical_membership or league_data)
         self.write(
             "fantasy-management/automation/fa-board-materialization.json",
             {
                 "schema_version": 1,
                 "materialization_id": "fantasy-operations-fa-board-materialization",
                 "managed_team": {"team_id": 1},
+                "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
-                    "league": "public/data/League.json",
+                    "league_enrichment": "public/data/League.json",
                     "drafts": "public/data/Drafts.json",
                     "timestamps": "public/data/Timestamps.json",
                 },
                 "output": {"fa_board_readmodel": "fantasy-management/generated/operations/fa-board-readmodel.json"},
             },
+        )
+
+    @staticmethod
+    def canonical_player(player_id: str) -> dict:
+        return {
+            "CanonicalPlayerID": f"canonical-{player_id}",
+            "ProviderMappings": [
+                {"Provider": "Sleeper", "ProviderPlayerID": str(player_id)}
+            ],
+        }
+
+    def write_canonical_league(self, membership: dict) -> None:
+        teams = membership.get("Teams") or []
+        owners = []
+        members = []
+        rosters = []
+        for team in teams:
+            team_id = int(team["TeamID"])
+            member_id = f"member-{team_id}"
+            owner_id = f"user-{team_id}"
+            owners.append(
+                {
+                    "name": team.get("Team") or f"Owner {team_id}",
+                    "team_id": team_id,
+                    "canonical_league_member_id": member_id,
+                }
+            )
+            members.append(
+                {
+                    "CanonicalLeagueMemberID": member_id,
+                    "DisplayName": team.get("Team") or f"Owner {team_id}",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": owner_id}
+                    ],
+                }
+            )
+            roster_ids = [str(pid) for pid in (team.get("Roster") or [])]
+            reserve_ids = [str(pid) for pid in (team.get("Reserve") or [])]
+            taxi_ids = [str(pid) for pid in (team.get("Taxi") or [])]
+            for player_id in reserve_ids + taxi_ids:
+                if player_id not in roster_ids:
+                    roster_ids.append(player_id)
+            rosters.append(
+                {
+                    "CanonicalLeagueMemberID": member_id,
+                    "CanonicalLeagueRosterID": f"roster-{team_id}",
+                    "ProviderOwnerUserID": owner_id,
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderRosterID": str(team_id)}
+                    ],
+                    "Players": [self.canonical_player(pid) for pid in roster_ids],
+                    "Reserve": [self.canonical_player(pid) for pid in reserve_ids],
+                    "Taxi": [self.canonical_player(pid) for pid in taxi_ids],
+                    "Starters": [],
+                }
+            )
+
+        self.write(
+            "fantasy-management/league-context/owner-registry.json",
+            {
+                "version": 3,
+                "canonical_league_id": "test-league",
+                "owners": owners,
+            },
+        )
+        self.write(
+            "source-data/leagues/test-league/manifest.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": "test-league-2026",
+                "Seasons": [
+                    {
+                        "CanonicalLeagueSeasonID": "test-league-2026",
+                        "Season": 2026,
+                    }
+                ],
+            },
+        )
+        self.write(
+            "source-data/leagues/test-league/seasons/2026/league.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "Season": 2026,
+                "Settings": {"num_teams": len(teams)},
+            },
+        )
+        self.write(
+            "source-data/leagues/test-league/seasons/2026/members.json",
+            members,
+        )
+        self.write(
+            "source-data/leagues/test-league/seasons/2026/rosters.json",
+            rosters,
         )
 
     def write(self, path: str, value: object) -> None:
@@ -159,9 +262,22 @@ def row(result: dict, pid: str) -> dict:
 
 
 class FaBoardReadmodelTests(unittest.TestCase):
-    def run_fixture(self, players: list[dict], league_data: dict, draft_data: list[dict]) -> dict:
+    def run_fixture(
+        self,
+        players: list[dict],
+        league_data: dict,
+        draft_data: list[dict],
+        *,
+        canonical_membership: dict | None = None,
+    ) -> dict:
         with tempfile.TemporaryDirectory() as tmp:
-            return Fixture(Path(tmp), players, league_data, draft_data).build()
+            return Fixture(
+                Path(tmp),
+                players,
+                league_data,
+                draft_data,
+                canonical_membership=canonical_membership,
+            ).build()
 
     def test_opponent_rostered_and_taxi_buckets_block_availability(self) -> None:
         result = self.run_fixture(
@@ -216,16 +332,85 @@ class FaBoardReadmodelTests(unittest.TestCase):
         self.assertEqual("materialized", materialized["current_fa_draft"]["materialization_mode"])
         self.assertEqual(1, row(materialized, "candidate")["active_slot_cost_now"])
 
-    def test_incomplete_negative_ownership_fails_closed(self) -> None:
-        result = self.run_fixture([player("unknown", "Unknown")], league(incomplete_opponent=True), draft())
-        self.assertEqual("unknown", row(result, "unknown")["availability_status"])
-        self.assertFalse(result["sources"]["league"]["complete_for_negative_ownership"])
-        self.assertEqual("error", result["quality"]["status"])
+    def test_legacy_league_roster_divergence_does_not_control_availability_or_capacity(self) -> None:
+        canonical = league(
+            managed_roster=["taxi"],
+            managed_taxi=["taxi"],
+            opponent_roster=["opp"],
+            reserve_slots=1,
+            taxi_slots=2,
+        )
+        legacy = league(
+            managed_roster=["legacy-only"],
+            managed_taxi=[],
+            opponent_roster=[],
+            reserve_slots=1,
+            taxi_slots=2,
+        )
+        result = self.run_fixture(
+            [
+                player("taxi", "Taxi Rookie", years=0),
+                player("opp", "Opponent"),
+                player("legacy-only", "Legacy Only"),
+            ],
+            legacy,
+            draft(),
+            canonical_membership=canonical,
+        )
+
+        self.assertEqual("rostered", row(result, "taxi")["availability_status"])
+        self.assertEqual("Taxi", row(result, "taxi")["roster_bucket"])
+        self.assertEqual("rostered", row(result, "opp")["availability_status"])
+        self.assertEqual("2", row(result, "opp")["owner_team_id"])
+        self.assertEqual("available", row(result, "legacy-only")["availability_status"])
+        self.assertEqual(1, result["managed_team_capacity"]["taxi_occupied"])
+        self.assertEqual(1, result["managed_team_capacity"]["taxi_free_before_pending"])
+        self.assertTrue(
+            result["sources"]["canonical_league_rosters"]["complete_for_negative_ownership"]
+        )
+
+    def test_invalid_canonical_ownership_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fixture = Fixture(root, [player("unknown", "Unknown")], league(), draft())
+            rosters_path = root / "source-data/leagues/test-league/seasons/2026/rosters.json"
+            rosters = json.loads(rosters_path.read_text(encoding="utf-8"))
+            rosters[0]["ProviderOwnerUserID"] = "wrong-owner"
+            fixture.write(
+                "source-data/leagues/test-league/seasons/2026/rosters.json",
+                rosters,
+            )
+
+            with self.assertRaisesRegex(
+                MODULE.FaBoardMaterializationError,
+                "Canonical FA-board ownership is unavailable",
+            ):
+                fixture.build()
 
     def test_missing_current_fa_draft_during_draft_phase_fails_closed(self) -> None:
         result = self.run_fixture([player("unknown", "Unknown")], league(), [])
         self.assertEqual("unknown", row(result, "unknown")["availability_status"])
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+
+    def test_repository_current_fa_board_semantics_match_canonical_cutover(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        config_path = root / "fantasy-management/automation/fa-board-materialization.json"
+        rebuilt = MODULE.build(root, config_path)
+        published = json.loads(
+            (root / "fantasy-management/generated/operations/fa-board-readmodel.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        for key in (
+            "managed_team",
+            "current_fa_draft",
+            "managed_team_capacity",
+            "population",
+            "players",
+            "quality",
+        ):
+            self.assertEqual(published[key], rebuilt[key])
 
     def test_market_is_compact_and_schema_validates(self) -> None:
         result = self.run_fixture([player("market", "Market")], league(), draft())
