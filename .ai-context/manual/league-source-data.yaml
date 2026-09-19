@@ -322,7 +322,7 @@ productiveAcceptance:
     transactionsAndDrafts: canonical-active
     currentLeagueCoreScope: productive-freshness-scheduled
     currentLeagueCoreConsumer: canonical-active / RequestLeague League+Teams core
-    currentPlayoffBracketConsumer: canonical-shadow-parity / productive-Get-Playoffs-still-live
+    currentPlayoffBracketConsumer: canonical-active / RequestLeague Get-CanonicalCurrentPlayoffs
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -383,11 +383,11 @@ phase2TargetedFreshnessScopes:
       canonical League Core facts directly. RequestLeague now also consumes current
       League Metadata/Settings and Members/Rosters team inputs from league.json,
       members.json and rosters.json. The canonical winners/losers bracket contract
-      now preserves unresolved advancement routing through Team1Source/Team2Source,
-      and a non-publishing current Playoff shadow reconstructs the full legacy bracket
-      shape for parity. Productive playoff publication and the current matchup score
-      overlay intentionally remain on their separate live boundaries until separately
-      authorized cutovers.
+      preserves unresolved advancement routing through Team1Source/Team2Source, and
+      RequestLeague now consumes that canonical bracket source productively through
+      Get-CanonicalCurrentPlayoffs while preserving the public League.json::Playoffs
+      shape. The current matchup score overlay intentionally remains on its separate
+      live boundary until a separately authorized cutover.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
