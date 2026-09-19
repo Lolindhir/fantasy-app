@@ -107,7 +107,8 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.write_json(root, "generated/free-agent-signals.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-16T06:30:00Z", "input_fingerprint": "b" * 64, "players": [wr, kicker], "quality": {"status": "ok", "source_quality_status": "ok", "source_issue_count": 0, "selection_count_matches_source": True}})
         previous = root / "generated/free-agent-signals.previous.json"
         self.write_json(root, "generated/free-agent-signals.previous.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-15T06:30:00Z", "input_fingerprint": "c" * 64, "players": [self.player("fa-wr", "WR", "fantasy_free_agent", depth=3), self.player("fa-k", "K", "fantasy_free_agent")], "quality": {"status": "ok"}})
-        self.write_json(root, "league.json", {"ScoringType": {}})
+        self.write_json(root, "source-data/leagues/test/manifest.json", {"CanonicalLeagueID": "test", "CurrentCanonicalLeagueSeasonID": "test-2026", "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}]})
+        self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": {}})
 
         definitions = [
             self.source("wr-adp", "adp", "WR", "redraft_adp", ["rank", "percentile", "adp", "times_drafted"], primary=True),
@@ -128,7 +129,8 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         config = root / "config.json"
         self.write_json(root, "config.json", {
             "schema_version": 1,
-            "source": {"free_agent_signals": "generated/free-agent-signals.json", "player_signals": "generated/player-signals.json", "league": "league.json", "source_catalog": "catalog.json", "source_catalog_extensions": []},
+            "source": {"free_agent_signals": "generated/free-agent-signals.json", "player_signals": "generated/player-signals.json", "source_catalog": "catalog.json", "source_catalog_extensions": []},
+            "canonical_league": {"canonical_league_id": "test"},
             "materiality_profiles": self.profiles(root),
             "comparison_windows_days": [7],
             "cross_signal": {"minimum_percentile_delta_points": 5},
@@ -153,6 +155,25 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             self.assertIn("depth_chart_order_change", {x["kind"] for x in by_id["fa-wr"]["movement"]["structural_day_over_day"]["changes"]})
             self.assertEqual(set(result["population"]["positions"]), {"QB", "RB", "WR", "TE", "K"})
 
+
+    def test_scoring_comes_from_canonical_league_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, previous = self.fixture(root)
+            self.write_json(root, "public/data/League.json", {"ScoringType": {"pass_td": 999}})
+            result = MODULE.build(root, config, previous)
+            self.assertEqual(result["source"]["canonical_league_scoring"]["canonical_league_id"], "test")
+            self.assertEqual(result["source"]["canonical_league_scoring"]["season"], 2026)
+            self.assertNotIn("league", result["source"])
+
+    def test_canonical_scoring_identity_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config, previous = self.fixture(root)
+            self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "wrong", "Season": 2026, "ScoringSettings": {}})
+            with self.assertRaisesRegex(MODULE.FreeAgentMovementMaterializationError, "identity mismatch"):
+                MODULE.build(root, config, previous)
+
     def test_current_repository_inputs_build_and_validate(self) -> None:
         root = SCRIPT_PATH.parents[3]
         result = MODULE.build(root, root / "fantasy-management/automation/free-agent-movement-materialization.json")
@@ -160,6 +181,12 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         jsonschema.Draft202012Validator(schema).validate(result)
         self.assertGreater(result["population"]["free_agent_count"], 0)
         self.assertTrue(all(item["ownership"]["status"] == "fantasy_free_agent" for item in result["discoveries"]))
+        published = json.loads((root / "fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8"))
+        self.assertEqual(result["discoveries"], published["discoveries"])
+        self.assertEqual(result["population"], published["population"])
+        self.assertEqual(result["replacement_context"], published["replacement_context"])
+        self.assertEqual(result["materiality_thresholds"], published["materiality_thresholds"])
+        self.assertEqual(result["quality"], published["quality"])
 
     def test_production_workflow_materializes_after_free_agents(self) -> None:
         root = SCRIPT_PATH.parents[3]
