@@ -6,6 +6,9 @@
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
+## Ziel
+**Breece Hall als klaren Langzeit-Target holen, dafür bewusst einen Teil der jungen WR-Upside in Rome Odunze abgeben und das Portfolio von WR-Ungewissheit stärker Richtung RB-Stabilität verschieben – ohne Colston Loveland oder Tyler Warren anzutasten.**
+
 ## Exakte Transaktion
 Robert erhielt:
 - Breece Hall
@@ -36,7 +39,11 @@ Beide wurden im damaligen Verhandlungsverlauf ausdrücklich aus Hall-Konstruktio
 ## Preis / Ceiling
 Der finale Preis fühlte sich **fair bis leicht overpaid** an.
 
-Robert versteht Marcels Wunsch nach einem Ausgleich über die 1:1-Basis hinaus, erinnert den finalen Deal aber ungefähr als sein **Ceiling**. Materiell mehr hätte er nicht zahlen wollen.
+Robert verstand Marcels Wunsch nach einem Ausgleich über die 1:1-Basis hinaus. Gleichzeitig sah er Odunze-for-Hall bereits als grundsätzlich fair an; durch die zusätzliche Pick-Struktur lag der ausgeführte Deal für ihn eher am oberen Ende seines akzeptablen Bereichs.
+
+- Price Ceiling: ungefähr der ausgeführte Deal
+- Execution vs Ceiling: **at**
+- Materiell mehr hätte Robert nicht zahlen wollen.
 
 ## Risiko
 Das zentrale Risiko war kein fehlendes Hall-Vertrauen, sondern **Odunze-Regret**:
@@ -48,25 +55,23 @@ Das zentrale Risiko war kein fehlendes Hall-Vertrauen, sondern **Odunze-Regret**
 Hall selbst blieb ebenfalls kein sicherer Outcome.
 
 ## Finaler Decision State
-- Decision Confidence: **4/5**
-- Outcome Uncertainty: **4/5**
-- Gut Feeling: **positive**
-- Decision Margin: **moderate**
+- **Decision Confidence: 4/5**
+- **Outcome Uncertainty: 4/5**
+- **Gut Feeling: positive**
+- **Decision Margin: moderate**
 
 Interpretation:
 **Hohe Überzeugung in die Entscheidung bei gleichzeitig hoher Unsicherheit über die mögliche Ergebnisbandbreite.**
 
+Robert hielt den Trade insgesamt für richtig und war nach Abschluss zufrieden. Die Unsicherheit lag vor allem darin, ob Odunze unmittelbar vor einem großen Breakout abgegeben wurde und ob der leicht teure Endpreis diese Upside vollständig kompensierte.
+
 ## Seal
 - Status: `sealed`
-- Sealed at: `2026-09-19T05:20:00Z`
+- Sealed at: `2026-09-19T05:35:00Z`
 - User confirmation: ja
 
 ## Outcome-Firewall
 Spätere Hall-/Odunze-Performance und die spätere Verwendung der erhaltenen Picks gehören nicht in die Originalentscheidung. Die spätere Asset-Kette wird separat über Portfolio Links / Reviews bewertet.
 
-
-## Post-Seal-Korrektur
-- 2026-09-19T05:30:00Z: Das historische Preisgefühl wurde von **fair** auf **fair bis leicht overpaid** präzisiert.
-- Grund: präzisere Erinnerung Roberts an die damalige subjektive Preiswahrnehmung.
-- Keine Änderung an Decision Confidence, Outcome Uncertainty, Gut Feeling, Decision Margin oder Price Ceiling.
-- Kein Outcome-Rewrite; spätere Ergebnisse spielten bei der Korrektur keine Rolle.
+## Correction / Provenance
+Der erste Seal-Schritt erfolgte noch während der laufenden Kalibrierung. Robert stellte anschließend ausdrücklich klar, dass die Rekonstruktion noch live war und das historische Preisgefühl **fair bis leicht overpaid** als normale finale Auswertung integriert werden sollte. Diese finale Fassung wurde daraufhin erneut ausdrücklich autorisiert und versiegelt.
