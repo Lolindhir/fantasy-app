@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -56,9 +56,15 @@ Die Unsicherheit über den richtigen **Entscheidungsweg** war sehr gering. Rober
 
 Die spätere Karriere von Barner oder der Spieler, der einmal aus dem 2027 Rookie 4th entsteht, ist davon getrennte Outcome-Evidence.
 
-## Noch offen vor Seal
-Explizite Bestätigung oder Anpassung von:
-**5/5 Confidence · 1/5 Outcome Uncertainty · very_positive · clear**
+## Finaler Decision State
+- **Decision Confidence: 5/5**
+- **Outcome Uncertainty: 1/5**
+- **Gut Feeling: very_positive**
+- **Decision Margin: clear**
+- **Preisgefühl: guter Value / klare Utility-Verbesserung**
+- **Mindestgegenleistung: 2027 Rookie 4th**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T07:45:00Z`
+- User confirmation: ja
