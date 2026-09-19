@@ -22,10 +22,7 @@
   "retryPolicies": {
     "standard": {
       "maxAttempts": 3,
-      "backoffMinutes": [
-        5,
-        10
-      ],
+      "backoffMinutes": [5, 10],
       "cooldownMinutes": 60
     }
   },
@@ -51,15 +48,8 @@
       "eventType": "scheduler-update-league",
       "profile": "productive",
       "timezone": "Etc/UTC",
-      "cron": [
-        "*/10 * * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["*/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "games",
@@ -68,16 +58,8 @@
       "eventType": "scheduler-update-games",
       "profile": "productive",
       "timezone": "America/New_York",
-      "cron": [
-        "45 0 * * *",
-        "0 13 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["45 0 * * *", "0 13 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "players",
@@ -86,16 +68,8 @@
       "eventType": "scheduler-update-players",
       "profile": "productive",
       "timezone": "America/New_York",
-      "cron": [
-        "15 1 * * *",
-        "0 8 * * *",
-        "30 13 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch"
-      ]
+      "cron": ["15 1 * * *", "0 8 * * *", "30 13 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
       "id": "standings",
@@ -104,14 +78,8 @@
       "eventType": "scheduler-update-standings",
       "profile": "productive",
       "timezone": "America/New_York",
-      "cron": [
-        "35 3 * * 3"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch"
-      ]
+      "cron": ["35 3 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
       "id": "transactions",
@@ -120,14 +88,8 @@
       "eventType": "scheduler-update-transactions",
       "profile": "productive",
       "timezone": "America/New_York",
-      "cron": [
-        "5 4 * * 3"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch"
-      ]
+      "cron": ["5 4 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
       "id": "teams",
@@ -136,14 +98,8 @@
       "eventType": "scheduler-update-teams",
       "profile": "productive",
       "timezone": "America/New_York",
-      "cron": [
-        "35 4 * * 3"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch"
-      ]
+      "cron": ["35 4 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
       "id": "nfl-source",
@@ -152,14 +108,8 @@
       "eventType": "scheduler-sync-nfl-source-data",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "0 4 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["0 4 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
       "id": "nfl-game-finality",
@@ -168,13 +118,8 @@
       "eventType": "scheduler-sync-nfl-game-finality",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "*/10 * * 9-12,1 *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch"
-      ]
+      "cron": ["*/10 * * 9-12,1 *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
       "id": "league-source",
@@ -183,14 +128,8 @@
       "eventType": "scheduler-sync-league-source-data",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "30 4 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["30 4 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
       "id": "league-core-source",
@@ -199,13 +138,8 @@
       "eventType": "scheduler-sync-league-core",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "2-59/10 * * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch"
-      ]
+      "cron": ["2-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
       "id": "league-transaction-source",
@@ -214,13 +148,8 @@
       "eventType": "scheduler-sync-league-transactions",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "5-59/10 * * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch"
-      ]
+      "cron": ["5-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
       "id": "league-draft-source",
@@ -229,13 +158,8 @@
       "eventType": "scheduler-sync-league-drafts",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "8-59/10 * * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch"
-      ]
+      "cron": ["8-59/10 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
       "id": "source-data-readiness",
@@ -244,14 +168,8 @@
       "eventType": "scheduler-source-data-readiness",
       "profile": "observer",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "0 5 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["0 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
       "id": "fantasypros",
@@ -260,15 +178,8 @@
       "eventType": "scheduler-update-fantasypros-rankings",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "20 5 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["20 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "fantasycalc",
@@ -277,15 +188,8 @@
       "eventType": "scheduler-update-fantasycalc-rankings",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "32 5 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["32 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "ffc-adp",
@@ -294,15 +198,8 @@
       "eventType": "scheduler-update-ffc-adp",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "44 5 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["44 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "fftoday",
@@ -311,15 +208,8 @@
       "eventType": "scheduler-update-fftoday-projections",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "56 5 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["56 5 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "cbs-sports",
@@ -328,15 +218,8 @@
       "eventType": "scheduler-update-cbs-sports-projections",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "8 6 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["8 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "sleeper-trending",
@@ -345,15 +228,8 @@
       "eventType": "scheduler-update-sleeper-trending",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "20 6 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["20 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "fantasy-operations-materializer",
@@ -362,15 +238,8 @@
       "eventType": "scheduler-materialize-fantasy-operations-inputs",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "45 6 * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch",
-        "push"
-      ]
+      "cron": ["45 6 * * *"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
     },
     {
       "id": "backup-cleanup",
@@ -379,14 +248,8 @@
       "eventType": "scheduler-clean-backups",
       "profile": "maintenance",
       "timezone": "Europe/Berlin",
-      "cron": [
-        "0 17 * * 3"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "schedule",
-        "workflow_dispatch"
-      ]
+      "cron": ["0 17 * * 3"],
+      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch"]
     },
     {
       "id": "workflow-health",
@@ -395,13 +258,8 @@
       "eventType": "scheduler-workflow-health",
       "profile": "observer",
       "timezone": "Etc/UTC",
-      "cron": [
-        "7-59/30 * * * *"
-      ],
-      "satisfyingEvents": [
-        "repository_dispatch",
-        "workflow_dispatch"
-      ],
+      "cron": ["7-59/30 * * * *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"],
       "maxStarvationMinutes": 30,
       "deferUntilOtherTargetsSettled": {
         "maxMinutes": 20
