@@ -39,6 +39,7 @@ from fantasy_football_calculator_adp_storage import (  # noqa: E402
     write_format,
 )
 from fantasy_football_calculator_kicker_adp import (  # noqa: E402
+    FantasyFootballCalculatorKickerCoverageError,
     FantasyFootballCalculatorKickerError,
     parse_kickers,
     write_kicker_format,
@@ -97,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
         saved = parse_input_mapping(args.input)
         prepared: list[dict[str, Any]] = []
         kicker_prepared: dict[str, Any] | None = None
+        kicker_coverage_warning: str | None = None
 
         # Validate both source formats before publishing either one.
         for key, config in FORMAT_CONFIGS.items():
@@ -135,17 +137,21 @@ def main(argv: list[str] | None = None) -> int:
             })
 
             if key == "ppr-8-team":
-                kicker_rows, kicker_diagnostics = parse_kickers(payload, sample)
-                kicker_prepared = {
-                    "payload": payload,
-                    "response_headers": response_headers,
-                    "source_url": source_url,
-                    "sample": sample,
-                    "rows": kicker_rows,
-                    "diagnostics": kicker_diagnostics,
-                }
+                try:
+                    kicker_rows, kicker_diagnostics = parse_kickers(payload, sample)
+                except FantasyFootballCalculatorKickerCoverageError as exc:
+                    kicker_coverage_warning = str(exc)
+                else:
+                    kicker_prepared = {
+                        "payload": payload,
+                        "response_headers": response_headers,
+                        "source_url": source_url,
+                        "sample": sample,
+                        "rows": kicker_rows,
+                        "diagnostics": kicker_diagnostics,
+                    }
 
-        if kicker_prepared is None:
+        if kicker_prepared is None and kicker_coverage_warning is None:
             raise FantasyFootballCalculatorKickerError(
                 "PPR 8-team payload was not prepared for kicker materialization"
             )
@@ -163,13 +169,19 @@ def main(argv: list[str] | None = None) -> int:
                         for position in sorted(counts)
                     )
                 )
-            print(
-                "FFC ADP ranking=redraft-ppr-8-team-kicker "
-                f"rows={len(kicker_prepared['rows'])} "
-                f"drafts={kicker_prepared['sample']['total_drafts']} "
-                f"quality={kicker_prepared['sample']['quality']} "
-                f"K={len(kicker_prepared['rows'])}"
-            )
+            if kicker_prepared is not None:
+                print(
+                    "FFC ADP ranking=redraft-ppr-8-team-kicker "
+                    f"rows={len(kicker_prepared['rows'])} "
+                    f"drafts={kicker_prepared['sample']['total_drafts']} "
+                    f"quality={kicker_prepared['sample']['quality']} "
+                    f"K={len(kicker_prepared['rows'])}"
+                )
+            else:
+                print(
+                    "FFC ADP ranking=redraft-ppr-8-team-kicker "
+                    f"skipped-preserving-last-good reason={kicker_coverage_warning}"
+                )
             return 0
 
         for item in prepared:
@@ -191,22 +203,29 @@ def main(argv: list[str] | None = None) -> int:
             for path in paths:
                 print(path)
 
-        kicker_paths, kicker_created = write_kicker_format(
-            repo_root=repo_root,
-            rows=kicker_prepared["rows"],
-            payload=kicker_prepared["payload"],
-            sample=kicker_prepared["sample"],
-            diagnostics=kicker_prepared["diagnostics"],
-            fetched_at=fetched_at,
-            source_url=kicker_prepared["source_url"],
-            response_headers=kicker_prepared["response_headers"],
-            season=args.season,
-            skip_unchanged=args.skip_unchanged,
-        )
-        kicker_action = "snapshot-created" if kicker_created else "ranking-unchanged"
-        print(f"[ffc-adp:ppr-8-team-kicker] {kicker_action}")
-        for path in kicker_paths:
-            print(path)
+        if kicker_prepared is not None:
+            kicker_paths, kicker_created = write_kicker_format(
+                repo_root=repo_root,
+                rows=kicker_prepared["rows"],
+                payload=kicker_prepared["payload"],
+                sample=kicker_prepared["sample"],
+                diagnostics=kicker_prepared["diagnostics"],
+                fetched_at=fetched_at,
+                source_url=kicker_prepared["source_url"],
+                response_headers=kicker_prepared["response_headers"],
+                season=args.season,
+                skip_unchanged=args.skip_unchanged,
+            )
+            kicker_action = "snapshot-created" if kicker_created else "ranking-unchanged"
+            print(f"[ffc-adp:ppr-8-team-kicker] {kicker_action}")
+            for path in kicker_paths:
+                print(path)
+        else:
+            print(
+                "[ffc-adp:ppr-8-team-kicker] skipped-preserving-last-good: "
+                f"{kicker_coverage_warning}",
+                file=sys.stderr,
+            )
         return 0
     except (
         FantasyFootballCalculatorFetchError,
