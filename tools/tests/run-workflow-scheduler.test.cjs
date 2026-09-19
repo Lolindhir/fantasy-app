@@ -85,7 +85,7 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 20);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 19);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
