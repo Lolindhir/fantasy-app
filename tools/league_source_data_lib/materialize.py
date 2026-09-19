@@ -272,11 +272,64 @@ def _members_and_rosters(
     return members, rosters, member_by_provider, roster_by_provider
 
 
+def _canonicalize_bracket_source(
+    raw_source: object,
+    *,
+    label: str,
+    slot: str,
+    current_round: int,
+    current_match: int,
+    match_round_by_id: dict[int, int],
+) -> dict | None:
+    if raw_source is None:
+        return None
+    if not isinstance(raw_source, dict):
+        raise ValueError(f"Sleeper {label} bracket {slot}_from must be an object when present")
+
+    unknown_keys = set(raw_source) - {"w", "l"}
+    populated = [
+        key
+        for key in ("w", "l")
+        if key in raw_source and raw_source.get(key) is not None
+    ]
+    if unknown_keys or len(populated) != 1:
+        raise ValueError(
+            f"Sleeper {label} bracket {slot}_from must contain exactly one of w/l"
+        )
+
+    provider_key = populated[0]
+    try:
+        source_match = int(raw_source[provider_key])
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Sleeper {label} bracket {slot}_from requires a numeric match reference"
+        ) from exc
+    if source_match < 1:
+        raise ValueError(
+            f"Sleeper {label} bracket {slot}_from match reference must be positive"
+        )
+    if source_match not in match_round_by_id:
+        raise ValueError(
+            f"Sleeper {label} bracket {slot}_from references unknown match {source_match}"
+        )
+    source_round = match_round_by_id[source_match]
+    if source_match == current_match or source_round >= current_round:
+        raise ValueError(
+            f"Sleeper {label} bracket {slot}_from must reference an earlier-round match"
+        )
+
+    return {
+        "Outcome": "Winner" if provider_key == "w" else "Loser",
+        "Match": source_match,
+    }
+
+
 def _canonicalize_bracket(raw: object, roster_by_provider: dict[str, str], label: str) -> list[dict]:
     if not isinstance(raw, list):
         raise ValueError(f"Sleeper {label} bracket must be an array")
-    result: list[dict] = []
-    seen: set[tuple[int, int]] = set()
+
+    normalized: list[tuple[dict, int, int]] = []
+    match_round_by_id: dict[int, int] = {}
     for item in raw:
         if not isinstance(item, dict):
             raise ValueError(f"Sleeper {label} bracket entries must be objects")
@@ -285,16 +338,41 @@ def _canonicalize_bracket(raw: object, roster_by_provider: dict[str, str], label
             match_no = int(item["m"])
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"Sleeper {label} bracket requires numeric r and m") from exc
-        key = (round_no, match_no)
-        if round_no < 1 or match_no < 1 or key in seen:
-            raise ValueError(f"Invalid or duplicate Sleeper {label} bracket match: {key}")
-        seen.add(key)
+        if round_no < 1 or match_no < 1:
+            raise ValueError(
+                f"Invalid Sleeper {label} bracket match identity: round={round_no}, match={match_no}"
+            )
+        if match_no in match_round_by_id:
+            raise ValueError(
+                f"Sleeper {label} bracket match numbers must be globally unique because routing references use match only: {match_no}"
+            )
+        match_round_by_id[match_no] = round_no
+        normalized.append((item, round_no, match_no))
+
+    result: list[dict] = []
+    for item, round_no, match_no in normalized:
         result.append(
             {
                 "Round": round_no,
                 "Match": match_no,
                 "Team1CanonicalLeagueRosterID": _resolve_roster(roster_by_provider, item.get("t1"), f"{label}.t1"),
                 "Team2CanonicalLeagueRosterID": _resolve_roster(roster_by_provider, item.get("t2"), f"{label}.t2"),
+                "Team1Source": _canonicalize_bracket_source(
+                    item.get("t1_from"),
+                    label=label,
+                    slot="t1",
+                    current_round=round_no,
+                    current_match=match_no,
+                    match_round_by_id=match_round_by_id,
+                ),
+                "Team2Source": _canonicalize_bracket_source(
+                    item.get("t2_from"),
+                    label=label,
+                    slot="t2",
+                    current_round=round_no,
+                    current_match=match_no,
+                    match_round_by_id=match_round_by_id,
+                ),
                 "WinnerCanonicalLeagueRosterID": _resolve_roster(roster_by_provider, item.get("w"), f"{label}.w"),
                 "LoserCanonicalLeagueRosterID": _resolve_roster(roster_by_provider, item.get("l"), f"{label}.l"),
                 "Placement": item.get("p"),

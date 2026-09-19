@@ -23,6 +23,7 @@ from league_source_data_lib.league_core_materialize import (  # noqa: E402
 )
 from league_source_data_lib.materialize import (  # noqa: E402
     PlayerMappingResolver,
+    _canonicalize_bracket,
     persist_canonical_outputs,
 )
 from league_source_data_lib.registry import load_league_registry  # noqa: E402
@@ -294,6 +295,79 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         finally:
             temporary.cleanup()
 
+    def test_bracket_routing_is_canonicalized_provider_neutrally(self) -> None:
+        raw = [
+            {"r": 1, "m": 1, "t1": 1, "t2": 2, "w": None, "l": None},
+            {
+                "r": 2,
+                "m": 2,
+                "p": 1,
+                "t1": None,
+                "t2": None,
+                "t1_from": {"w": 1},
+                "t2_from": {"l": 1},
+                "w": None,
+                "l": None,
+            },
+        ]
+        actual = _canonicalize_bracket(
+            raw,
+            {"1": "clr-one", "2": "clr-two"},
+            "winners",
+        )
+        self.assertEqual(
+            actual[1]["Team1Source"],
+            {"Outcome": "Winner", "Match": 1},
+        )
+        self.assertEqual(
+            actual[1]["Team2Source"],
+            {"Outcome": "Loser", "Match": 1},
+        )
+        self.assertNotIn("w", actual[1]["Team1Source"])
+        self.assertNotIn("l", actual[1]["Team2Source"])
+
+    def test_bracket_routing_fails_closed_on_unknown_or_forward_reference(self) -> None:
+        with self.assertRaisesRegex(ValueError, "references unknown match 99"):
+            _canonicalize_bracket(
+                [
+                    {"r": 1, "m": 1, "t1": 1, "t2": 2},
+                    {"r": 2, "m": 2, "t1_from": {"w": 99}},
+                ],
+                {"1": "clr-one", "2": "clr-two"},
+                "winners",
+            )
+
+        with self.assertRaisesRegex(ValueError, "earlier-round match"):
+            _canonicalize_bracket(
+                [
+                    {"r": 1, "m": 1, "t1": 1, "t2": 2},
+                    {"r": 1, "m": 2, "t1_from": {"w": 1}},
+                ],
+                {"1": "clr-one", "2": "clr-two"},
+                "winners",
+            )
+
+    def test_bracket_routing_fails_closed_on_ambiguous_source_or_match_identity(self) -> None:
+        with self.assertRaisesRegex(ValueError, "exactly one of w/l"):
+            _canonicalize_bracket(
+                [
+                    {"r": 1, "m": 1, "t1": 1, "t2": 2},
+                    {"r": 2, "m": 2, "t1_from": {"w": 1, "l": 1}},
+                ],
+                {"1": "clr-one", "2": "clr-two"},
+                "winners",
+            )
+
+        with self.assertRaisesRegex(ValueError, "globally unique"):
+            _canonicalize_bracket(
+                [
+                    {"r": 1, "m": 1, "t1": 1, "t2": 2},
+                    {"r": 2, "m": 1, "t1": 1, "t2": 2},
+                ],
+                {"1": "clr-one", "2": "clr-two"},
+                "winners",
+            )
+
     def test_current_scope_fails_closed_on_manifest_provider_mismatch(self) -> None:
         temporary, root = self._root_with_registry()
         try:
@@ -360,11 +434,59 @@ class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
         self.assertEqual(len(outputs), 5)
         for output in outputs:
             existing = json.loads(output.path.read_text(encoding="utf-8"))
+            if output.path.name not in {"winners-bracket.json", "losers-bracket.json"}:
+                self.assertEqual(
+                    output.value,
+                    existing,
+                    f"League Core parity drift for {output.path.relative_to(repo_root)}",
+                )
+                continue
+
+            # 6L-A is a contract migration: before the productive League Core producer
+            # rewrites the bracket files, all pre-existing canonical facts must remain
+            # identical while the planned output may add only Team1Source/Team2Source.
+            planned_without_routing = [
+                {
+                    key: value
+                    for key, value in match.items()
+                    if key not in {"Team1Source", "Team2Source"}
+                }
+                for match in output.value
+            ]
+            existing_without_routing = [
+                {
+                    key: value
+                    for key, value in match.items()
+                    if key not in {"Team1Source", "Team2Source"}
+                }
+                for match in existing
+            ]
             self.assertEqual(
-                output.value,
-                existing,
-                f"League Core parity drift for {output.path.relative_to(repo_root)}",
+                planned_without_routing,
+                existing_without_routing,
+                f"League Core non-routing parity drift for {output.path.relative_to(repo_root)}",
             )
+
+        winners_output = next(
+            output for output in outputs if output.path.name == "winners-bracket.json"
+        )
+        by_match = {item["Match"]: item for item in winners_output.value}
+        self.assertEqual(
+            by_match[3]["Team1Source"],
+            {"Outcome": "Winner", "Match": 1},
+        )
+        self.assertEqual(
+            by_match[3]["Team2Source"],
+            {"Outcome": "Winner", "Match": 2},
+        )
+        self.assertEqual(
+            by_match[4]["Team1Source"],
+            {"Outcome": "Loser", "Match": 1},
+        )
+        self.assertEqual(
+            by_match[4]["Team2Source"],
+            {"Outcome": "Loser", "Match": 2},
+        )
 
 
 if __name__ == "__main__":
