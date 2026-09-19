@@ -83,6 +83,36 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             self.assertEqual(canonical_json(data), canonical_json(data_again))
             self.assertEqual(canonical_json(quality), canonical_json(quality_again))
 
+    def test_managed_roster_membership_comes_from_canonical_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            league_path = root / "public/data/League.json"
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            league["Teams"][0]["Roster"] = ["3"]
+            league["Teams"][0]["Reserve"] = []
+            league["Teams"][0]["Taxi"] = []
+            league["Teams"][0]["Starter"] = ["3"]
+            league_path.write_text(json.dumps(league), encoding="utf-8")
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            data, _ = build(root, config_path)
+
+            self.assertEqual(3, data["managed_team"]["player_count"])
+            self.assertEqual("Test Team", data["managed_team"]["name"])
+            self.assertEqual("TST", data["managed_team"]["abbreviation"])
+            quarterback = next(player for player in data["players"] if player["player_id"] == "1")
+            receiver = next(player for player in data["players"] if player["player_id"] == "2")
+            self.assertEqual(["reserve", "roster"], quarterback["roster_sections"])
+            self.assertTrue(quarterback["is_starter"])
+            self.assertEqual(["roster"], receiver["roster_sections"])
+            self.assertTrue(receiver["is_starter"])
+            source_ids = {source["id"] for source in data["sources"]}
+            self.assertIn("league_display", source_ids)
+            self.assertIn("canonical_league_manifest", source_ids)
+            self.assertIn("canonical_league_rosters", source_ids)
+
     def test_duplicate_catalog_source_ids_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -100,6 +130,8 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "public/data",
             "fantasy-management/automation",
             "fantasy-management/_ai",
+            "fantasy-management/league-context",
+            "source-data/leagues/test-league/seasons/2026",
             "sources/fp",
             "sources/fc",
             "sources/ppr",
@@ -112,8 +144,9 @@ class FantasyOperationsInputsTests(unittest.TestCase):
         config = {
             "schema_version": 2,
             "managed_team": {"identity_field": "TeamID", "team_id": 1},
+            "canonical_league": {"canonical_league_id": "test-league"},
             "sources": {
-                "league": "public/data/League.json",
+                "league_display": "public/data/League.json",
                 "players": "public/data/Players.json",
                 "timestamps": "public/data/Timestamps.json",
             },
@@ -139,6 +172,78 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                     }
                 ]
             },
+        )
+        self._write_json(
+            root / "fantasy-management/league-context/owner-registry.json",
+            {
+                "version": 3,
+                "canonical_league_id": "test-league",
+                "owners": [
+                    {
+                        "name": "Owner One",
+                        "team_id": 1,
+                        "canonical_league_member_id": "member-1",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/manifest.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": "test-league-2026",
+                "Seasons": [
+                    {
+                        "CanonicalLeagueSeasonID": "test-league-2026",
+                        "Season": 2026,
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/league.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "Season": 2026,
+                "Settings": {"num_teams": 1},
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/members.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": "member-1",
+                    "DisplayName": "owner-one",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": "user-1"}
+                    ],
+                }
+            ],
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/rosters.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": "member-1",
+                    "CanonicalLeagueRosterID": "roster-1",
+                    "ProviderOwnerUserID": "user-1",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderRosterID": "99"}
+                    ],
+                    "Players": [
+                        self._canonical_player("1"),
+                        self._canonical_player("2"),
+                        self._canonical_player("3"),
+                    ],
+                    "Reserve": [self._canonical_player("1")],
+                    "Taxi": [],
+                    "Starters": [
+                        self._canonical_player("1"),
+                        self._canonical_player("2"),
+                        self._canonical_player("3"),
+                    ],
+                }
+            ],
         )
         self._write_json(
             root / "public/data/Players.json",
@@ -286,6 +391,15 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             },
         }
         self._write_json(root / "fantasy-management/_ai/operations-source-catalog.json", catalog)
+
+    @staticmethod
+    def _canonical_player(player_id: str) -> dict[str, object]:
+        return {
+            "CanonicalPlayerID": f"canonical-{player_id}",
+            "ProviderMappings": [
+                {"Provider": "Sleeper", "ProviderPlayerID": player_id}
+            ],
+        }
 
     @staticmethod
     def _player(player_id: str, name: str, position: str, team: str, injured: bool = False) -> dict[str, object]:
