@@ -152,11 +152,13 @@ dataSources:
     category: generated-output
     role: Hybrid current plus historical standings read model
     description: >
-      Historical completed seasons are derived from Canonical League source-data
-      under source-data/leagues/<CanonicalLeagueID>/seasons/<season> using league,
-      member, roster and playoff-bracket facts. The current season intentionally
-      remains on the existing live Sleeper-backed League/Team/Bracket path until
-      bounded current League freshness is migrated separately. Existing
+      Historical completed seasons are derived productively from Canonical League
+      source-data under source-data/leagues/<CanonicalLeagueID>/seasons/<season>
+      using league, member, roster and playoff-bracket facts. The current season
+      still publishes from the existing live Sleeper-backed League/Team/Bracket
+      path, while CanonicalStandingUtils also builds a non-publishing current-season
+      shadow from the productively fresh League Core scope and regression-checks
+      parity against the published current-season standings contract. Existing
       StandingUtils derivation owns Regular Season standings, Playoffs, Awards and
       AllTime; the public Standings.json contract is unchanged.
     historicalSource:
@@ -165,8 +167,12 @@ dataSources:
       seasonDiscovery: completed canonical seasons strictly before Metadata.LeagueYear
       providerFallback: none
     currentSource:
-      mode: legacy-live
-      reason: current League/member/roster/bracket canonical freshness is not yet aligned to the live standings refresh cadence
+      mode: legacy-live-with-canonical-shadow
+      productiveConsumer: public/requests/RequestStandings.ps1::Get-CurrentSeasonData
+      shadowConsumer: public/requests/utils/league/CanonicalStandingUtils.psm1::Get-CanonicalCurrentStandings
+      canonicalInputs: league.json + members.json + rosters.json + winners-bracket.json + losers-bracket.json
+      freshness: productively scheduled League Core scope every ten minutes
+      cutoverStatus: shadow-parity-only / no productive current-season cutover yet
     timestamped: true
     backup: true
 
