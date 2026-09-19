@@ -281,28 +281,29 @@ Assert-Equal -Actual $pick.PlayerID -Expected "player-1" -Message "In-memory pic
 Assert-Equal -Actual (Compare-Transactions -oldTransactions $enriched -newTransactions $enriched) -Expected $false -Message "A fully enriched no-op transaction snapshot is not semantically stable."
 
 
-# Canonical historical standings are productive for completed seasons. Current
-# standings now also have a canonical shadow, while RequestStandings must remain
-# on the existing live Sleeper-backed path until a separate cutover checkpoint.
+# Historical and current standings are canonical consumers. RequestStandings
+# must not perform direct Sleeper league/team/bracket reads after the current cutover.
 $canonicalStandingUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Raw
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical historical standings consumer performs a direct Sleeper league read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical historical standings consumer performs a direct Sleeper team read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical historical standings consumer performs a direct Sleeper winners-bracket read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical historical standings consumer performs a direct Sleeper losers-bracket read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical standings consumer performs a direct Sleeper league read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical standings consumer performs a direct Sleeper team read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical standings consumer performs a direct Sleeper winners-bracket read."
+Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical standings consumer performs a direct Sleeper losers-bracket read."
 
 $requestStandingsCutover = Get-Content "$PSScriptRoot\RequestStandings.ps1" -Raw
-Assert-True -Condition $requestStandingsCutover.Contains("CanonicalStandingUtils.psm1") -Message "RequestStandings does not import the canonical historical standings consumer."
+Assert-True -Condition $requestStandingsCutover.Contains("CanonicalStandingUtils.psm1") -Message "RequestStandings does not import the canonical standings consumer."
 Assert-True -Condition $requestStandingsCutover.Contains("Get-CanonicalHistoricalStandings") -Message "RequestStandings does not consume canonical historical standings."
-Assert-True -Condition $requestStandingsCutover.Contains("Get-CurrentSeasonData") -Message "RequestStandings no longer has an explicit current-season live boundary."
-Assert-True -Condition $requestStandingsCutover.Contains("Get-LeagueRaw -leagueID `$leagueID") -Message "Current standings no longer read current live league state."
-Assert-True -Condition $requestStandingsCutover.Contains("Get-Teams -leagueID `$leagueID") -Message "Current standings no longer read current live team state."
+Assert-True -Condition $requestStandingsCutover.Contains("Get-CanonicalCurrentSeasonData") -Message "RequestStandings does not consume canonical current standings."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-CurrentSeasonData")) -Message "RequestStandings still contains the retired live current-season helper."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-LeagueRaw")) -Message "RequestStandings still performs a direct Sleeper league read."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-Teams")) -Message "RequestStandings still performs a direct Sleeper team read."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-Playoffs")) -Message "RequestStandings still performs a direct Sleeper playoff read."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("TeamUtils.psm1")) -Message "RequestStandings still imports TeamUtils after the canonical current cutover."
+Assert-True -Condition (-not $requestStandingsCutover.Contains("LeagueUtils.psm1")) -Message "RequestStandings still imports LeagueUtils after the canonical current cutover."
 Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-SeasonDataRecursive")) -Message "RequestStandings still recursively traverses historical Sleeper leagues."
 Assert-True -Condition (-not $requestStandingsCutover.Contains("previous_league_id")) -Message "RequestStandings still discovers historical seasons through Sleeper previous_league_id."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-LeagueRaw -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live league read."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestStandingsCutover -Needle "Get-Teams -leagueID `$leagueID") -Expected 1 -Message "RequestStandings should perform one current live team read."
 
-# Reproduce RequestStandings' import block in a clean module state. Nested -Force
-# imports must not hide the direct commands needed by the current live boundary.
+# Reproduce RequestStandings' import block in a clean module state and verify the
+# canonical current/historical consumers plus shared derivation remain visible.
 Remove-Module CanonicalStandingUtils, TeamUtils, StandingUtils, LeagueUtils -Force -ErrorAction SilentlyContinue
 $requestImportLines = @(
     $requestStandingsCutover -split "`n" |
@@ -312,11 +313,10 @@ foreach ($importLine in $requestImportLines) {
     $resolvedImportLine = $importLine.Replace('$PSScriptRoot', $PSScriptRoot)
     Invoke-Expression $resolvedImportLine
 }
-Assert-True -Condition ($null -ne (Get-Command Get-LeagueRaw -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-LeagueRaw from the caller scope."
-Assert-True -Condition ($null -ne (Get-Command Get-Teams -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-Teams from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-StandingsRemote -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-StandingsRemote from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical historical standings consumer."
-Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings shadow consumer."
+Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentSeasonData -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings consumer."
+Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings compatibility wrapper."
 
 # Cross-source previous-season award joins must not depend on the CLR numeric
 # type used to materialize the same provider roster ID.
@@ -424,10 +424,21 @@ $canonicalPreviousSeason = @(
 )
 Assert-Equal -Actual $canonicalPreviousSeason.Count -Expected 1 -Message "Canonical current standings shadow requires exactly one previous-season standings context."
 
+$canonicalCurrentSeasonData = Get-CanonicalCurrentSeasonData `
+    -CanonicalLeagueID "nfl-reise" `
+    -PreviousSeasonStandings $canonicalPreviousSeason[0]
+Assert-StandingsJsonEqual -Actual $canonicalCurrentSeasonData.Output -Expected $publishedCurrentSeason[0] -Message "Canonical current standings cutover parity failed."
+
+$canonicalCurrentSource = Get-CanonicalStandingSourceForSeason `
+    -CanonicalLeagueID "nfl-reise" `
+    -Season ([string](Get-Config).LeagueYear) `
+    -AllowActiveSeason
+Assert-Equal -Actual $canonicalCurrentSeasonData.IsCompleted -Expected $canonicalCurrentSource.IsCompleted -Message "Canonical current standings completion state is not propagated from league.json."
+
 $canonicalCurrentStandings = Get-CanonicalCurrentStandings `
     -CanonicalLeagueID "nfl-reise" `
     -PreviousSeasonStandings $canonicalPreviousSeason[0]
-Assert-StandingsJsonEqual -Actual $canonicalCurrentStandings -Expected $publishedCurrentSeason[0] -Message "Canonical current standings shadow parity failed."
+Assert-StandingsJsonEqual -Actual $canonicalCurrentStandings -Expected $publishedCurrentSeason[0] -Message "Canonical current standings compatibility wrapper parity failed."
 
 foreach ($season in @("2024", "2025")) {
     $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
