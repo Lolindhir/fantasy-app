@@ -281,8 +281,9 @@ Assert-Equal -Actual $pick.PlayerID -Expected "player-1" -Message "In-memory pic
 Assert-Equal -Actual (Compare-Transactions -oldTransactions $enriched -newTransactions $enriched) -Expected $false -Message "A fully enriched no-op transaction snapshot is not semantically stable."
 
 
-# Canonical historical standings are productive for completed seasons, while
-# the current season must remain on the existing live Sleeper-backed path.
+# Canonical historical standings are productive for completed seasons. Current
+# standings now also have a canonical shadow, while RequestStandings must remain
+# on the existing live Sleeper-backed path until a separate cutover checkpoint.
 $canonicalStandingUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Raw
 Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical historical standings consumer performs a direct Sleeper league read."
 Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical historical standings consumer performs a direct Sleeper team read."
@@ -315,6 +316,7 @@ Assert-True -Condition ($null -ne (Get-Command Get-LeagueRaw -ErrorAction Silent
 Assert-True -Condition ($null -ne (Get-Command Get-Teams -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-Teams from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-StandingsRemote -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-StandingsRemote from the caller scope."
 Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical historical standings consumer."
+Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings shadow consumer."
 
 # Cross-source previous-season award joins must not depend on the CLR numeric
 # type used to materialize the same provider roster ID.
@@ -411,6 +413,21 @@ function Assert-StandingsJsonEqual {
         throw "$Message Canonical historical output differs from the published read model."
     }
 }
+
+$publishedCurrentSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq [string](Get-Config).LeagueYear })
+Assert-Equal -Actual $publishedCurrentSeason.Count -Expected 1 -Message "Published standings must contain the configured current season exactly once."
+
+$canonicalPreviousSeason = @(
+    $canonicalStandings.Seasons |
+        Sort-Object { [int]$_.Season } -Descending |
+        Select-Object -First 1
+)
+Assert-Equal -Actual $canonicalPreviousSeason.Count -Expected 1 -Message "Canonical current standings shadow requires exactly one previous-season standings context."
+
+$canonicalCurrentStandings = Get-CanonicalCurrentStandings `
+    -CanonicalLeagueID "nfl-reise" `
+    -PreviousSeasonStandings $canonicalPreviousSeason[0]
+Assert-StandingsJsonEqual -Actual $canonicalCurrentStandings -Expected $publishedCurrentSeason[0] -Message "Canonical current standings shadow parity failed."
 
 foreach ($season in @("2024", "2025")) {
     $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
