@@ -93,6 +93,46 @@ class FantasyCalcFetcherTests(unittest.TestCase):
         query = parse_qs(urlparse(module.build_source_url(config)).query)
         self.assertEqual(["8"], query["numTeams"])
 
+    def test_loads_unk_resolution_positions_from_canonical_sleeper_source(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repo_root = Path(temporary_directory)
+            canonical_path = (
+                repo_root / "source-data/nfl/platform/sleeper/players.json"
+            )
+            canonical_path.parent.mkdir(parents=True, exist_ok=True)
+            canonical_path.write_text(
+                json.dumps(
+                    {
+                        "SchemaVersion": 2,
+                        "SourceDataset": "sleeper.players",
+                        "Records": [
+                            {
+                                "CanonicalPlayerID": "NFLP-hunter",
+                                "SleeperPlayerID": "12530",
+                                "Position": "WR",
+                            },
+                            {
+                                "CanonicalPlayerID": "NFLP-defense",
+                                "SleeperPlayerID": "DEF",
+                                "Position": "DB",
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            legacy_path = repo_root / "public/data/Players.json"
+            legacy_path.parent.mkdir(parents=True, exist_ok=True)
+            legacy_path.write_text(
+                json.dumps([{"ID": "12530", "Position": "CB"}]),
+                encoding="utf-8",
+            )
+
+            positions = module.load_canonical_player_positions(repo_root)
+
+            self.assertEqual({"12530": "WR"}, positions)
+
     def test_normalizes_dynasty_players_and_picks(self):
         rows = module.parse_assets(
             self.make_payload(dynasty=True), module.FORMAT_CONFIGS["dynasty"]

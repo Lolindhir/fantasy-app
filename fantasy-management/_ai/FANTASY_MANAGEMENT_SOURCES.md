@@ -321,6 +321,7 @@ Operational rules:
 - treat FantasyCalc as observed trade-market context, not expert consensus or a projection
 - use normalized `Rank` for ordering and per-centile comparisons; retain `source_overall_rank` as an audit field with permitted ties
 - join players primarily through `sleeper_id`, then `source_asset_id`, then normalized name plus position
+- resolve only FantasyCalc's explicit `UNK` player-position sentinel through matching `SleeperPlayerID -> Position` from `source-data/nfl/platform/sleeper/players.json`; do not use `public/data/Players.json` for that fallback and keep all other unexpected provider positions fail-closed
 - treat FantasyCalc draft-pick IDs as source-only synthetic identifiers
 - resolve real pick identity and ownership from `League.json` and `Drafts.json`
 - apply six-team replacement-level context after reading the eight-team proxy

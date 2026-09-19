@@ -19,7 +19,7 @@ _SPEC.loader.exec_module(_IMPL)
 
 _OLD_ROOT = "fantasy-management/sources/external-rankings/fantasycalc"
 _NEW_ROOT = "fantasy-management/sources/external-rankings/market-value/fantasycalc"
-_CANONICAL_PLAYERS_PATH = Path("public/data/Players.json")
+_CANONICAL_SLEEPER_PLAYERS_PATH = Path("source-data/nfl/platform/sleeper/players.json")
 
 
 def _replace_paths(value: Any) -> Any:
@@ -59,37 +59,42 @@ def build_metadata(*args: Any, **kwargs: Any) -> dict[str, Any]:
 def load_canonical_player_positions(repo_root: Path) -> dict[str, str]:
     """Load supported canonical offense positions keyed by Sleeper player ID."""
 
-    players_path = repo_root / _CANONICAL_PLAYERS_PATH
+    players_path = repo_root / _CANONICAL_SLEEPER_PLAYERS_PATH
     try:
         payload = json.loads(players_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise _IMPL.FantasyCalcFetchError(
-            f"Cannot read canonical player positions from {players_path}: {exc}"
+            f"Cannot read canonical Sleeper player positions from {players_path}: {exc}"
         ) from exc
-    if not isinstance(payload, list):
+    if not isinstance(payload, dict):
         raise _IMPL.FantasyCalcFetchError(
-            f"Canonical Players.json is not an array: {players_path}"
+            f"Canonical Sleeper player dataset is not an object: {players_path}"
+        )
+
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise _IMPL.FantasyCalcFetchError(
+            f"Canonical Sleeper player dataset has no Records array: {players_path}"
         )
 
     positions: dict[str, str] = {}
-    for player in payload:
+    for player in records:
         if not isinstance(player, dict):
             raise _IMPL.FantasyCalcFetchError(
-                f"Canonical Players.json contains a non-object entry: {players_path}"
+                f"Canonical Sleeper player dataset contains a non-object record: {players_path}"
             )
-        sleeper_id = str(player.get("ID") or "").strip()
+        sleeper_id = str(player.get("SleeperPlayerID") or "").strip()
         position = str(player.get("Position") or "").strip().upper()
         if not sleeper_id or position not in _IMPL.PLAYER_POSITIONS:
             continue
         previous = positions.get(sleeper_id)
         if previous is not None and previous != position:
             raise _IMPL.FantasyCalcFetchError(
-                "Conflicting canonical positions for Sleeper player "
+                "Conflicting canonical Sleeper positions for player "
                 f"{sleeper_id}: {previous!r} vs {position!r}"
             )
         positions[sleeper_id] = position
     return positions
-
 
 def parse_assets(
     payload: list[dict[str, Any]],

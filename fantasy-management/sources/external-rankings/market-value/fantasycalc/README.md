@@ -70,6 +70,8 @@ Join-Reihenfolge für Spieler:
 
 FantasyCalc-Draftpick-IDs sind synthetische Quellenkennungen. Aktuelle Pick-Identität und Besitz kommen ausschließlich aus `League.json` und `Drafts.json`.
 
+Für den seltenen Provider-Sonderfall `position=UNK` wird die Position ausschließlich über dieselbe Sleeper-ID aus `source-data/nfl/platform/sleeper/players.json` aufgelöst. `public/data/Players.json` ist dafür seit Checkpoint 6V kein Fallback mehr; andere unerwartete FantasyCalc-Positionen bleiben fail-closed.
+
 ## Aktualisierung
 
 ```bash
