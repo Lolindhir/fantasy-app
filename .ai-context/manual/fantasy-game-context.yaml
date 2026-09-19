@@ -70,10 +70,11 @@ scoring_windows:
 
 impact:
   source_of_truth: >-
-    League-scored matchup player facts only. Current generation uses the same current
-    Sleeper matchup response loaded as score/player evidence for Matchups.json and
-    FantasyGameContext. Historical data uses persisted canonical league
-    PlayerPoints/StarterPoints. Generic NFL/Tank fantasy points are not accepted for this model.
+    League-scored matchup player facts only. Current generation loads the active
+    canonical League matchup partition through CanonicalMatchupUtils as score/player
+    evidence for Matchups.json and FantasyGameContext. Historical data uses persisted
+    canonical league PlayerPoints/StarterPoints. Generic NFL/Tank fantasy points are
+    not accepted for this model.
   states:
     unavailable: no league-scored player facts are available yet
     partial: league-scored facts exist but the NFL game is not final

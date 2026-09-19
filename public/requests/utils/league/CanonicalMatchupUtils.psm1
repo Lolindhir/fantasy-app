@@ -1,5 +1,5 @@
 # ===========================================================================
-# Canonical current matchup shadow adapter
+# Canonical current matchup adapter
 # ===========================================================================
 
 function Get-CmuRepoRoot {

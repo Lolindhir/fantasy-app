@@ -323,7 +323,7 @@ productiveAcceptance:
     currentLeagueCoreScope: productive-freshness-scheduled
     currentLeagueCoreConsumer: canonical-active / RequestLeague League+Teams core
     currentPlayoffBracketConsumer: canonical-active / RequestLeague Get-CanonicalCurrentPlayoffs
-    currentMatchupConsumer: canonical-shadow-parity / productive-Get-FgcCurrentMatchupLoad-still-live
+    currentMatchupConsumer: canonical-active / RequestLeague Get-CanonicalCurrentMatchupLoad
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -389,15 +389,16 @@ phase2TargetedFreshnessScopes:
       preserves unresolved advancement routing through Team1Source/Team2Source, and
       RequestLeague now consumes that canonical bracket source productively through
       Get-CanonicalCurrentPlayoffs while preserving the public League.json::Playoffs
-      shape. The current matchup score overlay intentionally remains on its separate
-      live boundary until a separately authorized cutover.
+      shape. RequestLeague also consumes the active current-matchup score/player
+      evidence productively through Get-CanonicalCurrentMatchupLoad while preserving
+      the existing Matchups/FantasyGameContext public contracts.
 
   currentMatchups:
-    status: productive-freshness-via-league-core-shadow-parity
+    status: productive-freshness-via-league-core-canonical-active
     purpose: >
       Bounded current-season freshness for the single active Sleeper matchup week
-      required by the current League/FantasyGameContext score overlay before a
-      separately authorized productive consumer cutover.
+      consumed productively by RequestLeague through the canonical current-matchup
+      adapter for Matchups/FantasyGameContext score and player evidence.
     cli:
       acquisition: tools/league_source_data.py sync --current-matchup-scope
       materialization: tools/league_source_data.py materialize --materialization-scope matchups --current-matchup-scope
@@ -440,13 +441,14 @@ phase2TargetedFreshnessScopes:
       - CanonicalMatchupUtils reconstructs persisted Sleeper provider semantics without live reads
       - reconstructed rows feed ConvertTo-FgcCurrentMatchupFacts identically to persisted raw Sleeper rows
     consumerStatus: >
-      RequestLeague still performs exactly one Get-FgcCurrentMatchupLoad live provider
-      read in checkpoint 6N. Productive cutover is intentionally deferred.
+      RequestLeague performs exactly one Get-CanonicalCurrentMatchupLoad read for the
+      active week and no longer performs a direct current-matchup provider read.
     publicationOrderingNote: >
-      The :09 scheduler provides bounded source freshness but 6N does not make App League
-      correctness depend on completion before the :10 scheduler tick because the app remains
-      live. A later productive cutover should add a narrow App League push trigger for canonical
-      current-matchup partition changes so publication remains race-safe rather than timing-only.
+      The regular scheduler still provides League Core + active Current Matchup at :02
+      and App League at :10, but correctness no longer depends on that timing alone.
+      APP • Data • League also has a narrow main-push trigger for CanonicalMatchupUtils
+      and canonical nfl-reise matchup partition changes, so newly published current
+      matchup evidence causes a rebuild through the existing rebuild-and-retry writer.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
@@ -494,8 +496,8 @@ phase1BInventory:
         function: Get-SleeperMatchups
         endpoint: /v1/league/<league_id>/matchups/<week>
         productiveUse:
-          - League.json current matchup snapshot through LeagueOverviewUtils.psm1
-          - matchup participants and scores for the relevant current/final week
+          - provider raw evidence for canonical League matchup materialization
+          - legacy helper retained outside the productive RequestLeague current-matchup consumer
       - dataset: transactions
         function: Get-SleeperTransactions
         endpoint: /v1/league/<league_id>/transactions/<week>

@@ -11,6 +11,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
@@ -366,7 +367,7 @@ try {
     $matchupRows = @()
     $activeMatchupScoreEvidenceAvailable = $matchupWeek -le 0
     if ($matchupWeek -gt 0) {
-        $matchupLoad = Get-FgcCurrentMatchupLoad -LeagueID $LeagueID -Week $matchupWeek
+        $matchupLoad = Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$league.season) -Week $matchupWeek
         if ($matchupLoad.Success) {
             $activeMatchupScoreEvidenceAvailable = $true
             $matchupRows = @($matchupLoad.Rows)
@@ -388,7 +389,7 @@ try {
             }
         }
         else {
-            Write-Warning "Current matchup refresh for Week $matchupWeek failed. Matchups finality will fail closed for active score evidence and FantasyGameContext keeps its previous generated file."
+            Write-Warning "Canonical current matchup load for Week $matchupWeek failed. Matchups finality will fail closed for active score evidence and FantasyGameContext keeps its previous generated file."
         }
     }
 
