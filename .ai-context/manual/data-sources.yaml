@@ -152,27 +152,25 @@ dataSources:
     category: generated-output
     role: Hybrid current plus historical standings read model
     description: >
-      Historical completed seasons are derived productively from Canonical League
-      source-data under source-data/leagues/<CanonicalLeagueID>/seasons/<season>
-      using league, member, roster and playoff-bracket facts. The current season
-      still publishes from the existing live Sleeper-backed League/Team/Bracket
-      path, while CanonicalStandingUtils also builds a non-publishing current-season
-      shadow from the productively fresh League Core scope and regression-checks
-      parity against the published current-season standings contract. Existing
-      StandingUtils derivation owns Regular Season standings, Playoffs, Awards and
-      AllTime; the public Standings.json contract is unchanged.
+      Historical completed seasons and the configured current season are derived
+      productively from Canonical League source-data under
+      source-data/leagues/<CanonicalLeagueID>/seasons/<season> using league, member,
+      roster and playoff-bracket facts. Current inputs are kept fresh by the bounded
+      League Core producer before app consumers run. Existing StandingUtils
+      derivation owns Regular Season standings, Playoffs, Awards and AllTime; the
+      public Standings.json contract is unchanged.
     historicalSource:
       canonicalLeagueID: nfl-reise
       consumer: public/requests/utils/league/CanonicalStandingUtils.psm1
       seasonDiscovery: completed canonical seasons strictly before Metadata.LeagueYear
       providerFallback: none
     currentSource:
-      mode: legacy-live-with-canonical-shadow
-      productiveConsumer: public/requests/RequestStandings.ps1::Get-CurrentSeasonData
-      shadowConsumer: public/requests/utils/league/CanonicalStandingUtils.psm1::Get-CanonicalCurrentStandings
+      mode: canonical-active
+      productiveConsumer: public/requests/utils/league/CanonicalStandingUtils.psm1::Get-CanonicalCurrentSeasonData
       canonicalInputs: league.json + members.json + rosters.json + winners-bracket.json + losers-bracket.json
       freshness: productively scheduled League Core scope every ten minutes
-      cutoverStatus: shadow-parity-only / no productive current-season cutover yet
+      providerFallback: none
+      cutoverStatus: productive
     timestamped: true
     backup: true
 
