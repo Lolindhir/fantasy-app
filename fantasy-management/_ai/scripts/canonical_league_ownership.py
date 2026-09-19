@@ -89,6 +89,56 @@ def _provider_player_ids(entries: Any, context: str) -> list[str]:
     return result
 
 
+def resolve_current_canonical_season(
+    repo_root: Path,
+    *,
+    canonical_league_id: str,
+) -> int:
+    """Resolve the active season only from the Canonical League manifest."""
+
+    root = repo_root.resolve()
+    manifest_path = root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    manifest = _require_object(_read_json(manifest_path), "manifest.json")
+
+    if manifest.get("CanonicalLeagueID") != canonical_league_id:
+        raise CanonicalOwnershipError(
+            "Canonical league manifest identity mismatch: "
+            f"expected {canonical_league_id!r}, found {manifest.get('CanonicalLeagueID')!r}."
+        )
+
+    current_season_id = manifest.get("CurrentCanonicalLeagueSeasonID")
+    if not isinstance(current_season_id, str) or not current_season_id:
+        raise CanonicalOwnershipError(
+            "manifest.json has no CurrentCanonicalLeagueSeasonID."
+        )
+
+    seasons = _require_list(manifest.get("Seasons"), "manifest.json.Seasons")
+    matches = [
+        row
+        for row in seasons
+        if isinstance(row, dict)
+        and row.get("CanonicalLeagueSeasonID") == current_season_id
+    ]
+    if len(matches) != 1:
+        raise CanonicalOwnershipError(
+            "CurrentCanonicalLeagueSeasonID must resolve to exactly one manifest season; "
+            f"found {len(matches)} matches for {current_season_id!r}."
+        )
+
+    try:
+        season = int(matches[0]["Season"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CanonicalOwnershipError(
+            f"Manifest season {current_season_id!r} has no valid Season."
+        ) from exc
+
+    if season <= 0:
+        raise CanonicalOwnershipError(
+            f"Manifest season {current_season_id!r} has invalid Season {season}."
+        )
+    return season
+
+
 def build_canonical_ownership_snapshot(
     repo_root: Path,
     *,
