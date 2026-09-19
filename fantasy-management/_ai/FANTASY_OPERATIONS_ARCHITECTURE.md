@@ -132,7 +132,7 @@ fantasy-management/_ai/scripts/build_free_agent_dataset.py
 → fantasy-management/generated/operations/free-agent-signals.json
 ```
 
-The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`, where ownership itself comes from the union of every league team’s Roster/Reserve/Taxi lists.
+The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`. In Checkpoint 6Q this league-wide ownership path is intentionally **not** migrated yet; it still comes from the union of every league team’s `League.json` Roster/Reserve/Taxi lists, while only `managed-roster-signals.json` has moved its TeamID 1 membership to Canonical League Source Data.
 
 `free-agent-signals.json` and `fa-board-readmodel.json` serve different purposes. The former is the complete ownership-derived free-agent population used by broad discovery/movement processing. The latter is the canonical compact live/current FA-board availability and capacity view because it adds the current Drafts gate. During a running Free-Agent Draft, `free-agent-signals.json` alone is not sufficient to prove availability for a newly selected player that has not yet been materialized into `League.json`.
 
@@ -325,9 +325,15 @@ A player absent from a top-N list is not assigned zero activity. The central pla
 
 ## Identity and ownership rule
 
-External signal identity is resolved through the configured stable player ID. Current league ownership is derived only from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+External signal identity is resolved through the configured stable player ID.
 
-Permitted ownership states are:
+Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migration:
+
+- `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership productively from Canonical League Source Data through `canonical_league_ownership.py`; `League.json` remains display enrichment for team name/abbreviation in that materializer.
+- External-signal relevance, league-wide player-signal ownership, Free-Agent population/availability and the other not-yet-migrated ownership consumers still derive current league ownership from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+- The stable Fantasy `TeamID` is bridged explicitly to `CanonicalLeagueMemberID` in `league-context/owner-registry.json`; provider roster IDs are not stable TeamIDs.
+
+Permitted ownership states for the league-wide ownership consumers are:
 
 - `mighty_giants`;
 - `opponent_rostered`;
