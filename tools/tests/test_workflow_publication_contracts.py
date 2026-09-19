@@ -35,6 +35,9 @@ WORKFLOW_LOCAL_REBUILD_WRITERS = {
 
 DELEGATED_REBUILD_WRITERS = {
     "sync-nfl-game-finality.yml": "sync-nfl-source-data.yml",
+    "sync-league-transactions.yml": "sync-league-source-data.yml",
+    "sync-league-drafts.yml": "sync-league-source-data.yml",
+    "sync-league-core.yml": "sync-league-source-data.yml",
 }
 
 REBASE_WRITERS = {
