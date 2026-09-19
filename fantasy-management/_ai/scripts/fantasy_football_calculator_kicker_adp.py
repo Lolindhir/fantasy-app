@@ -28,7 +28,7 @@ DIRECT_FETCHER = (
 SCHEMA_VERSION = 1
 ACTUAL_TEAMS = 6
 SOURCE_TEAMS = 8
-MIN_KICKER_ROWS = 8
+MIN_KICKER_ROWS = 10
 CSV_FIELDS = [
     "name", "Rank", "source_rank", "position", "team", "source_player_id",
     "adp", "adp_formatted", "times_drafted", "high", "low", "stdev", "bye",
@@ -39,6 +39,10 @@ CSV_FIELDS = [
 
 class FantasyFootballCalculatorKickerError(RuntimeError):
     """Raised when kicker rows cannot be materialized safely."""
+
+
+class FantasyFootballCalculatorKickerCoverageError(FantasyFootballCalculatorKickerError):
+    """Raised when the current FFC payload has too few usable kicker rows."""
 
 
 def _number(value: Any, field: str, name: str, minimum: Decimal = Decimal("0")) -> Decimal:
@@ -162,7 +166,7 @@ def parse_kickers(
         row.pop("_adp")
 
     if len(rows) < MIN_KICKER_ROWS:
-        raise FantasyFootballCalculatorKickerError(
+        raise FantasyFootballCalculatorKickerCoverageError(
             f"Too few FFC kicker rows for {RANKING_ID}: {len(rows)}"
         )
 
