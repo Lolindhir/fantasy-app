@@ -83,7 +83,7 @@ function Get-Compare {
             'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
             'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek','PlayoffStart', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
             'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SeasonKickoff', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
-            'WaiversOpen', 'WaiversMetaText', 'NextWaiverRun', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText'
+            'WaiversOpen', 'WaiversMetaText', 'NextWaiverRun', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText', 'LeagueIDPrevious'
         )
 
         foreach ($prop in $propsToCheck) {
@@ -95,6 +95,15 @@ function Get-Compare {
 
         foreach ($prop in @('RosterSize')) {
             if (-not (Compare-Arrays $oldLeague.$prop $newLeague.$prop $prop "League")) {
+                return $true
+            }
+        }
+
+        foreach ($prop in @('Settings','ScoringType')) {
+            $oldValue = $oldLeague.$prop | ConvertTo-Json -Depth 10 -Compress
+            $newValue = $newLeague.$prop | ConvertTo-Json -Depth 10 -Compress
+            if ($oldValue -ne $newValue) {
+                Write-Host "League property '$prop' changed."
                 return $true
             }
         }
