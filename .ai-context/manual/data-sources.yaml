@@ -152,6 +152,15 @@ dataSources:
       retainedLiveBoundaries:
         - playoff bracket publication via Get-Playoffs
         - current matchup live-score overlay via Get-FgcCurrentMatchupLoad
+      currentPlayoffBracketSource:
+        mode: legacy-live-with-canonical-shadow
+        productiveAdapter: public/requests/utils/league/PlayoffUtils.psm1::Get-Playoffs
+        shadowConsumer: public/requests/utils/league/CanonicalPlayoffUtils.psm1::Get-CanonicalCurrentPlayoffs
+        canonicalInputs: rosters.json + winners-bracket.json + losers-bracket.json
+        routingContract: Team1Source/Team2Source with Outcome Winner|Loser + Match
+        providerFallback: none
+        parity: current raw Sleeper brackets + published League.json::Playoffs
+        cutoverStatus: shadow-parity-only / productive Get-Playoffs still live until separate checkpoint
       downstreamDerivedUnchanged:
         - drafts and transactions
         - standings enrichment
