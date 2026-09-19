@@ -62,6 +62,9 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Leag
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-TeamsForLeague") -Expected 0 -Message "RequestLeague still performs the legacy current Teams provider read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live Playoffs read until the canonical bracket contract carries the full legacy routing shape."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must intentionally retain exactly one live current-matchup score overlay."
+Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
+Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType')") -Message "RequestLeague change detection does not track canonical Settings and ScoringType structurally."
+Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical Settings/ScoringType comparison is not structural."
 
 # League overview read-model helpers normalize optional deadline settings and
 # deterministic kickoff facts without frontend derivation.
@@ -487,7 +490,9 @@ else {
 }
 Assert-Equal -Actual ([string]$canonicalLeagueAvatar) -Expected ([string]$publishedLeague.Avatar) -Message "Canonical League Core avatar parity failed."
 
-Assert-StandingsJsonEqual -Actual $canonicalLeagueCoreShadow.League.settings -Expected $publishedLeague.Settings -Message "Canonical League Core settings parity failed."
+$canonicalComparableSettings = $canonicalLeagueCoreShadow.League.settings | Select-Object * -ExcludeProperty daily_waivers_last_ran
+$publishedComparableSettings = $publishedLeague.Settings | Select-Object * -ExcludeProperty daily_waivers_last_ran
+Assert-StandingsJsonEqual -Actual $canonicalComparableSettings -Expected $publishedComparableSettings -Message "Canonical League Core stable-settings parity failed."
 Assert-StandingsJsonEqual -Actual $canonicalLeagueCoreShadow.League.scoring_settings -Expected $publishedLeague.ScoringType -Message "Canonical League Core scoring settings parity failed."
 Assert-StandingsJsonEqual -Actual @($canonicalLeagueCoreShadow.League.roster_positions) -Expected @($publishedLeague.RosterSize) -Message "Canonical League Core roster-position parity failed."
 
