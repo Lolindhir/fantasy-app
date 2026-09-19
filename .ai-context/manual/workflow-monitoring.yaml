@@ -249,6 +249,12 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent League Source sync dispatched by the central scheduler; main-push runs verify source-layer changes immediately, while failures or a missed daily cycle should surface promptly. Pull-request, reusable-call and manual repair runs remain non-paging.
+  .github/workflows/sync-league-core.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    staleAfterMinutes: 45
+    rationale: Ten-minute canonical League Core freshness refresh dispatched at minute 2 of each ten-minute window, before transaction-source refresh, draft-source refresh and the next App League refresh. It delegates exactly the current league, members, rosters and winners/losers bracket datasets plus the bounded five-file canonical materialization to the reusable League Source producer; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
   .github/workflows/sync-league-transactions.yml:
     category: important
     relevantEvents:
