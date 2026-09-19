@@ -99,7 +99,7 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
-The compact FA-board decision-infrastructure contract is built from the freshly materialized `player-signals.json` plus complete current `League.json`, `Drafts.json` and `Timestamps.json`:
+The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, non-membership `League.json` rule/display enrichment, complete current `Drafts.json` and `Timestamps.json`:
 
 ```text
 fantasy-management/automation/fa-board-materialization.json
@@ -112,7 +112,9 @@ Its purpose is to answer current/live FA-board availability and immediate roster
 
 Availability is fail-closed:
 
-- current league ownership is resolved from the complete union of every team's `Roster`, `Reserve` and `Taxi` lists;
+- current league ownership is resolved from the complete Canonical League union of every team's `Roster`, `Reserve` and `Taxi` lists;
+- Managed-Team Reserve/Taxi occupancy used for capacity is taken from the same Canonical League ownership snapshot;
+- `League.json` contributes settings/phase/status/roster-size/kickoff/week and Team/TeamAbbr enrichment only; its roster lists do not control FA-board ownership or occupancy;
 - the current relevant Free-Agent Draft is resolved from complete `Drafts.json`;
 - positive ownership or an already assigned current FA-draft pick always blocks availability;
 - a player is `available` only when both negative checks are complete and unambiguous;
@@ -132,9 +134,9 @@ fantasy-management/_ai/scripts/build_free_agent_dataset.py
 → fantasy-management/generated/operations/free-agent-signals.json
 ```
 
-The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`. Through Checkpoint 6R this downstream player-signal/Free-Agent ownership path is intentionally **not** migrated yet; it still comes from the union of every league team’s `League.json` Roster/Reserve/Taxi lists. Canonical League ownership is already productive in `managed-roster-signals.json` and `external-signal-relevance.json`, but that does not silently change the separate player-signal ownership contract.
+The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`. Since Checkpoint 6S, `player-signals.json` derives that ownership from the Canonical League Roster/Reserve/Taxi union, so `free-agent-signals.json` inherits canonical fantasy ownership without re-reading `League.json`. Checkpoint 6T independently moves the FA-board's own availability/occupancy join to the same Canonical League basis while retaining App league rules/status as non-membership enrichment.
 
-`free-agent-signals.json` and `fa-board-readmodel.json` serve different purposes. The former is the complete ownership-derived free-agent population used by broad discovery/movement processing. The latter is the canonical compact live/current FA-board availability and capacity view because it adds the current Drafts gate. During a running Free-Agent Draft, `free-agent-signals.json` alone is not sufficient to prove availability for a newly selected player that has not yet been materialized into `League.json`.
+`free-agent-signals.json` and `fa-board-readmodel.json` serve different purposes. The former is the complete ownership-derived free-agent population used by broad discovery/movement processing. The latter is the canonical compact live/current FA-board availability and capacity view because it adds the current Drafts gate. During a running Free-Agent Draft, `free-agent-signals.json` alone is not sufficient to prove availability for a newly selected player that has not yet been materialized into the current Canonical League roster snapshot.
 
 The position-inclusive Free-Agent Movement Discovery contract is built from the complete current free-agent population and the existing normalized ranking/projection snapshot histories:
 
@@ -332,7 +334,7 @@ Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migra
 - `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership productively from Canonical League Source Data through `canonical_league_ownership.py`; `League.json` remains display enrichment for team name/abbreviation in that materializer.
 - `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data through the same adapter; `League.json` remains Team/TeamAbbr display enrichment in that materializer.
 - `player-signals.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data; `League.json` remains a non-membership App enrichment input for managed-team display and `ScoringType` used by projection scoring, plus the existing trigger/freshness bridge for this consumer.
-- Free-Agent population/availability, FA-board and the other not-yet-migrated ownership consumers still derive current league ownership from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+- `free-agent-signals.json` inherits canonical ownership from `player-signals.json`, and `fa-board-readmodel.json` derives its own availability/occupancy ownership directly from Canonical League Source Data. Any remaining not-yet-migrated ownership consumers retain their explicitly documented contracts.
 - The stable Fantasy `TeamID` is bridged explicitly to `CanonicalLeagueMemberID` in `league-context/owner-registry.json`; provider roster IDs are not stable TeamIDs.
 
 Permitted ownership states for the league-wide ownership consumers are:
