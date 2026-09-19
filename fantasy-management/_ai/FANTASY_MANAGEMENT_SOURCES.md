@@ -22,7 +22,7 @@ Important files:
 
 ## League source rules
 
-`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is currently productive in three scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q), `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R) and `player-signals.json` (league-wide ownership and `league_owned` population reason since 6S). In these migrated consumers `League.json` is retained only for current team display enrichment and the existing trigger/freshness bridge.
+`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is currently productive in three scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q), `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R) and `player-signals.json` (league-wide ownership and `league_owned` population reason since 6S). In the migrated ownership consumers `League.json` no longer supplies membership; it remains for consumer-specific App enrichment plus the existing trigger/freshness bridge. For `player-signals`, that retained App enrichment includes managed-team display metadata and league `ScoringType` used by the projection-extension layer.
 
 The user team is:
 
@@ -63,7 +63,7 @@ the complete league-wide Roster/Reserve/Taxi union is now read from Canonical Le
 while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing
 League-trigger/freshness bridge for that materializer.
 
-Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are now canonical-derived; `Players.json` remains the source for Player identity/metadata plus App-owned Salary/SalaryProjected and other player fields.
+Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are now canonical-derived; `Players.json` remains the source for Player identity/metadata plus App-owned Salary/SalaryProjected and other player fields. `League.json` remains a non-membership enrichment input there for managed-team display and `ScoringType` used to reconcile projection components to league scoring.
 
 This is **not** a wholesale Fantasy Management ownership cutover. FA-board ownership/capacity, Free-Agent availability, Drafts, Transactions and all other unmigrated consumers retain their currently documented source contracts until separately migrated.
 
