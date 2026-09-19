@@ -159,6 +159,16 @@ dataSources:
         providerFallback: none
         parity: current raw Sleeper brackets + published League.json::Playoffs
         cutoverStatus: productive
+      currentMatchupSource:
+        mode: legacy-live-with-canonical-shadow
+        productiveAdapter: public/requests/utils/league/FantasyGameContextCore.ps1::Get-FgcCurrentMatchupLoad
+        shadowAdapter: public/requests/utils/league/CanonicalMatchupUtils.psm1::Get-CanonicalCurrentMatchupLoad
+        canonicalInput: matchups/week-<CurrentWeek>.json
+        freshness: productively scheduled with the bounded League Core scope every ten minutes at minute 2
+        currentWeekSelection: shared source-owned current-week resolver / settings.leg first
+        providerFallback: none in shadow adapter
+        parity: persisted current raw Sleeper provider semantics + downstream ConvertTo-FgcCurrentMatchupFacts
+        cutoverStatus: shadow-parity-only / productive live overlay intentionally retained in 6N
       downstreamDerivedUnchanged:
         - drafts and transactions
         - standings enrichment

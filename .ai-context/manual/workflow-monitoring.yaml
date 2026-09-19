@@ -255,7 +255,7 @@ workflows:
     - repository_dispatch
     - push
     staleAfterMinutes: 45
-    rationale: Ten-minute canonical League Core freshness refresh dispatched at minute 2 of each ten-minute window, plus narrow main-push rebuilds when the League Core wrapper or its direct materialization code changes. It delegates exactly the current league, members, rosters and winners/losers bracket datasets plus the bounded five-file canonical materialization to the reusable League Source producer; scheduler and narrow push runs are production health evidence. Two consecutive production failures or roughly 45 minutes without a successful production run are actionable. Manual repair runs remain non-paging.
+    rationale: Ten-minute canonical League Core freshness refresh dispatched at minute 2 of each ten-minute window, plus narrow main-push rebuilds when the League Core wrapper or its direct materialization code changes. It delegates current league, members, rosters, winners/losers brackets and exactly the active current matchup week, materializing the five Core files plus one bounded current-matchup partition. Scheduler and narrow push runs are production health evidence. Two consecutive production failures or roughly 45 minutes without a successful production run are actionable. Manual repair runs remain non-paging.
   .github/workflows/sync-league-transactions.yml:
     category: important
     relevantEvents:

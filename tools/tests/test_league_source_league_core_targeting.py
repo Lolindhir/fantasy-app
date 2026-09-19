@@ -37,6 +37,10 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         target = root / "source-data" / "league-registry.json"
         target.parent.mkdir(parents=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        schedule_source = Path(__file__).resolve().parents[2] / "source-data" / "nfl" / "schedules" / "2026.json"
+        schedule_target = root / "source-data" / "nfl" / "schedules" / "2026.json"
+        schedule_target.parent.mkdir(parents=True, exist_ok=True)
+        schedule_target.write_text(schedule_source.read_text(encoding="utf-8"), encoding="utf-8")
         return temporary, root
 
     def _write_fixture(
@@ -135,7 +139,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     "status": "in_season",
                     "season_type": "regular",
                     "avatar": None,
-                    "settings": {"trade_deadline": 99},
+                    "settings": {"trade_deadline": 99, "leg": 2, "last_scored_leg": 1},
                     "scoring_settings": {"pass_td": 4},
                     "roster_positions": ["QB", "BN"],
                 }
@@ -175,8 +179,27 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         )
         (raw_root / "winners-bracket.json").write_text("[]", encoding="utf-8")
         (raw_root / "losers-bracket.json").write_text("[]", encoding="utf-8")
+        matchup_root = raw_root / "matchups"
+        matchup_root.mkdir(parents=True, exist_ok=True)
+        (matchup_root / "week-2.json").write_text(
+            json.dumps(
+                [
+                    {
+                        "roster_id": 1,
+                        "matchup_id": 1,
+                        "points": 7.0,
+                        "custom_points": None,
+                        "players": ["p1"],
+                        "starters": ["p1"],
+                        "players_points": {"p1": 7.0},
+                        "starters_points": [7.0],
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
 
-    def test_targeted_acquisition_fetches_only_current_league_core_datasets(self) -> None:
+    def test_targeted_acquisition_fetches_current_league_core_and_active_matchup(self) -> None:
         temporary, root = self._root_with_registry()
         try:
             registry = load_league_registry(root)
@@ -200,6 +223,19 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     return [{"roster_id": 1, "owner_id": "u1"}]
                 if url.endswith("/winners_bracket") or url.endswith("/losers_bracket"):
                     return []
+                if url.endswith("/matchups/2"):
+                    return [
+                        {
+                            "roster_id": 1,
+                            "matchup_id": 1,
+                            "points": 7.0,
+                            "custom_points": None,
+                            "players": ["p1"],
+                            "starters": ["p1"],
+                            "players_points": {"p1": 7.0},
+                            "starters_points": [7.0],
+                        }
+                    ]
                 raise AssertionError(f"Unexpected URL: {url}")
 
             plans = plan_raw_acquisition(
@@ -209,22 +245,23 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                 fetch,
                 dataset_ids=set(LEAGUE_CORE_DATASET_IDS),
                 seasons={2026},
+                weeks={2},
             )
 
-            self.assertEqual(len(plans), 5)
+            self.assertEqual(len(plans), 6)
             self.assertEqual(
                 {plan.dataset_id for plan in plans},
                 set(LEAGUE_CORE_DATASET_IDS),
             )
             self.assertEqual({plan.season for plan in plans}, {2026})
-            self.assertEqual(len(calls), 4)
-            self.assertFalse(any("/matchups/" in url for url in calls))
+            self.assertEqual(len(calls), 5)
+            self.assertEqual(sum("/matchups/2" in url for url in calls), 1)
             self.assertFalse(any("/transactions/" in url for url in calls))
             self.assertFalse(any("/draft" in url for url in calls))
         finally:
             temporary.cleanup()
 
-    def test_league_core_scope_writes_only_five_core_files_and_is_noop_on_repeat(self) -> None:
+    def test_league_core_scope_writes_core_plus_active_matchup_and_is_noop_on_repeat(self) -> None:
         temporary, root = self._root_with_registry()
         try:
             self._write_fixture(root)
@@ -250,6 +287,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     "source-data/leagues/test-league/seasons/2026/rosters.json",
                     "source-data/leagues/test-league/seasons/2026/winners-bracket.json",
                     "source-data/leagues/test-league/seasons/2026/losers-bracket.json",
+                    "source-data/leagues/test-league/seasons/2026/matchups/week-2.json",
                 },
             )
             self.assertEqual(
@@ -260,6 +298,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     "raw-sleeper-league-rosters",
                     "raw-sleeper-winners-bracket",
                     "raw-sleeper-losers-bracket",
+                    "raw-sleeper-matchups",
                     "nfl-player-provider-mappings",
                     "canonical-week-structure",
                 ),
@@ -286,10 +325,10 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     seasons={2026},
                 )
             )
-            self.assertEqual(first["CanonicalFiles"], 5)
+            self.assertEqual(first["CanonicalFiles"], 6)
             self.assertEqual(second["CanonicalFilesChanged"], 0)
             season_root = root / "source-data/leagues/test-league/seasons/2026"
-            self.assertFalse((season_root / "matchups").exists())
+            self.assertTrue((season_root / "matchups" / "week-2.json").exists())
             self.assertFalse((season_root / "transactions").exists())
             self.assertFalse((season_root / "drafts.json").exists())
         finally:
@@ -431,7 +470,7 @@ class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
             resolver,
             seasons={season},
         )
-        self.assertEqual(len(outputs), 5)
+        self.assertEqual(len(outputs), 6)
         for output in outputs:
             existing = json.loads(output.path.read_text(encoding="utf-8"))
             self.assertEqual(

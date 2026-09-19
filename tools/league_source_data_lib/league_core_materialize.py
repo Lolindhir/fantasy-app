@@ -11,8 +11,10 @@ from .materialize import (
     PlayerMappingResolver,
     _canonical_trade_deadline_week,
     _canonicalize_bracket,
+    _canonicalize_matchups,
     _members_and_rosters,
 )
+from .matchup_materialize import resolve_current_matchup_scope
 from .registry import LeagueDataset
 
 LEAGUE_CORE_DATASET_IDS = (
@@ -21,6 +23,7 @@ LEAGUE_CORE_DATASET_IDS = (
     "sleeper.league-rosters",
     "sleeper.winners-bracket",
     "sleeper.losers-bracket",
+    "sleeper.matchups",
 )
 LEAGUE_CORE_SCOPE_DEPENDENCIES = (
     "raw-sleeper-league",
@@ -28,6 +31,7 @@ LEAGUE_CORE_SCOPE_DEPENDENCIES = (
     "raw-sleeper-league-rosters",
     "raw-sleeper-winners-bracket",
     "raw-sleeper-losers-bracket",
+    "raw-sleeper-matchups",
     "nfl-player-provider-mappings",
     "canonical-week-structure",
 )
@@ -47,14 +51,20 @@ def _registry_guard(registry: Iterable[LeagueDataset]) -> None:
         raise ValueError(
             f"League registry is missing required League Core inputs: {sorted(missing)}"
         )
+    league_instance_ids = set(LEAGUE_CORE_DATASET_IDS) - {"sleeper.matchups"}
     invalid = [
         dataset_id
-        for dataset_id in LEAGUE_CORE_DATASET_IDS
+        for dataset_id in league_instance_ids
         if by_id[dataset_id].scope != "league-instance"
     ]
     if invalid:
         raise ValueError(
             f"League Core datasets must be league-instance scoped: {sorted(invalid)}"
+        )
+    matchup = by_id["sleeper.matchups"]
+    if matchup.scope != "week" or matchup.week_start is None or matchup.week_end_source != "nfl-regular-season-schedule":
+        raise ValueError(
+            "League Core current matchup companion must use the canonical week-scoped Sleeper matchup dataset"
         )
 
 
@@ -239,6 +249,19 @@ def plan_league_core_materialization(
         if int(league_raw.get("season")) != season:
             raise ValueError(f"Sleeper league raw season mismatch for {provider_league_id}")
 
+        current_matchup_scope = resolve_current_matchup_scope(
+            repo_root,
+            canonical_league_id,
+            provider_league_id,
+            league_raw,
+        )
+        if int(current_matchup_scope["Season"]) != season:
+            raise ValueError(
+                f"League Core current matchup season mismatch: {current_matchup_scope['Season']} != {season}"
+            )
+        current_matchup_week = int(current_matchup_scope["CurrentWeek"])
+        matchups_raw = _read_json(raw_base / "matchups" / f"week-{current_matchup_week}.json")
+
         members, rosters, _, roster_by_provider = _members_and_rosters(
             canonical_league_id,
             season_id,
@@ -249,6 +272,14 @@ def plan_league_core_materialization(
         )
         winners = _canonicalize_bracket(winners_raw, roster_by_provider, "winners")
         losers = _canonicalize_bracket(losers_raw, roster_by_provider, "losers")
+        current_matchups = _canonicalize_matchups(
+            matchups_raw,
+            season_id,
+            roster_by_provider,
+            resolver,
+            season,
+            current_matchup_week,
+        )
         week_structure = _existing_week_structure(
             season_root,
             canonical_league_id,
@@ -284,6 +315,10 @@ def plan_league_core_materialization(
             CanonicalOutput(season_root / "rosters.json", rosters),
             CanonicalOutput(season_root / "winners-bracket.json", winners),
             CanonicalOutput(season_root / "losers-bracket.json", losers),
+            CanonicalOutput(
+                season_root / "matchups" / f"week-{current_matchup_week}.json",
+                current_matchups,
+            ),
         ]
         for output in season_outputs:
             if output.path in seen_paths:

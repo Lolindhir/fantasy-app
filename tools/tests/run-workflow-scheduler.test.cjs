@@ -134,6 +134,7 @@ test('draft source cadence is phased after transactions and before the next Leag
   assert.match(workflow, /materialization_scope:\s+drafts/);
 });
 
+
 test('NFL game finality uses targeted seasonal polling and event-driven Games publication', () => {
   const config = loadConfig();
   const finalityTarget = config.targets.find((item) => item.id === 'nfl-game-finality');
