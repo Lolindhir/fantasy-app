@@ -24,6 +24,20 @@ Analysis answers:
 
 > What should Mighty Giants do?
 
+## Quality-layer separation
+
+Podcast processing and later reviews must keep three quality questions separate:
+
+1. **Extraction Quality** asks whether the repository preserved what the source actually said, including reasoning, uncertainty, context, structure and relevant coverage. Golden Set checks, Content Map reconciliation, mention coverage and extraction process review belong to this layer.
+2. **Source Reliability / Calibration** asks whether an evaluable source claim later proved well calibrated against the appropriate outcome and time horizon. This is a separate derived evaluation layer and must not be inferred from extraction quality.
+3. **Decision Quality** asks whether a Mighty Giants decision was well reasoned from the information available at decision time. It remains governed by the relevant decision-record and review contracts and must not be inferred from source hit rates alone.
+
+Do not collapse these layers into one podcast or quality score.
+
+Later source-outcome evaluation must never rewrite the historical source take. The original claim, reasoning, conditions, uncertainty and source context remain source evidence. Calibration records, when implemented, must reference that immutable source state from a separate derived layer.
+
+Podcast extraction should preserve source-expressed timing, conditions, uncertainty and conviction when materially present because those details may later determine whether and when a claim is evaluable. Do not invent an evaluation horizon, probability or outcome criterion that the source did not express merely to make future scoring easier.
+
 ## Podcast episode package
 
 Each current episode package contains:
