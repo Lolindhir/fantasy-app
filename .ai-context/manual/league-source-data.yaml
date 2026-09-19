@@ -294,6 +294,7 @@ productiveAcceptance:
     currentStandings: canonical-active
     transactionsAndDrafts: canonical-active
     currentLeagueCoreScope: productive-freshness-scheduled
+    currentLeagueCoreConsumer: canonical-shadow-parity / productive-RequestLeague-still-legacy-live
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -350,9 +351,12 @@ phase2TargetedFreshnessScopes:
       - current nfl-reise Core outputs are parity-checked against accepted canonical files
     productionNote: >
       The bounded League Core scope is productively scheduled every ten minutes, ahead
-      of the next App League refresh. Historical and Current Standings now consume
-      these canonical League Core facts directly; RequestStandings no longer performs
-      a live Sleeper league/team/bracket read for standings.
+      of the next App League refresh. Historical and Current Standings consume these
+      canonical League Core facts directly. A CI-backed Current League Core shadow now
+      reconstructs RequestLeague's source-owned League Metadata/Settings and
+      Members/Rosters team inputs from league.json, members.json and rosters.json, but
+      productive RequestLeague remains on its legacy live League/Team adapters until
+      a separate cutover checkpoint.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
