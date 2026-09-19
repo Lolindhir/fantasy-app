@@ -269,6 +269,9 @@ fantasy-management/
 - The mention register is a completeness and audit artifact; it must not be treated as a ranking or recommendation.
 - A Content Map is a source-preservation contract for new pipeline packages; it is not Knowledge or a final recommendation.
 - Golden Set profiles evaluate extraction quality and may propose improvements, but canonical rules and profiles change only after explicit user approval.
+- Extraction Quality, Source Reliability / Calibration and Decision Quality are distinct quality layers and must not be collapsed into one score or used as silent proxies for one another.
+- Extraction Quality evaluates how faithfully and completely the repository preserved the source; it does not establish that the source's underlying claim was accurate.
+- Later source-outcome calibration must remain a separate derived evaluation layer: it may inform explicit source-weighting decisions but must not rewrite historical source takes, extraction-quality results or sealed decision records.
 - `fantasy-management/_ai/golden-set/profile-list.json` is the canonical list of active Golden Set profiles. Unregistered profile files are drafts or proposals, not active extraction requirements.
 - The local podcast builder may aggregate and validate authored work-package artifacts, but it must not create new editorial interpretation.
 - `fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md` is the canonical storage contract for approved qualitative `entity-observation` baselines. `fantasy-management/automation/state/entity-observation.json` is the bounded global header and must not contain canonical target payloads. Normal approved qualitative baseline writes replace only the complete deterministic target shard under `fantasy-management/automation/state/entity-observation-targets/{target_id}.json`.
