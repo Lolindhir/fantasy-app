@@ -306,6 +306,8 @@ function Get-CanonicalStandingSourceForSeason {
 
     return [PSCustomObject][ordered]@{
         Season             = [string]$Season
+        Status             = [string]$league.Status
+        IsCompleted        = ([string]$league.Status -eq "complete")
         TeamData           = $teamData
         Playoffs           = [PSCustomObject][ordered]@{
             WinnersBracket = $legacyWinners
@@ -315,7 +317,7 @@ function Get-CanonicalStandingSourceForSeason {
     }
 }
 
-function Get-CanonicalCurrentStandings {
+function Get-CanonicalCurrentSeasonData {
     param(
         [string]$CanonicalLeagueID = "nfl-reise",
         [AllowNull()]$PreviousSeasonStandings = $null
@@ -324,12 +326,27 @@ function Get-CanonicalCurrentStandings {
     $currentSeason = [string](Get-Config).LeagueYear
     $source = Get-CanonicalStandingSourceForSeason -CanonicalLeagueID $CanonicalLeagueID -Season $currentSeason -AllowActiveSeason
     $standings = Get-StandingsRemote -playoffs $source.Playoffs -teamData @($source.TeamData) -regularSeasonGames ([int]$source.RegularSeasonGames) -previousSeasonStandings $PreviousSeasonStandings
-
-    return Get-OutputStandingsForSeason `
+    $output = Get-OutputStandingsForSeason `
         -season $currentSeason `
         -standingsPlayoffs @($standings.Playoffs) `
         -standingsRegularSeason @($standings.RegularSeason) `
         -awards @($standings.Awards)
+
+    return [PSCustomObject][ordered]@{
+        Output      = $output
+        IsCompleted = [bool]$source.IsCompleted
+    }
+}
+
+function Get-CanonicalCurrentStandings {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise",
+        [AllowNull()]$PreviousSeasonStandings = $null
+    )
+
+    return (Get-CanonicalCurrentSeasonData `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -PreviousSeasonStandings $PreviousSeasonStandings).Output
 }
 
 function Get-CanonicalHistoricalStandingSeasons {
@@ -416,6 +433,7 @@ function Get-CanonicalHistoricalStandings {
 
 Export-ModuleMember -Function @(
     "Get-CanonicalStandingSourceForSeason",
+    "Get-CanonicalCurrentSeasonData",
     "Get-CanonicalCurrentStandings",
     "Get-CanonicalHistoricalStandingSeasons",
     "Get-CanonicalHistoricalStandings"
