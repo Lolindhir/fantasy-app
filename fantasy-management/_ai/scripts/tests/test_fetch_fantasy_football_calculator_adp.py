@@ -1,8 +1,10 @@
 import csv
+import io
 import importlib.util
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -23,11 +25,12 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
         raw_note="a",
         end_date="2026-07-18",
         total_drafts=300,
+        offense_rows=120,
     ):
         config = module.FORMAT_CONFIGS[config_key]
         players = []
         positions = ["QB", "RB", "WR", "TE"]
-        for index in range(1, 121):
+        for index in range(1, offense_rows + 1):
             adp = index + 0.25 + (0.1 if change_adp and index == 1 else 0)
             players.append(
                 {
@@ -134,6 +137,62 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
         self.assertTrue(config["two_qb"])
         self.assertEqual(10, sample["teams"])
         self.assertEqual(120, len(rows))
+
+    def test_accepts_offense_population_at_contract_minimum(self):
+        _, _, _, _, rows, diagnostics = self.prepare(offense_rows=50)
+        self.assertEqual(50, len(rows))
+        self.assertEqual(50, diagnostics["normalized_player_count"])
+
+    def test_accepts_current_in_season_sized_offense_population(self):
+        _, _, _, _, rows, diagnostics = self.prepare(offense_rows=72)
+        self.assertEqual(72, len(rows))
+        self.assertEqual(72, diagnostics["normalized_player_count"])
+
+    def test_rejects_offense_population_below_contract_minimum(self):
+        config = module.FORMAT_CONFIGS["ppr-8-team"]
+        payload = self.make_payload(offense_rows=49)
+        sample = module.validate_payload(
+            payload,
+            config,
+            season=2026,
+            fetched_at=datetime(2026, 7, 18, tzinfo=timezone.utc),
+        )
+        with self.assertRaisesRegex(
+            module.FantasyFootballCalculatorFetchError,
+            "Too few offensive FFC rows",
+        ):
+            module.parse_players(payload, config, sample)
+
+    def test_dry_run_preserves_healthy_formats_when_kicker_coverage_is_too_small(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ppr_path = root / "ppr.json"
+            two_qb_path = root / "2qb.json"
+            ppr_path.write_text(
+                json.dumps(self.make_payload("ppr-8-team")),
+                encoding="utf-8",
+            )
+            two_qb_path.write_text(
+                json.dumps(self.make_payload("2qb-10-team")),
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = module.main([
+                    "--season",
+                    "2026",
+                    "--fetched-at",
+                    "2026-07-18T08:00:00Z",
+                    "--input",
+                    f"ppr-8-team={ppr_path}",
+                    "--input",
+                    f"2qb-10-team={two_qb_path}",
+                    "--dry-run",
+                ])
+            self.assertEqual(0, result)
+            self.assertIn("redraft-ppr-8-team rows=120", output.getvalue())
+            self.assertIn("redraft-2qb-10-team rows=120", output.getvalue())
+            self.assertIn("skipped-preserving-last-good", output.getvalue())
 
     def test_rejects_wrong_team_count_and_stale_sample(self):
         config = module.FORMAT_CONFIGS["ppr-8-team"]
