@@ -41,6 +41,33 @@ Verwende separat genau eine aktuelle Sicherheitsstufe:
 
 Roster Security ist dynamisch. Sie muss bei materiellen Änderungen neu abgeleitet werden und darf nicht aus einer alten Analyse fortgeschrieben werden.
 
+### 3.0 Comparison Boundary und General Churn strikt trennen
+
+Die **Comparison Boundary** beantwortet eine andere Frage als die Security-Stufe `churn`:
+
+- `boundary_priority` ordnet die Spieler, die bei einem materiellen neuen Zugang zuerst im direkten Opportunity-Cost-Vergleich geprüft werden sollen;
+- diese Reihenfolge ist eine **Vergleichsreihenfolge**, keine Cut-Freigabe und keine zusätzliche Security-Stufe;
+- ein Spieler mit `hold` darf an der Comparison Boundary stehen, wenn das Roster so asset-dicht ist, dass kein echter `churn`-Spieler existiert;
+- `conditional` bedeutet weiterhin, dass jeder relevante Add/Draft-/Streaming-Bedarf einen direkten Vergleich auslöst, aber **nicht**, dass der Platz frei repurposabel ist;
+- nur `roster_security = churn` kann allein von der Security-Seite her einen allgemeinen Churn-Slot darstellen; zusätzlich müssen aktiver Rosterstatus, Coverage, Spezialplatz- und sonstige Strukturregeln erfüllt sein;
+- Taxi- und Reserve-Spieler können an einer künftigen Retention-/Comparison Boundary relevant sein, zählen im aktuellen Zustand aber nie als allgemeine aktive Churn-Slots.
+
+Damit können folgende Zustände gleichzeitig korrekt sein:
+
+1. **0 allgemeine Churn-Slots**, weil kein aktiver Spieler als `churn` frei repurposabel ist;
+2. eine **aktive Comparison Boundary**, zum Beispiel zwei `hold`-/`conditional`-Spieler, gegen die ein Premium-Zugang zuerst verglichen würde.
+
+`boundary_priority` darf deshalb nicht als implizites Downgrade von `hold` zu `conditional` oder `churn` interpretiert werden.
+
+#### Fail-visible bei fehlender Klassifikation
+
+Ein fehlender Role-/Security- oder Boundary-Stand darf nicht still zu einer scheinbar leeren oder sicheren Churn-Boundary führen.
+
+- Jeder aktuell gehaltene Spieler ohne vollständige Role-/Security-Klassifikation erzeugt mindestens `needs_classification`/Quality-Warning.
+- Ist ein unklassifizierter Spieler aktiv und nach Position, Markt-/Usage-Signal oder Roster-Kontext plausibel boundary-relevant, muss der Churn-/Boundary-Output zusätzlich als `review_required` bzw. nicht entscheidungsreif behandelt werden.
+- Eine Transaktionsentscheidung darf aus einem solchen unvollständigen Output **nicht** ableiten, dass keine Comparison Boundary existiert oder dass zwei Churn-Slots verfügbar sind.
+- Neue Roster-Zugänge, Aktivierungen aus Reserve/IR, Taxi-Änderungen und materielle Usage-/Role-Änderungen sind Reclassification-Trigger; bis zur Neubewertung bleibt der fehlende Stand sichtbar statt durch einen Default ersetzt zu werden.
+
 ### 3.1 Zusatzdimension: `contingent_rb_upside`
 
 Für Running Backs wird neben primärer Roster Role und Roster Security eine eigene kontextuelle Upside-Dimension geführt. Sie ersetzt **keine** der beiden Hauptachsen und macht einen Spieler nicht automatisch zum Hold.
@@ -472,8 +499,9 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool einschließlich noch nicht materialisierter eigener Draft-Picks und die aktuell optimale **virtuelle** Taxi-Zuweisung;
 - bei einer materiellen Taxi-Entscheidung vor dem Lock für die ernsthaften Kandidaten: `retention_confidence`, `post_taxi_churn_risk` und die Begründung, wie erwartete Production/Upside gegen die Wahrscheinlichkeit eines später dauerhaft gerechtfertigten aktiven Rosterplatzes abgewogen wurde;
 - bei `locked`: die tatsächliche bindende Taxi-Zuweisung;
-- aktuelle Anzahl allgemeiner Churn-Slots;
-- aktuelle Churn-/Conditional-Boundary;
+- aktuelle Anzahl **echter allgemeiner Churn-Slots**; ein Slot zählt nur, wenn der Spieler als `churn` klassifiziert und strukturell tatsächlich repurposable ist;
+- aktuelle **Comparison Boundary** mit `boundary_priority`, getrennt von der Zahl allgemeiner Churn-Slots; `hold` und `conditional` dürfen dort sichtbar sein, ohne als Churn gezählt zu werden;
+- bei unklassifizierten aktiven Spielern den `needs_classification`-/`review_required`-Status und dessen Auswirkung auf die Entscheidungsreife der Boundary;
 - ob Coverage- und Zwei-Slot-Guardrails eingehalten werden;
 - bei Free-Agent-Draft-Boards: `availability_status` (`available`, `unavailable`, `unknown`) und die für die Verfügbarkeitsprüfung verwendeten `League.json`-/`Drafts.json`-Stände; `available` benötigt einen vollständigen positiven Availability-Nachweis und darf nicht aus einem fehlenden Treffer in einer trunkierten/unvollständigen Ausgabe abgeleitet werden;
 - bei Free-Agent-Draft-Boards: getrennt ausweisen, welche Kandidaten aus Active-BPA-, Reserve/IR-Stash- und – vor Lock – Taxi-Stash-Discovery stammen; kein Pick/PASS ohne Mandatory Stash Sweep;

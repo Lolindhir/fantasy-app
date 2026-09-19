@@ -45,6 +45,26 @@ Jede Klassifikation muss deshalb ihre Provenienz ausweisen:
 - expliziter User Override;
 - unklassifiziert / Review erforderlich.
 
+## Comparison Boundary vs. General Churn
+
+Der Read-Model-Contract trennt zwei unterschiedliche Konzepte:
+
+- **Comparison Boundary:** geordnete Opportunity-Cost-Kandidaten für einen materiellen Add/Trade/Draft-Zugang. Die Reihenfolge wird über `boundary_priority` aus der aktuell gültigen Evaluation gespeist und kann auch `hold` oder `conditional` enthalten.
+- **General Churn:** tatsächlich frei repurposable aktive Plätze. Dafür reicht `boundary_priority` ausdrücklich nicht; von der Security-Seite qualifiziert nur `roster_security = churn`, zusätzlich zu Active-/Coverage-/Specialist-Guardrails.
+
+Ein asset-dichtes Roster kann deshalb gleichzeitig eine nicht-leere Comparison Boundary und **0 allgemeine Churn-Slots** besitzen.
+
+Der JSON-Output muss diese Trennung sichtbar machen. `candidate_pool` ist der Comparison-Boundary-Pool; jeder Eintrag weist aus, ob er als General Churn zählt. Der Guardrail-Status des Zwei-Slot-Ziels wird ausschließlich aus echten General-Churn-Slots abgeleitet.
+
+## Fail-visible Missing Classification
+
+`unclassified` darf nicht als neutraler Wert behandelt werden, wenn dadurch eine Boundary- oder Churn-Aussage scheinbar vollständig würde.
+
+- Jeder unklassifizierte Managed Player bleibt Quality-Warning / `needs_classification`.
+- Bei aktiven unklassifizierten Spielern ist die Comparison-/Churn-Aussage nicht entscheidungsreif, solange deren mögliche Boundary-Relevanz nicht aufgelöst ist.
+- Der Read Model darf in diesem Zustand nicht implizieren, dass eine leere `candidate_pool` eine belastbare Aussage „keine Boundary vorhanden“ ist.
+- Neue Roster-Mitglieder und materielle Roster-/Reserve-/Taxi-/Usage-/Role-Änderungen müssen einen Reclassification-Bedarf sichtbar machen, bis der aktuelle Evaluation-State nachgezogen wurde.
+
 ## Taxi
 
 Vor dem Taxi-Lock ist die technische Sleeper-Belegung nicht strategisch bindend. Der Overview-Contract zeigt sie nur als `current_technical_occupants`.

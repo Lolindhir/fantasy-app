@@ -28,7 +28,8 @@ SCHEMA_VERSION = 1
 VALID_ROLES = {"core_starter", "starter_rotation", "backup", "prospect", "specialist"}
 VALID_SECURITY = {"locked", "strong_hold", "hold", "conditional", "churn"}
 STARTABLE_ROLES = {"core_starter", "starter_rotation"}
-BOUNDARY_SECURITY = {"conditional", "churn"}
+COMPARISON_BOUNDARY_SECURITY = {"conditional", "churn"}
+GENERAL_CHURN_SECURITY = {"churn"}
 
 
 class RosterOverviewError(RuntimeError):
@@ -306,6 +307,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                     "name": source_player.get("name"),
                 }
             )
+            if area == "active":
+                issues.append(
+                    {
+                        "severity": "warning",
+                        "kind": "active_unclassified_boundary_review_required",
+                        "player_id": player_id,
+                        "name": source_player.get("name"),
+                    }
+                )
 
     missing_signal_ids = sorted(held_ids - matched_signal_ids)
     for player_id in missing_signal_ids:
@@ -365,28 +375,54 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             else "unclassified"
         )
         item["coverage_protected"] = coverage_protected
+        boundary_priority = item["classification"].get("boundary_priority")
+        boundary_security = item["roster_security"] in COMPARISON_BOUNDARY_SECURITY
+        boundary_ranked_hold = boundary_priority is not None and item["roster_security"] == "hold"
+        item["comparison_boundary_eligible"] = bool(
+            (boundary_security or boundary_ranked_hold)
+            and item["structural_function"] != "specialist"
+            and not coverage_protected
+            and item["is_current_active"]
+        )
+        item["potential_comparison_boundary_after_taxi_reassignment"] = bool(
+            taxi_phase == "pre_lock"
+            and (boundary_security or boundary_ranked_hold)
+            and item["structural_function"] != "specialist"
+            and not coverage_protected
+        )
         item["churn_eligible"] = bool(
-            item["roster_security"] in BOUNDARY_SECURITY
+            item["roster_security"] in GENERAL_CHURN_SECURITY
             and item["structural_function"] != "specialist"
             and not coverage_protected
             and item["is_current_active"]
         )
         item["potential_churn_after_taxi_reassignment"] = bool(
             taxi_phase == "pre_lock"
-            and item["roster_security"] in BOUNDARY_SECURITY
+            and item["roster_security"] in GENERAL_CHURN_SECURITY
             and item["structural_function"] != "specialist"
             and not coverage_protected
         )
 
-    boundary_pool = [item for item in players if item["potential_churn_after_taxi_reassignment"] or item["churn_eligible"]]
+    boundary_pool = [
+        item
+        for item in players
+        if item["potential_comparison_boundary_after_taxi_reassignment"] or item["comparison_boundary_eligible"]
+    ]
     boundary_pool.sort(
         key=lambda item: (
-            0 if item["roster_security"] == "churn" else 1,
+            0 if item["classification"].get("boundary_priority") is not None else 1,
             item["classification"].get("boundary_priority") if item["classification"].get("boundary_priority") is not None else 9999,
+            0 if item["roster_security"] == "churn" else 1,
             item["name"] or "",
         )
     )
-    active_boundary = [item for item in boundary_pool if item["churn_eligible"]]
+    active_boundary = [item for item in boundary_pool if item["comparison_boundary_eligible"]]
+    general_churn_pool = [item for item in players if item["churn_eligible"]]
+    active_unclassified_count = sum(
+        1
+        for item in players
+        if item["is_current_active"] and (item["roster_role"] is None or item["roster_security"] is None)
+    )
 
     seed_date = _parse_date(state.get("as_of"))
     generated_dt = _parse_datetime(signals.get("generated_at"))
@@ -488,13 +524,18 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "churn": {
                 "target_general_slots": churn_target,
                 "assignment_status": "provisional_pre_lock" if taxi_phase == "pre_lock" else "current_locked_roster",
+                "decision_readiness": "review_required" if active_unclassified_count else "ready",
+                "active_unclassified_count": active_unclassified_count,
                 "current_active_candidate_count": len(active_boundary),
+                "current_active_general_churn_count": len(general_churn_pool),
                 "candidate_pool_count": len(boundary_pool),
                 "guardrail_status": (
                     "provisional_requires_virtual_taxi_assignment"
                     if taxi_phase == "pre_lock"
+                    else "review_required"
+                    if active_unclassified_count
                     else "met"
-                    if len(active_boundary) >= churn_target
+                    if len(general_churn_pool) >= churn_target
                     else "below_target"
                 ),
                 "candidate_pool": [
@@ -505,8 +546,18 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                         "security": item["roster_security"],
                         "current_area": item["roster_area"],
                         "boundary_priority": item["classification"].get("boundary_priority"),
+                        "counts_as_general_churn": item["churn_eligible"],
                     }
                     for item in boundary_pool
+                ],
+                "general_churn_pool": [
+                    {
+                        "player_id": item["player_id"],
+                        "name": item["name"],
+                        "position": item["position"],
+                        "current_area": item["roster_area"],
+                    }
+                    for item in general_churn_pool
                 ],
             },
         },
@@ -545,7 +596,8 @@ def render_markdown(data: dict[str, Any]) -> str:
         f"- Taxi: **{capacity['current_taxi_count']} / {capacity['taxi_slots']}**; binding: **{'yes' if taxi['binding'] else 'no'}**",
         f"- Reserve: **{capacity['current_reserve_count']} / {capacity['reserve_slots']}**",
         f"- Startable Skill Pool: **{skill['startable_skill_pool']} / {skill['required_skill_lineup_slots']}** (margin {skill['skill_pool_margin']:+d})",
-        f"- General churn target: **{churn['target_general_slots']}**; status: `{churn['guardrail_status']}`",
+        f"- General churn target: **{churn['target_general_slots']}**; active general churn: **{churn['current_active_general_churn_count']}**; status: `{churn['guardrail_status']}`",
+        f"- Comparison boundary candidates: **{churn['current_active_candidate_count']}**; decision readiness: `{churn['decision_readiness']}`",
         "",
         "## Position coverage",
         "",
@@ -572,8 +624,8 @@ def render_markdown(data: dict[str, Any]) -> str:
             "",
             "## Players",
             "",
-            "| Pos | Player | Area | Role | Security | Structural function | Coverage role | Churn |",
-            "|---|---|---|---|---|---|---|---|",
+            "| Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |",
+            "|---|---|---|---|---|---|---|---|---|",
         ]
     )
     for item in data["players"]:
@@ -581,18 +633,20 @@ def render_markdown(data: dict[str, Any]) -> str:
             f"| {item['position']} | {item['name']} | {item['roster_area']} | "
             f"{item['roster_role'] or 'unclassified'} | {item['roster_security'] or 'unclassified'} | "
             f"{item['structural_function']} | {item['coverage_role']} | "
+            f"{'yes' if item['comparison_boundary_eligible'] else 'no'} | "
             f"{'yes' if item['churn_eligible'] else 'no'} |"
         )
 
-    lines.extend(["", "## Churn boundary pool", ""])
+    lines.extend(["", "## Comparison boundary pool", ""])
     if churn["candidate_pool"]:
         for candidate in churn["candidate_pool"]:
             lines.append(
                 f"- {candidate['name']} ({candidate['position']}) — `{candidate['security']}` — "
-                f"area `{candidate['current_area']}` — priority `{candidate['boundary_priority']}`"
+                f"area `{candidate['current_area']}` — priority `{candidate['boundary_priority']}` — "
+                f"general churn: `{'yes' if candidate['counts_as_general_churn'] else 'no'}`"
             )
     else:
-        lines.append("- No current boundary candidate available.")
+        lines.append("- No classified comparison-boundary candidate available.")
 
     lines.extend(
         [
