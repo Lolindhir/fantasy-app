@@ -326,10 +326,22 @@ def main() -> int:
                     bootstrap.canonical_league_id,
                     bootstrap.current_provider_league_id,
                 )
+                current_payload = load_persisted_current_league_payload(
+                    repo_root,
+                    bootstrap.current_provider_league_id,
+                )
+                current_matchup_scope = resolve_current_matchup_scope(
+                    repo_root,
+                    bootstrap.canonical_league_id,
+                    bootstrap.current_provider_league_id,
+                    current_payload,
+                )
                 seasons = {season}
+                weeks = {current_matchup_scope["CurrentWeek"]}
                 current_league_core_scope = {
                     "Season": season,
                     "ProviderLeagueID": bootstrap.current_provider_league_id,
+                    "CurrentMatchupWeek": current_matchup_scope["CurrentWeek"],
                 }
             elif args.current_transaction_window:
                 current_payload = load_persisted_current_league_payload(
@@ -453,6 +465,12 @@ def main() -> int:
                     "Current Sleeper league season does not match canonical manifest for League Core scope: "
                     f"{current_instance.season} != {manifest_season}"
                 )
+            current_matchup_scope = resolve_current_matchup_scope(
+                repo_root,
+                bootstrap.canonical_league_id,
+                bootstrap.current_provider_league_id,
+                current_instance.payload,
+            )
             plans = plan_raw_acquisition(
                 repo_root,
                 [current_instance],
@@ -462,6 +480,7 @@ def main() -> int:
                 offline=args.offline,
                 dataset_ids=set(LEAGUE_CORE_DATASET_IDS),
                 seasons={manifest_season},
+                weeks={current_matchup_scope["CurrentWeek"]},
             )
             raw = persist_raw_plans(plans)
             results.append(
@@ -473,6 +492,7 @@ def main() -> int:
                     "CurrentLeagueCoreScope": {
                         "Season": manifest_season,
                         "ProviderLeagueID": bootstrap.current_provider_league_id,
+                        "CurrentMatchupWeek": current_matchup_scope["CurrentWeek"],
                     },
                     **raw,
                 }
