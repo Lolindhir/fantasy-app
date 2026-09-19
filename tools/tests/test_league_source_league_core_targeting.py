@@ -434,37 +434,10 @@ class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
         self.assertEqual(len(outputs), 5)
         for output in outputs:
             existing = json.loads(output.path.read_text(encoding="utf-8"))
-            if output.path.name not in {"winners-bracket.json", "losers-bracket.json"}:
-                self.assertEqual(
-                    output.value,
-                    existing,
-                    f"League Core parity drift for {output.path.relative_to(repo_root)}",
-                )
-                continue
-
-            # 6L-A is a contract migration: before the productive League Core producer
-            # rewrites the bracket files, all pre-existing canonical facts must remain
-            # identical while the planned output may add only Team1Source/Team2Source.
-            planned_without_routing = [
-                {
-                    key: value
-                    for key, value in match.items()
-                    if key not in {"Team1Source", "Team2Source"}
-                }
-                for match in output.value
-            ]
-            existing_without_routing = [
-                {
-                    key: value
-                    for key, value in match.items()
-                    if key not in {"Team1Source", "Team2Source"}
-                }
-                for match in existing
-            ]
             self.assertEqual(
-                planned_without_routing,
-                existing_without_routing,
-                f"League Core non-routing parity drift for {output.path.relative_to(repo_root)}",
+                output.value,
+                existing,
+                f"League Core parity drift for {output.path.relative_to(repo_root)}",
             )
 
         winners_output = next(
