@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "purpose": "Owner and team reference map for Fantasy Management.",
   "canonical_dynamic_sources": [
     "public/data/Metadata.json",
@@ -13,51 +13,107 @@
     "Refer to TeamID 1 as Robert, not merely as Mighty Giants, whenever the manager is being compared with Marcel, Flo, Jan, Dennis or Tim.",
     "Use a team name alone only when the franchise identity itself is relevant, for example canonical team fields, matchup displays, logos, trade graphics or explicit team-name tables.",
     "When both identities matter, use the form 'Robert (Mighty Giants)'.",
-    "Do not replace canonical machine-readable team_name values or historical source data with owner names."
+    "Do not replace canonical machine-readable team_name values or historical source data with owner names.",
+    "Use canonical_league_member_id as the explicit bridge from stable Fantasy Management TeamID to Canonical League member identity.",
+    "Never infer stable TeamID from Sleeper roster_id or another provider roster identifier."
   ],
   "owners": [
     {
       "name": "Robert",
       "preferred_human_label": "Robert",
       "team_id": 1,
+      "canonical_league_member_id": "clm-0d8ae9d542b9515bbbf066784c7afc9c",
       "default_perspective": true,
-      "known_team_names": ["Mighty Giants"],
-      "aliases": ["ich", "mein Team", "Mighty Giants", "Lolindhir"]
+      "known_team_names": [
+        "Mighty Giants"
+      ],
+      "aliases": [
+        "ich",
+        "mein Team",
+        "Mighty Giants",
+        "Lolindhir"
+      ]
     },
     {
       "name": "Marcel",
       "preferred_human_label": "Marcel",
       "team_id": 2,
-      "known_team_names": ["Ruhr Valley Packers", "ND - Fighting Childish", "Fighting Childish"],
-      "aliases": ["Marcel", "Marci0231", "Ruhr Valley Packers", "Fighting Childish"]
+      "canonical_league_member_id": "clm-6ddf454ba1e45efd9c7e419eb6740c52",
+      "known_team_names": [
+        "Ruhr Valley Packers",
+        "ND - Fighting Childish",
+        "Fighting Childish"
+      ],
+      "aliases": [
+        "Marcel",
+        "Marci0231",
+        "Ruhr Valley Packers",
+        "Fighting Childish"
+      ]
     },
     {
       "name": "Flo",
       "preferred_human_label": "Flo",
       "team_id": 3,
-      "known_team_names": ["Just Bill"],
-      "aliases": ["Flo", "FloDHL99", "Just Bill"]
+      "canonical_league_member_id": "clm-9658ad1ac4f65b97b09be2e78b397e87",
+      "known_team_names": [
+        "Just Bill"
+      ],
+      "aliases": [
+        "Flo",
+        "FloDHL99",
+        "Just Bill"
+      ]
     },
     {
       "name": "Jan",
       "preferred_human_label": "Jan",
       "team_id": 4,
-      "known_team_names": ["Mammoth Marauders", "Team JanB94"],
-      "aliases": ["Jan", "JanB94", "Mammoth Marauders"]
+      "canonical_league_member_id": "clm-a656f0e9e8b95846b78772c39ae88884",
+      "known_team_names": [
+        "Mammoth Marauders",
+        "Team JanB94"
+      ],
+      "aliases": [
+        "Jan",
+        "JanB94",
+        "Mammoth Marauders"
+      ]
     },
     {
       "name": "Dennis",
       "preferred_human_label": "Dennis",
       "team_id": 5,
-      "known_team_names": ["Team DennisLACards"],
-      "aliases": ["Dennis", "DennisLACards", "Team DennisLACards"]
+      "canonical_league_member_id": "clm-6ec5ec87716c5a80a08c79caabaad431",
+      "known_team_names": [
+        "Team DennisLACards"
+      ],
+      "aliases": [
+        "Dennis",
+        "DennisLACards",
+        "Team DennisLACards"
+      ]
     },
     {
       "name": "Tim",
       "preferred_human_label": "Tim",
       "team_id": 6,
-      "known_team_names": ["Team TimpaBay", "Timpa Bay"],
-      "aliases": ["Tim", "TimpaBay", "Timpa Bay", "Team TimpaBay"]
+      "canonical_league_member_id": "clm-e13c0ce8943e57dd96e522e758d08061",
+      "known_team_names": [
+        "Team TimpaBay",
+        "Timpa Bay"
+      ],
+      "aliases": [
+        "Tim",
+        "TimpaBay",
+        "Timpa Bay",
+        "Team TimpaBay"
+      ]
     }
+  ],
+  "canonical_league_id": "nfl-reise",
+  "canonical_identity_sources": [
+    "source-data/leagues/nfl-reise/seasons/*/members.json",
+    "source-data/leagues/nfl-reise/seasons/*/rosters.json"
   ]
 }
