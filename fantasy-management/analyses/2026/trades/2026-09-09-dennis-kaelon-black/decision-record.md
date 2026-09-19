@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **4/5**
 - Outcome firewall: bestätigt
 
@@ -84,9 +84,14 @@ Mehrere sehr unterschiedliche Pfade waren plausibel:
 
 Damit war die Ergebnisspanne deutlich breiter als bei einem normalen 3/5-Uncertainty-Trade.
 
-## Noch offen vor Seal
-Bestätigung oder Anpassung von:
-**3/5 Confidence · 4/5 Outcome Uncertainty · mixed · close**
+## Finaler Decision State
+- **Decision Confidence: 3/5**
+- **Outcome Uncertainty: 4/5**
+- **Gut Feeling: mixed**
+- **Decision Margin: close**
+- **Preisgefühl: Liquidation Discount unter Roster-Zwang**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T07:58:00Z`
+- User confirmation: ja
