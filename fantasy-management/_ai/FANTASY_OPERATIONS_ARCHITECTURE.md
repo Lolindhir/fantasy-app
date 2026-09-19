@@ -132,7 +132,7 @@ fantasy-management/_ai/scripts/build_free_agent_dataset.py
 → fantasy-management/generated/operations/free-agent-signals.json
 ```
 
-The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`. In Checkpoint 6Q this league-wide ownership path is intentionally **not** migrated yet; it still comes from the union of every league team’s `League.json` Roster/Reserve/Taxi lists, while only `managed-roster-signals.json` has moved its TeamID 1 membership to Canonical League Source Data.
+The free-agent population is selected exclusively from `ownership.status == fantasy_free_agent`. Through Checkpoint 6R this downstream player-signal/Free-Agent ownership path is intentionally **not** migrated yet; it still comes from the union of every league team’s `League.json` Roster/Reserve/Taxi lists. Canonical League ownership is already productive in `managed-roster-signals.json` and `external-signal-relevance.json`, but that does not silently change the separate player-signal ownership contract.
 
 `free-agent-signals.json` and `fa-board-readmodel.json` serve different purposes. The former is the complete ownership-derived free-agent population used by broad discovery/movement processing. The latter is the canonical compact live/current FA-board availability and capacity view because it adds the current Drafts gate. During a running Free-Agent Draft, `free-agent-signals.json` alone is not sufficient to prove availability for a newly selected player that has not yet been materialized into `League.json`.
 
@@ -330,7 +330,8 @@ External signal identity is resolved through the configured stable player ID.
 Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migration:
 
 - `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership productively from Canonical League Source Data through `canonical_league_ownership.py`; `League.json` remains display enrichment for team name/abbreviation in that materializer.
-- External-signal relevance, league-wide player-signal ownership, Free-Agent population/availability and the other not-yet-migrated ownership consumers still derive current league ownership from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
+- `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data through the same adapter; `League.json` remains Team/TeamAbbr display enrichment in that materializer.
+- League-wide `player-signals`, Free-Agent population/availability, FA-board and the other not-yet-migrated ownership consumers still derive current league ownership from the union of every team’s `Roster`, `Reserve` and `Taxi` lists in `League.json`.
 - The stable Fantasy `TeamID` is bridged explicitly to `CanonicalLeagueMemberID` in `league-context/owner-registry.json`; provider roster IDs are not stable TeamIDs.
 
 Permitted ownership states for the league-wide ownership consumers are:
@@ -353,7 +354,7 @@ An unresolved player remains in the external-signal dataset as an explicit data-
 - Monitoring and analysis must explicitly consider `IsFreeAgent` when determining current NFL roster status. Do not report a repository data-quality error merely because `TeamAbbr`/`TeamID` or `Status = Active` coexist with `IsFreeAgent = true`.
 - When these fields conflict with a decision-relevant current transaction or roster claim, verify the current NFL status against fresh authoritative transaction, league or team evidence and preserve the conflict instead of silently selecting one field.
 
-This rule concerns **NFL roster status only**. Fantasy-league ownership and fantasy-free-agent availability remain derived exclusively from the union of every team's `Roster`, `Reserve` and `Taxi` lists in `League.json`; `Players.json -> IsFreeAgent` must never be used as fantasy-league availability.
+This rule concerns **NFL roster status only**. Fantasy-league ownership is consumer-scoped during the Phase-2 migration: external-signal relevance uses the Canonical League Roster/Reserve/Taxi union, while the still-unmigrated player-signal/Free-Agent/FA-board path uses the `League.json` union. `Players.json -> IsFreeAgent` must never be used as fantasy-league availability.
 
 ## Non-player entity rule
 
