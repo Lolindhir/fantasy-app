@@ -157,6 +157,7 @@ def build_league_state(
     league_enrichment: Any,
     ownership_teams: Any,
     managed_team_id: str,
+    canonical_season: int,
 ) -> dict[str, Any]:
     """Combine canonical ownership with retained App-owned league rule enrichment."""
 
@@ -260,6 +261,21 @@ def build_league_state(
             {"severity": "error", "kind": "managed_team_missing", "team_id": managed_team_id}
         )
 
+    ownership_complete = not any(
+        issue.get("severity") == "error" for issue in issues
+    )
+
+    enrichment_season = optional_text(league_enrichment.get("Season"))
+    if enrichment_season and enrichment_season != str(canonical_season):
+        issues.append(
+            {
+                "severity": "error",
+                "kind": "league_enrichment_season_mismatch",
+                "canonical_season": str(canonical_season),
+                "enrichment_season": enrichment_season,
+            }
+        )
+
     roster_size = league_enrichment.get("RosterSize")
     active_capacity = len(roster_size) if isinstance(roster_size, list) else None
     if active_capacity is None:
@@ -268,13 +284,14 @@ def build_league_state(
     complete = not any(issue.get("severity") == "error" for issue in issues)
     return {
         "complete": complete,
+        "ownership_complete": ownership_complete,
         "issues": issues,
         "ownership": ownership,
         "team_by_id": team_by_id,
         "managed_team": managed_team,
         "settings": settings,
         "active_capacity": active_capacity,
-        "league_season": optional_text(league_enrichment.get("Season")),
+        "league_season": str(canonical_season),
         "league_phase": optional_text(league_enrichment.get("Phase")),
         "league_status": optional_text(league_enrichment.get("Status")),
         "season_kickoff": optional_text(league_enrichment.get("SeasonKickoff")),
@@ -664,6 +681,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         league_enrichment,
         ownership_teams,
         managed_team_id,
+        canonical_season,
     )
     draft_state = resolve_active_fa_draft(drafts, league_state)
 
@@ -737,7 +755,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
         if owners:
             availability = "rostered"
-        elif not league_state.get("complete"):
+        elif not league_state.get("ownership_complete"):
             availability = UNKNOWN
         elif draft_state.get("resolution_status") == UNKNOWN:
             availability = UNKNOWN
@@ -870,7 +888,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             ).relative_to(root).as_posix(),
             "content_sha256": source_hash(canonical_season_root / "rosters.json"),
             "source_timestamp": None,
-            "complete_for_negative_ownership": bool(league_state.get("complete")),
+            "complete_for_negative_ownership": bool(
+                league_state.get("ownership_complete")
+            ),
         },
         "drafts": {
             "path": sources["drafts"],
