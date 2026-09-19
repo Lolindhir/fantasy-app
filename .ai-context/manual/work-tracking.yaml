@@ -25,6 +25,45 @@ issueGranularity:
     - Create a separate Issue when newly discovered work has an independently meaningful goal, lifecycle, acceptance criteria, blocker or ownership boundary.
     - Native parent/sub-issue relationships are optional and are not required by the current work-tracking contract.
 
+issueRelationshipGovernance:
+  purpose: >-
+    Prevent semantically colliding work packages as the Issue portfolio grows.
+    Relationship review is semantic governance, not a replacement for deterministic
+    label/cardinality validation.
+  relationshipTypes:
+    duplicate:
+      meaning: Two Issues materially represent the same work package or outcome.
+    subsumed-or-superseded:
+      meaning: One Issue's remaining meaningful scope is fully owned by another Issue.
+    partial-overlap:
+      meaning: Issues are independently meaningful but duplicate part of their scope, acceptance criteria or planned implementation.
+    contradiction:
+      meaning: Goals, guardrails, acceptance criteria, target architecture or intended outcomes cannot all be true at the same time.
+    competing-ownership:
+      meaning: Multiple Issues claim canonical ownership of the same decision, contract, source of truth or responsibility boundary.
+    dependency-or-sequencing:
+      meaning: Both Issues remain valid, but one must precede, unblock or constrain the other.
+    stale-relationship:
+      meaning: An Issue still assumes an older decision, scope or predecessor state that has since been superseded, completed or materially changed.
+  creationGate:
+    - Before creating a new tracked Issue, search plausible open Issues semantically for matching, overlapping or conflicting work.
+    - Also inspect materially relevant closed, superseded or not-planned Issues when they may contain prior decisions, rejected approaches, ownership boundaries or scope that affect the proposed work.
+    - Compare goal, scope/non-goals, guardrails, acceptance criteria, canonical ownership and dependency/sequencing assumptions rather than relying on title similarity alone.
+    - Reuse or update an existing appropriate Issue when it can own the work without obscuring a genuinely independent goal or lifecycle.
+    - Create a separate Issue only after the relationship check shows an independently meaningful work package; record important dependency, sequencing, overlap or supersession relationships in the affected Issue body when they matter to execution.
+  resolutionRules:
+    - Duplicate work should normally reuse one canonical Issue; close or supersede the redundant Issue when appropriate while preserving durable classification/history.
+    - Fully subsumed work should be explicitly routed to the owning Issue rather than kept as a second active implementation path.
+    - Partial overlap should be removed or assigned to one owner, or the boundary between the Issues should be made explicit.
+    - Contradictory work must not proceed in parallel without resolving or explicitly sequencing the conflicting decision.
+    - Competing ownership must be reduced to one canonical owner for the decision, contract or source-of-truth responsibility.
+    - Valid dependent work may remain separate when its sequencing or blocker relationship is explicit.
+    - A stale relationship should be refreshed against the current canonical decision or predecessor state before implementation continues.
+    - Do not merge Issues mechanically merely because they are related; preserve separate work packages when their goals, lifecycle or ownership are genuinely independent.
+  validatorBoundary:
+    - Semantic relationship classification requires contextual judgment and is not part of the deterministic validator in tools/validate_work_tracking.py.
+    - Deterministic validation remains responsible for machine-checkable metadata/taxonomy/lifecycle invariants; semantic portfolio review is a separate complementary layer.
+
 bodyContract:
   canonicalState: issue-body
   comments: supplemental
@@ -49,9 +88,9 @@ bodyContract:
 lifecycle:
   start:
     - If the user names an Issue, fetch and use it.
-    - Otherwise search open Issues semantically for an existing matching work package.
-    - Reuse one appropriate existing Issue; create a new one only if no appropriate Issue exists.
-    - Bring the body and labels up to date before or while beginning non-trivial implementation.
+    - Otherwise perform the issueRelationshipGovernance creation gate before choosing or creating the owning Work Package.
+    - Reuse one appropriate existing Issue when possible; create a new one only when the semantic relationship check shows no existing Issue can correctly own the independently meaningful work.
+    - Bring the body, relevant Issue relationships and labels up to date before or while beginning non-trivial implementation.
   progress:
     - Update the body after meaningful technical findings, completed logical subtasks, scope changes, blockers or significant phase changes.
   postCommit:
@@ -290,9 +329,13 @@ driftGovernance:
     - Cardinality and exclusivity rules are still appropriate and followed.
     - Open tracked Issues have plausible current priorities.
     - Closed tracked Issues carry no priority, active status or blocked label.
+    - Active work is semantically checked for duplicate, subsumed/superseded, partial-overlap, contradiction, competing-ownership, dependency/sequencing and stale-relationship drift.
+    - Materially relevant closed, superseded or not-planned Issues are considered when prior decisions or ownership boundaries could collide with current work.
     - Project views and filters still match the documented schema.
     - Deprecated or unused labels are identified for cleanup.
   normalWork:
     - Perform opportunistic drift detection when a documented label is missing, renamed or semantically inconsistent; do not silently ignore the mismatch.
     - Treat any Issue label not documented by this contract as drift rather than as an implicit exception.
+    - When creating or materially reframing an Issue, perform the semantic relationship check even if a full portfolio audit is not otherwise due.
+    - Periodic portfolio reviews should include semantic Issue-relationship drift in addition to priority/status/blocker plausibility.
     - A full label audit is not required after every normal commit.
