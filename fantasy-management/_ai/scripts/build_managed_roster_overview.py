@@ -230,10 +230,10 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise RosterOverviewError("Unexpected managed roster overview config schema version")
 
     sources = config["sources"]
-    league_path = root / sources["league"]
+    league_enrichment_path = root / sources["league_enrichment"]
     signals_path = root / sources["managed_roster_signals"]
     state_path = root / sources["evaluation_state"]
-    league = _load_json(league_path)
+    league = _load_json(league_enrichment_path)
     signals = _load_json(signals_path)
     state = _load_json(state_path)
     _validate_state(state)
@@ -241,15 +241,51 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     team_id = str(config["managed_team"]["team_id"])
     managed_team = next((team for team in league.get("Teams") or [] if str(team.get("TeamID")) == team_id), None)
     if managed_team is None:
-        raise RosterOverviewError(f"Managed team {team_id} not found in League.json")
+        raise RosterOverviewError(f"Managed team {team_id} not found in League.json enrichment")
     if str((signals.get("managed_team") or {}).get("team_id")) != team_id:
         raise RosterOverviewError("Managed roster signals belong to a different team")
 
+    signal_players = signals.get("players")
+    if not isinstance(signal_players, list) or not signal_players:
+        raise RosterOverviewError("Managed roster signals must contain a non-empty players array")
+
     base_classifications, user_overrides = _index_classifications(state)
-    roster_ids = {str(value) for value in managed_team.get("Roster") or []}
-    taxi_ids = {str(value) for value in managed_team.get("Taxi") or []}
-    reserve_ids = {str(value) for value in managed_team.get("Reserve") or []}
-    held_ids = roster_ids | taxi_ids | reserve_ids
+    roster_ids: set[str] = set()
+    taxi_ids: set[str] = set()
+    reserve_ids: set[str] = set()
+    held_ids: set[str] = set()
+    allowed_sections = {"roster", "taxi", "reserve"}
+    for index, source_player in enumerate(signal_players):
+        if not isinstance(source_player, dict):
+            raise RosterOverviewError(f"Managed roster signal player {index} must be an object")
+        player_id = str(source_player.get("player_id") or "").strip()
+        if not player_id:
+            raise RosterOverviewError(f"Managed roster signal player {index} has no player_id")
+        if player_id in held_ids:
+            raise RosterOverviewError(f"Managed roster signals contain duplicate player_id {player_id}")
+        raw_sections = source_player.get("roster_sections")
+        if not isinstance(raw_sections, list) or not raw_sections:
+            raise RosterOverviewError(
+                f"Managed roster signal player {player_id} has no roster_sections"
+            )
+        sections = {str(value).strip().casefold() for value in raw_sections if str(value).strip()}
+        unknown_sections = sorted(sections - allowed_sections)
+        if unknown_sections:
+            raise RosterOverviewError(
+                f"Managed roster signal player {player_id} has unknown roster sections: "
+                + ", ".join(unknown_sections)
+            )
+        if "roster" not in sections:
+            raise RosterOverviewError(
+                f"Managed roster signal player {player_id} is missing the roster section"
+            )
+        held_ids.add(player_id)
+        roster_ids.add(player_id)
+        if "taxi" in sections:
+            taxi_ids.add(player_id)
+        if "reserve" in sections:
+            reserve_ids.add(player_id)
+
     active_ids = roster_ids - taxi_ids - reserve_ids
 
     taxi_phase = _derive_taxi_phase(league)
@@ -267,7 +303,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     players: list[dict[str, Any]] = []
     issues: list[dict[str, Any]] = []
     matched_signal_ids: set[str] = set()
-    for source_player in signals.get("players") or []:
+    for source_player in signal_players:
         player_id = str(source_player.get("player_id") or "")
         if not player_id or player_id not in held_ids:
             continue
@@ -432,9 +468,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     source_records = [
         {
-            "id": "league",
-            "path": _relative(league_path, root),
-            "content_sha256": ops.sha256_text(league_path.read_text(encoding="utf-8")),
+            "id": "league_enrichment",
+            "path": _relative(league_enrichment_path, root),
+            "content_sha256": ops.sha256_text(league_enrichment_path.read_text(encoding="utf-8")),
         },
         {
             "id": "managed_roster_signals",

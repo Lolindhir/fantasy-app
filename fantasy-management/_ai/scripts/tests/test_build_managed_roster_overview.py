@@ -48,6 +48,32 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             self.assertIn("Rookie Runner", markdown)
             self.assertIn("provisional_requires_virtual_taxi_assignment", markdown)
 
+    def test_legacy_league_roster_divergence_does_not_control_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            league_path = root / "public/data/League.json"
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            league["Teams"][0]["Roster"] = ["999"]
+            league["Teams"][0]["Reserve"] = ["999"]
+            league["Teams"][0]["Taxi"] = ["999"]
+            league_path.write_text(json.dumps(league), encoding="utf-8")
+
+            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+
+            self.assertEqual(4, result["team"]["held_player_count"])
+            self.assertEqual(3, result["structure"]["capacity"]["current_active_count"])
+            self.assertEqual(1, result["structure"]["capacity"]["current_taxi_count"])
+            self.assertEqual(0, result["structure"]["capacity"]["current_reserve_count"])
+            self.assertEqual(
+                {"1", "2", "3", "4"},
+                {item["player_id"] for item in result["players"]},
+            )
+            rookie = next(item for item in result["players"] if item["player_id"] == "4")
+            self.assertTrue(rookie["is_current_taxi"])
+            self.assertFalse(rookie["is_current_active"])
+
     def test_user_override_wins_over_seed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -81,8 +107,13 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             league["Status"] = "in_season"
             league["Phase"] = "regular season"
             league["FinalScoredWeek"] = 1
-            league["Teams"][0]["Taxi"] = []
             league_path.write_text(json.dumps(league), encoding="utf-8")
+
+            signals_path = root / "fantasy-management/generated/operations/managed-roster-signals.json"
+            signals = json.loads(signals_path.read_text(encoding="utf-8"))
+            rookie_signal = next(item for item in signals["players"] if item["player_id"] == "4")
+            rookie_signal["roster_sections"] = ["roster"]
+            signals_path.write_text(json.dumps(signals), encoding="utf-8")
 
             state_path = root / "fantasy-management/automation/roster-evaluation-state.json"
             state = json.loads(state_path.read_text(encoding="utf-8"))
@@ -115,6 +146,21 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             self.assertFalse(by_name["Rookie Runner"]["counts_as_general_churn"])
             self.assertTrue(by_name["Starting Receiver"]["counts_as_general_churn"])
 
+    def test_repository_current_overview_semantics_match_published_output(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+        published = json.loads(
+            (root / "fantasy-management/generated/operations/managed-roster-overview.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        for document in (result, published):
+            document.pop("input_fingerprint", None)
+            document.pop("sources", None)
+
+        self.assertEqual(published, result)
+
     def _write_fixture(self, root: Path) -> None:
         for path in (
             "public/data",
@@ -129,7 +175,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
                 "schema_version": 1,
                 "managed_team": {"team_id": 1},
                 "sources": {
-                    "league": "public/data/League.json",
+                    "league_enrichment": "public/data/League.json",
                     "managed_roster_signals": "fantasy-management/generated/operations/managed-roster-signals.json",
                     "evaluation_state": "fantasy-management/automation/roster-evaluation-state.json",
                 },

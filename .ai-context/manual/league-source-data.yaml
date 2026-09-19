@@ -115,7 +115,10 @@ boundaries:
       und league_owned Population-Reason. Checkpoint 6T nutzt dieselbe Canonical-
       Ownership nun produktiv fuer fa-board-readmodel: Availability, Owner/Bucket
       und Managed-Team Roster/Reserve/Taxi-Belegung kommen direkt aus source-data.
-      League.json liefert in diesen migrierten Consumern keine Membership mehr,
+      Checkpoint 6U entfernt ausserdem den doppelten direkten Membership-Read im
+      managed-roster-overview; dessen Held/Active/Reserve/Taxi-Struktur wird jetzt
+      aus canonical-active managed-roster-signals abgeleitet. League.json liefert
+      in diesen migrierten Consumern keine Membership mehr,
       bleibt aber fuer consumer-spezifisches App-Enrichment erhalten: bei
       player-signals fuer Managed-Team-Display und ScoringType der Projection-
       Reconciliation; beim FA-Board fuer League Settings, Phase/Status, RosterSize,

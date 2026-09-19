@@ -17,8 +17,8 @@ V1 ist bewusst hybrid.
 
 Automatisch neu abgeleitet werden insbesondere:
 
-- aktuelle Roster-/Taxi-/Reserve-Mitgliedschaft;
-- aktive Kapazität und Belegung;
+- aktuelle Roster-/Taxi-/Reserve-Mitgliedschaft aus `managed-roster-signals.json`, dessen TeamID-1 Membership seit Checkpoint 6Q aus Canonical League Source Data stammt;
+- aktive Kapazität und Belegung auf Basis dieser canonical-derived Membership;
 - feste Starteranforderungen aus `League.json -> RosterSize`;
 - aktuelle Taxi-Phase;
 - Positionsbestände und Coverage-Status;
@@ -86,4 +86,4 @@ Dafür gelten folgende Leitplanken:
 
 ## Materialisierung
 
-`build_managed_roster_overview.py` erzeugt beide Outputs. Der bestehende Player-Signal-Materialisierungslauf ruft den Overview-Builder nach erfolgreicher Player-Signal-Erzeugung mit auf, sodass keine zweite parallele Operations-Pipeline benötigt wird.
+`build_managed_roster_overview.py` erzeugt beide Outputs. Seit Checkpoint 6U liest der Builder Membership/Buckets nicht mehr erneut aus `League.json`, sondern ausschließlich aus dem bereits canonical-active `managed-roster-signals.json`. `League.json` bleibt non-membership Enrichment für Team-Display, Lineup-/RosterSize-Regeln, Reserve-/Taxi-Slots und Phase/Status. Der bestehende Player-Signal-Materialisierungslauf ruft den Overview-Builder nach erfolgreicher Player-Signal-Erzeugung mit auf, sodass keine zweite parallele Operations-Pipeline benötigt wird.
