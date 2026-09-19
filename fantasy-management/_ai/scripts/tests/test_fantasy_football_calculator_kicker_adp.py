@@ -13,9 +13,9 @@ import fantasy_football_calculator_kicker_adp as module
 
 
 class FantasyFootballCalculatorKickerTests(unittest.TestCase):
-    def payload(self):
+    def payload(self, kicker_rows=12):
         players = []
-        for index in range(12):
+        for index in range(kicker_rows):
             players.append({
                 "player_id": 9000 + index,
                 "name": f"Kicker {index}",
@@ -45,6 +45,18 @@ class FantasyFootballCalculatorKickerTests(unittest.TestCase):
         self.assertEqual(1, rows[0]["Rank"])
         self.assertEqual("PK", diagnostics["source_position"])
         self.assertTrue(diagnostics["reuses_ppr_all_position_payload"])
+
+    def test_accepts_catalog_minimum_kicker_population(self):
+        rows, diagnostics = module.parse_kickers(self.payload(10), self.sample())
+        self.assertEqual(10, len(rows))
+        self.assertEqual(10, diagnostics["normalized_player_count"])
+
+    def test_rejects_kicker_population_below_catalog_minimum(self):
+        with self.assertRaisesRegex(
+            module.FantasyFootballCalculatorKickerCoverageError,
+            "Too few FFC kicker rows",
+        ):
+            module.parse_kickers(self.payload(9), self.sample())
 
     def test_writes_and_skips_unchanged_kicker_snapshot(self):
         rows, diagnostics = module.parse_kickers(self.payload(), self.sample())
