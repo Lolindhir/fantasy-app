@@ -69,6 +69,8 @@ Checkpoint 6T extends Canonical League ownership to `fa-board-readmodel.json`: a
 
 Checkpoint 6U removes the Managed-Roster-Overview's duplicate direct membership read from `League.json`. `managed-roster-overview.json` now derives held/active/reserve/taxi membership exclusively from `managed-roster-signals.json`; `League.json` remains non-membership enrichment for team display, `RosterSize`, lineup settings, Reserve-/Taxi slot counts and phase/status.
 
+Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `source-data/nfl/identities/players.json`; player names come from that Canonical Identity contract, while current position and NFL team come from `source-data/nfl/platform/sleeper/players.json`. Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. This does not migrate `player-signals.json`, App-owned Salary/SalaryProjected/Grading or `RequestPlayers.ps1`.
+
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
 
 

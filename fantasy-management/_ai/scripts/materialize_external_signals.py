@@ -402,6 +402,78 @@ def count_by_key(
     return dict(sorted(counts.items()))
 
 
+
+def build_canonical_identity_by_sleeper(
+    document: Any,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(document, dict) or not isinstance(document.get("Players"), list):
+        raise ExternalSignalMaterializationError(
+            "Canonical player identity input must contain a Players array"
+        )
+    result: dict[str, dict[str, Any]] = {}
+    for row in document["Players"]:
+        if not isinstance(row, dict):
+            raise ExternalSignalMaterializationError(
+                "Canonical player identity input contains a non-object row"
+            )
+        canonical_player_id = text(row.get("CanonicalPlayerID"))
+        if not canonical_player_id:
+            raise ExternalSignalMaterializationError(
+                "Canonical player identity row has no CanonicalPlayerID"
+            )
+        ids = row.get("IDs") or {}
+        if not isinstance(ids, dict):
+            raise ExternalSignalMaterializationError(
+                f"Canonical player identity {canonical_player_id} has invalid IDs"
+            )
+        sleeper_id = text(ids.get("Sleeper"))
+        if not sleeper_id:
+            continue
+        if sleeper_id in result:
+            raise ExternalSignalMaterializationError(
+                f"Canonical player identities contain duplicate active Sleeper ID {sleeper_id}"
+            )
+        result[sleeper_id] = row
+    return result
+
+
+def build_canonical_sleeper_player_lookup(
+    document: Any,
+    identity_by_sleeper: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(document, dict) or not isinstance(document.get("Records"), list):
+        raise ExternalSignalMaterializationError(
+            "Canonical Sleeper player input must contain a Records array"
+        )
+    result: dict[str, dict[str, Any]] = {}
+    for row in document["Records"]:
+        if not isinstance(row, dict):
+            raise ExternalSignalMaterializationError(
+                "Canonical Sleeper player input contains a non-object row"
+            )
+        sleeper_id = text(row.get("SleeperPlayerID"))
+        if not sleeper_id:
+            raise ExternalSignalMaterializationError(
+                "Canonical Sleeper player row has no SleeperPlayerID"
+            )
+        if sleeper_id in result:
+            raise ExternalSignalMaterializationError(
+                f"Canonical Sleeper players contain duplicate SleeperPlayerID {sleeper_id}"
+            )
+        canonical_player_id = text(row.get("CanonicalPlayerID"))
+        if canonical_player_id:
+            identity = identity_by_sleeper.get(sleeper_id)
+            identity_canonical_id = text((identity or {}).get("CanonicalPlayerID"))
+            if canonical_player_id != identity_canonical_id:
+                raise ExternalSignalMaterializationError(
+                    "Canonical Sleeper player identity mismatch for "
+                    f"{sleeper_id}: platform={canonical_player_id}, "
+                    f"identity={identity_canonical_id}"
+                )
+        result[sleeper_id] = row
+    return result
+
+
 def build(
     root: Path,
     config_path: Path,
@@ -415,15 +487,19 @@ def build(
     paths = {key: root / value for key, value in config["sources"].items()}
     catalog_path = root / config["signal_catalog"]
     league_display = load_json(paths["league_display"])
-    players = load_json(paths["players"])
+    canonical_identities = load_json(paths["canonical_player_identities"])
+    canonical_sleeper_players = load_json(paths["canonical_sleeper_players"])
     quality = load_json(paths["base_quality"])
     catalog = load_json(catalog_path)
     validate_catalog(catalog)
 
-    if not isinstance(players, list):
-        raise ExternalSignalMaterializationError(
-            "Players input must be a JSON array"
-        )
+    identity_by_sleeper = build_canonical_identity_by_sleeper(
+        canonical_identities
+    )
+    sleeper_player_lookup = build_canonical_sleeper_player_lookup(
+        canonical_sleeper_players,
+        identity_by_sleeper,
+    )
 
     managed = config["managed_team"]
     if managed.get("identity_field") != "TeamID":
@@ -470,11 +546,6 @@ def build(
             f"Managed team {managed_id} not found in canonical ownership snapshot"
         )
 
-    player_lookup = {
-        str(player.get("ID")): player
-        for player in players
-        if player.get("ID") is not None
-    }
     ownership = build_ownership(teams)
     canonical_league_root = (
         root
@@ -505,7 +576,16 @@ def build(
             canonical_season_root / "rosters.json",
             root,
         ),
-        file_record("players", paths["players"], root),
+        file_record(
+            "canonical_player_identities",
+            paths["canonical_player_identities"],
+            root,
+        ),
+        file_record(
+            "canonical_sleeper_players",
+            paths["canonical_sleeper_players"],
+            root,
+        ),
         file_record("external_signal_catalog", catalog_path, root),
     ]
     entries: dict[str, dict[str, Any]] = {}
@@ -581,16 +661,17 @@ def build(
                 )
 
             row = row_by_id.get(player_id)
-            local = player_lookup.get(player_id)
+            identity = identity_by_sleeper.get(player_id)
+            sleeper_player = sleeper_player_lookup.get(player_id)
             owner = ownership_for(player_id, ownership, managed_id)
             entry = entries.setdefault(
                 player_id,
                 {
                     "player_id": player_id,
-                    "name": text((local or {}).get("Name")),
-                    "position": text((local or {}).get("Position")),
-                    "nfl_team": text((local or {}).get("TeamAbbr")),
-                    "identity_status": "resolved" if local else "unresolved",
+                    "name": text((identity or {}).get("Name")),
+                    "position": text((sleeper_player or {}).get("Position")),
+                    "nfl_team": text((sleeper_player or {}).get("Team")),
+                    "identity_status": "resolved" if identity else "unresolved",
                     "ownership": owner,
                     "source_signals": {},
                 },
@@ -616,7 +697,7 @@ def build(
             }
 
             severity = source.get("unresolved_identity_severity", "info")
-            if not local and severity != "none":
+            if not identity and severity != "none":
                 issues.append(
                     {
                         "domain": QUALITY_DOMAIN,

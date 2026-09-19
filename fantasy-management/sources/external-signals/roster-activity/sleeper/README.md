@@ -100,7 +100,7 @@ After every successful source refresh, the Fantasy Operations materialization wo
 fantasy-management/generated/operations/external-signal-relevance.json
 ```
 
-This is the human- and monitoring-facing dataset. It joins the Sleeper ID with current `Players.json` and derives ownership from every `Roster`, `Reserve` and `Taxi` list in `League.json`.
+This is the human- and monitoring-facing dataset. It joins the Sleeper ID to the active Canonical Identity bridge in `source-data/nfl/identities/players.json`, takes current position and NFL team from `source-data/nfl/platform/sleeper/players.json`, and derives fantasy ownership from the Canonical League Roster/Reserve/Taxi union. `public/data/League.json` remains display enrichment for fantasy-team names/abbreviations; `public/data/Players.json` is not an input to this materializer.
 
 It includes:
 
@@ -162,7 +162,7 @@ The fetcher fails closed on:
 
 Both add and drop payloads must validate before either output is replaced. A failed run leaves the last successful files unchanged and must not create monitoring events.
 
-The downstream materializer also fails closed on invalid catalog configuration, invalid non-player entity regexes, duplicate source identities, invalid row arrays or missing required league/player inputs.
+The downstream materializer also fails closed on invalid catalog configuration, invalid non-player entity regexes, duplicate source identities, invalid row arrays, duplicate active Canonical Sleeper links, duplicate Canonical Sleeper platform IDs, CanonicalPlayerID disagreement between those two player sources, or missing required league/identity/platform inputs.
 
 ## Retention
 
