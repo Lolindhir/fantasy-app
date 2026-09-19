@@ -10,6 +10,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
@@ -22,7 +23,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
@@ -99,7 +99,7 @@ function Get-Compare {
             }
         }
 
-        foreach ($prop in @('Settings','ScoringType')) {
+        foreach ($prop in @('Settings','ScoringType','Playoffs')) {
             $oldValue = $oldLeague.$prop | ConvertTo-Json -Depth 10 -Compress
             $newValue = $newLeague.$prop | ConvertTo-Json -Depth 10 -Compress
             if ($oldValue -ne $newValue) {
@@ -199,7 +199,7 @@ try {
 
     $league = Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID $CanonicalLeagueID
     $teamData = Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID
-    $playoffs = Get-Playoffs
+    $playoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID $CanonicalLeagueID
     $standings = Get-StandingsLocal
 
     $currentSeason = $league.Season

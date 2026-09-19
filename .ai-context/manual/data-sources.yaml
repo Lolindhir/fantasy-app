@@ -150,17 +150,15 @@ dataSources:
       providerFallback: none
       cutoverStatus: productive
       retainedLiveBoundaries:
-        - playoff bracket publication via Get-Playoffs
         - current matchup live-score overlay via Get-FgcCurrentMatchupLoad
       currentPlayoffBracketSource:
-        mode: legacy-live-with-canonical-shadow
-        productiveAdapter: public/requests/utils/league/PlayoffUtils.psm1::Get-Playoffs
-        shadowConsumer: public/requests/utils/league/CanonicalPlayoffUtils.psm1::Get-CanonicalCurrentPlayoffs
+        mode: canonical-active
+        productiveAdapter: public/requests/utils/league/CanonicalPlayoffUtils.psm1::Get-CanonicalCurrentPlayoffs
         canonicalInputs: rosters.json + winners-bracket.json + losers-bracket.json
         routingContract: Team1Source/Team2Source with Outcome Winner|Loser + Match
         providerFallback: none
         parity: current raw Sleeper brackets + published League.json::Playoffs
-        cutoverStatus: shadow-parity-only / productive Get-Playoffs still live until separate checkpoint
+        cutoverStatus: productive
       downstreamDerivedUnchanged:
         - drafts and transactions
         - standings enrichment
@@ -171,13 +169,15 @@ dataSources:
         structuredFields:
           - Settings
           - ScoringType
+          - Playoffs
         note: >
-          RequestLeague change detection must treat canonical source-owned Settings
-          and ScoringType as publish-relevant structured fields. The repository
+          RequestLeague change detection must treat canonical source-owned Settings,
+          ScoringType and Playoffs as publish-relevant structured fields. The repository
           parity regression excludes only settings.daily_waivers_last_ran because
           League Core and App League intentionally refresh at different points in
           the ten-minute cycle; productive RequestLeague still persists that field
-          when its value changes.
+          when its value changes. Playoff bracket advancement changes must likewise
+          publish even when no unrelated top-level League property changes.
     timestamped: true
     backup: true
 
