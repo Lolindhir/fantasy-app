@@ -22,7 +22,7 @@ Important files:
 
 ## League source rules
 
-`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and every ownership consumer not yet migrated. The scoped exception is `managed-roster-signals.json`: since Checkpoint 6Q, TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership are read from Canonical League Source Data through `canonical_league_ownership.py`, while `League.json` supplies only current display enrichment for that consumer.
+`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is currently productive in two scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q) and `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R). In both consumers `League.json` is retained only for current team display enrichment and the existing trigger/freshness bridge.
 
 The user team is:
 
@@ -56,15 +56,16 @@ The adapter exposes current member/ownership basis facts such as
 It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
 team windows or other App/Fantasy-derived state.
 
-Checkpoint 6Q activates this adapter for exactly one productive consumer:
-`fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py` / `managed-roster-signals.json`.
-That consumer now gets TeamID 1 membership and starter facts from Canonical League Source Data.
-`public/data/League.json` remains an input there only for current display enrichment (`Team`, `TeamAbbr`)
-and for the existing League-trigger/freshness bridge.
+Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data.
 
-This is **not** a wholesale Fantasy Management ownership cutover. External-signal ownership,
-league-wide player-signal ownership, FA-board ownership/capacity, Drafts, Transactions and all other
-unmigrated consumers retain their currently documented source contracts until separately migrated.
+Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
+the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
+while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing
+League-trigger/freshness bridge for that materializer.
+
+This is **not** a wholesale Fantasy Management ownership cutover. League-wide player-signal ownership,
+FA-board ownership/capacity, Free-Agent availability, Drafts, Transactions and all other unmigrated
+consumers retain their currently documented source contracts until separately migrated.
 
 
 ## Metadata source rules
@@ -121,7 +122,7 @@ Operational rules:
 
 `Players.json -> IsFreeAgent` is not a fantasy-league free-agent signal.
 
-A player is fantasy-owned if the player's ID appears in any team `Roster`, `Reserve` or `Taxi` list in `League.json`. A fantasy free agent is only a player whose ID does not appear in any of those lists.
+Fantasy ownership is consumer-scoped during Phase 2. `external-signal-relevance.json` now tests the player's ID against the Canonical League Roster/Reserve/Taxi union; the still-unmigrated league-wide `player-signals`/Free-Agent/FA-board path continues to use the corresponding `League.json` union until its own cutover. `Players.json -> IsFreeAgent` is never a fantasy-league ownership signal.
 
 `fantasy-management/generated/operations/free-agent-signals.json` remains the complete current ownership-derived free-agent population for general Fantasy Operations discovery, movement analysis and research prioritization. It remains downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
 
@@ -238,7 +239,7 @@ The current active signal kind is:
 
 - `roster-activity`: observed add/drop or comparable platform activity
 
-Source signals remain provider-global. Mighty Giants ownership, opponent ownership and fantasy-free-agent status are derived only later by joining the normalized signal with current `League.json` and player data.
+Source signals remain provider-global. In the productive external-signal relevance materializer, Mighty Giants ownership, opponent ownership and fantasy-free-agent status are derived later by joining the normalized signal with Canonical League ownership plus current player data; `League.json` contributes only team display metadata for that consumer.
 
 The canonical hierarchy and common rules are documented in:
 

@@ -13,7 +13,14 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
 from materialize_external_signals import (  # noqa: E402
     ExternalSignalMaterializationError,
     build,
+    build_ownership,
     canonical_json,
+    ownership_for,
+)
+from canonical_league_ownership import (  # noqa: E402
+    build_canonical_ownership_snapshot,
+    enrich_canonical_ownership_with_display,
+    resolve_current_canonical_season,
 )
 
 
@@ -119,6 +126,64 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 canonical_json(quality_again),
             )
 
+    def test_legacy_league_rosters_do_not_control_canonical_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self._write_fixture(root)
+
+            league_path = root / "public/data/League.json"
+            league = json.loads(league_path.read_text(encoding="utf-8"))
+            league["Teams"][0]["Roster"] = ["5"]
+            league["Teams"][0]["Reserve"] = ["5"]
+            league["Teams"][0]["Taxi"] = []
+            league["Teams"][1]["Roster"] = []
+            league_path.write_text(json.dumps(league), encoding="utf-8")
+
+            data, _ = build(root, config_path)
+            players = {player["player_id"]: player for player in data["players"]}
+
+            self.assertEqual("mighty_giants", players["1"]["ownership"]["status"])
+            self.assertEqual("opponent_rostered", players["4"]["ownership"]["status"])
+            self.assertEqual("fantasy_free_agent", players["5"]["ownership"]["status"])
+            self.assertEqual("Mighty Giants", data["managed_team"]["name"])
+            self.assertEqual("MiG", data["managed_team"]["abbreviation"])
+            source_ids = {source["id"] for source in data["sources"]}
+            self.assertIn("league_display", source_ids)
+            self.assertIn("canonical_league_manifest", source_ids)
+            self.assertIn("canonical_league_rosters", source_ids)
+
+    def test_repository_external_signal_ownership_matches_canonical_union(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        season = resolve_current_canonical_season(
+            root,
+            canonical_league_id="nfl-reise",
+        )
+        snapshot = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id="nfl-reise",
+            season=season,
+        )
+        league_display = json.loads(
+            (root / "public/data/League.json").read_text(encoding="utf-8")
+        )
+        teams = enrich_canonical_ownership_with_display(snapshot, league_display)
+        ownership = build_ownership(teams)
+
+        generated = json.loads(
+            (
+                root
+                / "fantasy-management/generated/operations/"
+                "external-signal-relevance.json"
+            ).read_text(encoding="utf-8")
+        )
+        managed_id = str(generated["managed_team"]["team_id"])
+        for player in generated["players"]:
+            self.assertEqual(
+                ownership_for(str(player["player_id"]), ownership, managed_id),
+                player["ownership"],
+                f"ownership drift for player {player['player_id']}",
+            )
+
     def test_duplicate_source_ids_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -204,6 +269,84 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                     },
                 ]
             },
+        )
+        self._write_json(
+            root / "fantasy-management/league-context/owner-registry.json",
+            {
+                "version": 3,
+                "canonical_league_id": "test-league",
+                "owners": [
+                    {
+                        "name": "Owner One",
+                        "team_id": 1,
+                        "canonical_league_member_id": "member-1",
+                    },
+                    {
+                        "name": "Owner Two",
+                        "team_id": 2,
+                        "canonical_league_member_id": "member-2",
+                    },
+                ],
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/manifest.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": "test-league-2026",
+                "Seasons": [
+                    {
+                        "CanonicalLeagueSeasonID": "test-league-2026",
+                        "Season": 2026,
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/league.json",
+            {
+                "CanonicalLeagueID": "test-league",
+                "Season": 2026,
+                "Settings": {"num_teams": 2},
+            },
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/members.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": "member-1",
+                    "DisplayName": "owner-one",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": "user-1"}
+                    ],
+                },
+                {
+                    "CanonicalLeagueMemberID": "member-2",
+                    "DisplayName": "owner-two",
+                    "ProviderMappings": [
+                        {"Provider": "Sleeper", "ProviderUserID": "user-2"}
+                    ],
+                },
+            ],
+        )
+        self._write_json(
+            root / "source-data/leagues/test-league/seasons/2026/rosters.json",
+            [
+                self._canonical_roster(
+                    "member-1",
+                    "roster-1",
+                    "user-1",
+                    "91",
+                    "1",
+                ),
+                self._canonical_roster(
+                    "member-2",
+                    "roster-2",
+                    "user-2",
+                    "92",
+                    "4",
+                ),
+            ],
         )
         self._write_json(
             root / "public/data/Players.json",
@@ -320,8 +463,11 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                     "identity_field": "TeamID",
                     "team_id": 1,
                 },
+                "canonical_league": {
+                    "canonical_league_id": "test-league",
+                },
                 "sources": {
-                    "league": "public/data/League.json",
+                    "league_display": "public/data/League.json",
                     "players": "public/data/Players.json",
                     "base_quality": (
                         "fantasy-management/generated/operations/"
@@ -345,6 +491,38 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             },
         )
         return config_path
+
+    @staticmethod
+    def _canonical_player(player_id: str) -> dict[str, object]:
+        return {
+            "CanonicalPlayerID": f"canonical-{player_id}",
+            "ProviderMappings": [
+                {"Provider": "Sleeper", "ProviderPlayerID": player_id}
+            ],
+        }
+
+    @classmethod
+    def _canonical_roster(
+        cls,
+        member_id: str,
+        canonical_roster_id: str,
+        provider_owner_id: str,
+        provider_roster_id: str,
+        player_id: str,
+    ) -> dict[str, object]:
+        player = cls._canonical_player(player_id)
+        return {
+            "CanonicalLeagueMemberID": member_id,
+            "CanonicalLeagueRosterID": canonical_roster_id,
+            "ProviderOwnerUserID": provider_owner_id,
+            "ProviderMappings": [
+                {"Provider": "Sleeper", "ProviderRosterID": provider_roster_id}
+            ],
+            "Players": [player],
+            "Reserve": [],
+            "Taxi": [],
+            "Starters": [player],
+        }
 
     @staticmethod
     def _signal_player(

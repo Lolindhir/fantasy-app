@@ -107,12 +107,15 @@ boundaries:
       Fantasy Management ist waehrend Phase 2 bewusst gemischt. Checkpoint 6P hat
       den fail-closed Canonical League Ownership/Roster Adapter und die explizite
       TeamID->CanonicalLeagueMemberID-Bridge etabliert. Checkpoint 6Q nutzt diesen
-      Adapter nun produktiv fuer genau managed-roster-signals: TeamID 1 Roster,
-      Reserve, Taxi und Starter kommen direkt aus source-data/leagues; League.json
-      bleibt dort nur Display-Enrichment und bestehende Trigger-/Freshness-Bruecke.
-      League-weite Ownership-Consumer, FA-Availability, Drafts, Transactions und
-      weitere nicht migrierte FM-Pfade behalten bis zu eigenen Checkpoints ihre
-      bisherigen public/data-Vertraege. Sleeper roster_id bleibt reine Provenienz.
+      Adapter produktiv fuer managed-roster-signals: TeamID 1 Roster, Reserve, Taxi
+      und Starter kommen direkt aus source-data/leagues. Checkpoint 6R nutzt die
+      gleiche Canonical-Basis produktiv fuer external-signal-relevance und damit die
+      vollstaendige league-weite Roster/Reserve/Taxi-Ownership-Union. League.json
+      bleibt in beiden migrierten Consumern nur Display-Enrichment und bestehende
+      Trigger-/Freshness-Bruecke. Player-Signal-/FA-Availability-, Drafts-,
+      Transactions- und weitere nicht migrierte FM-Pfade behalten bis zu eigenen
+      Checkpoints ihre bisherigen public/data-Vertraege. Sleeper roster_id bleibt
+      reine Provenienz.
     targetState: >
       Basisfakten fuer Liga, Ownership, Drafts, Transactions und NFL-Zustand werden
       nach Consumer-Migration direkt aus source-data abgeleitet. Fantasy-Management-
@@ -676,9 +679,11 @@ phase1BInventory:
       Sleeper, wo die Canonical-Source-Freshness den produktiven Refresh-Takt noch
       nicht abdeckt.
     fantasyManagement: >
-      Fantasy Management liest den aktuellen League-/Ownership-/Draft-/Transaction-
-      Zustand heute noch aus public/data. Phase 2 soll diese Basisfakten direkt aus
-      dem gemeinsamen Layer ableitbar machen.
+      Fantasy Management migriert Consumer schrittweise. managed-roster-signals und
+      external-signal-relevance lesen ihre Ownership-Basis bereits aus Canonical
+      League Source Data; Player-Signal-/FA-/Draft-/weitere nicht migrierte Pfade
+      lesen ihre jeweiligen Basisfakten weiterhin aus public/data, bis ihr eigener
+      Cutover abgeschlossen ist.
 
   sourceLayerDatasetCandidates:
     status: implemented-and-productive

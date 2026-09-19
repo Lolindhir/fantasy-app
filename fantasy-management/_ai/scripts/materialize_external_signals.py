@@ -13,6 +13,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from canonical_league_ownership import (
+    CanonicalOwnershipError,
+    build_canonical_ownership_snapshot,
+    enrich_canonical_ownership_with_display,
+    resolve_current_canonical_season,
+)
+
 SCHEMA_VERSION = 1
 CATALOG_SCHEMA_VERSION = 1
 SEVERITIES = {"none", "info", "warning", "error"}
@@ -407,7 +414,7 @@ def build(
 
     paths = {key: root / value for key, value in config["sources"].items()}
     catalog_path = root / config["signal_catalog"]
-    league = load_json(paths["league"])
+    league_display = load_json(paths["league_display"])
     players = load_json(paths["players"])
     quality = load_json(paths["base_quality"])
     catalog = load_json(catalog_path)
@@ -418,20 +425,49 @@ def build(
             "Players input must be a JSON array"
         )
 
-    teams = league.get("Teams") or []
     managed = config["managed_team"]
+    if managed.get("identity_field") != "TeamID":
+        raise ExternalSignalMaterializationError(
+            "Canonical external-signal ownership requires managed_team.identity_field = TeamID"
+        )
     managed_id = str(managed["team_id"])
+
+    canonical_config = config.get("canonical_league") or {}
+    canonical_league_id = text(canonical_config.get("canonical_league_id"))
+    if not canonical_league_id:
+        raise ExternalSignalMaterializationError(
+            "canonical_league.canonical_league_id is required for external-signal ownership"
+        )
+    try:
+        canonical_season = resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+        canonical_snapshot = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id=canonical_league_id,
+            season=canonical_season,
+        )
+        teams = enrich_canonical_ownership_with_display(
+            canonical_snapshot,
+            league_display,
+        )
+    except CanonicalOwnershipError as exc:
+        raise ExternalSignalMaterializationError(
+            f"Canonical external-signal ownership is unavailable: {exc}"
+        ) from exc
+
     managed_team = next(
         (
             team
             for team in teams
-            if str(team.get(managed["identity_field"])) == managed_id
+            if str(team.get("TeamID")) == managed_id
         ),
         None,
     )
     if not managed_team:
         raise ExternalSignalMaterializationError(
-            f"Managed team {managed_id} not found"
+            f"Managed team {managed_id} not found in canonical ownership snapshot"
         )
 
     player_lookup = {
@@ -440,8 +476,35 @@ def build(
         if player.get("ID") is not None
     }
     ownership = build_ownership(teams)
+    canonical_league_root = (
+        root
+        / "source-data"
+        / "leagues"
+        / canonical_league_id
+    )
+    canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     records = [
-        file_record("league", paths["league"], root),
+        file_record("league_display", paths["league_display"], root),
+        file_record(
+            "canonical_league_manifest",
+            canonical_league_root / "manifest.json",
+            root,
+        ),
+        file_record(
+            "canonical_league",
+            canonical_season_root / "league.json",
+            root,
+        ),
+        file_record(
+            "canonical_league_members",
+            canonical_season_root / "members.json",
+            root,
+        ),
+        file_record(
+            "canonical_league_rosters",
+            canonical_season_root / "rosters.json",
+            root,
+        ),
         file_record("players", paths["players"], root),
         file_record("external_signal_catalog", catalog_path, root),
     ]
@@ -679,7 +742,7 @@ def build(
         "generated_at": generated_at,
         "input_fingerprint": fingerprint,
         "managed_team": {
-            "team_id": managed_team.get(managed["identity_field"]),
+            "team_id": managed_team.get("TeamID"),
             "name": text(managed_team.get("Team")),
             "abbreviation": text(managed_team.get("TeamAbbr")),
         },
