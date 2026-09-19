@@ -387,6 +387,18 @@ class FaBoardReadmodelTests(unittest.TestCase):
             ):
                 fixture.build()
 
+    def test_missing_app_capacity_rule_does_not_invalidate_canonical_negative_ownership(self) -> None:
+        league_data = league()
+        league_data.pop("RosterSize")
+        result = self.run_fixture([player("free", "Free")], league_data, draft())
+
+        self.assertEqual("available", row(result, "free")["availability_status"])
+        self.assertEqual("unknown", row(result, "free")["active_slot_cost_on_materialization"])
+        self.assertTrue(
+            result["sources"]["canonical_league_rosters"]["complete_for_negative_ownership"]
+        )
+        self.assertEqual("error", result["quality"]["status"])
+
     def test_missing_current_fa_draft_during_draft_phase_fails_closed(self) -> None:
         result = self.run_fixture([player("unknown", "Unknown")], league(), [])
         self.assertEqual("unknown", row(result, "unknown")["availability_status"])
