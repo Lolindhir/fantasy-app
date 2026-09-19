@@ -7,9 +7,11 @@ current managed-team reserve/taxi capacity. It is decision infrastructure only:
 it does not browse, call AI services, or emit add/drop/draft recommendations.
 
 Availability is fail-closed. A negative ownership result is trusted only when
-League.json was fully validated, and a player is considered draft-available only
-when the current Free-Agent draft state is also resolved. Positive ownership or
-an assigned pick always blocks availability even when another source is degraded.
+Canonical League ownership was fully validated, and a player is considered
+draft-available only when the current Free-Agent draft state is also resolved.
+League.json supplies non-membership league rules/status/display enrichment only.
+Positive ownership or an assigned pick always blocks availability even when
+another source is degraded.
 """
 
 from __future__ import annotations
@@ -21,6 +23,13 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Literal
+
+from canonical_league_ownership import (
+    CanonicalOwnershipError,
+    build_canonical_ownership_snapshot,
+    enrich_canonical_ownership_with_display,
+    resolve_current_canonical_season,
+)
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -139,52 +148,79 @@ def validate_player_signals(source: Any) -> dict[str, Any]:
     return source
 
 
-def build_league_state(league: Any, managed_team_id: str) -> dict[str, Any]:
-    issues: list[dict[str, Any]] = []
-    if not isinstance(league, dict):
-        return {"complete": False, "issues": [{"severity": "error", "kind": "league_not_object"}]}
+def build_league_state(
+    league_enrichment: Any,
+    ownership_teams: Any,
+    managed_team_id: str,
+) -> dict[str, Any]:
+    """Combine canonical ownership with retained App-owned league rule enrichment."""
 
-    teams = league.get("Teams")
-    settings = league.get("Settings") if isinstance(league.get("Settings"), dict) else {}
+    issues: list[dict[str, Any]] = []
+    if not isinstance(league_enrichment, dict):
+        return {
+            "complete": False,
+            "issues": [{"severity": "error", "kind": "league_enrichment_not_object"}],
+        }
+
+    settings = (
+        league_enrichment.get("Settings")
+        if isinstance(league_enrichment.get("Settings"), dict)
+        else {}
+    )
     taxi_slots_raw = optional_number(settings.get("taxi_slots"))
     reserve_slots_raw = optional_number(settings.get("reserve_slots"))
     taxi_slots = int(taxi_slots_raw) if isinstance(taxi_slots_raw, (int, float)) else 0
     reserve_slots = int(reserve_slots_raw) if isinstance(reserve_slots_raw, (int, float)) else 0
 
-    if not isinstance(teams, list) or not teams:
-        return {"complete": False, "issues": [{"severity": "error", "kind": "league_teams_missing"}]}
+    if not isinstance(ownership_teams, list) or not ownership_teams:
+        return {
+            "complete": False,
+            "issues": [{"severity": "error", "kind": "canonical_ownership_teams_missing"}],
+        }
 
     ownership: dict[str, list[dict[str, Any]]] = defaultdict(list)
     team_by_id: dict[str, dict[str, Any]] = {}
     managed_team: dict[str, Any] | None = None
 
-    for team in teams:
+    for team in ownership_teams:
         if not isinstance(team, dict):
-            issues.append({"severity": "error", "kind": "invalid_team_record"})
+            issues.append({"severity": "error", "kind": "invalid_canonical_team_record"})
             continue
         team_id = optional_text(team.get("TeamID"))
         if not team_id:
-            issues.append({"severity": "error", "kind": "team_without_id"})
+            issues.append({"severity": "error", "kind": "canonical_team_without_id"})
             continue
         if team_id in team_by_id:
             issues.append({"severity": "error", "kind": "duplicate_team_id", "team_id": team_id})
             continue
         team_by_id[team_id] = team
 
-        if "Roster" not in team:
-            issues.append({"severity": "error", "kind": "missing_roster_section", "team_id": team_id, "section": "Roster"})
-        if taxi_slots > 0 and "Taxi" not in team:
-            issues.append({"severity": "error", "kind": "missing_roster_section", "team_id": team_id, "section": "Taxi"})
-        if reserve_slots > 0 and "Reserve" not in team:
-            issues.append({"severity": "error", "kind": "missing_roster_section", "team_id": team_id, "section": "Reserve"})
-
-        roster = safe_id_list(team.get("Roster"), field=f"team:{team_id}:Roster", issues=issues, required=False)
-        taxi = safe_id_list(team.get("Taxi"), field=f"team:{team_id}:Taxi", issues=issues, required=False)
-        reserve = safe_id_list(team.get("Reserve"), field=f"team:{team_id}:Reserve", issues=issues, required=False)
+        roster = safe_id_list(
+            team.get("Roster"),
+            field=f"canonical-team:{team_id}:Roster",
+            issues=issues,
+            required=True,
+        )
+        taxi = safe_id_list(
+            team.get("Taxi"),
+            field=f"canonical-team:{team_id}:Taxi",
+            issues=issues,
+            required=False,
+        )
+        reserve = safe_id_list(
+            team.get("Reserve"),
+            field=f"canonical-team:{team_id}:Reserve",
+            issues=issues,
+            required=False,
+        )
 
         section_sets = {"Roster": set(roster), "Taxi": set(taxi), "Reserve": set(reserve)}
         for player_id in sorted(set().union(*section_sets.values())):
-            sections = [name for name in ("Roster", "Taxi", "Reserve") if player_id in section_sets[name]]
+            sections = [
+                name
+                for name in ("Roster", "Taxi", "Reserve")
+                if player_id in section_sets[name]
+            ]
             ownership[player_id].append(
                 {
                     "team_id": team_id,
@@ -215,9 +251,11 @@ def build_league_state(league: Any, managed_team_id: str) -> dict[str, Any]:
             )
 
     if managed_team is None:
-        issues.append({"severity": "error", "kind": "managed_team_missing", "team_id": managed_team_id})
+        issues.append(
+            {"severity": "error", "kind": "managed_team_missing", "team_id": managed_team_id}
+        )
 
-    roster_size = league.get("RosterSize")
+    roster_size = league_enrichment.get("RosterSize")
     active_capacity = len(roster_size) if isinstance(roster_size, list) else None
     if active_capacity is None:
         issues.append({"severity": "error", "kind": "roster_size_missing"})
@@ -231,11 +269,11 @@ def build_league_state(league: Any, managed_team_id: str) -> dict[str, Any]:
         "managed_team": managed_team,
         "settings": settings,
         "active_capacity": active_capacity,
-        "league_season": optional_text(league.get("Season")),
-        "league_phase": optional_text(league.get("Phase")),
-        "league_status": optional_text(league.get("Status")),
-        "season_kickoff": optional_text(league.get("SeasonKickoff")),
-        "current_week": optional_number(league.get("CurrentWeek")),
+        "league_season": optional_text(league_enrichment.get("Season")),
+        "league_phase": optional_text(league_enrichment.get("Phase")),
+        "league_status": optional_text(league_enrichment.get("Status")),
+        "season_kickoff": optional_text(league_enrichment.get("SeasonKickoff")),
+        "current_week": optional_number(league_enrichment.get("CurrentWeek")),
     }
 
 
@@ -580,19 +618,48 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     sources = config.get("sources") or {}
     player_signals_path = root / sources["player_signals"]
-    league_path = root / sources["league"]
+    league_enrichment_path = root / sources["league_enrichment"]
     drafts_path = root / sources["drafts"]
     timestamps_path = root / sources["timestamps"]
 
     player_signals = validate_player_signals(load_json(player_signals_path))
-    league = load_json(league_path)
+    league_enrichment = load_json(league_enrichment_path)
     drafts = load_json(drafts_path)
     timestamps = load_json(timestamps_path)
     if not isinstance(timestamps, dict):
         timestamps = {}
 
     managed_team_id = str((config.get("managed_team") or {}).get("team_id"))
-    league_state = build_league_state(league, managed_team_id)
+    canonical_config = config.get("canonical_league") or {}
+    canonical_league_id = optional_text(canonical_config.get("canonical_league_id"))
+    if not canonical_league_id:
+        raise FaBoardMaterializationError(
+            "canonical_league.canonical_league_id is required for FA-board ownership"
+        )
+    try:
+        canonical_season = resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+        canonical_snapshot = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id=canonical_league_id,
+            season=canonical_season,
+        )
+        ownership_teams = enrich_canonical_ownership_with_display(
+            canonical_snapshot,
+            league_enrichment,
+        )
+    except CanonicalOwnershipError as exc:
+        raise FaBoardMaterializationError(
+            f"Canonical FA-board ownership is unavailable: {exc}"
+        ) from exc
+
+    league_state = build_league_state(
+        league_enrichment,
+        ownership_teams,
+        managed_team_id,
+    )
     draft_state = resolve_active_fa_draft(drafts, league_state)
 
     generated_at = max_timestamp(
@@ -761,11 +828,43 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     effective_controlled = materialized_controlled | set(pending_unique)
 
     current_draft = draft_state.get("draft") if isinstance(draft_state.get("draft"), dict) else None
+    canonical_league_root = (
+        root / "source-data" / "leagues" / canonical_league_id
+    )
+    canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     source_records = {
-        "league": {
-            "path": sources["league"],
-            "content_sha256": source_hash(league_path),
+        "league_enrichment": {
+            "path": sources["league_enrichment"],
+            "content_sha256": source_hash(league_enrichment_path),
             "source_timestamp": optional_text(timestamps.get("League")),
+        },
+        "canonical_league_manifest": {
+            "path": (
+                canonical_league_root / "manifest.json"
+            ).relative_to(root).as_posix(),
+            "content_sha256": source_hash(canonical_league_root / "manifest.json"),
+            "source_timestamp": None,
+        },
+        "canonical_league": {
+            "path": (
+                canonical_season_root / "league.json"
+            ).relative_to(root).as_posix(),
+            "content_sha256": source_hash(canonical_season_root / "league.json"),
+            "source_timestamp": None,
+        },
+        "canonical_league_members": {
+            "path": (
+                canonical_season_root / "members.json"
+            ).relative_to(root).as_posix(),
+            "content_sha256": source_hash(canonical_season_root / "members.json"),
+            "source_timestamp": None,
+        },
+        "canonical_league_rosters": {
+            "path": (
+                canonical_season_root / "rosters.json"
+            ).relative_to(root).as_posix(),
+            "content_sha256": source_hash(canonical_season_root / "rosters.json"),
+            "source_timestamp": None,
             "complete_for_negative_ownership": bool(league_state.get("complete")),
         },
         "drafts": {
