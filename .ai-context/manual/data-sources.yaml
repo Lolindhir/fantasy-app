@@ -164,7 +164,7 @@ dataSources:
         productiveAdapter: public/requests/utils/league/FantasyGameContextCore.ps1::Get-FgcCurrentMatchupLoad
         shadowAdapter: public/requests/utils/league/CanonicalMatchupUtils.psm1::Get-CanonicalCurrentMatchupLoad
         canonicalInput: matchups/week-<CurrentWeek>.json
-        freshness: productively scheduled bounded Current Matchup scope every ten minutes at minute 9
+        freshness: productively scheduled with the bounded League Core scope every ten minutes at minute 2
         currentWeekSelection: shared source-owned current-week resolver / settings.leg first
         providerFallback: none in shadow adapter
         parity: persisted current raw Sleeper provider semantics + downstream ConvertTo-FgcCurrentMatchupFacts
