@@ -2,7 +2,7 @@
 
 ## Status
 - Record origin: `reconstructed`
-- Status: `draft`
+- Status: `sealed`
 - Reconstruction confidence: **5/5**
 - Outcome firewall: bestätigt
 
@@ -54,9 +54,13 @@ Ein exaktes Maximalpaket wird nicht erfunden, weil Robert nur sicher rekonstruie
 
 Die 2/5 Outcome Uncertainty steht für normale Prospect-Unsicherheit. Robert selbst hatte bei Love und McMillan aber außergewöhnlich hohe Überzeugung.
 
-## Noch offen vor Seal
-Explizite Freigabe der finalen Kalibrierung:
-**5/5 Confidence · 2/5 Outcome Uncertainty · very_positive · clear**
+## Finaler Decision State
+- **Decision Confidence: 5/5**
+- **Outcome Uncertainty: 2/5**
+- **Gut Feeling: very_positive**
+- **Decision Margin: clear**
 
 ## Seal
-Noch nicht versiegelt.
+- Status: `sealed`
+- Sealed at: `2026-09-19T06:25:00Z`
+- User confirmation: ja
