@@ -9,8 +9,9 @@ Taxi phase: `locked`
 - Active: **30 / 30** (delta +0)
 - Taxi: **2 / 2**; binding: **yes**
 - Reserve: **3 / 5**
-- Startable Skill Pool: **15 / 10** (margin +5)
-- General churn target: **2**; status: `below_target`
+- Startable Skill Pool: **17 / 10** (margin +7)
+- General churn target: **2**; active general churn: **0**; status: `below_target`
+- Comparison boundary candidates: **2**; decision readiness: `ready`
 
 ## Position coverage
 
@@ -18,53 +19,54 @@ Taxi phase: `locked`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
-| RB | 9 | 8 | 2 | 5 | 1 | – | – | pool_managed |
+| RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 17 | 13 | 2 | 7 | 2 | – | – | pool_managed |
+| WR | 17 | 13 | 2 | 8 | 3 | – | – | pool_managed |
 
 ## Players
 
-| Pos | Player | Area | Role | Security | Structural function | Coverage role | Churn |
-|---|---|---|---|---|---|---|---|
-| K | Jake Bates | active | specialist | churn | specialist | specialist | no |
-| QB | Jaxson Dart | active | backup | strong_hold | coverage_reserve | positional_coverage | no |
-| QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no |
-| RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| RB | Cam Skattebo | active | backup | strong_hold | coverage_reserve | positional_coverage | no |
-| RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| RB | Dylan Sampson | reserve | prospect | conditional | development | development | no |
-| RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| RB | Jonathon Brooks | active | unclassified | unclassified | unclassified | unclassified | no |
-| RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| RB | Kyle Monangai | active | prospect | strong_hold | development | development | no |
-| RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| TE | Colston Loveland | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| TE | Harold Fannin | active | backup | strong_hold | coverage_reserve | positional_coverage | no |
-| TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no |
-| WR | Antonio Williams | taxi | prospect | strong_hold | development | development | no |
-| WR | Caleb Douglas | active | unclassified | unclassified | unclassified | unclassified | no |
-| WR | Chris Bell | taxi | prospect | conditional | development | development | no |
-| WR | Davante Adams | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no |
-| WR | Dontayvion Wicks | active | unclassified | unclassified | unclassified | unclassified | no |
-| WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no |
-| WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Malachi Fields | active | prospect | hold | development | development | no |
-| WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| WR | Marvin Harrison | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no |
-| WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no |
-| WR | Ricky Pearsall | reserve | unclassified | unclassified | unclassified | unclassified | no |
-| WR | Tetairoa McMillan | active | unclassified | unclassified | unclassified | unclassified | no |
+| Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |
+|---|---|---|---|---|---|---|---|---|
+| K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
+| QB | Jaxson Dart | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| RB | Cam Skattebo | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | Dylan Sampson | reserve | prospect | conditional | development | development | no | no |
+| RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| RB | Jonathon Brooks | active | prospect | hold | development | development | no | no |
+| RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | Kyle Monangai | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| TE | Colston Loveland | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| TE | Harold Fannin | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no | no |
+| WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
+| WR | Caleb Douglas | active | prospect | strong_hold | development | development | no | no |
+| WR | Chris Bell | taxi | prospect | hold | development | development | no | no |
+| WR | Davante Adams | active | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
+| WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no | no |
+| WR | Dontayvion Wicks | active | backup | hold | coverage_reserve | positional_coverage | yes | no |
+| WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no | no |
+| WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Malachi Fields | active | prospect | hold | development | development | yes | no |
+| WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| WR | Marvin Harrison | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| WR | Ricky Pearsall | reserve | prospect | hold | development | development | no | no |
+| WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 
-## Churn boundary pool
+## Comparison boundary pool
 
-- No current boundary candidate available.
+- Malachi Fields (WR) — `hold` — area `active` — priority `10` — general churn: `no`
+- Dontayvion Wicks (WR) — `hold` — area `active` — priority `20` — general churn: `no`
 
 ## Interpretation
 

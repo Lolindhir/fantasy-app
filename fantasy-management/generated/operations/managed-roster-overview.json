@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
   "generated_at": "2026-09-19T06:30:59.208376Z",
-  "input_fingerprint": "9bb5b19eb0112b7a2047ff8431eb9511a2f07bf73074d4905c6c6d44c1901459",
+  "input_fingerprint": "2215df06e7a885cc44cd695c6fe1ecade60fc8512f718787044d28180cb87cb5",
   "sources": [
     {
       "id": "league",
@@ -17,13 +17,13 @@
     {
       "id": "roster_evaluation_state",
       "path": "fantasy-management/automation/roster-evaluation-state.json",
-      "content_sha256": "302049464a6320ededf9c7f05d45a49ea22b8fdc245f7f8ef6b766c58ad6e351"
+      "content_sha256": "0669424f055a1290237473c033d2467529196baf187e1281164959b6b7e41ac0"
     }
   ],
   "evaluation": {
     "mode": "hybrid_manual_v1",
-    "seed_as_of": "2026-08-19",
-    "classification_age_days": 31,
+    "seed_as_of": "2026-09-19",
+    "classification_age_days": 0,
     "automatic_fields": [
       "roster_membership",
       "roster_area",
@@ -42,7 +42,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 5,
+    "unclassified_count": 0,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -116,7 +116,7 @@
         "held_count": 9,
         "current_active_count": 8,
         "effective_prelock_or_locked_count": 8,
-        "startable_count": 5,
+        "startable_count": 6,
         "backup_count": 1,
         "coverage_floor": null,
         "preferred_coverage": null,
@@ -138,8 +138,8 @@
         "held_count": 17,
         "current_active_count": 13,
         "effective_prelock_or_locked_count": 13,
-        "startable_count": 7,
-        "backup_count": 2,
+        "startable_count": 8,
+        "backup_count": 3,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -152,8 +152,8 @@
         "TE"
       ],
       "required_skill_lineup_slots": 10,
-      "startable_skill_pool": 15,
-      "skill_pool_margin": 5,
+      "startable_skill_pool": 17,
+      "skill_pool_margin": 7,
       "startable_players": [
         {
           "player_id": "2133",
@@ -216,6 +216,11 @@
           "position": "WR"
         },
         {
+          "player_id": "12481",
+          "name": "Cam Skattebo",
+          "position": "RB"
+        },
+        {
           "player_id": "12517",
           "name": "Colston Loveland",
           "position": "TE"
@@ -224,6 +229,11 @@
           "player_id": "12518",
           "name": "Tyler Warren",
           "position": "TE"
+        },
+        {
+          "player_id": "12526",
+          "name": "Tetairoa McMillan",
+          "position": "WR"
         },
         {
           "player_id": "13287",
@@ -235,10 +245,33 @@
     "churn": {
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
-      "current_active_candidate_count": 0,
-      "candidate_pool_count": 0,
+      "decision_readiness": "ready",
+      "active_unclassified_count": 0,
+      "current_active_candidate_count": 2,
+      "current_active_general_churn_count": 0,
+      "candidate_pool_count": 2,
       "guardrail_status": "below_target",
-      "candidate_pool": []
+      "candidate_pool": [
+        {
+          "player_id": "13285",
+          "name": "Malachi Fields",
+          "position": "WR",
+          "security": "hold",
+          "current_area": "active",
+          "boundary_priority": 10,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "9486",
+          "name": "Dontayvion Wicks",
+          "position": "WR",
+          "security": "hold",
+          "current_area": "active",
+          "boundary_priority": 20,
+          "counts_as_general_churn": false
+        }
+      ],
+      "general_churn_pool": []
     }
   },
   "players": [
@@ -262,10 +295,12 @@
         "roster_security": "churn",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Specialist churn only; required kicker slot does not count as a general churn slot."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -298,6 +333,8 @@
       },
       "coverage_role": "specialist",
       "coverage_protected": true,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -321,8 +358,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -357,6 +394,8 @@
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -380,8 +419,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -416,6 +455,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -439,8 +480,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -475,6 +516,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -498,8 +541,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -534,6 +577,8 @@
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -557,8 +602,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -593,6 +638,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -608,16 +655,16 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "backup",
+      "roster_role": "starter_rotation",
       "roster_security": "strong_hold",
-      "structural_function": "coverage_reserve",
+      "structural_function": "starter_core",
       "classification": {
-        "roster_role": "backup",
+        "roster_role": "starter_rotation",
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -650,8 +697,10 @@
         "fantasycalc_overall_rank": 61,
         "fantasycalc_value": 3327
       },
-      "coverage_role": "positional_coverage",
+      "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -675,8 +724,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -711,6 +760,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -733,12 +784,14 @@
       "classification": {
         "roster_role": "prospect",
         "roster_security": "conditional",
-        "boundary_priority": 20,
+        "boundary_priority": 30,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Currently on Reserve/IR; reclassify on activation before treating boundary priority as actionable."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -771,6 +824,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -794,8 +849,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -830,6 +885,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -845,20 +902,22 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "prospect",
+        "roster_security": "hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Young comeback asset remains above ordinary churn despite limited current role."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
@@ -887,8 +946,10 @@
         "fantasycalc_overall_rank": 154,
         "fantasycalc_value": 1535
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -912,8 +973,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -948,6 +1009,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -963,18 +1026,20 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "prospect",
+      "roster_role": "backup",
       "roster_security": "strong_hold",
-      "structural_function": "development",
+      "structural_function": "coverage_reserve",
       "classification": {
-        "roster_role": "prospect",
+        "roster_role": "backup",
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Week-1 regular-season usage confirms meaningful current utility; retain above churn boundary."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1005,8 +1070,10 @@
         "fantasycalc_overall_rank": 113,
         "fantasycalc_value": 1919
       },
-      "coverage_role": "development",
+      "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1030,8 +1097,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1066,6 +1133,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1089,8 +1158,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1125,6 +1194,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1148,8 +1219,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1184,6 +1255,8 @@
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1207,8 +1280,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1243,6 +1316,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1266,8 +1341,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1302,6 +1377,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1325,8 +1402,8 @@
         "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1361,6 +1438,8 @@
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1378,17 +1457,19 @@
       "is_current_taxi": true,
       "is_current_reserve": false,
       "roster_role": "prospect",
-      "roster_security": "strong_hold",
+      "roster_security": "hold",
       "structural_function": "development",
       "classification": {
         "roster_role": "prospect",
-        "roster_security": "strong_hold",
+        "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Taxi locked; development asset, not active churn capacity."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1421,6 +1502,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1436,20 +1519,22 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "strong_hold",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "prospect",
+        "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Week-1 91% offensive snap share materially raises current role confidence; preserve rookie upside."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
@@ -1478,8 +1563,10 @@
         "fantasycalc_overall_rank": 146,
         "fantasycalc_value": 1577
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1497,17 +1584,19 @@
       "is_current_taxi": true,
       "is_current_reserve": false,
       "roster_role": "prospect",
-      "roster_security": "conditional",
+      "roster_security": "hold",
       "structural_function": "development",
       "classification": {
         "roster_role": "prospect",
-        "roster_security": "conditional",
-        "boundary_priority": 30,
+        "roster_security": "hold",
+        "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Taxi locked; development asset, not active churn capacity."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1540,6 +1629,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1556,17 +1647,19 @@
       "is_current_taxi": false,
       "is_current_reserve": false,
       "roster_role": "starter_rotation",
-      "roster_security": "strong_hold",
+      "roster_security": "hold",
       "structural_function": "starter_core",
       "classification": {
         "roster_role": "starter_rotation",
-        "roster_security": "strong_hold",
+        "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Productive win-now asset; consolidation/trade candidate rather than cut candidate."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1599,6 +1692,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1623,10 +1718,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Reserve status removes active slot cost; young asset remains protected."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1659,6 +1756,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1674,20 +1773,22 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "backup",
+      "roster_security": "hold",
+      "structural_function": "coverage_reserve",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "roster_role": "backup",
+        "roster_security": "hold",
+        "boundary_priority": 20,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Second active comparison-boundary player; Week-1 91% offensive snap share prevents clean churn classification."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
@@ -1716,8 +1817,10 @@
         "fantasycalc_overall_rank": 185,
         "fantasycalc_value": 1310
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": true,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1741,8 +1844,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1777,6 +1880,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1800,8 +1905,8 @@
         "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1836,6 +1941,8 @@
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1859,8 +1966,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1895,6 +2002,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1918,8 +2027,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -1954,6 +2063,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -1975,12 +2086,14 @@
       "classification": {
         "roster_role": "prospect",
         "roster_security": "hold",
-        "boundary_priority": null,
+        "boundary_priority": 10,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "First active comparison-boundary player; hold does not equal general churn."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2013,6 +2126,8 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": true,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -2036,8 +2151,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -2072,6 +2187,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -2095,8 +2212,8 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -2131,6 +2248,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -2154,8 +2273,8 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-08-19-roster-role-security-baseline.md",
-        "source_as_of": "2026-08-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
         "notes": [],
         "evidence": [],
@@ -2190,6 +2309,8 @@
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -2206,20 +2327,22 @@
       "is_current_active": false,
       "is_current_taxi": false,
       "is_current_reserve": true,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "prospect",
+        "roster_security": "hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Season-ending injury lowers current utility, but Reserve status removes active slot cost."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Inactive",
@@ -2248,8 +2371,10 @@
         "fantasycalc_overall_rank": 179,
         "fantasycalc_value": 1361
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     },
@@ -2265,20 +2390,22 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
+        "source_as_of": "2026-09-19",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Current dynasty value and weekly role are clearly above the active boundary."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
@@ -2307,47 +2434,18 @@
         "fantasycalc_overall_rank": 39,
         "fantasycalc_value": 4251
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     }
   ],
   "quality": {
-    "status": "warning",
-    "issue_count": 5,
-    "issues": [
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "9486",
-        "name": "Dontayvion Wicks"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "11583",
-        "name": "Jonathon Brooks"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "11638",
-        "name": "Ricky Pearsall"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "12526",
-        "name": "Tetairoa McMillan"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "13296",
-        "name": "Caleb Douglas"
-      }
-    ],
+    "status": "ok",
+    "issue_count": 0,
+    "issues": [],
     "limitations": [
       "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
       "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",
