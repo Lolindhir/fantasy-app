@@ -138,6 +138,44 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
                     season=2026,
                 )
 
+    def test_repository_managed_roster_signals_match_canonical_membership(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        snapshot = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id="nfl-reise",
+            season=resolve_current_canonical_season(
+                root,
+                canonical_league_id="nfl-reise",
+            ),
+        )
+        managed = next(team for team in snapshot["Teams"] if team["TeamID"] == 1)
+        signals = self._read_json(
+            root / "fantasy-management/generated/operations/managed-roster-signals.json"
+        )
+        players = {
+            str(player["player_id"]): player
+            for player in signals["players"]
+        }
+
+        expected_ids = set(managed["Roster"]) | set(managed["Reserve"]) | set(managed["Taxi"])
+        self.assertEqual(expected_ids, set(players))
+        starters = set(managed["Starter"])
+        reserve = set(managed["Reserve"])
+        taxi = set(managed["Taxi"])
+        roster = set(managed["Roster"])
+        for player_id, player in players.items():
+            expected_sections = sorted(
+                section
+                for section, bucket in (
+                    ("roster", roster),
+                    ("reserve", reserve),
+                    ("taxi", taxi),
+                )
+                if player_id in bucket
+            )
+            self.assertEqual(expected_sections, player["roster_sections"])
+            self.assertEqual(player_id in starters, player["is_starter"])
+
     def test_repository_current_ownership_is_strictly_equal(self) -> None:
         root = Path(__file__).resolve().parents[4]
         metadata = self._read_json(root / "public/data/Metadata.json")
