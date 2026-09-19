@@ -74,10 +74,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 23);
+  assert.equal(config.targets.length, 22);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 23);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 22);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
