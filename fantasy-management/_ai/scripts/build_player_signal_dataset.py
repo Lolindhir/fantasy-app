@@ -22,6 +22,12 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
+from canonical_league_ownership import (  # noqa: E402
+    CanonicalOwnershipError,
+    build_canonical_ownership_snapshot,
+    enrich_canonical_ownership_with_display,
+    resolve_current_canonical_season,
+)
 
 
 SCHEMA_VERSION = 1
@@ -194,13 +200,13 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise PlayerSignalMaterializationError("Unexpected player-signal materialization config schema version")
 
     core = config["sources"]
-    league_path = root / core["league"]
+    league_display_path = root / core["league_display"]
     players_path = root / core["players"]
     timestamps_path = root / core["timestamps"]
     external_signal_path = root / core["external_signal_relevance"]
     catalog_path = root / config["source_catalog"]
 
-    league = ops.load_json(league_path)
+    league_display = ops.load_json(league_display_path)
     players = ops.load_json(players_path)
     timestamps = ops.load_json(timestamps_path)
     external_signal_document = ops.load_json(external_signal_path)
@@ -209,11 +215,37 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     if not isinstance(players, list):
         raise PlayerSignalMaterializationError("Players input must be a JSON array")
 
-    teams = league.get("Teams") if isinstance(league.get("Teams"), list) else []
     managed_team_id = str(config["managed_team"]["team_id"])
+    canonical_config = config.get("canonical_league") or {}
+    canonical_league_id = ops.optional_text(canonical_config.get("canonical_league_id"))
+    if not canonical_league_id:
+        raise PlayerSignalMaterializationError(
+            "canonical_league.canonical_league_id is required for player-signal ownership"
+        )
+    try:
+        canonical_season = resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+        canonical_snapshot = build_canonical_ownership_snapshot(
+            root,
+            canonical_league_id=canonical_league_id,
+            season=canonical_season,
+        )
+        teams = enrich_canonical_ownership_with_display(
+            canonical_snapshot,
+            league_display,
+        )
+    except CanonicalOwnershipError as exc:
+        raise PlayerSignalMaterializationError(
+            f"Canonical player-signal ownership is unavailable: {exc}"
+        ) from exc
+
     managed_team = next((team for team in teams if str(team.get("TeamID")) == managed_team_id), None)
     if managed_team is None:
-        raise PlayerSignalMaterializationError(f"Managed team {managed_team_id} not found")
+        raise PlayerSignalMaterializationError(
+            f"Managed team {managed_team_id} not found in canonical ownership snapshot"
+        )
 
     loaded_sources = [
         ops.resolve_catalog_source(root, definition)
@@ -226,8 +258,35 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
     external_signal_timestamp = external_signal_document.get("generated_at") if isinstance(external_signal_document, dict) else None
+    canonical_league_root = (
+        root
+        / "source-data"
+        / "leagues"
+        / canonical_league_id
+    )
+    canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     input_sources = [
-        ops.source_file("league", league_path, root, league_timestamp),
+        ops.source_file("league_display", league_display_path, root, league_timestamp),
+        ops.source_file(
+            "canonical_league_manifest",
+            canonical_league_root / "manifest.json",
+            root,
+        ),
+        ops.source_file(
+            "canonical_league",
+            canonical_season_root / "league.json",
+            root,
+        ),
+        ops.source_file(
+            "canonical_league_members",
+            canonical_season_root / "members.json",
+            root,
+        ),
+        ops.source_file(
+            "canonical_league_rosters",
+            canonical_season_root / "rosters.json",
+            root,
+        ),
         ops.source_file("players", players_path, root, player_timestamp),
         ops.source_file(
             "timestamps",
