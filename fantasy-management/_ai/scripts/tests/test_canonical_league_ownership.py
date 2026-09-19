@@ -75,6 +75,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             )
             rosters = self._read_json(rosters_path)
             rosters[1]["Players"] = list(rosters[0]["Players"])
+            rosters[1]["Starters"] = list(rosters[0]["Starters"])
             self._write_json(rosters_path, rosters)
 
             with self.assertRaisesRegex(
