@@ -22,7 +22,7 @@ Important files:
 
 ## League source rules
 
-`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is currently productive in two scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q) and `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R). In both consumers `League.json` is retained only for current team display enrichment and the existing trigger/freshness bridge.
+`public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is currently productive in three scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q), `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R) and `player-signals.json` (league-wide ownership and `league_owned` population reason since 6S). In these migrated consumers `League.json` is retained only for current team display enrichment and the existing trigger/freshness bridge.
 
 The user team is:
 
@@ -63,9 +63,9 @@ the complete league-wide Roster/Reserve/Taxi union is now read from Canonical Le
 while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing
 League-trigger/freshness bridge for that materializer.
 
-This is **not** a wholesale Fantasy Management ownership cutover. League-wide player-signal ownership,
-FA-board ownership/capacity, Free-Agent availability, Drafts, Transactions and all other unmigrated
-consumers retain their currently documented source contracts until separately migrated.
+Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are now canonical-derived; `Players.json` remains the source for Player identity/metadata plus App-owned Salary/SalaryProjected and other player fields.
+
+This is **not** a wholesale Fantasy Management ownership cutover. FA-board ownership/capacity, Free-Agent availability, Drafts, Transactions and all other unmigrated consumers retain their currently documented source contracts until separately migrated.
 
 
 ## Metadata source rules
@@ -122,7 +122,7 @@ Operational rules:
 
 `Players.json -> IsFreeAgent` is not a fantasy-league free-agent signal.
 
-Fantasy ownership is consumer-scoped during Phase 2. `external-signal-relevance.json` now tests the player's ID against the Canonical League Roster/Reserve/Taxi union; the still-unmigrated league-wide `player-signals`/Free-Agent/FA-board path continues to use the corresponding `League.json` union until its own cutover. `Players.json -> IsFreeAgent` is never a fantasy-league ownership signal.
+Fantasy ownership is consumer-scoped during Phase 2. `external-signal-relevance.json` and `player-signals.json` now test the player's ID against the Canonical League Roster/Reserve/Taxi union. The still-unmigrated Free-Agent/FA-board ownership paths continue to use their corresponding `League.json` union until their own cutovers. `Players.json -> IsFreeAgent` is never a fantasy-league ownership signal.
 
 `fantasy-management/generated/operations/free-agent-signals.json` remains the complete current ownership-derived free-agent population for general Fantasy Operations discovery, movement analysis and research prioritization. It remains downstream of current league ownership rather than `Players.json -> IsFreeAgent`.
 
