@@ -56,7 +56,7 @@ The adapter exposes current member/ownership basis facts such as
 It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
 team windows or other App/Fantasy-derived state.
 
-Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data.
+Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `source-data/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `source-data/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
 
 Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
 the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
@@ -93,7 +93,7 @@ Always re-check `Metadata.json` when exact owner mapping matters.
 
 ## Player source rules
 
-`public/data/Players.json` is the canonical current raw player read model from the application context. Fantasy Management consumes it read-only and must not require the app producer to create AI- or agent-specific reduced copies or chunk exports.
+`public/data/Players.json` is the canonical current raw player read model from the application context. Fantasy Management consumes it read-only and must not require the app producer to create AI- or agent-specific reduced copies or chunk exports. During the field-by-field Phase-2 cutover it is no longer the identity source for every Operations consumer: `external-signal-relevance.json` is fully canonical for identity/platform fields since 6W, and `managed-roster-signals.json` uses Canonical NFL identity/position/team fields since 6X while retaining App-owned/legacy enrichment fields from `Players.json`.
 
 For broad operational analysis, prefer the smallest current Fantasy-Management-owned derived contract that matches the task instead of scanning the raw player file:
 

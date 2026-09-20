@@ -36,6 +36,7 @@ NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
 SEVERITIES = {"none", "info", "warning", "error"}
 SIGNAL_TYPES = {"text", "number", "boolean"}
 JOIN_TYPES = {"id", "name_position"}
+FANTASY_RELEVANT_POSITIONS = {"QB", "RB", "WR", "TE", "K"}
 
 
 class MaterializationError(RuntimeError):
@@ -103,6 +104,130 @@ def optional_text(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def canonical_fantasy_position(player: dict[str, Any] | None) -> str | None:
+    if not player:
+        return None
+    raw_position = optional_text(player.get("Position"))
+    fantasy_positions = player.get("FantasyPositions")
+    if fantasy_positions is None:
+        return raw_position
+    if not isinstance(fantasy_positions, list):
+        raise MaterializationError(
+            "Canonical Sleeper player FantasyPositions must be an array"
+        )
+
+    normalized = [
+        value
+        for value in (
+            optional_text(position).upper() if optional_text(position) else None
+            for position in fantasy_positions
+        )
+        if value
+    ]
+    for position in normalized:
+        if position in FANTASY_RELEVANT_POSITIONS:
+            return position
+    return raw_position or (normalized[0] if normalized else None)
+
+
+def build_canonical_identity_by_sleeper(
+    document: Any,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(document, dict) or not isinstance(document.get("Players"), list):
+        raise MaterializationError(
+            "Canonical player identity input must contain a Players array"
+        )
+    result: dict[str, dict[str, Any]] = {}
+    for row in document["Players"]:
+        if not isinstance(row, dict):
+            raise MaterializationError(
+                "Canonical player identity input contains a non-object row"
+            )
+        canonical_player_id = optional_text(row.get("CanonicalPlayerID"))
+        if not canonical_player_id:
+            raise MaterializationError(
+                "Canonical player identity row has no CanonicalPlayerID"
+            )
+        ids = row.get("IDs") or {}
+        if not isinstance(ids, dict):
+            raise MaterializationError(
+                f"Canonical player identity {canonical_player_id} has invalid IDs"
+            )
+        sleeper_id = optional_text(ids.get("Sleeper"))
+        if not sleeper_id:
+            continue
+        if sleeper_id in result:
+            raise MaterializationError(
+                f"Canonical player identities contain duplicate active Sleeper ID {sleeper_id}"
+            )
+        result[sleeper_id] = row
+    return result
+
+
+def build_canonical_sleeper_player_lookup(
+    document: Any,
+    identity_by_sleeper: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(document, dict) or not isinstance(document.get("Records"), list):
+        raise MaterializationError(
+            "Canonical Sleeper player input must contain a Records array"
+        )
+    result: dict[str, dict[str, Any]] = {}
+    for row in document["Records"]:
+        if not isinstance(row, dict):
+            raise MaterializationError(
+                "Canonical Sleeper player input contains a non-object row"
+            )
+        sleeper_id = optional_text(row.get("SleeperPlayerID"))
+        if not sleeper_id:
+            raise MaterializationError(
+                "Canonical Sleeper player row has no SleeperPlayerID"
+            )
+        if sleeper_id in result:
+            raise MaterializationError(
+                f"Canonical Sleeper players contain duplicate SleeperPlayerID {sleeper_id}"
+            )
+        canonical_player_id = optional_text(row.get("CanonicalPlayerID"))
+        if canonical_player_id:
+            identity = identity_by_sleeper.get(sleeper_id)
+            identity_canonical_id = optional_text(
+                (identity or {}).get("CanonicalPlayerID")
+            )
+            if canonical_player_id != identity_canonical_id:
+                raise MaterializationError(
+                    "Canonical Sleeper player identity mismatch for "
+                    f"{sleeper_id}: platform={canonical_player_id}, "
+                    f"identity={identity_canonical_id}"
+                )
+        result[sleeper_id] = row
+    return result
+
+
+def canonicalize_player_identity(
+    player_id: str,
+    legacy_player: dict[str, Any],
+    identity_by_sleeper: dict[str, dict[str, Any]],
+    sleeper_player_lookup: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    identity = identity_by_sleeper.get(player_id)
+    if identity is None:
+        raise MaterializationError(
+            f"Managed roster player {player_id} has no Canonical Identity Sleeper mapping"
+        )
+    sleeper_player = sleeper_player_lookup.get(player_id)
+    if sleeper_player is None:
+        raise MaterializationError(
+            f"Managed roster player {player_id} has no Canonical Sleeper player record"
+        )
+
+    player = dict(legacy_player)
+    player["ID"] = player_id
+    player["Name"] = optional_text(identity.get("Name"))
+    player["Position"] = canonical_fantasy_position(sleeper_player)
+    player["TeamAbbr"] = optional_text(sleeper_player.get("Team"))
+    return player
 
 
 def optional_number(value: Any) -> int | float | None:
@@ -611,16 +736,25 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     core_sources = config["sources"]
     league_display_path = root / core_sources["league_display"]
     players_path = root / core_sources["players"]
+    canonical_identities_path = root / core_sources["canonical_player_identities"]
+    canonical_sleeper_players_path = root / core_sources["canonical_sleeper_players"]
     timestamps_path = root / core_sources["timestamps"]
     catalog_path = root / config["source_catalog"]
 
     league_display = load_json(league_display_path)
     players = load_json(players_path)
+    canonical_identities = load_json(canonical_identities_path)
+    canonical_sleeper_players = load_json(canonical_sleeper_players_path)
     timestamps = load_json(timestamps_path)
     catalog = load_json(catalog_path)
     validate_catalog(catalog)
     if not isinstance(players, list):
         raise MaterializationError("Players input must be a JSON array")
+    identity_by_sleeper = build_canonical_identity_by_sleeper(canonical_identities)
+    sleeper_player_lookup = build_canonical_sleeper_player_lookup(
+        canonical_sleeper_players,
+        identity_by_sleeper,
+    )
 
     managed_config = config["managed_team"]
     if managed_config.get("identity_field") != "TeamID":
@@ -717,6 +851,16 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         ),
         source_file("players", players_path, root, player_timestamp),
         source_file(
+            "canonical_player_identities",
+            canonical_identities_path,
+            root,
+        ),
+        source_file(
+            "canonical_sleeper_players",
+            canonical_sleeper_players_path,
+            root,
+        ),
+        source_file(
             "timestamps",
             timestamps_path,
             root,
@@ -767,10 +911,16 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     primary_adp_applicable = 0
     primary_adp_listed = 0
     for player_id in sorted(sections_by_player, key=lambda value: (len(value), value)):
-        player = player_lookup.get(player_id)
-        if player is None:
+        legacy_player = player_lookup.get(player_id)
+        if legacy_player is None:
             quality_issues.append({"severity": "error", "kind": "missing_player", "player_id": player_id})
             continue
+        player = canonicalize_player_identity(
+            player_id,
+            legacy_player,
+            identity_by_sleeper,
+            sleeper_player_lookup,
+        )
 
         source_results: dict[str, dict[str, Any]] = {}
         market: dict[str, dict[str, Any]] = {}
