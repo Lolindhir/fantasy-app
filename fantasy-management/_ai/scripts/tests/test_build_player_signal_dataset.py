@@ -596,6 +596,67 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 player["source_signals"]["ffc-k"]["join_method"],
             )
 
+    def test_canonical_first_last_name_alias_preserves_external_source_join(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            identities_path = root / "source-data/nfl/identities/players.json"
+            identities = json.loads(identities_path.read_text(encoding="utf-8"))
+            identities["Players"][0].update(
+                {
+                    "Name": "Nickname One",
+                    "FirstName": "Kicker",
+                    "LastName": "One",
+                }
+            )
+            identities_path.write_text(json.dumps(identities, indent=2) + "\n", encoding="utf-8")
+
+            players_path = root / "public/data/Players.json"
+            players = json.loads(players_path.read_text(encoding="utf-8"))
+            players[0]["Name"] = "Wrong Legacy Name"
+            players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            player = next(item for item in result["players"] if item["player_id"] == "1")
+
+            self.assertEqual("Nickname One", player["name"])
+            self.assertEqual("listed", player["source_signals"]["ffc-k"]["coverage_status"])
+            self.assertEqual(
+                "canonical_identity_alias_normalized_name_position",
+                player["source_signals"]["ffc-k"]["join_method"],
+            )
+
+    def test_legacy_name_is_not_used_as_external_source_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            identities_path = root / "source-data/nfl/identities/players.json"
+            identities = json.loads(identities_path.read_text(encoding="utf-8"))
+            identities["Players"][0].update(
+                {
+                    "Name": "Nickname One",
+                    "FirstName": "Legal",
+                    "LastName": "One",
+                }
+            )
+            identities_path.write_text(json.dumps(identities, indent=2) + "\n", encoding="utf-8")
+
+            # The legacy display name still matches the fixture source row, but 6Y
+            # source joins must use Canonical Identity names only.
+            players_path = root / "public/data/Players.json"
+            players = json.loads(players_path.read_text(encoding="utf-8"))
+            players[0]["Name"] = "Kicker One"
+            players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            player = next(item for item in result["players"] if item["player_id"] == "1")
+
+            self.assertEqual("Nickname One", player["name"])
+            self.assertEqual("not_listed", player["source_signals"]["ffc-k"]["coverage_status"])
+            self.assertEqual("missing", player["source_signals"]["ffc-k"]["join_method"])
+
     def test_canonical_player_identity_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
