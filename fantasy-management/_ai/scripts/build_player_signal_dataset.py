@@ -203,6 +203,40 @@ def canonical_player_context(
     return player, identity, sleeper_player
 
 
+def canonical_identity_name_aliases(identity: dict[str, Any]) -> list[str]:
+    display_name = ops.optional_text(identity.get("Name"))
+    first_name = ops.optional_text(identity.get("FirstName"))
+    last_name = ops.optional_text(identity.get("LastName"))
+    full_name = " ".join(part for part in (first_name, last_name) if part)
+    if not full_name:
+        return []
+    if ops.normalize_name(full_name) == ops.normalize_name(display_name):
+        return []
+    return [full_name]
+
+
+def evaluate_source_for_canonical_player(
+    player: dict[str, Any],
+    identity: dict[str, Any],
+    source: ops.LoadedCatalogSource,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    result, issue = ops.evaluate_source_for_player(player, source)
+    if result.get("join_method") != "missing":
+        return result, issue
+
+    for alias in canonical_identity_name_aliases(identity):
+        alias_player = dict(player)
+        alias_player["Name"] = alias
+        alias_result, alias_issue = ops.evaluate_source_for_player(alias_player, source)
+        alias_join_method = alias_result.get("join_method")
+        if alias_result.get("listed") or alias_join_method == "ambiguous":
+            alias_result = dict(alias_result)
+            alias_result["join_method"] = f"canonical_identity_alias_{alias_join_method}"
+            return alias_result, alias_issue
+
+    return result, issue
+
+
 def validate_output(data: dict[str, Any]) -> None:
     required = {
         "schema_version",
@@ -429,7 +463,11 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         for source in loaded_sources:
             definition = source.definition
             source_id = definition["source_id"]
-            result, issue = ops.evaluate_source_for_player(player, source)
+            result, issue = evaluate_source_for_canonical_player(
+                player,
+                identity,
+                source,
+            )
             raw_results[source_id] = result
             enriched = enrich_source_result(result, source, generated_at)
             enriched_results[source_id] = enriched
