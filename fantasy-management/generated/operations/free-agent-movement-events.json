@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-20T04:24:11.490841Z",
-  "input_fingerprint": "d9deba595ba9898dd4dc2a1d92a035501635ca2380576d72eecfbee2154608c5",
+  "generated_at": "2026-09-20T05:19:55Z",
+  "input_fingerprint": "ef0ac693bef68787523302948c4986f67e9e3c195e5e968cd8eb44bfaf019d8d",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "d4e23fd96130a0c98e165703e988bb8df97d3489ba430daf9251fc16ac520e4f"
+      "input_fingerprint": "ce36b223b10f9e232e8b00f51576e7ede1bf92ee54a4bccb92b2edeb8eccb597"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "54965cee2412b47774217096d0ff1681d88baf7493b2a5d3a2998f6901aaff91"
+      "input_fingerprint": "d4e23fd96130a0c98e165703e988bb8df97d3489ba430daf9251fc16ac520e4f"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,949 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 222,
+    "current_discovery_count": 239,
     "previous_discovery_count": 222,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 23,
+    "event_type_counts": {
+      "changed": 4,
+      "new": 17,
+      "structural_change": 2
+    },
+    "event_priority_counts": {
+      "high": 5,
+      "medium": 18
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
-    "current_evidence_fingerprint": "8fe6f9247c9043b339d67ca9d244610cf6493cfa6530b65659d6fccd399f3b01",
+    "current_evidence_fingerprint": "e890c12142b6dbf094e415d3d77bd166902ffb3cd717b3a0d79593bcf9ce4123",
     "previous_evidence_fingerprint": "8fe6f9247c9043b339d67ca9d244610cf6493cfa6530b65659d6fccd399f3b01",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 23,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "4033",
+      "name": "David Njoku",
+      "position": "TE",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "22d14ffe4ddea6305e9d94fa11ec9ead532407510e295bbe41eeaffbb404412d",
+      "previous_state_hash": "22d14ffe4ddea6305e9d94fa11ec9ead532407510e295bbe41eeaffbb404412d",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 1,
+          "to": 2
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11629",
+      "name": "Devontez Walker",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "7e1364c5819d913dc9c4919be2f7e6ba90244bee8b24a42a8ec45a8beb76c7c0",
+      "previous_state_hash": "47e2e30d18882ee99db537dac4b5ae804bf4c45438bd3e9315b3c25c0e7d4d7a",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 4,
+          "to": 3
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11623",
+      "name": "Jordan Whittington",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "036b304a8e1f1e3a8819c5f4fdbcc9ddec58e0d6a74010f179a5373570a11b17",
+      "previous_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": "Doubtful"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13491",
+      "name": "Kaden Wetjen",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "63e488ec1ac0d5f8a00cc88a90693978e957f39b32e19bf8d78af1e310df4d06",
+      "previous_state_hash": "0c087279af49842c420812c6c67dbf2a68ecc6d19e1d4e14a16e0da82985bacb",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 6,
+          "to": 5
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11630",
+      "name": "Roman Wilson",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "25f77a5bd44b9a74048b5dc8a48916043f7867c85d8ae08e18a2efe1badaab25",
+      "previous_state_hash": "f61e3c8659e5ad98fd91570ff56cd4622a9711c7ff98b263aabaf5a0b5889a9d",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 3,
+          "to": 2
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11058",
+      "name": "Blake Grupe",
+      "position": "K",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 1,
+          "to": 2
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "5119",
+      "name": "Jason Sanders",
+      "position": "K",
+      "event_type": "structural_change",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "0d441fe7f67b50fde032ea7e52712cb677bd4e9175b3700d83ffa62630132d2c",
+      "previous_state_hash": "0d441fe7f67b50fde032ea7e52712cb677bd4e9175b3700d83ffa62630132d2c",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 1
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "K"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "10866",
+      "name": "Aidan O'Connell",
+      "position": "QB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20260920",
+          "to": "20260927"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "260",
+      "name": "Josh Johnson",
+      "position": "QB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 3
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "QB"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "4464",
+      "name": "Nick Mullens",
+      "position": "QB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 2
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "QB"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8025",
+      "name": "Adam Prentice",
+      "position": "RB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 5
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "RB"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "6012",
+      "name": "Travis Homer",
+      "position": "RB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 5
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "RB"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "6529",
+      "name": "Chris Myarick",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 4
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "TE"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12817",
+      "name": "Jake Briningstool",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 3,
+          "to": 4
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11595",
+      "name": "Jared Wiley",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 5,
+          "to": 3
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11762",
+      "name": "Anthony Gould",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 9
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "LWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7757",
+      "name": "Ben Skowronek",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 5,
+          "to": 4
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3269",
+      "name": "Chris Moore",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 3,
+          "to": 2
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7039",
+      "name": "Cody White",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 6
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "LWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13621",
+      "name": "Dillon Bell",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 7
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "RWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8200",
+      "name": "Kevin Austin",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 6
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "SWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12699",
+      "name": "LaJohntay Wester",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 5,
+          "to": 4
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13541",
+      "name": "Lewis Bond",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": null,
+          "to": 11
+        },
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": null,
+          "to": "LWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "ok",
     "movement_quality_status": "ok",
