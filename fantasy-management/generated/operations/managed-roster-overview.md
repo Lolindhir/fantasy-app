@@ -38,11 +38,11 @@ Taxi phase: `locked`
 | RB | Dylan Sampson | reserve | prospect | conditional | development | development | no | no |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | RB | Jonathon Brooks | active | prospect | hold | development | development | no | no |
-| RB | Kenneth Walker | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | Kenneth Walker III | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Kyle Monangai | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | TE | Colston Loveland | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
-| TE | Harold Fannin | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| TE | Harold Fannin Jr. | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no | no |
@@ -58,7 +58,7 @@ Taxi phase: `locked`
 | WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Malachi Fields | active | prospect | hold | development | development | yes | no |
 | WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
-| WR | Marvin Harrison | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Marvin Harrison Jr. | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Ricky Pearsall | reserve | prospect | hold | development | development | no | no |
 | WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
