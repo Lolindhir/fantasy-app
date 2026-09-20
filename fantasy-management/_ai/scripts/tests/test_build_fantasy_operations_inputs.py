@@ -112,6 +112,138 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             self.assertIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
+            self.assertIn("canonical_player_identities", source_ids)
+            self.assertIn("canonical_sleeper_players", source_ids)
+
+    def test_managed_roster_identity_and_ranking_joins_use_canonical_nfl_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            players_path = root / "public/data/Players.json"
+            players = json.loads(players_path.read_text(encoding="utf-8"))
+            players[0].update(
+                {
+                    "Name": "Wrong Legacy Name",
+                    "Position": "TE",
+                    "TeamAbbr": "ZZZ",
+                    "Salary": 123,
+                    "SalaryProjected": 456,
+                    "Status": "Legacy Active",
+                    "Age": 27,
+                    "Year": 5,
+                    "IsFreeAgent": False,
+                }
+            )
+            players_path.write_text(json.dumps(players), encoding="utf-8")
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            receiver = next(
+                row for row in sleeper["Records"] if row["SleeperPlayerID"] == "2"
+            )
+            receiver["Position"] = "DB"
+            receiver["FantasyPositions"] = ["DB", "WR"]
+            sleeper_path.write_text(json.dumps(sleeper), encoding="utf-8")
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            data, _ = build(root, config_path)
+
+            quarterback = next(
+                player for player in data["players"] if player["player_id"] == "1"
+            )
+            receiver_output = next(
+                player for player in data["players"] if player["player_id"] == "2"
+            )
+
+            self.assertEqual("Quarter Back", quarterback["name"])
+            self.assertEqual("QB", quarterback["position"])
+            self.assertEqual("AAA", quarterback["nfl_team"])
+            self.assertEqual(123, quarterback["app_data"]["salary"])
+            self.assertEqual(456, quarterback["app_data"]["salary_projected"])
+            self.assertEqual("Legacy Active", quarterback["app_data"]["status"])
+            self.assertEqual(27, quarterback["app_data"]["age"])
+            self.assertEqual(5, quarterback["app_data"]["years_experience"])
+            self.assertFalse(quarterback["app_data"]["is_free_agent"])
+            self.assertEqual(
+                "current_injury_signal",
+                quarterback["injury"]["coverage_status"],
+            )
+            self.assertEqual(
+                "normalized_name_position",
+                quarterback["source_signals"]["fantasypros-dynasty"]["join_method"],
+            )
+            self.assertEqual(
+                "listed",
+                quarterback["source_signals"]["fantasypros-dynasty"]["coverage_status"],
+            )
+            self.assertEqual("WR", receiver_output["position"])
+            self.assertEqual(
+                "listed",
+                receiver_output["source_signals"]["fantasypros-dynasty"]["coverage_status"],
+            )
+
+            source_ids = {source["id"] for source in data["sources"]}
+            self.assertIn("players", source_ids)
+            self.assertIn("canonical_player_identities", source_ids)
+            self.assertIn("canonical_sleeper_players", source_ids)
+
+    def test_duplicate_canonical_sleeper_identity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            identities_path = root / "source-data/nfl/identities/players.json"
+            identities = json.loads(identities_path.read_text(encoding="utf-8"))
+            identities["Players"].append(
+                {
+                    "CanonicalPlayerID": "canonical-duplicate",
+                    "Name": "Duplicate",
+                    "IDs": {"Sleeper": "1"},
+                }
+            )
+            identities_path.write_text(json.dumps(identities), encoding="utf-8")
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            with self.assertRaisesRegex(
+                MaterializationError,
+                "duplicate active Sleeper ID 1",
+            ):
+                build(root, config_path)
+
+    def test_canonical_sleeper_identity_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["CanonicalPlayerID"] = "canonical-other"
+            sleeper_path.write_text(json.dumps(sleeper), encoding="utf-8")
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            with self.assertRaisesRegex(
+                MaterializationError,
+                "Canonical Sleeper player identity mismatch",
+            ):
+                build(root, config_path)
+
+    def test_malformed_canonical_fantasy_positions_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["FantasyPositions"] = "QB"
+            sleeper_path.write_text(json.dumps(sleeper), encoding="utf-8")
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            with self.assertRaisesRegex(
+                MaterializationError,
+                "FantasyPositions must be an array",
+            ):
+                build(root, config_path)
 
     def test_duplicate_catalog_source_ids_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -132,6 +264,8 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "fantasy-management/_ai",
             "fantasy-management/league-context",
             "source-data/leagues/test-league/seasons/2026",
+            "source-data/nfl/identities",
+            "source-data/nfl/platform/sleeper",
             "sources/fp",
             "sources/fc",
             "sources/ppr",
@@ -148,6 +282,8 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "sources": {
                 "league_display": "public/data/League.json",
                 "players": "public/data/Players.json",
+                "canonical_player_identities": "source-data/nfl/identities/players.json",
+                "canonical_sleeper_players": "source-data/nfl/platform/sleeper/players.json",
                 "timestamps": "public/data/Timestamps.json",
             },
             "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
@@ -244,6 +380,56 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                     ],
                 }
             ],
+        )
+        self._write_json(
+            root / "source-data/nfl/identities/players.json",
+            {
+                "Players": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "Name": "Quarter Back",
+                        "IDs": {"Sleeper": "1"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-2",
+                        "Name": "Wide Receiver",
+                        "IDs": {"Sleeper": "2"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-3",
+                        "Name": "Reliable Kicker",
+                        "IDs": {"Sleeper": "3"},
+                    },
+                ]
+            },
+        )
+        self._write_json(
+            root / "source-data/nfl/platform/sleeper/players.json",
+            {
+                "Records": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "SleeperPlayerID": "1",
+                        "Position": "QB",
+                        "FantasyPositions": ["QB"],
+                        "Team": "AAA",
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-2",
+                        "SleeperPlayerID": "2",
+                        "Position": "WR",
+                        "FantasyPositions": ["WR"],
+                        "Team": "BBB",
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-3",
+                        "SleeperPlayerID": "3",
+                        "Position": "K",
+                        "FantasyPositions": ["K"],
+                        "Team": "CCC",
+                    },
+                ]
+            },
         )
         self._write_json(
             root / "public/data/Players.json",

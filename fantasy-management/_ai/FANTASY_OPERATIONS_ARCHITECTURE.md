@@ -56,7 +56,7 @@ fantasy-management/generated/operations/data-quality.json
 
 `source-freshness.json` is the canonical monitoring-readiness gate for the configured source cycle. It distinguishes successful current refresh confirmation from source content changes and exposes `proceed`, `proceed_degraded` or `block`, including whether a no-event conclusion is permitted and which source/signal families are affected.
 
-`managed-roster-signals.json` contains prepared data for the complete Mighty Giants roster.
+`managed-roster-signals.json` contains prepared data for the complete Mighty Giants roster. Membership/starter buckets come from Canonical League Source Data. Since Checkpoint 6X, player name plus the position/team identity surface used for output and ranking/ADP joins come from Canonical NFL Identity and Sleeper Platform sources; `public/data/Players.json` is retained only for the still-unmigrated App/legacy enrichment fields such as status, age/experience, salary/projected salary, NFL free-agent flag and the structured injury signal.
 
 `external-signal-relevance.json` resolves global external-signal player IDs to current player identity and league ownership. It contains readable add/drop views and complete per-player signal details for:
 
