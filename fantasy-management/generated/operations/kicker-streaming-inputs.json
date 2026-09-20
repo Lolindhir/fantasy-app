@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "kicker-streaming-inputs",
   "generated_at": "2026-09-20T08:04:46Z",
-  "input_fingerprint": "5e40df9188fbacecf0b65a6acbf442b0109331ae436a6399c8fc91b5d0718024",
+  "input_fingerprint": "132949fcab2f2c1fd2189971cf23b32d41a3bcaed3633f10da786e137de39786",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants"
@@ -1188,20 +1188,20 @@
         "providers": {
           "fftoday": {
             "source_id": "fftoday-redraft-kicker-preseason",
-            "coverage_status": "not_listed",
+            "coverage_status": "listed",
             "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "bye": null,
-            "fgm": null,
-            "fga": null,
-            "fg_pct": null,
-            "epm": null,
-            "epa": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null,
+            "listed": true,
+            "join_method": "canonical_identity_alias_normalized_name_position",
+            "rank": 16,
+            "percentile": 51.61,
+            "bye": 11,
+            "fgm": 26,
+            "fga": 31,
+            "fg_pct": 83.9,
+            "epm": 46,
+            "epa": 48,
+            "projected_fantasy_points": 124,
+            "source_updated_date": "2026-09-06",
             "league_scoring": {
               "status": "position_specific_elsewhere",
               "core_points": null,
@@ -1218,30 +1218,30 @@
           },
           "cbs_sports": {
             "source_id": "cbs-sports-redraft-kicker-preseason",
-            "coverage_status": "not_listed",
+            "coverage_status": "listed",
             "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "games_played": null,
-            "fgm": null,
-            "fga": null,
+            "listed": true,
+            "join_method": "canonical_identity_alias_normalized_name_position",
+            "rank": 25,
+            "percentile": 22.58,
+            "games_played": 16,
+            "fgm": 24,
+            "fga": 28,
             "longest_field_goal": null,
-            "fg_1_19_made": null,
-            "fg_1_19_attempts": null,
-            "fg_20_29_made": null,
-            "fg_20_29_attempts": null,
-            "fg_30_39_made": null,
-            "fg_30_39_attempts": null,
-            "fg_40_49_made": null,
-            "fg_40_49_attempts": null,
-            "fg_50_plus_made": null,
-            "fg_50_plus_attempts": null,
-            "xpm": null,
-            "xpa": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null,
+            "fg_1_19_made": 0.368,
+            "fg_1_19_attempts": 0.368,
+            "fg_20_29_made": 5.9,
+            "fg_20_29_attempts": 5.9,
+            "fg_30_39_made": 7.5,
+            "fg_30_39_attempts": 8.3,
+            "fg_40_49_made": 5.6,
+            "fg_40_49_attempts": 8.4,
+            "fg_50_plus_made": 4.17,
+            "fg_50_plus_attempts": 4.17,
+            "xpm": 40,
+            "xpa": 41,
+            "projected_fantasy_points": 112,
+            "projected_fantasy_points_per_game": 7,
             "league_scoring": {
               "status": "position_specific_elsewhere",
               "core_points": null,
@@ -1259,9 +1259,9 @@
         },
         "summary": {
           "applicable_provider_count": 2,
-          "listed_provider_count": 0,
-          "consensus_percentile": null,
-          "percentile_spread": null,
+          "listed_provider_count": 2,
+          "consensus_percentile": 37.09,
+          "percentile_spread": 29.03,
           "provider_fantasy_points_policy": "kept_separate_not_averaged"
         }
       },
@@ -1294,20 +1294,73 @@
       },
       "league_scoring_projection": {
         "cbs_sports": {
-          "status": "not_available",
-          "points_min": null,
-          "points_max": null,
-          "provider_projected_fantasy_points": null,
-          "reason": "CBS Sports projection not listed for this player",
-          "components": {}
+          "status": "bounded",
+          "points_min": 123.554,
+          "points_max": 127.724,
+          "provider_projected_fantasy_points": 112.0,
+          "reason": "CBS 50+ field goals are bounded across the league's separate 50-59 and 60+ scoring",
+          "components": {
+            "1_19": {
+              "made": 0.368,
+              "attempts": 0.368,
+              "misses": 0.0,
+              "points": 1.104
+            },
+            "20_29": {
+              "made": 5.9,
+              "attempts": 5.9,
+              "misses": 0.0,
+              "points": 17.7
+            },
+            "30_39": {
+              "made": 7.5,
+              "attempts": 8.3,
+              "misses": 0.8000000000000007,
+              "points": 22.5
+            },
+            "40_49": {
+              "made": 5.6,
+              "attempts": 8.4,
+              "misses": 2.8000000000000007,
+              "points": 22.4
+            },
+            "50_plus": {
+              "made": 4.17,
+              "attempts": 4.17,
+              "misses": 0.0,
+              "points_min": 20.85,
+              "points_max": 25.02,
+              "ambiguity": "CBS combines 50-59 and 60+ while league scoring separates them"
+            },
+            "extra_points": {
+              "made": 40.0,
+              "attempts": 41.0,
+              "misses": 1.0,
+              "points": 39.0
+            }
+          }
         },
         "fftoday": {
-          "status": "not_available",
-          "points_min": null,
-          "points_max": null,
-          "provider_projected_fantasy_points": null,
-          "reason": "FFToday projection not listed for this player",
-          "components": {}
+          "status": "bounded",
+          "points_min": 122.0,
+          "points_max": 200.0,
+          "provider_projected_fantasy_points": 124.0,
+          "reason": "FFToday supplies total field goals without distance buckets, so league scoring is bounded by the minimum and maximum field-goal values",
+          "components": {
+            "field_goals": {
+              "made": 26.0,
+              "attempts": 31.0,
+              "misses": 5.0,
+              "points_min": 78.0,
+              "points_max": 156.0
+            },
+            "extra_points": {
+              "made": 46.0,
+              "attempts": 48.0,
+              "misses": 2.0,
+              "points": 44.0
+            }
+          }
         }
       }
     },
