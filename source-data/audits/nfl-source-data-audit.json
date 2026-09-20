@@ -23,7 +23,7 @@
       "nflverse.contracts"
     ]
   },
-  "canonicalIdentityCount": 28597,
+  "canonicalIdentityCount": 28598,
   "appPlayerCount": 1272,
   "identityCoverage": {
     "matched": 1272,
@@ -333,12 +333,13 @@
     "duplicateLinkProviderIDs": {},
     "duplicateLinkProviderIDCount": 0
   },
-  "identityWeakProviderCollisionCount": 416,
+  "identityWeakProviderCollisionCount": 418,
   "identityWeakProviderCollisions": {
     "OTC": [
       "13753"
     ],
     "NFL": [
+      "35536",
       "63568"
     ],
     "NFLCom": [
@@ -349,6 +350,7 @@
       "63568"
     ],
     "ESB": [
+      "CUR232742",
       "DIX021070",
       "EKE080143",
       "HEL088990",
@@ -788,9 +790,9 @@
     "Rotowire": 7,
     "Sportradar": 1
   },
-  "identitySourceMappingConflictCount": 482,
+  "identitySourceMappingConflictCount": 483,
   "identitySourceMappingConflictsByReason": {
-    "birthdate_conflict_with_nflverse_players": 481,
+    "birthdate_conflict_with_nflverse_players": 482,
     "provider_id_maps_to_multiple_people": 1
   },
   "identitySourceMappingConflicts": [
@@ -1513,6 +1515,13 @@
         {
           "Provider": "GSIS",
           "ID": "00-0041329",
+          "NFLVerseBirthDates": [
+            "2003-03-10"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "4705926",
           "NFLVerseBirthDates": [
             "2003-03-10"
           ]
@@ -15312,6 +15321,43 @@
     {
       "Source": "nflverse.ff-player-ids",
       "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "row",
+      "MFLID": "9891",
+      "Name": "Rennie Curran",
+      "BirthDate": "1988-11-11",
+      "Position": "LB",
+      "DraftYear": "2010",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0027698",
+          "NFLVerseBirthDates": [
+            "1988-11-10"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "5621",
+          "NFLVerseBirthDates": [
+            "1988-11-10"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {
+        "GSIS": "00-0027698",
+        "ESPN": "13270",
+        "PFR": "CurrRe99",
+        "PFF": "5621",
+        "NFLCom": "35536",
+        "CBS": "1264394",
+        "CFBRef": "rennie-curran-1",
+        "Rotowire": "6602"
+      }
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
       "QuarantineScope": "birthdate-only",
       "Resolution": "strong_anchor_consensus",
       "ResolvedBirthDate": "1989-08-31",
@@ -20490,22 +20536,22 @@
       }
     }
   ],
-  "providerMappingConflictCount": 527,
+  "providerMappingConflictCount": 532,
   "providerMappingConflictsByProvider": {
     "CBS": 12,
     "CFBRef": 1,
-    "ESB": 7,
-    "ESPN": 7,
+    "ESB": 8,
+    "ESPN": 8,
     "FantasyData": 2,
     "FantasyPros": 2,
     "Fleaflicker": 2,
-    "GSIS": 6,
+    "GSIS": 7,
     "KTC": 1,
     "MFL": 377,
-    "NFL": 1,
+    "NFL": 2,
     "NFLCom": 5,
     "OTC": 1,
-    "PFF": 6,
+    "PFF": 7,
     "PFR": 3,
     "Rotowire": 5,
     "Sleeper": 4,
@@ -20756,6 +20802,22 @@
     },
     {
       "Provider": "ESB",
+      "ExternalID": "CUR232742",
+      "CanonicalPlayerIDs": [
+        "NFLP-acab4ce16b3e1b6c293a",
+        "NFLP-eff64383a9d3493de069"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-acab4ce16b3e1b6c293a": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
       "ExternalID": "DIX021070",
       "CanonicalPlayerIDs": [
         "NFLP-9226f20764f7e2f9916e",
@@ -20972,6 +21034,22 @@
     },
     {
       "Provider": "ESPN",
+      "ExternalID": "4705926",
+      "CanonicalPlayerIDs": [
+        "NFLP-a391a47611574d2eb5bb",
+        "NFLP-ac52b067c8fe715cc1ef"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-a391a47611574d2eb5bb": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
       "ExternalID": "5083509",
       "CanonicalPlayerIDs": [
         "NFLP-60af69d11def45b210a0",
@@ -21104,6 +21182,22 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-998babaf6b2094b2fc7a": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "GSIS",
+      "ExternalID": "00-0027698",
+      "CanonicalPlayerIDs": [
+        "NFLP-acab4ce16b3e1b6c293a",
+        "NFLP-eff64383a9d3493de069"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-acab4ce16b3e1b6c293a": [
+          "nflverse.players"
         ]
       }
     },
@@ -27240,6 +27334,22 @@
     },
     {
       "Provider": "NFL",
+      "ExternalID": "35536",
+      "CanonicalPlayerIDs": [
+        "NFLP-acab4ce16b3e1b6c293a",
+        "NFLP-eff64383a9d3493de069"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-acab4ce16b3e1b6c293a": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "NFL",
       "ExternalID": "63568",
       "CanonicalPlayerIDs": [
         "NFLP-a391a47611574d2eb5bb",
@@ -27449,6 +27559,22 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-998babaf6b2094b2fc7a": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "PFF",
+      "ExternalID": "5621",
+      "CanonicalPlayerIDs": [
+        "NFLP-acab4ce16b3e1b6c293a",
+        "NFLP-eff64383a9d3493de069"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-acab4ce16b3e1b6c293a": [
+          "nflverse.players"
         ]
       }
     },
@@ -29065,13 +29191,13 @@
     "externalSnapshotSeasonCount": 7,
     "externalSnapshotCount": 14,
     "externalSnapshotPlayerCount": 142898,
-    "externalResolvedPlayerCount": 60884,
+    "externalResolvedPlayerCount": 60886,
     "externalUnresolvedPlayerCount": 81852,
     "externalInsufficientCorroborationCount": 81852,
-    "externalConflictingPlayerCount": 162,
-    "externalHistoricalClaimCount": 144432,
-    "externalSleeperClaimCount": 31708,
-    "historicalClaimCount": 145629
+    "externalConflictingPlayerCount": 160,
+    "externalHistoricalClaimCount": 144436,
+    "externalSleeperClaimCount": 31709,
+    "historicalClaimCount": 145633
   },
   "historicalResolutionConflictCount": 170,
   "historicalResolutionConflictsByReason": {
@@ -33556,8 +33682,8 @@
     },
     "weeklyRosters": {
       "partitionCount": 511,
-      "recordCount": 894261,
-      "resolvedIdentityCount": 882925,
+      "recordCount": 894264,
+      "resolvedIdentityCount": 882928,
       "unresolvedIdentityCount": 11336,
       "missingProviderIDRowCount": 149,
       "equivalentDuplicateRowCount": 17456,
@@ -33573,8 +33699,8 @@
     "snapCounts": {
       "partitionCount": 280,
       "recordCount": 326196,
-      "resolvedIdentityCount": 325969,
-      "unresolvedIdentityCount": 227,
+      "resolvedIdentityCount": 325970,
+      "unresolvedIdentityCount": 226,
       "missingProviderIDRowCount": 0
     },
     "sleeperPlayers": {
