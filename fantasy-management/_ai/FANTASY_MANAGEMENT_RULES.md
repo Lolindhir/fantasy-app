@@ -608,6 +608,8 @@ Kicker ist der aktuelle Referenzfall:
 
 Die endgültige wöchentliche Start/Sit- und Waiver-Entscheidung gehört in einen übergeordneten Workflow, der alle Positionen und den vollständigen Rosterpreis gemeinsam bewertet.
 
+Für konkrete Start/Sit-Empfehlungen ist der vollständige Boundary-, gemeinsame FLEX-/Positions- und Late-Swap-/AutoSub-Workflow aus `fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md` verbindlich. Insbesondere erhalten aktuell gesetzte Starter keinen Incumbency-Bonus, und liga-spezifische AutoSub-Regeln müssen aus den aktuellen League Settings statt aus dauerhaft angenommenen Werten abgeleitet werden.
+
 Er muss insbesondere berücksichtigen:
 
 - beste legale Startaufstellung;

@@ -24,6 +24,19 @@ Important files:
 
 `public/data/League.json` remains the primary current source for league settings, draft-pick references, roster size, lineup settings, scoring, salary cap fields, phase/status and ownership consumers not yet migrated. Canonical ownership is now productive in five scoped Operations consumers: `managed-roster-signals.json` (TeamID 1 membership/starter facts since 6Q), `external-signal-relevance.json` (league-wide Roster/Reserve/Taxi ownership since 6R), `player-signals.json` (league-wide ownership and `league_owned` population reason since 6S) and `fa-board-readmodel.json` (league-wide availability ownership plus Managed-Team Reserve/Taxi occupancy/capacity basis since 6T) and `managed-roster-overview.json` (Managed-Team membership/buckets inherited from canonical-active managed-roster-signals since 6U). In the migrated ownership consumers `League.json` no longer supplies membership; it remains only for consumer-specific App enrichment plus the existing trigger/freshness bridge. For `player-signals`, that retained enrichment includes managed-team display metadata and league `ScoringType`; for the FA board it includes league settings, phase/status, `RosterSize`, `SeasonKickoff`, `CurrentWeek` and team display metadata.
 
+### Sleeper platform-mechanics source hierarchy
+
+For platform features whose behavior can materially change a Fantasy Management decision, keep the current league setting separate from the semantic meaning of that setting:
+
+- use the current `public/data/League.json` value as the canonical app-level source for which Sleeper setting is currently active in this league;
+- use current official Sleeper Support/documentation as the preferred external source for what that feature or setting means operationally;
+- do not infer platform semantics only from a setting key, an old chat explanation, remembered behavior or a community post;
+- community posts, Reddit and similar sources may help diagnose edge cases, but they do not override either the current league setting or official platform documentation;
+- when AutoSubs materially affect a weekly lineup decision, resolve current league values such as allowed substitute count, timing eligibility and lock-related settings from `League.json`, then verify the current trigger/lock/substitution semantics against official Sleeper documentation before relying on them.
+
+Current official AutoSub documentation:
+`https://support.sleeper.com/en/articles/9731991-how-does-player-autosubs-work`
+
 The user team is:
 
 - Team name: `Mighty Giants`
