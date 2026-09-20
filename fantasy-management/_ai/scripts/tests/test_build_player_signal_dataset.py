@@ -204,6 +204,67 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
+            "source-data/nfl/identities/players.json",
+            {
+                "Players": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "Name": "Kicker One",
+                        "IDs": {"Sleeper": "1", "ESPN": "101"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-2",
+                        "Name": "Kicker Two",
+                        "IDs": {"Sleeper": "2", "ESPN": "202"},
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-3",
+                        "Name": "Inactive Free Agent",
+                        "IDs": {"Sleeper": "3", "ESPN": "303"},
+                    },
+                ]
+            },
+        )
+        self.write_json(
+            root,
+            "source-data/nfl/platform/sleeper/players.json",
+            {
+                "Records": [
+                    {
+                        "CanonicalPlayerID": "canonical-1",
+                        "SleeperPlayerID": "1",
+                        "Status": "Active",
+                        "Team": "AAA",
+                        "Position": "K",
+                        "FantasyPositions": ["K"],
+                        "DepthChartPosition": "K",
+                        "DepthChartOrder": 1,
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-2",
+                        "SleeperPlayerID": "2",
+                        "Status": "Active",
+                        "Team": "BBB",
+                        "Position": "K",
+                        "FantasyPositions": ["K"],
+                        "DepthChartPosition": null,
+                        "DepthChartOrder": null,
+                    },
+                    {
+                        "CanonicalPlayerID": "canonical-3",
+                        "SleeperPlayerID": "3",
+                        "Status": "Inactive",
+                        "Team": null,
+                        "Position": "K",
+                        "FantasyPositions": ["K"],
+                        "DepthChartPosition": null,
+                        "DepthChartOrder": null,
+                    },
+                ]
+            },
+        )
+        self.write_json(
+            root,
             "public/data/Players.json",
             [
                 {
@@ -409,6 +470,8 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 "sources": {
                     "league_display": "public/data/League.json",
                     "players": "public/data/Players.json",
+                    "canonical_player_identities": "source-data/nfl/identities/players.json",
+                    "canonical_sleeper_players": "source-data/nfl/platform/sleeper/players.json",
                     "timestamps": "public/data/Timestamps.json",
                     "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json",
                 },
@@ -484,6 +547,86 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
+            self.assertIn("canonical_player_identities", source_ids)
+            self.assertIn("canonical_sleeper_players", source_ids)
+
+    def test_canonical_identity_and_sleeper_fields_override_legacy_player_mirrors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            players_path = root / "public/data/Players.json"
+            players = json.loads(players_path.read_text(encoding="utf-8"))
+            players[0].update(
+                {
+                    "Name": "Wrong Legacy Name",
+                    "Position": "WR",
+                    "Status": "Legacy Status",
+                    "ESPNID": "999999",
+                    "SleeperDepthChartPosition": "WR",
+                    "SleeperDepthChartOrder": 9,
+                    "Salary": 55,
+                    "SalaryProjected": 66,
+                    "TeamAbbr": "AAA",
+                }
+            )
+            players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["Position"] = "DB"
+            sleeper["Records"][0]["FantasyPositions"] = ["DB", "K"]
+            sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            player = next(item for item in result["players"] if item["player_id"] == "1")
+
+            self.assertEqual("Kicker One", player["name"])
+            self.assertEqual("K", player["position"])
+            self.assertEqual("AAA", player["nfl_team"])
+            self.assertEqual("Active", player["app_data"]["status"])
+            self.assertEqual("101", player["app_data"]["espn_id"])
+            self.assertEqual(55, player["app_data"]["salary"])
+            self.assertEqual(66, player["app_data"]["salary_projected"])
+            self.assertEqual("K", player["role"]["sleeper_depth_chart_position"])
+            self.assertEqual(1, player["role"]["sleeper_depth_chart_order"])
+            self.assertEqual("listed", player["source_signals"]["ffc-k"]["coverage_status"])
+            self.assertEqual(
+                "normalized_name_position",
+                player["source_signals"]["ffc-k"]["join_method"],
+            )
+
+    def test_canonical_player_identity_mismatch_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["CanonicalPlayerID"] = "canonical-other"
+            sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                MODULE.PlayerSignalMaterializationError,
+                "Canonical Sleeper player identity mismatch",
+            ):
+                MODULE.build(root, config_path)
+
+    def test_malformed_canonical_fantasy_positions_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][0]["FantasyPositions"] = "K"
+            sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                MODULE.PlayerSignalMaterializationError,
+                "FantasyPositions must be an array",
+            ):
+                MODULE.build(root, config_path)
 
     def test_preserves_top_n_absence_and_nominal_role_semantics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

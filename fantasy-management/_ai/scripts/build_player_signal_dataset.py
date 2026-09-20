@@ -161,15 +161,46 @@ def projection_view(
     }
 
 
-def role_view(player: dict[str, Any]) -> dict[str, Any]:
-    depth_position = ops.optional_text(player.get("SleeperDepthChartPosition"))
-    depth_order = ops.optional_number(player.get("SleeperDepthChartOrder"))
+def role_view(sleeper_player: dict[str, Any]) -> dict[str, Any]:
+    depth_position = ops.optional_text(sleeper_player.get("DepthChartPosition"))
+    depth_order = ops.optional_number(sleeper_player.get("DepthChartOrder"))
     return {
         "sleeper_depth_chart_position": depth_position,
         "sleeper_depth_chart_order": depth_order,
         "coverage_status": "available" if depth_position is not None or depth_order is not None else "not_available",
         "interpretation": "nominal_depth_chart_only_not_usage",
     }
+
+
+def canonical_player_context(
+    player_id: str,
+    legacy_player: dict[str, Any],
+    identity_by_sleeper: dict[str, dict[str, Any]],
+    sleeper_player_lookup: dict[str, dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    identity = identity_by_sleeper.get(player_id)
+    if identity is None:
+        raise PlayerSignalMaterializationError(
+            f"Player-signal player {player_id} has no Canonical Identity Sleeper mapping"
+        )
+    sleeper_player = sleeper_player_lookup.get(player_id)
+    if sleeper_player is None:
+        raise PlayerSignalMaterializationError(
+            f"Player-signal player {player_id} has no Canonical Sleeper player record"
+        )
+    try:
+        position = ops.canonical_fantasy_position(sleeper_player)
+    except ops.MaterializationError as exc:
+        raise PlayerSignalMaterializationError(
+            f"Canonical Sleeper player {player_id} has invalid fantasy position data: {exc}"
+        ) from exc
+
+    player = dict(legacy_player)
+    player["Name"] = ops.optional_text(identity.get("Name"))
+    player["Position"] = position
+    # TeamAbbr intentionally remains the legacy App field in 6Y because nfl_team
+    # currently participates in the player-signal population rule.
+    return player, identity, sleeper_player
 
 
 def validate_output(data: dict[str, Any]) -> None:
@@ -202,18 +233,34 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     core = config["sources"]
     league_display_path = root / core["league_display"]
     players_path = root / core["players"]
+    canonical_identities_path = root / core["canonical_player_identities"]
+    canonical_sleeper_players_path = root / core["canonical_sleeper_players"]
     timestamps_path = root / core["timestamps"]
     external_signal_path = root / core["external_signal_relevance"]
     catalog_path = root / config["source_catalog"]
 
     league_display = ops.load_json(league_display_path)
     players = ops.load_json(players_path)
+    canonical_identities = ops.load_json(canonical_identities_path)
+    canonical_sleeper_players = ops.load_json(canonical_sleeper_players_path)
     timestamps = ops.load_json(timestamps_path)
     external_signal_document = ops.load_json(external_signal_path)
     catalog = ops.load_json(catalog_path)
     ops.validate_catalog(catalog)
     if not isinstance(players, list):
         raise PlayerSignalMaterializationError("Players input must be a JSON array")
+    try:
+        identity_by_sleeper = ops.build_canonical_identity_by_sleeper(
+            canonical_identities
+        )
+        sleeper_player_lookup = ops.build_canonical_sleeper_player_lookup(
+            canonical_sleeper_players,
+            identity_by_sleeper,
+        )
+    except ops.MaterializationError as exc:
+        raise PlayerSignalMaterializationError(
+            f"Canonical player identity/platform inputs are invalid: {exc}"
+        ) from exc
 
     managed_team_id = str(config["managed_team"]["team_id"])
     canonical_config = config.get("canonical_league") or {}
@@ -289,6 +336,16 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         ),
         ops.source_file("players", players_path, root, player_timestamp),
         ops.source_file(
+            "canonical_player_identities",
+            canonical_identities_path,
+            root,
+        ),
+        ops.source_file(
+            "canonical_sleeper_players",
+            canonical_sleeper_players_path,
+            root,
+        ),
+        ops.source_file(
             "timestamps",
             timestamps_path,
             root,
@@ -352,10 +409,16 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     population_reason_counts: Counter[str] = Counter()
     output_players: list[dict[str, Any]] = []
 
-    for player in players:
-        if not isinstance(player, dict) or player.get("ID") is None:
+    for legacy_player in players:
+        if not isinstance(legacy_player, dict) or legacy_player.get("ID") is None:
             continue
-        player_id = str(player["ID"])
+        player_id = str(legacy_player["ID"])
+        player, identity, sleeper_player = canonical_player_context(
+            player_id,
+            legacy_player,
+            identity_by_sleeper,
+            sleeper_player_lookup,
+        )
         position = str(player.get("Position") or "").upper()
         if position not in allowed_positions:
             continue
@@ -431,16 +494,16 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 "population_reasons": reasons,
                 "ownership": ownership_value,
                 "app_data": {
-                    "status": ops.optional_text(player.get("Status")),
-                    "age": ops.optional_number(player.get("Age")),
-                    "years_experience": ops.optional_number(player.get("Year")),
-                    "salary": ops.optional_number(player.get("Salary")),
-                    "salary_projected": ops.optional_number(player.get("SalaryProjected")),
-                    "is_free_agent_source_field": ops.optional_bool(player.get("IsFreeAgent")),
-                    "espn_id": ops.optional_text(player.get("ESPNID")),
+                    "status": ops.optional_text(sleeper_player.get("Status")),
+                    "age": ops.optional_number(legacy_player.get("Age")),
+                    "years_experience": ops.optional_number(legacy_player.get("Year")),
+                    "salary": ops.optional_number(legacy_player.get("Salary")),
+                    "salary_projected": ops.optional_number(legacy_player.get("SalaryProjected")),
+                    "is_free_agent_source_field": ops.optional_bool(legacy_player.get("IsFreeAgent")),
+                    "espn_id": ops.optional_text((identity.get("IDs") or {}).get("ESPN")),
                 },
-                "injury": ops.derive_injury_signal(player),
-                "role": role_view(player),
+                "injury": ops.derive_injury_signal(legacy_player),
+                "role": role_view(sleeper_player),
                 "source_signals": enriched_results,
                 "market": market,
                 "redraft_adp": redraft_adp,

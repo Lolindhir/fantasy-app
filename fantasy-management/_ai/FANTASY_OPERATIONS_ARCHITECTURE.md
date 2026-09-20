@@ -78,7 +78,7 @@ fantasy-management/_ai/scripts/build_player_signal_dataset.py
 
 The workflow builds `source-freshness.json` first and `external-signal-relevance.json` before `player-signals.json`, so the central contracts consume the latest successfully materialized readiness, activity and ownership context from the same run. All generated outputs are staged and published together through the existing retry/rebuild write path.
 
-The central player-signal dataset is league-wide rather than managed-roster-only. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
+The central player-signal dataset is league-wide rather than managed-roster-only. Since Checkpoint 6Y, its player name, fantasy-relevant position, Sleeper status, ESPN identity and nominal Sleeper depth-chart fields are read from Canonical NFL Identity/Platform data. `Players.json` still supplies the population-carrying `TeamAbbr` / `has_nfl_team` bridge plus Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
 
 - the player currently has an NFL team;
 - the player is owned in the fantasy league;
@@ -87,10 +87,10 @@ The central player-signal dataset is league-wide rather than managed-roster-only
 
 The dataset joins:
 
-- current player identity and app fields;
+- Canonical NFL player name/fantasy position plus Canonical ESPN identity;
+- Canonical Sleeper status and nominal depth-chart position/order as source facts, with depth chart explicitly not treated as usage truth;
+- remaining App/legacy enrichment fields including TeamAbbr population bridge, Age/Experience, Salary/SalaryProjected, Tank01 IsFreeAgent and structured injury;
 - league ownership derived from every team’s Roster/Reserve/Taxi union;
-- structured injury fields;
-- Sleeper nominal depth-chart position/order as a role hint, explicitly not as usage truth;
 - Dynasty expert-consensus and market-value signals;
 - Redraft ADP including the dedicated Kicker ADP feed;
 - provider projections;
