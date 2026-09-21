@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "policy_id": "season-aware-fantasy-operations",
+  "season_context_id": "nfl-regular-season-context",
+  "purpose": "Data-driven Fantasy Operations activity and signal criticality by canonical NFL regular-season phase.",
+  "modules": {
+    "free_agent_monitoring": {
+      "phases": {
+        "pre_regular_season": {
+          "active": true
+        },
+        "regular_season": {
+          "active": true
+        },
+        "post_regular_season": {
+          "active": false
+        }
+      }
+    }
+  },
+  "signal_families": {
+    "redraft_adp": {
+      "phases": {
+        "pre_regular_season": {
+          "relevance": "required"
+        },
+        "regular_season": {
+          "relevance": "secondary"
+        },
+        "post_regular_season": {
+          "relevance": "inactive"
+        }
+      }
+    }
+  },
+  "defaults": {
+    "active_module_signal_relevance": "required"
+  }
+}
