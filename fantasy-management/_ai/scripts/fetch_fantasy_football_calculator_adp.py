@@ -19,8 +19,11 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from fantasy_football_calculator_adp_core import (  # noqa: E402
     CSV_FIELDS,
@@ -40,10 +43,20 @@ from fantasy_football_calculator_adp_storage import (  # noqa: E402
     write_format,
 )
 from fantasy_football_calculator_kicker_adp import (  # noqa: E402
-    FantasyFootballCalculatorKickerCoverageError,
     FantasyFootballCalculatorKickerError,
+    RANKING_ID as KICKER_RANKING_ID,
     parse_kickers,
     write_kicker_format,
+)
+from fantasy_football_calculator_source_quality import (  # noqa: E402
+    FantasyFootballCalculatorQualityError,
+    evaluate_dataset_coverage,
+    load_contract,
+    write_observation,
+)
+from tools.nfl_season_context import (  # noqa: E402
+    NflSeasonContextError,
+    resolve_nfl_season_context,
 )
 
 
@@ -75,7 +88,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[3],
+        default=REPO_ROOT,
     )
     parser.add_argument("--fetched-at")
     parser.add_argument(
@@ -97,18 +110,24 @@ def main(argv: list[str] | None = None) -> int:
         fetched_at = parse_timestamp(args.fetched_at)
         repo_root = args.repo_root.resolve()
         saved = parse_input_mapping(args.input)
+        season_context = resolve_nfl_season_context(
+            repo_root,
+            as_of=fetched_at,
+            season=args.season,
+        )
+        contract = load_contract(repo_root)
+
         prepared: list[dict[str, Any]] = []
         kicker_prepared: dict[str, Any] | None = None
-        kicker_coverage_warning: str | None = None
+        observations: dict[str, dict[str, Any]] = {}
 
-        # Validate both source formats before publishing either one.
+        # Validate both source formats technically before publishing any normalized dataset.
         for key, config in FORMAT_CONFIGS.items():
             if key in saved:
                 payload = json.loads(saved[key].read_text(encoding="utf-8"))
                 if not isinstance(payload, dict):
                     raise FantasyFootballCalculatorFetchError(
-                        f"Saved FFC payload is not an object for "
-                        f"{config['ranking_id']}"
+                        f"Saved FFC payload is not an object for {config['ranking_id']}"
                     )
                 response_headers: dict[str, str] = {}
                 source_url = build_source_url(config, args.season)
@@ -118,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.season,
                     args.timeout,
                 )
+
             sample = validate_payload(
                 payload,
                 config,
@@ -126,23 +146,47 @@ def main(argv: list[str] | None = None) -> int:
                 max_stale_days=args.max_stale_days,
             )
             rows, diagnostics = parse_players(payload, config, sample)
-            prepared.append({
-                "key": key,
-                "config": config,
-                "payload": payload,
-                "response_headers": response_headers,
-                "source_url": source_url,
+            quality = evaluate_dataset_coverage(
+                contract,
+                dataset_id=config["ranking_id"],
+                phase=season_context["phase"],
+                observed_rows=len(rows),
+            )
+            observations[config["ranking_id"]] = {
+                "dataset_id": config["ranking_id"],
+                "technical_status": "valid",
+                **quality,
                 "sample": sample,
-                "rows": rows,
                 "diagnostics": diagnostics,
-            })
+            }
+            if quality["publishable"]:
+                prepared.append({
+                    "key": key,
+                    "config": config,
+                    "payload": payload,
+                    "response_headers": response_headers,
+                    "source_url": source_url,
+                    "sample": sample,
+                    "rows": rows,
+                    "diagnostics": diagnostics,
+                })
 
             if key == "ppr-8-team":
-                try:
-                    kicker_rows, kicker_diagnostics = parse_kickers(payload, sample)
-                except FantasyFootballCalculatorKickerCoverageError as exc:
-                    kicker_coverage_warning = str(exc)
-                else:
+                kicker_rows, kicker_diagnostics = parse_kickers(payload, sample)
+                kicker_quality = evaluate_dataset_coverage(
+                    contract,
+                    dataset_id=KICKER_RANKING_ID,
+                    phase=season_context["phase"],
+                    observed_rows=len(kicker_rows),
+                )
+                observations[KICKER_RANKING_ID] = {
+                    "dataset_id": KICKER_RANKING_ID,
+                    "technical_status": "valid",
+                    **kicker_quality,
+                    "sample": sample,
+                    "diagnostics": kicker_diagnostics,
+                }
+                if kicker_quality["publishable"]:
                     kicker_prepared = {
                         "payload": payload,
                         "response_headers": response_headers,
@@ -152,36 +196,15 @@ def main(argv: list[str] | None = None) -> int:
                         "diagnostics": kicker_diagnostics,
                     }
 
-        if kicker_prepared is None and kicker_coverage_warning is None:
-            raise FantasyFootballCalculatorKickerError(
-                "PPR 8-team payload was not prepared for kicker materialization"
-            )
-
         if args.dry_run:
-            for item in prepared:
-                counts = Counter(row["position"] for row in item["rows"])
+            for dataset_id, observation in observations.items():
                 print(
-                    f"FFC ADP ranking={item['config']['ranking_id']} "
-                    f"rows={len(item['rows'])} "
-                    f"drafts={item['sample']['total_drafts']} "
-                    f"quality={item['sample']['quality']} "
-                    + " ".join(
-                        f"{position}={counts[position]}"
-                        for position in sorted(counts)
-                    )
-                )
-            if kicker_prepared is not None:
-                print(
-                    "FFC ADP ranking=redraft-ppr-8-team-kicker "
-                    f"rows={len(kicker_prepared['rows'])} "
-                    f"drafts={kicker_prepared['sample']['total_drafts']} "
-                    f"quality={kicker_prepared['sample']['quality']} "
-                    f"K={len(kicker_prepared['rows'])}"
-                )
-            else:
-                print(
-                    "FFC ADP ranking=redraft-ppr-8-team-kicker "
-                    f"skipped-preserving-last-good reason={kicker_coverage_warning}"
+                    f"FFC ADP ranking={dataset_id} "
+                    f"rows={observation['observed_rows']} "
+                    f"coverage={observation['coverage_status']} "
+                    f"minimum={observation['minimum_usable_rows']} "
+                    f"expected={observation['expected_minimum_rows']} "
+                    f"phase={season_context['phase']}"
                 )
             return 0
 
@@ -221,16 +244,34 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[ffc-adp:ppr-8-team-kicker] {kicker_action}")
             for path in kicker_paths:
                 print(path)
-        else:
-            print(
-                "[ffc-adp:ppr-8-team-kicker] skipped-preserving-last-good: "
-                f"{kicker_coverage_warning}",
-                file=sys.stderr,
-            )
+
+        for dataset_id, observation in observations.items():
+            if not observation["publishable"]:
+                print(
+                    f"[ffc-adp:{dataset_id}] preserving-last-good: "
+                    f"coverage={observation['coverage_status']} "
+                    f"rows={observation['observed_rows']}",
+                    file=sys.stderr,
+                )
+
+        observation_path = write_observation(
+            repo_root,
+            {
+                "schema_version": 1,
+                "source_id": "fantasy-football-calculator",
+                "technical_status": "success",
+                "checked_at": fetched_at.isoformat().replace("+00:00", "Z"),
+                "season_context": season_context,
+                "datasets": observations,
+            },
+        )
+        print(observation_path)
         return 0
     except (
         FantasyFootballCalculatorFetchError,
         FantasyFootballCalculatorKickerError,
+        FantasyFootballCalculatorQualityError,
+        NflSeasonContextError,
         OSError,
         ValueError,
         json.JSONDecodeError,
