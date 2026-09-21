@@ -57,10 +57,10 @@ class LoadedCatalogSource:
     definition: dict[str, Any]
     pointer_source: SourceFile
     ranking_source: SourceFile
-    observation_source: SourceFile | None
-    current_observation: dict[str, Any] | None
     rows: list[dict[str, str]]
     index: dict[str, Any]
+    observation_source: SourceFile | None = None
+    current_observation: dict[str, Any] | None = None
 
 
 def canonical_json(value: Any) -> str:
