@@ -86,6 +86,30 @@ Der Gesamtstatus ist:
 
 Im aktuellen Produktionsvertrag sind alle sechs überwachten Fantasy-Operations-Quellen nicht-blockierend. Ein fehlender oder veralteter externer Source-Heartbeat führt deshalb zu `degraded`, kann aber weiterhin `no_event_conclusion_allowed = false` setzen. App-Daten wie League und Players werden nicht über diesen Mechanismus zu Blocking Inputs erklärt.
 
+## Season Context, Source Freshness und Dataset Quality
+
+Das Freshness Gate beantwortet ab Schema-Version 3 zwei getrennte Fragen:
+
+- **Ist die technische Source-Beobachtung frisch?**
+- **Wie kritisch ist die betroffene Signalfamilie für das aktuell aktive Monitoring?**
+
+Dataset-Coverage selbst wird nicht mehr durch einen fehlenden Provider-Heartbeat simuliert. Source-spezifische Dataset-Observation-Artefakte wie FFC `observation-status.json` halten `usable`, Coverage-Grenzen, Phase und Last-Good-Bezug separat fest. Ein structurally-valid Refresh kann daher den Source-Heartbeat aktualisieren, obwohl ein einzelnes Dataset wegen `insufficient_coverage` keinen neuen Ranking-Snapshot veröffentlicht.
+
+Der kanonische NFL-Context stammt aus `source-data/nfl/schedules/<season>.json`; die versionierte Consumer-Policy liegt in `fantasy-management/automation/season-aware-operations-policy.json`. Scheduler-Zeitpunkte bestimmen nicht die fachliche Relevanz.
+
+Das Gate publiziert zusätzlich:
+
+- `season_context`;
+- `monitoring.active`;
+- `monitoring.signal_family_relevance`;
+- pro Source die effektive Blocking-/No-Event-Criticality nach Phase.
+
+Ein nicht frisches `secondary`-Signal bleibt ein Degraded-/Observability-Befund, verhindert aber nicht allein `no_event_conclusion_allowed = true`. Ein `inactive`-Signal ist für den Consumer nicht readiness-relevant.
+
+### `decision = inactive`
+
+Ist das Daily Free-Agent-Monitoring laut kanonischem Season Context fachlich inaktiv, gilt `monitoring.active = false`, `decision = inactive`, `allowed = false` und `no_event_conclusion_allowed = false`. Das bedeutet nicht „keine Events“, sondern „dieses Monitoring-Modul ist in dieser Phase nicht auszuführen bzw. nicht zu interpretieren“.
+
 ## Monitoring-Verhalten
 
 `source-freshness.json -> monitoring` ist vor jeder Interpretation von `free-agent-movement-events.json` zu lesen.
