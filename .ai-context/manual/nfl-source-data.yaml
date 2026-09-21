@@ -533,3 +533,22 @@ validation:
   - Sleeper object key und player_id duerfen sich nicht widersprechen.
   - Phase-1-Abdeckung und Identity-Resolution werden im Audit unter phase1Datasets publiziert.
   - Reale Source-Materialisierung muss den bestehenden zweiten semantischen No-op-Pass bestehen.
+
+
+seasonContext:
+  resolver: tools/nfl_season_context.py
+  contextId: nfl-regular-season-context
+  canonicalBasis: source-data/nfl/schedules/<season>.json
+  providerIndependent: true
+  sleeperDependency: false
+  phases:
+    - pre_regular_season
+    - regular_season
+    - post_regular_season
+  rule: >
+    Der gemeinsame Season Context wird ausschließlich aus kanonischen REG-
+    Schedule-Fakten und einem expliziten As-of-Datum abgeleitet. Die v1-Phasen
+    behaupten bewusst keine feinere Preseason-/Postseason-/Offseason-Grenze, wenn
+    diese nicht durch den aktuellen kanonischen Schedule getragen wird. Consumer
+    dürfen daraus Aktivität und Relevanz ableiten; Scheduler-Zeitpunkte sind keine
+    Domain-Semantik.
