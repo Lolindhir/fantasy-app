@@ -51,12 +51,10 @@ class FantasyFootballCalculatorKickerTests(unittest.TestCase):
         self.assertEqual(10, len(rows))
         self.assertEqual(10, diagnostics["normalized_player_count"])
 
-    def test_rejects_kicker_population_below_catalog_minimum(self):
-        with self.assertRaisesRegex(
-            module.FantasyFootballCalculatorKickerCoverageError,
-            "Too few FFC kicker rows",
-        ):
-            module.parse_kickers(self.payload(9), self.sample())
+    def test_parser_preserves_kicker_population_below_quality_minimum(self):
+        rows, diagnostics = module.parse_kickers(self.payload(9), self.sample())
+        self.assertEqual(9, len(rows))
+        self.assertEqual(9, diagnostics["normalized_player_count"])
 
     def test_writes_and_skips_unchanged_kicker_snapshot(self):
         rows, diagnostics = module.parse_kickers(self.payload(), self.sample())
