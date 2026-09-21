@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-quality-policy.schema.json",
+  "title": "Season-aware Source Quality Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source_id", "season_context_id", "purpose", "datasets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "season_context_id": {"const": "nfl-regular-season-context"},
+    "purpose": {"type": "string", "minLength": 1},
+    "datasets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phases"],
+        "properties": {
+          "phases": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pre_regular_season", "regular_season", "post_regular_season"],
+            "properties": {
+              "pre_regular_season": {"$ref": "#/$defs/phase"},
+              "regular_season": {"$ref": "#/$defs/phase"},
+              "post_regular_season": {"$ref": "#/$defs/phase"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "expected_minimum_rows", "minimum_usable_rows"],
+      "properties": {
+        "active": {"type": "boolean"},
+        "expected_minimum_rows": {"type": "integer", "minimum": 0},
+        "minimum_usable_rows": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
