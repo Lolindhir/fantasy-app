@@ -48,7 +48,21 @@
       "required_for_no_event_conclusion": true,
       "affected_signal_families": [
         "redraft_adp"
-      ]
+      ],
+      "phase_policy": {
+        "regular_season": {
+          "active": true,
+          "required_for_no_event_conclusion": false
+        },
+        "postseason": {
+          "active": false,
+          "required_for_no_event_conclusion": false
+        },
+        "post_regular_season": {
+          "active": false,
+          "required_for_no_event_conclusion": false
+        }
+      }
     },
     {
       "id": "fftoday",
@@ -89,5 +103,9 @@
         "external_activity"
       ]
     }
-  ]
+  ],
+  "domain_context": {
+    "resolver": "canonical_nfl_schedule",
+    "source_root": "source-data/nfl/schedules"
+  }
 }

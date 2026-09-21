@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasy-football-calculator",
+  "quality_model": "phase-aware-coverage",
+  "season_context_resolver": "tools/nfl_season_context.py",
+  "datasets": {
+    "redraft-ppr-8-team": {
+      "minimum_usable_rows": 50,
+      "expected_minimum_rows": 80,
+      "phase_overrides": {
+        "regular_season": {
+          "expected_minimum_rows": 50
+        }
+      }
+    },
+    "redraft-2qb-10-team": {
+      "minimum_usable_rows": 50,
+      "expected_minimum_rows": 80,
+      "phase_overrides": {
+        "regular_season": {
+          "expected_minimum_rows": 50
+        }
+      }
+    },
+    "redraft-ppr-8-team-kicker": {
+      "minimum_usable_rows": 10,
+      "expected_minimum_rows": 10,
+      "phase_overrides": {}
+    }
+  }
+}

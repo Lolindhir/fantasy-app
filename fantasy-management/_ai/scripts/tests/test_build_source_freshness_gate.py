@@ -72,6 +72,27 @@ class SourceFreshnessGateTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tempdir.cleanup()
 
+    def _write_schedule(self) -> None:
+        path = self.root / "source-data/nfl/schedules/2026.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "SchemaVersion": 2,
+                    "Season": 2026,
+                    "SourceDataset": "nflverse.schedules",
+                    "Finalized": False,
+                    "Games": [
+                        {"GameID": "2026_01_A_B", "GameType": "REG", "Week": 1, "GameDay": "2026-09-09"},
+                        {"GameID": "2026_18_A_B", "GameType": "REG", "Week": 18, "GameDay": "2027-01-10"},
+                        {"GameID": "2026_19_A_B", "GameType": "WC", "Week": 19, "GameDay": "2027-01-16"},
+                        {"GameID": "2026_22_A_B", "GameType": "SB", "Week": 22, "GameDay": "2027-02-14"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
     def _write_timestamps(self, league: str) -> None:
         (self.root / "public/data/Timestamps.json").write_text(
             json.dumps({"League": league}), encoding="utf-8"
@@ -181,6 +202,55 @@ class SourceFreshnessGateTests(unittest.TestCase):
 
         self.assertEqual("failed", source["status"])
         self.assertEqual("latest_heartbeat_not_successful", source["reason"])
+
+    def test_regular_season_secondary_source_does_not_block_no_event_conclusion(self) -> None:
+        self._write_schedule()
+        self._write_timestamps("2026-09-21T04:35:00Z")
+        self.config["domain_context"] = {
+            "resolver": "canonical_nfl_schedule",
+            "source_root": "source-data/nfl/schedules",
+        }
+        self.config["sources"][1]["phase_policy"] = {
+            "regular_season": {
+                "active": True,
+                "required_for_no_event_conclusion": False,
+            }
+        }
+        report = freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=datetime(2026, 9, 21, 4, 45, tzinfo=timezone.utc),
+        )
+        self.assertEqual("regular_season", report["domain_context"]["phase"])
+        self.assertEqual("degraded", report["overall_status"])
+        self.assertEqual("proceed_degraded", report["monitoring"]["decision"])
+        self.assertTrue(report["monitoring"]["no_event_conclusion_allowed"])
+        self.assertEqual(["fantasycalc"], report["monitoring"]["unfresh_source_ids"])
+        source = next(item for item in report["sources"] if item["id"] == "fantasycalc")
+        self.assertFalse(source["required_for_no_event_conclusion"])
+
+    def test_postseason_inactive_source_is_removed_from_expected_population(self) -> None:
+        self._write_schedule()
+        self._write_timestamps("2027-01-20T04:35:00Z")
+        self.config["domain_context"] = {
+            "resolver": "canonical_nfl_schedule",
+            "source_root": "source-data/nfl/schedules",
+        }
+        self.config["sources"][1]["phase_policy"] = {
+            "postseason": {
+                "active": False,
+                "required_for_no_event_conclusion": False,
+            }
+        }
+        report = freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=datetime(2027, 1, 20, 4, 45, tzinfo=timezone.utc),
+        )
+        self.assertEqual("postseason", report["domain_context"]["phase"])
+        self.assertEqual(1, report["population"]["source_count"])
+        self.assertEqual("ok", report["overall_status"])
+        self.assertEqual(["league"], [item["id"] for item in report["sources"]])
 
     def test_heartbeat_writer_records_success_without_equating_unchanged_with_failure(self) -> None:
         heartbeat = heartbeat_writer.build_heartbeat(

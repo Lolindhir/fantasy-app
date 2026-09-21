@@ -523,3 +523,24 @@ frontendTargets:
       - responsive and cross-feature integration validation
       - Salary & Trade Simulator expansion using the same shared salary primitives
       - remove the legacy Teams salary view only after functional parity for exclude/cut scenarios
+
+sharedDomainContext:
+  nflSeasonContext:
+    owner: shared-data-platform-product-semantics
+    resolver: tools/nfl_season_context.py
+    canonicalInputs:
+      - source-data/nfl/schedules/<season>.json
+    phases:
+      - pre_regular_season
+      - regular_season
+      - postseason
+      - post_regular_season
+    rule: >
+      Consumer workflows must derive NFL season phase from canonical schedule facts
+      through the shared resolver rather than reconstructing it from Sleeper, wall-clock
+      workflow schedules or consumer-local heuristics. The resolver is deterministic
+      code over canonical facts; it is not itself provider evidence.
+    consumerBoundary: >
+      Shared phase identifies domain context only. Each consumer owns its explicit
+      required/secondary/inactive policy. Technical source validity remains independent
+      from consumer relevance and may not be weakened by phase.

@@ -141,3 +141,21 @@ Vergleiche verwenden listenlängenabhängige Perzentile, niemals rohe Rang- oder
 ## Attribution und Nutzung
 
 Fantasy Football Calculator erlaubt die Nutzung der ADP-REST-API für persönliche und kommerzielle Zwecke, bittet um Attribution und weist darauf hin, dass die Daten nur einmal täglich aktualisiert werden. Bei nutzerseitiger Darstellung der Daten soll Fantasy Football Calculator sichtbar als Quelle genannt werden.
+
+## Source Quality und aktuelle Observation
+
+FFC trennt seit #613 den technischen Provider-Refresh von der Nutzbarkeit der einzelnen Rankings.
+
+`source-contract.json` definiert pro Dataset:
+- `minimum_usable_rows` als harte fachliche Untergrenze;
+- `expected_minimum_rows` als erwartete Coverage;
+- optionale phasenabhängige Erwartungen.
+
+`observation.json` wird bei jedem technisch erfolgreichen Provider-Abruf neu geschrieben und enthält den kanonisch aufgelösten NFL Season Context sowie den aktuellen Zustand jedes FFC-Datasets. Mögliche Coverage-Zustände sind:
+- `usable` — erfüllt die aktuelle Erwartung;
+- `reduced_coverage` — unter Erwartung, aber oberhalb der absoluten Nutzbarkeitsgrenze;
+- `insufficient_coverage` — unter der absoluten Nutzbarkeitsgrenze und deshalb nicht aktuell publizierbar.
+
+Ein `insufficient_coverage`-Dataset ersetzt seinen letzten guten Ranking-Snapshot nicht. Andere technisch valide und nutzbare FFC-Datasets werden unabhängig weiter publiziert. Fantasy Operations liest die aktuelle Observation zusätzlich zum Last-Good-Pointer und verwendet einen alten Snapshot nicht als aktuellen Input, wenn die aktuelle Observation dessen Dataset als unzureichend markiert.
+
+Der Season Context wird aus dem kanonischen NFL Schedule abgeleitet. Für PPR und 2QB bleibt die absolute Mindest-Usability bei 50 Offense-Rows. Vor Beginn der Regular Season liegt die erwartete Population bei 80; in der Regular Season bei 50. Diese phasenabhängige Erwartung lockert technische Payload-Validierung nicht auf.

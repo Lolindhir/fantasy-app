@@ -480,6 +480,74 @@ def match_source_row(player: dict[str, Any], source: LoadedCatalogSource) -> tup
     return None, "missing", []
 
 
+def evaluate_catalog_source_observation(
+    root: Path,
+    definition: dict[str, Any],
+) -> tuple[bool, SourceFile | None, dict[str, Any] | None]:
+    observation_config = (definition.get("access") or {}).get("observation")
+    if not observation_config:
+        return True, None, None
+
+    source_id = definition["source_id"]
+    observation_path = root / observation_config["path"]
+    if not observation_path.exists():
+        # Transitional rollout guard: the catalog may land before the first
+        # provider run publishes its observation. Once present, the observation
+        # becomes authoritative for current dataset usability.
+        return True, None, None
+
+    observation = load_json(observation_path)
+    if observation.get("technical_status") != "success":
+        raise MaterializationError(
+            f"Current source observation for {source_id} is not technically successful"
+        )
+    datasets = observation.get("datasets")
+    if not isinstance(datasets, dict):
+        raise MaterializationError(
+            f"Current source observation for {source_id} has no datasets object"
+        )
+    dataset_id = observation_config["dataset_id"]
+    dataset = datasets.get(dataset_id)
+    if not isinstance(dataset, dict):
+        raise MaterializationError(
+            f"Current source observation for {source_id} has no dataset {dataset_id}"
+        )
+    coverage_status = optional_text(dataset.get("coverage_status"))
+    usable_statuses = set(observation_config["usable_statuses"])
+    if coverage_status not in {"usable", "reduced_coverage", "insufficient_coverage"}:
+        raise MaterializationError(
+            f"Current source observation for {source_id} has invalid coverage status"
+        )
+
+    observed_at = observation.get("checked_at")
+    observation_source = source_file(
+        f"{source_id}_observation",
+        observation_path,
+        root,
+        observed_at,
+    )
+    if coverage_status in usable_statuses:
+        return True, observation_source, None
+
+    return (
+        False,
+        observation_source,
+        {
+            "severity": "warning",
+            "kind": "current_source_observation_unusable",
+            "source": source_id,
+            "details": {
+                "dataset_id": dataset_id,
+                "coverage_status": coverage_status,
+                "observed_rows": dataset.get("observed_rows"),
+                "minimum_usable_rows": dataset.get("minimum_usable_rows"),
+                "expected_minimum_rows": dataset.get("expected_minimum_rows"),
+                "checked_at": observed_at,
+            },
+        },
+    )
+
+
 def resolve_catalog_source(root: Path, definition: dict[str, Any]) -> LoadedCatalogSource:
     source_id = definition["source_id"]
     access = definition["access"]
@@ -812,11 +880,22 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             f"Managed team {team_id} not found in League.json display enrichment"
         )
 
-    loaded_sources = [
-        resolve_catalog_source(root, definition)
-        for definition in catalog["sources"]
-        if definition.get("active")
-    ]
+    loaded_sources: list[LoadedCatalogSource] = []
+    source_observation_files: list[SourceFile] = []
+    source_availability_issues: list[dict[str, Any]] = []
+    for definition in catalog["sources"]:
+        if not definition.get("active"):
+            continue
+        usable, observation_source, availability_issue = evaluate_catalog_source_observation(
+            root,
+            definition,
+        )
+        if observation_source is not None:
+            source_observation_files.append(observation_source)
+        if availability_issue is not None:
+            source_availability_issues.append(availability_issue)
+        if usable:
+            loaded_sources.append(resolve_catalog_source(root, definition))
 
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
@@ -867,6 +946,7 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             max_timestamp(timestamps.values()) if isinstance(timestamps, dict) else None,
         ),
         source_file("operations_source_catalog", catalog_path, root),
+        *source_observation_files,
     ]
     for source in loaded_sources:
         source_files.extend([source.pointer_source, source.ranking_source])
@@ -884,7 +964,7 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
                 sections_by_player[str(player_id)].append(section_name)
     starters = {str(player_id) for player_id in managed_team.get("Starter") or []}
 
-    quality_issues: list[dict[str, Any]] = []
+    quality_issues: list[dict[str, Any]] = list(source_availability_issues)
     source_coverage: dict[str, dict[str, int]] = {
         source.definition["source_id"]: {
             "applicable_players": 0,
