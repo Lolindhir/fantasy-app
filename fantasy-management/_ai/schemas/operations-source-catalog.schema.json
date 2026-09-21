@@ -30,7 +30,22 @@
               "type": {"const": "repo_latest_pointer"},
               "location": {"type": "string", "minLength": 1},
               "ranking_path_field": {"type": "string", "minLength": 1},
-              "timestamp_fields": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+              "timestamp_fields": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "observation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path", "dataset_id", "usable_statuses"],
+                "properties": {
+                  "path": {"type": "string", "minLength": 1},
+                  "dataset_id": {"type": "string", "minLength": 1},
+                  "usable_statuses": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {"enum": ["usable", "reduced_coverage"]}
+                  }
+                }
+              }
             }
           },
           "applicability": {
