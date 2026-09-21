@@ -1164,3 +1164,57 @@ decisions:
         - Existing consumer-owned paths now contain recognized transitional shared responsibilities that will need staged migration.
         - A future physical data-platform layout, rule storage model and derivation registry still require separate design and migration work.
         - Rights/publication policy must be modeled independently for retained media/source evidence.
+
+  - id: ADR-038
+    title: Canonical NFL season context separates source observation freshness from phase-aware consumer usability
+    status: accepted
+    date: 2026-09-21
+    context: >
+      The Fantasy Football Calculator incident showed that a technically successful,
+      structurally valid provider observation can have seasonally shrinking dataset
+      coverage. Treating a coverage shortfall as a provider-refresh failure left the
+      provider heartbeat stale and incorrectly made the entire redraft_adp family
+      block an authoritative Daily Free-Agent no-event conclusion during the NFL
+      regular season. The same architecture also lacked a provider-independent way
+      for consumers to know whether a workflow or signal family is currently
+      operationally relevant.
+    decision: >
+      Derive a small provider-independent NFL season context from the canonical
+      source-data/nfl/schedules/<season>.json schedule rather than from Sleeper or
+      workflow calendar heuristics. The initial contract intentionally exposes only
+      pre_regular_season, regular_season and post_regular_season, because those
+      boundaries are directly supported by canonical REG schedule evidence; it does
+      not invent a precise postseason/offseason split when the current-season
+      canonical schedule does not yet contain that evidence. Technical fetch/schema
+      success, current dataset observation/coverage usability and consumer
+      criticality are separate dimensions. A successful structurally valid source
+      observation may therefore refresh the technical source heartbeat while a
+      dataset preserves its last-good normalized ranking and records
+      insufficient_coverage. Consumer policy is phase-aware and versioned:
+      scheduling provides execution opportunities, while canonical domain context
+      determines whether a module is active and whether a signal family is required,
+      secondary or inactive. For Daily Free-Agent Monitoring, redraft_adp is
+      secondary during the regular season and does not independently block a
+      no-event conclusion; the module is inactive after the regular season under
+      the bounded v1 context. Transitional FFC quality/observation files remain
+      under fantasy-management until the shared Market/Source migration defined by
+      #613 moves their physical ownership.
+    rationale: >
+      This preserves fail-closed technical validation without turning normal
+      seasonal population decline into false provider outages, prevents stale
+      last-good data from masquerading as a current full-quality observation, and
+      makes monitoring relevance data-driven instead of hidden in scheduler timing.
+      The three-phase context is deliberately smaller than a universal NFL calendar
+      model so the repository only claims distinctions supported by canonical data.
+    consequences:
+      positive:
+        - Provider reachability/schema failures remain hard technical failures.
+        - Dataset coverage degradation is explicit and independently consumable.
+        - Healthy sibling datasets can publish even when one dataset is below its current usability threshold.
+        - Daily Free-Agent Monitoring no longer treats regular-season redraft ADP as a required no-event gate.
+        - Post-regular-season Free-Agent Monitoring can be deterministically inactive without deleting schedules.
+        - The same season-context contract can be reused by later shared Data Platform consumers.
+      negative:
+        - Source freshness, dataset observation quality and consumer readiness now require distinct contracts and tests.
+        - Last-good rankings may remain available as context while their current observation is unusable, so consumers must respect observation metadata.
+        - A richer postseason/offseason distinction requires future canonical evidence and a versioned extension rather than inference.
