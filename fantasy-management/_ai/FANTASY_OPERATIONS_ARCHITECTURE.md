@@ -477,3 +477,20 @@ The following legacy behaviors are not part of scheduled production monitoring a
 - autonomous Observation Event bundle publication.
 
 Legacy workflow and helper files may remain only where another explicitly documented historical purpose requires them. Their existence does not override this architecture, `OBSERVATION_STATE_STORAGE.md`, the current `entity-observation` job definition or the current `runner-config.json` mode.
+
+## Season Context, technische Freshness und Dataset-Usability
+
+Fantasy Operations behandelt zeitabhängige Source-Relevanz datengetrieben statt über versteckte Scheduler-Sonderlogik.
+
+Der gemeinsame NFL Season Context wird deterministisch aus kanonischen Schedule-Fakten aufgelöst. Der erste Resolver ist `tools/nfl_season_context.py` und verwendet `source-data/nfl/schedules/<season>.json`. Er unterscheidet mindestens `pre_regular_season`, `regular_season`, `postseason` und `post_regular_season`. Consumer dürfen diese Semantik nicht separat aus Sleeper rekonstruieren.
+
+Für externe Source-Datasets gelten getrennte Zustände:
+1. **technical refresh** — Provider erreichbar und technischer Vertrag valide;
+2. **coverage/usability** — aktuelle Observation erfüllt erwartete bzw. absolute Mindest-Coverage;
+3. **consumer relevance** — der aktuelle Domain Context bestimmt, ob ein Signal required, secondary oder inactive ist.
+
+Ein erfolgreich beobachteter, aber aktuell unzureichend abgedeckter Dataset-Zustand darf den letzten guten Snapshot für Provenance/Historie erhalten. Sobald eine aktuelle Observation `insufficient_coverage` meldet, darf ein Operations-Consumer diesen Last-Good-Snapshot jedoch nicht still als aktuelle Source-Evidenz verwenden.
+
+Erwartete Coverage darf phasenabhängig sein; `minimum usable coverage` bleibt die absolute fachliche Nutzbarkeitsgrenze. Technische Schema-/Format-/Plausibilitätsregeln bleiben phasenunabhängig fail-closed.
+
+Die aktuelle FFC-Implementierung ist der erste vertikale Consumer dieses Vertrags. Die physische Market-Source-Migration in die spätere Shared Data Platform bleibt davon getrennt; Source Contract und Observation sind so geschnitten, dass sie bei diesem Cutover mitwandern können.
