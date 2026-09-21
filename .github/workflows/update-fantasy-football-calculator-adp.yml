@@ -12,9 +12,14 @@ on:
       - fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_storage.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_quality.py
+      - fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/quality-policy.json
+      - tools/nfl_season_context.py
+      - tools/tests/test_nfl_season_context.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py
       - fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
       - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_quality.py
       - .github/workflows/update-fantasy-football-calculator-adp.yml
   pull_request:
     branches:
@@ -23,9 +28,14 @@ on:
       - fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_adp_storage.py
+      - fantasy-management/_ai/scripts/fantasy_football_calculator_quality.py
+      - fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/quality-policy.json
+      - tools/nfl_season_context.py
+      - tools/tests/test_nfl_season_context.py
       - fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py
       - fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
       - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_quality.py
       - .github/workflows/update-fantasy-football-calculator-adp.yml
   workflow_dispatch: # manueller Start
 
@@ -58,6 +68,8 @@ jobs:
           python -m unittest
           fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
           fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+          fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_quality.py
+          tools/tests/test_nfl_season_context.py
           -v
 
       - name: Update Fantasy Football Calculator ADP rankings
