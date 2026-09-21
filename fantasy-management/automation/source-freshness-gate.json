@@ -107,5 +107,29 @@
   "domain_context": {
     "resolver": "canonical_nfl_schedule",
     "source_root": "source-data/nfl/schedules"
+  },
+  "consumer_activity": {
+    "modules": [
+      {
+        "id": "free-agent-daily-monitoring",
+        "default_relevance": "required",
+        "phase_policy": {
+          "pre_regular_season": "required",
+          "regular_season": "required",
+          "postseason": "inactive",
+          "post_regular_season": "inactive"
+        }
+      },
+      {
+        "id": "kicker-daily-monitoring",
+        "default_relevance": "secondary",
+        "phase_policy": {
+          "pre_regular_season": "secondary",
+          "regular_season": "required",
+          "postseason": "inactive",
+          "post_regular_season": "inactive"
+        }
+      }
+    ]
   }
 }
