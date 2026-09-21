@@ -142,3 +142,21 @@ Diese Werte sind **nur Observability**. Sie werden nicht in `source-freshness.js
 - Ein Content-Timestamp ist nicht automatisch ein Fetch-Erfolgsnachweis.
 - Fantasy Management darf für eigene Freshness-Zwecke keine App-Produktionspipeline zur Laufzeitabhängigkeit machen.
 - `event_count = 0` ist nur dann ein belastbarer No-Event-Befund, wenn `no_event_conclusion_allowed = true`.
+
+## Season-aware Freshness und Dataset-Usability
+
+Technische Source-Freshness, Dataset-Coverage und Consumer-Criticality sind getrennte Achsen.
+
+- Ein technisch erfolgreicher Abruf mit gültigem HTTP-/JSON-/Schema-/Plausibilitätsvertrag darf als erfolgreicher Source-Refresh bestätigt werden, auch wenn ein einzelnes Dataset aktuell zu wenig Coverage für die fachliche Nutzung besitzt.
+- Ein Dataset mit `insufficient_coverage` darf dadurch nicht automatisch aktuell nutzbar werden. Der letzte gute normalisierte Snapshot bleibt erhalten, aber eine aktuelle Source-Observation muss den Dataset-Zustand explizit als nicht nutzbar markieren.
+- Fantasy Operations darf einen solchen Last-Good-Snapshot nicht still als aktuellen Input konsumieren, sobald eine aktuelle Observation seine Usability verneint.
+- `source-freshness.json` bewertet weiterhin die technische Refresh-Bestätigung der überwachten Source. Dataset-Usability wird über den jeweiligen Source-/Dataset-Quality-Vertrag bewertet.
+- Die Monitoring-Criticality darf aus einem kanonischen NFL-Domain-Context abgeleitet werden. Der Scheduler bestimmt weiterhin nur die Ausführungsgelegenheit und keine fachliche Saisonphase.
+
+Für FFC ist der erste produktive Vertrag:
+- vor Beginn der Regular Season bleibt `redraft_adp` ein No-Event-relevanter Input;
+- während der Regular Season bleibt FFC sichtbar und wird weiter refreshed, ist für Daily Free-Agent-No-Event aber `secondary`; ein fehlender FFC-Heartbeat degradiert den Freshness-Status, blockiert jedoch nicht die No-Event-Aussage;
+- in Postseason bzw. nach Ende der Regular Season wird FFC für diesen Freshness-Consumer aus der erwarteten Population genommen;
+- die Phase stammt aus dem kanonischen NFL Schedule unter `source-data/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
+
+Diese Policy ändert keine technische Validierungsgrenze. Malformed Payload, falsche Source-Identity, ungültige Teamzahl, veraltetes Sample oder mathematisch inkonsistente Playerdaten bleiben technische Fehler und erzeugen keinen Success-Heartbeat.
