@@ -17,7 +17,6 @@ SOURCE_ID = "fantasy-football-calculator"
 SOURCE_NAME = "Fantasy Football Calculator"
 SCHEMA_VERSION = 1
 ACTUAL_TEAMS = 6
-MIN_ROWS = 50
 DEFAULT_MAX_STALE_DAYS = 45
 POSITIONS = {"QB", "RB", "WR", "TE", "DEF", "PK"}
 OFFENSE = {"QB", "RB", "WR", "TE"}
@@ -354,10 +353,6 @@ def parse_players(
     for rank, row in enumerate(rows, start=1):
         row["Rank"] = rank
         row.pop("_adp")
-    if len(rows) < MIN_ROWS:
-        raise FantasyFootballCalculatorFetchError(
-            f"Too few offensive FFC rows for {config['ranking_id']}: {len(rows)}"
-        )
     return rows, {
         "source_player_count": len(payload["players"]),
         "normalized_player_count": len(rows),
