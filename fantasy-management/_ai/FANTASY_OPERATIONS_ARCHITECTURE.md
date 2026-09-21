@@ -494,3 +494,28 @@ Ein erfolgreich beobachteter, aber aktuell unzureichend abgedeckter Dataset-Zust
 Erwartete Coverage darf phasenabhängig sein; `minimum usable coverage` bleibt die absolute fachliche Nutzbarkeitsgrenze. Technische Schema-/Format-/Plausibilitätsregeln bleiben phasenunabhängig fail-closed.
 
 Die aktuelle FFC-Implementierung ist der erste vertikale Consumer dieses Vertrags. Die physische Market-Source-Migration in die spätere Shared Data Platform bleibt davon getrennt; Source Contract und Observation sind so geschnitten, dass sie bei diesem Cutover mitwandern können.
+
+## Consumer Activity als Operations-Readiness
+
+Der gemeinsame NFL Season Context wird in Fantasy Operations zusätzlich in einen consumer-spezifischen Activity-State übersetzt. Diese Übersetzung gehört zur Operations-Policy, nicht zur Shared Source Evidence.
+
+Der aktuelle Runtime-Contract wird zusammen mit Source Freshness publiziert:
+
+```text
+source-data/nfl/schedules/<season>.json
+→ shared NFL Season Context
+→ Fantasy Operations Consumer Activity Policy
+→ generated/operations/source-freshness.json -> consumer_activity
+→ Daily Monitoring Consumer
+```
+
+Damit gilt:
+- Scheduler = technische Ausführungsgelegenheit;
+- Season Context = gemeinsame Domain-Fakten;
+- Consumer Activity = Fantasy-Operations-spezifische `required | secondary | inactive`-Policy;
+- Source Freshness = technische Readiness;
+- Monitoring Materiality = erst nach Activity- und Freshness-Gate.
+
+Deterministische Materialisierungen dürfen weiterhin unabhängig erzeugt werden, auch wenn ein späterer Monitoring-Consumer inaktiv ist. Entscheidend ist, dass ein inaktiver Consumer die vorbereiteten Events/Targets nicht fachlich interpretiert oder daraus No-Event-Aussagen ableitet.
+
+Diese Schicht wird vor dem späteren physischen Data-Platform-Cutover funktional stabilisiert. Die spätere Migration darf Pfade und Ownership verändern, aber nicht wieder Saisonphase in Scheduler oder Consumer-Lokallogik duplizieren.
