@@ -557,3 +557,31 @@ Vor einer automatischen Aktivierung müssen festgelegt werden:
 - ob Empfehlungen nur gemeldet oder irgendwann technisch in der App vorbereitet werden.
 
 Änderungen an `.github/workflows/**` benötigen weiterhin eine separate ausdrückliche Freigabe.
+
+## Season-aware Consumer Activity Gate
+
+Vor jeder Daily-Monitoring-Interpretation ist neben dem globalen Freshness-State der passende Eintrag in `source-freshness.json -> consumer_activity.modules` zu lesen.
+
+Verbindliche Reihenfolge:
+
+1. kanonischen `domain_context` aus `source-freshness.json` lesen;
+2. das konkrete Monitoring-Modul über seine stabile Modul-ID auflösen;
+3. `runtime_status` und `execution_allowed` prüfen;
+4. nur bei aktivem Modul die eigentlichen Event-/Target-Artefakte interpretieren;
+5. erst danach die bestehenden Freshness-, Materiality-, Availability- und Research-Gates anwenden.
+
+Wenn `runtime_status = inactive_by_policy` gilt:
+- keine Event-/Target-Interpretation;
+- keine externe Einzelrecherche;
+- keine Notification;
+- kein Watchlist-/Baseline-Vorschlag;
+- `event_count = 0` oder ein leerer Target-Satz wird **nicht** als belastbarer No-Event-Befund interpretiert;
+- der Lauf endet still als fachlich inaktiv, nicht als Fehler.
+
+`secondary` bleibt aktiv. Es bedeutet, dass das Modul in dieser Phase nützlich, aber nicht verpflichtender Kernbestandteil des Operations-Prozesses ist. Es darf nicht mit `inactive` gleichgesetzt werden.
+
+Aktuelle Modul-IDs:
+- `free-agent-daily-monitoring`;
+- `kicker-daily-monitoring`.
+
+Die Phase wird nicht aus Sleeper, GitHub-Actions-Zeitplänen oder Verbraucher-Heuristiken rekonstruiert.

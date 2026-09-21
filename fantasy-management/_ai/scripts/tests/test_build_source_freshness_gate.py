@@ -93,6 +93,36 @@ class SourceFreshnessGateTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _enable_consumer_activity(self) -> None:
+        self.config["domain_context"] = {
+            "resolver": "canonical_nfl_schedule",
+            "source_root": "source-data/nfl/schedules",
+        }
+        self.config["consumer_activity"] = {
+            "modules": [
+                {
+                    "id": "free-agent-daily-monitoring",
+                    "default_relevance": "required",
+                    "phase_policy": {
+                        "pre_regular_season": "required",
+                        "regular_season": "required",
+                        "postseason": "inactive",
+                        "post_regular_season": "inactive",
+                    },
+                },
+                {
+                    "id": "kicker-daily-monitoring",
+                    "default_relevance": "secondary",
+                    "phase_policy": {
+                        "pre_regular_season": "secondary",
+                        "regular_season": "required",
+                        "postseason": "inactive",
+                        "post_regular_season": "inactive",
+                    },
+                },
+            ]
+        }
+
     def _write_timestamps(self, league: str) -> None:
         (self.root / "public/data/Timestamps.json").write_text(
             json.dumps({"League": league}), encoding="utf-8"
@@ -251,6 +281,82 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self.assertEqual(1, report["population"]["source_count"])
         self.assertEqual("ok", report["overall_status"])
         self.assertEqual(["league"], [item["id"] for item in report["sources"]])
+
+    def test_regular_season_consumer_modules_are_active_ready(self) -> None:
+        self._write_schedule()
+        self._enable_consumer_activity()
+        self._write_timestamps("2026-09-21T04:35:00Z")
+        self._write_heartbeat(checked_at="2026-09-21T03:32:00Z")
+
+        report = freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=datetime(2026, 9, 21, 4, 45, tzinfo=timezone.utc),
+        )
+
+        activity = report["consumer_activity"]
+        self.assertEqual("regular_season", activity["phase"])
+        self.assertEqual(
+            ["free-agent-daily-monitoring", "kicker-daily-monitoring"],
+            activity["required_module_ids"],
+        )
+        self.assertEqual([], activity["inactive_module_ids"])
+        self.assertTrue(
+            all(item["runtime_status"] == "active_ready" for item in activity["modules"])
+        )
+        self.assertTrue(
+            all(item["execution_allowed"] for item in activity["modules"])
+        )
+
+    def test_pre_regular_kicker_monitoring_is_secondary(self) -> None:
+        self._write_schedule()
+        self._enable_consumer_activity()
+        self._write_timestamps("2026-08-18T04:35:00Z")
+        self._write_heartbeat(checked_at="2026-08-18T03:32:00Z")
+
+        report = freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=self.NOW,
+        )
+
+        activity = report["consumer_activity"]
+        self.assertEqual("pre_regular_season", activity["phase"])
+        self.assertEqual(
+            ["free-agent-daily-monitoring"],
+            activity["required_module_ids"],
+        )
+        self.assertEqual(
+            ["kicker-daily-monitoring"],
+            activity["secondary_module_ids"],
+        )
+        kicker = next(
+            item for item in activity["modules"] if item["id"] == "kicker-daily-monitoring"
+        )
+        self.assertEqual("active_ready", kicker["runtime_status"])
+        self.assertTrue(kicker["execution_allowed"])
+
+    def test_postseason_monitoring_modules_short_circuit_as_inactive_by_policy(self) -> None:
+        self._write_schedule()
+        self._enable_consumer_activity()
+        self._write_timestamps("2027-01-20T04:35:00Z")
+
+        report = freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=datetime(2027, 1, 20, 4, 45, tzinfo=timezone.utc),
+        )
+
+        activity = report["consumer_activity"]
+        self.assertEqual("postseason", activity["phase"])
+        self.assertEqual(
+            ["free-agent-daily-monitoring", "kicker-daily-monitoring"],
+            activity["inactive_module_ids"],
+        )
+        for item in activity["modules"]:
+            self.assertEqual("inactive_by_policy", item["runtime_status"])
+            self.assertFalse(item["execution_allowed"])
+            self.assertIsNone(item["no_event_conclusion_allowed"])
 
     def test_heartbeat_writer_records_success_without_equating_unchanged_with_failure(self) -> None:
         heartbeat = heartbeat_writer.build_heartbeat(

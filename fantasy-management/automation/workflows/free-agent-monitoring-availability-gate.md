@@ -50,3 +50,14 @@ A player may still deserve a non-FA qualitative watch for role, injury, transact
 - Do not let external rankings, projections, Sleeper Trending or `free-agent-signals.json` override the FA-board gate.
 - Scheduled monitoring remains read-only.
 - When the FA-board gate blocks only an availability-based path and no other material decision effect remains, stay silent.
+
+## Season-aware Activity Gate
+
+Vor **jedem** Schritt aus `Event handling` muss der Consumer in `fantasy-management/generated/operations/source-freshness.json -> consumer_activity.modules` den Eintrag `free-agent-daily-monitoring` auflösen.
+
+- `runtime_status = inactive_by_policy`: sofort still beenden. `free-agent-movement-events.json` wird in diesem Lauf nicht als fachlicher Event-/No-Event-Contract interpretiert.
+- `execution_allowed = false` aus Freshness-Gründen: nach bestehender Freshness-Semantik blockieren.
+- `active_degraded`: nur im Rahmen der im Freshness-Contract erlaubten Aussagen weiterarbeiten.
+- `active_ready`: normal fortfahren.
+
+Insbesondere ist bei `inactive_by_policy` ein gespeichertes oder neu materialisiertes `event_count = 0` **keine** Aussage „keine relevante Free-Agent-Veränderung“. Das Modul war fachlich nicht aktiv.

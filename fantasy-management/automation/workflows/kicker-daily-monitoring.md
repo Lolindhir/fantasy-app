@@ -262,3 +262,14 @@ Das aktuelle Scheduled Monitoring ist read-only.
 - No-op bleibt still.
 
 Eine spätere automatische Weekly Decision Orchestration ist ein eigener freizugebender Ausbau und darf nicht aus diesem Daily-Kicker-Profil implizit abgeleitet werden.
+
+## Season-aware Activity Gate
+
+Vor der dynamischen Target-Auflösung muss `fantasy-management/generated/operations/source-freshness.json -> consumer_activity.modules` für `kicker-daily-monitoring` geprüft werden.
+
+- `inactive_by_policy`: keine Kicker-Targets auflösen, keine Baseline-Engine starten, keine externe Job-Verifikation auslösen und still beenden.
+- `secondary`: das Modul bleibt ausführbar und darf Veränderungen priorisieren, ist aber in dieser Phase kein verpflichtender Kernconsumer.
+- `required`: normales Daily-Kicker-Monitoring nach den bestehenden Freshness-/Materiality-Regeln.
+- Freshness kann ein fachlich aktives Modul weiterhin zu `blocked_by_freshness` oder `active_degraded` machen.
+
+Die aktuelle Policy setzt Kicker Daily Monitoring vor der Regular Season auf `secondary`, während der Regular Season auf `required` und in Postseason/`post_regular_season` auf `inactive`. Weekly Lineup + Waiver bleibt davon getrennt.

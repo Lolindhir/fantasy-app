@@ -160,3 +160,30 @@ Für FFC ist der erste produktive Vertrag:
 - die Phase stammt aus dem kanonischen NFL Schedule unter `source-data/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
 
 Diese Policy ändert keine technische Validierungsgrenze. Malformed Payload, falsche Source-Identity, ungültige Teamzahl, veraltetes Sample oder mathematisch inkonsistente Playerdaten bleiben technische Fehler und erzeugen keinen Success-Heartbeat.
+
+## Consumer Activity Contract
+
+`source-freshness.json` veröffentlicht zusätzlich zum Source-Readiness-State den aktuellen Fantasy-Operations-Consumer-State unter `consumer_activity`.
+
+Der Contract wird aus demselben kanonischen NFL Season Context abgeleitet und verwendet genau drei fachliche Relevanzwerte:
+
+- `required` — der Consumer gehört in dieser Phase zum normalen Operations-Prozess und soll bei erlaubter Freshness ausgeführt/interpretiert werden;
+- `secondary` — der Consumer bleibt fachlich aktiv und darf laufen, ist aber kein verpflichtender Kernbestandteil der Phase;
+- `inactive` — der Consumer ist in dieser Phase fachlich nicht aktiv.
+
+Runtime-Status:
+
+- `active_ready` — Phase aktiv und globaler Freshness-State `ok`;
+- `active_degraded` — Phase aktiv, Monitoring darf trotz degradiertem Freshness-State weiterlaufen;
+- `blocked_by_freshness` — Phase aktiv, aber Freshness blockiert die Ausführung;
+- `inactive_by_policy` — die Phase deaktiviert den Consumer unabhängig von technischer Freshness.
+
+`inactive_by_policy` ist **kein technischer Fehler** und **kein No-Event-Befund**. Für ein inaktives Modul gilt deshalb `execution_allowed=false` und `no_event_conclusion_allowed=null`. Der Consumer muss vor dem Lesen/Interpretieren seiner Event- oder Target-Artefakte still beenden.
+
+Der erste produktive Consumer-Policy-Satz liegt übergangsweise in `fantasy-management/automation/source-freshness-gate.json -> consumer_activity`. Diese physische Lage ist bewusst nicht die endgültige Shared-Data-Struktur; die Semantik soll beim späteren Data-Platform-Cutover unverändert mitwandern.
+
+Aktuelle Policy:
+- `free-agent-daily-monitoring`: vor und während der Regular Season `required`; Postseason und `post_regular_season` `inactive`;
+- `kicker-daily-monitoring`: vor der Regular Season `secondary`, während der Regular Season `required`, Postseason und `post_regular_season` `inactive`.
+
+Scheduler und Workflow-Zeitpläne bestimmen weiterhin nur Ausführungsgelegenheiten. Sie dürfen diese Domain-Policy nicht duplizieren.

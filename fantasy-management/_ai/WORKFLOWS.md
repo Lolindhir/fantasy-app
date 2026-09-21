@@ -367,3 +367,15 @@ league/source refreshes
 Ranking and signal refreshes should finish shortly before the scheduled monitoring run so monitoring reads the newest successful inputs. Keep independent source refreshes failure-isolated, preserve their last good states and let the monitoring freshness gate decide whether a missing or stale required input blocks, limits or merely annotates the run.
 
 Actual GitHub Actions schedules, dependencies and activation require a separate explicit approval. Documentation, scripts, tests and manual baselines may be prepared before that workflow approval.
+
+### Season-aware Monitoring Activity
+
+Daily Monitoring liest vor der Modulauflösung `fantasy-management/generated/operations/source-freshness.json -> consumer_activity`.
+
+- `free-agent-daily-monitoring` steuert die fachliche Aktivität der Free-Agent-Movement-/Availability-Eskalation.
+- `kicker-daily-monitoring` steuert die fachliche Aktivität des Kicker-Target-/Profile-Monitorings.
+- `inactive_by_policy` beendet das jeweilige Modul still vor Event-/Target-Interpretation.
+- `secondary` bleibt ausführbar, wird aber nicht als verpflichtender Kernconsumer der Phase behandelt.
+- Workflow-Schedules dürfen diese Policy nicht duplizieren.
+
+Deterministische Input-/Event-Materialisierung kann unabhängig weiterlaufen; fachliche Monitoring-Aktivität wird erst im Consumer entschieden.

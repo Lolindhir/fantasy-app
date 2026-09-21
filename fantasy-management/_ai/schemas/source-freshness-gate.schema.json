@@ -33,6 +33,53 @@
         "as_of_date": {"type": "string"}
       }
     },
+    "consumer_activity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "phase",
+        "modules",
+        "required_module_ids",
+        "secondary_module_ids",
+        "inactive_module_ids"
+      ],
+      "properties": {
+        "schema_version": {"const": 1},
+        "phase": {
+          "type": ["string", "null"],
+          "enum": ["pre_regular_season", "regular_season", "postseason", "post_regular_season", null]
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "relevance",
+              "active",
+              "reason",
+              "runtime_status",
+              "execution_allowed",
+              "no_event_conclusion_allowed"
+            ],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "relevance": {"enum": ["required", "secondary", "inactive"]},
+              "active": {"type": "boolean"},
+              "reason": {"type": "string", "minLength": 1},
+              "runtime_status": {"enum": ["active_ready", "active_degraded", "blocked_by_freshness", "inactive_by_policy"]},
+              "execution_allowed": {"type": "boolean"},
+              "no_event_conclusion_allowed": {"type": ["boolean", "null"]}
+            }
+          }
+        },
+        "required_module_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "secondary_module_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "inactive_module_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
     "morning_cycle": {
       "type": "object",
       "additionalProperties": false,
