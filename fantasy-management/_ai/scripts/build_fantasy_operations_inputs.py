@@ -57,6 +57,8 @@ class LoadedCatalogSource:
     definition: dict[str, Any]
     pointer_source: SourceFile
     ranking_source: SourceFile
+    observation_source: SourceFile | None
+    current_observation: dict[str, Any] | None
     rows: list[dict[str, str]]
     index: dict[str, Any]
 
@@ -480,6 +482,81 @@ def match_source_row(player: dict[str, Any], source: LoadedCatalogSource) -> tup
     return None, "missing", []
 
 
+def load_current_observation(
+    root: Path,
+    definition: dict[str, Any],
+) -> tuple[dict[str, Any] | None, SourceFile | None]:
+    access = definition["access"]
+    relative_path = optional_text(access.get("observation_status_path"))
+    if not relative_path:
+        return None, None
+
+    path = root / relative_path
+    if not path.exists():
+        return {
+            "status": "missing",
+            "usable": False,
+            "checked_at": None,
+            "published": False,
+        }, None
+
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise MaterializationError(
+            f"Current source observation for {definition['source_id']} must be an object"
+        )
+    if payload.get("source_id") != definition["provider"]:
+        raise MaterializationError(
+            f"Current source observation source_id mismatch for {definition['source_id']}"
+        )
+    if payload.get("dataset_id") != definition["dataset_id"]:
+        raise MaterializationError(
+            f"Current source observation dataset_id mismatch for {definition['source_id']}"
+        )
+    if not isinstance(payload.get("usable"), bool):
+        raise MaterializationError(
+            f"Current source observation usable flag is invalid for {definition['source_id']}"
+        )
+    status = optional_text(payload.get("status"))
+    if status not in {
+        "usable",
+        "reduced_coverage",
+        "insufficient_coverage",
+        "inactive_for_phase",
+    }:
+        raise MaterializationError(
+            f"Current source observation status is invalid for {definition['source_id']}: {status!r}"
+        )
+    checked_at = optional_text(payload.get("checked_at"))
+    if checked_at is None or parse_datetime(checked_at) is None:
+        raise MaterializationError(
+            f"Current source observation checked_at is invalid for {definition['source_id']}"
+        )
+    return payload, source_file(
+        f"{definition['source_id']}_observation",
+        path,
+        root,
+        checked_at,
+    )
+
+
+def current_observation_summary(source: LoadedCatalogSource) -> dict[str, Any] | None:
+    observation = source.current_observation
+    if observation is None:
+        return None
+    summary = {
+        "status": observation.get("status"),
+        "usable": bool(observation.get("usable")),
+        "checked_at": observation.get("checked_at"),
+        "published": bool(observation.get("published")),
+    }
+    if isinstance(observation.get("coverage"), dict):
+        summary["coverage"] = observation["coverage"]
+    if isinstance(observation.get("season_context"), dict):
+        summary["season_context"] = observation["season_context"]
+    return summary
+
+
 def resolve_catalog_source(root: Path, definition: dict[str, Any]) -> LoadedCatalogSource:
     source_id = definition["source_id"]
     access = definition["access"]
@@ -491,10 +568,13 @@ def resolve_catalog_source(root: Path, definition: dict[str, Any]) -> LoadedCata
     ranking_file = root / ranking_path
     timestamp = max_timestamp(pointer.get(field) for field in access["timestamp_fields"])
     rows = load_csv(ranking_file)
+    observation, observation_source = load_current_observation(root, definition)
     return LoadedCatalogSource(
         definition=definition,
         pointer_source=source_file(f"{source_id}_pointer", pointer_file, root, timestamp),
         ranking_source=source_file(f"{source_id}_ranking", ranking_file, root, timestamp),
+        observation_source=observation_source,
+        current_observation=observation,
         rows=rows,
         index=build_source_index(rows, definition["join"]["strategies"]),
     )
@@ -637,7 +717,7 @@ def evaluate_source_for_player(player: dict[str, Any], source: LoadedCatalogSour
 
 
 def flatten_source_result(result: dict[str, Any]) -> dict[str, Any]:
-    return {
+    flattened = {
         "source_id": result["source_id"],
         "coverage_status": result["coverage_status"],
         "applicable": result["applicable"],
@@ -645,6 +725,9 @@ def flatten_source_result(result: dict[str, Any]) -> dict[str, Any]:
         "join_method": result["join_method"],
         **result["signals"],
     }
+    if result.get("current_observation") is not None:
+        flattened["current_observation"] = result["current_observation"]
+    return flattened
 
 
 def derive_adp_view(
@@ -870,6 +953,8 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     ]
     for source in loaded_sources:
         source_files.extend([source.pointer_source, source.ranking_source])
+        if source.observation_source is not None:
+            source_files.append(source.observation_source)
 
     player_lookup = {
         str(player.get("ID")): player
@@ -895,17 +980,48 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         }
         for source in loaded_sources
     }
+    source_observations: dict[str, dict[str, Any]] = {}
     for source in loaded_sources:
+        source_id = source.definition["source_id"]
         minimum_rows = int(source.definition["quality"].get("minimum_rows", 0))
         if source.index["row_count"] < minimum_rows:
             issue = severity_issue(
                 source.definition["quality"].get("row_count_severity", "error"),
                 kind="unexpected_row_count",
-                source_id=source.definition["source_id"],
+                source_id=source_id,
                 details={"actual_rows": source.index["row_count"], "minimum_rows": minimum_rows},
             )
             if issue:
                 quality_issues.append(issue)
+
+        observation = current_observation_summary(source)
+        if observation is not None:
+            source_observations[source_id] = observation
+            observation_status = observation.get("status")
+            if observation_status == "missing":
+                quality_issues.append({
+                    "severity": "warning",
+                    "kind": "current_source_observation_missing",
+                    "source": source_id,
+                })
+            elif observation_status == "reduced_coverage":
+                quality_issues.append({
+                    "severity": "warning",
+                    "kind": "current_source_observation_reduced_coverage",
+                    "source": source_id,
+                    "observation_status": observation_status,
+                    "checked_at": observation.get("checked_at"),
+                    "coverage": observation.get("coverage"),
+                })
+            elif not observation.get("usable"):
+                quality_issues.append({
+                    "severity": "warning",
+                    "kind": "current_source_observation_unusable",
+                    "source": source_id,
+                    "observation_status": observation_status,
+                    "checked_at": observation.get("checked_at"),
+                    "coverage": observation.get("coverage"),
+                })
 
     output_players: list[dict[str, Any]] = []
     primary_adp_applicable = 0
@@ -928,6 +1044,9 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             definition = source.definition
             source_id = definition["source_id"]
             result, issue = evaluate_source_for_player(player, source)
+            observation = current_observation_summary(source)
+            if observation is not None:
+                result["current_observation"] = observation
             source_results[source_id] = result
             if issue:
                 quality_issues.append(issue)
@@ -1008,6 +1127,7 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         "primary_adp_applicable": primary_adp_applicable,
         "primary_adp_listed": primary_adp_listed,
         "sources": source_coverage,
+        "source_observations": source_observations,
     }
     status = quality_status(quality_issues)
     data = {
