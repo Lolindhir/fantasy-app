@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "season-aware-operations-policy.schema.json",
+  "title": "Season-aware Fantasy Operations Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "season_context_id",
+    "purpose",
+    "modules",
+    "signal_families",
+    "defaults"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "policy_id": {"const": "season-aware-fantasy-operations"},
+    "season_context_id": {"const": "nfl-regular-season-context"},
+    "purpose": {"type": "string", "minLength": 1},
+    "modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["free_agent_monitoring"],
+      "properties": {
+        "free_agent_monitoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["phases"],
+          "properties": {
+            "phases": {"$ref": "#/$defs/modulePhases"}
+          }
+        }
+      }
+    },
+    "signal_families": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phases"],
+        "properties": {
+          "phases": {"$ref": "#/$defs/signalPhases"}
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active_module_signal_relevance"],
+      "properties": {
+        "active_module_signal_relevance": {
+          "enum": ["required", "secondary", "inactive"]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "modulePhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active"],
+      "properties": {
+        "active": {"type": "boolean"}
+      }
+    },
+    "modulePhases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pre_regular_season", "regular_season", "post_regular_season"],
+      "properties": {
+        "pre_regular_season": {"$ref": "#/$defs/modulePhase"},
+        "regular_season": {"$ref": "#/$defs/modulePhase"},
+        "post_regular_season": {"$ref": "#/$defs/modulePhase"}
+      }
+    },
+    "signalPhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relevance"],
+      "properties": {
+        "relevance": {"enum": ["required", "secondary", "inactive"]}
+      }
+    },
+    "signalPhases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pre_regular_season", "regular_season", "post_regular_season"],
+      "properties": {
+        "pre_regular_season": {"$ref": "#/$defs/signalPhase"},
+        "regular_season": {"$ref": "#/$defs/signalPhase"},
+        "post_regular_season": {"$ref": "#/$defs/signalPhase"}
+      }
+    }
+  }
+}
