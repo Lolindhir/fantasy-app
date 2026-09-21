@@ -83,6 +83,69 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             self.assertEqual(canonical_json(data), canonical_json(data_again))
             self.assertEqual(canonical_json(quality), canonical_json(quality_again))
 
+    def test_current_source_observation_marks_last_good_context_explicitly(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+
+            catalog_path = root / "fantasy-management/_ai/operations-source-catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            ppr = next(source for source in catalog["sources"] if source["source_id"] == "ffc-ppr")
+            ppr["access"]["observation_status_path"] = "sources/ppr/observation-status.json"
+            catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
+
+            self._write_json(
+                root / "sources/ppr/observation-status.json",
+                {
+                    "schema_version": 1,
+                    "source_id": "ffc",
+                    "dataset_id": "ffc-ppr",
+                    "checked_at": "2026-09-21T04:14:44Z",
+                    "season_context": {
+                        "context_id": "nfl-regular-season-context",
+                        "season": 2026,
+                        "as_of_date": "2026-09-21",
+                        "phase": "regular_season",
+                        "source_path": "source-data/nfl/schedules/2026.json",
+                    },
+                    "status": "insufficient_coverage",
+                    "usable": False,
+                    "coverage": {
+                        "observed_rows": 43,
+                        "expected_minimum_rows": 50,
+                        "minimum_usable_rows": 50,
+                    },
+                    "published": False,
+                    "last_good": {
+                        "ranking_fetched_at": "2026-09-20T03:49:19Z",
+                        "ranking_file": "sources/ppr/ranking.csv",
+                    },
+                },
+            )
+
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            data, quality = build(root, config_path)
+            receiver = next(player for player in data["players"] if player["player_id"] == "2")
+            current = receiver["redraft_adp"]["ppr_8_team"]["current_observation"]
+
+            self.assertEqual("insufficient_coverage", current["status"])
+            self.assertFalse(current["usable"])
+            self.assertFalse(current["published"])
+            self.assertEqual(43, current["coverage"]["observed_rows"])
+            self.assertEqual(
+                "insufficient_coverage",
+                quality["coverage"]["source_observations"]["ffc-ppr"]["status"],
+            )
+            issue = next(
+                item
+                for item in quality["issues"]
+                if item["kind"] == "current_source_observation_unusable"
+            )
+            self.assertEqual("ffc-ppr", issue["source"])
+            self.assertEqual("warning", quality["status"])
+            source_ids = {source["id"] for source in data["sources"]}
+            self.assertIn("ffc-ppr_observation", source_ids)
+
     def test_managed_roster_membership_comes_from_canonical_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
