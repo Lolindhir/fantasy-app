@@ -352,6 +352,18 @@ Use owner registry, owner profiles, negotiation history and league-format notes 
 12. Run source-specific unit tests before publishing generated data.
 13. Attribute the provider in stored metadata and user-facing analysis.
 
+## Season-aware external ranking refresh
+
+External Ranking Refresh trennt technische Source-Validität von Dataset-Coverage. Für Quellen mit einem expliziten Quality-Policy-Vertrag gilt:
+
+1. Netzwerk-, Source-Identity-, Schema-, Feld- und numerische Plausibilitätsfehler bleiben fail-closed.
+2. Nach erfolgreicher struktureller Validierung wird Coverage separat gegen den aktuellen Season-Context bewertet.
+3. Ein Dataset unterhalb seiner `minimum_usable_rows` veröffentlicht keinen neuen normalisierten Snapshot; der letzte gute Snapshot bleibt erhalten.
+4. Die aktuelle Raw-Beobachtung und ein maschinenlesbarer Dataset-Observation-Status werden dennoch persistiert.
+5. Andere valide Datasets desselben Providers dürfen unabhängig publizieren.
+6. Nach einem technisch erfolgreichen Provider-Abruf darf der Success-Heartbeat aktualisiert werden; Consumer müssen Dataset-Usability separat beachten.
+7. Qualitäts- und Relevanzgrenzen stammen aus versionierten Policies, nicht aus versteckten Fetcher-Magic-Numbers.
+
 ## Monitoring input freshness and orchestration
 
 The intended production order is:
