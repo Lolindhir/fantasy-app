@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-dataset-observation.schema.json",
+  "title": "Source Dataset Observation Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_id",
+    "dataset_id",
+    "checked_at",
+    "season_context",
+    "status",
+    "usable",
+    "coverage",
+    "published",
+    "last_good"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "season_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context_id", "season", "as_of_date", "phase", "source_path"],
+      "properties": {
+        "context_id": {"const": "nfl-regular-season-context"},
+        "season": {"type": "integer", "minimum": 2000},
+        "as_of_date": {"type": "string", "format": "date"},
+        "phase": {"enum": ["pre_regular_season", "regular_season", "post_regular_season"]},
+        "source_path": {"type": "string", "minLength": 1}
+      }
+    },
+    "status": {"enum": ["usable", "reduced_coverage", "insufficient_coverage", "inactive_for_phase"]},
+    "usable": {"type": "boolean"},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observed_rows", "expected_minimum_rows", "minimum_usable_rows"],
+      "properties": {
+        "observed_rows": {"type": "integer", "minimum": 0},
+        "expected_minimum_rows": {"type": "integer", "minimum": 0},
+        "minimum_usable_rows": {"type": "integer", "minimum": 0}
+      }
+    },
+    "published": {"type": "boolean"},
+    "last_good": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ranking_fetched_at", "ranking_file"],
+      "properties": {
+        "ranking_fetched_at": {"type": ["string", "null"]},
+        "ranking_file": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
