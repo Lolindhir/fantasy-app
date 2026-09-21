@@ -3,9 +3,10 @@
 
 Stores independent PPR 8-team and 2-QB 10-team redraft signals. The PPR payload
 also materializes a separate kicker-only ranking without an additional request.
-Insufficient kicker coverage preserves the last-good kicker snapshot without
-blocking healthy PPR/2-QB publication. Each ranking keeps only the latest raw
-response and archives changed normalized rankings.
+Dataset coverage is evaluated separately from technical fetch/schema validity.
+Unusable coverage preserves the last-good normalized ranking while persisting
+the current raw observation and dataset quality state. Each ranking keeps only
+the latest raw response and archives changed normalized rankings.
 """
 
 from __future__ import annotations
@@ -19,14 +20,18 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+REPO_ROOT = Path(__file__).resolve().parents[3]
+TOOLS_DIR = REPO_ROOT / "tools"
+for import_path in (SCRIPT_DIR, TOOLS_DIR):
+    if str(import_path) not in sys.path:
+        sys.path.insert(0, str(import_path))
 
 from fantasy_football_calculator_adp_core import (  # noqa: E402
     CSV_FIELDS,
     DEFAULT_MAX_STALE_DAYS,
     FORMAT_CONFIGS,
     SCHEMA_VERSION,
+    SOURCE_ROOT,
     FantasyFootballCalculatorFetchError,
     build_source_url,
     fetch_payload,
@@ -38,12 +43,22 @@ from fantasy_football_calculator_adp_core import (  # noqa: E402
 from fantasy_football_calculator_adp_storage import (  # noqa: E402
     ranking_root,
     write_format,
+    write_observation_status,
 )
 from fantasy_football_calculator_kicker_adp import (  # noqa: E402
     FantasyFootballCalculatorKickerCoverageError,
     FantasyFootballCalculatorKickerError,
     parse_kickers,
     write_kicker_format,
+)
+from fantasy_football_calculator_quality import (  # noqa: E402
+    FfcQualityPolicyError,
+    evaluate_dataset_coverage,
+    load_quality_policy,
+)
+from nfl_season_context import (  # noqa: E402
+    NflSeasonContextError,
+    resolve_nfl_season_context,
 )
 
 
@@ -75,7 +90,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[3],
+        default=REPO_ROOT,
+    )
+    parser.add_argument(
+        "--quality-policy",
+        type=Path,
+        default=Path(SOURCE_ROOT) / "quality-policy.json",
     )
     parser.add_argument("--fetched-at")
     parser.add_argument(
@@ -96,6 +116,17 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("Invalid season or max-stale-days")
         fetched_at = parse_timestamp(args.fetched_at)
         repo_root = args.repo_root.resolve()
+        quality_policy_path = (
+            args.quality_policy
+            if args.quality_policy.is_absolute()
+            else repo_root / args.quality_policy
+        )
+        quality_policy = load_quality_policy(quality_policy_path)
+        season_context = resolve_nfl_season_context(
+            repo_root,
+            as_of=fetched_at,
+            season=args.season,
+        )
         saved = parse_input_mapping(args.input)
         prepared: list[dict[str, Any]] = []
         kicker_prepared: dict[str, Any] | None = None
@@ -126,6 +157,12 @@ def main(argv: list[str] | None = None) -> int:
                 max_stale_days=args.max_stale_days,
             )
             rows, diagnostics = parse_players(payload, config, sample)
+            coverage = evaluate_dataset_coverage(
+                quality_policy,
+                dataset_id=config["ranking_id"],
+                phase=season_context["phase"],
+                row_count=len(rows),
+            )
             prepared.append({
                 "key": key,
                 "config": config,
@@ -135,6 +172,7 @@ def main(argv: list[str] | None = None) -> int:
                 "sample": sample,
                 "rows": rows,
                 "diagnostics": diagnostics,
+                "coverage": coverage,
             })
 
             if key == "ppr-8-team":
@@ -165,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
                     f"rows={len(item['rows'])} "
                     f"drafts={item['sample']['total_drafts']} "
                     f"quality={item['sample']['quality']} "
+                    f"coverage_status={item['coverage']['status']} "
                     + " ".join(
                         f"{position}={counts[position]}"
                         for position in sorted(counts)
@@ -186,23 +225,51 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         for item in prepared:
-            paths, created = write_format(
+            coverage = item["coverage"]
+            published = False
+            if coverage["usable"]:
+                paths, created = write_format(
+                    repo_root=repo_root,
+                    rows=item["rows"],
+                    payload=item["payload"],
+                    config=item["config"],
+                    sample=item["sample"],
+                    diagnostics=item["diagnostics"],
+                    fetched_at=fetched_at,
+                    source_url=item["source_url"],
+                    response_headers=item["response_headers"],
+                    season=args.season,
+                    skip_unchanged=args.skip_unchanged,
+                )
+                published = True
+                action = "snapshot-created" if created else "ranking-unchanged"
+                print(
+                    f"[ffc-adp:{item['key']}] {action} "
+                    f"coverage_status={coverage['status']} "
+                    f"rows={coverage['observed_rows']}"
+                )
+                for output_path in paths:
+                    print(output_path)
+            else:
+                print(
+                    f"[ffc-adp:{item['key']}] skipped-preserving-last-good "
+                    f"coverage_status={coverage['status']} "
+                    f"rows={coverage['observed_rows']} "
+                    f"minimum_usable_rows={coverage['minimum_usable_rows']}",
+                    file=sys.stderr,
+                )
+
+            observation_paths = write_observation_status(
                 repo_root=repo_root,
-                rows=item["rows"],
                 payload=item["payload"],
                 config=item["config"],
-                sample=item["sample"],
-                diagnostics=item["diagnostics"],
                 fetched_at=fetched_at,
-                source_url=item["source_url"],
-                response_headers=item["response_headers"],
-                season=args.season,
-                skip_unchanged=args.skip_unchanged,
+                season_context=season_context,
+                coverage=coverage,
+                published=published,
             )
-            action = "snapshot-created" if created else "ranking-unchanged"
-            print(f"[ffc-adp:{item['key']}] {action}")
-            for path in paths:
-                print(path)
+            for output_path in observation_paths:
+                print(output_path)
 
         if kicker_prepared is not None:
             kicker_paths, kicker_created = write_kicker_format(
@@ -231,6 +298,8 @@ def main(argv: list[str] | None = None) -> int:
     except (
         FantasyFootballCalculatorFetchError,
         FantasyFootballCalculatorKickerError,
+        FfcQualityPolicyError,
+        NflSeasonContextError,
         OSError,
         ValueError,
         json.JSONDecodeError,
