@@ -2,16 +2,16 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-09-21T16:35:43Z",
-  "input_fingerprint": "853f0fe60cd44f8c042fa31187127c64bfb27af69a402641cfd51bdc5d0dc534",
+  "input_fingerprint": "9cfc3ce5dbf7aeae53f185cdcc9fa42ee6273023e4fdf4fb53e98a7f287bde84",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "603359c01e2f25984188e668da1908ed1519d039ff2131d9d7deadaca9d1f9ee"
+      "input_fingerprint": "d305e15b38ee3f49cd1930f8953c49099626c0b7df4a3e3d26cb39454433805c"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "f0c486238ca8fbe8487ed4ece1a51e688e8ba4fe55674ea2c6140995fa130a88"
+      "input_fingerprint": "603359c01e2f25984188e668da1908ed1519d039ff2131d9d7deadaca9d1f9ee"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -30,7 +30,7 @@
       "changed": 1
     },
     "event_priority_counts": {
-      "high": 1
+      "medium": 1
     },
     "baseline_mode": "comparison"
   },
@@ -39,9 +39,9 @@
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "current_evidence_fingerprint": "909d370796111971776e2670826a3f7a82a3c1f89c1493a4de92c4636741298b",
-    "previous_evidence_fingerprint": "c5b07103a08381af66fe4c1d1d22f0a355b86af6ca29ce037a34fbde59be9a8a",
+    "previous_evidence_fingerprint": "909d370796111971776e2670826a3f7a82a3c1f89c1493a4de92c4636741298b",
     "contract_changed": false,
-    "evidence_changed": true,
+    "evidence_changed": false,
     "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
@@ -52,21 +52,20 @@
       "name": "Brandon Aiyuk",
       "position": "WR",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "036b304a8e1f1e3a8819c5f4fdbcc9ddec58e0d6a74010f179a5373570a11b17",
-      "previous_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "previous_state_hash": "036b304a8e1f1e3a8819c5f4fdbcc9ddec58e0d6a74010f179a5373570a11b17",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "injury_availability"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -91,15 +90,7 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "return_timeline_change",
-          "severity": "medium",
-          "from": "20260927",
-          "to": "20270215"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],

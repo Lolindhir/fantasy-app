@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-21T16:39:19.798217Z",
+  "generated_at": "2026-09-21T16:59:09.456724Z",
   "berlin_date": "2026-09-21",
   "timezone": "Europe/Berlin",
   "domain_context": {
@@ -22,6 +22,36 @@
       "kind": "canonical_nfl_schedule",
       "path": "source-data/nfl/schedules/2026.json"
     }
+  },
+  "consumer_activity": {
+    "schema_version": 1,
+    "phase": "regular_season",
+    "modules": [
+      {
+        "id": "free-agent-daily-monitoring",
+        "relevance": "required",
+        "active": true,
+        "reason": "phase_policy:regular_season",
+        "runtime_status": "active_ready",
+        "execution_allowed": true,
+        "no_event_conclusion_allowed": true
+      },
+      {
+        "id": "kicker-daily-monitoring",
+        "relevance": "required",
+        "active": true,
+        "reason": "phase_policy:regular_season",
+        "runtime_status": "active_ready",
+        "execution_allowed": true,
+        "no_event_conclusion_allowed": true
+      }
+    ],
+    "required_module_ids": [
+      "free-agent-daily-monitoring",
+      "kicker-daily-monitoring"
+    ],
+    "secondary_module_ids": [],
+    "inactive_module_ids": []
   },
   "morning_cycle": {
     "refresh_window_start": "05:00",
@@ -61,7 +91,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T03:25:01.863319Z",
-      "age_minutes": 794.3,
+      "age_minutes": 814.13,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -79,7 +109,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T03:39:44.172936Z",
-      "age_minutes": 779.59,
+      "age_minutes": 799.42,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -96,7 +126,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T16:12:51.811852Z",
-      "age_minutes": 26.47,
+      "age_minutes": 46.29,
       "content_changed": true,
       "trigger": "push"
     },
@@ -113,7 +143,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T03:58:50.352692Z",
-      "age_minutes": 760.49,
+      "age_minutes": 780.32,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -130,7 +160,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T04:14:46.146250Z",
-      "age_minutes": 744.56,
+      "age_minutes": 764.39,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -147,7 +177,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-21T04:24:36.641121Z",
-      "age_minutes": 734.72,
+      "age_minutes": 754.55,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
