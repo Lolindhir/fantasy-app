@@ -2,6 +2,7 @@ import type { FantasyGameContextMatchup } from '../../../core/models/fantasy-gam
 import type { League } from '../../../core/models/league.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import {
+  matchupSportsStateLabel,
   matchupDisplaySideValue,
   orientMatchupScore,
   resolveMatchupDisplayTeamIDs
@@ -72,32 +73,25 @@ describe('FantasyGameContext matchup display orientation', () => {
     expect(resolveMatchupDisplayTeamIDs(league, matchups, '2026', 2, matchup)).toEqual([10, 2]);
   });
 
-  it('keeps scores, remaining paths and timeline points attached to the displayed team', () => {
+  it('keeps scores and timeline points attached to the displayed team', () => {
     const displayTeamIDs = resolveMatchupDisplayTeamIDs(league, matchups, '2026', 2, matchup);
 
     expect(orientMatchupScore(matchup, displayTeamIDs, matchup.FinalScores)).toEqual({
       Left: 123.5,
       Right: 91.25
     });
-    expect(matchupDisplaySideValue(
-      matchup,
-      displayTeamIDs,
-      'left',
-      matchup.RemainingRelevance.LeftRemainingPathCount,
-      matchup.RemainingRelevance.RightRemainingPathCount
-    )).toBe(3);
-    expect(matchupDisplaySideValue(
-      matchup,
-      displayTeamIDs,
-      'right',
-      matchup.RemainingRelevance.LeftRemainingPathCount,
-      matchup.RemainingRelevance.RightRemainingPathCount
-    )).toBe(1);
     expect(matchupDisplaySideValue(matchup, displayTeamIDs, 'left', 12.75, 27.5)).toBe(27.5);
     expect(matchupDisplaySideValue(matchup, displayTeamIDs, 'right', 12.75, 27.5)).toBe(12.75);
   });
 
   it('preserves generated orientation when the Overview matchup cannot be resolved', () => {
     expect(resolveMatchupDisplayTeamIDs(league, null, '2026', 2, matchup)).toEqual([2, 10]);
+  });
+
+  it('uses sports language for each remaining-scoring state', () => {
+    expect(matchupSportsStateLabel('both-sides', 'Flo', 'Tampa Bay')).toBe('Both teams can still score');
+    expect(matchupSportsStateLabel('left-only', 'Flo', 'Tampa Bay')).toBe('Only Flo can still score');
+    expect(matchupSportsStateLabel('right-only', 'Flo', 'Tampa Bay')).toBe('Only Tampa Bay can still score');
+    expect(matchupSportsStateLabel('none', 'Flo', 'Tampa Bay')).toBe('No more points can be scored');
   });
 });
