@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-09-21T14:46:08Z",
-  "input_fingerprint": "228e11ebd6d1dbaba3f4a7acebd7b1f29386c93237dafb426d069862cbbfdbbe",
-  "status": "ok",
+  "generated_at": "2026-09-21T16:12:50.727775Z",
+  "input_fingerprint": "ae2be0e218112c7540ed3e5d9b20b5785211ef843f43c7d1b68cd7c9eedeb333",
+  "status": "warning",
   "coverage": {
     "managed_roster_ids": 35,
     "resolved_players": 35,
     "players_with_current_injury_signal": 11,
-    "primary_adp_applicable": 34,
-    "primary_adp_listed": 16,
+    "primary_adp_applicable": 4,
+    "primary_adp_listed": 4,
     "sources": {
       "fantasypros-dynasty-superflex-ppr": {
         "applicable_players": 34,
@@ -22,13 +22,6 @@
         "applicable_players": 34,
         "listed_players": 34,
         "not_listed_players": 0,
-        "not_applicable_players": 1,
-        "ambiguous_players": 0
-      },
-      "ffc-redraft-ppr-8-team": {
-        "applicable_players": 34,
-        "listed_players": 14,
-        "not_listed_players": 20,
         "not_applicable_players": 1,
         "ambiguous_players": 0
       },
@@ -91,7 +84,21 @@
       }
     }
   },
-  "issues": [],
+  "issues": [
+    {
+      "severity": "warning",
+      "kind": "current_source_observation_unusable",
+      "source": "ffc-redraft-ppr-8-team",
+      "details": {
+        "dataset_id": "redraft-ppr-8-team",
+        "coverage_status": "insufficient_coverage",
+        "observed_rows": 43,
+        "minimum_usable_rows": 50,
+        "expected_minimum_rows": 50,
+        "checked_at": "2026-09-21T16:12:50.727775Z"
+      }
+    }
+  ],
   "source_freshness": [
     {
       "id": "league_display",
@@ -144,6 +151,16 @@
       "source_timestamp": null
     },
     {
+      "id": "ffc-redraft-ppr-8-team_observation",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/observation.json",
+      "source_timestamp": "2026-09-21T16:12:50.727775Z"
+    },
+    {
+      "id": "ffc-redraft-2qb-10-team_observation",
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/observation.json",
+      "source_timestamp": "2026-09-21T16:12:50.727775Z"
+    },
+    {
       "id": "fantasypros-dynasty-superflex-ppr_pointer",
       "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
       "source_timestamp": "2026-09-21T03:24:59.892978Z"
@@ -164,24 +181,14 @@
       "source_timestamp": "2026-09-21T03:39:42.849253Z"
     },
     {
-      "id": "ffc-redraft-ppr-8-team_pointer",
-      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json",
-      "source_timestamp": "2026-09-20T03:49:19.235854Z"
-    },
-    {
-      "id": "ffc-redraft-ppr-8-team_ranking",
-      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-ppr-8-team/snapshots/2026-09-20/ranking.csv",
-      "source_timestamp": "2026-09-20T03:49:19.235854Z"
-    },
-    {
       "id": "ffc-redraft-2qb-10-team_pointer",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
-      "source_timestamp": "2026-09-20T03:49:19.235854Z"
+      "source_timestamp": "2026-09-21T16:12:50.727775Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_ranking",
-      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-09-20/ranking.csv",
-      "source_timestamp": "2026-09-20T03:49:19.235854Z"
+      "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-09-21/ranking.csv",
+      "source_timestamp": "2026-09-21T16:12:50.727775Z"
     },
     {
       "id": "fftoday-redraft-kicker-preseason_pointer",
