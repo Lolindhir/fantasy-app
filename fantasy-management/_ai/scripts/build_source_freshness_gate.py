@@ -14,6 +14,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from tools.nfl_season_context import resolve_nfl_season_context  # noqa: E402
+from operations_consumer_activity import (  # noqa: E402
+    apply_freshness_readiness,
+    resolve_consumer_activity,
+)
 
 DEFAULT_CONFIG = REPO_ROOT / "fantasy-management/automation/source-freshness-gate.json"
 VALID_SOURCE_STATUSES = {"fresh", "stale", "missing", "failed", "invalid"}
@@ -186,6 +190,16 @@ def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[
         decision = "proceed"
 
     counts = {status: sum(1 for source in sources if source["status"] == status) for status in sorted(VALID_SOURCE_STATUSES)}
+    consumer_activity = resolve_consumer_activity(
+        config.get("consumer_activity"),
+        phase=phase,
+    )
+    consumer_activity = apply_freshness_readiness(
+        consumer_activity,
+        freshness_status=overall_status,
+        monitoring_allowed=not blocking,
+        no_event_conclusion_allowed=not no_event_blockers,
+    )
     return {
         "schema_version": config["schema_version"],
         "dataset_id": "source-freshness-gate",
@@ -193,6 +207,7 @@ def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[
         "berlin_date": now.astimezone(BERLIN).date().isoformat(),
         "timezone": config["timezone"],
         "domain_context": domain_context,
+        "consumer_activity": consumer_activity,
         "morning_cycle": config["morning_cycle"],
         "population": {
             "source_count": len(sources),
