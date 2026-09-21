@@ -433,6 +433,22 @@ If the amount or variety of deterministic generated data grows materially, `fant
 
 New generated subdirectories must follow the same reproducibility rule and should be created only when real artifacts require them; do not create empty placeholder folders.
 
+## Season-aware Source Quality und Consumer Readiness
+
+Fantasy Operations trennt drei Zustände ausdrücklich:
+
+1. **Technical Source Observation**: Provider erreichbar, Response strukturell valide und Source-Identität plausibel.
+2. **Dataset Usability/Coverage**: Die aktuelle beobachtete Population erfüllt den phasenabhängigen Qualitätsvertrag oder nicht.
+3. **Consumer Readiness/Relevance**: Eine Signalfamilie ist für das aktuelle Operations-Modul in der kanonischen NFL-Phase `required`, `secondary` oder `inactive`.
+
+Der providerunabhängige Domain Context stammt aus `tools/nfl_season_context.py` und ausschließlich aus dem kanonischen `source-data/nfl/schedules/<season>.json`. Sleeper und Workflow-Uhrzeiten sind keine Season-Context-Quelle.
+
+Für FFC gilt im aktuellen Übergangsvertrag: Ein technisch valider Abruf mit zu kleiner Population ist **kein technischer Refresh-Fehler**. Das betroffene Dataset veröffentlicht kein neues normalisiertes Ranking, behält seinen letzten guten Snapshot und schreibt stattdessen ein aktuelles `observation-status.json` mit Coverage/Usability. Gesunde Geschwister-Datasets dürfen unabhängig publizieren. Der providerweite Success-Heartbeat bestätigt den erfolgreichen technischen Abruf; Dataset-Qualität bleibt separat sichtbar.
+
+Operations darf ein Last-Good-Ranking weiterhin als historischen/sekundären Kontext materialisieren, muss dessen aktuelle Observation aber explizit mitführen. `data-quality.json` warnt bei `reduced_coverage`, `insufficient_coverage`, `inactive_for_phase` oder fehlender aktueller Observation. Ein solcher Zustand ist kein negatives Spielersignal.
+
+Die aktuelle Consumer-Policy liegt in `fantasy-management/automation/season-aware-operations-policy.json`. Für Daily Free-Agent Monitoring ist `redraft_adp` während der Regular Season `secondary`: eine technische FFC-Unfrische bleibt sichtbar, blockiert aber allein keinen belastbaren No-Event-Befund. Nach Ende der Regular Season ist das Free-Agent-Monitoring im v1-Context `inactive`.
+
 ## Production order
 
 The intended daily order is:
