@@ -36,7 +36,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
         (self.root / "public/data").mkdir(parents=True)
         (self.root / "fantasy-management/sources/refresh-status").mkdir(parents=True)
         self.config = {
-            "schema_version": 2,
+            "schema_version": 3,
             "timezone": "Europe/Berlin",
             "morning_cycle": {
                 "refresh_window_start": "05:00",
@@ -68,6 +68,69 @@ class SourceFreshnessGateTests(unittest.TestCase):
                 },
             ],
         }
+        self.season_policy = {
+            "schema_version": 1,
+            "policy_id": "season-aware-fantasy-operations",
+            "season_context_id": "nfl-regular-season-context",
+            "modules": {
+                "free_agent_monitoring": {
+                    "phases": {
+                        "pre_regular_season": {"active": True},
+                        "regular_season": {"active": True},
+                        "post_regular_season": {"active": False},
+                    }
+                }
+            },
+            "signal_families": {
+                "redraft_adp": {
+                    "phases": {
+                        "pre_regular_season": {"relevance": "required"},
+                        "regular_season": {"relevance": "secondary"},
+                        "post_regular_season": {"relevance": "inactive"},
+                    }
+                }
+            },
+            "defaults": {"active_module_signal_relevance": "required"},
+        }
+        self.season_context = self._season_context("pre_regular_season")
+
+    def _season_context(self, phase: str) -> dict:
+        as_of = {
+            "pre_regular_season": "2026-08-18",
+            "regular_season": "2026-09-21",
+            "post_regular_season": "2027-01-11",
+        }[phase]
+        week = {
+            "pre_regular_season": None,
+            "regular_season": 2,
+            "post_regular_season": 18,
+        }[phase]
+        return {
+            "schema_version": 1,
+            "context_id": "nfl-regular-season-context",
+            "season": 2026,
+            "as_of_date": as_of,
+            "phase": phase,
+            "regular_season": {
+                "first_game_date": "2026-09-09",
+                "last_game_date": "2027-01-10",
+                "current_week": week,
+            },
+            "source": {
+                "kind": "canonical_nfl_schedule",
+                "path": "source-data/nfl/schedules/2026.json",
+                "game_type_basis": "REG",
+            },
+        }
+
+    def _evaluate(self, *, season_context: dict | None = None) -> dict:
+        return freshness.evaluate_gate(
+            root=self.root,
+            config=self.config,
+            now=self.NOW,
+            season_policy=self.season_policy,
+            season_context=season_context or self.season_context,
+        )
 
     def tearDown(self) -> None:
         self.tempdir.cleanup()
@@ -107,9 +170,9 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self._write_timestamps("2026-08-18T04:35:00Z")
         self._write_heartbeat(checked_at="2026-08-18T03:32:00Z", content_changed=False)
 
-        report = freshness.evaluate_gate(root=self.root, config=self.config, now=self.NOW)
+        report = self._evaluate()
 
-        self.assertEqual(2, report["schema_version"])
+        self.assertEqual(3, report["schema_version"])
         self.assertEqual("ok", report["overall_status"])
         self.assertEqual("proceed", report["monitoring"]["decision"])
         self.assertTrue(report["monitoring"]["allowed"])
@@ -181,6 +244,51 @@ class SourceFreshnessGateTests(unittest.TestCase):
 
         self.assertEqual("failed", source["status"])
         self.assertEqual("latest_heartbeat_not_successful", source["reason"])
+
+    def test_regular_season_secondary_redraft_adp_does_not_block_no_event_conclusion(self) -> None:
+        self._write_timestamps("2026-08-18T04:35:00Z")
+        self._write_heartbeat(checked_at="2026-08-18T03:32:00Z")
+        self.config["sources"].append(
+            {
+                "id": "ffc",
+                "label": "FFC",
+                "kind": "heartbeat",
+                "path": "fantasy-management/sources/refresh-status/ffc.json",
+                "required_after_local_time": "05:00",
+                "max_age_minutes": 1440,
+                "block_monitoring_if_unfresh": False,
+                "required_for_no_event_conclusion": True,
+                "affected_signal_families": ["redraft_adp"],
+            }
+        )
+
+        report = self._evaluate(
+            season_context=self._season_context("regular_season")
+        )
+
+        self.assertEqual("degraded", report["overall_status"])
+        self.assertEqual("proceed_degraded", report["monitoring"]["decision"])
+        self.assertTrue(report["monitoring"]["active"])
+        self.assertTrue(report["monitoring"]["no_event_conclusion_allowed"])
+        self.assertEqual(
+            "secondary",
+            report["monitoring"]["signal_family_relevance"]["redraft_adp"],
+        )
+        ffc = next(item for item in report["sources"] if item["id"] == "ffc")
+        self.assertFalse(ffc["effective_required_for_no_event_conclusion"])
+
+    def test_post_regular_season_disables_free_agent_monitoring(self) -> None:
+        self._write_timestamps("2026-08-18T04:35:00Z")
+        self._write_heartbeat(checked_at="2026-08-18T03:32:00Z")
+
+        report = self._evaluate(
+            season_context=self._season_context("post_regular_season")
+        )
+
+        self.assertFalse(report["monitoring"]["active"])
+        self.assertEqual("inactive", report["monitoring"]["decision"])
+        self.assertFalse(report["monitoring"]["allowed"])
+        self.assertFalse(report["monitoring"]["no_event_conclusion_allowed"])
 
     def test_heartbeat_writer_records_success_without_equating_unchanged_with_failure(self) -> None:
         heartbeat = heartbeat_writer.build_heartbeat(
