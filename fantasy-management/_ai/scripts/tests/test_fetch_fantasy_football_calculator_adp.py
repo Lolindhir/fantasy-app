@@ -92,6 +92,65 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             "raw_note": raw_note,
         }
 
+    def write_runtime_contracts(self, root: Path) -> Path:
+        schedule_path = root / "source-data" / "nfl" / "schedules" / "2026.json"
+        schedule_path.parent.mkdir(parents=True, exist_ok=True)
+        schedule_path.write_text(
+            json.dumps({
+                "SchemaVersion": 2,
+                "Season": 2026,
+                "SourceDataset": "nflverse.schedules",
+                "Finalized": False,
+                "Games": [
+                    {"GameID": "w1", "GameType": "REG", "Week": 1, "GameDay": "2026-09-09"},
+                    {"GameID": "w2", "GameType": "REG", "Week": 2, "GameDay": "2026-09-17"},
+                    {"GameID": "w18", "GameType": "REG", "Week": 18, "GameDay": "2027-01-10"},
+                ],
+            }),
+            encoding="utf-8",
+        )
+        policy_path = (
+            root
+            / "fantasy-management"
+            / "sources"
+            / "external-rankings"
+            / "adp"
+            / "fantasy-football-calculator"
+            / "quality-policy.json"
+        )
+        policy_path.parent.mkdir(parents=True, exist_ok=True)
+        phases = {
+            "pre_regular_season": {
+                "active": True,
+                "expected_minimum_rows": 80,
+                "minimum_usable_rows": 50,
+            },
+            "regular_season": {
+                "active": True,
+                "expected_minimum_rows": 50,
+                "minimum_usable_rows": 50,
+            },
+            "post_regular_season": {
+                "active": False,
+                "expected_minimum_rows": 0,
+                "minimum_usable_rows": 0,
+            },
+        }
+        policy_path.write_text(
+            json.dumps({
+                "schema_version": 1,
+                "source_id": "fantasy-football-calculator",
+                "season_context_id": "nfl-regular-season-context",
+                "purpose": "test",
+                "datasets": {
+                    "redraft-ppr-8-team": {"phases": phases},
+                    "redraft-2qb-10-team": {"phases": phases},
+                },
+            }),
+            encoding="utf-8",
+        )
+        return policy_path
+
     def prepare(self, config_key="ppr-8-team", **kwargs):
         config = module.FORMAT_CONFIGS[config_key]
         payload = self.make_payload(config_key, **kwargs)
@@ -148,20 +207,18 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
         self.assertEqual(72, len(rows))
         self.assertEqual(72, diagnostics["normalized_player_count"])
 
-    def test_rejects_offense_population_below_contract_minimum(self):
+    def test_parser_keeps_coverage_separate_from_structural_validation(self):
         config = module.FORMAT_CONFIGS["ppr-8-team"]
-        payload = self.make_payload(offense_rows=49)
+        payload = self.make_payload(offense_rows=43)
         sample = module.validate_payload(
             payload,
             config,
             season=2026,
             fetched_at=datetime(2026, 7, 18, tzinfo=timezone.utc),
         )
-        with self.assertRaisesRegex(
-            module.FantasyFootballCalculatorFetchError,
-            "Too few offensive FFC rows",
-        ):
-            module.parse_players(payload, config, sample)
+        rows, diagnostics = module.parse_players(payload, config, sample)
+        self.assertEqual(43, len(rows))
+        self.assertEqual(43, diagnostics["normalized_player_count"])
 
     def test_dry_run_preserves_healthy_formats_when_kicker_coverage_is_too_small(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -193,6 +250,91 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             self.assertIn("redraft-ppr-8-team rows=120", output.getvalue())
             self.assertIn("redraft-2qb-10-team rows=120", output.getvalue())
             self.assertIn("skipped-preserving-last-good", output.getvalue())
+
+    def test_regular_season_insufficient_ppr_preserves_last_good_and_publishes_2qb(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            policy_path = self.write_runtime_contracts(root)
+
+            config, payload, _, sample, rows, diagnostics = self.prepare(offense_rows=58)
+            module.write_format(
+                repo_root=root,
+                rows=rows,
+                payload=payload,
+                config=config,
+                sample=sample,
+                diagnostics=diagnostics,
+                fetched_at=datetime(2026, 9, 20, 3, 49, tzinfo=timezone.utc),
+                source_url=module.build_source_url(config, 2026),
+                response_headers={},
+                season=2026,
+                skip_unchanged=True,
+            )
+
+            ppr_path = root / "ppr.json"
+            two_qb_path = root / "2qb.json"
+            ppr_payload = self.make_payload(
+                "ppr-8-team",
+                offense_rows=43,
+                end_date="2026-09-20",
+                total_drafts=100,
+            )
+            ppr_payload["meta"]["start_date"] = "2026-09-13"
+            two_qb_payload = self.make_payload(
+                "2qb-10-team",
+                offense_rows=120,
+                end_date="2026-09-20",
+                total_drafts=1000,
+            )
+            two_qb_payload["meta"]["start_date"] = "2026-08-21"
+            ppr_path.write_text(json.dumps(ppr_payload), encoding="utf-8")
+            two_qb_path.write_text(json.dumps(two_qb_payload), encoding="utf-8")
+
+            result = module.main([
+                "--repo-root",
+                str(root),
+                "--quality-policy",
+                str(policy_path),
+                "--season",
+                "2026",
+                "--fetched-at",
+                "2026-09-21T04:14:44Z",
+                "--input",
+                f"ppr-8-team={ppr_path}",
+                "--input",
+                f"2qb-10-team={two_qb_path}",
+                "--skip-unchanged",
+            ])
+            self.assertEqual(0, result)
+
+            ppr_root = module.ranking_root(root, module.FORMAT_CONFIGS["ppr-8-team"])
+            ppr_latest = json.loads((ppr_root / "latest.json").read_text(encoding="utf-8"))
+            ppr_status = json.loads(
+                (ppr_root / "observation-status.json").read_text(encoding="utf-8")
+            )
+            ppr_raw = json.loads((ppr_root / "raw-latest.json").read_text(encoding="utf-8"))
+            self.assertEqual("2026-09-20", ppr_latest["snapshot_date"])
+            self.assertFalse((ppr_root / "snapshots" / "2026-09-21").exists())
+            self.assertEqual(45, len(ppr_raw["players"]))
+            self.assertEqual("insufficient_coverage", ppr_status["status"])
+            self.assertFalse(ppr_status["usable"])
+            self.assertFalse(ppr_status["published"])
+            self.assertEqual(43, ppr_status["coverage"]["observed_rows"])
+            self.assertEqual(
+                ppr_latest["ranking_file"],
+                ppr_status["last_good"]["ranking_file"],
+            )
+
+            two_qb_root = module.ranking_root(root, module.FORMAT_CONFIGS["2qb-10-team"])
+            two_qb_latest = json.loads(
+                (two_qb_root / "latest.json").read_text(encoding="utf-8")
+            )
+            two_qb_status = json.loads(
+                (two_qb_root / "observation-status.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual("2026-09-21", two_qb_latest["snapshot_date"])
+            self.assertTrue(two_qb_status["usable"])
+            self.assertTrue(two_qb_status["published"])
 
     def test_rejects_wrong_team_count_and_stale_sample(self):
         config = module.FORMAT_CONFIGS["ppr-8-team"]
