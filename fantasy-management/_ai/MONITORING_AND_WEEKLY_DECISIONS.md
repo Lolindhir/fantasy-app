@@ -92,6 +92,20 @@ Sie beantwortet:
 - Ist der erwartete Wochen- oder Mehrwochenvorteil größer als der Wert des verlorenen Roster-Slots?
 - Welche Entscheidung ist zeitkritisch und welche kann beobachtet werden?
 
+## Season-aware Aktivität und Signal-Criticality
+
+Daily Monitoring ist kein ganzjährig identischer Prozess. Vor jeder Event-Interpretation ist der veröffentlichte `source-freshness.json`-State einschließlich `season_context`, `monitoring.active` und `signal_family_relevance` zu lesen.
+
+Der v1-Season-Context unterscheidet ausschließlich `pre_regular_season`, `regular_season` und `post_regular_season`, weil diese Grenzen aus dem kanonischen REG-Schedule belastbar ableitbar sind. Eine feinere Postseason-/Offseason-Semantik darf später ergänzt, aber nicht aus Sleeper oder Kalenderheuristiken erfunden werden.
+
+Für Daily Free-Agent Monitoring gilt aktuell:
+
+- vor Beginn der Regular Season ist `redraft_adp` ein erforderliches Signal;
+- während der Regular Season ist `redraft_adp` sekundärer Markt-/Kostenkontext und darf allein eine No-Event-Aussage nicht blockieren;
+- nach Ende der Regular Season ist das Daily Free-Agent-Monitoring im v1-Vertrag inaktiv.
+
+Technische Source-Probleme und reduzierte Dataset-Coverage bleiben sichtbar und dürfen nicht als Spielersignale interpretiert werden.
+
 ## 2. Daily Monitoring: fachlicher Zielzustand
 
 Der Daily-Monitoring-Workflow soll langfristig vier Populationen abdecken:
