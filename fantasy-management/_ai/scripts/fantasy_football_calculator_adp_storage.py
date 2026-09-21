@@ -167,6 +167,60 @@ def build_metadata(
     }
 
 
+def write_observation_status(
+    *,
+    repo_root: Path,
+    payload: dict[str, Any],
+    config: dict[str, Any],
+    fetched_at: datetime,
+    season_context: dict[str, Any],
+    coverage: dict[str, Any],
+    published: bool,
+) -> list[Path]:
+    root = ranking_root(repo_root, config)
+    raw_path = root / "raw-latest.json"
+    latest_path = root / "latest.json"
+    status_path = root / "observation-status.json"
+
+    written: list[Path] = []
+    if not published:
+        atomic_write(raw_path, render_raw(payload))
+        written.append(raw_path)
+
+    latest = read_json(latest_path) or {}
+    status = {
+        "schema_version": 1,
+        "source_id": SOURCE_ID,
+        "dataset_id": config["ranking_id"],
+        "checked_at": fetched_at.isoformat(),
+        "season_context": {
+            "context_id": season_context["context_id"],
+            "season": season_context["season"],
+            "as_of_date": season_context["as_of_date"],
+            "phase": season_context["phase"],
+            "source_path": season_context["source"]["path"],
+        },
+        "status": coverage["status"],
+        "usable": bool(coverage["usable"]),
+        "coverage": {
+            "observed_rows": int(coverage["observed_rows"]),
+            "expected_minimum_rows": int(coverage["expected_minimum_rows"]),
+            "minimum_usable_rows": int(coverage["minimum_usable_rows"]),
+        },
+        "published": published,
+        "last_good": {
+            "ranking_fetched_at": latest.get("ranking_fetched_at"),
+            "ranking_file": latest.get("ranking_file"),
+        },
+    }
+    atomic_write(
+        status_path,
+        json.dumps(status, indent=2, ensure_ascii=False) + "\n",
+    )
+    written.append(status_path)
+    return written
+
+
 def write_format(
     *,
     repo_root: Path,
