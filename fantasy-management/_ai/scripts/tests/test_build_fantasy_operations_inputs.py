@@ -16,11 +16,72 @@ from build_fantasy_operations_inputs import (  # noqa: E402
     build,
     canonical_json,
     derive_injury_signal,
+    evaluate_catalog_source_observation,
     normalize_name,
 )
 
 
 class FantasyOperationsInputsTests(unittest.TestCase):
+    def test_current_source_observation_excludes_insufficient_dataset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            observation_path = root / "sources/ffc/observation.json"
+            observation_path.parent.mkdir(parents=True, exist_ok=True)
+            observation_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source_id": "fantasy-football-calculator",
+                        "technical_status": "success",
+                        "checked_at": "2026-09-21T04:14:44Z",
+                        "datasets": {
+                            "redraft-ppr-8-team": {
+                                "coverage_status": "insufficient_coverage",
+                                "observed_rows": 43,
+                                "minimum_usable_rows": 50,
+                                "expected_minimum_rows": 50,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            definition = {
+                "source_id": "ffc-redraft-ppr-8-team",
+                "access": {
+                    "observation": {
+                        "path": "sources/ffc/observation.json",
+                        "dataset_id": "redraft-ppr-8-team",
+                        "usable_statuses": ["usable", "reduced_coverage"],
+                    }
+                },
+            }
+            usable, source, issue = evaluate_catalog_source_observation(root, definition)
+            self.assertFalse(usable)
+            self.assertIsNotNone(source)
+            self.assertEqual("current_source_observation_unusable", issue["kind"])
+            self.assertEqual(43, issue["details"]["observed_rows"])
+
+    def test_missing_observation_uses_transitional_legacy_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            definition = {
+                "source_id": "ffc-redraft-ppr-8-team",
+                "access": {
+                    "observation": {
+                        "path": "sources/ffc/observation.json",
+                        "dataset_id": "redraft-ppr-8-team",
+                        "usable_statuses": ["usable", "reduced_coverage"],
+                    }
+                },
+            }
+            usable, source, issue = evaluate_catalog_source_observation(
+                Path(directory),
+                definition,
+            )
+            self.assertTrue(usable)
+            self.assertIsNone(source)
+            self.assertIsNone(issue)
+
     def test_name_normalization_removes_suffix_and_punctuation(self) -> None:
         self.assertEqual("marvinharrison", normalize_name("Marvin Harrison Jr."))
         self.assertEqual("jamarrchase", normalize_name("Ja'Marr Chase"))
