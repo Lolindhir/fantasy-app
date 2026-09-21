@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, time, timezone
 from pathlib import Path
 from typing import Any
@@ -9,6 +10,11 @@ from zoneinfo import ZoneInfo
 
 BERLIN = ZoneInfo("Europe/Berlin")
 REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.nfl_season_context import resolve_nfl_season_context  # noqa: E402
+
 DEFAULT_CONFIG = REPO_ROOT / "fantasy-management/automation/source-freshness-gate.json"
 VALID_SOURCE_STATUSES = {"fresh", "stale", "missing", "failed", "invalid"}
 
@@ -116,12 +122,44 @@ def _evaluate_heartbeat_source(root: Path, source: dict[str, Any], now: datetime
     }
 
 
+def _effective_source_policy(
+    source: dict[str, Any],
+    *,
+    phase: str | None,
+) -> dict[str, Any]:
+    effective = dict(source)
+    if phase is None:
+        return effective
+    override = (source.get("phase_policy") or {}).get(phase)
+    if isinstance(override, dict):
+        for key in (
+            "active",
+            "block_monitoring_if_unfresh",
+            "required_for_no_event_conclusion",
+        ):
+            if key in override:
+                effective[key] = override[key]
+    return effective
+
+
 def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[str, Any]:
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
     now = now.astimezone(timezone.utc)
+    domain_context = None
+    phase = None
+    if config.get("domain_context"):
+        domain_context = resolve_nfl_season_context(
+            root,
+            as_of=now,
+        )
+        phase = domain_context["phase"]
+
     sources: list[dict[str, Any]] = []
-    for source in config["sources"]:
+    for configured_source in config["sources"]:
+        source = _effective_source_policy(configured_source, phase=phase)
+        if source.get("active", True) is False:
+            continue
         if source["kind"] == "timestamp":
             result = _evaluate_timestamp_source(root, source, now)
         elif source["kind"] == "heartbeat":
@@ -154,6 +192,7 @@ def evaluate_gate(*, root: Path, config: dict[str, Any], now: datetime) -> dict[
         "generated_at": _iso_z(now),
         "berlin_date": now.astimezone(BERLIN).date().isoformat(),
         "timezone": config["timezone"],
+        "domain_context": domain_context,
         "morning_cycle": config["morning_cycle"],
         "population": {
             "source_count": len(sources),
