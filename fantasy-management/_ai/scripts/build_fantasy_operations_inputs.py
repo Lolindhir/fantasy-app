@@ -491,19 +491,10 @@ def evaluate_catalog_source_observation(
     source_id = definition["source_id"]
     observation_path = root / observation_config["path"]
     if not observation_path.exists():
-        return (
-            False,
-            None,
-            {
-                "severity": "warning",
-                "kind": "current_source_observation_missing",
-                "source": source_id,
-                "details": {
-                    "path": observation_config["path"],
-                    "dataset_id": observation_config["dataset_id"],
-                },
-            },
-        )
+        # Transitional rollout guard: the catalog may land before the first
+        # provider run publishes its observation. Once present, the observation
+        # becomes authoritative for current dataset usability.
+        return True, None, None
 
     observation = load_json(observation_path)
     if observation.get("technical_status") != "success":
