@@ -17,6 +17,7 @@ function makeLeague(): League {
     Season: '2026',
     Status: 'In-Season',
     FinalScoredWeek: 1,
+    PlayoffStartWeek: 14,
     Teams: Array.from({ length: 9 }, (_, index) => {
       const teamID = index + 1;
       return {
@@ -25,7 +26,25 @@ function makeLeague(): League {
         TeamAbbr: `T${teamID}`,
         Owner: `Owner ${teamID}`,
         Avatar: `/team-${teamID}.png`,
-        Roster: []
+        Roster: [],
+        Placements: {
+          Current: {
+            Regular: {
+              Place: teamID,
+              PlaceOrdinal: `${teamID}.`,
+              Wins: 1,
+              Losses: 0,
+              Ties: 0,
+              Points: 100 + teamID,
+              PointsAgainst: 90,
+              WinPercentage: 1,
+              WinPercentageDisplay: '1.000',
+              Record: '1-0',
+              Streak: '1W'
+            },
+            Awards: []
+          }
+        }
       };
     })
   } as unknown as League;
@@ -46,6 +65,20 @@ function makeMatchups(): MatchupsReadModel {
       LastCompletedWeek: 1,
       ActiveOrNextWeek: 2
     }
+  };
+}
+
+function makeDecisionWindows(): DecisionWindowsReadModel {
+  return {
+    SchemaVersion: 3,
+    LeagueID: 'league',
+    Season: '2026',
+    LineupWeek: 2,
+    LastLineupWeek: 17,
+    DecisionWindows: [],
+    LookaheadDecisionWindow: null,
+    PlayerLockFacts: [],
+    TeamLineupEvaluations: []
   };
 }
 
@@ -165,7 +198,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       'getWeeklyRecaps'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(makeContext()));
-    dataService.getDecisionWindows.and.returnValue(of(null as unknown as DecisionWindowsReadModel));
+    dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows()));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
     dataService.getNflTeams.and.returnValue(of([
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: '/away.svg' },
