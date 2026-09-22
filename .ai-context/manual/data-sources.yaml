@@ -440,7 +440,9 @@ dataFlow:
       refresh. Canonical Player Identity `IDs.Sleeper -> IDs.ESPN` joins the provider
       observation to app players; the legacy Players.json ESPN field is not identity
       authority. Only explicit OUT removes a direct scoring path; missing/provider-error evidence
-      remains unknown and must not synthesize unavailability.
+      remains unknown and must not synthesize unavailability. The generated observation keeps a
+      stable FirstObservedAtUtc for the current provider status (with legacy ObservedAtUtc as the
+      same compatibility alias) so unchanged polling does not create semantic DecisionWindows churn.
 
   - from: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
     to: public/data/Transactions.json
