@@ -228,8 +228,11 @@ dataSources:
     generator: public/requests/RequestLeague.ps1
     helpers:
       - public/requests/utils/league/DecisionWindowUtils.psm1
+      - public/requests/utils/league/FantasyRelevanceV2Utils.psm1
+      - public/requests/utils/league/EspnScoringAvailabilityUtils.psm1
+      - public/requests/utils/league/LineupRepairabilityDecisionUtils.psm1
     localDocumentation: public/data/DecisionWindows.ai-doc.yaml
-    architectureDecision: ADR-036
+    architectureDecision: ADR-036 + ADR-038
     category: generated-output
     role: Current exact-kickoff Decision Window and objective lineup read model
     description: >
@@ -244,7 +247,10 @@ dataSources:
     currentAdapter:
       lineupWeekSource: Sleeper settings.leg from already-fetched League state
       scheduleJoin: Player.TeamID -> Schedule.teamIDHome / teamIDAway
-      providerRequests: none added specifically for DecisionWindows
+      providerRequests:
+        - ESPN Site NFL injuries feed during active current-week DecisionWindows generation; no API key; failure returns no availability overlay rather than fabricating OUT
+      scoringAvailabilityJoin: Players.ESPNID -> ESPN athlete.id -> provider-neutral FantasyRelevance.ScoringAvailability
+      scoringAvailabilityBoundary: '#669 owns current-game scoring availability; generic Players.json injury narrative remains separate and unresolved for wholesale canonicalization.'
       migrationBoundary: '#347 may replace transitional current adapters with canonical source-data inputs without changing the provider-neutral derivation semantics.'
     historicalRule: >
       Historical relevance remains rebuildable from persisted season/week schedule,
