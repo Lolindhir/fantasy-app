@@ -76,13 +76,14 @@ function New-LrrGame {
 }
 
 function Invoke-Lrr {
-    param([object]$Model, [array]$Teams, [array]$RawPlayers, [array]$Schedule, [object]$Capability)
+    param([object]$Model, [array]$Teams, [array]$RawPlayers, [array]$Schedule, [object]$Capability, [hashtable]$Availability = @{})
     return Add-LineupRepairabilityDecisionFacts `
         -BaseReadModel $Model `
         -Teams $Teams `
         -Players $RawPlayers `
         -Schedule $Schedule `
         -AcquisitionCapability $Capability `
+        -ScoringAvailabilityByPlayerID $Availability `
         -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T10:00:00Z'))
 }
 
@@ -169,5 +170,46 @@ Assert-LrrEqual 'EXTERNAL_PLAYER_EVIDENCE_UNKNOWN' $result.FantasyRelevance.Team
 $model = New-LrrReadModel -Slots @((New-LrrSlot 'WR-1' 'WR' $null)) -Players @() -Locks @() -Evaluation 'review'
 $result = Invoke-Lrr $model $teams @() @() $unavailable
 Assert-LrrEqual 'unknown' $result.FantasyRelevance.Teams[0].Slots[0].Repairability.State 'Review evidence must remain neutral unknown'
+
+# Explicit terminal scoring availability creates a starter problem but remains repairable before kickoff.
+$outObservation = [PSCustomObject]@{ State = 'unavailable'; Reason = 'out'; Source = 'ESPN'; Provider = 'ESPN_SITE_INJURIES'; ProviderPlayerID = '1'; ProviderStatus = 'Out'; ProviderDate = $null }
+$uncertainObservation = [PSCustomObject]@{ State = 'uncertain'; Reason = 'questionable'; Source = 'ESPN'; Provider = 'ESPN_SITE_INJURIES'; ProviderPlayerID = '2'; ProviderStatus = 'Questionable'; ProviderDate = $null }
+
+$outSlot = New-LrrSlot 'WR-1' 'WR' 'out1' 'unlocked'
+$outSlot | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outObservation
+$outStarter = New-LrrPlayer 'out1' 'starter' 'WR' 'unlocked' 'WR-1'
+$outStarter | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outObservation
+$model = New-LrrReadModel -Slots @($outSlot) -Players @($outStarter, (New-LrrPlayer 'wr2' 'bench' 'WR')) -Locks @((New-LrrLock 'out1'), (New-LrrLock 'wr2'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('out1','wr2') }) @() @() $unavailable @{ out1 = $outObservation }
+$repair = $result.FantasyRelevance.Teams[0].Slots[0].Repairability
+Assert-LrrEqual 'STARTER_UNAVAILABLE' $repair.ProblemCode 'Explicit ESPN OUT must attach an availability problem to the starter slot'
+Assert-LrrEqual 'repairable' $repair.State 'Pregame OUT can still be repaired with an eligible unlocked bench player'
+
+# Once the OUT starter has locked, the slot is objectively consumed and irreparable.
+$lockedOutSlot = New-LrrSlot 'QB-1' 'QB' 'outqb' 'locked-active'
+$lockedOutSlot | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outObservation
+$lockedOutPlayer = New-LrrPlayer 'outqb' 'starter' 'QB' 'locked-active' 'QB-1'
+$lockedOutPlayer | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outObservation
+$model = New-LrrReadModel -Slots @($lockedOutSlot) -Players @($lockedOutPlayer) -Locks @((New-LrrLock 'outqb'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('outqb') }) @() @() $unavailable @{ outqb = $outObservation }
+$repair = $result.FantasyRelevance.Teams[0].Slots[0].Repairability
+Assert-LrrEqual 'STARTER_UNAVAILABLE' $repair.ProblemCode 'Locked OUT must retain the availability problem code'
+Assert-LrrEqual 'irreparable' $repair.State 'Locked OUT starter cannot score again and must be irreparable'
+
+# Questionable is visible evidence but never a terminal scoring problem.
+$questionableSlot = New-LrrSlot 'WR-1' 'WR' 'q1' 'locked-active'
+$questionableSlot | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $uncertainObservation
+$questionablePlayer = New-LrrPlayer 'q1' 'starter' 'WR' 'locked-active' 'WR-1'
+$questionablePlayer | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $uncertainObservation
+$model = New-LrrReadModel -Slots @($questionableSlot) -Players @($questionablePlayer) -Locks @((New-LrrLock 'q1'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('q1') }) @() @() $unavailable @{ q1 = $uncertainObservation }
+Assert-LrrNull $result.FantasyRelevance.Teams[0].Slots[0].Repairability 'Questionable must not create red/problem semantics'
+
+# An unavailable bench/free-agent candidate cannot repair another slot.
+$benchOut = New-LrrPlayer 'bout' 'bench' 'WR'
+$benchOut | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outObservation
+$model = New-LrrReadModel -Slots @((New-LrrSlot 'WR-1' 'WR' $null)) -Players @($benchOut) -Locks @((New-LrrLock 'bout'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('bout') }) @() @() $unavailable @{ bout = $outObservation }
+Assert-LrrEqual 'irreparable' $result.FantasyRelevance.Teams[0].Slots[0].Repairability.State 'Unavailable bench player must not count as a repair candidate'
 
 Write-Host 'Lineup repairability regression tests passed.' -ForegroundColor Green
