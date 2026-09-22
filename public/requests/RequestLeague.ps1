@@ -22,6 +22,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\EspnScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
@@ -310,13 +311,16 @@ try {
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
 
+    $scoringAvailability = Get-EspnScoringAvailabilityBySleeperID -Players $playersData
+
     $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
         -League $league `
         -Teams $teamData `
         -Players $playersData `
         -Schedule $schedule `
         -LastLineupWeek ([int]$lastWeek) `
-        -AcquisitionCapability $acquisitionCapability
+        -AcquisitionCapability $acquisitionCapability `
+        -ScoringAvailabilityByPlayerID $scoringAvailability
 
     if ($schedule) {
         $sortedGames = $schedule | Sort-Object { $_.gameID }
