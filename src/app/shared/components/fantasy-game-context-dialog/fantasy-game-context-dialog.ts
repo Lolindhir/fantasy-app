@@ -16,7 +16,8 @@ import type {
   FantasyGameContextMatchupGame,
   FantasyGameContextPlayer,
   FantasyGameContextReadModel,
-  FantasyGameContextTeam
+  FantasyGameContextTeam,
+  FantasyMatchupRemainingState
 } from '../../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
@@ -42,6 +43,19 @@ interface FantasyGamePlayerDisplay {
 
 export type MatchupDisplaySide = 'left' | 'right';
 export type MatchupDisplayTeamIDs = [string | number, string | number];
+
+export function matchupSportsStateLabel(
+  state: FantasyMatchupRemainingState,
+  leftTeamName: string,
+  rightTeamName: string
+): string {
+  switch (state) {
+    case 'both-sides': return 'Both teams can still score';
+    case 'left-only': return `Only ${leftTeamName} can still score`;
+    case 'right-only': return `Only ${rightTeamName} can still score`;
+    case 'none': return 'No more points can be scored';
+  }
+}
 
 export function resolveMatchupDisplayTeamIDs(
   league: League,
@@ -376,24 +390,10 @@ export class FantasyGameContextDialogComponent {
     const remaining = matchup.RemainingRelevance;
     if (!remaining) return 'Current starter exposure';
 
-    switch (remaining.State) {
-      case 'both-sides': return 'Both teams can still score';
-      case 'left-only': return `Only ${this.teamShortName(matchup.TeamIDs[0])} can still score`;
-      case 'right-only': return `Only ${this.teamShortName(matchup.TeamIDs[1])} can still score`;
-      case 'none': return 'No scoring paths remaining';
-    }
-  }
-
-  remainingPathCount(matchup: FantasyGameContextMatchup, side: MatchupDisplaySide): number | null {
-    const remaining = matchup.RemainingRelevance;
-    if (!remaining) return null;
-
-    return matchupDisplaySideValue(
-      matchup,
-      this.displayTeamIDsFor(matchup),
-      side,
-      remaining.LeftRemainingPathCount,
-      remaining.RightRemainingPathCount
+    return matchupSportsStateLabel(
+      remaining.State,
+      this.teamShortName(matchup.TeamIDs[0]),
+      this.teamShortName(matchup.TeamIDs[1])
     );
   }
 
