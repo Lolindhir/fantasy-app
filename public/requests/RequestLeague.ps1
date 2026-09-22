@@ -21,6 +21,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\AcquisitionCapabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
@@ -310,13 +311,23 @@ try {
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
 
+    $scoringAvailabilityObservations = @(
+        Get-EspnScoringAvailabilityObservations `
+            -Season ([int]$currentSeason) `
+            -Teams $teamData `
+            -Players $playersData
+    )
+    $outAvailabilityCount = @($scoringAvailabilityObservations | Where-Object State -eq 'out').Count
+    Write-Host "ESPN scoring availability: $($scoringAvailabilityObservations.Count) starter observations, $outAvailabilityCount OUT." -ForegroundColor DarkGray
+
     $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
         -League $league `
         -Teams $teamData `
         -Players $playersData `
         -Schedule $schedule `
         -LastLineupWeek ([int]$lastWeek) `
-        -AcquisitionCapability $acquisitionCapability
+        -AcquisitionCapability $acquisitionCapability `
+        -ScoringAvailabilityObservations $scoringAvailabilityObservations
 
     if ($schedule) {
         $sortedGames = $schedule | Sort-Object { $_.gameID }
