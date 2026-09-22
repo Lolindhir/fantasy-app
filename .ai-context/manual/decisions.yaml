@@ -1164,3 +1164,59 @@ decisions:
         - Existing consumer-owned paths now contain recognized transitional shared responsibilities that will need staged migration.
         - A future physical data-platform layout, rule storage model and derivation registry still require separate design and migration work.
         - Rights/publication policy must be modeled independently for retained media/source evidence.
+
+  - id: ADR-038
+    title: Current-game scoring availability requires explicit terminal provider evidence
+    status: accepted
+    context: >
+      Fantasy Relevance already distinguished unlocked, locked-active and completed
+      NFL-game lifecycle, but a starter who was active at kickoff and then ruled out
+      could remain counted as a direct scoring path until the game became Final.
+      Generic injury narrative is too broad for this purpose: Questionable or
+      Doubtful players may still play, while the product needs a narrow fact that
+      answers whether a starter can add any more fantasy points in the relevant NFL
+      game. Waiting for a perfect provider-latency study would leave the known
+      current-state gap unresolved.
+    decision: >
+      Add a provider-neutral ScoringAvailability observation to the generated
+      DecisionWindows/FantasyRelevance contract. Acquire the initial current state
+      from ESPN's public Site NFL injuries feed during the existing frequent
+      RequestLeague path and join athlete.id only through the persisted ESPN player
+      ID carried by Players.json; never use display-name matching. Normalize explicit
+      Out, Inactive, Injury Reserve and Suspended evidence to unavailable.
+      Questionable, Doubtful and Probable remain uncertain and do not create a
+      terminal scoring problem. Missing ESPN rows, request failure, conflicting
+      duplicate rows and unmapped statuses never synthesize unavailable. Generic
+      Players.json InjuryDetails remains a separate legacy injury/narrative contract
+      and is not replaced by this decision.
+      Fantasy Relevance must suppress direct scoring paths and replacement-candidate
+      eligibility for explicit unavailable players. Repairability owns the lineup
+      consequence: an unavailable starter before kickoff may remain repairable when
+      a legal replacement path exists; once that starter is locked-active, explicit
+      unavailable evidence is irreparable for the current NFL game. Completed games
+      remain completed rather than being recolored as injury problems. Angular
+      consumes these generated provider-neutral facts and the established
+      repairability lifecycle; it does not reinterpret ESPN statuses.
+      The acquisition provider remains replaceable. #669 continues measuring ESPN
+      propagation latency in production, but provider-latency acceptance is not a
+      prerequisite for exposing the current observed state.
+    rationale: >
+      The product question is scoring availability, not medical diagnosis. Requiring
+      explicit terminal evidence prevents Questionable/Doubtful noise from becoming
+      false red states, while reusing the existing ten-minute League refresh provides
+      useful current state immediately without a new workflow or schedule. Keeping
+      provider semantics behind a normalized observation allows ESPN to be replaced
+      or corroborated later without redesigning Matchups or Angular.
+    consequences:
+      positive:
+        - In-game ruled-out starters can stop counting as remaining scoring paths before NFL Final.
+        - Pregame OUT starters use existing repairability semantics instead of a separate UI rule.
+        - Existing red/amber/blue/green visual semantics remain unchanged and generator-owned.
+        - No new GitHub Actions schedule or API key is required.
+        - Provider failure cannot falsely mark a player unavailable.
+      negative:
+        - The current runtime depends on an undocumented ESPN Site API without an SLA.
+        - A ten-minute refresh cadence bounds how quickly the app can observe a provider update even when ESPN updates sooner.
+        - Exact provider propagation latency remains an empirical follow-up in #669.
+        - Current scoring availability is not yet persisted as a historical source-data observation stream.
+
