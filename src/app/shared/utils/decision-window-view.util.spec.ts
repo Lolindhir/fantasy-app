@@ -290,6 +290,13 @@ describe('decision-window-view util', () => {
       Count: 2
     })).toBe('2 starter slots empty');
 
+    expect(formatDecisionWindowIssue({
+      Code: 'STARTER_UNAVAILABLE',
+      State: 'action-required',
+      PlayerID: 'p1',
+      Count: null
+    })).toBe('Starter unavailable');
+
     expect(formatDecisionWindowsUpdatedAt(
       '2026-09-05T09:48:00Z',
       new Date('2026-09-05T10:00:00Z')
