@@ -433,6 +433,14 @@ dataFlow:
       provider requests. Sleeper settings.leg owns current lineup-week evidence;
       stable current TeamID fields join players to Schedule games.
 
+  - from: ESPN Fantasy kona_player_info injuryStatus
+    to: public/data/DecisionWindows.json
+    purpose: >
+      Supply current starter scoring-availability evidence during the frequent League
+      refresh. Existing ESPN player IDs join the provider observation to app players.
+      Only explicit OUT removes a direct scoring path; missing/provider-error evidence
+      remains unknown and must not synthesize unavailability.
+
   - from: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
     to: public/data/Transactions.json
     purpose: Adapt canonical current-season completed transaction facts to the existing app read-model contract.

@@ -1,5 +1,6 @@
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\ParticipantScoringPathDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop -Force
@@ -78,7 +79,8 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Players,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
         [Parameter(Mandatory = $true)][int]$LastLineupWeek,
-        [AllowNull()][object]$AcquisitionCapability = $null
+        [AllowNull()][object]$AcquisitionCapability = $null,
+        [AllowNull()][object[]]$ScoringAvailabilityObservations = @()
     )
 
     $baseReadModel = DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel `
@@ -101,8 +103,12 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         -Schedule $Schedule `
         -AsOfUtc $asOfUtc
 
-    $repairabilityReadModel = Add-LineupRepairabilityDecisionFacts `
+    $availabilityReadModel = Add-PlayerScoringAvailabilityDecisionFacts `
         -BaseReadModel $relevanceReadModel `
+        -Observations $ScoringAvailabilityObservations
+
+    $repairabilityReadModel = Add-LineupRepairabilityDecisionFacts `
+        -BaseReadModel $availabilityReadModel `
         -Teams $Teams `
         -Players $Players `
         -Schedule $Schedule `

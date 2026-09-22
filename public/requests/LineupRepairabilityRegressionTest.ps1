@@ -165,6 +165,19 @@ $result = Invoke-Lrr $model $teams $unknownPlayer $schedule $before
 Assert-LrrEqual 'unknown' $result.FantasyRelevance.Teams[0].Slots[0].Repairability.State 'Unknown relevant external lock evidence must remain unknown'
 Assert-LrrEqual 'EXTERNAL_PLAYER_EVIDENCE_UNKNOWN' $result.FantasyRelevance.Teams[0].Slots[0].Repairability.ReasonCode 'Unknown external player reason'
 
+# ESPN OUT after lock is an objective irreparable starter problem.
+$outAvailability = [PSCustomObject]@{ State = 'out'; ProviderStatus = 'OUT'; Source = 'ESPN'; ObservedAtUtc = '2026-09-13T20:30:00Z' }
+$outSlot = New-LrrSlot 'QB-1' 'QB' 'qb-out' 'locked-active'
+$outSlot | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outAvailability -Force
+$outPlayer = New-LrrPlayer 'qb-out' 'starter' 'QB' 'locked-active' 'QB-1'
+$outPlayer | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outAvailability -Force
+$model = New-LrrReadModel -Slots @($outSlot) -Players @($outPlayer) -Locks @((New-LrrLock 'qb-out' 'scheduled' '2026-09-13T17:00:00Z'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('qb-out') }) @() @() $unavailable
+$repair = $result.FantasyRelevance.Teams[0].Slots[0].Repairability
+Assert-LrrEqual 'STARTER_UNAVAILABLE' $repair.ProblemCode 'Explicit OUT must create a starter availability problem'
+Assert-LrrEqual 'irreparable' $repair.State 'OUT after lock cannot be repaired'
+Assert-LrrEqual 'NO_LEGAL_REPAIR_PATH' $repair.ReasonCode 'Locked OUT reason must remain objective'
+
 # Review/data-quality state must not be converted into manager-fault repairability.
 $model = New-LrrReadModel -Slots @((New-LrrSlot 'WR-1' 'WR' $null)) -Players @() -Locks @() -Evaluation 'review'
 $result = Invoke-Lrr $model $teams @() @() $unavailable
