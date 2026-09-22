@@ -46,11 +46,12 @@ import {
 } from '../../utils/matchups-overview-view.util';
 import {
   buildOverviewTopContext,
-  isOverviewCurrentWeekSurfaceReady,
   orderOverviewCurrentMatchups,
+  resolveOverviewDisplayWeek,
   resolveOverviewWeeklyPhase,
   selectOverviewRecap,
   type OverviewRecapSelection,
+  type OverviewStandingRow,
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
@@ -194,12 +195,8 @@ export class LeagueMatchupsComponent {
   }
 
   get week(): number | null {
-    return this.currentMatchupsReadModel()?.Summary.ActiveOrNextWeek ?? null;
-  }
-
-  get currentWeekSurfaceReady(): boolean {
     const state = this.fantasyContextStateSignal();
-    return isOverviewCurrentWeekSurfaceReady(
+    return resolveOverviewDisplayWeek(
       this.league,
       this.currentMatchupsReadModel(),
       state.decisionWindows,
@@ -207,15 +204,19 @@ export class LeagueMatchupsComponent {
     );
   }
 
+  get currentWeekSurfaceReady(): boolean {
+    const readModel = this.currentMatchupsReadModel();
+    const week = this.week;
+    return week !== null && !!readModel?.Weeks.find(candidate => candidate.Week === week);
+  }
+
   get overviewPhase(): OverviewWeeklyPhase {
-    const phase = resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal());
-    if (!this.currentWeekSurfaceReady && (this.topContext?.lastCompletedWeek ?? null) !== null) return 'recap';
-    return phase;
+    return resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal(), this.week);
   }
 
   get topContext(): OverviewTopContext | null {
     if (!this.hasOverviewContextData) return null;
-    return buildOverviewTopContext(this.league, this.currentMatchupsReadModel());
+    return buildOverviewTopContext(this.league, this.currentMatchupsReadModel(), this.week);
   }
 
   get weeklyRecap(): OverviewRecapSelection | null {
@@ -239,7 +240,7 @@ export class LeagueMatchupsComponent {
     if (!weekModel) return [];
 
     const teamByID = new Map(this.league.Teams.map(team => [team.TeamID, team]));
-    const ordered = orderOverviewCurrentMatchups(this.league, weekModel.Matchups);
+    const ordered = orderOverviewCurrentMatchups(this.league, weekModel.Matchups, this.topContext?.standings ?? null);
 
     return ordered
       .filter(matchup => matchup.Participants.length === 2)
@@ -261,7 +262,6 @@ export class LeagueMatchupsComponent {
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
-    if (!this.currentWeekSurfaceReady) return null;
     return isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
   }
 
@@ -275,7 +275,7 @@ export class LeagueMatchupsComponent {
   }
 
   scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {
-    const decisionWindows = this.latestFantasyContextState?.decisionWindows;
+    const decisionWindows = this.currentDecisionWindows();
     return buildMatchupScoreboardState(matchup.completionState, [
       findFantasyRelevanceTeam(decisionWindows, matchup.left.team.TeamID),
       findFantasyRelevanceTeam(decisionWindows, matchup.right.team.TeamID)
@@ -307,7 +307,6 @@ export class LeagueMatchupsComponent {
   }
 
   openMatchupDetailFromOverview(matchup: LeagueMatchupView): void {
-    if (!this.currentWeekSurfaceReady) return;
     if (this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
   }
 
@@ -321,11 +320,6 @@ export class LeagueMatchupsComponent {
 
   teamDisplayName(team: FantasyTeam): string {
     return team.Team?.trim() || team.Owner || `Team ${team.TeamID}`;
-  }
-
-  standingsRecord(team: FantasyTeam): string | null {
-    const placement = team.Placements?.Current?.Regular;
-    return placement ? this.formatRecord(placement) : null;
   }
 
   teamShortNameByID(teamID: string | number): string {
@@ -499,24 +493,21 @@ export class LeagueMatchupsComponent {
   }
 
   private getTeamContext(team: FantasyTeam): LeagueMatchupTeamContextView | null {
-    if (this.league.FinalScoredWeek > 0) {
-      const placement = team.Placements?.Current?.Regular;
-      if (!placement) return null;
-
-      const standing = this.normalizeStanding(placement.Place);
-      const record = this.formatRecord(placement);
-      const streak = placement.Streak?.trim() || null;
-      const pointsFor = Number.isFinite(placement.Points) ? placement.Points : null;
-
-      if (standing === null && !record && !streak && pointsFor === null) return null;
+    const displayWeek = this.week;
+    const snapshot = displayWeek !== null && displayWeek > 1
+      ? this.overviewStandingForTeam(team.TeamID)
+      : null;
+    if (snapshot) {
+      const standing = this.normalizeStanding(snapshot.displayPlace);
+      const pointsFor = Number.isFinite(snapshot.points) ? snapshot.points : null;
       return {
         mode: 'current',
         seasonLabel: null,
         standing,
         overallStanding: null,
         regularStanding: standing,
-        record,
-        streak,
+        record: snapshot.record,
+        streak: snapshot.streak,
         pointsFor,
         pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
       };
@@ -542,6 +533,19 @@ export class LeagueMatchupsComponent {
       pointsFor,
       pointsForDisplay: pointsFor === null ? null : this.pointsForFormatter.format(pointsFor)
     };
+  }
+
+  private overviewStandingForTeam(teamID: string | number): OverviewStandingRow | null {
+    return this.topContext?.standings.find(row => String(row.team.TeamID) === String(teamID)) ?? null;
+  }
+
+  private currentDecisionWindows(): DecisionWindowsReadModel | null {
+    const decisionWindows = this.latestFantasyContextState?.decisionWindows ?? null;
+    return decisionWindows
+      && decisionWindows.Season === this.league.Season
+      && decisionWindows.LineupWeek === this.week
+      ? decisionWindows
+      : null;
   }
 
   private teamForID(teamID: string | number): FantasyTeam | null {

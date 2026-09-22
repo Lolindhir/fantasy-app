@@ -8,6 +8,7 @@ import {
   getLastCompletedWeek,
   isOverviewCurrentWeekSurfaceReady,
   orderOverviewCurrentMatchups,
+  resolveOverviewDisplayWeek,
   resolveOverviewWeeklyPhase,
   selectOverviewRecap
 } from './overview-weekly-dashboard.util';
@@ -229,6 +230,81 @@ describe('Overview weekly dashboard presentation', () => {
     )).toBeFalse();
   });
 
+  it('retains the previous display week until the next week is fully coherent', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 2;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 2);
+    league.PlayoffStartWeek = 14;
+    const model = readModel(2, 3);
+    model.Weeks[1] = {
+      ...model.Weeks[1],
+      CompletionState: 'final',
+      Matchups: [matchup('m-3', 1, 4, 'final'), matchup('m-4', 2, 3, 'final')]
+    };
+    model.Weeks.push({
+      Week: 3,
+      Stage: 'regular-season',
+      FirstKickoffUtc: '2026-09-25T00:00:00Z',
+      CompletionState: 'open',
+      Matchups: [matchup('m-5', 1, 3), matchup('m-6', 2, 4)]
+    });
+
+    expect(resolveOverviewDisplayWeek(
+      league,
+      model,
+      { Season: '2026', LineupWeek: 2 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 2 } as FantasyGameContextReadModel
+    )).toBe(2);
+
+    const context = buildOverviewTopContext(league, model, 2);
+    expect(context.lastCompletedWeek).toBe(1);
+    expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
+      [3, '1-0'],
+      [1, '1-0'],
+      [4, '0-1'],
+      [2, '0-1']
+    ]);
+  });
+
+  it('atomically releases the next display week when standings and both context models agree', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 2;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 2);
+    league.PlayoffStartWeek = 14;
+    const model = readModel(2, 3);
+    model.Weeks[1] = {
+      ...model.Weeks[1],
+      CompletionState: 'final',
+      Matchups: [matchup('m-3', 1, 4, 'final'), matchup('m-4', 2, 3, 'final')]
+    };
+    model.Weeks.push({
+      Week: 3,
+      Stage: 'regular-season',
+      FirstKickoffUtc: '2026-09-25T00:00:00Z',
+      CompletionState: 'open',
+      Matchups: [matchup('m-5', 1, 3), matchup('m-6', 2, 4)]
+    });
+
+    expect(resolveOverviewDisplayWeek(
+      league,
+      model,
+      { Season: '2026', LineupWeek: 3 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 3 } as FantasyGameContextReadModel
+    )).toBe(3);
+
+    const context = buildOverviewTopContext(league, model, 3);
+    expect(context.lastCompletedWeek).toBe(2);
+    expect(context.standings.every(row => row.wins + row.losses + row.ties === 2)).toBeTrue();
+  });
+
   it('releases the next-week surface when standings and both week-context models agree', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
@@ -281,6 +357,7 @@ describe('Overview weekly dashboard presentation', () => {
     expect(resolveOverviewWeeklyPhase(model, new Date('2026-09-17T00:00:00Z'))).toBe('prep');
     expect(resolveOverviewWeeklyPhase(model, new Date('2026-09-17T23:59:59Z'))).toBe('prep');
     expect(resolveOverviewWeeklyPhase(model, new Date('2026-09-18T00:00:00Z'))).toBe('live');
+    expect(resolveOverviewWeeklyPhase(model, new Date('2026-09-19T00:00:00Z'), 1)).toBe('live');
   });
 
   it('orders whole cards by standings keys and orients the better standing first', () => {
