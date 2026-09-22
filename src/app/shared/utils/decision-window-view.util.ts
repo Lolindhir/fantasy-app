@@ -283,6 +283,8 @@ export function formatDecisionWindowIssue(issue: DecisionWindowIssue): string {
     }
     case 'STARTER_ON_BYE':
       return 'Starter on bye';
+    case 'STARTER_UNAVAILABLE':
+      return 'Starter unavailable';
     case 'STARTER_WITHOUT_NFL_TEAM':
       return 'Starter without NFL team';
     case 'STARTER_LOCK_UNKNOWN':
