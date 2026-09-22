@@ -236,6 +236,7 @@ try {
         -Standings $standings `
         -DecisionFacts (New-MrmDecisionFacts) `
         -LiveMatchupRows $liveRows `
+        -LiveMatchupWeek 1 `
         -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T18:00:00Z')) `
         -RepoRoot $temp
 
@@ -251,6 +252,26 @@ try {
     Assert-MrmEqual 2 $finalModel.Weeks[0].Matchups[0].Result.WinnerTeamID 'Final winner must use the effective score.'
     Assert-MrmEqual 1 $finalModel.Summary.LastCompletedWeek 'LastCompletedWeek is incorrect.'
     Assert-MrmTrue ($null -eq $finalModel.Summary.ActiveOrNextWeek) 'ActiveOrNextWeek must be null after the last known week is final.'
+
+    $wrongWeekLiveRows = @(
+        [PSCustomObject][ordered]@{ roster_id = 1; matchup_id = 1; points = 0.0; custom_points = $null },
+        [PSCustomObject][ordered]@{ roster_id = 2; matchup_id = 1; points = 0.0; custom_points = $null }
+    )
+    $crossWeekModel = New-MatchupSeasonReadModel `
+        -CanonicalLeagueID 'nfl-reise' `
+        -Season 2026 `
+        -Standings $standings `
+        -DecisionFacts (New-MrmDecisionFacts) `
+        -LiveMatchupRows $wrongWeekLiveRows `
+        -LiveMatchupWeek 2 `
+        -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T18:00:00Z')) `
+        -RepoRoot $temp
+
+    $crossWeekTeam1 = @($crossWeekModel.Weeks[0].Matchups[0].Participants | Where-Object { $_.TeamID -eq 1 })[0]
+    $crossWeekTeam2 = @($crossWeekModel.Weeks[0].Matchups[0].Participants | Where-Object { $_.TeamID -eq 2 })[0]
+    Assert-MrmEqual 10.0 $crossWeekTeam1.Points 'Next-week live rows must not overwrite the active fantasy week even when Sleeper matchup_id is reused.'
+    Assert-MrmEqual 7.0 $crossWeekTeam2.Points 'Cross-week live score contamination must be blocked for every participant.'
+    Assert-MrmEqual 'final' $crossWeekModel.Weeks[0].CompletionState 'Ignoring mismatched-week live rows must preserve active-week finality from canonical evidence.'
 
     $matchupReadModelModule = Get-Module MatchupReadModelUtils
     $historyDiagnostics = & $matchupReadModelModule {
@@ -282,6 +303,7 @@ try {
         -Standings $standings `
         -DecisionFacts (New-MrmDecisionFacts -Team1HasPath $true) `
         -LiveMatchupRows $liveRows `
+        -LiveMatchupWeek 1 `
         -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T18:00:00Z')) `
         -RepoRoot $temp
     Assert-MrmEqual 'open' $openModel.Weeks[0].CompletionState 'Known remaining scoring path must keep the week open.'
@@ -295,6 +317,7 @@ try {
         -Standings $standings `
         -DecisionFacts (New-MrmDecisionFacts -Team1Repairable $true) `
         -LiveMatchupRows $liveRows `
+        -LiveMatchupWeek 1 `
         -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T18:00:00Z')) `
         -RepoRoot $temp
     Assert-MrmEqual 'open' $repairableModel.Weeks[0].Matchups[0].CompletionState 'Repairable lineup path must count as a legal remaining scoring path.'
@@ -305,6 +328,7 @@ try {
         -Standings $standings `
         -DecisionFacts (New-MrmDecisionFacts -OmitTeam2Evaluation) `
         -LiveMatchupRows $liveRows `
+        -LiveMatchupWeek 1 `
         -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T18:00:00Z')) `
         -RepoRoot $temp
     Assert-MrmEqual 'unknown' $unknownModel.Weeks[0].Matchups[0].CompletionState 'Missing lineup evidence must fail closed to unknown.'

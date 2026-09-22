@@ -85,4 +85,23 @@ function Resolve-LeagueWeekState {
     }
 }
 
-Export-ModuleMember -Function Resolve-LeagueWeekState
+function Resolve-FantasyMatchupLoadWeek {
+    param(
+        [AllowNull()][object]$DecisionWindows,
+        [Parameter(Mandatory = $true)][int]$LastLeagueWeek,
+        [bool]$LeagueComplete = $false
+    )
+
+    if ($LeagueComplete -or $LastLeagueWeek -le 0 -or $null -eq $DecisionWindows) {
+        return 0
+    }
+
+    $lineupWeek = ConvertTo-LeagueWeekPositiveInt `
+        -Value (Get-LeagueWeekPropertyValue -Object $DecisionWindows -Name 'LineupWeek') `
+        -Source 'DecisionWindows.LineupWeek'
+
+    if ($lineupWeek -le 0) { return 0 }
+    return [Math]::Min($lineupWeek, $LastLeagueWeek)
+}
+
+Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek
