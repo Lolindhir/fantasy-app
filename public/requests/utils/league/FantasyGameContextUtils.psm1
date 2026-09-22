@@ -1,5 +1,6 @@
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\EspnScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\ParticipantScoringPathDecisionUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\FantasyMatchupPreviewUtils.psm1" -ErrorAction Stop -Force
@@ -93,12 +94,14 @@ function New-CurrentLeagueDecisionWindowsReadModel {
     }
 
     $asOfUtc = [DateTimeOffset]::UtcNow
+    $scoringAvailability = Get-EspnScoringAvailabilityBySleeperID -Players $Players
     $relevanceReadModel = Add-FantasyRelevanceDecisionFacts `
         -BaseReadModel $baseReadModel `
         -League $League `
         -Teams $Teams `
         -Players $Players `
         -Schedule $Schedule `
+        -ScoringAvailabilityByPlayerID $scoringAvailability `
         -AsOfUtc $asOfUtc
 
     $repairabilityReadModel = Add-LineupRepairabilityDecisionFacts `
@@ -107,6 +110,7 @@ function New-CurrentLeagueDecisionWindowsReadModel {
         -Players $Players `
         -Schedule $Schedule `
         -AcquisitionCapability $AcquisitionCapability `
+        -ScoringAvailabilityByPlayerID $scoringAvailability `
         -AsOfUtc $asOfUtc
 
     return Add-ParticipantScoringPathDecisionFacts -BaseReadModel $repairabilityReadModel
