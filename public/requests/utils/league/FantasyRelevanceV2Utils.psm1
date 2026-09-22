@@ -293,8 +293,15 @@ function Add-FantasyRelevanceContext {
         $matchup = $matchupByTeam[$teamID]
         foreach ($player in @($teamStateByID[$teamID].Players)) {
             $pathType = $null
-            if ($player.Placement -eq 'starter' -and $player.HasDirectScoringPath -and $player.GameState -eq 'locked-active') { $pathType = 'locked-starter' }
-            elseif ($player.Placement -eq 'starter' -and $player.HasDirectScoringPath -and $player.GameState -eq 'unlocked') { $pathType = 'unlocked-starter' }
+            $directPathEvidence = Get-FrvPropertyValue -Object $player -Names @('HasDirectScoringPath')
+            $hasDirectScoringPath = if ($null -eq $directPathEvidence) {
+                $player.Placement -eq 'starter' -and @('unlocked','locked-active') -contains [string]$player.GameState
+            }
+            else {
+                [bool]$directPathEvidence
+            }
+            if ($player.Placement -eq 'starter' -and $hasDirectScoringPath -and $player.GameState -eq 'locked-active') { $pathType = 'locked-starter' }
+            elseif ($player.Placement -eq 'starter' -and $hasDirectScoringPath -and $player.GameState -eq 'unlocked') { $pathType = 'unlocked-starter' }
             elseif ($player.IsBenchCandidate) { $pathType = 'bench-candidate' }
             if ($null -eq $pathType -or [string]::IsNullOrWhiteSpace([string]$player.GameID)) { continue }
 
