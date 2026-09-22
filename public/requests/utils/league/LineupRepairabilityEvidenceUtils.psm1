@@ -79,6 +79,7 @@ function Get-LineupExternalRepairEvidence {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$MutableSlots,
         [AllowNull()][object]$AcquisitionCapability,
+        [hashtable]$ScoringAvailabilityByPlayerID = @{},
         [Parameter(Mandatory = $true)][int]$LineupWeek,
         [DateTimeOffset]$AsOfUtc = [DateTimeOffset]::UtcNow
     )
@@ -175,6 +176,10 @@ function Get-LineupExternalRepairEvidence {
     $candidates = @()
     foreach ($id in @($byID.Keys | Sort-Object)) {
         if ($owned.ContainsKey($id)) { continue }
+        if ($ScoringAvailabilityByPlayerID.ContainsKey($id)) {
+            $availability = $ScoringAvailabilityByPlayerID[$id]
+            if ([string](Get-LreValue -Object $availability -Names @('State')) -eq 'unavailable') { continue }
+        }
 
         $player = $byID[$id]
         $position = ([string](Get-LreValue -Object $player -Names @('Position','FantasyPosition'))).Trim().ToUpperInvariant()
