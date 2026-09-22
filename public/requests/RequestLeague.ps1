@@ -313,6 +313,8 @@ try {
 
     $scoringAvailability = Get-EspnScoringAvailabilityBySleeperID -Players $playersData
 
+    Write-Host "ESPN scoring availability observations: $($scoringAvailability.Count)" -ForegroundColor DarkGray
+
     $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
         -League $league `
         -Teams $teamData `
