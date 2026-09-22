@@ -92,6 +92,7 @@ export interface PlayerScoringAvailability {
   State: PlayerScoringAvailabilityState;
   ProviderStatus: string | null;
   Source: 'ESPN' | string;
+  FirstObservedAtUtc?: string | null;
   ObservedAtUtc: string | null;
 }
 
