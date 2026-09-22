@@ -107,6 +107,13 @@ function Add-LineupRepairabilityDecisionFacts {
                 continue
             }
 
+            $availability = Get-LrdValue -Object $slot -Names @('ScoringAvailability')
+            $availabilityState = [string](Get-LrdValue -Object $availability -Names @('State'))
+            if ($availabilityState -eq 'out') {
+                $problems[$slotID] = 'STARTER_UNAVAILABLE'
+                continue
+            }
+
             $key = "$teamID|$starterID"
             $kind = if ($locks.ContainsKey($key)) {
                 [string](Get-LrdValue -Object $locks[$key] -Names @('Kind'))
@@ -133,10 +140,21 @@ function Add-LineupRepairabilityDecisionFacts {
                 InternalCandidateCount = 0
                 ExternalCandidateCount = 0
             }
+            $lockedUnavailable = [PSCustomObject]@{
+                State                  = 'irreparable'
+                Path                   = $null
+                ReasonCode             = 'NO_LEGAL_REPAIR_PATH'
+                InternalCandidateCount = 0
+                ExternalCandidateCount = 0
+            }
             foreach ($slot in $slots) {
                 $slotID = [string](Get-LrdValue -Object $slot -Names @('SlotID'))
                 if ($problems.ContainsKey($slotID)) {
-                    $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $unknown
+                    $resolvedProblem = if (
+                        $problems[$slotID] -eq 'STARTER_UNAVAILABLE' -and
+                        [string](Get-LrdValue -Object $slot -Names @('State')) -ne 'unlocked'
+                    ) { $lockedUnavailable } else { $unknown }
+                    $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $resolvedProblem
                 }
             }
             continue
@@ -192,6 +210,9 @@ function Add-LineupRepairabilityDecisionFacts {
 
             $position = ([string](Get-LrdValue -Object $player -Names @('Position'))).Trim().ToUpperInvariant()
             $gameState = [string](Get-LrdValue -Object $player -Names @('GameState'))
+            $availability = Get-LrdValue -Object $player -Names @('ScoringAvailability')
+            $availabilityState = [string](Get-LrdValue -Object $availability -Names @('State'))
+            if ($availabilityState -eq 'out') { continue }
             $key = "$teamID|$playerID"
             $kind = if ($locks.ContainsKey($key)) {
                 [string](Get-LrdValue -Object $locks[$key] -Names @('Kind'))
@@ -238,10 +259,21 @@ function Add-LineupRepairabilityDecisionFacts {
             -ExternalEvidenceState ([string]$external.State) `
             -ExternalPlayerEvidenceUnknown ([bool]$external.PlayerEvidenceUnknown)
 
+        $lockedUnavailable = [PSCustomObject]@{
+            State                  = 'irreparable'
+            Path                   = $null
+            ReasonCode             = 'NO_LEGAL_REPAIR_PATH'
+            InternalCandidateCount = 0
+            ExternalCandidateCount = 0
+        }
         foreach ($slot in $slots) {
             $slotID = [string](Get-LrdValue -Object $slot -Names @('SlotID'))
             if ($problems.ContainsKey($slotID)) {
-                $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $resolved
+                $resolvedProblem = if (
+                    $problems[$slotID] -eq 'STARTER_UNAVAILABLE' -and
+                    [string](Get-LrdValue -Object $slot -Names @('State')) -ne 'unlocked'
+                ) { $lockedUnavailable } else { $resolved }
+                $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $resolvedProblem
             }
         }
     }
