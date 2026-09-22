@@ -114,10 +114,11 @@ contract:
       scoringAvailability: >
         Current ESPN Fantasy injuryStatus observations are joined by the existing ESPN
         player ID and normalized to available, uncertain, out or unknown. ProviderStatus,
-        Source and FirstObservedAtUtc remain visible evidence. FirstObservedAtUtc marks the
-        first local poll that saw the current provider status and resets on provider-status
-        transitions; legacy ObservedAtUtc is retained as a compatibility alias to the same
-        stable timestamp. No volatile last-poll timestamp is persisted in DecisionWindows,
+        Source and FirstObservedAtUtc remain visible evidence. FirstObservedAtUtc is serialized
+        as normalized UTC ISO-8601 (yyyy-MM-ddTHH:mm:ssZ), marks the first local poll that saw
+        the current provider status and resets on provider-status transitions; legacy
+        ObservedAtUtc is retained as a compatibility alias to the same stable timestamp.
+        No volatile last-poll timestamp is persisted in DecisionWindows,
         so unchanged provider checks remain semantic no-ops. Missing/provider-error evidence
         stays unknown and never removes a scoring path.
       repairabilityPresence: >
