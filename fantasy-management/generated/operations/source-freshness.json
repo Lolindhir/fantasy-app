@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-22T03:20:14.673407Z",
+  "generated_at": "2026-09-22T03:30:00.613101Z",
   "berlin_date": "2026-09-22",
   "timezone": "Europe/Berlin",
   "domain_context": {
@@ -60,8 +60,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 0,
-    "stale_count": 6,
+    "fresh_count": 1,
+    "stale_count": 5,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -72,7 +72,6 @@
     "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "fantasypros",
       "fantasycalc",
       "fantasy-football-calculator",
       "fftoday",
@@ -81,7 +80,6 @@
     ],
     "blocking_source_ids": [],
     "no_event_blocking_source_ids": [
-      "fantasypros",
       "fantasycalc",
       "fftoday",
       "cbs-sports",
@@ -89,11 +87,9 @@
     ],
     "affected_signal_families": [
       "dynasty_market",
-      "dynasty_ranking",
       "external_activity",
       "redraft_adp",
       "redraft_market",
-      "redraft_ranking",
       "season_projection"
     ]
   },
@@ -109,10 +105,10 @@
         "dynasty_ranking",
         "redraft_ranking"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-21T03:25:01.863319Z",
-      "age_minutes": 1435.21,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-22T03:25:22.988683Z",
+      "age_minutes": 4.63,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -130,7 +126,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T03:39:44.172936Z",
-      "age_minutes": 1420.51,
+      "age_minutes": 1430.27,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -147,7 +143,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T16:12:51.811852Z",
-      "age_minutes": 667.38,
+      "age_minutes": 677.15,
       "content_changed": true,
       "trigger": "push"
     },
@@ -164,7 +160,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T03:58:50.352692Z",
-      "age_minutes": 1401.41,
+      "age_minutes": 1411.17,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -181,7 +177,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T04:14:46.146250Z",
-      "age_minutes": 1385.48,
+      "age_minutes": 1395.24,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -198,7 +194,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T04:24:36.641121Z",
-      "age_minutes": 1375.63,
+      "age_minutes": 1385.4,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
