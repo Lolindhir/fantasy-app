@@ -7,7 +7,26 @@
     <div class="all-time-owner">{{ row.owner }}</div>
 
     <div class="all-time-awards">
-      {{ repeatEmojiLimited('💍', row.championships) }}
+      <span
+        *ngIf="row.championships > 0"
+        class="all-time-championships"
+        [attr.aria-label]="row.championships === 1 ? '1 championship' : row.championships + ' championships'"
+      >
+        <span *ngIf="row.championships > 2" class="championship-count">{{ row.championships }}</span>
+        <img
+          class="championship-ring-icon"
+          src="assets/championship-ring.svg"
+          alt=""
+          aria-hidden="true"
+        />
+        <img
+          *ngIf="row.championships === 2"
+          class="championship-ring-icon"
+          src="assets/championship-ring.svg"
+          alt=""
+          aria-hidden="true"
+        />
+      </span>
       {{ repeatEmojiLimited('🥈', row.runnerUps) }}
       {{ repeatEmojiLimited('🥉', row.thirds) }}
       {{ repeatEmojiLimited('👑', row.regularSeasonWins) }}
