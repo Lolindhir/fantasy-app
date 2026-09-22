@@ -270,6 +270,110 @@ describe('Overview weekly dashboard presentation', () => {
     ]);
   });
 
+  it('preserves Last Week matchup ordering and participant orientation from the standings before that week', () => {
+    const currentPlaces = [4, 1, 2, 5, 6, 3];
+    const teams = currentPlaces.map((place, index) => makeTeam(index + 1, place, index + 1, index + 1));
+    const league = makeLeague(teams, 2, currentPlaces);
+    league.PlayoffStartWeek = 14;
+
+    const model: MatchupsReadModel = {
+      SchemaVersion: 1,
+      Season: '2026',
+      Weeks: [
+        {
+          Week: 1,
+          Stage: 'regular-season',
+          FirstKickoffUtc: '2026-09-10T00:20:00Z',
+          CompletionState: 'final',
+          Matchups: [
+            {
+              FantasyMatchupID: 'w1-mig-tib',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 1, Points: 205.36, ScoreKind: 'standard' },
+                { TeamID: 6, Points: 225.86, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 6 }
+            },
+            {
+              FantasyMatchupID: 'w1-rvp-dlc',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 2, Points: 242.8, ScoreKind: 'standard' },
+                { TeamID: 5, Points: 167.9, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 2 }
+            },
+            {
+              FantasyMatchupID: 'w1-jub-mam',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 3, Points: 220.76, ScoreKind: 'standard' },
+                { TeamID: 4, Points: 180.88, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 3 }
+            }
+          ]
+        },
+        {
+          Week: 2,
+          Stage: 'regular-season',
+          FirstKickoffUtc: '2026-09-18T00:15:00Z',
+          CompletionState: 'final',
+          Matchups: [
+            {
+              FantasyMatchupID: 'w2-rvp-mam',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 2, Points: 202.5, ScoreKind: 'standard' },
+                { TeamID: 4, Points: 186.84, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 2 }
+            },
+            {
+              FantasyMatchupID: 'w2-mig-dlc',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 1, Points: 188.02, ScoreKind: 'standard' },
+                { TeamID: 5, Points: 143, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 1 }
+            },
+            {
+              FantasyMatchupID: 'w2-jub-tib',
+              CompletionState: 'final',
+              Participants: [
+                { TeamID: 3, Points: 209.56, ScoreKind: 'standard' },
+                { TeamID: 6, Points: 182.22, ScoreKind: 'standard' }
+              ],
+              Result: { Type: 'win', WinnerTeamID: 3 }
+            }
+          ]
+        },
+        {
+          Week: 3,
+          Stage: 'regular-season',
+          FirstKickoffUtc: '2026-09-25T00:15:00Z',
+          CompletionState: 'open',
+          Matchups: [matchup('w3', 2, 1)]
+        }
+      ],
+      Summary: { LastCompletedWeek: 2, ActiveOrNextWeek: 3 }
+    };
+
+    const context = buildOverviewTopContext(league, model, 3);
+
+    expect(context.lastCompletedWeek).toBe(2);
+    expect(context.lastMatchups.map(row => row.matchupID)).toEqual([
+      'w2-jub-tib',
+      'w2-rvp-mam',
+      'w2-mig-dlc'
+    ]);
+    expect(context.lastMatchups[0].participants.map(participant => participant.team.TeamID)).toEqual([6, 3]);
+    expect(context.lastMatchups[0].participants.map(participant => participant.points)).toEqual([182.22, 209.56]);
+    expect(context.lastMatchups[0].participants.map(participant => participant.isWinner)).toEqual([false, true]);
+  });
+
   it('atomically releases the next display week when standings and both context models agree', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
