@@ -73,7 +73,7 @@ export type FantasyRelevanceRosterPlacement = 'starter' | 'bench' | 'ir' | 'taxi
 export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'unknown';
 export type FantasyRelevanceRepairabilityState = 'repairable' | 'irreparable' | 'unknown';
 export type FantasyRelevanceRepairabilityPath = 'internal-roster' | 'external-acquisition';
-export type FantasyRelevanceRepairabilityProblemCode = 'OPEN_STARTER_SLOT' | 'STARTER_ON_BYE';
+export type FantasyRelevanceRepairabilityProblemCode = 'OPEN_STARTER_SLOT' | 'STARTER_ON_BYE' | 'STARTER_UNAVAILABLE';
 export type FantasyRelevanceRemainingScoringPathState = 'open' | 'none' | 'unknown';
 export type FantasyRelevanceRepairabilityReasonCode =
   | 'INTERNAL_ASSIGNMENT_AVAILABLE'
@@ -92,6 +92,18 @@ export interface FantasyRelevanceSlotRepairability {
   ExternalCandidateCount: number;
 }
 
+export type ScoringAvailabilityState = 'available' | 'uncertain' | 'unavailable' | 'unknown';
+
+export interface ScoringAvailabilityObservation {
+  State: ScoringAvailabilityState;
+  Reason: string;
+  Source: 'ESPN';
+  Provider: string;
+  ProviderPlayerID: string;
+  ProviderStatus: string;
+  ProviderDate: string | null;
+}
+
 export interface FantasyRelevanceSlotDefinition {
   SlotID: string;
   SlotType: string;
@@ -105,6 +117,7 @@ export interface FantasyRelevanceSlotState extends FantasyRelevanceSlotDefinitio
   GameID: string | null;
   DecisionWindowID: string | null;
   StartsAtUtc: string | null;
+  ScoringAvailability?: ScoringAvailabilityObservation | null;
   Repairability?: FantasyRelevanceSlotRepairability | null;
 }
 
@@ -116,6 +129,7 @@ export interface FantasyRelevancePlayerState {
   GameID: string | null;
   DecisionWindowID: string | null;
   StartsAtUtc: string | null;
+  ScoringAvailability?: ScoringAvailabilityObservation | null;
   LineupSlotID: string | null;
   LineupSlotType: string | null;
   EligibleUnlockedSlotIDs: string[];
