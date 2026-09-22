@@ -13,6 +13,8 @@ file:
   participantScoringPathDerivation: public/requests/utils/league/ParticipantScoringPathDecisionUtils.psm1
   temporaryAcquisitionBridge: public/requests/utils/league/AcquisitionCapabilityUtils.psm1
   architectureDecision: .ai-context/manual/decisions.yaml#ADR-036
+  scoringAvailabilityDecision: .ai-context/manual/decisions.yaml#ADR-038
+  scoringAvailabilityAdapter: public/requests/utils/league/EspnScoringAvailabilityUtils.psm1
 
 contract:
   purpose: >
@@ -80,7 +82,7 @@ contract:
       PlayerLockFacts remain provider-neutral kickoff association evidence. The
       current game-time state is materialized separately in FantasyRelevance.
   fantasyRelevance:
-    version: 3
+    version: 4
     purpose: >
       Generator-owned current lineup state for downstream remaining-scoring-path,
       must-watch, lineup-repairability and participant-terminal derivation. Angular
@@ -107,10 +109,18 @@ contract:
         - GameID
         - DecisionWindowID
         - StartsAtUtc
+        - ScoringAvailability
         - Repairability
+      scoringAvailability: >
+        Optional provider-neutral current-game availability evidence. The current
+        acquisition adapter joins ESPN athlete IDs to persisted Players.ESPNID and
+        materializes source/status provenance only when ESPN returns an injury/status
+        observation. Missing records never imply OUT. Explicit unavailable evidence
+        suppresses the player's direct scoring path; uncertain evidence does not.
       repairabilityPresence: >
         Repairability is null for slots without an initial supported objective problem.
-        It is populated for an open required starter slot or a starter-on-bye slot.
+        It is populated for an open required starter slot, a starter-on-bye slot or
+        an explicitly unavailable starter whose NFL game is not Final.
     rosterPlacement:
       values:
         - starter
@@ -126,7 +136,7 @@ contract:
     gameState:
       values:
         unlocked: The player's NFL kickoff is still in the future; current lineup placement is mutable.
-        locked-active: The player's NFL kickoff has occurred and the NFL game is not Final; placement is committed and the player may still add points.
+        locked-active: The player's NFL kickoff has occurred and the NFL game is not Final; placement is committed. ScoringAvailability may separately prove that this player can no longer add points.
         completed: The player's NFL game is Final; no ordinary additional live fantasy points can be added by that player.
         unknown: Required scheduled-game evidence is unavailable or ambiguous.
       rules:
@@ -147,6 +157,7 @@ contract:
       problemCodes:
         - OPEN_STARTER_SLOT
         - STARTER_ON_BYE
+        - STARTER_UNAVAILABLE
       states:
         repairable: Known evidence proves the complete remaining mutable lineup can still be legally filled.
         irreparable: Known evidence proves no accepted legal internal or external repair path remains.
@@ -167,6 +178,7 @@ contract:
         - One player may fill at most one slot in the matching solution.
         - Unlocked starters may move among other eligible mutable slots, enabling FLEX/SUPER_FLEX reshuffles.
         - Locked-active and completed starters stay fixed and cannot be future repair candidates.
+        - A starter with explicit terminal ScoringAvailability is never a repair candidate; before kickoff its slot may still be repaired, after kickoff it is irreparable for that NFL game.
         - IR/Reserve and Taxi are excluded from normal internal repair candidates.
         - Review/data-quality lineup states remain unknown rather than becoming manager-fault irreparable states.
       externalCandidateRules:
@@ -176,9 +188,32 @@ contract:
         - The current temporary #493 bridge supplies acquisition capability; consumer output remains provider-neutral.
         - Under the accepted current bridge, an external candidate is actionable only when NextWaiverRun is strictly earlier than that candidate's StartsAtUtc.
         - Trade is excluded because another manager is required and therefore is not a deterministic repair path.
+        - External candidates with explicit terminal ScoringAvailability are excluded from repair matching.
       replacementBoundary: >
         Issue #492 must replace/remove the temporary #493 acquisition bridge later
         without changing the repairability State/Path/Reason consumer semantics.
+    scoringAvailability:
+      purpose: >
+        Current-game scoring eligibility observation, distinct from generic injury
+        narrative. It answers whether explicit provider evidence says the player is
+        unavailable to score further points in the relevant NFL game.
+      currentProvider: ESPN_SITE_INJURIES
+      join: Players.ESPNID -> ESPN athlete.id -> Players.ID / FantasyRelevance PlayerID
+      states:
+        available: Explicit provider status says active/available.
+        uncertain: Provider status such as Questionable, Doubtful or Probable is non-terminal and never creates red/problem semantics by itself.
+        unavailable: Explicit terminal status such as Out, Inactive, Injury Reserve or Suspended proves no further scoring availability for the current NFL game.
+        unknown: Provider returned an unmapped status; it is retained for review and never treated as unavailable.
+      failureRules:
+        - Absence from the ESPN injury response does not synthesize available or unavailable.
+        - ESPN request failure yields no overlay and preserves existing lineup semantics; it never synthesizes OUT.
+        - Conflicting duplicate ESPN observations for one athlete are quarantined by omitting that athlete from the overlay.
+        - Generic Tank01 InjuryDetails in Players.json remains a separate legacy narrative/status contract.
+      freshness: >
+        Acquired during the existing frequent RequestLeague path. No per-poll observed-at
+        timestamp is persisted because unchanged observations must remain semantic
+        no-ops; future latency calibration is evaluated from status transitions and
+        provider/event evidence rather than forcing generated-data churn.
     participantRemainingScoringPath:
       field: RemainingScoringPathState
       values:
@@ -217,6 +252,7 @@ contract:
         - GameID
         - DecisionWindowID
         - StartsAtUtc
+        - ScoringAvailability
         - LineupSlotID
         - LineupSlotType
         - EligibleUnlockedSlotIDs
