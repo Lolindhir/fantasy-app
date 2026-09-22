@@ -42,6 +42,35 @@ function makeNflTeams(teamCount = 10): NFLTeam[] {
   });
 }
 
+function makeDecisionWindows(week = 2): DecisionWindowsReadModel {
+  return {
+    SchemaVersion: 3,
+    LeagueID: 'league',
+    Season: '2026',
+    LineupWeek: week,
+    LastLineupWeek: 17,
+    DecisionWindows: [],
+    LookaheadDecisionWindow: null,
+    PlayerLockFacts: [],
+    TeamLineupEvaluations: []
+  };
+}
+
+function makeFantasyGameContext(week = 2): FantasyGameContextReadModel {
+  return {
+    SchemaVersion: 5,
+    LeagueID: 'league',
+    Season: '2026',
+    Week: week,
+    ScoringState: 'pending',
+    DecisionWindows: [],
+    Games: [],
+    FantasyMatchups: [],
+    NonGameAssociations: [],
+    MustWatchGames: []
+  };
+}
+
 function makeLeague(teamCount = 8): League {
   const teams = Array.from({ length: teamCount }, (_, index) => {
     const place = index + 1;
@@ -90,6 +119,7 @@ function makeLeague(teamCount = 8): League {
     Season: '2026',
     Status: 'In-Season',
     FinalScoredWeek: 1,
+    PlayoffStartWeek: 14,
     Teams: teams,
     Standings: [{
       Season: '2026',
@@ -219,8 +249,8 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       'getNflTeams',
       'getWeeklyRecaps'
     ]);
-    dataService.getFantasyGameContext.and.returnValue(of(null as unknown as FantasyGameContextReadModel));
-    dataService.getDecisionWindows.and.returnValue(of(null as unknown as DecisionWindowsReadModel));
+    dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext()));
+    dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows()));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
     dataService.getNflTeams.and.returnValue(of(makeNflTeams()));
     dataService.getWeeklyRecaps.and.returnValue(of(recap));
@@ -346,6 +376,53 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       }
     });
   }
+
+  it('keeps only completed-week orientation and a prominent recap while standings are stale', () => {
+    const staleLeague = makeLeague();
+    for (const team of staleLeague.Teams) {
+      team.Placements.Current.Regular.Wins = 0;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+      team.Placements.Current.Regular.Record = '0-0';
+    }
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    fixture.componentInstance.league = staleLeague;
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeFalse();
+    expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
+    expect(host.querySelector('.weekly-recap-shell--prominent')).not.toBeNull();
+    expect(host.querySelector('.weekly-recap-shell--compact')).toBeNull();
+    expect(host.querySelector('.matchups-shell')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
+  });
+
+  it('keeps the next-week interactive surface hidden while fantasy context is still on the completed week', () => {
+    dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext(1)));
+    dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows(1)));
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    fixture.componentInstance.league = makeLeague();
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeFalse();
+    expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
+    expect(host.querySelector('.weekly-recap-shell--prominent')).not.toBeNull();
+    expect(host.querySelector('.matchups-shell')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
+  });
+
+  it('releases the current matchup surface when standings and week context are coherent', () => {
+    const host: HTMLElement = fixture.nativeElement;
+    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
+    expect(host.querySelector('.matchups-shell')).not.toBeNull();
+    expect(host.querySelector('.matchup-card')).not.toBeNull();
+  });
 
   it('keeps dynamic league size for standings and completed mini-matchups', () => {
     dataService.getMatchups.and.returnValue(of(makeMatchups(10)));

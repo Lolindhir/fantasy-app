@@ -9,6 +9,11 @@ on:
       - "public/requests/RequestStandings.ps1"
       - "public/requests/utils/league/CanonicalStandingUtils.psm1"
       - "public/requests/utils/league/StandingUtils.psm1"
+      - "source-data/leagues/nfl-reise/seasons/*/league.json"
+      - "source-data/leagues/nfl-reise/seasons/*/members.json"
+      - "source-data/leagues/nfl-reise/seasons/*/rosters.json"
+      - "source-data/leagues/nfl-reise/seasons/*/winners-bracket.json"
+      - "source-data/leagues/nfl-reise/seasons/*/losers-bracket.json"
   repository_dispatch:
     types:
       - scheduler-update-standings

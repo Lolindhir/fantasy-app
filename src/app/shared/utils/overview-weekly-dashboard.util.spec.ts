@@ -1,9 +1,12 @@
+import type { DecisionWindowsReadModel } from '../../core/models/decision-window.models';
+import type { FantasyGameContextReadModel } from '../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import type { FantasyMatchupReadModel, MatchupsReadModel } from '../../core/models/matchup.models';
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import {
   buildOverviewTopContext,
   getLastCompletedWeek,
+  isOverviewCurrentWeekSurfaceReady,
   orderOverviewCurrentMatchups,
   resolveOverviewWeeklyPhase,
   selectOverviewRecap
@@ -183,6 +186,92 @@ describe('Overview weekly dashboard presentation', () => {
     expect(context.standings.length).toBe(8);
     expect(context.lastMatchups.length).toBe(4);
     expect(context.lastMatchups.flatMap(row => row.participants).length).toBe(8);
+  });
+
+  it('holds the next-week surface while completed-week standings are stale', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 0;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 1);
+    league.PlayoffStartWeek = 14;
+    const model = readModel(1, 2);
+    const windows = { Season: '2026', LineupWeek: 2 } as DecisionWindowsReadModel;
+    const context = { Season: '2026', Week: 2 } as FantasyGameContextReadModel;
+
+    expect(isOverviewCurrentWeekSurfaceReady(league, model, windows, context)).toBeFalse();
+  });
+
+  it('holds the next-week surface while DecisionWindows or FantasyGameContext still point at the completed week', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 1;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 1);
+    league.PlayoffStartWeek = 14;
+    const model = readModel(1, 2);
+
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league,
+      model,
+      { Season: '2026', LineupWeek: 1 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 2 } as FantasyGameContextReadModel
+    )).toBeFalse();
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league,
+      model,
+      { Season: '2026', LineupWeek: 2 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 1 } as FantasyGameContextReadModel
+    )).toBeFalse();
+  });
+
+  it('releases the next-week surface when standings and both week-context models agree', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 1;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 1);
+    league.PlayoffStartWeek = 14;
+
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league,
+      readModel(1, 2),
+      { Season: '2026', LineupWeek: 2 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 2 } as FantasyGameContextReadModel
+    )).toBeTrue();
+  });
+
+  it('caps standings coverage at the end of the regular season during playoffs', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    for (const team of teams) {
+      team.Placements.Current.Regular.Wins = 13;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+    }
+    const league = makeLeague(teams, 14);
+    league.PlayoffStartWeek = 14;
+    const playoffModel = readModel(14, 15);
+    playoffModel.Weeks.push({
+      Week: 15,
+      Stage: 'playoffs',
+      FirstKickoffUtc: '2026-12-18T00:00:00Z',
+      CompletionState: 'open',
+      Matchups: [matchup('p-1', 1, 2)]
+    });
+    playoffModel.Summary = { LastCompletedWeek: 14, ActiveOrNextWeek: 15 };
+
+    expect(isOverviewCurrentWeekSurfaceReady(
+      league,
+      playoffModel,
+      { Season: '2026', LineupWeek: 15 } as DecisionWindowsReadModel,
+      { Season: '2026', Week: 15 } as FantasyGameContextReadModel
+    )).toBeTrue();
   });
 
   it('switches Recap → Prep → Live at the explicit kickoff boundaries', () => {

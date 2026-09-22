@@ -146,7 +146,7 @@ dataSources:
       productiveLeagueAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentLeagueRaw
       productiveTeamAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentTeamsForLeague
       canonicalInputs: league.json + members.json + rosters.json
-      freshness: productively scheduled League Core scope every ten minutes
+      freshness: productively scheduled League Core scope every ten minutes; canonical standing-source changes trigger Standings rebuilds, and changed Standings output triggers League re-enrichment
       providerFallback: none
       cutoverStatus: productive
       currentPlayoffBracketSource:

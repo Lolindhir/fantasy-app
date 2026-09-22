@@ -46,6 +46,7 @@ import {
 } from '../../utils/matchups-overview-view.util';
 import {
   buildOverviewTopContext,
+  isOverviewCurrentWeekSurfaceReady,
   orderOverviewCurrentMatchups,
   resolveOverviewWeeklyPhase,
   selectOverviewRecap,
@@ -158,6 +159,15 @@ export class LeagueMatchupsComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
+  private readonly fantasyContextStateSignal = toSignal(this.fantasyContextState$, {
+    initialValue: {
+      context: null,
+      decisionWindows: null,
+      matchups: null,
+      nflTeams: []
+    } as FantasyContextState
+  });
+
   private readonly pointsForFormatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
@@ -187,8 +197,20 @@ export class LeagueMatchupsComponent {
     return this.currentMatchupsReadModel()?.Summary.ActiveOrNextWeek ?? null;
   }
 
+  get currentWeekSurfaceReady(): boolean {
+    const state = this.fantasyContextStateSignal();
+    return isOverviewCurrentWeekSurfaceReady(
+      this.league,
+      this.currentMatchupsReadModel(),
+      state.decisionWindows,
+      state.context
+    );
+  }
+
   get overviewPhase(): OverviewWeeklyPhase {
-    return resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal());
+    const phase = resolveOverviewWeeklyPhase(this.currentMatchupsReadModel(), this.nowSignal());
+    if (!this.currentWeekSurfaceReady && (this.topContext?.lastCompletedWeek ?? null) !== null) return 'recap';
+    return phase;
   }
 
   get topContext(): OverviewTopContext | null {
@@ -207,6 +229,8 @@ export class LeagueMatchupsComponent {
   }
 
   get matchups(): LeagueMatchupView[] {
+    if (!this.currentWeekSurfaceReady) return [];
+
     const readModel = this.currentMatchupsReadModel();
     const week = this.week;
     if (!readModel || week === null) return [];
@@ -237,6 +261,7 @@ export class LeagueMatchupsComponent {
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
+    if (!this.currentWeekSurfaceReady) return null;
     return isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
   }
 
@@ -282,6 +307,7 @@ export class LeagueMatchupsComponent {
   }
 
   openMatchupDetailFromOverview(matchup: LeagueMatchupView): void {
+    if (!this.currentWeekSurfaceReady) return;
     if (this.latestFantasyContextState) this.openMatchupDetail(matchup, this.latestFantasyContextState);
   }
 

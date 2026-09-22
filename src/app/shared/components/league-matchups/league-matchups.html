@@ -68,6 +68,7 @@
     <ng-container *ngTemplateOutlet="weekRecap; context: { compact: false }"></ng-container>
   </ng-container>
 
+  <ng-container *ngIf="currentWeekSurfaceReady">
   <section *ngIf="matchups as matchupRows" class="matchups-shell" id="current-matchups">
     <ng-container *ngIf="matchupRows.length > 0">
       <div class="matchups-heading">
@@ -303,6 +304,7 @@
       </div>
     </ng-container>
   </section>
+  </ng-container>
 
   <div class="weekly-tail" [class.weekly-tail--with-recap]="overviewPhase !== 'recap' && (topContext?.lastCompletedWeek ?? null) !== null">
     <ng-container *ngIf="fantasyContextState$ | async as contextState">
