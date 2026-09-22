@@ -137,6 +137,7 @@ coreConcepts:
     initialProblemCodes:
       - OPEN_STARTER_SLOT
       - STARTER_ON_BYE
+      - STARTER_UNAVAILABLE
     states:
       repairable: >
         Known evidence proves the complete remaining mutable lineup can still be
@@ -161,6 +162,9 @@ coreConcepts:
       - One player may satisfy at most one starter slot.
       - Unlocked starters may move between other eligible mutable slots, including FLEX and SUPER_FLEX reshuffles.
       - Locked-active and completed starters remain fixed and are not future repair candidates.
+      - Explicit terminal current-game scoring unavailability creates STARTER_UNAVAILABLE; an unlocked slot may still be repairable, while a locked-active unavailable starter is irreparable.
+      - Questionable, Doubtful and other non-terminal uncertainty never create STARTER_UNAVAILABLE by themselves.
+      - Unavailable players are excluded from both internal-roster and external-acquisition repair candidates.
       - Active Roster means Starter plus Bench for internal repair; IR/Reserve and Taxi are excluded.
       - Review/data-quality lineup problems remain neutral unknown rather than manager-fault irreparable states.
     acquisitionRules:
@@ -173,6 +177,35 @@ coreConcepts:
       Generation/data owns slot matching, lock evidence, fantasy ownership joins,
       acquisition feasibility and fail-closed unknown handling. Angular owns only
       presentation and consumer-specific display mapping.
+
+  ScoringAvailability:
+    description: >
+      Provider-neutral current-game observation used by FantasyRelevance to answer
+      whether explicit evidence says a player can no longer score further fantasy
+      points in the relevant NFL game. This is deliberately narrower than generic
+      injury/news narrative.
+    currentAcquisition:
+      provider: ESPN
+      endpointFamily: ESPN Site NFL injuries
+      identityJoin: ESPN athlete ID through persisted Players.ESPNID; no display-name matching
+      refresh: existing frequent RequestLeague generation path
+    states:
+      - available
+      - uncertain
+      - unavailable
+      - unknown
+    terminalRule: >
+      Only explicit unavailable evidence is terminal. Out, Inactive, Injury Reserve
+      and Suspended are normalized as unavailable; Questionable, Doubtful and
+      Probable remain uncertain and never trigger red/irreparable semantics alone.
+    missingRule: >
+      Missing ESPN rows, request failure, conflicting provider rows or unmapped
+      statuses must never be interpreted as OUT. Generic Players.json InjuryDetails
+      remains a separate legacy contract.
+    ownership: >
+      Generation/data owns provider acquisition, ID joins, normalization and scoring
+      path effects. Angular consumes the generated provider-neutral observation and
+      existing repairability/lifecycle semantics without reinterpreting ESPN fields.
 
   Player:
     description: >
