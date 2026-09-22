@@ -143,6 +143,35 @@ Assert-FrvEqual 'g-q1' $context.MustWatchGames[0].GameID 'schema-v4 weekly Must-
 Assert-FrvEqual 1 (@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamCount) 'direct starter fantasy-team breadth must be materialized'
 Assert-FrvTrue (@(@($context.Games | Where-Object GameID -eq 'g-t1')[0].RemainingRelevance.DirectStarterFantasyTeamIDs) -contains '1') 'direct starter fantasy-team identities must be materialized'
 
+# Explicit ESPN OUT suppresses a direct scoring path while preserving provider evidence.
+$outObservation = [PSCustomObject]@{
+    State = 'unavailable'; Reason = 'out'; Source = 'ESPN'; Provider = 'ESPN_SITE_INJURIES'
+    ProviderPlayerID = 'espn-t1'; ProviderStatus = 'Out'; ProviderDate = $null
+}
+$outDecision = Add-FantasyRelevanceDecisionFacts `
+    -BaseReadModel (DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel -League $league -Teams $teams -Players $players -Schedule $schedule -LastLineupWeek 1) `
+    -League $league -Teams $teams -Players $players -Schedule $schedule `
+    -ScoringAvailabilityByPlayerID @{ t1 = $outObservation } `
+    -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T19:30:00Z'))
+$outTeam = @($outDecision.FantasyRelevance.Teams | Where-Object FantasyTeamID -eq '1')[0]
+$outPlayer = @($outTeam.Players | Where-Object PlayerID -eq 't1')[0]
+$outSlot = @($outTeam.Slots | Where-Object SlotID -eq 'TE-1')[0]
+Assert-FrvEqual 'unavailable' $outPlayer.ScoringAvailability.State 'Player state must retain normalized ESPN availability'
+Assert-FrvEqual 'out' $outSlot.ScoringAvailability.Reason 'Starter slot must retain provider-neutral availability evidence'
+Assert-FrvTrue (-not $outPlayer.HasDirectScoringPath) 'Explicit OUT must suppress direct scoring path before game completion'
+
+$questionableObservation = [PSCustomObject]@{
+    State = 'uncertain'; Reason = 'questionable'; Source = 'ESPN'; Provider = 'ESPN_SITE_INJURIES'
+    ProviderPlayerID = 'espn-t1'; ProviderStatus = 'Questionable'; ProviderDate = $null
+}
+$questionableDecision = Add-FantasyRelevanceDecisionFacts `
+    -BaseReadModel (DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel -League $league -Teams $teams -Players $players -Schedule $schedule -LastLineupWeek 1) `
+    -League $league -Teams $teams -Players $players -Schedule $schedule `
+    -ScoringAvailabilityByPlayerID @{ t1 = $questionableObservation } `
+    -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T19:30:00Z'))
+$questionablePlayer = @(@($questionableDecision.FantasyRelevance.Teams | Where-Object FantasyTeamID -eq '1')[0].Players | Where-Object PlayerID -eq 't1')[0]
+Assert-FrvTrue $questionablePlayer.HasDirectScoringPath 'Questionable must not suppress an otherwise valid scoring path'
+
 # After the TE kickoff, its starter is committed while the later RB remained on Bench and is now locked out.
 $lateDecision = Add-FantasyRelevanceDecisionFacts `
     -BaseReadModel (DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel -League $league -Teams $teams -Players $players -Schedule $schedule -LastLineupWeek 1) `
