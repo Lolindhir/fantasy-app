@@ -136,4 +136,38 @@ $secondPublished = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentO
 $secondPublishedModel = Add-PlayerScoringAvailabilityDecisionFacts -BaseReadModel (New-PsaModel) -Observations $secondPublished
 Assert-PsaTrue (-not (Test-DecisionWindowReadModelChanged -OldData $firstPublishedModel -NewData $secondPublishedModel)) 'Unchanged provider status must remain a semantic DecisionWindows no-op even when a later poll occurred'
 
+$parsedPrevious = @'
+{
+  "PlayerID": "p1",
+  "ESPNPlayerID": "4689114",
+  "State": "uncertain",
+  "ProviderStatus": "QUESTIONABLE",
+  "Source": "ESPN",
+  "FirstObservedAtUtc": "2026-09-22T16:49:31Z",
+  "ObservedAtUtc": "2026-09-22T16:49:31Z"
+}
+'@ | ConvertFrom-Json
+$parsedCurrent = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'QUESTIONABLE'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-22T17:10:00Z'
+}
+$resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($parsedCurrent) -PreviousObservations @($parsedPrevious))
+Assert-PsaEqual '2026-09-22T16:49:31Z' $resolved[0].FirstObservedAtUtc 'JSON-deserialized ISO timestamps must remain normalized UTC ISO strings'
+
+$localePrevious = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'QUESTIONABLE'
+    Source = 'ESPN'
+    FirstObservedAtUtc = '09/22/2026 16:49:31'
+    ObservedAtUtc = '09/22/2026 16:49:31'
+}
+$resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($parsedCurrent) -PreviousObservations @($localePrevious))
+Assert-PsaEqual '2026-09-22T16:49:31Z' $resolved[0].FirstObservedAtUtc 'Previously published locale-formatted transition time must self-heal to UTC ISO'
+
 Write-Host 'Player scoring availability regression tests passed.' -ForegroundColor Green
