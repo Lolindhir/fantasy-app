@@ -377,7 +377,7 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     });
   }
 
-  it('keeps only completed-week orientation and a prominent recap while standings are stale', () => {
+  it('retains the prior matchup week instead of hiding the surface while standings are stale', () => {
     const staleLeague = makeLeague();
     for (const team of staleLeague.Teams) {
       team.Placements.Current.Regular.Wins = 0;
@@ -392,15 +392,14 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeFalse();
+    expect(fixture.componentInstance.week).toBe(1);
+    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
     expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
-    expect(host.querySelector('.weekly-recap-shell--prominent')).not.toBeNull();
-    expect(host.querySelector('.weekly-recap-shell--compact')).toBeNull();
-    expect(host.querySelector('.matchups-shell')).toBeNull();
-    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
+    expect(host.querySelector('.matchups-shell')).not.toBeNull();
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 1 Matchups');
   });
 
-  it('keeps the next-week interactive surface hidden while fantasy context is still on the completed week', () => {
+  it('retains the completed context week while Matchups has already advanced', () => {
     dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext(1)));
     dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows(1)));
 
@@ -410,11 +409,69 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
-    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeFalse();
+    expect(fixture.componentInstance.week).toBe(1);
+    expect(fixture.componentInstance.currentWeekSurfaceReady).toBeTrue();
     expect(host.querySelector('.weekly-context-shell')).not.toBeNull();
-    expect(host.querySelector('.weekly-recap-shell--prominent')).not.toBeNull();
-    expect(host.querySelector('.matchups-shell')).toBeNull();
-    expect(host.querySelector('.fantasy-pulse-shell')).toBeNull();
+    expect(host.querySelector('.matchups-shell')).not.toBeNull();
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 1 Matchups');
+  });
+
+  it('shows Week 2, Week-1 history and Week-1 standings while Week 3 context is not coherent', () => {
+    const rolloverLeague = makeLeague();
+    rolloverLeague.FinalScoredWeek = 2;
+    for (const team of rolloverLeague.Teams) {
+      team.Placements.Current.Regular.Wins = 2;
+      team.Placements.Current.Regular.Losses = 0;
+      team.Placements.Current.Regular.Ties = 0;
+      team.Placements.Current.Regular.Record = '2-0';
+    }
+
+    const rolloverMatchups = makeMatchups();
+    rolloverMatchups.Weeks[1] = {
+      ...rolloverMatchups.Weeks[1],
+      CompletionState: 'final',
+      Matchups: rolloverMatchups.Weeks[1].Matchups.map(matchup => ({
+        ...matchup,
+        CompletionState: 'final' as const,
+        Participants: matchup.Participants.map((participant, index) => ({
+          ...participant,
+          Points: 150 + Number(participant.TeamID) + index
+        })),
+        Result: { Type: 'win' as const, WinnerTeamID: matchup.Participants[0].TeamID }
+      }))
+    };
+    rolloverMatchups.Weeks.push({
+      Week: 3,
+      Stage: 'regular-season',
+      FirstKickoffUtc: '2099-09-24T00:00:00Z',
+      CompletionState: 'open',
+      Matchups: rolloverMatchups.Weeks[1].Matchups.map((matchup, index) => ({
+        FantasyMatchupID: `w3-${index + 1}`,
+        CompletionState: 'open' as const,
+        Participants: matchup.Participants.map(participant => ({
+          TeamID: participant.TeamID,
+          Points: 0,
+          ScoreKind: 'standard' as const
+        })),
+        Result: null
+      }))
+    });
+    rolloverMatchups.Summary = { LastCompletedWeek: 2, ActiveOrNextWeek: 3 };
+
+    dataService.getMatchups.and.returnValue(of(rolloverMatchups));
+    dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext(2)));
+    dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows(2)));
+
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    fixture.componentInstance.league = rolloverLeague;
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(fixture.componentInstance.week).toBe(2);
+    expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 2 Matchups');
+    expect(host.querySelector('.weekly-context-half--last .weekly-context-heading')?.textContent).toContain('Last Week · W1');
+    expect(Array.from(host.querySelectorAll('.weekly-standing-record')).every(row => row.textContent?.trim() === '1-0')).toBeTrue();
   });
 
   it('releases the current matchup surface when standings and week context are coherent', () => {

@@ -24,6 +24,13 @@ export type OverviewWeeklyPhase = 'recap' | 'prep' | 'live';
 export interface OverviewStandingRow {
   team: FantasyTeam;
   displayPlace: number;
+  wins: number;
+  losses: number;
+  ties: number;
+  points: number;
+  pointsAgainst: number;
+  record: string;
+  streak: string | null;
 }
 
 export interface OverviewLastMatchupParticipant {
@@ -65,11 +72,12 @@ const prepLeadMs = 24 * 60 * 60 * 1000;
 
 export function resolveOverviewWeeklyPhase(
   readModel: MatchupsReadModel | null | undefined,
-  now: Date
+  now: Date,
+  displayWeek: number | null = readModel?.Summary.ActiveOrNextWeek ?? null
 ): OverviewWeeklyPhase {
   if (!readModel) return 'prep';
 
-  const activeWeek = findWeek(readModel, readModel.Summary.ActiveOrNextWeek);
+  const activeWeek = findWeek(readModel, displayWeek);
   const kickoffMs = parseUtc(activeWeek?.FirstKickoffUtc);
   const nowMs = now.getTime();
 
@@ -109,12 +117,39 @@ export function isOverviewCurrentWeekSurfaceReady(
     && fantasyContext.Week === activeWeek;
 }
 
+export function resolveOverviewDisplayWeek(
+  league: League,
+  readModel: MatchupsReadModel | null | undefined,
+  decisionWindows: DecisionWindowsReadModel | null | undefined,
+  fantasyContext: FantasyGameContextReadModel | null | undefined
+): number | null {
+  if (!readModel || readModel.Season !== league.Season) return null;
+
+  const activeWeek = readModel.Summary.ActiveOrNextWeek;
+  if (activeWeek === null) return null;
+
+  if (isOverviewCurrentWeekSurfaceReady(league, readModel, decisionWindows, fantasyContext)) {
+    return activeWeek;
+  }
+
+  // Rollover is atomic in the Overview. If the source-owned Matchups model has
+  // already discovered N+1 but the rest of the weekly context has not caught up,
+  // keep presenting N rather than partially exposing N+1 or hiding the surface.
+  const retainedWeek = activeWeek - 1;
+  return retainedWeek > 0 && findWeek(readModel, retainedWeek)
+    ? retainedWeek
+    : activeWeek;
+}
+
 export function buildOverviewTopContext(
   league: League,
-  readModel: MatchupsReadModel | null | undefined
+  readModel: MatchupsReadModel | null | undefined,
+  displayWeek: number | null = readModel?.Summary.ActiveOrNextWeek ?? null
 ): OverviewTopContext {
-  const standings = buildCurrentStandings(league, league.Teams);
-  const lastWeek = getLastCompletedWeek(readModel);
+  const standings = buildOverviewStandingsSnapshot(league, readModel, displayWeek);
+  const lastWeek = displayWeek === null
+    ? getLastCompletedWeek(readModel)
+    : getFinalWeek(readModel, displayWeek - 1);
   if (!lastWeek) {
     return { standings, lastCompletedWeek: null, lastMatchups: [] };
   }
@@ -167,9 +202,10 @@ export function selectOverviewRecap(
 
 export function orderOverviewCurrentMatchups(
   league: League,
-  matchups: readonly FantasyMatchupReadModel[]
+  matchups: readonly FantasyMatchupReadModel[],
+  standings: readonly OverviewStandingRow[] | null = null
 ): FantasyMatchupReadModel[] {
-  const context = buildEffectiveStandingContext(league);
+  const context = buildEffectiveStandingContext(league, standings);
   const teamByID = new Map(league.Teams.map(team => [String(team.TeamID), team]));
 
   const oriented = matchups.map(matchup => ({
@@ -197,6 +233,171 @@ export function getLastCompletedWeek(
   if (!readModel || readModel.Summary.LastCompletedWeek === null) return null;
 
   const week = findWeek(readModel, readModel.Summary.LastCompletedWeek);
+  return week?.CompletionState === 'final' ? week : null;
+}
+
+function buildOverviewStandingsSnapshot(
+  league: League,
+  readModel: MatchupsReadModel | null | undefined,
+  displayWeek: number | null
+): OverviewStandingRow[] {
+  if (!readModel || readModel.Season !== league.Season || displayWeek === null) {
+    return buildCurrentOverviewStandingRows(league);
+  }
+
+  const playoffStartWeek = Number(league.PlayoffStartWeek);
+  const targetRegularWeek = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
+    ? Math.min(displayWeek - 1, Math.max(0, playoffStartWeek - 1))
+    : Math.max(0, displayWeek - 1);
+
+  if (targetRegularWeek <= 0) return buildCurrentOverviewStandingRows(league);
+
+  const weeks: MatchupWeekReadModel[] = [];
+  for (let weekNumber = 1; weekNumber <= targetRegularWeek; weekNumber++) {
+    const week = findWeek(readModel, weekNumber);
+    if (!week || week.Stage !== 'regular-season' || week.CompletionState !== 'final') {
+      return buildCurrentOverviewStandingRows(league);
+    }
+    weeks.push(week);
+  }
+
+  interface SnapshotStats {
+    team: FantasyTeam;
+    wins: number;
+    losses: number;
+    ties: number;
+    points: number;
+    pointsAgainst: number;
+    results: string[];
+  }
+
+  const statsByTeam = new Map<string, SnapshotStats>(
+    league.Teams.map(team => [String(team.TeamID), {
+      team,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      points: 0,
+      pointsAgainst: 0,
+      results: []
+    }])
+  );
+
+  for (const week of weeks) {
+    for (const matchup of week.Matchups) {
+      if (matchup.CompletionState !== 'final' || matchup.Participants.length !== 2 || !matchup.Result) continue;
+
+      const left = matchup.Participants[0];
+      const right = matchup.Participants[1];
+      const leftStats = statsByTeam.get(String(left.TeamID));
+      const rightStats = statsByTeam.get(String(right.TeamID));
+      const leftPoints = Number(left.Points);
+      const rightPoints = Number(right.Points);
+      if (!leftStats || !rightStats || !Number.isFinite(leftPoints) || !Number.isFinite(rightPoints)) {
+        return buildCurrentOverviewStandingRows(league);
+      }
+
+      leftStats.points += leftPoints;
+      leftStats.pointsAgainst += rightPoints;
+      rightStats.points += rightPoints;
+      rightStats.pointsAgainst += leftPoints;
+
+      if (matchup.Result.Type === 'tie') {
+        leftStats.ties += 1;
+        rightStats.ties += 1;
+        leftStats.results.push('T');
+        rightStats.results.push('T');
+        continue;
+      }
+
+      const winnerID = String(matchup.Result.WinnerTeamID);
+      const leftWon = winnerID === String(left.TeamID);
+      const rightWon = winnerID === String(right.TeamID);
+      if (leftWon === rightWon) return buildCurrentOverviewStandingRows(league);
+
+      const winner = leftWon ? leftStats : rightStats;
+      const loser = leftWon ? rightStats : leftStats;
+      winner.wins += 1;
+      loser.losses += 1;
+      winner.results.push('W');
+      loser.results.push('L');
+    }
+  }
+
+  const ranked = [...statsByTeam.values()].sort((a, b) => {
+    const winPctDiff = standingWinPercentage(b) - standingWinPercentage(a);
+    if (winPctDiff !== 0) return winPctDiff;
+
+    const pointsDiff = b.points - a.points;
+    if (pointsDiff !== 0) return pointsDiff;
+
+    const pointsAgainstDiff = a.pointsAgainst - b.pointsAgainst;
+    if (pointsAgainstDiff !== 0) return pointsAgainstDiff;
+
+    return String(a.team.TeamID).localeCompare(String(b.team.TeamID), undefined, { numeric: true });
+  });
+
+  return ranked.map((row, index) => ({
+    team: row.team,
+    displayPlace: index + 1,
+    wins: row.wins,
+    losses: row.losses,
+    ties: row.ties,
+    points: roundStandingPoints(row.points),
+    pointsAgainst: roundStandingPoints(row.pointsAgainst),
+    record: formatStandingRecord(row.wins, row.losses, row.ties),
+    streak: formatStandingStreak(row.results)
+  }));
+}
+
+function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[] {
+  return buildCurrentStandings(league, league.Teams).map(({ team, displayPlace }) => {
+    const placement = team.Placements?.Current?.Regular;
+    const wins = Number(placement?.Wins ?? 0);
+    const losses = Number(placement?.Losses ?? 0);
+    const ties = Number(placement?.Ties ?? 0);
+    return {
+      team,
+      displayPlace,
+      wins,
+      losses,
+      ties,
+      points: Number(placement?.Points ?? team.Points ?? 0),
+      pointsAgainst: Number(placement?.PointsAgainst ?? team.PointsAgainst ?? 0),
+      record: formatStandingRecord(wins, losses, ties),
+      streak: placement?.Streak?.trim() || null
+    };
+  });
+}
+
+function standingWinPercentage(row: { wins: number; losses: number; ties: number }): number {
+  const games = row.wins + row.losses + row.ties;
+  return games > 0 ? (row.wins + (0.5 * row.ties)) / games : -1;
+}
+
+function formatStandingRecord(wins: number, losses: number, ties: number): string {
+  const base = `${wins}-${losses}`;
+  return ties > 0 ? `${base}-${ties}` : base;
+}
+
+function formatStandingStreak(results: readonly string[]): string | null {
+  if (results.length === 0) return null;
+  const last = results[results.length - 1];
+  let count = 1;
+  for (let index = results.length - 2; index >= 0 && results[index] === last; index--) count++;
+  return `${count}${last}`;
+}
+
+function roundStandingPoints(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function getFinalWeek(
+  readModel: MatchupsReadModel | null | undefined,
+  weekNumber: number
+): MatchupWeekReadModel | null {
+  if (!readModel || weekNumber <= 0) return null;
+  const week = findWeek(readModel, weekNumber);
   return week?.CompletionState === 'final' ? week : null;
 }
 
@@ -229,9 +430,14 @@ function selectRecapDensity(recap: WeeklyRecapWeek, prominent: boolean): Overvie
   };
 }
 
-function buildEffectiveStandingContext(league: League): OverviewEffectiveStandingContext {
+function buildEffectiveStandingContext(
+  league: League,
+  standings: readonly OverviewStandingRow[] | null = null
+): OverviewEffectiveStandingContext {
   return {
-    currentPlaces: resolveUsableCurrentPlaces(league),
+    currentPlaces: standings
+      ? new Map(standings.map(row => [String(row.team.TeamID), row.displayPlace]))
+      : resolveUsableCurrentPlaces(league),
     neutralOrder: tryBuildNeutralOrder(league.Teams)
   };
 }
