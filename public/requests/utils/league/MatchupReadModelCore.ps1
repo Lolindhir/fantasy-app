@@ -496,6 +496,7 @@ function New-MatchupSeasonReadModel {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Standings,
         [AllowNull()][object]$DecisionFacts,
         [AllowEmptyCollection()][array]$LiveMatchupRows = @(),
+        [int]$LiveMatchupWeek = 0,
         [bool]$ActiveScoreEvidenceAvailable = $true,
         [DateTimeOffset]$AsOfUtc = [DateTimeOffset]::UtcNow,
         [string]$RepoRoot = (Get-MrmRepositoryRoot),
@@ -523,6 +524,9 @@ function New-MatchupSeasonReadModel {
 
     $decisionSeason = [string](Get-MrmValue -Object $DecisionFacts -Names @('Season'))
     $activeWeek = if ($null -ne $DecisionFacts -and $decisionSeason -eq [string]$Season) { [int](Get-MrmValue -Object $DecisionFacts -Names @('LineupWeek')) } else { 0 }
+    if (@($LiveMatchupRows).Count -gt 0 -and $LiveMatchupWeek -le 0) {
+        throw 'LiveMatchupWeek is required when LiveMatchupRows are supplied.'
+    }
     $weeks = @()
 
     for ($week = $startWeek; $week -le $lastKnownWeek; $week++) {
@@ -531,7 +535,7 @@ function New-MatchupSeasonReadModel {
         $firstKickoff = if ($kickoffs.Count -gt 0) { [string]$kickoffs[0] } else { $null }
         $matchupFile = Join-Path $matchupDir "week-$week.json"
         $rows = if (Test-Path $matchupFile) { @(Get-Content $matchupFile -Raw | ConvertFrom-Json) } else { @() }
-        $weekLiveRows = if ($week -eq $activeWeek) { @($LiveMatchupRows) } else { @() }
+        $weekLiveRows = if ($week -eq $activeWeek -and $week -eq $LiveMatchupWeek) { @($LiveMatchupRows) } else { @() }
         $malformedEvidenceFound = $false
         $pairings = @(ConvertTo-MrmCanonicalPairings -Season $Season -Week $week -Rows $rows -ParticipantOrder $participantOrder -LiveRows $weekLiveRows -MalformedEvidenceFound ([ref]$malformedEvidenceFound))
         if ($week -eq $activeWeek -and -not $ActiveScoreEvidenceAvailable) {

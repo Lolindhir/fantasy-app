@@ -358,10 +358,10 @@ try {
     $playoffStartUtc = Get-LeaguePlayoffStartUtc -Schedule $schedule -PlayoffStartWeek ([int]$playoffStart)
     $playoffStartAt = if ($null -ne $playoffStartUtc) { $playoffStartUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") } else { $null }
 
-    $matchupWeek = 0
-    if ([string]$league.status -ne "complete" -and $currentWeek -gt 0 -and [int]$lastWeek -gt 0) {
-        $matchupWeek = [Math]::Min([int]$currentWeek, [int]$lastWeek)
-    }
+    $matchupWeek = Resolve-FantasyMatchupLoadWeek `
+        -DecisionWindows $decisionWindowsAsJson `
+        -LastLeagueWeek ([int]$lastWeek) `
+        -LeagueComplete ([string]$league.status -eq "complete")
 
     $fantasyGameContextAsJson = $null
     $matchupRows = @()
@@ -399,6 +399,7 @@ try {
         -Standings @($standings) `
         -DecisionFacts $decisionWindowsAsJson `
         -LiveMatchupRows @($matchupRows) `
+        -LiveMatchupWeek $matchupWeek `
         -ActiveScoreEvidenceAvailable $activeMatchupScoreEvidenceAvailable
 
     $cutsAllowed = $true

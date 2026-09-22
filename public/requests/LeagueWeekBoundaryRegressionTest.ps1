@@ -40,6 +40,20 @@ try {
     Assert-Equal -Expected 17 -Actual $activeState.LastLeagueWeek -Message 'Structural last league week must not collapse to last_scored_leg.'
     Assert-Equal -Expected 'ExpectedLastLeagueWeek' -Actual $activeState.BoundarySource -Message 'Active seasons must use the projected canonical boundary.'
 
+    $rolloverDecisionWindows = [PSCustomObject][ordered]@{
+        LineupWeek = 2
+    }
+    $rolloverMatchupWeek = Resolve-FantasyMatchupLoadWeek `
+        -DecisionWindows $rolloverDecisionWindows `
+        -LastLeagueWeek 17
+    Assert-Equal -Expected 2 -Actual $rolloverMatchupWeek -Message 'Fantasy matchup loading must follow DecisionWindows.LineupWeek during NFL week rollover.'
+
+    $completedMatchupWeek = Resolve-FantasyMatchupLoadWeek `
+        -DecisionWindows $rolloverDecisionWindows `
+        -LastLeagueWeek 17 `
+        -LeagueComplete $true
+    Assert-Equal -Expected 0 -Actual $completedMatchupWeek -Message 'Completed leagues must not request a current fantasy matchup week.'
+
     $completedSourceFile = Join-Path $tempRoot 'completed-league.json'
     [PSCustomObject][ordered]@{
         WeekStructure = [PSCustomObject][ordered]@{
