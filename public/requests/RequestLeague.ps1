@@ -311,11 +311,15 @@ try {
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
 
+    $canonicalIdentityPath = Join-Path $PSScriptRoot "..\..\source-data\nfl\identities\players.json"
+    $canonicalIdentityPayload = Get-Content $canonicalIdentityPath -Raw | ConvertFrom-Json
+    $canonicalIdentities = @($canonicalIdentityPayload.Players)
     $scoringAvailabilityObservations = @(
         Get-EspnScoringAvailabilityObservations `
             -Season ([int]$currentSeason) `
             -Teams $teamData `
-            -Players $playersData
+            -Players $playersData `
+            -CanonicalIdentities $canonicalIdentities
     )
     $outAvailabilityCount = @($scoringAvailabilityObservations | Where-Object State -eq 'out').Count
     Write-Host "ESPN scoring availability: $($scoringAvailabilityObservations.Count) starter observations, $outAvailabilityCount OUT." -ForegroundColor DarkGray
