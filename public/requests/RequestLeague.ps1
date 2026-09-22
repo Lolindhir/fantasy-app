@@ -314,12 +314,31 @@ try {
     $canonicalIdentityPath = Join-Path $PSScriptRoot "..\..\source-data\nfl\identities\players.json"
     $canonicalIdentityPayload = Get-Content $canonicalIdentityPath -Raw | ConvertFrom-Json
     $canonicalIdentities = @($canonicalIdentityPayload.Players)
-    $scoringAvailabilityObservations = @(
+
+    $previousScoringAvailabilityObservations = @()
+    if (Test-Path $config.DecisionWindowsFile) {
+        try {
+            $previousDecisionWindows = Get-Content $config.DecisionWindowsFile -Raw | ConvertFrom-Json
+            if ($previousDecisionWindows.PSObject.Properties.Name -contains 'ScoringAvailabilityObservations') {
+                $previousScoringAvailabilityObservations = @($previousDecisionWindows.ScoringAvailabilityObservations)
+            }
+        }
+        catch {
+            Write-Warning "Could not read prior DecisionWindows scoring-availability observations; transition timing will restart from this poll. $_"
+        }
+    }
+
+    $currentScoringAvailabilityObservations = @(
         Get-EspnScoringAvailabilityObservations `
             -Season ([int]$currentSeason) `
             -Teams $teamData `
             -Players $playersData `
             -CanonicalIdentities $canonicalIdentities
+    )
+    $scoringAvailabilityObservations = @(
+        Resolve-PlayerScoringAvailabilityObservationTimes `
+            -CurrentObservations $currentScoringAvailabilityObservations `
+            -PreviousObservations $previousScoringAvailabilityObservations
     )
     $outAvailabilityCount = @($scoringAvailabilityObservations | Where-Object State -eq 'out').Count
     Write-Host "ESPN scoring availability: $($scoringAvailabilityObservations.Count) starter observations, $outAvailabilityCount OUT." -ForegroundColor DarkGray

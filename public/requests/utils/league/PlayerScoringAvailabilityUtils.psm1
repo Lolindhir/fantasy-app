@@ -34,6 +34,66 @@ function ConvertTo-PsaNormalizedState {
     }
 }
 
+function Resolve-PlayerScoringAvailabilityObservationTimes {
+    param(
+        [AllowNull()][object[]]$CurrentObservations,
+        [AllowNull()][object[]]$PreviousObservations
+    )
+
+    $previousByPlayer = @{}
+    $ambiguousPrevious = @{}
+    foreach ($previous in @(Get-PsaCollection $PreviousObservations)) {
+        if ($null -eq $previous) { continue }
+        $playerID = ConvertTo-PsaPlayerID (Get-PsaValue -Object $previous -Names @('PlayerID'))
+        if ($null -eq $playerID) { continue }
+
+        if ($previousByPlayer.ContainsKey($playerID) -or $ambiguousPrevious.ContainsKey($playerID)) {
+            $previousByPlayer.Remove($playerID)
+            $ambiguousPrevious[$playerID] = $true
+            continue
+        }
+        $previousByPlayer[$playerID] = $previous
+    }
+
+    $resolved = @()
+    foreach ($current in @(Get-PsaCollection $CurrentObservations)) {
+        if ($null -eq $current) { continue }
+
+        $playerID = ConvertTo-PsaPlayerID (Get-PsaValue -Object $current -Names @('PlayerID'))
+        $currentObservedAtUtc = Get-PsaValue -Object $current -Names @('ObservedAtUtc')
+        $firstObservedAtUtc = $currentObservedAtUtc
+
+        if ($null -ne $playerID -and $previousByPlayer.ContainsKey($playerID)) {
+            $previous = $previousByPlayer[$playerID]
+            $sameProviderStatus = (
+                [string](Get-PsaValue -Object $previous -Names @('ESPNPlayerID')) -eq [string](Get-PsaValue -Object $current -Names @('ESPNPlayerID')) -and
+                [string](Get-PsaValue -Object $previous -Names @('Source')) -eq [string](Get-PsaValue -Object $current -Names @('Source')) -and
+                [string](Get-PsaValue -Object $previous -Names @('ProviderStatus')) -eq [string](Get-PsaValue -Object $current -Names @('ProviderStatus')) -and
+                [string](Get-PsaValue -Object $previous -Names @('State')) -eq [string](Get-PsaValue -Object $current -Names @('State'))
+            )
+            if ($sameProviderStatus) {
+                $previousFirstObservedAtUtc = Get-PsaValue -Object $previous -Names @('FirstObservedAtUtc','ObservedAtUtc')
+                if (-not [string]::IsNullOrWhiteSpace([string]$previousFirstObservedAtUtc)) {
+                    $firstObservedAtUtc = [string]$previousFirstObservedAtUtc
+                }
+            }
+        }
+
+        $stableObservedAtUtc = if ([string]::IsNullOrWhiteSpace([string]$firstObservedAtUtc)) { $null } else { [string]$firstObservedAtUtc }
+        $resolved += [PSCustomObject][ordered]@{
+            PlayerID = [string](Get-PsaValue -Object $current -Names @('PlayerID'))
+            ESPNPlayerID = [string](Get-PsaValue -Object $current -Names @('ESPNPlayerID'))
+            State = [string](Get-PsaValue -Object $current -Names @('State'))
+            ProviderStatus = Get-PsaValue -Object $current -Names @('ProviderStatus')
+            Source = [string](Get-PsaValue -Object $current -Names @('Source'))
+            FirstObservedAtUtc = $stableObservedAtUtc
+            ObservedAtUtc = $stableObservedAtUtc
+        }
+    }
+
+    return @($resolved)
+}
+
 function Get-EspnScoringAvailabilityObservations {
     param(
         [Parameter(Mandatory = $true)][int]$Season,
@@ -180,6 +240,7 @@ function Add-PlayerScoringAvailabilityDecisionFacts {
                     State = 'unknown'
                     ProviderStatus = $null
                     Source = 'ESPN'
+                    FirstObservedAtUtc = $null
                     ObservedAtUtc = $null
                 }
             } else {
@@ -187,7 +248,8 @@ function Add-PlayerScoringAvailabilityDecisionFacts {
                     State = [string](Get-PsaValue -Object $observation -Names @('State'))
                     ProviderStatus = Get-PsaValue -Object $observation -Names @('ProviderStatus')
                     Source = [string](Get-PsaValue -Object $observation -Names @('Source'))
-                    ObservedAtUtc = Get-PsaValue -Object $observation -Names @('ObservedAtUtc')
+                    FirstObservedAtUtc = Get-PsaValue -Object $observation -Names @('FirstObservedAtUtc','ObservedAtUtc')
+                    ObservedAtUtc = Get-PsaValue -Object $observation -Names @('ObservedAtUtc','FirstObservedAtUtc')
                 }
             }
             $player | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $availability -Force
@@ -227,4 +289,4 @@ function Add-PlayerScoringAvailabilityDecisionFacts {
     return $BaseReadModel
 }
 
-Export-ModuleMember -Function Get-EspnScoringAvailabilityObservations, Add-PlayerScoringAvailabilityDecisionFacts
+Export-ModuleMember -Function Get-EspnScoringAvailabilityObservations, Resolve-PlayerScoringAvailabilityObservationTimes, Add-PlayerScoringAvailabilityDecisionFacts
