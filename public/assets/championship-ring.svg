@@ -1,81 +1,103 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="gold" x1="13" y1="6" x2="50" y2="37" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF4B5"/>
-      <stop offset="0.26" stop-color="#E9BA4E"/>
-      <stop offset="0.58" stop-color="#98630F"/>
-      <stop offset="0.82" stop-color="#F0C967"/>
-      <stop offset="1" stop-color="#744508"/>
-    </linearGradient>
-    <linearGradient id="band" x1="18" y1="28" x2="46" y2="60" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF0A0"/>
-      <stop offset="0.3" stop-color="#D49B2A"/>
-      <stop offset="0.6" stop-color="#744508"/>
-      <stop offset="0.82" stop-color="#DCA637"/>
-      <stop offset="1" stop-color="#FFF3AE"/>
-    </linearGradient>
-    <linearGradient id="silver" x1="25" y1="14" x2="39" y2="31" gradientUnits="userSpaceOnUse">
+    <linearGradient id="platinum" x1="10" y1="5" x2="54" y2="45" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFFFFF"/>
-      <stop offset="0.38" stop-color="#DCE4ED"/>
-      <stop offset="0.72" stop-color="#8997A8"/>
-      <stop offset="1" stop-color="#F7FAFC"/>
+      <stop offset="0.18" stop-color="#DDE3E8"/>
+      <stop offset="0.42" stop-color="#8C969F"/>
+      <stop offset="0.64" stop-color="#F7F9FA"/>
+      <stop offset="0.82" stop-color="#AEB6BD"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="12" y1="8" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF2B0"/>
+      <stop offset="0.25" stop-color="#D6A23A"/>
+      <stop offset="0.5" stop-color="#81510B"/>
+      <stop offset="0.75" stop-color="#E2B24E"/>
+      <stop offset="1" stop-color="#FFF0A0"/>
+    </linearGradient>
+    <linearGradient id="emerald" x1="18" y1="10" x2="46" y2="39" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B4D43"/>
+      <stop offset="0.38" stop-color="#062E2C"/>
+      <stop offset="0.7" stop-color="#081D23"/>
+      <stop offset="1" stop-color="#0D5B4A"/>
+    </linearGradient>
+    <radialGradient id="gem" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0.35 0.25) scale(0.8)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.42" stop-color="#E8EDF2"/>
+      <stop offset="0.72" stop-color="#A7B0B9"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </radialGradient>
+    <linearGradient id="shadowMetal" x1="24" y1="14" x2="39" y2="33" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.35" stop-color="#D7DDE2"/>
+      <stop offset="0.7" stop-color="#7B858E"/>
+      <stop offset="1" stop-color="#F8FAFB"/>
     </linearGradient>
   </defs>
 
-  <!-- Broad lower band: drawn first so the compact silhouette still reads unmistakably as a ring. -->
-  <ellipse
-    cx="32"
-    cy="42"
-    rx="15.5"
-    ry="17.5"
-    stroke="url(#band)"
-    stroke-width="7.5"
-  />
-  <path
-    d="M20.5 43.5C22 52.2 25.6 57 32 57s10-4.8 11.5-13.5"
-    stroke="#FFF0A0"
-    stroke-opacity="0.7"
-    stroke-width="1.4"
-    stroke-linecap="round"
-  />
+  <!-- Heavy ring band and shoulders -->
+  <ellipse cx="32" cy="43" rx="16.5" ry="17.5" stroke="url(#gold)" stroke-width="9"/>
+  <ellipse cx="32" cy="43" rx="13.5" ry="14.6" stroke="#10262A" stroke-width="4.5"/>
+  <ellipse cx="32" cy="43" rx="11.2" ry="12.5" stroke="#0A5A49" stroke-width="2.2"/>
 
-  <!-- Slightly shorter championship face so more of the band remains visible at 24–25 px. -->
-  <path
-    d="M20 6.5h24l7.5 7.5v13.5L44 35H20l-7.5-7.5V14L20 6.5Z"
-    fill="url(#gold)"
-    stroke="#684008"
-    stroke-width="2"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M23 11.5h18l5.5 5.5v7.5L41 30H23l-5.5-5.5V17l5.5-5.5Z"
-    fill="#17283F"
-    stroke="#F8E39A"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
+  <path d="M14 20.5 5.8 29l4.4 14.8 10.7-8.6-2.6-13.3-4.3-1.4Z"
+        fill="#0B1016" stroke="url(#gold)" stroke-width="1.7" stroke-linejoin="round"/>
+  <path d="M50 20.5 58.2 29l-4.4 14.8-10.7-8.6 2.6-13.3 4.3-1.4Z"
+        fill="#0B1016" stroke="url(#gold)" stroke-width="1.7" stroke-linejoin="round"/>
 
-  <g fill="#F9FCFF">
-    <circle cx="21.5" cy="15.5" r="1.25"/>
-    <circle cx="42.5" cy="15.5" r="1.25"/>
-    <circle cx="21.5" cy="26" r="1.25"/>
-    <circle cx="42.5" cy="26" r="1.25"/>
+  <path d="M10.8 28.2 16.3 24.8 17.7 31.5 11.9 35.5Z"
+        fill="#123A34" stroke="#C89A38" stroke-width="0.8"/>
+  <path d="M53.2 28.2 47.7 24.8 46.3 31.5 52.1 35.5Z"
+        fill="#123A34" stroke="#C89A38" stroke-width="0.8"/>
+
+  <!-- Jewel rows on ring shoulders -->
+  <g fill="url(#gem)" stroke="#737D86" stroke-width="0.45">
+    <circle cx="10.8" cy="28.4" r="1.5"/>
+    <circle cx="12.1" cy="33.1" r="1.5"/>
+    <circle cx="13.6" cy="37.5" r="1.5"/>
+    <circle cx="53.2" cy="28.4" r="1.5"/>
+    <circle cx="51.9" cy="33.1" r="1.5"/>
+    <circle cx="50.4" cy="37.5" r="1.5"/>
   </g>
 
-  <!-- Compact original football-trophy mark. -->
-  <ellipse
-    cx="32"
-    cy="19.2"
-    rx="6.3"
-    ry="3.8"
-    transform="rotate(-16 32 19.2)"
-    fill="url(#silver)"
-    stroke="#6E7A89"
-    stroke-width="0.8"
-  />
-  <path d="M29.9 22.7h4.2l1.1 5.5h-6.4l1.1-5.5Z" fill="url(#silver)" stroke="#6E7A89" stroke-width="0.75"/>
-  <rect x="27.3" y="27.5" width="9.4" height="2.4" rx="1.2" fill="url(#silver)" stroke="#6E7A89" stroke-width="0.65"/>
+  <!-- Massive championship face -->
+  <path d="M18 5.5h28l8 8v16.5l-8 8H18l-8-8V13.5l8-8Z"
+        fill="url(#platinum)" stroke="#5E4A22" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M20 8.5h24l6.5 6.5v13.5L44 35H20l-6.5-6.5V15L20 8.5Z"
+        fill="url(#gold)" stroke="#6D4B14" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M22.4 11h19.2l5.7 5.7v10.1l-5.7 5.7H22.4l-5.7-5.7V16.7l5.7-5.7Z"
+        fill="url(#emerald)" stroke="#E8D18B" stroke-width="1.1" stroke-linejoin="round"/>
 
-  <path d="M29.4 18.6 34.5 19.7" stroke="#526171" stroke-width="0.85" stroke-linecap="round"/>
-  <path d="m31 18.2-.35 1.55M32.5 18.5l-.35 1.55M34 18.8l-.35 1.55" stroke="#526171" stroke-width="0.6" stroke-linecap="round"/>
+  <!-- Gem-set perimeter -->
+  <g fill="url(#gem)" stroke="#7A838B" stroke-width="0.35">
+    <circle cx="21.8" cy="14.6" r="1.35"/>
+    <circle cx="27" cy="12.7" r="1.15"/>
+    <circle cx="37" cy="12.7" r="1.15"/>
+    <circle cx="42.2" cy="14.6" r="1.35"/>
+    <circle cx="20.2" cy="20.8" r="1.15"/>
+    <circle cx="43.8" cy="20.8" r="1.15"/>
+    <circle cx="21.8" cy="27.7" r="1.35"/>
+    <circle cx="42.2" cy="27.7" r="1.35"/>
+  </g>
+
+  <!-- Central Lombardi-style trophy silhouette -->
+  <ellipse cx="32" cy="17.3" rx="6.6" ry="4.2"
+           transform="rotate(-17 32 17.3)"
+           fill="url(#shadowMetal)" stroke="#626B73" stroke-width="0.75"/>
+  <path d="M29.6 21.1h4.8l2.1 9.2h-9l2.1-9.2Z"
+        fill="url(#shadowMetal)" stroke="#626B73" stroke-width="0.75" stroke-linejoin="round"/>
+  <path d="M27.1 29.7h9.8l1.3 2.3H25.8l1.3-2.3Z"
+        fill="url(#shadowMetal)" stroke="#626B73" stroke-width="0.7" stroke-linejoin="round"/>
+
+  <!-- Football seam/laces -->
+  <path d="M29.1 16.3 34.7 17.6" stroke="#4F5963" stroke-width="0.8" stroke-linecap="round"/>
+  <path d="m30.7 15.9-.35 1.55M32.2 16.2l-.35 1.55M33.7 16.55l-.35 1.55"
+        stroke="#4F5963" stroke-width="0.55" stroke-linecap="round"/>
+
+  <!-- Crown-like star accent and metallic highlights -->
+  <path d="m32 9.6 1.1 2.1 2.3.3-1.7 1.6.4 2.3-2.1-1.1-2.1 1.1.4-2.3-1.7-1.6 2.3-.3L32 9.6Z"
+        fill="#FFFFFF" stroke="#B8943A" stroke-width="0.45"/>
+  <path d="M18.8 6.8h26.4" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="0.6" stroke-linecap="round"/>
+  <path d="M17.1 45.6C20 53.3 25 57.9 32 57.9s12-4.6 14.9-12.3"
+        stroke="#FFF1B2" stroke-opacity="0.7" stroke-width="1.1" stroke-linecap="round"/>
 </svg>
