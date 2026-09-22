@@ -1,14 +1,14 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-22T16:37:10Z`  
+Generated: `2026-09-22T16:49:38Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
 ## Roster status
 
-- Active: **30 / 30** (delta +0)
+- Active: **28 / 30** (delta +2)
 - Taxi: **2 / 2**; binding: **yes**
-- Reserve: **3 / 5**
+- Reserve: **5 / 5**
 - Startable Skill Pool: **17 / 10** (margin +7)
 - General churn target: **2**; active general churn: **0**; status: `below_target`
 - Comparison boundary candidates: **2**; decision readiness: `ready`
@@ -18,7 +18,7 @@ Taxi phase: `locked`
 | Pos | Held | Active | Fixed starters | Startable | Backup | Floor | Preferred | Status |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
-| QB | 4 | 4 | 2 | 2 | 2 | 3 | 4 | preferred_met |
+| QB | 4 | 2 | 2 | 1 | 1 | 3 | 4 | below_floor |
 | RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
 | WR | 17 | 13 | 2 | 8 | 3 | – | – | pool_managed |
@@ -28,8 +28,8 @@ Taxi phase: `locked`
 | Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |
 |---|---|---|---|---|---|---|---|---|
 | K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
-| QB | Jaxson Dart | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
-| QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| QB | Jayden Daniels | reserve | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
