@@ -107,6 +107,7 @@ function Add-FantasyRelevanceDecisionFacts {
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Teams,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Players,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
+        [hashtable]$ScoringAvailabilityByPlayerID = @{},
         [DateTimeOffset]$AsOfUtc = [DateTimeOffset]::UtcNow
     )
 
@@ -183,6 +184,7 @@ function Add-FantasyRelevanceDecisionFacts {
             $gameID = if ($null -ne $lock) { [string](Get-FrvPropertyValue -Object $lock -Names @('GameID')) } else { $null }
             $status = if (-not [string]::IsNullOrWhiteSpace($gameID) -and $statusByGame.ContainsKey($gameID)) { [string]$statusByGame[$gameID] } else { $null }
             $state = if ($null -eq $starterID) { 'unlocked' } else { Get-FrvGameState -LockFact $lock -GameStatus $status -AsOfUtc $AsOfUtc }
+            $scoringAvailability = if ($null -ne $starterID -and $ScoringAvailabilityByPlayerID.ContainsKey($starterID)) { $ScoringAvailabilityByPlayerID[$starterID] } else { $null }
 
             $slotState = [PSCustomObject][ordered]@{
                 SlotID           = $definition.SlotID
@@ -194,6 +196,7 @@ function Add-FantasyRelevanceDecisionFacts {
                 GameID           = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('GameID') } else { $null }
                 DecisionWindowID = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('DecisionWindowID') } else { $null }
                 StartsAtUtc      = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('StartsAtUtc') } else { $null }
+                ScoringAvailability = $scoringAvailability
             }
             $slotStates += $slotState
             if ($null -ne $starterID) { $slotByStarter[$starterID] = $slotState }
@@ -209,8 +212,11 @@ function Add-FantasyRelevanceDecisionFacts {
             $gameID = if ($null -ne $lock) { [string](Get-FrvPropertyValue -Object $lock -Names @('GameID')) } else { $null }
             $status = if (-not [string]::IsNullOrWhiteSpace($gameID) -and $statusByGame.ContainsKey($gameID)) { [string]$statusByGame[$gameID] } else { $null }
             $gameState = Get-FrvGameState -LockFact $lock -GameStatus $status -AsOfUtc $AsOfUtc
+            $scoringAvailability = if ($ScoringAvailabilityByPlayerID.ContainsKey($playerID)) { $ScoringAvailabilityByPlayerID[$playerID] } else { $null }
+            $availabilityState = if ($null -ne $scoringAvailability) { [string](Get-FrvPropertyValue -Object $scoringAvailability -Names @('State')) } else { $null }
+            $isTerminallyUnavailable = $availabilityState -eq 'unavailable'
             $eligibleSlotIDs = @()
-            if ($placement -eq 'bench' -and $gameState -eq 'unlocked') {
+            if ($placement -eq 'bench' -and $gameState -eq 'unlocked' -and -not $isTerminallyUnavailable) {
                 $eligibleSlotIDs = @(
                     $mutableSlots |
                         Where-Object { Test-FrvSlotEligibility -Position $position -SlotType $_.SlotType } |
@@ -228,11 +234,12 @@ function Add-FantasyRelevanceDecisionFacts {
                 GameID                  = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('GameID') } else { $null }
                 DecisionWindowID        = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('DecisionWindowID') } else { $null }
                 StartsAtUtc             = if ($null -ne $lock) { Get-FrvPropertyValue -Object $lock -Names @('StartsAtUtc') } else { $null }
+                ScoringAvailability     = $scoringAvailability
                 LineupSlotID            = if ($null -ne $lineupSlot) { $lineupSlot.SlotID } else { $null }
                 LineupSlotType          = if ($null -ne $lineupSlot) { $lineupSlot.SlotType } else { $null }
                 EligibleUnlockedSlotIDs = $eligibleSlotIDs
                 IsBenchCandidate        = $isBenchCandidate
-                HasDirectScoringPath    = $placement -eq 'starter' -and @('unlocked','locked-active') -contains $gameState
+                HasDirectScoringPath    = $placement -eq 'starter' -and @('unlocked','locked-active') -contains $gameState -and -not $isTerminallyUnavailable
                 HasAlternativePath      = $isBenchCandidate
             }
         }
@@ -255,7 +262,7 @@ function Add-FantasyRelevanceDecisionFacts {
     }
 
     $relevance = [PSCustomObject][ordered]@{
-        Version         = 1
+        Version         = 4
         SlotDefinitions = $slotDefinitions
         Teams           = $teamStates
     }
