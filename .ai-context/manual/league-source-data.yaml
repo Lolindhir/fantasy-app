@@ -405,7 +405,10 @@ phase2TargetedFreshnessScopes:
     productionNote: >
       The bounded League Core scope is productively scheduled every ten minutes, ahead
       of the next App League refresh. Historical and Current Standings consume these
-      canonical League Core facts directly. RequestLeague now also consumes current
+      canonical League Core facts directly. Canonical current league/member/roster/
+      playoff-bracket commits also trigger the Standings consumer, and a changed
+      Standings.json triggers App League re-enrichment so completed-week records do
+      not wait for the weekly Standings fallback schedule. RequestLeague now also consumes current
       League Metadata/Settings and Members/Rosters team inputs from league.json,
       members.json and rosters.json. The canonical winners/losers bracket contract
       preserves unresolved advancement routing through Team1Source/Team2Source, and

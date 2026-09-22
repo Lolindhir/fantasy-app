@@ -1,3 +1,5 @@
+import type { DecisionWindowsReadModel } from '../../core/models/decision-window.models';
+import type { FantasyGameContextReadModel } from '../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import type {
   FantasyMatchupReadModel,
@@ -80,6 +82,31 @@ export function resolveOverviewWeeklyPhase(
   // presentation. Before Week 1 there is no recap source, so use the prep layout
   // without fabricating recap content.
   return getLastCompletedWeek(readModel) ? 'recap' : 'prep';
+}
+
+export function isOverviewCurrentWeekSurfaceReady(
+  league: League,
+  readModel: MatchupsReadModel | null | undefined,
+  decisionWindows: DecisionWindowsReadModel | null | undefined,
+  fantasyContext: FantasyGameContextReadModel | null | undefined
+): boolean {
+  if (!readModel || readModel.Season !== league.Season) return false;
+
+  const activeWeek = readModel.Summary.ActiveOrNextWeek;
+  if (activeWeek === null) return false;
+
+  const lastCompletedWeek = readModel.Summary.LastCompletedWeek ?? 0;
+  if (!currentStandingsCoverCompletedWeek(league, lastCompletedWeek)) return false;
+
+  if (!decisionWindows
+    || decisionWindows.Season !== league.Season
+    || decisionWindows.LineupWeek !== activeWeek) {
+    return false;
+  }
+
+  return !!fantasyContext
+    && fantasyContext.Season === league.Season
+    && fantasyContext.Week === activeWeek;
 }
 
 export function buildOverviewTopContext(
@@ -171,6 +198,26 @@ export function getLastCompletedWeek(
 
   const week = findWeek(readModel, readModel.Summary.LastCompletedWeek);
   return week?.CompletionState === 'final' ? week : null;
+}
+
+function currentStandingsCoverCompletedWeek(league: League, lastCompletedWeek: number): boolean {
+  if (lastCompletedWeek <= 0) return true;
+  if (!Array.isArray(league.Teams) || league.Teams.length === 0) return false;
+
+  const playoffStartWeek = Number(league.PlayoffStartWeek);
+  const requiredCompletedRegularGames = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
+    ? Math.min(lastCompletedWeek, Math.max(0, playoffStartWeek - 1))
+    : lastCompletedWeek;
+
+  return league.Teams.every(team => {
+    const regular = team.Placements?.Current?.Regular;
+    if (!regular) return false;
+
+    const values = [regular.Wins, regular.Losses, regular.Ties].map(Number);
+    if (values.some(value => !Number.isFinite(value) || value < 0)) return false;
+
+    return values[0] + values[1] + values[2] >= requiredCompletedRegularGames;
+  });
 }
 
 function selectRecapDensity(recap: WeeklyRecapWeek, prominent: boolean): OverviewRecapSelection {

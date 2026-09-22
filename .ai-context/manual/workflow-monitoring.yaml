@@ -341,7 +341,7 @@ workflows:
     - repository_dispatch
     - push
     staleAfterMinutes: 45
-    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
+    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, published Standings, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence. A Standings publication therefore re-enriches League team placement/record context promptly; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
   .github/workflows/update-players.yml:
     category: important
     relevantEvents:
@@ -367,7 +367,7 @@ workflows:
     - repository_dispatch
     - push
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh dispatched by the central scheduler, plus narrow main-push rebuilds when the Standings workflow or its canonical/current derivation code changes. Both are production health evidence; alert after the weekly cycle has effectively been missed for about a day.
+    rationale: Weekly between-week standings refresh remains the scheduler fallback, while narrow main-push rebuilds also react to canonical nfl-reise league/member/roster/playoff-bracket source changes and to Standings workflow/derivation changes. Push-triggered refreshes keep completed-week records current without inventing a more frequent time schedule; the long staleness threshold still reflects that source changes are not guaranteed every hour.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:
