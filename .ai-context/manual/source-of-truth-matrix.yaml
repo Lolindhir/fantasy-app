@@ -129,6 +129,29 @@ matrix:
       - keep convenience/profile metadata separate from roster membership and injury ownership
       - names remain descriptive rather than identity keys
 
+
+  nflScoringAvailability:
+    facts:
+      - current-game explicit player scoring availability
+      - provider designation proving a player cannot score further in the relevant NFL game
+    durableCanonicalPrimary: unresolved pending #669 live-latency acceptance; consumer contract is provider-neutral
+    currentRuntimePrimary: ESPN Site NFL injuries feed acquired during RequestLeague and joined by ESPN athlete ID
+    secondary:
+      - official NFL/team inactive and ruled-out reporting for validation
+      - Sleeper status as corroborating evidence only
+    fallback: none; provider failure or missing player observation preserves no-overlay/unknown semantics
+    identityKey: CanonicalPlayerID through persisted ESPN provider mapping; current App join bridges Players.ESPNID to Players.ID
+    lifecycle: dynamic current-game state
+    historyCoverage: current observation only; no historical latency archive accepted yet
+    migrationState: transitional-current-runtime-active
+    guards:
+      - explicit terminal provider evidence only may normalize to unavailable
+      - Questionable, Doubtful and Probable are non-terminal uncertainty and never imply unavailable
+      - missing ESPN rows, request failures and unmapped statuses never imply OUT
+      - generic injury narrative and long-horizon health status remain separate from scoring availability
+      - Angular consumes provider-neutral generated state and does not reinterpret ESPN fields
+      - display names are never used as identity joins
+
   nflDraftHistory:
     facts:
       - NFL draft year
