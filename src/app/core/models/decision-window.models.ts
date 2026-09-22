@@ -73,7 +73,10 @@ export type FantasyRelevanceRosterPlacement = 'starter' | 'bench' | 'ir' | 'taxi
 export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'unknown';
 export type FantasyRelevanceRepairabilityState = 'repairable' | 'irreparable' | 'unknown';
 export type FantasyRelevanceRepairabilityPath = 'internal-roster' | 'external-acquisition';
-export type FantasyRelevanceRepairabilityProblemCode = 'OPEN_STARTER_SLOT' | 'STARTER_ON_BYE';
+export type FantasyRelevanceRepairabilityProblemCode =
+  | 'OPEN_STARTER_SLOT'
+  | 'STARTER_ON_BYE'
+  | 'STARTER_UNAVAILABLE';
 export type FantasyRelevanceRemainingScoringPathState = 'open' | 'none' | 'unknown';
 export type FantasyRelevanceRepairabilityReasonCode =
   | 'INTERNAL_ASSIGNMENT_AVAILABLE'
@@ -82,6 +85,20 @@ export type FantasyRelevanceRepairabilityReasonCode =
   | 'ACQUISITION_EVIDENCE_UNKNOWN'
   | 'EXTERNAL_PLAYER_EVIDENCE_UNKNOWN'
   | 'NO_LEGAL_REPAIR_PATH';
+
+export type PlayerScoringAvailabilityState = 'available' | 'uncertain' | 'out' | 'unknown';
+
+export interface PlayerScoringAvailability {
+  State: PlayerScoringAvailabilityState;
+  ProviderStatus: string | null;
+  Source: 'ESPN' | string;
+  ObservedAtUtc: string | null;
+}
+
+export interface PlayerScoringAvailabilityObservation extends PlayerScoringAvailability {
+  PlayerID: string;
+  ESPNPlayerID: string;
+}
 
 export interface FantasyRelevanceSlotRepairability {
   ProblemCode: FantasyRelevanceRepairabilityProblemCode;
@@ -105,6 +122,7 @@ export interface FantasyRelevanceSlotState extends FantasyRelevanceSlotDefinitio
   GameID: string | null;
   DecisionWindowID: string | null;
   StartsAtUtc: string | null;
+  ScoringAvailability?: PlayerScoringAvailability | null;
   Repairability?: FantasyRelevanceSlotRepairability | null;
 }
 
@@ -122,6 +140,7 @@ export interface FantasyRelevancePlayerState {
   IsBenchCandidate: boolean;
   HasDirectScoringPath: boolean;
   HasAlternativePath: boolean;
+  ScoringAvailability?: PlayerScoringAvailability | null;
 }
 
 export interface FantasyRelevanceTeamState {
@@ -157,5 +176,6 @@ export interface DecisionWindowsReadModel {
   LookaheadDecisionWindow: DecisionWindow | null;
   PlayerLockFacts: DecisionWindowPlayerLockFact[];
   TeamLineupEvaluations: DecisionWindowTeamLineupEvaluation[];
+  ScoringAvailabilityObservations?: PlayerScoringAvailabilityObservation[];
   FantasyRelevance?: DecisionWindowFantasyRelevance;
 }
