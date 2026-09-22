@@ -2,16 +2,16 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-09-22T15:40:19Z",
-  "input_fingerprint": "52d2e1171d61ab7aef180e61514178ac0931b77e3a02df9626834cc8767c03fc",
+  "input_fingerprint": "7895bd37dbc50e53bc93ad0b39eaec5e4e925635c9a7f415ad25f41b54c9d42c",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "37e4b92b9e90d778774b4e12e8e431fb1cd50aece838331b77b533fd5cf54ada"
+      "input_fingerprint": "a4ef78e257ae264823add070611992c7d823bba388a01c05e489d0cb8b352f89"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "bddc0336ea9043999c55139764c6900e7327215034788cf3a9bab169e46dbfe5"
+      "input_fingerprint": "37e4b92b9e90d778774b4e12e8e431fb1cd50aece838331b77b533fd5cf54ada"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,17 +23,16 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 236,
-    "previous_discovery_count": 228,
-    "event_count": 12,
+    "current_discovery_count": 228,
+    "previous_discovery_count": 236,
+    "event_count": 11,
     "event_type_counts": {
       "changed": 3,
-      "new": 8,
-      "structural_change": 1
+      "resolved": 8
     },
     "event_priority_counts": {
-      "high": 4,
-      "medium": 8
+      "low": 8,
+      "medium": 3
     },
     "baseline_mode": "comparison"
   },
@@ -42,10 +41,10 @@
     "current_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "previous_materiality_contract_fingerprint": "cc5e5d1c07a627cdcc19f39270d16fe896f17edda5977dfb9c39518edef9c805",
     "current_evidence_fingerprint": "2cd8a7a53536bf518713782d7c762a7a500c48fb324e1d3a380543e153cf09cd",
-    "previous_evidence_fingerprint": "a4f918a12262ac1525b6f56b31922d98200033e2e7f0c450929c7d806dcfd2d9",
+    "previous_evidence_fingerprint": "2cd8a7a53536bf518713782d7c762a7a500c48fb324e1d3a380543e153cf09cd",
     "contract_changed": false,
-    "evidence_changed": true,
-    "comparison_event_count_before_suppression": 12,
+    "evidence_changed": false,
+    "comparison_event_count_before_suppression": 11,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
@@ -55,21 +54,20 @@
       "name": "Audric Estimé",
       "position": "RB",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "63157db126c1f38dbf0d880975cc1edfe878adccf8aa9f6e7d18a17b8d26ceca",
-      "previous_state_hash": "e63f5db7f8d40c7f96a7d01fdd232c3b0a3f94ba866487ea3a931ff75c5ba462",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "e63f5db7f8d40c7f96a7d01fdd232c3b0a3f94ba866487ea3a931ff75c5ba462",
+      "previous_state_hash": "63157db126c1f38dbf0d880975cc1edfe878adccf8aa9f6e7d18a17b8d26ceca",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "injury_availability"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -88,123 +86,7 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "8800",
-      "name": "Malik Davis",
-      "position": "RB",
-      "event_type": "structural_change",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "high",
-      "current_state_hash": "9cb72a35634e7d7bac55d0437e46b0ff34ec78eb3fc6540efc929f5f71b557ba",
-      "previous_state_hash": "9cb72a35634e7d7bac55d0437e46b0ff34ec78eb3fc6540efc929f5f71b557ba",
-      "changed_dimensions": [
-        "structural_change"
-      ],
-      "current_material_families": [
-        "dynasty_market",
-        "injury_availability",
-        "season_projection"
-      ],
-      "previous_material_families": [
-        "dynasty_market",
-        "season_projection"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "high",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "high",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "position_rank_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "tier_change",
-          "severity": "high",
-          "direction": null
-        },
-        {
-          "family": "season_projection",
-          "kind": "consensus_percentile_movement",
-          "severity": "medium",
-          "direction": "down"
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "confirmation_down",
-          "families": [
-            "dynasty_market",
-            "season_projection"
-          ],
-          "up_families": [],
-          "down_families": []
-        }
-      ],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
@@ -212,21 +94,20 @@
       "name": "Thomas Fidone II",
       "position": "TE",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "f740b074750645719972a8ab4369f99ed745be498eea2267ec6935ecb44fc15b",
-      "previous_state_hash": "26f53de5866e4c3bff101e93b3ca6151b77637de7249a01627f0678d712493a2",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "26f53de5866e4c3bff101e93b3ca6151b77637de7249a01627f0678d712493a2",
+      "previous_state_hash": "f740b074750645719972a8ab4369f99ed745be498eea2267ec6935ecb44fc15b",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "injury_availability"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -239,15 +120,7 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Out",
-          "to": "Inactive"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
@@ -255,21 +128,20 @@
       "name": "Kendrick Law",
       "position": "WR",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "c1390beb3f1f69d0633e4e3712b391379473f18d4461346c230b6834bc8be637",
-      "previous_state_hash": "c41de6a67e3f6375a9d6100cfce19a447476277f02b41b47b59bd38da002fcaf",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "c41de6a67e3f6375a9d6100cfce19a447476277f02b41b47b59bd38da002fcaf",
+      "previous_state_hash": "c1390beb3f1f69d0633e4e3712b391379473f18d4461346c230b6834bc8be637",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "injury_availability"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -288,286 +160,199 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "12486",
       "name": "Dillon Gabriel",
       "position": "QB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve - Designated to Return"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "12705",
       "name": "Graham Mertz",
       "position": "QB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Injured Reserve",
-          "to": "IR"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13597",
       "name": "Matthew Caldwell",
       "position": "QB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "12656",
       "name": "Robbie Ouzts",
       "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "1250",
       "name": "Will Johnson",
       "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Doubtful",
-          "to": "Out"
-        },
-        {
-          "family": "injury_availability",
-          "kind": "return_timeline_change",
-          "severity": "medium",
-          "from": "20260927",
-          "to": "20261220"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13121",
       "name": "Ben Yurosek",
       "position": "TE",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13355",
       "name": "DJ Rogers",
       "position": "TE",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "6154",
       "name": "David Sills",
       "position": "WR",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "IR",
-          "to": "Injured Reserve - Designated to Return"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
