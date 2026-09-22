@@ -155,9 +155,20 @@ export function buildOverviewTopContext(
   }
 
   const teamByID = new Map(league.Teams.map(team => [String(team.TeamID), team]));
+  const historicalStandings = buildOverviewStandingsSnapshot(
+    league,
+    readModel,
+    lastWeek.Week,
+    false
+  );
+  const orderedLastMatchups = orderOverviewCurrentMatchups(
+    league,
+    lastWeek.Matchups,
+    historicalStandings
+  );
   const lastMatchups: OverviewLastMatchup[] = [];
 
-  for (const matchup of lastWeek.Matchups) {
+  for (const matchup of orderedLastMatchups) {
     if (matchup.CompletionState !== 'final' || matchup.Participants.length !== 2) continue;
 
     const mapped = matchup.Participants.map(participant => {
@@ -239,10 +250,15 @@ export function getLastCompletedWeek(
 function buildOverviewStandingsSnapshot(
   league: League,
   readModel: MatchupsReadModel | null | undefined,
-  displayWeek: number | null
+  displayWeek: number | null,
+  useCurrentFallback = true
 ): OverviewStandingRow[] {
+  const fallback = (): OverviewStandingRow[] => useCurrentFallback
+    ? buildCurrentOverviewStandingRows(league)
+    : [];
+
   if (!readModel || readModel.Season !== league.Season || displayWeek === null) {
-    return buildCurrentOverviewStandingRows(league);
+    return fallback();
   }
 
   const playoffStartWeek = Number(league.PlayoffStartWeek);
@@ -250,13 +266,13 @@ function buildOverviewStandingsSnapshot(
     ? Math.min(displayWeek - 1, Math.max(0, playoffStartWeek - 1))
     : Math.max(0, displayWeek - 1);
 
-  if (targetRegularWeek <= 0) return buildCurrentOverviewStandingRows(league);
+  if (targetRegularWeek <= 0) return fallback();
 
   const weeks: MatchupWeekReadModel[] = [];
   for (let weekNumber = 1; weekNumber <= targetRegularWeek; weekNumber++) {
     const week = findWeek(readModel, weekNumber);
     if (!week || week.Stage !== 'regular-season' || week.CompletionState !== 'final') {
-      return buildCurrentOverviewStandingRows(league);
+      return fallback();
     }
     weeks.push(week);
   }
@@ -294,7 +310,7 @@ function buildOverviewStandingsSnapshot(
       const leftPoints = Number(left.Points);
       const rightPoints = Number(right.Points);
       if (!leftStats || !rightStats || !Number.isFinite(leftPoints) || !Number.isFinite(rightPoints)) {
-        return buildCurrentOverviewStandingRows(league);
+        return fallback();
       }
 
       leftStats.points += leftPoints;
@@ -313,7 +329,7 @@ function buildOverviewStandingsSnapshot(
       const winnerID = String(matchup.Result.WinnerTeamID);
       const leftWon = winnerID === String(left.TeamID);
       const rightWon = winnerID === String(right.TeamID);
-      if (leftWon === rightWon) return buildCurrentOverviewStandingRows(league);
+      if (leftWon === rightWon) return fallback();
 
       const winner = leftWon ? leftStats : rightStats;
       const loser = leftWon ? rightStats : leftStats;
