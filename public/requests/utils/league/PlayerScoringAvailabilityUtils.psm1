@@ -39,6 +39,7 @@ function Get-EspnScoringAvailabilityObservations {
         [Parameter(Mandatory = $true)][int]$Season,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Teams,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Players,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$CanonicalIdentities,
         [int]$TimeoutSec = 15
     )
 
@@ -48,19 +49,45 @@ function Get-EspnScoringAvailabilityObservations {
         if ($null -ne $sleeperID) { $playerBySleeper[$sleeperID] = $player }
     }
 
+    $espnBySleeper = @{}
+    $ambiguousSleeper = @{}
+    $ambiguousEspn = @{}
+    foreach ($identity in @($CanonicalIdentities)) {
+        $ids = Get-PsaValue -Object $identity -Names @('IDs')
+        $sleeperID = ConvertTo-PsaPlayerID (Get-PsaValue -Object $ids -Names @('Sleeper'))
+        $espnID = ConvertTo-PsaPlayerID (Get-PsaValue -Object $ids -Names @('ESPN'))
+        if ($null -eq $sleeperID -or $null -eq $espnID) { continue }
+
+        if ($espnBySleeper.ContainsKey($sleeperID) -and $espnBySleeper[$sleeperID] -ne $espnID) {
+            $ambiguousSleeper[$sleeperID] = $true
+            continue
+        }
+        $existingSleeper = @($espnBySleeper.Keys | Where-Object { $espnBySleeper[$_] -eq $espnID -and $_ -ne $sleeperID })
+        if ($existingSleeper.Count -gt 0) {
+            $ambiguousEspn[$espnID] = $true
+            continue
+        }
+        $espnBySleeper[$sleeperID] = $espnID
+    }
+
+    foreach ($sleeperID in @($ambiguousSleeper.Keys)) {
+        $espnBySleeper.Remove($sleeperID)
+        Write-Warning "Canonical scoring-availability identity has multiple ESPN IDs for Sleeper '$sleeperID'; skipping."
+    }
+    foreach ($espnID in @($ambiguousEspn.Keys)) {
+        foreach ($sleeperID in @($espnBySleeper.Keys | Where-Object { $espnBySleeper[$_] -eq $espnID })) {
+            $espnBySleeper.Remove($sleeperID)
+        }
+        Write-Warning "Canonical scoring-availability ESPN ID '$espnID' maps to multiple Sleeper players; skipping."
+    }
+
     $targetByEspn = @{}
     foreach ($team in @($Teams)) {
         foreach ($rawStarterID in @(Get-PsaCollection (Get-PsaValue -Object $team -Names @('Starter','StarterIDs','Starters')))) {
             $starterID = ConvertTo-PsaPlayerID $rawStarterID
             if ($null -eq $starterID -or -not $playerBySleeper.ContainsKey($starterID)) { continue }
-            $player = $playerBySleeper[$starterID]
-            $espnID = ([string](Get-PsaValue -Object $player -Names @('ESPNID','EspnID','espn_id'))).Trim()
-            if ([string]::IsNullOrWhiteSpace($espnID)) { continue }
-            if ($targetByEspn.ContainsKey($espnID) -and $targetByEspn[$espnID] -ne $starterID) {
-                Write-Warning "ESPN scoring-availability ID '$espnID' maps to multiple Sleeper players; skipping ambiguous ID."
-                $targetByEspn[$espnID] = $null
-                continue
-            }
+            if (-not $espnBySleeper.ContainsKey($starterID)) { continue }
+            $espnID = [string]$espnBySleeper[$starterID]
             $targetByEspn[$espnID] = $starterID
         }
     }
