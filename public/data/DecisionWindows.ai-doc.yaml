@@ -6,6 +6,7 @@ file:
   generator: public/requests/RequestLeague.ps1
   baseDerivation: public/requests/utils/league/DecisionWindowUtils.psm1
   relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
+  scoringAvailabilityDerivation: public/requests/utils/league/PlayerScoringAvailabilityUtils.psm1
   repairabilityDerivation:
     - public/requests/utils/league/LineupRepairabilityDecisionUtils.psm1
     - public/requests/utils/league/LineupRepairabilityUtils.psm1
@@ -31,6 +32,7 @@ contract:
     - LookaheadDecisionWindow
     - PlayerLockFacts
     - TeamLineupEvaluations
+    - ScoringAvailabilityObservations
     - FantasyRelevance
   decisionWindow:
     fields:
@@ -80,7 +82,7 @@ contract:
       PlayerLockFacts remain provider-neutral kickoff association evidence. The
       current game-time state is materialized separately in FantasyRelevance.
   fantasyRelevance:
-    version: 3
+    version: 4
     purpose: >
       Generator-owned current lineup state for downstream remaining-scoring-path,
       must-watch, lineup-repairability and participant-terminal derivation. Angular
@@ -107,10 +109,18 @@ contract:
         - GameID
         - DecisionWindowID
         - StartsAtUtc
+        - ScoringAvailability
         - Repairability
+      scoringAvailability: >
+        Current ESPN Fantasy injuryStatus observations are joined by the existing ESPN
+        player ID and normalized to available, uncertain, out or unknown. ProviderStatus,
+        Source and ObservedAtUtc remain visible evidence. Missing/provider-error evidence
+        stays unknown and never removes a scoring path.
       repairabilityPresence: >
         Repairability is null for slots without an initial supported objective problem.
-        It is populated for an open required starter slot or a starter-on-bye slot.
+        It is populated for an open required starter slot, a starter-on-bye slot or an
+        explicit OUT starter. An OUT starter after lock is irreparable; before lock the
+        ordinary full-lineup repair solver decides whether a legal replacement path exists.
     rosterPlacement:
       values:
         - starter
@@ -147,6 +157,7 @@ contract:
       problemCodes:
         - OPEN_STARTER_SLOT
         - STARTER_ON_BYE
+        - STARTER_UNAVAILABLE
       states:
         repairable: Known evidence proves the complete remaining mutable lineup can still be legally filled.
         irreparable: Known evidence proves no accepted legal internal or external repair path remains.
