@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\FantasyGameContextSleeperShapeRegressionTest.ps1"
 & "$PSScriptRoot\FantasyRelevanceV2RegressionTest.ps1"
 & "$PSScriptRoot\LineupRepairabilityRegressionTest.ps1"
+& "$PSScriptRoot\PlayerScoringAvailabilityRegressionTest.ps1"
 & "$PSScriptRoot\ParticipantScoringPathRegressionTest.ps1"
 & "$PSScriptRoot\FantasyWeeklyWatchRegressionTest.ps1"
 & "$PSScriptRoot\GameFinalityRegressionTest.ps1"
