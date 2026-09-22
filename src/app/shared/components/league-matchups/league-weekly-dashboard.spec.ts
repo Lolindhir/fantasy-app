@@ -282,7 +282,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       expect(shell!.scrollWidth).toBeLessThanOrEqual(shell!.clientWidth + 1);
       expect(shell!.querySelectorAll('.weekly-standing-row').length).toBe(8);
       expect(shell!.querySelectorAll('.weekly-standing-record').length).toBe(8);
-      expect(Array.from(shell!.querySelectorAll('.weekly-standing-record')).every(row => row.textContent?.trim() === '1-0')).toBeTrue();
+      const standingRecords = Array.from(shell!.querySelectorAll('.weekly-standing-record')).map(row => row.textContent?.trim());
+      expect(standingRecords.filter(record => record === '1-0').length).toBe(4);
+      expect(standingRecords.filter(record => record === '0-1').length).toBe(4);
       expect(shell!.querySelectorAll('.weekly-last-matchup').length).toBe(4);
       expect(shell!.querySelectorAll('.weekly-last-side').length).toBe(8);
       expect(shell!.querySelector('.weekly-last-row')).toBeNull();
@@ -471,7 +473,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(fixture.componentInstance.week).toBe(2);
     expect(host.querySelector('.matchups-heading')?.textContent).toContain('Week 2 Matchups');
     expect(host.querySelector('.weekly-context-half--last .weekly-context-heading')?.textContent).toContain('Last Week · W1');
-    expect(Array.from(host.querySelectorAll('.weekly-standing-record')).every(row => row.textContent?.trim() === '1-0')).toBeTrue();
+    const records = Array.from(host.querySelectorAll('.weekly-standing-record')).map(row => row.textContent?.trim());
+    expect(records.filter(record => record === '1-0').length).toBe(4);
+    expect(records.filter(record => record === '0-1').length).toBe(4);
   });
 
   it('releases the current matchup surface when standings and week context are coherent', () => {
