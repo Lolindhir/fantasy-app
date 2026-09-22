@@ -34,6 +34,39 @@ function ConvertTo-PsaNormalizedState {
     }
 }
 
+function ConvertTo-PsaUtcTimestamp {
+    param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value) { return $null }
+
+    try {
+        if ($Value -is [DateTimeOffset]) {
+            return ([DateTimeOffset]$Value).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+        }
+
+        if ($Value -is [DateTime]) {
+            $date = [DateTime]$Value
+            if ($date.Kind -eq [DateTimeKind]::Unspecified) {
+                $date = [DateTime]::SpecifyKind($date, [DateTimeKind]::Utc)
+            }
+            return $date.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+        }
+
+        $text = ([string]$Value).Trim()
+        if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+
+        $parsed = [DateTimeOffset]::Parse(
+            $text,
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AssumeUniversal
+        )
+        return $parsed.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+    }
+    catch {
+        return $null
+    }
+}
+
 function Resolve-PlayerScoringAvailabilityObservationTimes {
     param(
         [AllowNull()][object[]]$CurrentObservations,
@@ -60,7 +93,7 @@ function Resolve-PlayerScoringAvailabilityObservationTimes {
         if ($null -eq $current) { continue }
 
         $playerID = ConvertTo-PsaPlayerID (Get-PsaValue -Object $current -Names @('PlayerID'))
-        $currentObservedAtUtc = Get-PsaValue -Object $current -Names @('ObservedAtUtc')
+        $currentObservedAtUtc = ConvertTo-PsaUtcTimestamp (Get-PsaValue -Object $current -Names @('ObservedAtUtc'))
         $firstObservedAtUtc = $currentObservedAtUtc
 
         if ($null -ne $playerID -and $previousByPlayer.ContainsKey($playerID)) {
@@ -72,7 +105,10 @@ function Resolve-PlayerScoringAvailabilityObservationTimes {
                 [string](Get-PsaValue -Object $previous -Names @('State')) -eq [string](Get-PsaValue -Object $current -Names @('State'))
             )
             if ($sameProviderStatus) {
-                $previousFirstObservedAtUtc = Get-PsaValue -Object $previous -Names @('FirstObservedAtUtc','ObservedAtUtc')
+                $previousFirstObservedAtUtc = ConvertTo-PsaUtcTimestamp (Get-PsaValue -Object $previous -Names @('FirstObservedAtUtc'))
+                if ($null -eq $previousFirstObservedAtUtc) {
+                    $previousFirstObservedAtUtc = ConvertTo-PsaUtcTimestamp (Get-PsaValue -Object $previous -Names @('ObservedAtUtc'))
+                }
                 if (-not [string]::IsNullOrWhiteSpace([string]$previousFirstObservedAtUtc)) {
                     $firstObservedAtUtc = [string]$previousFirstObservedAtUtc
                 }
