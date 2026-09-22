@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-09-22T03:43:41.046069Z",
+  "generated_at": "2026-09-22T03:53:18.950618Z",
   "berlin_date": "2026-09-22",
   "timezone": "Europe/Berlin",
   "domain_context": {
@@ -60,8 +60,8 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 2,
-    "stale_count": 4,
+    "fresh_count": 3,
+    "stale_count": 3,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
@@ -72,7 +72,6 @@
     "allowed": true,
     "no_event_conclusion_allowed": false,
     "unfresh_source_ids": [
-      "fantasy-football-calculator",
       "fftoday",
       "cbs-sports",
       "sleeper-trending"
@@ -85,7 +84,6 @@
     ],
     "affected_signal_families": [
       "external_activity",
-      "redraft_adp",
       "season_projection"
     ]
   },
@@ -104,7 +102,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-22T03:25:22.988683Z",
-      "age_minutes": 18.3,
+      "age_minutes": 27.93,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -122,7 +120,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-09-22T03:39:46.333776Z",
-      "age_minutes": 3.91,
+      "age_minutes": 13.54,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -136,12 +134,12 @@
       "affected_signal_families": [
         "redraft_adp"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-09-21T16:12:51.811852Z",
-      "age_minutes": 690.82,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-09-22T03:50:03.616391Z",
+      "age_minutes": 3.26,
       "content_changed": true,
-      "trigger": "push"
+      "trigger": "repository_dispatch"
     },
     {
       "id": "fftoday",
@@ -156,7 +154,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T03:58:50.352692Z",
-      "age_minutes": 1424.84,
+      "age_minutes": 1434.48,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -173,7 +171,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T04:14:46.146250Z",
-      "age_minutes": 1408.91,
+      "age_minutes": 1418.55,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -190,7 +188,7 @@
       "status": "stale",
       "reason": "heartbeat_not_from_current_berlin_date",
       "checked_at": "2026-09-21T04:24:36.641121Z",
-      "age_minutes": 1399.07,
+      "age_minutes": 1408.71,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
