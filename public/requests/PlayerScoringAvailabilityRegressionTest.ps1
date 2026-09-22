@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 Import-Module "$PSScriptRoot\utils\league\PlayerScoringAvailabilityUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -Force
 
 function Assert-PsaEqual {
     param($Expected, $Actual, [string]$Message)
@@ -55,6 +56,7 @@ $model = Add-PlayerScoringAvailabilityDecisionFacts -BaseReadModel (New-PsaModel
 $team = $model.FantasyRelevance.Teams[0]
 Assert-PsaEqual 'out' $team.Players[0].ScoringAvailability.State 'OUT state must be attached to player'
 Assert-PsaEqual 'OUT' $team.Slots[0].ScoringAvailability.ProviderStatus 'Provider status must be preserved on slot'
+Assert-PsaEqual '2026-09-13T20:30:00Z' $team.Slots[0].ScoringAvailability.FirstObservedAtUtc 'Legacy observation time must remain available as first-observed evidence'
 Assert-PsaTrue (-not [bool]$team.Players[0].HasDirectScoringPath) 'OUT starter must lose direct scoring path'
 Assert-PsaEqual 0 $team.LockedActiveStarterCount 'OUT starter must not count as locked-active scoring path'
 Assert-PsaTrue (-not [bool]$team.HasRemainingScoringPath) 'OUT-only team must have no remaining direct scoring path'
@@ -66,5 +68,72 @@ $team = $model.FantasyRelevance.Teams[0]
 Assert-PsaEqual 'unknown' $team.Players[0].ScoringAvailability.State 'Missing ESPN observation must remain unknown'
 Assert-PsaTrue ([bool]$team.Players[0].HasDirectScoringPath) 'Missing ESPN observation must not remove scoring path'
 Assert-PsaEqual 1 $team.LockedActiveStarterCount 'Missing ESPN observation must preserve existing live state'
+
+
+$previousLegacy = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'QUESTIONABLE'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-13T20:00:00Z'
+}
+$currentSame = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'QUESTIONABLE'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-13T20:10:00Z'
+}
+$resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($currentSame) -PreviousObservations @($previousLegacy))
+Assert-PsaEqual '2026-09-13T20:00:00Z' $resolved[0].FirstObservedAtUtc 'Unchanged provider status must preserve first-observed time'
+Assert-PsaEqual '2026-09-13T20:00:00Z' $resolved[0].ObservedAtUtc 'Compatibility observation time must stay stable across no-op polls'
+
+$currentDoubtful = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'DOUBTFUL'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-13T20:15:00Z'
+}
+$resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($currentDoubtful) -PreviousObservations @($previousLegacy))
+Assert-PsaEqual '2026-09-13T20:15:00Z' $resolved[0].FirstObservedAtUtc 'Provider-status change must reset first-observed time even when normalized state stays uncertain'
+
+$previousStable = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'DOUBTFUL'
+    Source = 'ESPN'
+    FirstObservedAtUtc = '2026-09-13T20:15:00Z'
+    ObservedAtUtc = '2026-09-13T20:15:00Z'
+}
+$currentOut = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'out'
+    ProviderStatus = 'OUT'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-13T20:30:00Z'
+}
+$resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($currentOut) -PreviousObservations @($previousStable))
+Assert-PsaEqual '2026-09-13T20:30:00Z' $resolved[0].FirstObservedAtUtc 'OUT transition must start a new first-observed time'
+Assert-PsaEqual '2026-09-13T20:30:00Z' $resolved[0].ObservedAtUtc 'Compatibility timestamp must match the new transition time'
+
+$firstPublished = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($currentSame) -PreviousObservations @($previousLegacy))
+$firstPublishedModel = Add-PlayerScoringAvailabilityDecisionFacts -BaseReadModel (New-PsaModel) -Observations $firstPublished
+$laterSame = [PSCustomObject]@{
+    PlayerID = 'p1'
+    ESPNPlayerID = '4689114'
+    State = 'uncertain'
+    ProviderStatus = 'QUESTIONABLE'
+    Source = 'ESPN'
+    ObservedAtUtc = '2026-09-13T20:20:00Z'
+}
+$secondPublished = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($laterSame) -PreviousObservations @($firstPublishedModel.ScoringAvailabilityObservations))
+$secondPublishedModel = Add-PlayerScoringAvailabilityDecisionFacts -BaseReadModel (New-PsaModel) -Observations $secondPublished
+Assert-PsaTrue (-not (Test-DecisionWindowReadModelChanged -OldData $firstPublishedModel -NewData $secondPublishedModel)) 'Unchanged provider status must remain a semantic DecisionWindows no-op even when a later poll occurred'
 
 Write-Host 'Player scoring availability regression tests passed.' -ForegroundColor Green
