@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-23T15:46:45Z",
-  "input_fingerprint": "cf2f5a5f436200aeef9650153ce8b9c7c3111f6fd428c6e70d6ac6b31e2b8f48",
+  "generated_at": "2026-09-23T16:06:05Z",
+  "input_fingerprint": "b9644ca07c87a20f1b036b3edf8b48b45c97725674790b98464e4e2774196ae9",
   "sources": [
     {
       "id": "league_enrichment",
@@ -12,7 +12,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "99b83c52d4ed77e6239f2a9a094dbbb0aa1db50ab0820d6b90dc0b7628ea2f0f"
+      "content_sha256": "b29530e8b52e0b48d77d28040cdf2e9b752e09b029d661b6b1ad4765f12ddb76"
     },
     {
       "id": "roster_evaluation_state",
@@ -103,9 +103,9 @@
       "QB": {
         "fixed_starter_requirement": 2,
         "held_count": 5,
-        "current_active_count": 4,
-        "effective_prelock_or_locked_count": 4,
-        "startable_count": 1,
+        "current_active_count": 5,
+        "effective_prelock_or_locked_count": 5,
+        "startable_count": 2,
         "backup_count": 2,
         "coverage_floor": 3,
         "preferred_coverage": 4,
@@ -136,10 +136,10 @@
       "WR": {
         "fixed_starter_requirement": 2,
         "held_count": 18,
-        "current_active_count": 14,
-        "effective_prelock_or_locked_count": 14,
+        "current_active_count": 13,
+        "effective_prelock_or_locked_count": 13,
         "startable_count": 8,
-        "backup_count": 3,
+        "backup_count": 2,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -404,14 +404,13 @@
       "name": "Jayden Daniels",
       "position": "QB",
       "nfl_team": "WAS",
-      "roster_area": "reserve",
+      "roster_area": "active",
       "roster_sections": [
-        "reserve",
         "roster"
       ],
-      "is_current_active": false,
+      "is_current_active": true,
       "is_current_taxi": false,
-      "is_current_reserve": true,
+      "is_current_reserve": false,
       "roster_role": "core_starter",
       "roster_security": "locked",
       "structural_function": "starter_core",
@@ -1511,13 +1510,14 @@
       "name": "Alec Pierce",
       "position": "WR",
       "nfl_team": "IND",
-      "roster_area": "active",
+      "roster_area": "reserve",
       "roster_sections": [
+        "reserve",
         "roster"
       ],
-      "is_current_active": true,
+      "is_current_active": false,
       "is_current_taxi": false,
-      "is_current_reserve": false,
+      "is_current_reserve": true,
       "roster_role": "backup",
       "roster_security": "hold",
       "structural_function": "coverage_reserve",

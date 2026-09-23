@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-23T15:46:45Z`  
+Generated: `2026-09-23T16:06:05Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -18,10 +18,10 @@ Taxi phase: `locked`
 | Pos | Held | Active | Fixed starters | Startable | Backup | Floor | Preferred | Status |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
-| QB | 5 | 4 | 2 | 1 | 2 | 3 | 4 | preferred_met |
+| QB | 5 | 5 | 2 | 2 | 2 | 3 | 4 | preferred_met |
 | RB | 9 | 7 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 18 | 14 | 2 | 8 | 3 | – | – | pool_managed |
+| WR | 18 | 13 | 2 | 8 | 2 | – | – | pool_managed |
 
 ## Players
 
@@ -29,7 +29,7 @@ Taxi phase: `locked`
 |---|---|---|---|---|---|---|---|---|
 | K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
 | QB | Jaxson Dart | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
-| QB | Jayden Daniels | reserve | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Kirk Cousins | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
@@ -47,7 +47,7 @@ Taxi phase: `locked`
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Adonai Mitchell | active | unclassified | unclassified | unclassified | unclassified | no | no |
-| WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no | no |
+| WR | Alec Pierce | reserve | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
 | WR | Caleb Douglas | active | prospect | strong_hold | development | development | no | no |
 | WR | Chris Bell | taxi | prospect | hold | development | development | no | no |
