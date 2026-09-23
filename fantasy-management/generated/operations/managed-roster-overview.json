@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-23T10:07:52Z",
-  "input_fingerprint": "ce36e1434bdfbbe4183b8f4c7afde4294f1ce4f9fe9f2570201dc52cd7324bc4",
+  "generated_at": "2026-09-23T10:17:38Z",
+  "input_fingerprint": "1b4fc968e1d3a7e74574ca86e73385fc67555798e42431716020cb68af6af4d5",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "d1d0b7396af44f8f26add87f52c493e92199a8b5f871d60d41e0414f5a85ebcc"
+      "content_sha256": "d55861bb3da54ea2805f411e29345c9012267f5a453b103c010ed5d97fb1e2f1"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "7fd042bfd67999b6805c201a940edebd11706ca71058e2e24006118a69bb99fb"
+      "content_sha256": "a0f98db32fb5494d3b79b6aa04a9492a2c8b78584edb9d71b11d5e6595ea71ee"
     },
     {
       "id": "roster_evaluation_state",
@@ -42,24 +42,24 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 0,
+    "unclassified_count": 2,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
     "team_id": 1,
     "name": "Mighty Giants",
     "abbreviation": "MiG",
-    "held_player_count": 35
+    "held_player_count": 37
   },
   "structure": {
     "capacity": {
       "regular_active_capacity": 30,
-      "current_active_count": 28,
+      "current_active_count": 30,
       "taxi_slots": 2,
       "current_taxi_count": 2,
       "reserve_slots": 5,
       "current_reserve_count": 5,
-      "hard_active_delta": 2
+      "hard_active_delta": 0
     },
     "lineup": {
       "fixed_starters": {
@@ -102,14 +102,14 @@
       },
       "QB": {
         "fixed_starter_requirement": 2,
-        "held_count": 4,
-        "current_active_count": 2,
-        "effective_prelock_or_locked_count": 2,
+        "held_count": 5,
+        "current_active_count": 3,
+        "effective_prelock_or_locked_count": 3,
         "startable_count": 1,
         "backup_count": 1,
         "coverage_floor": 3,
         "preferred_coverage": 4,
-        "status": "below_floor"
+        "status": "floor_met_below_preferred"
       },
       "RB": {
         "fixed_starter_requirement": 2,
@@ -135,9 +135,9 @@
       },
       "WR": {
         "fixed_starter_requirement": 2,
-        "held_count": 17,
-        "current_active_count": 13,
-        "effective_prelock_or_locked_count": 13,
+        "held_count": 18,
+        "current_active_count": 14,
+        "effective_prelock_or_locked_count": 14,
         "startable_count": 8,
         "backup_count": 3,
         "coverage_floor": null,
@@ -245,12 +245,12 @@
     "churn": {
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
-      "decision_readiness": "ready",
-      "active_unclassified_count": 0,
+      "decision_readiness": "review_required",
+      "active_unclassified_count": 2,
       "current_active_candidate_count": 2,
       "current_active_general_churn_count": 0,
       "candidate_pool_count": 2,
-      "guardrail_status": "below_target",
+      "guardrail_status": "review_required",
       "candidate_pool": [
         {
           "player_id": "13285",
@@ -456,6 +456,67 @@
         "fantasycalc_value": 5137
       },
       "coverage_role": "fixed_starter_pool",
+      "coverage_protected": true,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "1166",
+      "name": "Kirk Cousins",
+      "position": "QB",
+      "nfl_team": "LV",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 38.1,
+        "years_experience": 15,
+        "salary": 18518684,
+        "salary_projected": 15791966,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 236,
+        "fantasypros_position_rank": "QB37",
+        "fantasycalc_overall_rank": 158,
+        "fantasycalc_value": 1427
+      },
+      "coverage_role": "unclassified",
       "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -1378,6 +1439,67 @@
         "fantasycalc_value": 4115
       },
       "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11625",
+      "name": "Adonai Mitchell",
+      "position": "WR",
+      "nfl_team": "NYJ",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24,
+        "years_experience": 3,
+        "salary": 2012520,
+        "salary_projected": 3984488,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 167,
+        "fantasypros_position_rank": "WR69",
+        "fantasycalc_overall_rank": 177,
+        "fantasycalc_value": 1318
+      },
+      "coverage_role": "unclassified",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -2445,9 +2567,34 @@
     }
   ],
   "quality": {
-    "status": "ok",
-    "issue_count": 0,
-    "issues": [],
+    "status": "warning",
+    "issue_count": 4,
+    "issues": [
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "1166",
+        "name": "Kirk Cousins"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "1166",
+        "name": "Kirk Cousins"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "11625",
+        "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "11625",
+        "name": "Adonai Mitchell"
+      }
+    ],
     "limitations": [
       "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
       "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",

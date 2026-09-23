@@ -1,27 +1,27 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-23T10:07:52Z`  
+Generated: `2026-09-23T10:17:38Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
 ## Roster status
 
-- Active: **28 / 30** (delta +2)
+- Active: **30 / 30** (delta +0)
 - Taxi: **2 / 2**; binding: **yes**
 - Reserve: **5 / 5**
 - Startable Skill Pool: **17 / 10** (margin +7)
-- General churn target: **2**; active general churn: **0**; status: `below_target`
-- Comparison boundary candidates: **2**; decision readiness: `ready`
+- General churn target: **2**; active general churn: **0**; status: `review_required`
+- Comparison boundary candidates: **2**; decision readiness: `review_required`
 
 ## Position coverage
 
 | Pos | Held | Active | Fixed starters | Startable | Backup | Floor | Preferred | Status |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
-| QB | 4 | 2 | 2 | 1 | 1 | 3 | 4 | below_floor |
+| QB | 5 | 3 | 2 | 1 | 1 | 3 | 4 | floor_met_below_preferred |
 | RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 17 | 13 | 2 | 8 | 3 | – | – | pool_managed |
+| WR | 18 | 14 | 2 | 8 | 3 | – | – | pool_managed |
 
 ## Players
 
@@ -30,6 +30,7 @@ Taxi phase: `locked`
 | K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
 | QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | reserve | core_starter | locked | starter_core | fixed_starter_pool | no | no |
+| QB | Kirk Cousins | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
@@ -45,6 +46,7 @@ Taxi phase: `locked`
 | TE | Harold Fannin Jr. | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Adonai Mitchell | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
 | WR | Caleb Douglas | active | prospect | strong_hold | development | development | no | no |
