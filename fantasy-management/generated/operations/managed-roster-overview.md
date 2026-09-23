@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-23T14:36:16Z`  
+Generated: `2026-09-23T15:11:47Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -18,8 +18,8 @@ Taxi phase: `locked`
 | Pos | Held | Active | Fixed starters | Startable | Backup | Floor | Preferred | Status |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
-| QB | 5 | 3 | 2 | 1 | 1 | 3 | 4 | floor_met_below_preferred |
-| RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
+| QB | 5 | 4 | 2 | 1 | 2 | 3 | 4 | preferred_met |
+| RB | 9 | 7 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
 | WR | 18 | 14 | 2 | 8 | 3 | – | – | pool_managed |
 
@@ -28,7 +28,7 @@ Taxi phase: `locked`
 | Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |
 |---|---|---|---|---|---|---|---|---|
 | K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
-| QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
+| QB | Jaxson Dart | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | reserve | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Kirk Cousins | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
@@ -38,7 +38,7 @@ Taxi phase: `locked`
 | RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Dylan Sampson | reserve | prospect | conditional | development | development | no | no |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
-| RB | Jonathon Brooks | active | prospect | hold | development | development | no | no |
+| RB | Jonathon Brooks | reserve | prospect | hold | development | development | no | no |
 | RB | Kenneth Walker III | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Kyle Monangai | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |

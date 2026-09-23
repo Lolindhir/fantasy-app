@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-23T14:36:16Z",
-  "input_fingerprint": "07e850195e22b669bb573f4a9edf8f3b1d2d8522769dd8f51c8912d11d7e8818",
+  "generated_at": "2026-09-23T15:11:47Z",
+  "input_fingerprint": "49fff8cb282bea176747a992a91ef0aea7dcf0fe72b389cc088ef774c2503168",
   "sources": [
     {
       "id": "league_enrichment",
@@ -12,7 +12,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "5447a793be8179671b343229390db727c706259c4ea19e4d36f12d02b0e801f2"
+      "content_sha256": "7a26524fd977bf49b8fd28009cf4d2e2e277f602c2cc5fbdf8d60a4998f8d668"
     },
     {
       "id": "roster_evaluation_state",
@@ -103,19 +103,19 @@
       "QB": {
         "fixed_starter_requirement": 2,
         "held_count": 5,
-        "current_active_count": 3,
-        "effective_prelock_or_locked_count": 3,
+        "current_active_count": 4,
+        "effective_prelock_or_locked_count": 4,
         "startable_count": 1,
-        "backup_count": 1,
+        "backup_count": 2,
         "coverage_floor": 3,
         "preferred_coverage": 4,
-        "status": "floor_met_below_preferred"
+        "status": "preferred_met"
       },
       "RB": {
         "fixed_starter_requirement": 2,
         "held_count": 9,
-        "current_active_count": 8,
-        "effective_prelock_or_locked_count": 8,
+        "current_active_count": 7,
+        "effective_prelock_or_locked_count": 7,
         "startable_count": 6,
         "backup_count": 1,
         "coverage_floor": null,
@@ -343,14 +343,13 @@
       "name": "Jaxson Dart",
       "position": "QB",
       "nfl_team": "NYG",
-      "roster_area": "reserve",
+      "roster_area": "active",
       "roster_sections": [
-        "reserve",
         "roster"
       ],
-      "is_current_active": false,
+      "is_current_active": true,
       "is_current_taxi": false,
-      "is_current_reserve": true,
+      "is_current_reserve": false,
       "roster_role": "backup",
       "roster_security": "strong_hold",
       "structural_function": "coverage_reserve",
@@ -394,7 +393,7 @@
         "fantasycalc_value": 4544
       },
       "coverage_role": "positional_coverage",
-      "coverage_protected": true,
+      "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -456,7 +455,7 @@
         "fantasycalc_value": 5137
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": true,
+      "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -517,7 +516,7 @@
         "fantasycalc_value": 1427
       },
       "coverage_role": "unclassified",
-      "coverage_protected": true,
+      "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -578,7 +577,7 @@
         "fantasycalc_value": 5351
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": true,
+      "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -639,7 +638,7 @@
         "fantasycalc_value": 4008
       },
       "coverage_role": "positional_coverage",
-      "coverage_protected": true,
+      "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -958,13 +957,14 @@
       "name": "Jonathon Brooks",
       "position": "RB",
       "nfl_team": "CAR",
-      "roster_area": "active",
+      "roster_area": "reserve",
       "roster_sections": [
+        "reserve",
         "roster"
       ],
-      "is_current_active": true,
+      "is_current_active": false,
       "is_current_taxi": false,
-      "is_current_reserve": false,
+      "is_current_reserve": true,
       "roster_role": "prospect",
       "roster_security": "hold",
       "structural_function": "development",
@@ -993,8 +993,8 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
-        "description": null,
+        "designation": "Injured Reserve",
+        "description": "Sep 23: The Panthers placed Brooks (core) on injured reserve Wednesday, Darin Gantt of the team's official site reports.",
         "reported_date": "20240801",
         "return_date": "20261108",
         "external_verification_priority": "high",
