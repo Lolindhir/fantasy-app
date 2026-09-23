@@ -1,85 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="silverBody" x1="48" y1="34" x2="206" y2="222" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset=".24" stop-color="#D9DEE4"/>
-      <stop offset=".5" stop-color="#F7F8FA"/>
-      <stop offset=".72" stop-color="#A7AEB7"/>
-      <stop offset="1" stop-color="#767D86"/>
+    <linearGradient id="goldShoulder" x1="4" y1="12" x2="57" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9D6"/>
+      <stop offset=".16" stop-color="#F5D56A"/>
+      <stop offset=".42" stop-color="#C98718"/>
+      <stop offset=".68" stop-color="#744405"/>
+      <stop offset=".84" stop-color="#D89A24"/>
+      <stop offset="1" stop-color="#FFE891"/>
     </linearGradient>
-    <linearGradient id="silverFrame" x1="72" y1="42" x2="186" y2="148" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset=".34" stop-color="#C4CAD1"/>
-      <stop offset=".58" stop-color="#F5F7F9"/>
-      <stop offset="1" stop-color="#8E959E"/>
+    <linearGradient id="goldFace" x1="10" y1="5" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFBE0"/>
+      <stop offset=".13" stop-color="#FFE888"/>
+      <stop offset=".31" stop-color="#D69A27"/>
+      <stop offset=".48" stop-color="#8A5409"/>
+      <stop offset=".66" stop-color="#D99B28"/>
+      <stop offset=".82" stop-color="#F5D66F"/>
+      <stop offset="1" stop-color="#9B610D"/>
     </linearGradient>
-    <linearGradient id="greenFace" x1="88" y1="58" x2="169" y2="131" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2FD283"/>
-      <stop offset=".42" stop-color="#0E9554"/>
-      <stop offset="1" stop-color="#075C35"/>
+    <linearGradient id="goldReturn" x1="10" y1="41" x2="20" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAB23B"/>
+      <stop offset=".5" stop-color="#9A5D0D"/>
+      <stop offset="1" stop-color="#5C3405"/>
     </linearGradient>
-    <linearGradient id="chrome" x1="102" y1="62" x2="153" y2="140" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset=".28" stop-color="#D4D9DF"/>
-      <stop offset=".5" stop-color="#7F8791"/>
-      <stop offset=".67" stop-color="#F7F9FB"/>
-      <stop offset="1" stop-color="#A1A8B1"/>
+    <radialGradient id="emeraldInset" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(26 20) rotate(49) scale(36 39)">
+      <stop stop-color="#188A6A"/>
+      <stop offset=".28" stop-color="#0E654F"/>
+      <stop offset=".62" stop-color="#073C34"/>
+      <stop offset="1" stop-color="#031A1D"/>
+    </radialGradient>
+    <linearGradient id="gemGreen" x1="12" y1="18" x2="20" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8AFFD1"/>
+      <stop offset=".24" stop-color="#2FD499"/>
+      <stop offset=".7" stop-color="#087456"/>
+      <stop offset="1" stop-color="#03382D"/>
     </linearGradient>
-    <linearGradient id="panel" x1="48" y1="63" x2="83" y2="132" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#555B63"/>
-      <stop offset="1" stop-color="#20252A"/>
+    <linearGradient id="chromeBall" x1="25" y1="18" x2="39" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".18" stop-color="#DDE6EC"/>
+      <stop offset=".38" stop-color="#7D8995"/>
+      <stop offset=".55" stop-color="#FDFEFF"/>
+      <stop offset=".72" stop-color="#AEB8C2"/>
+      <stop offset="1" stop-color="#F8FBFD"/>
     </linearGradient>
-    <mask id="fingerHole" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
-      <rect width="256" height="256" fill="#fff"/>
-      <ellipse cx="128" cy="187" rx="60" ry="27" fill="#000"/>
-    </mask>
+    <linearGradient id="chromeStem" x1="28" y1="28" x2="37" y2="47" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDFEFF"/>
+      <stop offset=".2" stop-color="#B8C2CC"/>
+      <stop offset=".43" stop-color="#65717C"/>
+      <stop offset=".58" stop-color="#F8FBFD"/>
+      <stop offset=".77" stop-color="#8E9AA5"/>
+      <stop offset="1" stop-color="#E9EEF2"/>
+    </linearGradient>
+    <filter id="frontShadow" x="2" y="2" width="60" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1.1" stdDeviation="1.05" flood-color="#2D1702" flood-opacity=".52"/>
+    </filter>
+    <filter id="trophyShadow" x="20" y="15" width="25" height="36" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy=".75" stdDeviation=".7" flood-color="#001510" flood-opacity=".58"/>
+    </filter>
   </defs>
 
-  <g>
-    <!-- Full ring body: shoulders and lower opening remain the primary silhouette. -->
-    <path d="M38 110C38 78 58 51 90 40C101 36 113 34 128 34C143 34 155 36 166 40C198 51 218 78 218 110V158C218 179 209 196 191 207C175 218 154 224 128 224C102 224 81 218 65 207C47 196 38 179 38 158V110Z"
-          fill="url(#silverBody)" stroke="#59616A" stroke-width="4.5" stroke-linejoin="round" mask="url(#fingerHole)"/>
+  <!-- V6 geometry retained: open shoulders and open lower center. -->
+  <path d="M14.5 14.5C6.5 16 1.5 23.5 1.5 33c0 8.8 3.8 15.8 11.5 20.2l5.4-7.3c-4.3-2.9-6.5-7-6.5-12.5 0-5.4 2.2-9.4 6.7-12.1l-4.1-6.8Z"
+        fill="url(#goldShoulder)" stroke="#543003" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M49.5 14.5C57.5 16 62.5 23.5 62.5 33c0 8.8-3.8 15.8-11.5 20.2l-5.4-7.3c4.3-2.9 6.5-7 6.5-12.5 0-5.4-2.2-9.4-6.7-12.1l4.1-6.8Z"
+        fill="url(#goldShoulder)" stroke="#543003" stroke-width="1.3" stroke-linejoin="round"/>
 
-    <!-- Strong top highlight for metal readability at 25 px. -->
-    <path d="M55 108C55 84 69 63 94 53C104 49 115 47 128 47C141 47 152 49 162 53C187 63 201 84 201 108"
-          stroke="#FFFFFF" stroke-opacity=".78" stroke-width="5" stroke-linecap="round"/>
+  <path d="M7.3 42.6c1.8 7.3 6.4 13.6 14.4 17.3l3.7-6.1c-5.1-2.5-8.9-6.4-10.8-11.8l-7.3.6Z"
+        fill="url(#goldReturn)" stroke="#4B2902" stroke-width=".9" stroke-linejoin="round"/>
+  <path d="M56.7 42.6c-1.8 7.3-6.4 13.6-14.4 17.3l-3.7-6.1c5.1-2.5 8.9-6.4 10.8-11.8l7.3.6Z"
+        fill="url(#goldReturn)" stroke="#4B2902" stroke-width=".9" stroke-linejoin="round"/>
 
-    <!-- Exaggerated transparent finger opening for unmistakable ring readability at 25 px. -->
-    <ellipse cx="128" cy="187" rx="64" ry="31" fill="none" stroke="#7C848D" stroke-width="8"/>
-    <path d="M72 176C88 167 105 163 128 163C151 163 168 167 184 176"
-          stroke="#FFFFFF" stroke-opacity=".72" stroke-width="4" stroke-linecap="round"/>
+  <!-- Shoulder specular edges stay sparse and help the side mass read behind the face. -->
+  <path d="M6.4 24.7c-1.4 2.6-2 5.5-2 8.7 0 3.3.8 6.3 2.2 8.8"
+        stroke="#FFF7C7" stroke-width="1.15" stroke-linecap="round" opacity=".86"/>
+  <path d="M57.8 25.3c.9 2.3 1.3 4.9 1.2 7.6-.1 2.2-.5 4.4-1.2 6.4"
+        stroke="#F6C94F" stroke-width=".85" stroke-linecap="round" opacity=".58"/>
+  <path d="M16.9 19.2c-3.2 2.3-5 5.5-5.5 9.4" stroke="#3C2202" stroke-width="1.05" stroke-linecap="round" opacity=".72"/>
+  <path d="M47.1 19.2c3.2 2.3 5 5.5 5.5 9.4" stroke="#3C2202" stroke-width="1.05" stroke-linecap="round" opacity=".72"/>
 
-    <!-- Broad collar separating face from the lower ring. -->
-    <path d="M45 157C61 151 88 148 128 148C168 148 195 151 211 157V168C193 163 166 160 128 160C90 160 63 163 45 168V157Z"
-          fill="url(#silverFrame)" stroke="#777F88" stroke-width="2.5"/>
-
-    <!-- Side shoulders: simple dark panels plus one bold football silhouette each. -->
-    <path d="M46 70L66 60L78 72V125L66 135L47 127L41 98L46 70Z"
-          fill="url(#panel)" stroke="#7A828B" stroke-width="2.5"/>
-    <path d="M210 70L190 60L178 72V125L190 135L209 127L215 98L210 70Z"
-          fill="url(#panel)" stroke="#7A828B" stroke-width="2.5"/>
-
-    <g fill="url(#chrome)" stroke="#6F7780" stroke-width="2">
-      <ellipse cx="60" cy="98" rx="10" ry="20"/>
-      <ellipse cx="196" cy="98" rx="10" ry="20"/>
-    </g>
-    <path d="M60 86V110M196 86V110" stroke="#59616A" stroke-width="2.4" stroke-linecap="round"/>
-
-    <!-- Raised front plate. -->
-    <rect x="70" y="42" width="116" height="105" rx="26" fill="url(#silverFrame)" stroke="#68717B" stroke-width="3.2"/>
-    <rect x="84" y="56" width="88" height="73" rx="17" fill="url(#greenFace)" stroke="#075A34" stroke-width="3"/>
-    <path d="M95 63H161" stroke="#A8F2CB" stroke-opacity=".58" stroke-width="3.5" stroke-linecap="round"/>
-
-    <!-- Simplified Lombardi-style trophy: larger and fewer lines for 25 px. -->
-    <g transform="translate(128 93)">
-      <g transform="rotate(-18)">
-        <ellipse cx="0" cy="-13" rx="25" ry="17" fill="url(#chrome)" stroke="#646C75" stroke-width="2.8"/>
-        <path d="M-11 -13C-4 -10 4 -7 11 -6" stroke="#5C646D" stroke-width="2.6" stroke-linecap="round"/>
-        <path d="M-4 -18V-10M1 -19V-9M6 -17V-9" stroke="#717983" stroke-width="2.2" stroke-linecap="round"/>
-      </g>
-      <path d="M-13 7L-22 53H22L13 7Z" fill="url(#chrome)" stroke="#646C75" stroke-width="2.8" stroke-linejoin="round"/>
-      <path d="M-15 50H15" stroke="#FFFFFF" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
-    </g>
-
+  <!-- Front plate is visually raised over the shoulders. -->
+  <g filter="url(#frontShadow)">
+    <path d="M16.2 6.5h31.6c5.4 0 9.2 4.4 9.2 10.3v29.4C57 52.4 52.2 57 45.9 57H18.1C11.8 57 7 52.4 7 46.2V16.8C7 10.9 10.8 6.5 16.2 6.5Z"
+          fill="url(#goldFace)" stroke="#4E2B03" stroke-width="1.55"/>
+    <path d="M18 10.2h28c4.5 0 7.3 3.5 7.3 8.1v25.4c0 5.1-3.7 8.8-8.9 8.8H19.6c-5.2 0-8.9-3.7-8.9-8.8V18.3c0-4.6 2.8-8.1 7.3-8.1Z"
+          fill="url(#emeraldInset)" stroke="#4A3008" stroke-width="1.35"/>
   </g>
+
+  <!-- Bevel cues: light upper/left edge and darker lower/right inset edge. -->
+  <path d="M15 8.8h33c3.1 0 5.7 2 6.8 5" stroke="#FFFBE3" stroke-width="1.05" stroke-linecap="round" opacity=".8"/>
+  <path d="M9.8 20.5V44c0 5.6 4.1 9.8 9.7 9.8" stroke="#E9B744" stroke-width=".8" stroke-linecap="round" opacity=".8"/>
+  <path d="M20.8 51.1h23.8c4.2 0 7.1-2.4 8-6.1" stroke="#573006" stroke-width="1.05" stroke-linecap="round" opacity=".68"/>
+  <path d="M51.7 18.4v24.7" stroke="#271701" stroke-width=".85" stroke-linecap="round" opacity=".52"/>
+
+  <!-- Sparse side accents only. -->
+  <g stroke="#F4D36F" stroke-width=".78" stroke-linejoin="round">
+    <path d="M11.6 18.3h6.6v7.2h-6.6Z" fill="url(#gemGreen)"/>
+    <path d="M45.8 18.3h6.6v7.2h-6.6Z" fill="url(#gemGreen)"/>
+  </g>
+  <g fill="#FFE68A" stroke="#7A4708" stroke-width=".42">
+    <path d="m15 31.2 1.08 2.18 2.4.35-1.74 1.69.41 2.39L15 36.69l-2.15 1.13.41-2.39-1.74-1.69 2.4-.35L15 31.2Z"/>
+    <path d="m49 31.2 1.08 2.18 2.4.35-1.74 1.69.41 2.39L49 36.69l-2.15 1.13.41-2.39-1.74-1.69 2.4-.35L49 31.2Z"/>
+  </g>
+  <g fill="#FFF2A7" stroke="#7A4708" stroke-width=".34">
+    <path d="m25 12.6.88 1.78 1.96.29-1.42 1.38.34 1.95-1.76-.92-1.76.92.34-1.95-1.42-1.38 1.96-.29L25 12.6Z"/>
+    <path d="m32 10.3 1.12 2.27 2.5.36-1.81 1.77.43 2.49L32 16.04l-2.24 1.18.43-2.49-1.81-1.77 2.5-.36L32 10.3Z"/>
+    <path d="m39 12.6.88 1.78 1.96.29-1.42 1.38.34 1.95-1.76-.92-1.76.92.34-1.95-1.42-1.38 1.96-.29L39 12.6Z"/>
+  </g>
+
+  <!-- Same simplified Lombardi geometry, with stronger chrome contrast and depth. -->
+  <g filter="url(#trophyShadow)">
+    <ellipse cx="32" cy="23.2" rx="8" ry="5.2" transform="rotate(-16 32 23.2)"
+             fill="url(#chromeBall)" stroke="#66717C" stroke-width=".95"/>
+    <path d="M29.6 27.6h4.8l2.3 16.1h-9.4l2.3-16.1Z"
+          fill="url(#chromeStem)" stroke="#65717C" stroke-width=".9" stroke-linejoin="round"/>
+    <path d="M26.4 43.6h11.2l1.35 3.1h-13.9l1.35-3.1Z"
+          fill="url(#chromeStem)" stroke="#59636C" stroke-width=".85" stroke-linejoin="round"/>
+  </g>
+  <path d="M26.6 20.8c2.4-1.6 5.3-2.2 8.1-1.7" stroke="#FFFFFF" stroke-width="1.05" stroke-linecap="round" opacity=".88"/>
+  <path d="M30.2 29.3 28.5 40.8" stroke="#FFFFFF" stroke-width=".8" stroke-linecap="round" opacity=".7"/>
+  <path d="M28.8 22.2 35.2 23.7" stroke="#5F6972" stroke-width=".9" stroke-linecap="round"/>
+
+  <!-- One restrained gold specular glint. -->
+  <path d="M18.2 7.9h12.5" stroke="#FFFFFF" stroke-opacity=".82" stroke-width=".85" stroke-linecap="round"/>
 </svg>
