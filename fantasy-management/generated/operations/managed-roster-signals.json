@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-24T15:15:08.555938Z",
-  "input_fingerprint": "e6575863380bcd9d201856bce4fb5f83004c9aa93f228a4d17ac89569a1dbaca",
+  "generated_at": "2026-09-24T15:24:06Z",
+  "input_fingerprint": "7574474429319e95a93baf3dbb2d107fad469c779d3e8a4d0752f93c8c4f7291",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "66c54a69bd8e51183269fb967bd8ddc427bf04de07327ff8eea19d06a9998ee4",
-      "source_timestamp": "2026-09-24T14:55:26Z"
+      "content_sha256": "4a2128ababe2f5944d4eac714a26b97961da4aca82b8350544d42895fe7d91d6",
+      "source_timestamp": "2026-09-24T15:24:06Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "3511a774b1b6824f5028b604b04fd537d9e41d316f9e266ebf9c5711a04e3849",
-      "source_timestamp": "2026-09-24T14:55:26Z"
+      "content_sha256": "2dbad910e94c0011fca6d7e5df450faf183b560058ac92c69f8e2271cceeb152",
+      "source_timestamp": "2026-09-24T15:24:06Z"
     },
     {
       "id": "operations_source_catalog",
@@ -931,13 +931,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 20: The Eagles announced that Barkley (neck/shoulder) is questionable to return to Sunday's game against the Titans due to a stinger.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260928",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -1153,9 +1153,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -3409,7 +3410,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 23: Nacua (groin) will not practice Wednesday, but head coach Sean McVay indicated he could practice later this week, Adam Grosbard of The Orange County Register reports.",
+        "description": "Sep 24: Nacua, who was listed as a non-participant on Wednesday's estimated practice report, doesn't appear to be making much progress in his recovery from a groin injury and could be trending toward a second consecutive absence Sunday against the Broncos, Ian Rapoport of NFL Network reports.",
         "reported_date": null,
         "return_date": "20260927",
         "external_verification_priority": "high",
@@ -9397,7 +9398,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 15,
+      "players_with_current_injury_signal": 16,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {
