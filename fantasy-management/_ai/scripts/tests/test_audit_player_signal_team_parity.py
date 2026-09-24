@@ -77,6 +77,34 @@ class PlayerSignalTeamShadowParityTests(unittest.TestCase):
             sum(source_joins["by_source"].values()),
         )
 
+        evidence = summary["legacy_present_canonical_empty_evidence"]
+        self.assertEqual(
+            evidence["baseline_player_count"],
+            sum(evidence["tank01_is_free_agent"].values()),
+        )
+        self.assertEqual(
+            evidence["baseline_player_count"],
+            sum(evidence["sleeper_status"].values()),
+        )
+        self.assertEqual(
+            evidence["baseline_player_count"],
+            sum(evidence["fantasy_ownership_status"].values()),
+        )
+        population_dependency = evidence["population_dependency"]
+        self.assertEqual(
+            evidence["baseline_player_count"],
+            population_dependency["only_has_nfl_team_count"]
+            + population_dependency["other_population_reason_count"],
+        )
+        self.assertEqual(
+            population_dependency["only_has_nfl_team_count"],
+            sum(population_dependency["only_has_nfl_team_tank01_is_free_agent"].values()),
+        )
+        self.assertEqual(
+            population_dependency["only_has_nfl_team_count"],
+            sum(population_dependency["only_has_nfl_team_sleeper_status"].values()),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
