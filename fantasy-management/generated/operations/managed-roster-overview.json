@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-24T20:42:02Z",
-  "input_fingerprint": "62adb89521d68e9bbcf6003dee82d1a3533ebc46466bb0a868515965da897972",
+  "generated_at": "2026-09-24T21:07:46Z",
+  "input_fingerprint": "8b7df53c9913f1f4976d3696658f47dba24020ebde761e4e89676e81e531fe53",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "e6cff4d7583a652c5ff224551c537b0cc5cbdacdc0615d919a59e336732fe821"
+      "content_sha256": "7340e184d22082d4edd8ae1ca9757c4fdcf35803fa2b646cfbd25406a9c1fbdd"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "3993a6068179bb740cd2e5529f8a77aed4ef9b2cc165410571db0f759d960013"
+      "content_sha256": "ff1e88c1949f77b8487f43b2989949d9d669d8d7ff628c515abfb7c2f289b5a5"
     },
     {
       "id": "roster_evaluation_state",
@@ -103,10 +103,10 @@
       "QB": {
         "fixed_starter_requirement": 2,
         "held_count": 5,
-        "current_active_count": 5,
-        "effective_prelock_or_locked_count": 5,
+        "current_active_count": 4,
+        "effective_prelock_or_locked_count": 4,
         "startable_count": 2,
-        "backup_count": 2,
+        "backup_count": 1,
         "coverage_floor": 3,
         "preferred_coverage": 4,
         "status": "preferred_met"
@@ -136,10 +136,10 @@
       "WR": {
         "fixed_starter_requirement": 2,
         "held_count": 18,
-        "current_active_count": 13,
-        "effective_prelock_or_locked_count": 13,
+        "current_active_count": 14,
+        "effective_prelock_or_locked_count": 14,
         "startable_count": 8,
-        "backup_count": 2,
+        "backup_count": 3,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -343,13 +343,14 @@
       "name": "Jaxson Dart",
       "position": "QB",
       "nfl_team": "NYG",
-      "roster_area": "active",
+      "roster_area": "reserve",
       "roster_sections": [
+        "reserve",
         "roster"
       ],
-      "is_current_active": true,
+      "is_current_active": false,
       "is_current_taxi": false,
-      "is_current_reserve": false,
+      "is_current_reserve": true,
       "roster_role": "backup",
       "roster_security": "strong_hold",
       "structural_function": "coverage_reserve",
@@ -1510,14 +1511,13 @@
       "name": "Alec Pierce",
       "position": "WR",
       "nfl_team": "IND",
-      "roster_area": "reserve",
+      "roster_area": "active",
       "roster_sections": [
-        "reserve",
         "roster"
       ],
-      "is_current_active": false,
+      "is_current_active": true,
       "is_current_taxi": false,
-      "is_current_reserve": true,
+      "is_current_reserve": false,
       "roster_role": "backup",
       "roster_security": "hold",
       "structural_function": "coverage_reserve",
