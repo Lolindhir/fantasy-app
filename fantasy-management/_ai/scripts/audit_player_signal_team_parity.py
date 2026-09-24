@@ -27,6 +27,14 @@ SCHEMA_VERSION = 1
 AUDIT_ID = "player-signal-team-shadow-parity"
 
 
+def boolean_bucket(value: bool | None) -> str:
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    return "null"
+
+
 def classify_team_delta(legacy_team: str | None, canonical_team: str | None) -> str:
     if legacy_team == canonical_team:
         return "equal"
@@ -101,6 +109,15 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
     source_change_counts: Counter[str] = Counter()
     changed_source_players: set[str] = set()
     detail_rows: list[dict[str, Any]] = []
+
+    legacy_empty_is_free_agent: Counter[str] = Counter()
+    legacy_empty_sleeper_status: Counter[str] = Counter()
+    legacy_empty_joint_status: Counter[str] = Counter()
+    legacy_empty_ownership_status: Counter[str] = Counter()
+    legacy_empty_only_team_is_free_agent: Counter[str] = Counter()
+    legacy_empty_only_team_sleeper_status: Counter[str] = Counter()
+    legacy_empty_only_team_count = 0
+    legacy_empty_other_reason_count = 0
 
     free_agent_added: list[str] = []
     free_agent_removed: list[str] = []
@@ -194,6 +211,29 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             if baseline_player
             else None
         )
+
+        if delta_class == "legacy_present_canonical_empty" and in_baseline:
+            tank01_is_free_agent = ops.optional_bool(legacy_player.get("IsFreeAgent"))
+            sleeper_status = ops.optional_text(sleeper_player.get("Status"))
+            is_free_agent_bucket = boolean_bucket(tank01_is_free_agent)
+            sleeper_status_bucket = sleeper_status or "null"
+            ownership_status_bucket = ops.optional_text(ownership_status) or "null"
+            joint_bucket = (
+                f"IsFreeAgent={is_free_agent_bucket}|Status={sleeper_status_bucket}"
+            )
+
+            legacy_empty_is_free_agent[is_free_agent_bucket] += 1
+            legacy_empty_sleeper_status[sleeper_status_bucket] += 1
+            legacy_empty_joint_status[joint_bucket] += 1
+            legacy_empty_ownership_status[ownership_status_bucket] += 1
+
+            if sorted(baseline_reasons) == ["has_nfl_team"]:
+                legacy_empty_only_team_count += 1
+                legacy_empty_only_team_is_free_agent[is_free_agent_bucket] += 1
+                legacy_empty_only_team_sleeper_status[sleeper_status_bucket] += 1
+            else:
+                legacy_empty_other_reason_count += 1
+
         if in_baseline and not in_shadow:
             removed_population.append(player_id)
             if ownership_status == "fantasy_free_agent":
@@ -217,6 +257,8 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                     "baseline_in_population": in_baseline,
                     "shadow_in_population": in_shadow,
                     "ownership_status": ownership_status,
+                    "tank01_is_free_agent": ops.optional_bool(legacy_player.get("IsFreeAgent")),
+                    "sleeper_status": ops.optional_text(sleeper_player.get("Status")),
                     "source_join_changes": source_changes,
                 }
             )
@@ -239,6 +281,32 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             "team_delta_count": sum(delta_classes.values()),
             "team_delta_classes": dict(sorted(delta_classes.items())),
             "team_value_pairs": dict(sorted(team_pairs.items())),
+            "legacy_present_canonical_empty_evidence": {
+                "baseline_player_count": sum(legacy_empty_is_free_agent.values()),
+                "tank01_is_free_agent": dict(sorted(legacy_empty_is_free_agent.items())),
+                "sleeper_status": dict(sorted(legacy_empty_sleeper_status.items())),
+                "joint_tank01_free_agent_and_sleeper_status": dict(
+                    sorted(legacy_empty_joint_status.items())
+                ),
+                "fantasy_ownership_status": dict(
+                    sorted(legacy_empty_ownership_status.items())
+                ),
+                "population_dependency": {
+                    "only_has_nfl_team_count": legacy_empty_only_team_count,
+                    "other_population_reason_count": legacy_empty_other_reason_count,
+                    "only_has_nfl_team_tank01_is_free_agent": dict(
+                        sorted(legacy_empty_only_team_is_free_agent.items())
+                    ),
+                    "only_has_nfl_team_sleeper_status": dict(
+                        sorted(legacy_empty_only_team_sleeper_status.items())
+                    ),
+                },
+                "interpretation": (
+                    "Tank01 IsFreeAgent is the direct structured NFL free-agent signal; "
+                    "Sleeper Status and team-field presence are independent source facts and "
+                    "must not be treated as proof of an NFL contract."
+                ),
+            },
             "population": {
                 "baseline_count": len(baseline_ids),
                 "shadow_count": len(shadow_ids),
