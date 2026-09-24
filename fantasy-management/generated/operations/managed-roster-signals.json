@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-24T13:34:32Z",
-  "input_fingerprint": "aa136ff425e67665281aae0ca46344f74da5e21b571c300b0c6007ba89132653",
+  "generated_at": "2026-09-24T13:45:21Z",
+  "input_fingerprint": "59875fc854576fc7fab18c8eb56c9e73a05dc9f2a0d48056eeccd7173a19ae10",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "f940aed5eabf235107dd2e0f3019ef45a67121110d79c6f446e82a08fcf48176",
-      "source_timestamp": "2026-09-24T12:14:49Z"
+      "content_sha256": "aec9d42af48a2f01c94e3d6598a3aaedbf4e7bef272978126f0d1a0614f3b310",
+      "source_timestamp": "2026-09-24T13:45:21Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "3b1aa70d497ff1654b916e9ea727bf4c5a3402ef47e6f5c3cb13ab008b14f507",
-      "source_timestamp": "2026-09-24T13:34:32Z"
+      "content_sha256": "bca8a757e3d46c778385b75d791066ef57999958783a4b3a1c05cf4095680282",
+      "source_timestamp": "2026-09-24T13:45:21Z"
     },
     {
       "id": "operations_source_catalog",
@@ -85,14 +85,14 @@
     {
       "id": "fantasypros-dynasty-superflex-ppr_pointer",
       "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
-      "content_sha256": "a9b3f8f7f2093eb0c63bcf5da824ac46d1457b880040ca43d2eb367445dce26d",
-      "source_timestamp": "2026-09-24T03:24:15.461660Z"
+      "content_sha256": "0e79043365a04445550e721b63687a2c4a2d9201c96cba1c5a86647863d2f2da",
+      "source_timestamp": "2026-09-24T13:44:10.705825Z"
     },
     {
       "id": "fantasypros-dynasty-superflex-ppr_ranking",
       "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-09-24/ranking.csv",
       "content_sha256": "d3325722c57f2799419e7764681bdc759957ea165878f4d21dd1e08a5b8df219",
-      "source_timestamp": "2026-09-24T03:24:15.461660Z"
+      "source_timestamp": "2026-09-24T13:44:10.705825Z"
     },
     {
       "id": "fantasycalc-dynasty-superflex-ppr-8-team_pointer",
@@ -1179,13 +1179,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 23: Meyers (thumb) was listed as a limited participant for Wednesday's practice, Ryan O'Halloran of the Florida Times-Union reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260927",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -1401,9 +1401,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -8399,13 +8400,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Sep 23: Dolphins head coach Jeff Hafley said that Douglas (ankle) won't practice Wednesday, C. Isaiah Smalls II of the Miami Herald reports.",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
-        "return_date": "20260927",
-        "external_verification_priority": "high",
+        "return_date": null,
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -8621,10 +8622,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
