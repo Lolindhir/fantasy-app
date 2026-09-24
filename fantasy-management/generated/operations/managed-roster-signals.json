@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-24T13:45:21Z",
-  "input_fingerprint": "59875fc854576fc7fab18c8eb56c9e73a05dc9f2a0d48056eeccd7173a19ae10",
+  "generated_at": "2026-09-24T14:10:53Z",
+  "input_fingerprint": "7b2b04a9e50150afd118571b6c35c432cb44e1a973decd9094724fa65fd63ae5",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "aec9d42af48a2f01c94e3d6598a3aaedbf4e7bef272978126f0d1a0614f3b310",
-      "source_timestamp": "2026-09-24T13:45:21Z"
+      "content_sha256": "4df7a85fcdf75667bf7a68ad5bfe0061b140f004ead5c7ccbea94acb2f6e1e93",
+      "source_timestamp": "2026-09-24T14:10:53Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "bca8a757e3d46c778385b75d791066ef57999958783a4b3a1c05cf4095680282",
-      "source_timestamp": "2026-09-24T13:45:21Z"
+      "content_sha256": "f6d7650cb0ecf74482d9a51a1d377c2e14da7c1ff16542fd18d145d49b2a712b",
+      "source_timestamp": "2026-09-24T14:10:53Z"
     },
     {
       "id": "operations_source_catalog",
@@ -3902,13 +3902,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Out",
-        "description": "Sep 23: Commanders head coach Dan Quinn confirmed that Daniels will be out for Sunday's game against the Seahawks, but the quarterback remains without a precise timeline for a return while he continues to receive more medical opinions on his left elbow injury, Ben Standig of The Team 980 Washington D.C. reports.",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
-        "return_date": "20261004",
-        "external_verification_priority": "high",
+        "return_date": null,
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -4138,10 +4138,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -8400,13 +8399,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 23: Dolphins head coach Jeff Hafley said that Douglas (ankle) won't practice Wednesday, C. Isaiah Smalls II of the Miami Herald reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260927",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -8622,9 +8621,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
