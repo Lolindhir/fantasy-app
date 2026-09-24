@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-24T16:49:24Z",
-  "input_fingerprint": "1c149e70d661486b67bcb47be7301078e549a439866170eda40bcd72dc8616e0",
+  "generated_at": "2026-09-24T17:35:18Z",
+  "input_fingerprint": "2a18a36a58244050ca5493938b0c54a5ccfb61b835a70c413a8c265e983b6fa8",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "3f08e55cd0e10213baa509d6d6bf2894f02641c211d8df827f0469557df5b3b2",
-      "source_timestamp": "2026-09-24T16:49:24Z"
+      "content_sha256": "3c03a1203c3a47cd4d3125d1c32953390714dd7a9155fbf0717b50b50b57dbbe",
+      "source_timestamp": "2026-09-24T17:35:18Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "993ce53fc213683721f1c304bd29f2905f8957b57c61930bc909c37211ace001",
-      "source_timestamp": "2026-09-24T16:49:24Z"
+      "content_sha256": "226c8da388ba9c4196af51966dda938d1e1f2c4e922dd219b84a434f9b0160c7",
+      "source_timestamp": "2026-09-24T17:35:18Z"
     },
     {
       "id": "operations_source_catalog",
@@ -5652,13 +5652,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Injured Reserve",
-        "description": "Sep 15: Sampson (knee) was placed on injured reserve Tuesday.",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
-        "return_date": "20261018",
-        "external_verification_priority": "high",
+        "return_date": null,
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -5874,10 +5874,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -7397,13 +7396,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 23: Monangai (undisclosed) was not present during the portion of Wednesday's practice open to the media, Brad Biggs of the Chicago Tribune reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260927",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -7619,9 +7618,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
