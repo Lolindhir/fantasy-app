@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-24T18:49:09Z",
-  "input_fingerprint": "db59ca0b17b6c1043c50c3a0408b3c576514b9d95dd85fac81a6cc157bafa24b",
+  "generated_at": "2026-09-24T19:29:20Z",
+  "input_fingerprint": "1e312572e573a1574cc123d901dee0ed8a11235cd5f42086fc86bad48e867edb",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "8df768719252c3cc63501c920e653d6f4c915ae5e62ca00b268ca2d2ecc3a0db",
-      "source_timestamp": "2026-09-24T18:49:09Z"
+      "content_sha256": "b4c4fc2b2ba5d5b5eab50202fd2e2870239c22d0d29f6189642bfcc6c6f1b6d5",
+      "source_timestamp": "2026-09-24T19:29:20Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "b569ee2ba3abdbd319a624862b12194c5fa31a201565ac545266f35ed7831b0d",
-      "source_timestamp": "2026-09-24T18:49:09Z"
+      "content_sha256": "be80eaf64364026b3e096674666fa8dbe868d528f564699dc606c9a6b2585c80",
+      "source_timestamp": "2026-09-24T19:29:20Z"
     },
     {
       "id": "operations_source_catalog",
@@ -8897,13 +8897,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Sep 24: Bell (knee) \"mostly worked on the side\" during the media-viewing portion of Thursday's practice, David Furones of the South Florida Sun Sentinel reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20260927",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -9119,9 +9119,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9397,7 +9398,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 15,
+      "players_with_current_injury_signal": 16,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {
