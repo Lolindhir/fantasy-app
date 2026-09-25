@@ -4,7 +4,6 @@
   "source": {
     "free_agent_signals": "fantasy-management/generated/operations/free-agent-signals.json",
     "player_signals": "fantasy-management/generated/operations/player-signals.json",
-    "league": "public/data/League.json",
     "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
     "source_catalog_extensions": [
       "fantasy-management/_ai/operations-source-catalog-offense-projections.json"
@@ -35,7 +34,13 @@
       }
     }
   },
-  "comparison_windows_days": [1, 3, 7, 14, 30],
+  "comparison_windows_days": [
+    1,
+    3,
+    7,
+    14,
+    30
+  ],
   "cross_signal": {
     "minimum_percentile_delta_points": 5
   },
@@ -48,5 +53,8 @@
   },
   "output": {
     "free_agent_movement_signals": "fantasy-management/generated/operations/free-agent-movement-signals.json"
+  },
+  "canonical_league": {
+    "canonical_league_id": "nfl-reise"
   }
 }
