@@ -70,9 +70,26 @@ registry:
       - csv
       - json
     jsonContract: >
-      JSON-Raw-Sources duerfen als Liste von Records oder als Objekt mit Records
-      als Values vorliegen. Required Fields und Mindestanzahl werden vor
-      Persistierung validiert.
+      JSON-Raw-Sources duerfen als Liste von Records, als Objekt mit Records als
+      Values oder als expliziter Records-Wrapper mit Columns-Metadaten vorliegen.
+      Required Fields und Mindestanzahl werden vor Persistierung validiert.
+
+  sourceProjections:
+    purpose: >
+      Erlaubt eine eng typisierte, versionierte Provider-Evidence-Projektion,
+      wenn das Upstream-Artefakt fuer Git-Retention unverhaeltnismaessig gross ist,
+      der benoetigte Faktenscope aber deterministisch verlustfrei ausgeschnitten
+      werden kann.
+    default: >
+      Ohne sourceProjection wird die Upstream-Datei weiterhin byte-identisch als
+      Raw Source persistiert.
+    contract:
+      - sourceProjection muss id, positive version und upstreamFormat deklarieren.
+      - Persistiertes sourceFormat bleibt ein normales Registry-Format; projected sources verwenden aktuell JSON.
+      - Nur explizit im Code registrierte Projection-ID/Version-Paare sind erlaubt.
+      - Die Projection darf nur Provider-Zeilen filtern und Provider-Felder projizieren; CanonicalPlayerID, Fantasy-Scoring oder andere Derived Semantik bleibt dem Materializer vorbehalten.
+      - Upstream-Bytes duerfen transient sein; Metadata persistiert Upstream-Hash, Byte-Groesse und Projection-Statistik.
+      - Aenderungen an Projection-Semantik erfordern eine neue Projection-Version; finalisierte Historie bleibt ohne explizites --force eingefroren.
 
   materializerParticipation:
     field: materialize
@@ -262,6 +279,11 @@ activeDatasets:
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
     materialize: true
+  - id: nflverse.special-teams-fumble-events
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    sourceProjection: nflverse-special-teams-fumble-events@1
+    materialize: true
   - id: nflverse.snap-counts
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
@@ -283,9 +305,36 @@ canonicalOutputs:
   rosters: source-data/nfl/rosters/<season>.json
   weeklyRosters: source-data/nfl/weekly-rosters/<season>/<week>.json
   playerStats: source-data/nfl/player-stats/<season>/<week>.json
+  specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
   snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
   sleeperPlayers: source-data/nfl/platform/sleeper/players.json
   audit: source-data/audits/nfl-source-data-audit.json
+
+specialTeamsFumbleEventContract:
+  issue: 709
+  providerDataset: nflverse.special-teams-fumble-events
+  upstream: nflverse play-by-play csv.gz
+  upstreamRetention: transient
+  providerProjectionPath: source-data/providers/nflverse/special-teams-fumble-events/raw-<season>.json
+  canonicalPath: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
+  projectionRule: >
+    Persist only nflverse PBP rows with special=1 and at least one forced-fumble
+    or fumble-recovery player ID. Full play-by-play is not retained.
+  canonicalIdentity: GameID + PlayID + EventType + CanonicalPlayerID
+  eventTypes:
+    - forced-fumble
+    - fumble-recovery
+  playerIdentity: >
+    PBP player IDs are GSIS provider IDs and resolve through the existing
+    CanonicalPlayerID lookup. Finalized historical events without a resolved
+    CanonicalPlayerID fail closed.
+  missingSemantics: >
+    Missing source/canonical partitions are unknown, never zero. Zero-by-absence
+    is valid only inside a complete/finalized historical partition.
+  phaseAHistory: >
+    Checkpoint A proves the contract on 2025 only. Historical readiness/support
+    band integration belongs to Checkpoint B and is intentionally not added to
+    HISTORICAL_BANDS yet.
 
 operationalDatasetEvaluation:
   evaluatedAt: 2026-08-30
