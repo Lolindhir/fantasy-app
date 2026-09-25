@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import canonical_league_ownership as canonical_ownership  # noqa: E402
 
 
 class MovementContractError(RuntimeError):
@@ -43,6 +50,67 @@ def _required_text(value: Any, field: str) -> str:
 def _file_fingerprint(root: Path, relative: str) -> str:
     value = load_json(root / relative)
     return sha256_json(value)
+
+
+def _canonical_scoring_evidence(
+    root: Path,
+    movement_source: dict[str, Any],
+    movement_config: dict[str, Any],
+) -> dict[str, Any]:
+    canonical_cfg = _required_dict(movement_config.get("canonical_league"), "canonical_league")
+    canonical_league_id = _required_text(
+        canonical_cfg.get("canonical_league_id"),
+        "canonical_league.canonical_league_id",
+    )
+    try:
+        current_season = canonical_ownership.resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+    except canonical_ownership.CanonicalOwnershipError as exc:
+        raise MovementContractError(str(exc)) from exc
+
+    source = _required_dict(
+        movement_source.get("canonical_league_scoring"),
+        "movement.source.canonical_league_scoring",
+    )
+    if source.get("canonical_league_id") != canonical_league_id:
+        raise MovementContractError("Canonical league scoring evidence identity mismatch")
+    try:
+        source_season = int(source.get("season"))
+    except (TypeError, ValueError) as exc:
+        raise MovementContractError("Canonical league scoring evidence has invalid season") from exc
+    if source_season != current_season:
+        raise MovementContractError(
+            f"Canonical league scoring evidence season mismatch: expected {current_season}, found {source.get('season')!r}"
+        )
+
+    relative_path = _required_text(source.get("path"), "movement.source.canonical_league_scoring.path")
+    league = _required_dict(load_json(root / relative_path), "Canonical league scoring source")
+    if league.get("CanonicalLeagueID") != canonical_league_id:
+        raise MovementContractError("Canonical league scoring source identity mismatch")
+    try:
+        league_season = int(league.get("Season"))
+    except (TypeError, ValueError) as exc:
+        raise MovementContractError("Canonical league scoring source has invalid Season") from exc
+    if league_season != current_season:
+        raise MovementContractError(
+            f"Canonical league scoring source season mismatch: expected {current_season}, found {league.get('Season')!r}"
+        )
+    scoring = _required_dict(league.get("ScoringSettings"), "Canonical league ScoringSettings")
+    scoring_fingerprint = sha256_json(scoring)
+    declared_fingerprint = _required_text(
+        source.get("scoring_fingerprint"),
+        "movement.source.canonical_league_scoring.scoring_fingerprint",
+    )
+    if declared_fingerprint != scoring_fingerprint:
+        raise MovementContractError("Canonical league scoring evidence fingerprint mismatch")
+    return {
+        "canonical_league_id": canonical_league_id,
+        "season": current_season,
+        "path": relative_path,
+        "scoring_fingerprint": scoring_fingerprint,
+    }
 
 
 def annotate_movement(
@@ -90,7 +158,7 @@ def annotate_movement(
         path: _file_fingerprint(root, path)
         for path in catalog_paths
     }
-    league_path = _required_text(source_cfg.get("league"), "source.league")
+    canonical_scoring = _canonical_scoring_evidence(root, movement_source, movement_config)
 
     free_agent_source = _required_dict(movement_source.get("free_agent_signals"), "movement.source.free_agent_signals")
     player_source = _required_dict(movement_source.get("player_signals"), "movement.source.player_signals")
@@ -99,7 +167,7 @@ def annotate_movement(
         "free_agent_input_fingerprint": free_agent_source.get("input_fingerprint"),
         "player_input_fingerprint": player_source.get("input_fingerprint"),
         "ranking_histories": movement_source.get("ranking_histories"),
-        "league_fingerprint": _file_fingerprint(root, league_path),
+        "canonical_league_scoring": canonical_scoring,
         "source_catalog_fingerprints": catalog_fingerprints,
         "quality_issues": (_required_dict(movement.get("quality"), "movement.quality")).get("issues"),
     }
