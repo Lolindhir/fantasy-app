@@ -149,6 +149,8 @@ fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
 
 The Movement contract evaluates every current fantasy free agent at QB, RB, WR, TE and K through one shared Discovery-, Materiality- and Prioritization architecture. Kicker is not a separate discovery population or workflow. Position-specific sources, normalizations and thresholds remain valid features inside the common pipeline.
 
+Since Checkpoint 6V, projection-movement league scoring is read directly from the active Canonical League `league.json -> ScoringSettings`, with the current season resolved fail-closed through the Canonical League manifest. `free-agent-movement-signals.json` no longer reads `public/data/League.json -> ScoringType`. This is a scoring-only source cutover: population, fantasy ownership, ranking histories and materiality rules are unchanged.
+
 The deterministic Movement layer currently prepares:
 
 - historical 1/3/7/14/30-day ADP changes using the position-appropriate feed;
@@ -335,6 +337,7 @@ Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migra
 - `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data through the same adapter; `League.json` remains Team/TeamAbbr display enrichment in that materializer.
 - `player-signals.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data; `League.json` remains a non-membership App enrichment input for managed-team display and `ScoringType` used by projection scoring, plus the existing trigger/freshness bridge for this consumer.
 - `free-agent-signals.json` inherits canonical ownership from `player-signals.json`, and `fa-board-readmodel.json` derives its own availability/occupancy ownership directly from Canonical League Source Data.
+- `free-agent-movement-signals.json` reads league scoring directly from active Canonical League `ScoringSettings`; its scoring evidence fingerprint covers the canonical scoring payload rather than unrelated League state.
 - `managed-roster-overview.json` inherits TeamID 1 membership/buckets from canonical-active `managed-roster-signals.json`; `League.json` supplies only team display, lineup/roster-size rules, Reserve-/Taxi slot counts and phase/status enrichment there.
 - Any remaining not-yet-migrated ownership consumers retain their explicitly documented contracts.
 - The stable Fantasy `TeamID` is bridged explicitly to `CanonicalLeagueMemberID` in `league-context/owner-registry.json`; provider roster IDs are not stable TeamIDs.
