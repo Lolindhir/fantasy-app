@@ -16,6 +16,8 @@ sys.modules[SPEC.name] = MODULE
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
 
+import build_free_agent_movement_dataset as movement_builder  # noqa: E402
+
 
 class MovementEventTests(unittest.TestCase):
     def write_json(self, root: Path, relative: str, value: object) -> Path:
@@ -78,6 +80,12 @@ class MovementEventTests(unittest.TestCase):
             "source": {"movement_signals": "movement.json"},
             "output": {"movement_events": "events.json"},
         })
+
+    def current_repository_movement(self, root: Path) -> dict:
+        return movement_builder.build(
+            root,
+            root / "fantasy-management/automation/free-agent-movement-materialization.json",
+        )
 
     def test_initial_run_is_silent_baseline(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -241,7 +249,7 @@ class MovementEventTests(unittest.TestCase):
 
     def test_contract_version_changes_only_contract_fingerprint(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        movement = json.loads((root / "fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8"))
+        movement = self.current_repository_movement(root)
         config = json.loads((root / "fantasy-management/automation/free-agent-movement-materialization.json").read_text(encoding="utf-8"))
         first = MODULE.movement_contract.annotate_movement(root, movement, config)
         changed = json.loads(json.dumps(config))
@@ -252,7 +260,7 @@ class MovementEventTests(unittest.TestCase):
 
     def test_current_evidence_change_changes_only_evidence_fingerprint(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        movement = json.loads((root / "fantasy-management/generated/operations/free-agent-movement-signals.json").read_text(encoding="utf-8"))
+        movement = self.current_repository_movement(root)
         config = json.loads((root / "fantasy-management/automation/free-agent-movement-materialization.json").read_text(encoding="utf-8"))
         first = MODULE.movement_contract.annotate_movement(root, movement, config)
         changed = json.loads(json.dumps(movement))
@@ -261,9 +269,36 @@ class MovementEventTests(unittest.TestCase):
         self.assertEqual(first["materiality_contract"]["fingerprint"], second["materiality_contract"]["fingerprint"])
         self.assertNotEqual(first["evidence"]["input_fingerprint"], second["evidence"]["input_fingerprint"])
 
+    def test_canonical_scoring_change_changes_evidence_fingerprint_and_metadata_mismatch_fails_closed(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        movement = self.current_repository_movement(root)
+        config = json.loads((root / "fantasy-management/automation/free-agent-movement-materialization.json").read_text(encoding="utf-8"))
+        first = MODULE.movement_contract.annotate_movement(root, movement, config)
+        with tempfile.TemporaryDirectory() as directory:
+            canonical = json.loads((root / movement["source"]["canonical_league_scoring"]["path"]).read_text(encoding="utf-8"))
+            canonical["ScoringSettings"]["pass_td"] = float(canonical["ScoringSettings"]["pass_td"]) + 1.0
+            changed_path = self.write_json(Path(directory), "league.json", canonical)
+            changed = json.loads(json.dumps(movement))
+            changed["source"]["canonical_league_scoring"]["path"] = str(changed_path)
+            with self.assertRaisesRegex(MODULE.movement_contract.MovementContractError, "fingerprint mismatch"):
+                MODULE.movement_contract.annotate_movement(root, changed, config)
+            changed["source"]["canonical_league_scoring"]["scoring_fingerprint"] = MODULE.movement_contract.sha256_json(canonical["ScoringSettings"])
+            second = MODULE.movement_contract.annotate_movement(root, changed, config)
+        self.assertEqual(first["materiality_contract"]["fingerprint"], second["materiality_contract"]["fingerprint"])
+        self.assertNotEqual(first["evidence"]["input_fingerprint"], second["evidence"]["input_fingerprint"])
+
     def test_current_repository_initial_baseline_validates(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        result = MODULE.build(root, root / "fantasy-management/automation/free-agent-movement-event-materialization.json")
+        movement = self.current_repository_movement(root)
+        event_config = json.loads((root / "fantasy-management/automation/free-agent-movement-event-materialization.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:
+            temp_root = Path(directory)
+            movement_path = self.write_json(temp_root, "movement.json", movement)
+            event_config["source"]["movement_signals"] = str(movement_path)
+            event_config["source"]["movement_materiality_config"] = str(root / "fantasy-management/automation/free-agent-movement-materialization.json")
+            event_config["output"]["movement_events"] = str(temp_root / "events.json")
+            config_path = self.write_json(temp_root, "event-config.json", event_config)
+            result = MODULE.build(root, config_path)
         schema = json.loads((root / "fantasy-management/_ai/schemas/free-agent-movement-events.schema.json").read_text(encoding="utf-8"))
         jsonschema.Draft202012Validator(schema).validate(result)
         self.assertEqual(result["population"]["baseline_mode"], "initial_baseline")
