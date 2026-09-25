@@ -198,8 +198,10 @@ def canonical_player_context(
     player = dict(legacy_player)
     player["Name"] = ops.optional_text(identity.get("Name"))
     player["Position"] = position
-    # TeamAbbr intentionally remains the legacy App field in 6Y because nfl_team
-    # currently participates in the player-signal population rule.
+    # 6Z.1 decouples the team fact from population membership. TeamAbbr on the
+    # evaluation/output row is Canonical Sleeper Team; legacy TeamAbbr remains
+    # available separately on legacy_player only for the compatibility population bridge.
+    player["TeamAbbr"] = ops.optional_text(sleeper_player.get("Team"))
     return player, identity, sleeper_player
 
 
@@ -493,7 +495,10 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         ownership_value = external_signals.ownership_for(player_id, ownership, managed_team_id)
         activity = activity_view(player_id, activity_by_player, activity_metadata)
         reasons: list[str] = []
-        if ops.optional_text(player.get("TeamAbbr")):
+        # Compatibility-only population bridge: preserve the pre-6Z.1 population
+        # independently from the canonical nfl_team fact. This is not evidence of
+        # a current NFL contract and is intentionally sourced from the legacy row.
+        if ops.optional_text(legacy_player.get("TeamAbbr")):
             reasons.append("has_nfl_team")
         if ownership_value["status"] != "fantasy_free_agent":
             reasons.append("league_owned")
@@ -529,6 +534,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 "name": ops.optional_text(player.get("Name")),
                 "position": position,
                 "nfl_team": ops.optional_text(player.get("TeamAbbr")),
+                "nfl_team_source": "canonical_sleeper_team",
                 "population_reasons": reasons,
                 "ownership": ownership_value,
                 "app_data": {
@@ -565,6 +571,8 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         "players": [
             {
                 "player_id": player["player_id"],
+                "nfl_team": player["nfl_team"],
+                "nfl_team_source": player["nfl_team_source"],
                 "population_reasons": player["population_reasons"],
                 "ownership": player["ownership"],
                 "source_signals": player["source_signals"],
@@ -602,6 +610,11 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "positions": sorted(allowed_positions),
             "inclusion_rule": "position is in configured fantasy positions and at least one population reason applies",
             "reason_counts": dict(sorted(population_reason_counts.items())),
+            "team_presence_reason_contract": {
+                "reason": "has_nfl_team",
+                "source": "public/data/Players.json -> TeamAbbr",
+                "semantics": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth",
+            },
         },
         "sources": source_records,
         "players": output_players,
