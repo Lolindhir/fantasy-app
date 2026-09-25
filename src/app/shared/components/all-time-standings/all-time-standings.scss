@@ -1,19 +1,6 @@
 :host {
   display: block;
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
   margin-bottom: 20px;
-  overflow-x: hidden;
-}
-
-.all-time {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden;
 }
 
 .all-time-row {
@@ -76,20 +63,14 @@
 
 @media (max-width: 767px) {
   .all-time-row {
-    display: flex;
-    box-sizing: border-box;
-    align-items: center;
-    width: auto;
+    grid-template-columns: 18px 30px minmax(0, 1fr) auto;
     min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
     min-height: 38px;
     padding: 4px 10px;
     gap: 8px;
   }
 
   .all-time-place {
-    flex: 0 0 18px;
     text-align: center;
   }
 
@@ -98,7 +79,6 @@
     place-items: center;
     width: 30px;
     height: 30px;
-    flex: 0 0 30px;
     overflow: hidden;
     border-radius: 50%;
     background: #e2e8f0;
@@ -114,21 +94,19 @@
   }
 
   .all-time-owner {
-    flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .all-time-awards {
-    flex: 0 1 auto;
     flex-wrap: wrap;
     justify-content: flex-end;
+    justify-self: end;
     row-gap: 2px;
-    max-width: min(52%, 220px);
-    margin-left: auto;
+    max-width: min(46vw, 160px);
   }
 
   .all-time-award {
