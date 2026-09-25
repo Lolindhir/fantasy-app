@@ -125,7 +125,12 @@ boundaries:
       SeasonKickoff, CurrentWeek und Team-Display sowie als bestehende
       Trigger-/Freshness-Bruecke. free-agent-signals erbt Canonical Ownership
       downstream aus player-signals und besitzt keinen separaten League-Ownership-
-      Read. Drafts-, Transactions- und weitere nicht migrierte FM-Pfade behalten
+      Read. Checkpoint 6V liest Free-Agent-Movement-Scoring direkt aus dem aktiven
+      Canonical League league.json -> ScoringSettings; dieser Consumer besitzt keinen
+      direkten League.json -> ScoringType Read mehr. player-signals Projection-
+      Reconciliation und Kicker Streaming behalten ihre eigenen Scoring-Enrichment-
+      Grenzen bis zu separaten Checkpoints. Drafts-, Transactions- und weitere nicht
+      migrierte FM-Pfade behalten
       bis zu eigenen Checkpoints ihre bisherigen public/data-Vertraege.
       Sleeper roster_id bleibt reine Provenienz.
     targetState: >
