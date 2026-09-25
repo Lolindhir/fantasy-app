@@ -76,27 +76,48 @@ scoringContract:
   implementation: tools/historical_fantasy_scoring.py
   defaultLeague: nfl-reise
   providerFantasyTotals: validation-only
+  playerScoringRule: >
+    Individual player scoring is event-first rather than position-whitelisted. A kicker may
+    score passing/rushing/receiving events, a skill player may score return/defensive events,
+    and position is used only for explicitly position-specific Sleeper bonus settings.
+    Team-defense-only settings are classified separately and are not applied to player rows.
   rawFieldRules:
     passingInterceptions: passing_interceptions
     fumbles: fumbles_total
     fumblesLost: fumbles_lost_total
-    ownFumbleRecoveries: fumble_recovery_own
-    opponentFumbleRecoveries: fumble_recovery_opp
+    defensiveFumbleRecoveries: def_fumbles
     fumbleRecoveryTouchdowns: fumble_recovery_tds
+    defensiveForcedFumbles: def_fumbles_forced
+    defensiveInterceptions: def_interceptions
+    defensiveSacks: def_sacks
+    defensiveTouchdowns: def_tds
+    specialTeamsPlayerTouchdowns: special_teams_tds
+    puntReturnYards: punt_return_yards
+    kickoffReturnYards: kickoff_return_yards
     patMade: pat_made
     patAttempts: pat_att
     fieldGoalsMade: fg_made
     fieldGoalAttempts: fg_att
     fieldGoalMadeDistance: fg_made_distance
   derivedRules:
+    - Sleeper fum_rec is not reconstructed from offensive own/opponent recovery counters for an individual player; player fum_rec uses the defensive/IDP recovery fact def_fumbles.
+    - Sleeper st_td is an individual Special Teams Player TD and maps to special_teams_tds.
     - PAT misses are pat_att minus pat_made so blocked attempts remain represented as misses.
     - Aggregate field-goal misses are fg_att minus fg_made.
     - Made field goals use nflverse distance buckets through 60+; fgm_50p combines 50-59 and 60+.
   failClosedUnsupported:
     - >
+      Active individual-player Special Teams Forced Fumble, Special Teams Fumble Recovery,
+      or Special Teams Solo Tackle settings remain unsupported because canonical weekly
+      player-stats do not identify those events by special-teams unit. They must not be
+      inferred from generic defensive/recovery counters.
+    - >
       Non-zero distance-specific missed-field-goal scoring remains unsupported until reliable
-      raw miss-distance evidence is available. The scorer must reject such a profile rather
-      than fabricate a result.
+      raw miss-distance evidence including blocked attempts is available. The scorer must
+      reject such a profile rather than fabricate a result.
+    - >
+      Any other active player-applicable Sleeper scoring key without an explicit canonical
+      mapping is reported as UnsupportedNonZeroSettings instead of being silently ignored.
 
 readinessContract:
   implementation: tools/source_data_readiness.py

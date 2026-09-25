@@ -9,27 +9,57 @@ from typing import Any
 
 # Sleeper scoring keys are intentionally mapped to canonical nflverse raw-stat fields.
 # Provider fantasy-point columns are never consumed here.
+#
+# This module scores *individual player records*. Team-defense-only settings are
+# classified separately and are intentionally not applied to player rows.
 STAT_MAP: dict[str, tuple[str, ...]] = {
+    # Passing
     "pass_att": ("attempts",),
     "pass_cmp": ("completions",),
     "pass_yd": ("passing_yards",),
     "pass_td": ("passing_tds",),
     "pass_int": ("passing_interceptions",),
     "pass_2pt": ("passing_2pt_conversions",),
+    "pass_fd": ("passing_first_downs",),
+    # Rushing
     "rush_att": ("carries",),
     "rush_yd": ("rushing_yards",),
     "rush_td": ("rushing_tds",),
     "rush_2pt": ("rushing_2pt_conversions",),
+    "rush_fd": ("rushing_first_downs",),
+    # Receiving
     "rec": ("receptions",),
     "rec_yd": ("receiving_yards",),
     "rec_td": ("receiving_tds",),
     "rec_2pt": ("receiving_2pt_conversions",),
-    # nflverse exposes aggregate fumble counters specifically to retain edge-case fumbles
-    # that are not safely reconstructed from only rushing/receiving/sack categories.
+    "rec_fd": ("receiving_first_downs",),
+    # Misc player fumbles. Sleeper documents Fumble/Fumble Lost as applying to
+    # any player/unit. fum_rec is deliberately *not* an offensive own-recovery
+    # counter; for an individual player it is the defensive/IDP recovery stat.
     "fum": ("fumbles_total",),
     "fum_lost": ("fumbles_lost_total",),
-    "fum_rec": ("fumble_recovery_own", "fumble_recovery_opp"),
+    "fum_rec": ("def_fumbles",),
     "fum_rec_td": ("fumble_recovery_tds",),
+    "fum_ret_yd": ("fumble_recovery_yards_opp",),
+    # Individual defense / IDP. These keys can coexist with team-defense scoring
+    # in Sleeper; when scoring one player row we use only that player's facts.
+    "ff": ("def_fumbles_forced",),
+    "int": ("def_interceptions",),
+    "int_ret_yd": ("def_interception_yards",),
+    "sack": ("def_sacks",),
+    "sack_yd": ("def_sack_yards",),
+    "safe": ("def_safeties",),
+    "tkl_solo": ("def_tackles_solo",),
+    "tkl_ast": ("def_tackle_assists",),
+    "tkl_loss": ("def_tackles_for_loss",),
+    "qb_hit": ("def_qb_hits",),
+    "blk_kick": ("def_punt_blocks", "def_pat_blocks", "def_fg_blocks"),
+    "def_td": ("def_tds",),
+    # Individual special teams / returns.
+    "st_td": ("special_teams_tds",),
+    "pr_yd": ("punt_return_yards",),
+    "kr_yd": ("kickoff_return_yards",),
+    # Kicking
     "xpm": ("pat_made",),
     # Sleeper counts blocked kicks as misses. Attempts minus made therefore intentionally
     # includes both explicit misses and blocked attempts.
@@ -46,32 +76,55 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "fgm_yds": ("fg_made_distance",),
 }
 
-OFFENSE_PREFIXES = ("pass_", "rush_", "rec_", "fum_")
-OFFENSE_EXACT_KEYS = {"rec", "fum"}
-OFFENSE_BONUS_PREFIXES = ("bonus_pass_", "bonus_rush_", "bonus_rec_")
-POSITIONAL_RECEPTION_BONUS_KEYS = {"bonus_rec_rb", "bonus_rec_wr", "bonus_rec_te"}
-KICKER_KEYS = {
-    "xpm",
-    "xpmiss",
-    "fgm",
-    "fgmiss",
-    "fgm_0_19",
-    "fgm_20_29",
-    "fgm_30_39",
-    "fgm_40_49",
-    "fgm_50_59",
-    "fgm_50p",
-    "fgm_60p",
-    "fgm_yds",
-    "fgm_yds_over_30",
-    "fgmiss_0_19",
-    "fgmiss_20_29",
-    "fgmiss_30_39",
-    "fgmiss_40_49",
-    "fgmiss_50_59",
-    "fgmiss_50p",
-    "fgmiss_60p",
+# These settings describe the fantasy team-defense unit, not an individual player
+# record. They must not be mistaken for unsupported player settings and must never
+# be applied to an offensive/kicker/IDP player row.
+TEAM_DEFENSE_ONLY_KEYS = {
+    "bonus_def_fum_td_50p",
+    "bonus_def_int_td_50p",
+    "blk_kick_ret_yd",
+    "def_2pt",
+    "def_3_and_out",
+    "def_4_and_stop",
+    "def_forced_punts",
+    "def_kr_yd",
+    "def_pass_def",
+    "def_pr_yd",
+    "def_st_ff",
+    "def_st_fum_rec",
+    "def_st_td",
+    "def_st_tkl_solo",
+    "fg_ret_yd",
+    "pts_allow",
+    "pts_allow_0",
+    "pts_allow_1_6",
+    "pts_allow_7_13",
+    "pts_allow_14_20",
+    "pts_allow_21_27",
+    "pts_allow_28_34",
+    "pts_allow_35p",
+    "yds_allow",
+    "yds_allow_0_100",
+    "yds_allow_100_199",
+    "yds_allow_200_299",
+    "yds_allow_300_349",
+    "yds_allow_350_399",
+    "yds_allow_400_449",
+    "yds_allow_450_499",
+    "yds_allow_500_549",
+    "yds_allow_550p",
 }
+
+# Position-specific Sleeper settings are the exception to event-first scoring.
+# They only apply when the player's canonical primary position matches the key.
+POSITIONAL_RECEPTION_BONUS_KEYS = {"bonus_rec_rb", "bonus_rec_wr", "bonus_rec_te"}
+POSITIONAL_FIRST_DOWN_BONUS_KEYS = {
+    "bonus_fd_qb",
+    "bonus_fd_rb",
+    "bonus_fd_wr",
+    "bonus_fd_te",
+}
+POSITIONAL_KEYS = POSITIONAL_RECEPTION_BONUS_KEYS | POSITIONAL_FIRST_DOWN_BONUS_KEYS
 
 
 def read_json(path: Path) -> Any:
@@ -94,23 +147,32 @@ def stat_value(stats: dict[str, Any], fields: tuple[str, ...]) -> float:
     return total
 
 
-def is_applicable_offense_key(position: str, key: str) -> bool:
-    if key in OFFENSE_EXACT_KEYS or key.startswith(OFFENSE_PREFIXES):
-        return True
-    if key in POSITIONAL_RECEPTION_BONUS_KEYS:
-        return key == f"bonus_rec_{position.lower()}"
-    if key.startswith(OFFENSE_BONUS_PREFIXES):
-        return True
-    return key == f"bonus_fd_{position.lower()}"
+def positional_key_applies(position: str, key: str) -> bool:
+    return key.endswith(f"_{position.lower()}")
 
 
 def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> set[str]:
+    """Return individual-player scoring keys that apply to this record.
+
+    Player scoring is event-first: kickers may produce passing/rushing/receiving
+    stats, skill players may produce return/defensive stats, and fumble deductions
+    apply regardless of unit. Position only gates explicitly positional bonuses.
+
+    Any non-team-defense, non-positional key is considered player-applicable so an
+    activated but unmapped setting fails closed instead of being silently ignored.
+    """
+
     pos = (position or "").upper()
-    if pos == "K":
-        return {key for key in scoring if key in KICKER_KEYS}
-    if pos in {"QB", "RB", "WR", "TE", "FB"}:
-        return {key for key in scoring if is_applicable_offense_key(pos, key)}
-    return set()
+    applicable: set[str] = set()
+    for key in scoring:
+        if key in TEAM_DEFENSE_ONLY_KEYS:
+            continue
+        if key in POSITIONAL_KEYS:
+            if positional_key_applies(pos, key):
+                applicable.add(key)
+            continue
+        applicable.add(key)
+    return applicable
 
 
 def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, Any]:
@@ -193,7 +255,7 @@ def main() -> int:
     result = score_record(record, scoring)
     if result["UnsupportedNonZeroSettings"] and not args.allow_unsupported:
         raise ValueError(
-            "Selected scoring profile contains applicable non-zero settings without an explicit raw-stat mapping: "
+            "Selected scoring profile contains player-applicable non-zero settings without an explicit canonical mapping: "
             + ", ".join(result["UnsupportedNonZeroSettings"])
         )
     output = {

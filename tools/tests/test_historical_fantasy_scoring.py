@@ -22,6 +22,7 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
                 "rushing_yards": 4,
                 "rushing_tds": 0,
                 "fumbles_lost_total": 0,
+                "def_tds": 0,
             },
         }
         scoring = {
@@ -61,19 +62,70 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 17.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
-    def test_fumble_recovery_profile_uses_current_nflverse_aggregate_fields(self) -> None:
+    def test_fum_rec_is_defensive_recovery_not_own_offensive_recovery(self) -> None:
         record = {
             "Position": "WR",
             "Stats": {
-                "fumbles_total": 0,
-                "fumbles_lost_total": 0,
-                "fumble_recovery_own": 1,
+                "fumble_recovery_own": 2,
                 "fumble_recovery_opp": 0,
-                "fumble_recovery_tds": 1,
+                "def_fumbles": 0,
+                "fumble_recovery_tds": 0,
             },
         }
-        result = score_record(record, {"fum_rec": 2.0, "fum_rec_td": 6.0})
-        self.assertEqual(result["FantasyPoints"], 8.0)
+        result = score_record(record, {"fum_rec": 2.0})
+        self.assertEqual(result["FantasyPoints"], 0.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_individual_defensive_fumble_recovery_can_score_fum_rec(self) -> None:
+        record = {
+            "Position": "LB",
+            "Stats": {"def_fumbles": 1},
+        }
+        result = score_record(record, {"fum_rec": 2.0})
+        self.assertEqual(result["FantasyPoints"], 2.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_rashid_shaheed_special_teams_touchdown_scores_with_offense(self) -> None:
+        record = {
+            "Position": "WR",
+            "Stats": {
+                "receptions": 4,
+                "receiving_yards": 67,
+                "special_teams_tds": 1,
+            },
+        }
+        result = score_record(record, {"rec": 1.0, "rec_yd": 0.1, "st_td": 6.0})
+        self.assertEqual(result["FantasyPoints"], 16.7)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_brandon_aubrey_kicker_can_also_score_rushing_yards(self) -> None:
+        record = {
+            "Position": "K",
+            "Stats": {
+                "rushing_yards": 6,
+                "fg_att": 6,
+                "fg_made": 4,
+                "fg_made_20_29": 1,
+                "fg_made_30_39": 1,
+                "fg_made_40_49": 2,
+                "fg_made_50_59": 0,
+                "fg_made_60_": 0,
+                "pat_att": 2,
+                "pat_made": 2,
+            },
+        }
+        scoring = {
+            "rush_yd": 0.1,
+            "fgm_20_29": 3.0,
+            "fgm_30_39": 3.0,
+            "fgm_40_49": 4.0,
+            "fgm_50_59": 5.0,
+            "fgm_60p": 6.0,
+            "fgmiss": -1.0,
+            "xpm": 1.0,
+        }
+        result = score_record(record, scoring)
+        self.assertEqual(result["FantasyPoints"], 14.6)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
     def test_kicker_profile_uses_distance_buckets_and_blocked_kicks_count_as_misses(self) -> None:
@@ -107,6 +159,26 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 13.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
+    def test_team_defense_only_settings_are_not_applied_to_player_rows(self) -> None:
+        record = {"Position": "WR", "Stats": {"special_teams_tds": 0}}
+        scoring = {
+            "def_st_td": 6.0,
+            "pts_allow_0": 10.0,
+            "yds_allow_0_100": 5.0,
+        }
+        result = score_record(record, scoring)
+        self.assertEqual(result["FantasyPoints"], 0.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_unverifiable_player_special_teams_settings_fail_closed(self) -> None:
+        record = {"Position": "WR", "Stats": {"special_teams_tds": 0}}
+        scoring = {"st_ff": 1.0, "st_fum_rec": 1.0, "st_tkl_solo": 1.0}
+        result = score_record(record, scoring)
+        self.assertEqual(
+            result["UnsupportedNonZeroSettings"],
+            ["st_ff", "st_fum_rec", "st_tkl_solo"],
+        )
+
     def test_unimplemented_distance_specific_miss_scoring_fails_closed(self) -> None:
         record = {"Position": "K", "Stats": {"fg_att": 1, "fg_made": 0}}
         result = score_record(record, {"fgmiss_0_19": -2.0})
@@ -116,6 +188,12 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         record = {"Position": "WR", "Stats": {"receiving_yards": 100}}
         result = score_record(record, {"bonus_rec_yd_100": 3.0})
         self.assertEqual(result["UnsupportedNonZeroSettings"], ["bonus_rec_yd_100"])
+
+    def test_position_specific_bonus_does_not_block_other_positions(self) -> None:
+        record = {"Position": "WR", "Stats": {"receptions": 1}}
+        result = score_record(record, {"bonus_rec_te": 0.5, "rec": 1.0})
+        self.assertEqual(result["FantasyPoints"], 1.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
 
 if __name__ == "__main__":
