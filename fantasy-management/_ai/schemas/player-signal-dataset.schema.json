@@ -32,7 +32,7 @@
     "population": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["player_count", "positions", "inclusion_rule", "reason_counts"],
+      "required": ["player_count", "positions", "inclusion_rule", "reason_counts", "team_presence_reason_contract"],
       "properties": {
         "player_count": {"type": "integer", "minimum": 0},
         "positions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
@@ -40,6 +40,16 @@
         "reason_counts": {
           "type": "object",
           "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "team_presence_reason_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reason", "source", "semantics"],
+          "properties": {
+            "reason": {"const": "has_nfl_team"},
+            "source": {"const": "public/data/Players.json -> TeamAbbr"},
+            "semantics": {"const": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth"}
+          }
         }
       }
     },
@@ -172,6 +182,7 @@
         "name",
         "position",
         "nfl_team",
+        "nfl_team_source",
         "population_reasons",
         "ownership",
         "app_data",
@@ -188,6 +199,7 @@
         "name": {"type": ["string", "null"]},
         "position": {"enum": ["QB", "RB", "WR", "TE", "K"]},
         "nfl_team": {"type": ["string", "null"]},
+        "nfl_team_source": {"const": "canonical_sleeper_team"},
         "population_reasons": {
           "type": "array",
           "items": {"enum": ["has_nfl_team", "league_owned", "listed_in_external_source", "present_in_external_signal"]},
