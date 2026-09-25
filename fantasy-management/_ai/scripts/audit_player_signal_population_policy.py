@@ -5,6 +5,10 @@ Checkpoint 6Z.4 consumes the 6Z.3 shadow audit and turns its raw removal gap int
 explicit policy alternatives. It deliberately keeps Canonical NFL roster facts,
 Fantasy relevance, previous-season history and provider context separate.
 
+The policy audit uses the union of season-roster and weekly-roster Canonical
+history. This matters for statuses such as DEV/practice-squad history that can
+appear in weekly Canonical partitions while being absent from the season roster.
+
 Nothing in this module changes productive player-signals population reasons.
 """
 
@@ -31,16 +35,16 @@ BRIDGE_REASON = "has_nfl_team"
 POLICY_VARIANTS = {
     "current_canonical": (
         "Non-bridge Fantasy relevance OR latest-week Canonical NFL membership "
-        "OR current-season Canonical NFL roster history."
+        "OR any current-season Canonical NFL roster history from season/weekly rosters."
     ),
     "current_plus_previous_history": (
-        "Current Canonical policy plus previous-season Canonical roster history."
+        "Current Canonical policy plus any previous-season Canonical season/weekly roster history."
     ),
     "current_plus_provider_context": (
         "Current Canonical policy plus Sleeper Team presence or Tank01 IsFreeAgent=false."
     ),
     "current_plus_previous_and_provider_context": (
-        "Current Canonical policy plus both previous-season history and provider context."
+        "Current Canonical policy plus both previous-season Canonical history and provider context."
     ),
 }
 
@@ -90,12 +94,66 @@ def experience_bucket(value: Any) -> str:
     return "7_plus"
 
 
+def build_weekly_history_membership(
+    root: Path,
+    season: int,
+    identity_by_sleeper: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    directory = root / "source-data" / "nfl" / "weekly-rosters" / str(season)
+    if not directory.is_dir():
+        raise PopulationPolicyAuditError(
+            f"Canonical weekly-roster directory is missing for season {season}: {directory}"
+        )
+
+    partitions: list[tuple[int, Path]] = []
+    for path in directory.glob("*.json"):
+        try:
+            week = int(path.stem)
+        except ValueError:
+            continue
+        partitions.append((week, path))
+    partitions.sort(key=lambda item: item[0])
+    if not partitions:
+        raise PopulationPolicyAuditError(
+            f"No Canonical weekly-roster partitions found for season {season}"
+        )
+
+    sleeper_ids: set[str] = set()
+    canonical_ids: set[str] = set()
+    record_count = 0
+    mismatch_count = 0
+    unresolved_count = 0
+    for week, path in partitions:
+        membership = population_audit.build_roster_membership_index(
+            ops.load_json(path),
+            identity_by_sleeper,
+            source_name=str(path.relative_to(root)),
+        )
+        sleeper_ids.update(membership["sleeper_ids"])
+        canonical_ids.update(membership["canonical_ids"])
+        record_count += int(membership["record_count"])
+        mismatch_count += int(membership["current_sleeper_mapping_mismatch_count"])
+        unresolved_count += int(membership["unresolved_record_count"])
+
+    return {
+        "sleeper_ids": sleeper_ids,
+        "canonical_ids": canonical_ids,
+        "weeks": [week for week, _ in partitions],
+        "partition_count": len(partitions),
+        "record_count": record_count,
+        "current_sleeper_mapping_mismatch_count": mismatch_count,
+        "unresolved_record_count": unresolved_count,
+    }
+
+
 def cohort_for_row(row: dict[str, Any]) -> str:
-    return population_audit.classify_shadow_gap(
-        previous_season_roster_member=bool(row["previous_season_roster_member"]),
-        canonical_team_present=bool(row["canonical_team"]),
-        tank01_is_free_agent=row["tank01_is_free_agent"],
-    )
+    if row["previous_season_canonical_history_member"]:
+        return "previous_season_history"
+    if row["canonical_team"] or row["tank01_is_free_agent"] is False:
+        return "provider_context_exception"
+    if row["tank01_is_free_agent"] is True:
+        return "free_agent_no_current_or_recent_roster_evidence"
+    return "unresolved_diagnostic_state"
 
 
 def evaluate_policy_variants(row: dict[str, Any]) -> dict[str, bool]:
@@ -104,9 +162,9 @@ def evaluate_policy_variants(row: dict[str, Any]) -> dict[str, bool]:
     current_canonical = (
         non_bridge_relevant
         or bool(row["latest_weekly_roster_member"])
-        or bool(row["season_roster_member"])
+        or bool(row["current_season_canonical_history_member"])
     )
-    previous_history = bool(row["previous_season_roster_member"])
+    previous_history = bool(row["previous_season_canonical_history_member"])
     provider_context = (
         bool(row["canonical_team"])
         or row["tank01_is_free_agent"] is False
@@ -168,7 +226,14 @@ def _brief_player(row: dict[str, Any], *, cohort: str) -> dict[str, Any]:
         "sleeper_status": row["sleeper_status"],
         "canonical_team": row["canonical_team"],
         "tank01_is_free_agent": row["tank01_is_free_agent"],
+        "current_season_roster_member": row["season_roster_member"],
+        "current_season_weekly_history_member": row[
+            "current_season_weekly_history_member"
+        ],
         "previous_season_roster_member": row["previous_season_roster_member"],
+        "previous_season_weekly_history_member": row[
+            "previous_season_weekly_history_member"
+        ],
     }
 
 
@@ -177,6 +242,64 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     rows = shadow.get("details")
     if not isinstance(rows, list):
         raise PopulationPolicyAuditError("6Z.3 audit details are unavailable")
+
+    config = ops.load_json(config_path)
+    sources = config["sources"]
+    canonical_identities = ops.load_json(root / sources["canonical_player_identities"])
+    try:
+        identity_by_sleeper = ops.build_canonical_identity_by_sleeper(canonical_identities)
+    except ops.MaterializationError as exc:
+        raise PopulationPolicyAuditError(
+            f"Canonical player identities are invalid: {exc}"
+        ) from exc
+
+    current_evidence = shadow["canonical_nfl_membership_evidence"]
+    current_season = int(current_evidence["season"])
+    previous_season = int(current_evidence["previous_season"])
+    current_weekly_history = build_weekly_history_membership(
+        root,
+        current_season,
+        identity_by_sleeper,
+    )
+    previous_weekly_history = build_weekly_history_membership(
+        root,
+        previous_season,
+        identity_by_sleeper,
+    )
+
+    current_weekly_only_additions = 0
+    previous_weekly_only_additions = 0
+    for row in rows:
+        player_id = str(row["player_id"])
+        identity = identity_by_sleeper.get(player_id)
+        if identity is None:
+            raise PopulationPolicyAuditError(
+                f"Eligible player {player_id} has no Canonical Identity mapping"
+            )
+
+        current_weekly_history_member = population_audit.in_roster_membership(
+            player_id,
+            identity,
+            current_weekly_history,
+        )
+        previous_weekly_history_member = population_audit.in_roster_membership(
+            player_id,
+            identity,
+            previous_weekly_history,
+        )
+        row["current_season_weekly_history_member"] = current_weekly_history_member
+        row["current_season_canonical_history_member"] = (
+            bool(row["season_roster_member"]) or current_weekly_history_member
+        )
+        row["previous_season_weekly_history_member"] = previous_weekly_history_member
+        row["previous_season_canonical_history_member"] = (
+            bool(row["previous_season_roster_member"])
+            or previous_weekly_history_member
+        )
+        if current_weekly_history_member and not row["season_roster_member"]:
+            current_weekly_only_additions += 1
+        if previous_weekly_history_member and not row["previous_season_roster_member"]:
+            previous_weekly_only_additions += 1
 
     baseline_rows = [row for row in rows if row.get("baseline_in_population")]
     baseline_ids = {str(row["player_id"]) for row in baseline_rows}
@@ -205,12 +328,10 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     variant_ids = {name: set() for name in POLICY_VARIANTS}
     variant_free_agent_ids = {name: set() for name in POLICY_VARIANTS}
-    policy_by_player: dict[str, dict[str, bool]] = {}
 
     for row in rows:
         player_id = str(row["player_id"])
         evaluations = evaluate_policy_variants(row)
-        policy_by_player[player_id] = evaluations
         for name, included in evaluations.items():
             if included:
                 variant_ids[name].add(player_id)
@@ -272,7 +393,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         key=lambda row: (row["cohort"], row["name"] or "", row["player_id"]),
     )
 
-    current_evidence = shadow["canonical_nfl_membership_evidence"]
     current_week = int(current_evidence["latest_week"])
     current_season_records = int(
         current_evidence["season_roster_index_quality"]["record_count"]
@@ -287,14 +407,35 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         "audit_id": AUDIT_ID,
         "runtime_effect": "analysis_only_no_population_change",
         "baseline": shadow["baseline"],
-        "current_context": {
-            "season": current_evidence["season"],
+        "canonical_history_quality": {
+            "season": current_season,
             "latest_week": current_week,
             "current_season_roster_record_count": current_season_records,
-            "latest_weekly_roster_record_count": current_evidence[
-                "latest_weekly_roster_index_quality"
+            "current_season_weekly_history": {
+                "weeks": current_weekly_history["weeks"],
+                "partition_count": current_weekly_history["partition_count"],
+                "record_count": current_weekly_history["record_count"],
+                "current_sleeper_mapping_mismatch_count": current_weekly_history[
+                    "current_sleeper_mapping_mismatch_count"
+                ],
+                "unresolved_record_count": current_weekly_history["unresolved_record_count"],
+                "eligible_player_additions_over_season_roster": current_weekly_only_additions,
+            },
+            "previous_season": previous_season,
+            "previous_season_roster_record_count": current_evidence[
+                "previous_season_roster_index_quality"
             ]["record_count"],
-            "previous_season": current_evidence["previous_season"],
+            "previous_season_weekly_history": {
+                "weeks": previous_weekly_history["weeks"],
+                "partition_count": previous_weekly_history["partition_count"],
+                "record_count": previous_weekly_history["record_count"],
+                "current_sleeper_mapping_mismatch_count": previous_weekly_history[
+                    "current_sleeper_mapping_mismatch_count"
+                ],
+                "unresolved_record_count": previous_weekly_history["unresolved_record_count"],
+                "eligible_player_additions_over_season_roster": previous_weekly_only_additions,
+            },
+            "identity_policy": current_evidence["identity_policy"],
         },
         "policy_variants": variants,
         "recommended_policy": {
@@ -308,7 +449,8 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 "latest materialized weekly Canonical NFL roster membership"
             ),
             "canonical_nfl_recent_history": (
-                "current-season Canonical NFL roster history"
+                "current-season Canonical NFL roster history as the union of the season roster "
+                "and every materialized current-season weekly-roster partition"
             ),
             "previous_season_history": (
                 "diagnostic only while current-season Canonical roster evidence is available; "
@@ -352,21 +494,26 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "players": removed_kicker_players,
         },
         "decision_findings": {
+            "canonical_history_coverage": (
+                "Season-roster membership alone is not a complete recent-history signal. Weekly "
+                "Canonical rosters can contain DEV/practice-squad history absent from the season "
+                "roster, so current/previous-season history is evaluated as a season+weekly union."
+            ),
             "previous_season_history": (
-                "Previous-season-only rows have no current-week/current-season Canonical roster "
-                "evidence and no independent Fantasy relevance reason. During an established "
-                "regular season they do not justify a permanent include; current-season history "
+                "Previous-season-only rows have no current-season Canonical roster evidence and "
+                "no independent Fantasy relevance reason. During an established regular season "
+                "they do not justify a permanent include; current-season season+weekly history "
                 "already preserves players who were relevant earlier in the same season."
             ),
             "provider_context_exceptions": (
-                "These rows have no current-week/current-season/previous-season Canonical roster "
-                "evidence. Sleeper/Tank01 disagreement is retained for diagnosis but cannot override "
-                "the repository's primary Canonical NFL-membership source."
+                "After Canonical season+weekly history is exhausted, remaining Sleeper/Tank01 "
+                "disagreement is retained for diagnosis but cannot override the repository's "
+                "primary Canonical NFL-membership source."
             ),
             "low_evidence": (
-                "These rows are fantasy free agents with no non-bridge Fantasy relevance, no current "
-                "or previous-season Canonical roster evidence, and no positive provider-context "
-                "exception. They are the strongest removal cases."
+                "These rows are fantasy free agents with no non-bridge Fantasy relevance, no "
+                "current or previous-season Canonical season/weekly roster evidence, and no "
+                "positive provider-context exception. They are the strongest removal cases."
             ),
             "kicker": (
                 "Kicker removals are explicitly enumerated because Kicker is the largest sensitive "
@@ -381,7 +528,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 def compact_summary(result: dict[str, Any]) -> dict[str, Any]:
     return {
         "baseline": result["baseline"],
-        "current_context": result["current_context"],
+        "canonical_history_quality": result["canonical_history_quality"],
         "policy_variants": {
             name: {
                 key: value

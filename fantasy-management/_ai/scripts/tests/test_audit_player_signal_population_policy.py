@@ -48,12 +48,25 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
             ),
         )
 
+    def test_policy_variants_keep_weekly_history_canonical(self) -> None:
+        row = {
+            "baseline_population_reasons": ["has_nfl_team"],
+            "latest_weekly_roster_member": False,
+            "current_season_canonical_history_member": True,
+            "previous_season_canonical_history_member": False,
+            "canonical_team": None,
+            "tank01_is_free_agent": True,
+        }
+        result = MODULE.evaluate_policy_variants(row)
+        self.assertTrue(result["current_canonical"])
+        self.assertTrue(all(result.values()))
+
     def test_policy_variants_do_not_promote_previous_or_provider_context_silently(self) -> None:
         row = {
             "baseline_population_reasons": ["has_nfl_team"],
             "latest_weekly_roster_member": False,
-            "season_roster_member": False,
-            "previous_season_roster_member": True,
+            "current_season_canonical_history_member": False,
+            "previous_season_canonical_history_member": True,
             "canonical_team": "AAA",
             "tank01_is_free_agent": False,
         }
@@ -67,8 +80,8 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
         row = {
             "baseline_population_reasons": ["listed_in_external_source"],
             "latest_weekly_roster_member": False,
-            "season_roster_member": False,
-            "previous_season_roster_member": False,
+            "current_season_canonical_history_member": False,
+            "previous_season_canonical_history_member": False,
             "canonical_team": None,
             "tank01_is_free_agent": True,
         }
@@ -100,6 +113,25 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
             self.assertEqual(0, summary["league_owned_removed_count"])
             self.assertEqual(0, summary["managed_roster_players_removed_count"])
 
+        history_quality = result["canonical_history_quality"]
+        self.assertGreater(history_quality["latest_week"], 0)
+        self.assertGreater(history_quality["current_season_roster_record_count"], 0)
+        self.assertGreater(
+            history_quality["current_season_weekly_history"]["partition_count"],
+            0,
+        )
+        self.assertGreater(
+            history_quality["previous_season_weekly_history"]["partition_count"],
+            0,
+        )
+        self.assertGreater(
+            history_quality["previous_season_weekly_history"][
+                "eligible_player_additions_over_season_roster"
+            ],
+            0,
+            "Weekly Canonical history must retain evidence that season roster alone misses",
+        )
+
         recommended_summary = variants[recommended["variant"]]
         cohorts = result["recommended_removal_cohorts"]
         self.assertEqual(
@@ -128,11 +160,12 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
             )
         )
         self.assertTrue(
-            all(not row["previous_season_roster_member"] for row in provider_rows)
+            all(
+                not row["previous_season_roster_member"]
+                and not row["previous_season_weekly_history_member"]
+                for row in provider_rows
+            )
         )
-
-        self.assertGreater(result["current_context"]["latest_week"], 0)
-        self.assertGreater(result["current_context"]["current_season_roster_record_count"], 0)
 
         print(
             "6Z4_POPULATION_POLICY_AUDIT="
