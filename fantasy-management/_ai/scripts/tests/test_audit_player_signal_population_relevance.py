@@ -68,20 +68,23 @@ class PlayerSignalPopulationRelevanceAuditTests(unittest.TestCase):
         self.assertTrue(MODULE.in_roster_membership("p1", identities["p1"], membership))
         self.assertTrue(MODULE.in_roster_membership("p2", identities["p2"], membership))
 
-    def test_roster_membership_fails_closed_on_identity_conflict(self) -> None:
-        with self.assertRaises(MODULE.PopulationRelevanceAuditError):
-            MODULE.build_roster_membership_index(
-                {
-                    "Records": [
-                        {
-                            "CanonicalPlayerID": "wrong",
-                            "SourceIDs": {"Sleeper": "p1"},
-                        }
-                    ]
-                },
-                {"p1": {"CanonicalPlayerID": "c1"}},
-                source_name="fixture",
-            )
+    def test_roster_membership_keeps_canonical_id_sticky_across_sleeper_mapping_drift(self) -> None:
+        identity = {"CanonicalPlayerID": "c1"}
+        membership = MODULE.build_roster_membership_index(
+            {
+                "Records": [
+                    {
+                        "CanonicalPlayerID": "historical-canonical-id",
+                        "SourceIDs": {"Sleeper": "p1"},
+                    }
+                ]
+            },
+            {"p1": identity},
+            source_name="fixture",
+        )
+        self.assertFalse(MODULE.in_roster_membership("p1", identity, membership))
+        self.assertEqual(1, membership["current_sleeper_mapping_mismatch_count"])
+        self.assertIn("historical-canonical-id", membership["canonical_ids"])
 
     def test_current_repository_population_audit_is_structurally_consistent(self) -> None:
         root = SCRIPT_PATH.parents[3]

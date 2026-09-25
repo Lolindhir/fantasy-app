@@ -93,37 +93,49 @@ def build_roster_membership_index(
     identity_by_sleeper: dict[str, dict[str, Any]],
     *,
     source_name: str,
-) -> dict[str, set[str]]:
+) -> dict[str, Any]:
     sleeper_ids: set[str] = set()
     canonical_ids: set[str] = set()
+    current_sleeper_mapping_mismatch_count = 0
+    unresolved_record_count = 0
+    records = _records(document, source_name=source_name)
 
-    for row in _records(document, source_name=source_name):
+    for row in records:
         canonical_id = ops.optional_text(row.get("CanonicalPlayerID"))
         source_ids = row.get("SourceIDs") if isinstance(row.get("SourceIDs"), dict) else {}
         sleeper_id = ops.optional_text(source_ids.get("Sleeper"))
 
+        # Canonical roster history is sticky. A SourceIDs.Sleeper value on the
+        # roster row is evidence captured with that canonical row; a later/current
+        # Sleeper mapping must not reinterpret CanonicalPlayerID.
         if canonical_id:
             canonical_ids.add(canonical_id)
-        if sleeper_id:
-            identity = identity_by_sleeper.get(sleeper_id)
-            if identity is None:
-                sleeper_ids.add(sleeper_id)
-                continue
-            identity_canonical_id = _canonical_id(identity)
-            if canonical_id and identity_canonical_id and canonical_id != identity_canonical_id:
-                raise PopulationRelevanceAuditError(
-                    f"{source_name} Sleeper {sleeper_id} maps to {canonical_id}, "
-                    f"but Canonical Identity maps it to {identity_canonical_id}"
-                )
-            sleeper_ids.add(sleeper_id)
+            if sleeper_id:
+                identity = identity_by_sleeper.get(sleeper_id)
+                identity_canonical_id = _canonical_id(identity) if identity else None
+                if identity_canonical_id == canonical_id:
+                    sleeper_ids.add(sleeper_id)
+                elif identity_canonical_id and identity_canonical_id != canonical_id:
+                    current_sleeper_mapping_mismatch_count += 1
+            continue
 
-    return {"sleeper_ids": sleeper_ids, "canonical_ids": canonical_ids}
+        # Do not manufacture canonical NFL-membership evidence for unresolved
+        # canonical rows from a current provider mapping alone.
+        unresolved_record_count += 1
+
+    return {
+        "sleeper_ids": sleeper_ids,
+        "canonical_ids": canonical_ids,
+        "record_count": len(records),
+        "current_sleeper_mapping_mismatch_count": current_sleeper_mapping_mismatch_count,
+        "unresolved_record_count": unresolved_record_count,
+    }
 
 
 def in_roster_membership(
     player_id: str,
     identity: dict[str, Any],
-    membership: dict[str, set[str]],
+    membership: dict[str, Any],
 ) -> bool:
     canonical_id = _canonical_id(identity)
     return (
@@ -505,6 +517,25 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             "season_roster_path": str(season_roster_path.relative_to(root)).replace("\\", "/"),
             "latest_week": latest_week,
             "latest_weekly_roster_path": str(latest_weekly_path.relative_to(root)).replace("\\", "/"),
+            "season_roster_index_quality": {
+                "record_count": season_membership["record_count"],
+                "current_sleeper_mapping_mismatch_count": season_membership[
+                    "current_sleeper_mapping_mismatch_count"
+                ],
+                "unresolved_record_count": season_membership["unresolved_record_count"],
+            },
+            "latest_weekly_roster_index_quality": {
+                "record_count": weekly_membership["record_count"],
+                "current_sleeper_mapping_mismatch_count": weekly_membership[
+                    "current_sleeper_mapping_mismatch_count"
+                ],
+                "unresolved_record_count": weekly_membership["unresolved_record_count"],
+            },
+            "identity_policy": (
+                "CanonicalPlayerID is authoritative for canonical roster membership. "
+                "Row-level Sleeper IDs are used only when the current identity mapping agrees; "
+                "mapping drift is counted and never reassigns canonical roster history."
+            ),
             "semantics": {
                 "latest_weekly_roster": (
                     "canonical primary NFL membership evidence for the latest materialized week; "
