@@ -303,7 +303,7 @@ def walk_forward_v1(
             predictions,
             key=lambda row: (-float(row["AbsoluteError"]), row["Season"], row["Week"], row["CanonicalPlayerID"]),
         )[:20],
-        "ColdStarts": cold_starts,
+        "ColdStartExamples": cold_starts[:20],
     }
 
 
@@ -337,9 +337,6 @@ def build_v1_backtest_report(
                 **report,
             }
         )
-        for week_rows in observations.values():
-            pass
-
         # Reconstruct prediction rows only for combined aggregate without carrying history across seasons.
         history: dict[str, list[float]] = defaultdict(list)
         for week in sorted(observations):
