@@ -75,6 +75,114 @@ def base_row(**overrides: str) -> dict[str, str]:
     return row
 
 
+class SpecialTeamsFumbleRegistryTests(unittest.TestCase):
+    def test_registry_loads_versioned_projected_source_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry_path = root / "source-data/registry.json"
+            registry_path.parent.mkdir(parents=True, exist_ok=True)
+            registry_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 3,
+                        "datasets": [
+                            {
+                                "id": "nflverse.special-teams-fumble-events",
+                                "provider": "nflverse",
+                                "upstream": "nflverse/nflverse-data",
+                                "sourceMode": "season-partitioned",
+                                "sourceUrl": "https://example.invalid/play_by_play_{season}.csv.gz",
+                                "sourceFormat": "json",
+                                "sourceProjection": {
+                                    "id": SPECIAL_TEAMS_FUMBLE_PROJECTION_ID,
+                                    "version": SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION,
+                                    "upstreamFormat": "csv.gz",
+                                },
+                                "rawPath": "providers/nflverse/special-teams-fumble-events/raw-{season}.json",
+                                "metadataPath": "providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
+                                "requiredColumns": list(SPECIAL_TEAMS_FUMBLE_FIELDS),
+                                "minimumRows": 0,
+                                "availabilityPolicy": "current-season-may-be-unavailable",
+                                "materialize": True,
+                                "kind": "special-teams-fumble-event-evidence",
+                                "refreshPolicy": "current-season",
+                                "retentionPolicy": "permanent-by-season",
+                                "lifecycle": {
+                                    "class": "seasonal-finalizable",
+                                    "partitionKey": "season-week",
+                                    "finalization": "freeze-prior-seasons",
+                                    "repairPolicy": "explicit-force",
+                                },
+                                "license": "test",
+                                "attribution": "test",
+                            }
+                        ],
+                        "plannedDatasets": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            datasets = common_mod.load_registry(root)
+
+            self.assertEqual(1, len(datasets))
+            dataset = datasets[0]
+            self.assertEqual(SPECIAL_TEAMS_FUMBLE_PROJECTION_ID, dataset.source_projection_id)
+            self.assertEqual(SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION, dataset.source_projection_version)
+            self.assertEqual("csv.gz", dataset.upstream_format)
+            self.assertEqual("json", dataset.source_format)
+
+    def test_registry_rejects_unknown_projection_version(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry_path = root / "source-data/registry.json"
+            registry_path.parent.mkdir(parents=True, exist_ok=True)
+            registry_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 3,
+                        "datasets": [
+                            {
+                                "id": "nflverse.special-teams-fumble-events",
+                                "provider": "nflverse",
+                                "upstream": "nflverse/nflverse-data",
+                                "sourceMode": "season-partitioned",
+                                "sourceUrl": "https://example.invalid/play_by_play_{season}.csv.gz",
+                                "sourceFormat": "json",
+                                "sourceProjection": {
+                                    "id": SPECIAL_TEAMS_FUMBLE_PROJECTION_ID,
+                                    "version": 999,
+                                    "upstreamFormat": "csv.gz",
+                                },
+                                "rawPath": "providers/nflverse/special-teams-fumble-events/raw-{season}.json",
+                                "metadataPath": "providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
+                                "requiredColumns": list(SPECIAL_TEAMS_FUMBLE_FIELDS),
+                                "minimumRows": 0,
+                                "availabilityPolicy": "current-season-may-be-unavailable",
+                                "materialize": True,
+                                "kind": "special-teams-fumble-event-evidence",
+                                "refreshPolicy": "current-season",
+                                "retentionPolicy": "permanent-by-season",
+                                "lifecycle": {
+                                    "class": "seasonal-finalizable",
+                                    "partitionKey": "season-week",
+                                    "finalization": "freeze-prior-seasons",
+                                    "repairPolicy": "explicit-force",
+                                },
+                                "license": "test",
+                                "attribution": "test",
+                            }
+                        ],
+                        "plannedDatasets": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "unsupported sourceProjection"):
+                common_mod.load_registry(root)
+
+
 class SpecialTeamsFumbleProjectionTests(unittest.TestCase):
     def test_projection_keeps_only_special_teams_fumble_event_plays(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
