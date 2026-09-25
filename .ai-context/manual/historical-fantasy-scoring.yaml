@@ -128,15 +128,13 @@ scoringContract:
   derivedRules:
     - Sleeper fum_rec is not reconstructed from offensive own/opponent recovery counters for an individual player; player fum_rec uses the defensive/IDP recovery fact def_fumbles.
     - Sleeper st_td is an individual Special Teams Player TD and maps to special_teams_tds.
+    - Sleeper st_ff counts canonical SpecialTeams forced-fumble events for the individual player.
+    - Sleeper st_fum_rec counts canonical SpecialTeams fumble-recovery events only when RecoveryTeam is the opponent of the single unambiguous FumbledTeams value; own-team recoveries do not score and ambiguous recovery relations fail closed.
+    - Active st_ff/st_fum_rec require a present Finalized=true canonical special-teams-fumble-event week partition before zero-by-absence is valid.
     - PAT misses are pat_att minus pat_made so blocked attempts remain represented as misses.
     - Aggregate field-goal misses are fg_att minus fg_made.
     - Made field goals use nflverse distance buckets through 60+; fgm_50p combines 50-59 and 60+.
   failClosedUnsupported:
-    - >
-      Active individual-player Special Teams Forced Fumble and Special Teams Fumble Recovery
-      remain unsupported by the scorer until #698 Checkpoint C consumes the canonical
-      special-teams-fumble-events evidence. They must not be inferred from generic
-      player-stats defensive/recovery counters.
     - >
       Active Special Teams Solo Tackle remains unsupported because canonical source evidence
       does not yet identify that event by special-teams unit. It must not be inferred from
@@ -169,6 +167,19 @@ readinessContract:
   leagueRule: >
     Every configured CanonicalLeagueID must have a manifest and the required per-season core
     files. The productive hardening target is the nfl-reise namespace.
+
+parityValidation:
+  implementation: tools/historical_fantasy_scoring_parity.py
+  comparisonRule: >
+    Compare canonical League PlayerPoints against points re-derived from canonical NFL
+    player-stats plus finalized special-teams-fumble-event evidence. League player-weeks
+    without a canonical player-stat row may be skipped only when League PlayerPoints is zero;
+    a missing canonical stat row with non-zero League points is a hard parity defect.
+  tolerance: 0.01
+  providerDivergenceRule: >
+    A residual difference backed by different underlying provider raw facts is reported as
+    an explicit provider-stat divergence. Provider fantasy totals are validation evidence only
+    and never overwrite canonical NFL facts to force parity.
 
 operations:
   nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml

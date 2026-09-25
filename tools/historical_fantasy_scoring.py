@@ -76,6 +76,8 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "fgm_yds": ("fg_made_distance",),
 }
 
+SPECIAL_TEAMS_EVENT_SCORING_KEYS = {"st_ff", "st_fum_rec"}
+
 # These settings describe the fantasy team-defense unit, not an individual player
 # record. They must not be mistaken for unsupported player settings and must never
 # be applied to an offensive/kicker/IDP player row.
@@ -147,6 +149,73 @@ def stat_value(stats: dict[str, Any], fields: tuple[str, ...]) -> float:
     return total
 
 
+def special_teams_event_value(events: list[dict[str, Any]], scoring_key: str) -> float:
+    if scoring_key not in SPECIAL_TEAMS_EVENT_SCORING_KEYS:
+        raise ValueError(f"Unsupported special-teams event scoring key: {scoring_key}")
+
+    total = 0
+    for event in events:
+        if not isinstance(event, dict) or event.get("SpecialTeams") is not True:
+            raise ValueError("Canonical special-teams fumble evidence contains an invalid event record")
+        event_type = event.get("EventType")
+        if scoring_key == "st_ff":
+            if event_type == "forced-fumble":
+                total += 1
+            continue
+        if event_type != "fumble-recovery":
+            continue
+
+        recovery_team = event.get("RecoveryTeam")
+        fumbled_teams = event.get("FumbledTeams")
+        if not isinstance(recovery_team, str) or not recovery_team:
+            raise ValueError("Special-teams fumble recovery is missing RecoveryTeam")
+        if not isinstance(fumbled_teams, list):
+            raise ValueError("Special-teams fumble recovery is missing FumbledTeams")
+        normalized_fumbled_teams = sorted(
+            {str(team).strip() for team in fumbled_teams if str(team).strip()}
+        )
+        if len(normalized_fumbled_teams) != 1:
+            raise ValueError(
+                "Special-teams fumble recovery has ambiguous fumble-team relation: "
+                f"recoveryTeam={recovery_team!r} fumbledTeams={normalized_fumbled_teams!r}"
+            )
+        if recovery_team != normalized_fumbled_teams[0]:
+            total += 1
+    return float(total)
+
+
+def load_special_teams_fumble_events_for_player(
+    repo_root: Path,
+    season: int,
+    week: int,
+    player_id: str,
+) -> list[dict[str, Any]]:
+    path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+    if not path.exists():
+        raise ValueError(
+            "Canonical special-teams fumble evidence is missing; zero-by-absence is not allowed: "
+            f"{path}"
+        )
+    payload = read_json(path)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Canonical special-teams fumble evidence is not an object: {path}")
+    if payload.get("Season") != season or payload.get("Week") != week:
+        raise ValueError(f"Canonical special-teams fumble evidence has season/week mismatch: {path}")
+    if payload.get("Finalized") is not True:
+        raise ValueError(
+            "Canonical special-teams fumble evidence is not finalized; zero-by-absence is unknown: "
+            f"{path}"
+        )
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise ValueError(f"Canonical special-teams fumble evidence has no Records array: {path}")
+    return [
+        event
+        for event in records
+        if isinstance(event, dict) and event.get("CanonicalPlayerID") == player_id
+    ]
+
+
 def positional_key_applies(position: str, key: str) -> bool:
     return key.endswith(f"_{position.lower()}")
 
@@ -175,7 +244,12 @@ def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> se
     return applicable
 
 
-def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, Any]:
+def score_record(
+    record: dict[str, Any],
+    scoring: dict[str, Any],
+    *,
+    special_teams_fumble_events: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     stats = record.get("Stats") or {}
     if not isinstance(stats, dict):
         raise ValueError("Canonical player stat record has no Stats object")
@@ -187,11 +261,17 @@ def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, A
         weight = number(scoring.get(key))
         if weight == 0:
             continue
-        fields = STAT_MAP.get(key)
-        if fields is None:
-            unsupported_nonzero.append(key)
-            continue
-        raw = stat_value(stats, fields)
+        if key in SPECIAL_TEAMS_EVENT_SCORING_KEYS:
+            if special_teams_fumble_events is None:
+                unsupported_nonzero.append(key)
+                continue
+            raw = special_teams_event_value(special_teams_fumble_events, key)
+        else:
+            fields = STAT_MAP.get(key)
+            if fields is None:
+                unsupported_nonzero.append(key)
+                continue
+            raw = stat_value(stats, fields)
         points = raw * weight
         total += points
         contributions.append(
@@ -252,7 +332,26 @@ def main() -> int:
     if not isinstance(scoring, dict):
         raise ValueError("Selected league-season has no ScoringSettings")
     record = find_player_record(root, args.season, args.week, args.player)
-    result = score_record(record, scoring)
+    active_special_teams_event_keys = {
+        key
+        for key in SPECIAL_TEAMS_EVENT_SCORING_KEYS
+        if number(scoring.get(key)) != 0
+    }
+    special_teams_fumble_events = (
+        load_special_teams_fumble_events_for_player(
+            root,
+            args.season,
+            args.week,
+            args.player,
+        )
+        if active_special_teams_event_keys
+        else None
+    )
+    result = score_record(
+        record,
+        scoring,
+        special_teams_fumble_events=special_teams_fumble_events,
+    )
     if result["UnsupportedNonZeroSettings"] and not args.allow_unsupported:
         raise ValueError(
             "Selected scoring profile contains player-applicable non-zero settings without an explicit canonical mapping: "
