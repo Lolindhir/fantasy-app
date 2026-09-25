@@ -9,27 +9,87 @@
     <div class="all-time-awards">
       <span
         *ngIf="row.championships > 0"
-        class="all-time-championships"
+        class="all-time-award"
         [attr.aria-label]="row.championships === 1 ? '1 championship' : row.championships + ' championships'"
       >
-        <span *ngIf="row.championships > 2" class="championship-count">{{ row.championships }}</span>
+        <span *ngIf="row.championships > 2" class="award-count">{{ row.championships }}</span>
         <img
-          class="championship-ring-icon"
-          src="assets/championship-ring.png"
+          class="award-icon"
+          src="assets/awards/ui/award-championship-ring.png"
           alt=""
           aria-hidden="true"
         />
         <img
           *ngIf="row.championships === 2"
-          class="championship-ring-icon"
-          src="assets/championship-ring.png"
+          class="award-icon"
+          src="assets/awards/ui/award-championship-ring.png"
           alt=""
           aria-hidden="true"
         />
       </span>
-      {{ repeatEmojiLimited('🥈', row.runnerUps) }}
-      {{ repeatEmojiLimited('🥉', row.thirds) }}
-      {{ repeatEmojiLimited('👑', row.regularSeasonWins) }}
+
+      <span
+        *ngIf="row.runnerUps > 0"
+        class="all-time-award"
+        [attr.aria-label]="row.runnerUps === 1 ? '1 runner-up finish' : row.runnerUps + ' runner-up finishes'"
+      >
+        <span *ngIf="row.runnerUps > 2" class="award-count">{{ row.runnerUps }}</span>
+        <img
+          class="award-icon"
+          src="assets/awards/ui/award-runner-up.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <img
+          *ngIf="row.runnerUps === 2"
+          class="award-icon"
+          src="assets/awards/ui/award-runner-up.png"
+          alt=""
+          aria-hidden="true"
+        />
+      </span>
+
+      <span
+        *ngIf="row.thirds > 0"
+        class="all-time-award"
+        [attr.aria-label]="row.thirds === 1 ? '1 third-place finish' : row.thirds + ' third-place finishes'"
+      >
+        <span *ngIf="row.thirds > 2" class="award-count">{{ row.thirds }}</span>
+        <img
+          class="award-icon"
+          src="assets/awards/ui/award-third-place.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <img
+          *ngIf="row.thirds === 2"
+          class="award-icon"
+          src="assets/awards/ui/award-third-place.png"
+          alt=""
+          aria-hidden="true"
+        />
+      </span>
+
+      <span
+        *ngIf="row.regularSeasonWins > 0"
+        class="all-time-award"
+        [attr.aria-label]="row.regularSeasonWins === 1 ? '1 regular-season win' : row.regularSeasonWins + ' regular-season wins'"
+      >
+        <span *ngIf="row.regularSeasonWins > 2" class="award-count">{{ row.regularSeasonWins }}</span>
+        <img
+          class="award-icon"
+          src="assets/awards/ui/award-regular-season.png"
+          alt=""
+          aria-hidden="true"
+        />
+        <img
+          *ngIf="row.regularSeasonWins === 2"
+          class="award-icon"
+          src="assets/awards/ui/award-regular-season.png"
+          alt=""
+          aria-hidden="true"
+        />
+      </span>
     </div>
 
     <div class="all-time-avg">
