@@ -4,6 +4,15 @@
   <div *ngFor="let row of rows" class="all-time-row">
     <div class="all-time-place">{{ row.place }}</div>
 
+    <div class="all-time-owner-avatar" aria-hidden="true">
+      <ng-container *ngIf="row.team.OwnerAvatar; else ownerAvatarFallback">
+        <img [src]="row.team.OwnerAvatar" alt="" />
+      </ng-container>
+      <ng-template #ownerAvatarFallback>
+        <span>{{ row.owner.charAt(0) }}</span>
+      </ng-template>
+    </div>
+
     <div class="all-time-owner">{{ row.owner }}</div>
 
     <div class="all-time-awards">
@@ -12,8 +21,11 @@
         class="all-time-award"
         [attr.aria-label]="row.championships === 1 ? '1 championship' : row.championships + ' championships'"
       >
-        <span *ngIf="row.championships > 1" class="award-count">{{ row.championships }}×</span>
+        <span *ngIf="showAwardMultiplier(row, row.championships)" class="award-count">
+          {{ row.championships }}×
+        </span>
         <img
+          *ngFor="let _ of awardIconSlots(row, row.championships)"
           class="award-icon"
           src="assets/awards/ui/award-championship-ring.png"
           alt=""
@@ -26,8 +38,11 @@
         class="all-time-award"
         [attr.aria-label]="row.runnerUps === 1 ? '1 runner-up finish' : row.runnerUps + ' runner-up finishes'"
       >
-        <span *ngIf="row.runnerUps > 1" class="award-count">{{ row.runnerUps }}×</span>
+        <span *ngIf="showAwardMultiplier(row, row.runnerUps)" class="award-count">
+          {{ row.runnerUps }}×
+        </span>
         <img
+          *ngFor="let _ of awardIconSlots(row, row.runnerUps)"
           class="award-icon"
           src="assets/awards/ui/award-runner-up.png"
           alt=""
@@ -40,8 +55,11 @@
         class="all-time-award"
         [attr.aria-label]="row.thirds === 1 ? '1 third-place finish' : row.thirds + ' third-place finishes'"
       >
-        <span *ngIf="row.thirds > 1" class="award-count">{{ row.thirds }}×</span>
+        <span *ngIf="showAwardMultiplier(row, row.thirds)" class="award-count">
+          {{ row.thirds }}×
+        </span>
         <img
+          *ngFor="let _ of awardIconSlots(row, row.thirds)"
           class="award-icon"
           src="assets/awards/ui/award-third-place.png"
           alt=""
@@ -54,8 +72,11 @@
         class="all-time-award"
         [attr.aria-label]="row.regularSeasonWins === 1 ? '1 regular-season win' : row.regularSeasonWins + ' regular-season wins'"
       >
-        <span *ngIf="row.regularSeasonWins > 1" class="award-count">{{ row.regularSeasonWins }}×</span>
+        <span *ngIf="showAwardMultiplier(row, row.regularSeasonWins)" class="award-count">
+          {{ row.regularSeasonWins }}×
+        </span>
         <img
+          *ngFor="let _ of awardIconSlots(row, row.regularSeasonWins)"
           class="award-icon"
           src="assets/awards/ui/award-regular-season.png"
           alt=""
