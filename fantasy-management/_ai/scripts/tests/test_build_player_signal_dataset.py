@@ -584,6 +584,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual("Kicker One", player["name"])
             self.assertEqual("K", player["position"])
             self.assertEqual("AAA", player["nfl_team"])
+            self.assertEqual("canonical_sleeper_team", player["nfl_team_source"])
             self.assertEqual("Active", player["app_data"]["status"])
             self.assertEqual("101", player["app_data"]["espn_id"])
             self.assertEqual(55, player["app_data"]["salary"])
@@ -595,6 +596,46 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 "normalized_name_position",
                 player["source_signals"]["ffc-k"]["join_method"],
             )
+
+    def test_legacy_team_population_bridge_is_independent_from_canonical_team(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            players_path = root / "public/data/Players.json"
+            players = json.loads(players_path.read_text(encoding="utf-8"))
+            players[2]["TeamAbbr"] = "LEG"
+            players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            player = next(item for item in result["players"] if item["player_id"] == "3")
+
+            self.assertIsNone(player["nfl_team"])
+            self.assertEqual("canonical_sleeper_team", player["nfl_team_source"])
+            self.assertEqual(["has_nfl_team"], player["population_reasons"])
+            self.assertEqual(
+                {
+                    "reason": "has_nfl_team",
+                    "source": "public/data/Players.json -> TeamAbbr",
+                    "semantics": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth",
+                },
+                result["population"]["team_presence_reason_contract"],
+            )
+
+    def test_canonical_team_drives_output_without_changing_legacy_population_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][1]["Team"] = "CAN"
+            sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            player = next(item for item in result["players"] if item["player_id"] == "2")
+            self.assertEqual("CAN", player["nfl_team"])
+            self.assertIn("has_nfl_team", player["population_reasons"])
 
     def test_canonical_first_last_name_alias_preserves_external_source_join(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -721,6 +762,11 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         self.assertTrue(any(player["ownership"]["status"] == "fantasy_free_agent" for player in kickers))
         self.assertTrue(
             any(player["projections"]["summary"]["listed_provider_count"] >= 1 for player in kickers)
+        )
+        self.assertTrue(all(player["nfl_team_source"] == "canonical_sleeper_team" for player in result["players"]))
+        self.assertEqual(
+            result["population"]["team_presence_reason_contract"]["source"],
+            "public/data/Players.json -> TeamAbbr",
         )
 
     def test_current_repository_ownership_and_population_reasons_match_published_state(self) -> None:

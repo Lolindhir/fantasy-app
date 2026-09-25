@@ -165,9 +165,39 @@ def normalize_schedule_games(schedule: Any, season: str, week: int, season_type:
     return games
 
 
-def resolve_team_schedule(team: str | None, games: list[dict[str, Any]]) -> dict[str, Any]:
+def schedule_team_universe(schedule: Any, season: str, season_type: str) -> set[str]:
+    if not isinstance(schedule, list):
+        raise KickerWeeklyResearchPlanError("Schedule input must be a JSON array")
+    teams: set[str] = set()
+    for row in schedule:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("season")) != season or row.get("seasonType") != season_type:
+            continue
+        home = optional_string(row.get("home"))
+        away = optional_string(row.get("away"))
+        if home:
+            teams.add(home)
+        if away:
+            teams.add(away)
+    if not teams:
+        raise KickerWeeklyResearchPlanError(
+            f"No schedule team universe found for season {season} {season_type}"
+        )
+    return teams
+
+
+def resolve_team_schedule(
+    team: str | None,
+    games: list[dict[str, Any]],
+    known_schedule_teams: set[str],
+) -> dict[str, Any]:
     if not team:
         raise KickerWeeklyResearchPlanError("Shortlisted Kicker is missing nfl_team")
+    if team not in known_schedule_teams:
+        raise KickerWeeklyResearchPlanError(
+            f"Shortlisted Kicker nfl_team {team} is not schedule-resolvable"
+        )
     matches = [game for game in games if team in {game["home"], game["away"]}]
     if len(matches) > 1:
         raise KickerWeeklyResearchPlanError(f"Team {team} has multiple games in target week")
@@ -226,11 +256,13 @@ def build_research_plan(
     if not 1 <= target_week <= 18:
         raise KickerWeeklyResearchPlanError("Target week must be between 1 and 18")
 
+    season_type = str(research_config["schedule"].get("season_type", "Regular Season"))
+    known_schedule_teams = schedule_team_universe(schedule, season, season_type)
     games = normalize_schedule_games(
         schedule,
         season,
         target_week,
-        str(research_config["schedule"].get("season_type", "Regular Season")),
+        season_type,
     )
 
     try:
@@ -246,7 +278,11 @@ def build_research_plan(
         row = rows_by_id.get(player_id)
         if row is None:
             raise KickerWeeklyResearchPlanError(f"Shortlist player missing from baseline rows: {player_id}")
-        schedule_view = resolve_team_schedule(row.get("nfl_team"), games)
+        schedule_view = resolve_team_schedule(
+            row.get("nfl_team"),
+            games,
+            known_schedule_teams,
+        )
         neutral = bool(schedule_view["neutral_site"])
         expected_home = schedule_view["home"] if schedule_view["status"] == "scheduled" and not neutral else None
         if schedule_view["status"] == "bye":

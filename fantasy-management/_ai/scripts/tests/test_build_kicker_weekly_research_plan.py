@@ -64,6 +64,7 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
         )
 
         season_type = str(research_config["schedule"].get("season_type", "Regular Season"))
+        known_schedule_teams = MODULE.schedule_team_universe(schedule, payload["season"], season_type)
         target_games = [
             row
             for row in schedule
@@ -76,6 +77,7 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
 
         for candidate in candidates:
             team = candidate["nfl_team"]
+            self.assertIn(team, known_schedule_teams)
             matches = [game for game in target_games if team in {game.get("home"), game.get("away")}]
             self.assertLessEqual(len(matches), 1, f"{team} has multiple games in current repository week")
 
@@ -107,7 +109,7 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
 
     def test_schedule_resolution_supports_bye(self) -> None:
         games = [{"game_id": "g1", "home": "LAR", "away": "SF", "neutral_site": True}]
-        bye = MODULE.resolve_team_schedule("DET", games)
+        bye = MODULE.resolve_team_schedule("DET", games, {"DET", "LAR", "SF"})
         self.assertEqual(bye["status"], "bye")
         self.assertEqual(bye["team_side"], "bye")
         self.assertIsNone(bye["game_id"])
@@ -118,7 +120,12 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
             {"game_id": "g2", "home": "DET", "away": "GB"},
         ]
         with self.assertRaises(MODULE.KickerWeeklyResearchPlanError):
-            MODULE.resolve_team_schedule("DET", games)
+            MODULE.resolve_team_schedule("DET", games, {"DET", "NO", "GB"})
+
+    def test_unknown_team_is_not_treated_as_bye(self) -> None:
+        games = [{"game_id": "g1", "home": "LAR", "away": "SF", "neutral_site": False}]
+        with self.assertRaisesRegex(MODULE.KickerWeeklyResearchPlanError, "not schedule-resolvable"):
+            MODULE.resolve_team_schedule("XXX", games, {"LAR", "SF", "DET"})
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ class KickerStreamingInputTests(unittest.TestCase):
             "name": name,
             "position": "K",
             "nfl_team": "AAA",
+            "nfl_team_source": "canonical_sleeper_team",
             "ownership": {"status": ownership_status, "teams": teams},
             "injury": {},
             "role": {
@@ -190,6 +191,7 @@ class KickerStreamingInputTests(unittest.TestCase):
                 [("1", "held"), ("2", "free_agent")],
             )
             self.assertNotIn("recommendation", result)
+            self.assertTrue(all(item["nfl_team_source"] == "canonical_sleeper_team" for item in result["candidates"]))
 
     def test_reconciles_cbs_and_fftoday_as_bounds_without_overwriting_provider_points(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

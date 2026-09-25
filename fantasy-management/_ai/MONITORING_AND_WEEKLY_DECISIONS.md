@@ -295,7 +295,7 @@ bleiben als vorhandene technische und fachliche Bausteine nutzbar. Sie definiere
 
 Beim Ausbau sollen Kicker-Signale in den gemeinsamen positionsübergreifenden Movement- und Monitoring-Pfad einfließen, ohne parallele Discovery-Baselines, doppelte Ownership-Logik oder separate Kicker-Benachrichtigungen für denselben materiellen Sachverhalt zu erzeugen.
 
-Die Kicker-Streaming-Engine bleibt ein nachgelagertes positionsspezifisches Analysemodul für Weekly Decisions; sie ist keine Discovery-Schicht.
+Die Kicker-Streaming-Engine bleibt ein nachgelagertes positionsspezifisches Analysemodul für Weekly Decisions; sie ist keine Discovery-Schicht. Seit Checkpoint 6Z.1 muss ein Shortlist-`nfl_team` außerdem im Teamuniversum des aktuellen Season-Schedules auflösbar sein. Nur ein dort bekanntes Team ohne Spiel in der Zielwoche darf als Bye gelten; fehlende oder unbekannte Teamwerte schlagen fail-closed fehl.
 
 ### Was Daily Free-Agent Monitoring nicht macht
 

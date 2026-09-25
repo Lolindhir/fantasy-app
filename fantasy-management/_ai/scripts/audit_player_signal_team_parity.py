@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Audit the player-signal legacy TeamAbbr -> Canonical Sleeper Team cutover.
+"""Audit the player-signal legacy TeamAbbr / Canonical Sleeper Team boundary.
 
-This is a shadow/parity tool only. It never writes player-signals or changes the
-productive population contract. It compares the current 6Y baseline with the
-hypothetical use of Canonical Sleeper Team for nfl_team / has_nfl_team and for
-team-assisted external-source disambiguation.
+This is a read-only parity tool. Since 6Z.1, productive nfl_team and team-assisted
+source evaluation use Canonical Sleeper Team while the legacy TeamAbbr presence
+remains an explicit population-compatibility bridge for has_nfl_team. The audit
+therefore still simulates the intentionally deferred direct coupling in which
+Canonical Team would also control has_nfl_team, so the population impact of later
+removing that bridge remains visible.
 """
 
 from __future__ import annotations

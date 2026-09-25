@@ -129,7 +129,11 @@ boundaries:
       Canonical League league.json -> ScoringSettings; dieser Consumer besitzt keinen
       direkten League.json -> ScoringType Read mehr. player-signals Projection-
       Reconciliation und Kicker Streaming behalten ihre eigenen Scoring-Enrichment-
-      Grenzen bis zu separaten Checkpoints. Drafts-, Transactions- und weitere nicht
+      Grenzen bis zu separaten Checkpoints. Checkpoint 6Z.1 entkoppelt ausserdem den
+      Player-Signal-Team-Fakt von der Population: nfl_team stammt aus Canonical
+      Sleeper Team, waehrend public/data/Players.json -> TeamAbbr vorerst nur den
+      bestehenden has_nfl_team Population-Compatibility-Reason erhaelt. Dieser
+      Legacy-Reason ist kein NFL-Roster-/Vertragsbeweis. Drafts-, Transactions- und weitere nicht
       migrierte FM-Pfade behalten
       bis zu eigenen Checkpoints ihre bisherigen public/data-Vertraege.
       Sleeper roster_id bleibt reine Provenienz.
