@@ -145,6 +145,7 @@ def annotate_movement(
         },
         "cross_signal": movement_config.get("cross_signal"),
         "activity": movement_config.get("activity"),
+        "team_source_migration": movement_config.get("team_source_migration"),
     }
 
     catalog_paths = [
