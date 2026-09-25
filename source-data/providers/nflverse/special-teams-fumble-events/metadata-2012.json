@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.special-teams-fumble-events",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-data",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2012.csv.gz",
+  "sourceFormat": "json",
+  "sourceMode": "season-partitioned",
+  "availabilityStatus": "available",
+  "kind": "special-teams-fumble-event-evidence",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season-week",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse play-by-play data",
+  "sourceProjection": {
+    "id": "nflverse-special-teams-fumble-events",
+    "version": 1,
+    "upstreamFormat": "csv.gz"
+  },
+  "partition": {
+    "season": 2012
+  },
+  "retrievedAtUtc": "2026-09-25T12:32:04Z",
+  "contentHashSha256": "b04ea6c72a7a09aeeb2f4c3a511877754ef0d23230211491c517598597e87000",
+  "rowCount": 120,
+  "columns": [
+    "away_team",
+    "forced_fumble_player_1_player_id",
+    "forced_fumble_player_1_team",
+    "forced_fumble_player_2_player_id",
+    "forced_fumble_player_2_team",
+    "fumble_recovery_1_player_id",
+    "fumble_recovery_1_team",
+    "fumble_recovery_2_player_id",
+    "fumble_recovery_2_team",
+    "fumbled_1_team",
+    "fumbled_2_team",
+    "game_id",
+    "home_team",
+    "play_id",
+    "play_type",
+    "season",
+    "season_type",
+    "special",
+    "week"
+  ],
+  "upstreamContentHashSha256": "ff1cda2e26610ef8720324e442d1e5ebc24918e08fd1d2933590b7b91a7068cd",
+  "upstreamByteSize": 18195788,
+  "projectionStats": {
+    "sourceRowCount": 47834,
+    "specialTeamsRowCount": 7653,
+    "projectedRowCount": 120
+  }
+}
