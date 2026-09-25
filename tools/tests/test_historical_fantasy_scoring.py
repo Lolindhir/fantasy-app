@@ -90,6 +90,31 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 2.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
+    def test_generic_idp_forced_fumble_does_not_score_offensive_position(self) -> None:
+        shipley = {
+            "Position": "RB",
+            "PositionGroup": "RB",
+            "Stats": {
+                "receptions": 1,
+                "receiving_yards": 3,
+                "def_fumbles_forced": 1,
+            },
+        }
+        result = score_record(shipley, {"rec": 1.0, "rec_yd": 0.1, "ff": 1.0})
+        self.assertEqual(result["FantasyPoints"], 1.3)
+        self.assertNotIn(
+            "ff",
+            [contribution["ScoringKey"] for contribution in result["Contributions"]],
+        )
+
+        linebacker = {
+            "Position": "LB",
+            "PositionGroup": "LB",
+            "Stats": {"def_fumbles_forced": 1},
+        }
+        result = score_record(linebacker, {"ff": 1.0})
+        self.assertEqual(result["FantasyPoints"], 1.0)
+
     def test_rashid_shaheed_special_teams_touchdown_scores_with_offense(self) -> None:
         record = {
             "Position": "WR",
@@ -347,22 +372,42 @@ class HistoricalFantasyScoringRepositoryParityTests(unittest.TestCase):
         self.assertEqual([], summary["MissingCanonicalStatNonZeroPointPlayerWeeks"])
         self.assertEqual([], summary["UnsupportedPlayerWeeks"])
         self.assertEqual([], summary["ScoringMismatches"])
-        self.assertEqual(2547, summary["ComparedPlayerWeeks"])
-        self.assertEqual(2546, summary["ExactMatches"])
+        self.assertEqual(2554, summary["ComparedPlayerWeeks"])
+        self.assertEqual(2552, summary["ExactMatches"])
+        provider_divergences = [
+            {
+                key: row[key]
+                for key in (
+                    "Week",
+                    "CanonicalPlayerID",
+                    "PlayerName",
+                    "DerivedPoints",
+                    "LeaguePoints",
+                    "ProviderFantasyPointsPPR",
+                )
+            }
+            for row in summary["ProviderStatDivergences"]
+        ]
         self.assertEqual(
             [
                 {
                     "Week": 6,
                     "CanonicalPlayerID": "NFLP-3c5ddc5072f6fe8f9b77",
                     "PlayerName": "Caleb Williams",
-                    "Position": "QB",
                     "DerivedPoints": 20.38,
                     "LeaguePoints": 19.88,
-                    "Delta": 0.5,
                     "ProviderFantasyPointsPPR": 20.38,
-                }
+                },
+                {
+                    "Week": 9,
+                    "CanonicalPlayerID": "NFLP-2137c1a93d09e186f935",
+                    "PlayerName": "Josh Downs",
+                    "DerivedPoints": 17.7,
+                    "LeaguePoints": 15.7,
+                    "ProviderFantasyPointsPPR": 17.7,
+                },
             ],
-            summary["ProviderStatDivergences"],
+            provider_divergences,
         )
 
 
