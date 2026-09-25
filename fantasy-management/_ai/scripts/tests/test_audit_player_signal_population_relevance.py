@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for Checkpoint 6Z.2 population relevance audit."""
+"""Tests for Checkpoint 6Z.3 Canonical NFL population shadow audit."""
 
 from __future__ import annotations
 
@@ -42,6 +42,40 @@ class PlayerSignalPopulationRelevanceAuditTests(unittest.TestCase):
         self.assertFalse(result["season_roster_or_fantasy_relevance"])
         self.assertTrue(result["weekly_or_season_roster_or_fantasy_relevance"])
         self.assertTrue(result["structured_union_or_fantasy_relevance"])
+
+    def test_shadow_gap_classification_keeps_recent_history_and_provider_context_distinct(self) -> None:
+        self.assertEqual(
+            "previous_season_history",
+            MODULE.classify_shadow_gap(
+                previous_season_roster_member=True,
+                canonical_team_present=False,
+                tank01_is_free_agent=True,
+            ),
+        )
+        self.assertEqual(
+            "provider_context_exception",
+            MODULE.classify_shadow_gap(
+                previous_season_roster_member=False,
+                canonical_team_present=True,
+                tank01_is_free_agent=True,
+            ),
+        )
+        self.assertEqual(
+            "free_agent_no_current_or_recent_roster_evidence",
+            MODULE.classify_shadow_gap(
+                previous_season_roster_member=False,
+                canonical_team_present=False,
+                tank01_is_free_agent=True,
+            ),
+        )
+        self.assertEqual(
+            "unresolved_diagnostic_state",
+            MODULE.classify_shadow_gap(
+                previous_season_roster_member=False,
+                canonical_team_present=False,
+                tank01_is_free_agent=None,
+            ),
+        )
 
     def test_roster_membership_can_resolve_by_sleeper_or_canonical_id(self) -> None:
         identities = {
@@ -109,6 +143,25 @@ class PlayerSignalPopulationRelevanceAuditTests(unittest.TestCase):
         self.assertEqual(bridge["count"], sum(bridge["latest_weekly_roster_member"].values()))
         self.assertEqual(bridge["count"], sum(bridge["season_roster_member"].values()))
 
+        evidence = result["canonical_nfl_membership_evidence"]
+        self.assertGreater(evidence["previous_season_roster_index_quality"]["record_count"], 500)
+
+        shadow = result["canonical_population_shadow"]
+        self.assertEqual("shadow_only_not_published", shadow["runtime_effect"])
+        self.assertEqual(
+            result["candidate_contracts"]["weekly_or_season_roster_or_fantasy_relevance"][
+                "removed_count"
+            ],
+            shadow["removed_count"],
+        )
+        self.assertEqual(
+            shadow["removed_count"],
+            sum(cohort["count"] for cohort in shadow["cohorts"].values()),
+        )
+        self.assertEqual(0, shadow["managed_roster_players_removed_count"])
+        self.assertNotIn("canonical_nfl_membership", baseline["population_reason_counts"])
+        self.assertNotIn("canonical_nfl_recent_history", baseline["population_reason_counts"])
+
         for name, summary in result["candidate_contracts"].items():
             self.assertIn(name, MODULE.CANDIDATE_CONTRACTS)
             self.assertEqual(
@@ -133,7 +186,7 @@ class PlayerSignalPopulationRelevanceAuditTests(unittest.TestCase):
             )
 
         print(
-            "6Z2_POPULATION_RELEVANCE_AUDIT="
+            "6Z3_CANONICAL_POPULATION_SHADOW="
             + json.dumps(MODULE.compact_summary(result), sort_keys=True),
             flush=True,
         )

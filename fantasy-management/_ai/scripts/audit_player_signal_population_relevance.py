@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Audit future player-signal population relevance without changing runtime population.
 
-Checkpoint 6Z.2 keeps the productive ``has_nfl_team`` compatibility bridge intact
-and evaluates which already-versioned structured facts could replace it later.
+Checkpoint 6Z.3 keeps the productive ``has_nfl_team`` compatibility bridge intact,
+reuses builder-owned Canonical NFL shadow semantics, and classifies the exact
+cohorts that a later bridge removal would affect.
 The audit deliberately separates:
 
 * fantasy relevance (league ownership, external rankings/projections/market and
   external activity);
 * current Sleeper team/status platform facts;
 * Tank01 ``IsFreeAgent`` evidence;
-* canonical nflverse season and latest-week roster membership.
+* canonical nflverse latest-week and current-season roster membership;
+* previous-season roster history as diagnostic recent-history evidence.
 
-No candidate contract emitted here is applied by the productive player-signal
-builder. The result exists to make later population-cutover deltas reproducible.
+No candidate contract or shadow reason emitted here is applied by the productive
+player-signal builder. The result exists to make a later population cutover
+reproducible and explicitly adjudicable.
 """
 
 from __future__ import annotations
@@ -199,6 +202,22 @@ def evaluate_contracts(
     }
 
 
+def classify_shadow_gap(
+    *,
+    previous_season_roster_member: bool,
+    canonical_team_present: bool,
+    tank01_is_free_agent: bool | None,
+) -> str:
+    """Classify a current-canonical-roster gap without inventing employment truth."""
+    if previous_season_roster_member:
+        return "previous_season_history"
+    if canonical_team_present or tank01_is_free_agent is False:
+        return "provider_context_exception"
+    if tank01_is_free_agent is True:
+        return "free_agent_no_current_or_recent_roster_evidence"
+    return "unresolved_diagnostic_state"
+
+
 def _load_optional_generated(root: Path, relative_path: str, *, list_key: str) -> set[str]:
     path = root / relative_path
     if not path.is_file():
@@ -274,9 +293,19 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             f"Canonical season roster is missing for {season}: {season_roster_path}"
         )
     latest_week, latest_weekly_path = resolve_latest_weekly_roster_path(root, int(season))
+    previous_season = int(season) - 1
+    previous_season_roster_path = (
+        root / "source-data" / "nfl" / "rosters" / f"{previous_season}.json"
+    )
+    if not previous_season_roster_path.is_file():
+        raise PopulationRelevanceAuditError(
+            f"Canonical previous-season roster is missing for {previous_season}: "
+            f"{previous_season_roster_path}"
+        )
 
     season_roster = ops.load_json(season_roster_path)
     latest_weekly_roster = ops.load_json(latest_weekly_path)
+    previous_season_roster = ops.load_json(previous_season_roster_path)
     season_membership = build_roster_membership_index(
         season_roster,
         identity_by_sleeper,
@@ -286,6 +315,11 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
         latest_weekly_roster,
         identity_by_sleeper,
         source_name=str(latest_weekly_path.relative_to(root)),
+    )
+    previous_season_membership = build_roster_membership_index(
+        previous_season_roster,
+        identity_by_sleeper,
+        source_name=str(previous_season_roster_path.relative_to(root)),
     )
 
     baseline_by_id = {
@@ -350,6 +384,15 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
         tank01_is_free_agent = ops.optional_bool(legacy_player.get("IsFreeAgent"))
         weekly_member = in_roster_membership(player_id, identity, weekly_membership)
         season_member = in_roster_membership(player_id, identity, season_membership)
+        previous_season_member = in_roster_membership(
+            player_id,
+            identity,
+            previous_season_membership,
+        )
+        canonical_shadow = player_signals.canonical_nfl_population_shadow(
+            latest_weekly_roster_member=weekly_member,
+            current_season_roster_member=season_member,
+        )
 
         ownership_value = external_signals.ownership_for(
             player_id,
@@ -388,6 +431,10 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                     "sleeper_status": sleeper_status,
                     "latest_weekly_roster_member": weekly_member,
                     "season_roster_member": season_member,
+                    "previous_season_roster_member": previous_season_member,
+                    "canonical_nfl_population_shadow": canonical_shadow,
+                    "age": ops.optional_number(legacy_player.get("Age")),
+                    "years_experience": ops.optional_number(legacy_player.get("Year")),
                     "ownership_status": ownership_status,
                 }
             )
@@ -405,6 +452,10 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                     "sleeper_status": sleeper_status,
                     "latest_weekly_roster_member": weekly_member,
                     "season_roster_member": season_member,
+                    "previous_season_roster_member": previous_season_member,
+                    "canonical_nfl_population_shadow": canonical_shadow,
+                    "age": ops.optional_number(legacy_player.get("Age")),
+                    "years_experience": ops.optional_number(legacy_player.get("Year")),
                     "ownership_status": ownership_status,
                     "candidate_contracts": evaluations,
                 }
@@ -498,6 +549,65 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
         ),
     }
 
+    shadow_contract = contract_summaries["weekly_or_season_roster_or_fantasy_relevance"]
+    shadow_removed_ids = set(shadow_contract["removed_player_ids"])
+    shadow_gap_rows = [
+        row for row in bridge_only_rows if row["player_id"] in shadow_removed_ids
+    ]
+    shadow_cohort_rows: dict[str, list[dict[str, Any]]] = {
+        "previous_season_history": [],
+        "provider_context_exception": [],
+        "free_agent_no_current_or_recent_roster_evidence": [],
+        "unresolved_diagnostic_state": [],
+    }
+    for row in shadow_gap_rows:
+        cohort = classify_shadow_gap(
+            previous_season_roster_member=row["previous_season_roster_member"],
+            canonical_team_present=bool(row["canonical_team"]),
+            tank01_is_free_agent=row["tank01_is_free_agent"],
+        )
+        shadow_cohort_rows[cohort].append(row)
+
+    canonical_population_shadow = {
+        "runtime_effect": "shadow_only_not_published",
+        "builder_reason_semantics": {
+            "canonical_nfl_membership": "latest weekly canonical NFL roster membership",
+            "canonical_nfl_recent_history": "current-season canonical NFL roster history",
+        },
+        "candidate_contract": "weekly_or_season_roster_or_fantasy_relevance",
+        "projected_player_count": shadow_contract["player_count"],
+        "projected_delta": shadow_contract["delta"],
+        "removed_count": shadow_contract["removed_count"],
+        "removed_player_ids": shadow_contract["removed_player_ids"],
+        "free_agent_removed_count": shadow_contract["free_agent_removed_count"],
+        "fa_board_rows_removed_count": shadow_contract["removed_count"],
+        "movement_discoveries_removed_count": shadow_contract[
+            "movement_discoveries_removed_count"
+        ],
+        "kicker_candidates_removed_count": shadow_contract[
+            "kicker_candidates_removed_count"
+        ],
+        "managed_roster_players_removed_count": shadow_contract[
+            "managed_roster_players_removed_count"
+        ],
+        "cohorts": {
+            name: {
+                "count": len(rows),
+                "positions": dict(sorted(Counter(row["position"] for row in rows).items())),
+                "player_ids": sorted(row["player_id"] for row in rows),
+            }
+            for name, rows in shadow_cohort_rows.items()
+        },
+        "adjudication_required_count": (
+            len(shadow_cohort_rows["previous_season_history"])
+            + len(shadow_cohort_rows["provider_context_exception"])
+            + len(shadow_cohort_rows["unresolved_diagnostic_state"])
+        ),
+        "low_evidence_removal_candidate_count": len(
+            shadow_cohort_rows["free_agent_no_current_or_recent_roster_evidence"]
+        ),
+    }
+
     result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "audit_id": AUDIT_ID,
@@ -517,6 +627,10 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             "season_roster_path": str(season_roster_path.relative_to(root)).replace("\\", "/"),
             "latest_week": latest_week,
             "latest_weekly_roster_path": str(latest_weekly_path.relative_to(root)).replace("\\", "/"),
+            "previous_season": previous_season,
+            "previous_season_roster_path": str(
+                previous_season_roster_path.relative_to(root)
+            ).replace("\\", "/"),
             "season_roster_index_quality": {
                 "record_count": season_membership["record_count"],
                 "current_sleeper_mapping_mismatch_count": season_membership[
@@ -531,6 +645,15 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                 ],
                 "unresolved_record_count": weekly_membership["unresolved_record_count"],
             },
+            "previous_season_roster_index_quality": {
+                "record_count": previous_season_membership["record_count"],
+                "current_sleeper_mapping_mismatch_count": previous_season_membership[
+                    "current_sleeper_mapping_mismatch_count"
+                ],
+                "unresolved_record_count": previous_season_membership[
+                    "unresolved_record_count"
+                ],
+            },
             "identity_policy": (
                 "CanonicalPlayerID is authoritative for canonical roster membership. "
                 "Row-level Sleeper IDs are used only when the current identity mapping agrees; "
@@ -543,6 +666,9 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                 ),
                 "season_roster": (
                     "season-level NFL roster context; not proof of membership in every week"
+                ),
+                "previous_season_roster": (
+                    "diagnostic recent-history evidence only; not an active shadow inclusion reason"
                 ),
                 "tank01_is_free_agent": (
                     "direct current structured NFL free-agent signal retained by the app; "
@@ -558,6 +684,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             },
         },
         "exclusive_legacy_bridge": bridge_only_classification,
+        "canonical_population_shadow": canonical_population_shadow,
         "candidate_contracts": contract_summaries,
         "naive_canonical_team_false_drop_risk": {
             "count": len(false_drop_risk_rows),
@@ -597,6 +724,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
                 "listed_in_external_source",
                 "present_in_external_signal",
                 "canonical_nfl_membership",
+                "canonical_nfl_recent_history",
             ],
             "canonical_nfl_membership_note": (
                 "A later runtime contract should be phase-aware: latest canonical weekly roster is the "
@@ -628,6 +756,20 @@ def compact_summary(result: dict[str, Any]) -> dict[str, Any]:
         "baseline": result["baseline"],
         "canonical_nfl_membership_evidence": result["canonical_nfl_membership_evidence"],
         "exclusive_legacy_bridge": result["exclusive_legacy_bridge"],
+        "canonical_population_shadow": {
+            **{
+                key: value
+                for key, value in result["canonical_population_shadow"].items()
+                if key not in {"removed_player_ids", "cohorts"}
+            },
+            "cohorts": {
+                name: {
+                    "count": value["count"],
+                    "positions": value["positions"],
+                }
+                for name, value in result["canonical_population_shadow"]["cohorts"].items()
+            },
+        },
         "candidate_contracts": {
             name: {
                 key: value
