@@ -118,7 +118,7 @@ app-league-matchups {
 }
 
 .weekly-standing-row {
-  grid-template-columns: 16px 24px minmax(0, 1fr) 30px 4.2ch;
+  grid-template-columns: 16px 24px minmax(0, 1fr) 30px 3.5ch;
   column-gap: 4px;
   min-height: 33px;
 }
@@ -139,18 +139,18 @@ app-league-matchups {
   white-space: nowrap;
 }
 
-.weekly-standing-point-diff {
+.weekly-standing-movement {
   min-width: 0;
   color: #64748b;
   font-size: 0.64rem;
   font-variant-numeric: tabular-nums;
   font-weight: 850;
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
 }
 
-.weekly-standing-point-diff--positive { color: #5f8f70; }
-.weekly-standing-point-diff--negative { color: #b46b6b; }
+.weekly-standing-movement--positive { color: #5f8f70; }
+.weekly-standing-movement--negative { color: #b46b6b; }
 
 .weekly-team-avatar {
   display: grid;
@@ -522,9 +522,9 @@ app-league-matchups {
   .weekly-context-shell { grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr); }
   .weekly-context-heading { padding-inline: 6px; font-size: 0.61rem; }
   .weekly-context-row { padding-inline: 5px; }
-  .weekly-standing-row { grid-template-columns: 14px 22px minmax(0, 1fr) 27px 4ch; column-gap: 3px; }
+  .weekly-standing-row { grid-template-columns: 14px 22px minmax(0, 1fr) 27px 3.5ch; column-gap: 3px; }
   .weekly-standing-record { font-size: 0.64rem; }
-  .weekly-standing-point-diff { font-size: 0.6rem; }
+  .weekly-standing-movement { font-size: 0.6rem; }
   .weekly-team-avatar { width: 22px; height: 22px; }
   .weekly-team-avatar--last { width: 21px; height: 21px; flex-basis: 21px; }
   .weekly-team-identity { font-size: 0.65rem; }
@@ -538,9 +538,9 @@ app-league-matchups {
 @container (min-width: 768px) {
   .weekly-context-row { min-height: 38px; padding: 5px 12px; }
   .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
-  .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) 38px 4.4ch; column-gap: 7px; }
+  .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) 38px 3.5ch; column-gap: 7px; }
   .weekly-standing-record { font-size: 0.78rem; }
-  .weekly-standing-point-diff { font-size: 0.72rem; }
+  .weekly-standing-movement { font-size: 0.72rem; }
   .weekly-last-matchup { min-height: 76px; gap: 12px; padding: 10px; }
   .weekly-last-matchup::after { font-size: 0.5rem; }
   .weekly-last-side { grid-template-rows: 26px auto; row-gap: 4px; }
