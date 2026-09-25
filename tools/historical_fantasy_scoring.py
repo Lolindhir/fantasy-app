@@ -76,6 +76,9 @@ STAT_MAP: dict[str, tuple[str, ...]] = {
     "fgm_yds": ("fg_made_distance",),
 }
 
+SPECIAL_TEAMS_EVENT_DATASET_ID = "nflverse.special-teams-fumble-events"
+SPECIAL_TEAMS_EVENT_SCORING_KEYS = {"st_ff", "st_fum_rec"}
+
 # These settings describe the fantasy team-defense unit, not an individual player
 # record. They must not be mistaken for unsupported player settings and must never
 # be applied to an offensive/kicker/IDP player row.
@@ -126,6 +129,31 @@ POSITIONAL_FIRST_DOWN_BONUS_KEYS = {
 }
 POSITIONAL_KEYS = POSITIONAL_RECEPTION_BONUS_KEYS | POSITIONAL_FIRST_DOWN_BONUS_KEYS
 
+# Sleeper's generic individual-defense keys are IDP stats. nflverse may expose
+# defensive counters on an offensive-position player after a turnover or other
+# unusual play, but Sleeper does not apply these IDP settings to QB/RB/WR/TE/K.
+# Unit-specific Special Teams player keys are intentionally separate and remain
+# position-independent.
+IDP_ONLY_KEYS = {
+    "ff",
+    "fum_rec",
+    "int",
+    "int_ret_yd",
+    "sack",
+    "sack_yd",
+    "safe",
+    "tkl_solo",
+    "tkl_ast",
+    "tkl_loss",
+    "qb_hit",
+    "def_td",
+}
+DEFENSIVE_POSITION_GROUPS = {"DB", "DL", "LB"}
+DEFENSIVE_POSITIONS = {
+    "CB", "DB", "DE", "DL", "DT", "EDGE", "FS", "ILB", "LB", "NT",
+    "OLB", "S", "SAF", "SS",
+}
+
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -151,18 +179,31 @@ def positional_key_applies(position: str, key: str) -> bool:
     return key.endswith(f"_{position.lower()}")
 
 
-def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> set[str]:
+def is_defensive_player(position: str | None, position_group: str | None = None) -> bool:
+    pos = (position or "").upper()
+    group = (position_group or "").upper()
+    return group in DEFENSIVE_POSITION_GROUPS or pos in DEFENSIVE_POSITIONS
+
+
+def applicable_scoring_keys(
+    position: str | None,
+    scoring: dict[str, Any],
+    *,
+    position_group: str | None = None,
+) -> set[str]:
     """Return individual-player scoring keys that apply to this record.
 
-    Player scoring is event-first: kickers may produce passing/rushing/receiving
-    stats, skill players may produce return/defensive stats, and fumble deductions
-    apply regardless of unit. Position only gates explicitly positional bonuses.
+    Player scoring is event-first for ordinary offense, kicking, returns and
+    unit-specific Special Teams player events. Position gates only settings whose
+    Sleeper semantics are position-specific: explicit positional bonuses and
+    generic IDP/individual-defense keys.
 
-    Any non-team-defense, non-positional key is considered player-applicable so an
-    activated but unmapped setting fails closed instead of being silently ignored.
+    Any other non-team-defense key remains player-applicable so an activated but
+    unmapped setting fails closed instead of being silently ignored.
     """
 
     pos = (position or "").upper()
+    defensive_player = is_defensive_player(position, position_group)
     applicable: set[str] = set()
     for key in scoring:
         if key in TEAM_DEFENSE_ONLY_KEYS:
@@ -171,15 +212,26 @@ def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> se
             if positional_key_applies(pos, key):
                 applicable.add(key)
             continue
+        if key in IDP_ONLY_KEYS and not defensive_player:
+            continue
         applicable.add(key)
     return applicable
 
 
-def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, Any]:
+def score_record(
+    record: dict[str, Any],
+    scoring: dict[str, Any],
+    *,
+    special_teams_event_values: dict[str, float] | None = None,
+) -> dict[str, Any]:
     stats = record.get("Stats") or {}
     if not isinstance(stats, dict):
         raise ValueError("Canonical player stat record has no Stats object")
-    applicable = applicable_scoring_keys(record.get("Position"), scoring)
+    applicable = applicable_scoring_keys(
+        record.get("Position"),
+        scoring,
+        position_group=record.get("PositionGroup"),
+    )
     contributions = []
     unsupported_nonzero = []
     total = 0.0
@@ -187,11 +239,17 @@ def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, A
         weight = number(scoring.get(key))
         if weight == 0:
             continue
-        fields = STAT_MAP.get(key)
-        if fields is None:
-            unsupported_nonzero.append(key)
-            continue
-        raw = stat_value(stats, fields)
+        if key in SPECIAL_TEAMS_EVENT_SCORING_KEYS:
+            if special_teams_event_values is None:
+                unsupported_nonzero.append(key)
+                continue
+            raw = number(special_teams_event_values.get(key))
+        else:
+            fields = STAT_MAP.get(key)
+            if fields is None:
+                unsupported_nonzero.append(key)
+                continue
+            raw = stat_value(stats, fields)
         points = raw * weight
         total += points
         contributions.append(
@@ -204,17 +262,332 @@ def score_record(record: dict[str, Any], scoring: dict[str, Any]) -> dict[str, A
     }
 
 
+def special_teams_event_path(repo_root: Path, season: int, week: int) -> Path:
+    return (
+        repo_root
+        / "source-data/nfl/special-teams-fumble-events"
+        / str(season)
+        / f"{week:02d}.json"
+    )
+
+
+def _recovery_scores_st_fum_rec(record: dict[str, Any]) -> bool:
+    recovery_team = record.get("RecoveryTeam")
+    fumbled_teams = record.get("FumbledTeams")
+    if not isinstance(recovery_team, str) or not recovery_team.strip():
+        raise ValueError(
+            "Canonical Special Teams fumble-recovery event has no RecoveryTeam"
+        )
+    if not isinstance(fumbled_teams, list):
+        raise ValueError(
+            "Canonical Special Teams fumble-recovery event has no FumbledTeams list"
+        )
+    normalized = {
+        str(team).strip()
+        for team in fumbled_teams
+        if isinstance(team, str) and str(team).strip()
+    }
+    if len(normalized) != 1:
+        raise ValueError(
+            "Canonical Special Teams fumble-recovery relation is ambiguous; "
+            f"expected exactly one fumble team, found {sorted(normalized)}"
+        )
+    return recovery_team.strip() not in normalized
+
+
+def special_teams_event_index_from_payload(
+    payload: dict[str, Any],
+    *,
+    season: int | None = None,
+    week: int | None = None,
+) -> dict[str, dict[str, float]]:
+    if not isinstance(payload, dict):
+        raise ValueError("Canonical Special Teams fumble-event partition is not an object")
+    if season is not None and payload.get("Season") != season:
+        raise ValueError(
+            f"Canonical Special Teams fumble-event Season mismatch: expected {season}, "
+            f"found {payload.get('Season')!r}"
+        )
+    if week is not None and payload.get("Week") != week:
+        raise ValueError(
+            f"Canonical Special Teams fumble-event Week mismatch: expected {week}, "
+            f"found {payload.get('Week')!r}"
+        )
+    if payload.get("SourceDataset") != SPECIAL_TEAMS_EVENT_DATASET_ID:
+        raise ValueError(
+            "Canonical Special Teams fumble-event SourceDataset mismatch: "
+            f"{payload.get('SourceDataset')!r}"
+        )
+    if payload.get("Finalized") is not True:
+        raise ValueError(
+            "Canonical Special Teams fumble-event partition is not finalized; "
+            "zero-by-absence is unknown"
+        )
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise ValueError("Canonical Special Teams fumble-event partition has no Records list")
+
+    index: dict[str, dict[str, float]] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("Canonical Special Teams fumble-event Records contains a non-object")
+        player_id = record.get("CanonicalPlayerID")
+        if not isinstance(player_id, str) or not player_id.strip():
+            raise ValueError("Canonical Special Teams fumble-event record has no CanonicalPlayerID")
+        if record.get("SpecialTeams") is not True:
+            raise ValueError("Canonical Special Teams fumble-event record is not marked SpecialTeams=true")
+        values = index.setdefault(player_id, {"st_ff": 0.0, "st_fum_rec": 0.0})
+        event_type = record.get("EventType")
+        if event_type == "forced-fumble":
+            values["st_ff"] += 1.0
+        elif event_type == "fumble-recovery":
+            if _recovery_scores_st_fum_rec(record):
+                values["st_fum_rec"] += 1.0
+        else:
+            raise ValueError(
+                f"Unsupported canonical Special Teams fumble EventType: {event_type!r}"
+            )
+    return index
+
+
+def load_special_teams_event_index(
+    repo_root: Path,
+    season: int,
+    week: int,
+) -> dict[str, dict[str, float]]:
+    path = special_teams_event_path(repo_root, season, week)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Missing canonical Special Teams fumble-event evidence: {path}"
+        )
+    payload = read_json(path)
+    return special_teams_event_index_from_payload(payload, season=season, week=week)
+
+
+def active_special_teams_event_keys(
+    position: str | None,
+    scoring: dict[str, Any],
+) -> set[str]:
+    applicable = applicable_scoring_keys(position, scoring)
+    return {
+        key
+        for key in SPECIAL_TEAMS_EVENT_SCORING_KEYS
+        if key in applicable and number(scoring.get(key)) != 0
+    }
+
+
 def league_season_path(repo_root: Path, league_id: str, season: int) -> Path:
     return repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
 
 
-def find_player_record(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any]:
-    path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+def player_stats_path(repo_root: Path, season: int, week: int) -> Path:
+    return repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+
+
+def player_stats_index(repo_root: Path, season: int, week: int) -> dict[str, dict[str, Any]]:
+    path = player_stats_path(repo_root, season, week)
     payload = read_json(path)
-    matches = [row for row in payload.get("Records", []) if row.get("CanonicalPlayerID") == player_id]
-    if len(matches) != 1:
-        raise ValueError(f"Expected one player-stat record for {player_id} in {season}/W{week}, found {len(matches)}")
-    return matches[0]
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise ValueError(f"Canonical player-stat partition has no Records list: {path}")
+    index: dict[str, dict[str, Any]] = {}
+    for row in records:
+        if not isinstance(row, dict):
+            raise ValueError(f"Canonical player-stat partition contains a non-object row: {path}")
+        player_id = row.get("CanonicalPlayerID")
+        if not isinstance(player_id, str) or not player_id.strip():
+            raise ValueError(f"Canonical player-stat record has no CanonicalPlayerID: {path}")
+        if player_id in index:
+            raise ValueError(
+                f"Duplicate canonical player-stat record for {player_id} in {season}/W{week}"
+            )
+        index[player_id] = row
+    return index
+
+
+def find_player_record(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any]:
+    index = player_stats_index(repo_root, season, week)
+    if player_id not in index:
+        raise ValueError(f"Expected one player-stat record for {player_id} in {season}/W{week}, found 0")
+    return index[player_id]
+
+
+def score_player_week(
+    repo_root: Path,
+    season: int,
+    week: int,
+    player_id: str,
+    scoring: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    record = find_player_record(repo_root, season, week, player_id)
+    event_values: dict[str, float] | None = None
+    if active_special_teams_event_keys(record.get("Position"), scoring):
+        event_index = load_special_teams_event_index(repo_root, season, week)
+        event_values = event_index.get(player_id, {"st_ff": 0.0, "st_fum_rec": 0.0})
+    return record, score_record(
+        record,
+        scoring,
+        special_teams_event_values=event_values,
+    )
+
+
+def league_matchup_path(repo_root: Path, league_id: str, season: int, week: int) -> Path:
+    return (
+        repo_root
+        / "source-data/leagues"
+        / league_id
+        / "seasons"
+        / str(season)
+        / "matchups"
+        / f"week-{week}.json"
+    )
+
+
+def league_player_points(
+    repo_root: Path,
+    league_id: str,
+    season: int,
+    week: int,
+) -> dict[str, float]:
+    path = league_matchup_path(repo_root, league_id, season, week)
+    payload = read_json(path)
+    if not isinstance(payload, list):
+        raise ValueError(f"Canonical League matchup partition is not a list: {path}")
+    points: dict[str, float] = {}
+    for matchup in payload:
+        if not isinstance(matchup, dict):
+            raise ValueError(f"Canonical League matchup partition contains a non-object: {path}")
+        entries = matchup.get("PlayerPoints")
+        if not isinstance(entries, list):
+            raise ValueError(f"Canonical League matchup has no PlayerPoints list: {path}")
+        for entry in entries:
+            if not isinstance(entry, dict) or not isinstance(entry.get("Player"), dict):
+                raise ValueError(f"Canonical League PlayerPoints entry is malformed: {path}")
+            player_id = entry["Player"].get("CanonicalPlayerID")
+            if not isinstance(player_id, str) or not player_id.strip():
+                raise ValueError(f"Canonical League PlayerPoints entry has no CanonicalPlayerID: {path}")
+            if player_id in points:
+                raise ValueError(
+                    f"Duplicate CanonicalPlayerID {player_id} in League PlayerPoints for {season}/W{week}"
+                )
+            points[player_id] = number(entry.get("Points"))
+    return points
+
+
+def historical_parity_summary(
+    repo_root: Path,
+    *,
+    nfl_season: int,
+    weeks: range,
+    league_id: str,
+    scoring_season: int,
+    tolerance: float = 0.01,
+) -> dict[str, Any]:
+    profile = read_json(league_season_path(repo_root, league_id, scoring_season))
+    scoring = profile.get("ScoringSettings")
+    if not isinstance(scoring, dict):
+        raise ValueError("Selected league-season has no ScoringSettings")
+
+    total_league_player_weeks = 0
+    compared_player_weeks = 0
+    exact_matches = 0
+    missing_zero_points: list[dict[str, Any]] = []
+    missing_nonzero_points: list[dict[str, Any]] = []
+    unsupported: list[dict[str, Any]] = []
+    provider_divergences: list[dict[str, Any]] = []
+    scoring_mismatches: list[dict[str, Any]] = []
+
+    for week in weeks:
+        stats_by_player = player_stats_index(repo_root, nfl_season, week)
+        league_points = league_player_points(repo_root, league_id, nfl_season, week)
+        total_league_player_weeks += len(league_points)
+
+        event_index: dict[str, dict[str, float]] | None = None
+        if any(number(scoring.get(key)) != 0 for key in SPECIAL_TEAMS_EVENT_SCORING_KEYS):
+            event_index = load_special_teams_event_index(repo_root, nfl_season, week)
+
+        for player_id, league_value in league_points.items():
+            record = stats_by_player.get(player_id)
+            if record is None:
+                detail = {
+                    "Week": week,
+                    "CanonicalPlayerID": player_id,
+                    "LeaguePoints": league_value,
+                }
+                if abs(league_value) <= tolerance:
+                    missing_zero_points.append(detail)
+                else:
+                    missing_nonzero_points.append(detail)
+                continue
+
+            compared_player_weeks += 1
+            event_values = None
+            if active_special_teams_event_keys(record.get("Position"), scoring):
+                if event_index is None:
+                    raise ValueError(
+                        f"Special Teams event evidence was not loaded for {nfl_season}/W{week}"
+                    )
+                event_values = event_index.get(
+                    player_id,
+                    {"st_ff": 0.0, "st_fum_rec": 0.0},
+                )
+            result = score_record(
+                record,
+                scoring,
+                special_teams_event_values=event_values,
+            )
+            if result["UnsupportedNonZeroSettings"]:
+                unsupported.append(
+                    {
+                        "Week": week,
+                        "CanonicalPlayerID": player_id,
+                        "PlayerName": record.get("PlayerName"),
+                        "Settings": result["UnsupportedNonZeroSettings"],
+                    }
+                )
+                continue
+
+            derived = number(result["FantasyPoints"])
+            delta = derived - league_value
+            if abs(delta) <= tolerance + 1e-9:
+                exact_matches += 1
+                continue
+
+            stats = record.get("Stats") or {}
+            provider_ppr_raw = stats.get("fantasy_points_ppr") if isinstance(stats, dict) else None
+            provider_ppr = number(provider_ppr_raw) if provider_ppr_raw not in (None, "") else None
+            detail = {
+                "Week": week,
+                "CanonicalPlayerID": player_id,
+                "PlayerName": record.get("PlayerName"),
+                "Position": record.get("Position"),
+                "DerivedPoints": derived,
+                "LeaguePoints": league_value,
+                "Delta": delta,
+                "ProviderFantasyPointsPPR": provider_ppr,
+                "Contributions": result["Contributions"],
+            }
+            if provider_ppr is not None and abs(derived - provider_ppr) <= tolerance + 1e-9:
+                provider_divergences.append(detail)
+            else:
+                scoring_mismatches.append(detail)
+
+    return {
+        "NFLSeason": nfl_season,
+        "LeagueScoringProfile": {
+            "CanonicalLeagueID": league_id,
+            "Season": scoring_season,
+        },
+        "Tolerance": tolerance,
+        "TotalLeaguePlayerWeeks": total_league_player_weeks,
+        "ComparedPlayerWeeks": compared_player_weeks,
+        "ExactMatches": exact_matches,
+        "MissingCanonicalStatZeroPointPlayerWeeks": missing_zero_points,
+        "MissingCanonicalStatNonZeroPointPlayerWeeks": missing_nonzero_points,
+        "UnsupportedPlayerWeeks": unsupported,
+        "ProviderStatDivergences": provider_divergences,
+        "ScoringMismatches": scoring_mismatches,
+    }
 
 
 def snap_context(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any] | None:
@@ -251,8 +624,13 @@ def main() -> int:
     scoring = profile.get("ScoringSettings")
     if not isinstance(scoring, dict):
         raise ValueError("Selected league-season has no ScoringSettings")
-    record = find_player_record(root, args.season, args.week, args.player)
-    result = score_record(record, scoring)
+    record, result = score_player_week(
+        root,
+        args.season,
+        args.week,
+        args.player,
+        scoring,
+    )
     if result["UnsupportedNonZeroSettings"] and not args.allow_unsupported:
         raise ValueError(
             "Selected scoring profile contains player-applicable non-zero settings without an explicit canonical mapping: "

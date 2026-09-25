@@ -128,15 +128,13 @@ scoringContract:
   derivedRules:
     - Sleeper fum_rec is not reconstructed from offensive own/opponent recovery counters for an individual player; player fum_rec uses the defensive/IDP recovery fact def_fumbles.
     - Sleeper st_td is an individual Special Teams Player TD and maps to special_teams_tds.
+    - Sleeper st_ff is derived from canonical special-teams-fumble-events EventType=forced-fumble for the player.
+    - Sleeper st_fum_rec counts only canonical Special Teams fumble-recovery events whose single unambiguous FumbledTeams value differs from RecoveryTeam; own-team recovery does not score and ambiguous recovery relation fails closed.
+    - Active st_ff/st_fum_rec scoring requires a finalized canonical Special Teams event partition for the evaluated week. Missing or Finalized=false evidence cannot provide zero-by-absence.
     - PAT misses are pat_att minus pat_made so blocked attempts remain represented as misses.
     - Aggregate field-goal misses are fg_att minus fg_made.
     - Made field goals use nflverse distance buckets through 60+; fgm_50p combines 50-59 and 60+.
   failClosedUnsupported:
-    - >
-      Active individual-player Special Teams Forced Fumble and Special Teams Fumble Recovery
-      remain unsupported by the scorer until #698 Checkpoint C consumes the canonical
-      special-teams-fumble-events evidence. They must not be inferred from generic
-      player-stats defensive/recovery counters.
     - >
       Active Special Teams Solo Tackle remains unsupported because canonical source evidence
       does not yet identify that event by special-teams unit. It must not be inferred from
@@ -148,6 +146,31 @@ scoringContract:
     - >
       Any other active player-applicable Sleeper scoring key without an explicit canonical
       mapping is reported as UnsupportedNonZeroSettings instead of being silently ignored.
+
+validationPolicy:
+  leagueParity:
+    implementation: historical_parity_summary in tools/historical_fantasy_scoring.py
+    canonicalLeaguePoints: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<week>.json PlayerPoints
+    tolerance: 0.01
+    rules:
+      - Compare only League player-weeks with exactly one canonical NFL player-stat record; missing canonical stats with non-zero League points are hard validation failures.
+      - Active player-applicable scoring keys without canonical evidence remain explicit UnsupportedNonZeroSettings and fail acceptance.
+      - Exact canonical-vs-League matches within 0.01 are normal parity success.
+      - A residual mismatch is classified as provider-stat divergence only when the derived canonical score agrees within tolerance with persisted nflverse fantasy_points_ppr while Sleeper League PlayerPoints differs.
+      - Provider fantasy_points_ppr remains validation-only and never changes canonical scoring output.
+      - Provider-stat divergence stays visible in the parity result and must not be patched by mutating canonical NFL facts merely to imitate Sleeper.
+  accepted2025Target:
+    weeks: 1-17
+    expectedComparedPlayerWeeks: 2547
+    expectedExactMatches: 2546
+    expectedProviderStatDivergences:
+      - player: Caleb Williams
+        canonicalPlayerID: NFLP-3c5ddc5072f6fe8f9b77
+        week: 6
+        derivedPoints: 20.38
+        sleeperLeaguePoints: 19.88
+        nflverseFantasyPointsPpr: 20.38
+    expectedUnexplainedScoringMismatches: 0
 
 readinessContract:
   implementation: tools/source_data_readiness.py
