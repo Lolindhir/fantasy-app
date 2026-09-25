@@ -78,7 +78,14 @@ class SourceDataReadinessTests(unittest.TestCase):
             {"availabilityStatus": "available"},
         )
 
-    def mark_finality(self, season: int, finalized_weeks: list[int]) -> None:
+    def mark_finality(
+        self,
+        season: int,
+        finalized_weeks: list[int],
+        *,
+        incomplete_weeks: list[int] | None = None,
+    ) -> None:
+        incomplete_weeks = incomplete_weeks or []
         self.write_json(
             f"source-data/nfl/game-finality/{season}.json",
             {
@@ -87,6 +94,10 @@ class SourceDataReadinessTests(unittest.TestCase):
                 "Weeks": [
                     {"Week": week, "WeekFinal": True}
                     for week in finalized_weeks
+                ]
+                + [
+                    {"Week": week, "WeekFinal": False}
+                    for week in incomplete_weeks
                 ],
             },
         )
@@ -96,6 +107,8 @@ class SourceDataReadinessTests(unittest.TestCase):
         season: int,
         week: int,
         records: list[dict[str, object]] | None = None,
+        *,
+        finalized: bool = True,
     ) -> None:
         self.write_json(
             f"source-data/nfl/special-teams-fumble-events/{season}/{week:02d}.json",
@@ -103,7 +116,7 @@ class SourceDataReadinessTests(unittest.TestCase):
                 "Season": season,
                 "Week": week,
                 "SourceDataset": "nflverse.special-teams-fumble-events",
-                "Finalized": True,
+                "Finalized": finalized,
                 "Records": records or [],
             },
         )
@@ -312,6 +325,55 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.assertFalse(readiness["ReadyForHistoricalScoring"])
         self.assertIn(
             "nflverse.special-teams-fumble-events: missing finalized canonical week partitions 2025:[2]",
+            readiness["HardFailures"],
+        )
+
+    def test_special_teams_fumble_incomplete_historical_week_fails_closed_and_rejects_false_finalization(self) -> None:
+        self.configure_special_teams_fumble_registry()
+        self.mark_special_teams_fumble_raw_ready(2025)
+        self.mark_finality(2025, [1], incomplete_weeks=[2])
+        self.mark_special_teams_fumble_partition(2025, 1, [])
+        self.mark_special_teams_fumble_partition(
+            2025,
+            2,
+            [
+                {
+                    "CanonicalPlayerID": "NFLP-2",
+                    "SourceIDs": {"GSIS": "00-2"},
+                }
+            ],
+            finalized=True,
+        )
+
+        with patch.dict(
+            HISTORICAL_BANDS,
+            {
+                "nflverse.special-teams-fumble-events": {
+                    "start": 2025,
+                    "canonical": "special-teams-fumble-events",
+                }
+            },
+            clear=True,
+        ):
+            readiness = build_nfl_readiness(self.root)
+
+        dataset = readiness["Datasets"]["nflverse.special-teams-fumble-events"]
+        season = next(row for row in dataset["Seasons"] if row["Season"] == 2025)
+        coverage = season["SpecialTeamsFumbleEventCoverage"]
+        self.assertEqual([2], coverage["IncompleteGameFinalityWeeks"])
+        self.assertTrue(
+            any(
+                "canonical Finalized=True does not match game-finality WeekFinal=False" in error
+                for error in coverage["ContractErrors"]
+            )
+        )
+        self.assertEqual(
+            [{"Season": 2025, "Weeks": [2]}],
+            dataset["HistoricalIncompleteGameFinalityWeeks"],
+        )
+        self.assertFalse(readiness["ReadyForHistoricalScoring"])
+        self.assertIn(
+            "nflverse.special-teams-fumble-events: historical game-finality has incomplete weeks 2025:[2]",
             readiness["HardFailures"],
         )
 

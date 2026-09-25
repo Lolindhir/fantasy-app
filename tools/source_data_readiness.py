@@ -83,7 +83,7 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
     finality_path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
     finality = read_json(finality_path)
     contract_errors: list[str] = []
-    expected_weeks: set[int] = set()
+    week_finality: dict[int, bool] = {}
 
     if not isinstance(finality, dict):
         contract_errors.append(f"{season}: game-finality evidence missing or invalid")
@@ -105,22 +105,35 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
                         f"{season}: game-finality Weeks[{index}] is missing integer Week / boolean WeekFinal"
                     )
                     continue
-                if week_final:
-                    expected_weeks.add(week)
-            if not expected_weeks and not contract_errors:
+                existing = week_finality.get(week)
+                if existing is not None and existing != week_final:
+                    contract_errors.append(
+                        f"{season}: game-finality contains conflicting WeekFinal values for week {week}"
+                    )
+                    continue
+                week_finality[week] = week_final
+            if not any(week_finality.values()) and not contract_errors:
                 contract_errors.append(f"{season}: game-finality evidence contains no finalized weeks")
 
+    expected_weeks = sorted(week for week, week_final in week_finality.items() if week_final)
+    incomplete_weeks = sorted(week for week, week_final in week_finality.items() if not week_final)
     season_dir = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season)
-    missing_weeks: list[int] = []
+    partition_paths = {
+        int(path.stem): path
+        for path in season_dir.glob("*.json")
+        if path.stem.isdigit()
+    }
+    missing_weeks = [week for week in expected_weeks if week not in partition_paths]
     unresolved_count = 0
     unresolved_gsis: set[str] = set()
 
-    for week in sorted(expected_weeks):
-        partition = season_dir / f"{week:02d}.json"
-        if not partition.exists():
-            missing_weeks.append(week)
-            continue
+    unknown_partition_weeks = sorted(set(partition_paths) - set(week_finality))
+    for week in unknown_partition_weeks:
+        contract_errors.append(
+            f"{season} week {week}: canonical partition has no matching game-finality week"
+        )
 
+    for week, partition in sorted(partition_paths.items()):
         payload = read_json(partition)
         if not isinstance(payload, dict):
             contract_errors.append(f"{season} week {week}: canonical partition is not an object")
@@ -131,8 +144,13 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
             contract_errors.append(f"{season} week {week}: canonical Week mismatch")
         if payload.get("SourceDataset") != SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID:
             contract_errors.append(f"{season} week {week}: canonical SourceDataset mismatch")
-        if payload.get("Finalized") is not True:
-            contract_errors.append(f"{season} week {week}: canonical partition is not finalized")
+
+        expected_finalized = week_finality.get(week)
+        if expected_finalized is not None and payload.get("Finalized") is not expected_finalized:
+            contract_errors.append(
+                f"{season} week {week}: canonical Finalized={payload.get('Finalized')!r} "
+                f"does not match game-finality WeekFinal={expected_finalized}"
+            )
 
         records = payload.get("Records")
         if not isinstance(records, list):
@@ -153,17 +171,18 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
                     unresolved_gsis.add(str(gsis).strip())
 
     return {
-        "ExpectedFinalizedWeeks": sorted(expected_weeks),
+        "ExpectedFinalizedWeeks": expected_weeks,
+        "IncompleteGameFinalityWeeks": incomplete_weeks,
         "MissingFinalizedWeeks": missing_weeks,
         "UnresolvedCanonicalPlayerRecordCount": unresolved_count,
         "UnresolvedGSISIDs": sorted(unresolved_gsis),
         "ContractErrors": contract_errors,
         "Ready": bool(expected_weeks)
+        and not incomplete_weeks
         and not missing_weeks
         and unresolved_count == 0
         and not contract_errors,
     }
-
 
 def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
     season_now = current_season(repo_root)
@@ -176,6 +195,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
         missing_historical = []
         known_unavailable_historical = []
         missing_finalized_week_partitions: list[dict[str, Any]] = []
+        incomplete_game_finality_weeks: list[dict[str, Any]] = []
         historical_event_unresolved_count = 0
         historical_event_unresolved_gsis: set[str] = set()
         historical_event_contract_errors: list[str] = []
@@ -204,6 +224,13 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
                         {
                             "Season": season,
                             "Weeks": special_coverage["MissingFinalizedWeeks"],
+                        }
+                    )
+                if special_coverage["IncompleteGameFinalityWeeks"]:
+                    incomplete_game_finality_weeks.append(
+                        {
+                            "Season": season,
+                            "Weeks": special_coverage["IncompleteGameFinalityWeeks"],
                         }
                     )
                 historical_event_unresolved_count += int(
@@ -258,6 +285,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             dataset_summary.update(
                 {
                     "HistoricalFinalizedWeekGaps": missing_finalized_week_partitions,
+                    "HistoricalIncompleteGameFinalityWeeks": incomplete_game_finality_weeks,
                     "HistoricalUnresolvedCanonicalPlayerRecordCount": historical_event_unresolved_count,
                     "HistoricalUnresolvedGSISIDs": sorted(historical_event_unresolved_gsis),
                     "HistoricalPartitionContractErrors": historical_event_contract_errors,
@@ -270,6 +298,14 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
                 )
                 hard_failures.append(
                     f"{dataset_id}: missing finalized canonical week partitions {rendered}"
+                )
+            if incomplete_game_finality_weeks:
+                rendered = ", ".join(
+                    f"{entry['Season']}:{entry['Weeks']}"
+                    for entry in incomplete_game_finality_weeks
+                )
+                hard_failures.append(
+                    f"{dataset_id}: historical game-finality has incomplete weeks {rendered}"
                 )
             if historical_event_unresolved_count:
                 hard_failures.append(

@@ -576,7 +576,7 @@ def _build_player_stats(
     return outputs, audit, preserved
 
 
-def _historical_finalized_weeks(repo_root: Path, season: int) -> set[int]:
+def _historical_week_finality(repo_root: Path, season: int) -> dict[int, bool]:
     path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
     if not path.exists():
         raise ValueError(
@@ -585,13 +585,13 @@ def _historical_finalized_weeks(repo_root: Path, season: int) -> set[int]:
     payload = load_json(path)
     if not isinstance(payload, dict) or payload.get("Finalized") is not True:
         raise ValueError(
-            f"Historical game-finality evidence must be finalized before deriving zero-event weeks: {path}"
+            f"Historical game-finality evidence must be finalized before deriving week completeness: {path}"
         )
     weeks = payload.get("Weeks")
     if not isinstance(weeks, list):
         raise ValueError(f"Historical game-finality evidence has no Weeks array: {path}")
 
-    finalized: set[int] = set()
+    week_finality: dict[int, bool] = {}
     for row in weeks:
         if not isinstance(row, dict):
             raise ValueError(f"Historical game-finality Weeks contains a non-object row: {path}")
@@ -599,11 +599,15 @@ def _historical_finalized_weeks(repo_root: Path, season: int) -> set[int]:
         week_final = row.get("WeekFinal")
         if week is None or not isinstance(week_final, bool):
             raise ValueError(f"Historical game-finality week row is missing Week/WeekFinal: {path}")
-        if week_final:
-            finalized.add(week)
-    if not finalized:
+        existing = week_finality.get(week)
+        if existing is not None and existing != week_final:
+            raise ValueError(
+                f"Historical game-finality contains conflicting WeekFinal values for week {week}: {path}"
+            )
+        week_finality[week] = week_final
+    if not any(week_finality.values()):
         raise ValueError(f"Historical game-finality evidence contains no finalized weeks: {path}")
-    return finalized
+    return week_finality
 
 
 def _build_special_teams_fumble_events(
@@ -724,8 +728,18 @@ def _build_special_teams_fumble_events(
 
         output_weeks = set(grouped)
         empty_finalized_weeks: set[int] = set()
+        historical_week_finality: dict[int, bool] = {}
         if season < observation_season:
-            finalized_weeks = _historical_finalized_weeks(repo_root, season)
+            historical_week_finality = _historical_week_finality(repo_root, season)
+            unknown_event_weeks = sorted(set(grouped) - set(historical_week_finality))
+            if unknown_event_weeks:
+                raise ValueError(
+                    f"{dataset.id} historical event weeks are missing from game-finality evidence: "
+                    f"season={season} weeks={unknown_event_weeks}"
+                )
+            finalized_weeks = {
+                week for week, week_final in historical_week_finality.items() if week_final
+            }
             empty_finalized_weeks = finalized_weeks - set(grouped)
             output_weeks |= finalized_weeks
 
@@ -744,7 +758,11 @@ def _build_special_teams_fumble_events(
                 "Season": season,
                 "Week": week,
                 "SourceDataset": dataset.id,
-                "Finalized": _finalized_for_season(season, observation_season),
+                "Finalized": (
+                    historical_week_finality.get(week, False)
+                    if season < observation_season
+                    else False
+                ),
                 "Records": records,
             }
             path, effective, was_preserved = _canonical_partition(

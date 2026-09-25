@@ -330,18 +330,19 @@ specialTeamsFumbleEventContract:
     CanonicalPlayerID fail closed.
   missingSemantics: >
     Missing source/canonical partitions are unknown, never zero. Zero-by-absence
-    is valid only inside a complete/finalized historical partition. For historical
-    seasons the materializer derives finalized weeks from persisted canonical
-    game-finality evidence and writes an explicit partition with Records=[] when
-    a finalized week contains no special-teams fumble events.
+    is valid only inside a complete historical week whose persisted canonical
+    game-finality has WeekFinal=true. Historical eventful weeks with WeekFinal=false
+    may retain partial event evidence but their canonical partition must remain
+    Finalized=false. Finalized eventless weeks are persisted explicitly with Records=[].
   historicalCoverage:
     startSeason: 1999
     supportBand: HISTORICAL_BANDS
     readinessRule: >
-      Historical readiness requires the persisted raw season plus a canonical
-      partition for every WeekFinal=true week in persisted game-finality evidence.
-      Explicit finalized Records=[] partitions are valid zero evidence; a missing
-      finalized-week partition remains unknown and fails readiness.
+      Historical readiness requires the persisted raw season, no WeekFinal=false
+      weeks in persisted historical game-finality, and a canonical partition for
+      every WeekFinal=true week. Canonical partition Finalized must exactly match
+      WeekFinal. Explicit finalized Records=[] partitions are valid zero evidence;
+      an incomplete or missing finalized week remains unknown and fails readiness.
     identityRule: >
       Every historical canonical event record must have CanonicalPlayerID.
       Unresolved historical GSIS identities fail readiness closed.

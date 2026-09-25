@@ -67,9 +67,11 @@ historicalCoverage:
   specialTeamsFumbleEvents:
     startSeason: 1999
     completenessRule: >
-      Every WeekFinal=true week in persisted game-finality evidence requires a
-      canonical special-teams-fumble-event partition. Records=[] is explicit zero;
-      a missing finalized-week partition is unknown and fails readiness.
+      Every historical scoring week must have WeekFinal=true in persisted
+      game-finality evidence before zero-by-absence is valid. Every such week requires
+      a canonical special-teams-fumble-event partition whose Finalized value matches
+      WeekFinal. Records=[] is explicit zero; WeekFinal=false or a missing finalized
+      partition is unknown and fails readiness.
     identityRule: >
       Historical event records require CanonicalPlayerID; unresolved historical
       GSIS identities fail readiness closed.
@@ -143,10 +145,11 @@ readinessContract:
   readyForHistoricalScoringRule: >
     Every historical season in every declared support band must have persisted raw evidence
     and complete canonical materialization. For special-teams-fumble-events, completeness is
-    week-exact against persisted game-finality: every WeekFinal=true week must exist,
-    including explicit Records=[] zero partitions, and historical event identities must be
-    resolved. Current-season not-yet-available evidence does not satisfy a historical
-    partition and does not create a historical failure by itself.
+    week-exact against persisted game-finality: historical WeekFinal=false blocks readiness,
+    every WeekFinal=true week must exist including explicit Records=[] zero partitions,
+    canonical Finalized must match WeekFinal, and historical event identities must be resolved.
+    Current-season not-yet-available evidence does not satisfy a historical partition and does
+    not create a historical failure by itself.
   leagueRule: >
     Every configured CanonicalLeagueID must have a manifest and the required per-season core
     files. The productive hardening target is the nfl-reise namespace.
