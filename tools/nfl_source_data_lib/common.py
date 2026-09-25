@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from .source_projection import SUPPORTED_SOURCE_PROJECTIONS, project_source
+
 SCHEMA_VERSION = 1
 CANONICAL_SCHEMA_VERSION = 2
 REGISTRY_SCHEMA_VERSION = 3
@@ -172,16 +174,21 @@ def inspect_csv(path: Path, required_columns: Iterable[str], minimum_rows: int) 
 
 def inspect_json(path: Path, required_fields: Iterable[str], minimum_rows: int) -> tuple[list[str], int]:
     payload = load_json(path)
-    if isinstance(payload, dict):
+    declared_fields: list[str] = []
+    if isinstance(payload, dict) and isinstance(payload.get("Records"), list):
+        records = [value for value in payload["Records"] if isinstance(value, dict)]
+        if isinstance(payload.get("Columns"), list):
+            declared_fields = [str(value) for value in payload["Columns"]]
+    elif isinstance(payload, dict):
         records = [value for value in payload.values() if isinstance(value, dict)]
     elif isinstance(payload, list):
         records = [value for value in payload if isinstance(value, dict)]
     else:
-        raise ValueError(f"JSON dataset must be an object-of-records or array-of-records: {path}")
+        raise ValueError(f"JSON dataset must be an object-of-records, Records wrapper or array-of-records: {path}")
     row_count = len(records)
     if row_count < minimum_rows:
         raise ValueError(f"JSON {path} has implausibly few records ({row_count}); expected at least {minimum_rows}.")
-    available_fields = sorted({key for record in records for key in record})
+    available_fields = sorted(set(declared_fields) | {key for record in records for key in record})
     missing = sorted(set(required_fields) - set(available_fields))
     if missing:
         raise ValueError(f"JSON {path} is missing required record fields: {', '.join(missing)}")
@@ -285,6 +292,10 @@ def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[st
     source_format = str(value.get("sourceFormat") or "csv").strip()
     availability_policy = str(value.get("availabilityPolicy") or "required").strip()
     materialize = value.get("materialize", True)
+    projection_value = value.get("sourceProjection")
+    projection_id: str | None = None
+    projection_version: int | None = None
+    upstream_format: str | None = None
 
     if source_mode not in SOURCE_MODES:
         raise ValueError(f"Dataset {dataset_id} has unsupported sourceMode: {source_mode}")
@@ -296,6 +307,30 @@ def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[st
         )
     if not isinstance(materialize, bool):
         raise ValueError(f"Dataset {dataset_id} materialize must be boolean")
+
+    if projection_value is not None:
+        if not isinstance(projection_value, dict):
+            raise ValueError(f"Dataset {dataset_id} sourceProjection must be an object")
+        projection_id = str(projection_value.get("id") or "").strip()
+        projection_version = as_int(projection_value.get("version"))
+        upstream_format = str(projection_value.get("upstreamFormat") or "").strip()
+        if not projection_id or projection_version is None or projection_version <= 0 or not upstream_format:
+            raise ValueError(
+                f"Dataset {dataset_id} sourceProjection requires id, positive version and upstreamFormat"
+            )
+        expected_upstream = SUPPORTED_SOURCE_PROJECTIONS.get((projection_id, projection_version))
+        if expected_upstream is None:
+            raise ValueError(
+                f"Dataset {dataset_id} declares unsupported sourceProjection "
+                f"{projection_id}@{projection_version}"
+            )
+        if upstream_format != expected_upstream:
+            raise ValueError(
+                f"Dataset {dataset_id} sourceProjection {projection_id}@{projection_version} "
+                f"requires upstreamFormat={expected_upstream}"
+            )
+        if source_format != "json":
+            raise ValueError(f"Projected dataset {dataset_id} must persist sourceFormat=json")
 
     source_url = str(value.get("sourceUrl") or "").strip()
     raw_path = str(value.get("rawPath") or "").strip()
@@ -316,6 +351,9 @@ def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[st
         "sourceFormat": source_format,
         "availabilityPolicy": availability_policy,
         "materialize": materialize,
+        "projectionID": projection_id,
+        "projectionVersion": projection_version,
+        "upstreamFormat": upstream_format,
     }
 
 
@@ -342,6 +380,9 @@ class Dataset:
     source_format: str = "csv"
     availability_policy: str = "required"
     materialize: bool = True
+    source_projection_id: str | None = None
+    source_projection_version: int | None = None
+    upstream_format: str | None = None
 
     @property
     def is_season_partitioned(self) -> bool:
@@ -396,6 +437,9 @@ class Dataset:
             finalization_policy=lifecycle["finalization"], repair_policy=lifecycle["repairPolicy"],
             source_mode=source_contract["sourceMode"], source_format=source_contract["sourceFormat"],
             availability_policy=source_contract["availabilityPolicy"], materialize=source_contract["materialize"],
+            source_projection_id=source_contract.get("projectionID"),
+            source_projection_version=source_contract.get("projectionVersion"),
+            upstream_format=source_contract.get("upstreamFormat"),
         )
 
 
@@ -489,6 +533,12 @@ def _availability_metadata(dataset: Dataset, season: int | None, status: str) ->
         "license": dataset.license,
         "attribution": dataset.attribution,
     }
+    if dataset.source_projection_id is not None:
+        payload["sourceProjection"] = {
+            "id": dataset.source_projection_id,
+            "version": dataset.source_projection_version,
+            "upstreamFormat": dataset.upstream_format,
+        }
     if season is not None:
         payload["partition"] = {"season": season}
     return payload
@@ -560,8 +610,23 @@ def sync_dataset(
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="nfl-source-") as temp_dir:
         candidate = Path(temp_dir) / f"candidate.{dataset.source_format}"
+        projection_stats: dict[str, Any] | None = None
+        upstream_hash: str | None = None
+        upstream_size: int | None = None
         try:
-            download(source_url, candidate)
+            if dataset.source_projection_id is None:
+                download(source_url, candidate)
+            else:
+                upstream_candidate = Path(temp_dir) / "upstream-source"
+                download(source_url, upstream_candidate)
+                upstream_hash = sha256_file(upstream_candidate)
+                upstream_size = upstream_candidate.stat().st_size
+                projection_stats = project_source(
+                    dataset.source_projection_id,
+                    int(dataset.source_projection_version or 0),
+                    upstream_candidate,
+                    candidate,
+                )
         except urllib.error.HTTPError as exc:
             can_be_not_yet_available = (
                 exc.code == 404
@@ -600,6 +665,10 @@ def sync_dataset(
             "rowCount": row_count,
             "columns": columns,
         })
+        if projection_stats is not None:
+            metadata["upstreamContentHashSha256"] = upstream_hash
+            metadata["upstreamByteSize"] = upstream_size
+            metadata["projectionStats"] = projection_stats
         if changed or not metadata_path.exists():
             write_json_if_changed(metadata_path, metadata)
         else:

@@ -182,6 +182,27 @@
       "attribution": "nflverse player stats data"
     },
     {
+      "id": "nflverse.special-teams-fumble-events",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceMode": "season-partitioned",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz",
+      "sourceFormat": "json",
+      "sourceProjection": {"id": "nflverse-special-teams-fumble-events", "version": 1, "upstreamFormat": "csv.gz"},
+      "rawPath": "providers/nflverse/special-teams-fumble-events/raw-{season}.json",
+      "metadataPath": "providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
+      "requiredColumns": ["season", "season_type", "week", "game_id", "play_id", "play_type", "special", "home_team", "away_team", "forced_fumble_player_1_team", "forced_fumble_player_1_player_id", "forced_fumble_player_2_team", "forced_fumble_player_2_player_id", "fumbled_1_team", "fumbled_2_team", "fumble_recovery_1_team", "fumble_recovery_1_player_id", "fumble_recovery_2_team", "fumble_recovery_2_player_id"],
+      "minimumRows": 0,
+      "availabilityPolicy": "current-season-may-be-unavailable",
+      "materialize": true,
+      "kind": "special-teams-fumble-event-evidence",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {"class": "seasonal-finalizable", "partitionKey": "season-week", "finalization": "freeze-prior-seasons", "repairPolicy": "explicit-force"},
+      "license": "CC BY 4.0",
+      "attribution": "nflverse play-by-play data"
+    },
+    {
       "id": "nflverse.snap-counts",
       "provider": "nflverse",
       "upstream": "nflverse/nflverse-data",
