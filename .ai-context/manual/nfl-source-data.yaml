@@ -334,10 +334,21 @@ specialTeamsFumbleEventContract:
     seasons the materializer derives finalized weeks from persisted canonical
     game-finality evidence and writes an explicit partition with Records=[] when
     a finalized week contains no special-teams fumble events.
-  phaseAHistory: >
-    Checkpoint A proves the contract on 2025 only. Historical readiness/support
-    band integration belongs to Checkpoint B and is intentionally not added to
-    HISTORICAL_BANDS yet.
+  historicalCoverage:
+    startSeason: 1999
+    supportBand: HISTORICAL_BANDS
+    readinessRule: >
+      Historical readiness requires the persisted raw season plus a canonical
+      partition for every WeekFinal=true week in persisted game-finality evidence.
+      Explicit finalized Records=[] partitions are valid zero evidence; a missing
+      finalized-week partition remains unknown and fails readiness.
+    identityRule: >
+      Every historical canonical event record must have CanonicalPlayerID.
+      Unresolved historical GSIS identities fail readiness closed.
+    backfillRule: >
+      The dataset participates in the normal bounded newest-first historical
+      backfill selector. Checkpoint B1 activates the support/readiness contract;
+      production persistence of the remaining 1999-2024 seasons is Checkpoint B2.
 
 operationalDatasetEvaluation:
   evaluatedAt: 2026-08-30

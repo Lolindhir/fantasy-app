@@ -43,6 +43,7 @@ factOwnership:
     owner: source-data/nfl/**
     relevantDatasets:
       - source-data/nfl/player-stats/**
+      - source-data/nfl/special-teams-fumble-events/**
       - source-data/nfl/rosters/**
       - source-data/nfl/weekly-rosters/**
       - source-data/nfl/snap-counts/**
@@ -63,6 +64,15 @@ historicalCoverage:
     startSeason: 2002
   playerStats:
     startSeason: 1999
+  specialTeamsFumbleEvents:
+    startSeason: 1999
+    completenessRule: >
+      Every WeekFinal=true week in persisted game-finality evidence requires a
+      canonical special-teams-fumble-event partition. Records=[] is explicit zero;
+      a missing finalized-week partition is unknown and fails readiness.
+    identityRule: >
+      Historical event records require CanonicalPlayerID; unresolved historical
+      GSIS identities fail readiness closed.
   snapCounts:
     startSeason: 2012
   currentSeasonAvailabilityRule: >
@@ -107,10 +117,14 @@ scoringContract:
     - Made field goals use nflverse distance buckets through 60+; fgm_50p combines 50-59 and 60+.
   failClosedUnsupported:
     - >
-      Active individual-player Special Teams Forced Fumble, Special Teams Fumble Recovery,
-      or Special Teams Solo Tackle settings remain unsupported because canonical weekly
-      player-stats do not identify those events by special-teams unit. They must not be
-      inferred from generic defensive/recovery counters.
+      Active individual-player Special Teams Forced Fumble and Special Teams Fumble Recovery
+      remain unsupported by the scorer until #698 Checkpoint C consumes the canonical
+      special-teams-fumble-events evidence. They must not be inferred from generic
+      player-stats defensive/recovery counters.
+    - >
+      Active Special Teams Solo Tackle remains unsupported because canonical source evidence
+      does not yet identify that event by special-teams unit. It must not be inferred from
+      generic tackle counters.
     - >
       Non-zero distance-specific missed-field-goal scoring remains unsupported until reliable
       raw miss-distance evidence including blocked attempts is available. The scorer must
@@ -127,9 +141,12 @@ readinessContract:
     - source-data/audits/league-source-data-audit.json
     - source-data/audits/source-data-storage-audit.json
   readyForHistoricalScoringRule: >
-    Every historical season in every declared support band must have both persisted raw
-    evidence and canonical materialization. Current-season not-yet-available evidence does
-    not satisfy a historical partition and does not create a historical failure by itself.
+    Every historical season in every declared support band must have persisted raw evidence
+    and complete canonical materialization. For special-teams-fumble-events, completeness is
+    week-exact against persisted game-finality: every WeekFinal=true week must exist,
+    including explicit Records=[] zero partitions, and historical event identities must be
+    resolved. Current-season not-yet-available evidence does not satisfy a historical
+    partition and does not create a historical failure by itself.
   leagueRule: >
     Every configured CanonicalLeagueID must have a manifest and the required per-season core
     files. The productive hardening target is the nfl-reise namespace.
