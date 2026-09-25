@@ -447,6 +447,26 @@ Der spätere Workflow soll mindestens liefern:
 - Entscheidungskonfidenz;
 - zeitkritische nächste Aktion.
 
+### Post-Week Roster + Lineup Retrospective
+
+Nach vollständiger Fantasy-Scoring-Finality einer Woche kann ein abgeschlossenes Mighty-Giants-Postmortem erstellt werden. Es ist eine retrospektive Analyse und darf den damaligen Ex-ante-Entscheidungszustand nicht mit späterem Wissen überschreiben.
+
+Verbindliche Leitplanken:
+
+- historische Starter, Punkte, Eligibility, Taxi-/Reserve-Status und tatsächlich verfügbare Alternativen aus periodenstabiler Wochen-Evidenz rekonstruieren; aktuelle Roster- oder Starterzustände dürfen nicht still rückwirkend als damaliger Zustand verwendet werden;
+- finales Matchup-Ergebnis, tatsächlich gewertete Starter sowie relevante AutoSub-/Late-Swap-Ausführung getrennt vom ursprünglich ausgewählten Lineup dokumentieren;
+- ein legales Hindsight-/Best-Ball-Maximum darf als Diagnose berechnet werden, muss aber ausschließlich damals startberechtigte Spieler verwenden und ausdrücklich als Ex-post-Vergleich gekennzeichnet bleiben;
+- Prozessqualität aus der damals verfügbaren Evidenz bewerten, nicht aus dem späteren Ergebnis;
+- Decision Regret und Outcome Regret trennen:
+  - Decision Regret bedeutet, dass dieselben damals verfügbaren Informationen bei saubererer Anwendung des Prozesses plausibel zu einer anderen Entscheidung geführt hätten;
+  - Outcome Regret bedeutet, dass eine ex ante vertretbare Entscheidung durch Verletzung, Game Script, Varianz oder andere später eingetretene Ereignisse schlechter ausging;
+- bei materiellen Start/Sit-Grenzen, AutoSubs und Late-Swap-Pfaden die damaligen Alternativen und die Same-Information-Re-Decision explizit festhalten;
+- Spielerentwicklung nicht nur aus Fantasy-Punkten ableiten; belastbare Usage-, Opportunity-, Injury- und Rollen-Evidenz getrennt vom Boxscore ausweisen, soweit sie für die Woche verfügbar ist;
+- unmittelbare Rechecks und nächste Entscheidungsfragen ableiten, aber aus einem einzelnen Wochen-Outcome keine dauerhafte Spieler-, Roster- oder Prozessregel automatisch verallgemeinern;
+- bei rückwirkend rekonstruierten Reviews Rekonstruktionsdatum, Quellen, bekannte Lücken und Outcome-Firewall sichtbar machen.
+
+Nach ausdrücklicher Persistierungsfreigabe werden solche abgeschlossenen Reviews als datierte Analyseartefakte unter fantasy-management/analyses/<season>/weekly/ abgelegt. Ein Weekly Postmortem ersetzt keinen gegebenenfalls separat existierenden sealed Decision Record oder Decision Set und darf dessen Ex-ante-Felder niemals umschreiben.
+
 ## 5. Kicker als Sonderfall im Weekly Workflow
 
 ### Default-Rosterstrategie
