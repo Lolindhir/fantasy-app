@@ -147,21 +147,67 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         print("V2_CALIBRATION_SUMMARY=" + json.dumps(compact, sort_keys=True))
 
         selected = report["Calibration"]["Selected"]
-        self.assertIn(
-            selected["BaselineVariant"],
-            [BASELINE_PREVIOUS_POSITION_MEAN, BASELINE_CURRENT_POSITION_MEAN],
+        self.assertEqual(BASELINE_PREVIOUS_POSITION_MEAN, selected["BaselineVariant"])
+        self.assertEqual(0.5, selected["K"])
+        self.assertEqual(11297, report["Calibration"]["ComparableObservationCount"])
+        self.assertEqual(
+            {
+                "Count": 11297,
+                "MAE": 4.5917,
+                "RMSE": 6.2722,
+                "Bias": -0.1955,
+                "MeanProjection": 8.0903,
+                "MeanActual": 8.2858,
+            },
+            selected["Metrics"],
         )
-        self.assertIn(selected["K"], report["Calibration"]["KGrid"])
-        self.assertGreater(report["Calibration"]["ComparableObservationCount"], 10000)
 
         comparable = report["Holdout"]["Comparable"]
-        self.assertEqual(5724, comparable["V1"]["Count"])
-        self.assertEqual(5724, comparable["V2"]["Count"])
-        self.assertLess(comparable["V2"]["MAE"], comparable["V1"]["MAE"])
+        self.assertEqual(
+            {
+                "Count": 5724,
+                "MAE": 4.6282,
+                "RMSE": 6.4603,
+                "Bias": -0.1902,
+                "MeanProjection": 7.8769,
+                "MeanActual": 8.0671,
+            },
+            comparable["V1"],
+        )
+        self.assertEqual(
+            {
+                "Count": 5724,
+                "MAE": 4.5948,
+                "RMSE": 6.3162,
+                "Bias": -0.0628,
+                "MeanProjection": 8.0043,
+                "MeanActual": 8.0671,
+            },
+            comparable["V2"],
+        )
+        self.assertEqual(0.0334, comparable["MAEImprovementPoints"])
+        self.assertEqual(0.7217, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.1441, comparable["RMSEImprovementPoints"])
+        self.assertEqual(2.2305, comparable["RMSEImprovementPercent"])
+        self.assertEqual(5.595, comparable["V1Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(5.0683, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(6.691, comparable["V1Breakdowns"]["ByPosition"]["QB"]["MAE"])
+        self.assertEqual(6.5573, comparable["V2Breakdowns"]["ByPosition"]["QB"]["MAE"])
 
         expanded = report["Holdout"]["ExpandedCoverage"]
         self.assertEqual(641, expanded["AdditionalColdStartPredictions"])
         self.assertEqual(6365, expanded["TotalPredictions"])
+        self.assertEqual(
+            {
+                "Count": 641,
+                "MAE": 5.9516,
+                "RMSE": 7.0246,
+                "Bias": 2.6506,
+                "MeanProjection": 8.1993,
+                "MeanActual": 5.5487,
+            },
+            expanded["ColdStartMetrics"],
+        )
 
 
 if __name__ == "__main__":
