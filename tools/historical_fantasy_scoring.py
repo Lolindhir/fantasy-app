@@ -129,6 +129,31 @@ POSITIONAL_FIRST_DOWN_BONUS_KEYS = {
 }
 POSITIONAL_KEYS = POSITIONAL_RECEPTION_BONUS_KEYS | POSITIONAL_FIRST_DOWN_BONUS_KEYS
 
+# Sleeper's generic individual-defense keys are IDP stats. nflverse may expose
+# defensive counters on an offensive-position player after a turnover or other
+# unusual play, but Sleeper does not apply these IDP settings to QB/RB/WR/TE/K.
+# Unit-specific Special Teams player keys are intentionally separate and remain
+# position-independent.
+IDP_ONLY_KEYS = {
+    "ff",
+    "fum_rec",
+    "int",
+    "int_ret_yd",
+    "sack",
+    "sack_yd",
+    "safe",
+    "tkl_solo",
+    "tkl_ast",
+    "tkl_loss",
+    "qb_hit",
+    "def_td",
+}
+DEFENSIVE_POSITION_GROUPS = {"DB", "DL", "LB"}
+DEFENSIVE_POSITIONS = {
+    "CB", "DB", "DE", "DL", "DT", "EDGE", "FS", "ILB", "LB", "NT",
+    "OLB", "S", "SAF", "SS",
+}
+
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -154,18 +179,31 @@ def positional_key_applies(position: str, key: str) -> bool:
     return key.endswith(f"_{position.lower()}")
 
 
-def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> set[str]:
+def is_defensive_player(position: str | None, position_group: str | None = None) -> bool:
+    pos = (position or "").upper()
+    group = (position_group or "").upper()
+    return group in DEFENSIVE_POSITION_GROUPS or pos in DEFENSIVE_POSITIONS
+
+
+def applicable_scoring_keys(
+    position: str | None,
+    scoring: dict[str, Any],
+    *,
+    position_group: str | None = None,
+) -> set[str]:
     """Return individual-player scoring keys that apply to this record.
 
-    Player scoring is event-first: kickers may produce passing/rushing/receiving
-    stats, skill players may produce return/defensive stats, and fumble deductions
-    apply regardless of unit. Position only gates explicitly positional bonuses.
+    Player scoring is event-first for ordinary offense, kicking, returns and
+    unit-specific Special Teams player events. Position gates only settings whose
+    Sleeper semantics are position-specific: explicit positional bonuses and
+    generic IDP/individual-defense keys.
 
-    Any non-team-defense, non-positional key is considered player-applicable so an
-    activated but unmapped setting fails closed instead of being silently ignored.
+    Any other non-team-defense key remains player-applicable so an activated but
+    unmapped setting fails closed instead of being silently ignored.
     """
 
     pos = (position or "").upper()
+    defensive_player = is_defensive_player(position, position_group)
     applicable: set[str] = set()
     for key in scoring:
         if key in TEAM_DEFENSE_ONLY_KEYS:
@@ -173,6 +211,8 @@ def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> se
         if key in POSITIONAL_KEYS:
             if positional_key_applies(pos, key):
                 applicable.add(key)
+            continue
+        if key in IDP_ONLY_KEYS and not defensive_player:
             continue
         applicable.add(key)
     return applicable
@@ -187,7 +227,11 @@ def score_record(
     stats = record.get("Stats") or {}
     if not isinstance(stats, dict):
         raise ValueError("Canonical player stat record has no Stats object")
-    applicable = applicable_scoring_keys(record.get("Position"), scoring)
+    applicable = applicable_scoring_keys(
+        record.get("Position"),
+        scoring,
+        position_group=record.get("PositionGroup"),
+    )
     contributions = []
     unsupported_nonzero = []
     total = 0.0
