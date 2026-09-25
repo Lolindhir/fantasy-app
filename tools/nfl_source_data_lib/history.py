@@ -9,6 +9,10 @@ HISTORICAL_BANDS = {
     "nflverse.rosters": {"start": 1999, "canonical": "rosters"},
     "nflverse.weekly-rosters": {"start": 2002, "canonical": "weekly-rosters"},
     "nflverse.player-stats": {"start": 1999, "canonical": "player-stats"},
+    "nflverse.special-teams-fumble-events": {
+        "start": 1999,
+        "canonical": "special-teams-fumble-events",
+    },
     "nflverse.snap-counts": {
         "start": 2012,
         "canonical": "snap-counts",
