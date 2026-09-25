@@ -243,6 +243,75 @@ projectionBacktest:
         position group (MAE 6.4903), providing the benchmark for shrinkage/baseline
         variants in the next checkpoint.
 
+  v2:
+    implementation: tools/historical_projection_v2_calibration.py
+    model: shrunk-current-season-ppg
+    formula: Projection = CurrentSeasonPPG * w + PositionBaseline * (1 - w)
+    weight: w = PriorGames / (PriorGames + k)
+    calibration:
+      scoringProfile: nfl-reise-2025
+      seasons:
+        - 2023
+        - 2024
+      selectionMetric: MAE
+      tieBreak:
+        - RMSE
+        - absolute-bias
+        - lower-k
+      kGrid: 0.00-20.00-by-0.25-plus-24-32-48-64
+      comparableObservationCount: 11297
+      selectedBaseline: previous-season-position-mean-leave-one-player-out
+      selectedK: 0.5
+      selectedMetrics:
+        mae: 4.5917
+        rmse: 6.2722
+        bias: -0.1955
+    baselineCandidates:
+      - previous-season-position-mean-leave-one-player-out
+      - current-season-to-date-position-mean-leave-one-player-out-with-previous-season-fallback
+    leakageRule: >
+      Baseline and k selection use only 2023-2024. The 2025 season is an untouched
+      holdout. For a target week W, CurrentSeasonPPG and any current-season position
+      baseline use only weeks < W. Previous-season position evidence is already
+      completed before the target season. Position baselines exclude the target
+      player's own observations so the player's history is not counted twice.
+    holdout2025:
+      comparableCount: 5724
+      v1:
+        mae: 4.6282
+        rmse: 6.4603
+        bias: -0.1902
+      v2:
+        mae: 4.5948
+        rmse: 6.3162
+        bias: -0.0628
+      improvement:
+        maePoints: 0.0334
+        maePercent: 0.7217
+        rmsePoints: 0.1441
+        rmsePercent: 2.2305
+      diagnostics:
+        week2V1Mae: 5.5950
+        week2V2Mae: 5.0683
+        qbV1Mae: 6.6910
+        qbV2Mae: 6.5573
+    coldStartDiagnostic:
+      additionalPredictions: 641
+      mae: 5.9516
+      rmse: 7.0246
+      bias: 2.6506
+      rule: >
+        Pure position-baseline predictions for PriorGames=0 are diagnostic only and
+        are not accepted as the product cold-start rule. Their strong positive bias
+        shows that rookie/first-appearance handling needs the later V3 baseline work.
+    interpretation: >
+      V2 is accepted as a statistically better same-season projection after at least
+      one confirmed played game. The holdout improvement is real but modest, so the
+      simple global k=0.5 contract remains preferable to adding unvalidated complexity.
+      V3 must be compared against this locked V2 holdout benchmark rather than against
+      V1 alone.
+
+
 operations:
   nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml
   leagueSyncWorkflow: .github/workflows/sync-league-source-data.yml
