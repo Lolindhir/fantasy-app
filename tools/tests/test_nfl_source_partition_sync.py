@@ -120,6 +120,33 @@ class NflSourcePartitionSyncTests(unittest.TestCase):
                 selected,
             )
 
+    def test_bounded_historical_backfill_includes_special_teams_fumble_events_newest_first(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = partitioned_dataset(
+                root,
+                dataset_id="nflverse.special-teams-fumble-events",
+            )
+            existing = dataset.raw_path_for(2025)
+            existing.parent.mkdir(parents=True, exist_ok=True)
+            existing.write_text("{}", encoding="utf-8")
+
+            selected = select_missing_historical_partitions(
+                root,
+                [dataset],
+                current_season=2026,
+                limit=3,
+            )
+
+            self.assertEqual(
+                [
+                    ("nflverse.special-teams-fumble-events", 2024),
+                    ("nflverse.special-teams-fumble-events", 2023),
+                    ("nflverse.special-teams-fumble-events", 2022),
+                ],
+                selected,
+            )
+
     def test_bounded_historical_backfill_respects_support_bands_and_zero_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
