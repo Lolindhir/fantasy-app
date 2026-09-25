@@ -521,6 +521,7 @@ def historical_parity_summary(
                 "LeaguePoints": league_value,
                 "Delta": delta,
                 "ProviderFantasyPointsPPR": provider_ppr,
+                "Contributions": result["Contributions"],
             }
             if provider_ppr is not None and abs(derived - provider_ppr) <= tolerance + 1e-9:
                 provider_divergences.append(detail)
