@@ -288,6 +288,7 @@ def candidate(player: dict[str, Any], availability: str, scoring: dict[str, floa
         "player_id": str(player["player_id"]),
         "name": player.get("name"),
         "nfl_team": player.get("nfl_team"),
+        "nfl_team_source": player.get("nfl_team_source"),
         "availability": availability,
         "ownership": player.get("ownership") if isinstance(player.get("ownership"), dict) else {},
         "injury": player.get("injury") if isinstance(player.get("injury"), dict) else {},
