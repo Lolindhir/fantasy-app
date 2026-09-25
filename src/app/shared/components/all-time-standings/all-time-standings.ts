@@ -14,9 +14,4 @@ export class AllTimeStandingsComponent {
   @Input({ required: true }) standings: AllTimeStandingRow[] | null | undefined;
   @Input() title = 'All-Time Standings';
   @Input() showTitle = true;
-
-  repeatEmojiLimited(emoji: string, count: number): string {
-    if (count <= 2) return Array(count).fill(emoji).join('');
-    return `${count}${emoji}`;
-  }
 }
