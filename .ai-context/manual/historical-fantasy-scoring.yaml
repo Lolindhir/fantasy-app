@@ -181,6 +181,68 @@ parityValidation:
     an explicit provider-stat divergence. Provider fantasy totals are validation evidence only
     and never overwrite canonical NFL facts to force parity.
 
+projectionBacktest:
+  issue: 697
+  implementation: tools/historical_projection_backtest.py
+  v1:
+    model: current-season-ppg
+    formula: mean(prior confirmed played-game fantasy points in the same season)
+    leakageRule: >
+      Projection for target week W may use only outcomes from weeks < W. Target-week
+      participation is allowed only to define whether a historical player-game belongs
+      to the evaluation population; target-week stats, fantasy points, snaps and injury
+      state are never model features.
+    participation:
+      qbRbWrTeFb: OffenseSnaps > 0
+      kicker: SpecialTeamsSnaps > 0
+      missingSnapEvidence: unknown-and-excluded
+    coldStart: >
+      Week 1 and any later first confirmed appearance with no prior played game receive
+      no V1 projection. Cold start is not represented as zero.
+    byeDnp: >
+      A week without confirmed position-appropriate participation is not a player-game
+      observation for V1.
+    injury: no-explicit-adjustment-in-v1
+    seasonState: reset-before-week-1
+    metrics:
+      - MAE
+      - RMSE
+      - Bias
+      - MeanProjection
+      - MeanActual
+      - breakdown-by-position
+      - breakdown-by-target-week
+      - breakdown-by-prior-games
+    acceptedBaseline:
+      scoringProfile: nfl-reise-2025
+      seasons:
+        - 2024
+        - 2025
+      weeks: 1-18
+      predictionCount: 11361
+      mae: 4.6471
+      rmse: 6.4724
+      bias: -0.2951
+      season2024:
+        predictionCount: 5637
+        coldStarts: 629
+        missingParticipationEvidence: 6
+        mae: 4.6664
+        rmse: 6.4847
+        bias: -0.4016
+      season2025:
+        predictionCount: 5724
+        coldStarts: 641
+        missingParticipationEvidence: 13
+        mae: 4.6282
+        rmse: 6.4603
+        bias: -0.1902
+      interpretation: >
+        V1 is an accepted transparent baseline, not the final projection model. Early
+        weeks are weaker (combined Week-2 MAE 5.5087) and QB is the weakest major
+        position group (MAE 6.4903), providing the benchmark for shrinkage/baseline
+        variants in the next checkpoint.
+
 operations:
   nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml
   leagueSyncWorkflow: .github/workflows/sync-league-source-data.yml
