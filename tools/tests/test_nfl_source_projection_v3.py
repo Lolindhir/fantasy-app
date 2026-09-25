@@ -135,32 +135,100 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         print("V3_CALIBRATION_SUMMARY=" + json.dumps(compact, sort_keys=True))
 
         baseline = report["PlayerBaselineCalibration"]["Selected"]
-        self.assertIn(
-            baseline["HistoryVariant"],
-            [HISTORY_PREVIOUS_ONLY, HISTORY_TWO_SEASON],
-        )
-        self.assertGreater(
-            baseline["HistoryBackedColdStartMetrics"]["Count"],
-            500,
+        self.assertEqual(HISTORY_TWO_SEASON, baseline["HistoryVariant"])
+        self.assertEqual(0.25, baseline["HistoryDecay"])
+        self.assertEqual(0.0, baseline["HistoryK"])
+        self.assertEqual(1240, report["PlayerBaselineCalibration"]["ColdStartObservationCount"])
+        self.assertEqual(
+            {
+                "Count": 987,
+                "MAE": 4.3682,
+                "RMSE": 5.8518,
+                "Bias": 1.3454,
+                "MeanProjection": 7.5422,
+                "MeanActual": 6.1968,
+            },
+            baseline["HistoryBackedColdStartMetrics"],
         )
 
         current = report["CurrentSeasonCalibration"]["Selected"]
-        self.assertGreater(
-            report["CurrentSeasonCalibration"]["ComparableObservationCount"],
-            10000,
+        self.assertEqual(11297, report["CurrentSeasonCalibration"]["ComparableObservationCount"])
+        self.assertEqual(1.0, current["CurrentK"])
+        self.assertEqual(
+            {
+                "Count": 11297,
+                "MAE": 4.5425,
+                "RMSE": 6.1972,
+                "Bias": -0.1029,
+                "MeanProjection": 8.1829,
+                "MeanActual": 8.2858,
+            },
+            current["Metrics"],
         )
-        self.assertGreaterEqual(current["CurrentK"], 0.0)
 
         comparable = report["Holdout"]["Comparable"]
-        self.assertEqual(5724, comparable["V2"]["Count"])
-        self.assertEqual(5724, comparable["V3"]["Count"])
+        self.assertEqual(
+            {
+                "Count": 5724,
+                "MAE": 4.5948,
+                "RMSE": 6.3162,
+                "Bias": -0.0628,
+                "MeanProjection": 8.0043,
+                "MeanActual": 8.0671,
+            },
+            comparable["V2"],
+        )
+        self.assertEqual(
+            {
+                "Count": 5724,
+                "MAE": 4.5461,
+                "RMSE": 6.2445,
+                "Bias": 0.0197,
+                "MeanProjection": 8.0868,
+                "MeanActual": 8.0671,
+            },
+            comparable["V3"],
+        )
+        self.assertEqual(0.0487, comparable["MAEImprovementPoints"])
+        self.assertEqual(1.0599, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.0717, comparable["RMSEImprovementPoints"])
+        self.assertEqual(1.1352, comparable["RMSEImprovementPercent"])
+        self.assertEqual(5.0683, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(4.7838, comparable["V3Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(4.3241, comparable["V2Breakdowns"]["ByPriorGames"]["1"]["MAE"])
+        self.assertEqual(4.0746, comparable["V3Breakdowns"]["ByPriorGames"]["1"]["MAE"])
 
         cold = report["Holdout"]["ColdStart"]
         self.assertEqual(641, cold["V3All"]["Count"])
+        self.assertEqual(508, cold["HistoryBackedCount"])
+        self.assertEqual(133, cold["NoHistoryCount"])
         self.assertEqual(
-            641,
-            cold["HistoryBackedCount"] + cold["NoHistoryCount"],
+            {
+                "Count": 508,
+                "MAE": 4.1137,
+                "RMSE": 5.5433,
+                "Bias": 1.1729,
+                "MeanProjection": 7.2799,
+                "MeanActual": 6.107,
+            },
+            cold["V3HistoryBacked"],
         )
+        self.assertEqual(1.7912, cold["HistoryBackedMAEImprovementPoints"])
+        self.assertEqual(
+            {
+                "Count": 133,
+                "MAE": 6.1296,
+                "RMSE": 6.9152,
+                "Bias": 4.8093,
+                "MeanProjection": 8.2256,
+                "MeanActual": 3.4162,
+            },
+            cold["V3NoHistory"],
+        )
+
+        # V3 is promoted only because the untouched 2025 holdout beats V2.
+        self.assertLess(comparable["V3"]["MAE"], comparable["V2"]["MAE"])
+        self.assertLess(comparable["V3"]["RMSE"], comparable["V2"]["RMSE"])
 
 
 if __name__ == "__main__":
