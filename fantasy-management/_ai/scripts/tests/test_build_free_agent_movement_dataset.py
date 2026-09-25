@@ -39,6 +39,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             "name": player_id,
             "position": position,
             "nfl_team": "AAA",
+            "nfl_team_source": "test_team_source",
             "population_reasons": ["has_nfl_team"],
             "ownership": {"status": ownership, "teams": []},
             "app_data": {"espn_id": None},
@@ -136,6 +137,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             "cross_signal": {"minimum_percentile_delta_points": 5},
             "replacement_relevance": {"owned_boundary_quantile": 0.1, "near_distance_percentile_points": 10},
             "activity": {"near_replacement_top_n": 20},
+            "team_source_migration": {"comparison_policy": "suppress_nfl_team_change_when_source_contract_differs"},
             "output": {"free_agent_movement_signals": "generated/movement.json"},
         })
         return config, previous
@@ -154,6 +156,31 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             self.assertIn(15, kicker_thresholds)
             self.assertIn("depth_chart_order_change", {x["kind"] for x in by_id["fa-wr"]["movement"]["structural_day_over_day"]["changes"]})
             self.assertEqual(set(result["population"]["positions"]), {"QB", "RB", "WR", "TE", "K"})
+
+    def test_team_change_is_suppressed_only_across_source_contract_migration(self) -> None:
+        current = self.player("fa-wr", "WR", "fantasy_free_agent")
+        previous = self.player("fa-wr", "WR", "fantasy_free_agent")
+        current["nfl_team"] = None
+        current["nfl_team_source"] = "canonical_sleeper_team"
+        previous["nfl_team"] = "AAA"
+        previous.pop("nfl_team_source")
+
+        structural, crossed = MODULE._structural_movement(
+            current,
+            previous,
+            {"comparison_policy": "suppress_nfl_team_change_when_source_contract_differs"},
+        )
+        self.assertEqual(structural["team_comparison_status"], "source_contract_migration_suppressed")
+        self.assertFalse(any(item["family"] == "team_transaction" for item in crossed))
+
+        previous["nfl_team_source"] = "canonical_sleeper_team"
+        structural, crossed = MODULE._structural_movement(
+            current,
+            previous,
+            {"comparison_policy": "suppress_nfl_team_change_when_source_contract_differs"},
+        )
+        self.assertEqual(structural["team_comparison_status"], "compared")
+        self.assertTrue(any(item["kind"] == "nfl_team_change" for item in crossed))
 
     def test_scoring_comes_from_canonical_league_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -193,6 +220,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.assertTrue(all(item["ownership"]["status"] == "fantasy_free_agent" for item in result["discoveries"]))
         self.assertEqual(result["source"]["canonical_league_scoring"]["canonical_league_id"], "nfl-reise")
         self.assertNotIn("league", result["source"])
+        self.assertTrue(all("nfl_team_source" in item for item in result["discoveries"]))
 
     def test_production_workflow_materializes_after_free_agents(self) -> None:
         root = SCRIPT_PATH.parents[3]
