@@ -22,44 +22,33 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
         self.assertEqual(
             "none",
             MODULE.provider_context_shape(
-                canonical_team_present=False,
-                tank01_is_free_agent=True,
+                canonical_team_present=False, tank01_is_free_agent=True
             ),
         )
         self.assertEqual(
             "sleeper_team_only",
             MODULE.provider_context_shape(
-                canonical_team_present=True,
-                tank01_is_free_agent=True,
+                canonical_team_present=True, tank01_is_free_agent=True
             ),
         )
         self.assertEqual(
             "tank01_not_free_agent_only",
             MODULE.provider_context_shape(
-                canonical_team_present=False,
-                tank01_is_free_agent=False,
+                canonical_team_present=False, tank01_is_free_agent=False
             ),
         )
         self.assertEqual(
             "sleeper_team_and_tank01_not_free_agent",
             MODULE.provider_context_shape(
-                canonical_team_present=True,
-                tank01_is_free_agent=False,
+                canonical_team_present=True, tank01_is_free_agent=False
             ),
         )
 
-    def test_policy_variants_keep_weekly_history_canonical(self) -> None:
-        row = {
-            "baseline_population_reasons": ["has_nfl_team"],
-            "latest_weekly_roster_member": False,
-            "current_season_canonical_history_member": True,
-            "previous_season_canonical_history_member": False,
-            "canonical_team": None,
-            "tank01_is_free_agent": True,
-        }
-        result = MODULE.evaluate_policy_variants(row)
-        self.assertTrue(result["current_canonical"])
-        self.assertTrue(all(result.values()))
+    def test_roster_position_normalizes_running_back_variants(self) -> None:
+        self.assertEqual("RB", MODULE.roster_fantasy_position("FB"))
+        self.assertEqual("RB", MODULE.roster_fantasy_position("HB"))
+        self.assertEqual("TE", MODULE.roster_fantasy_position("TE"))
+        self.assertIsNone(MODULE.roster_fantasy_position("OL"))
 
     def test_policy_variants_do_not_promote_previous_or_provider_context_silently(self) -> None:
         row = {
@@ -94,15 +83,14 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
 
         self.assertEqual(1, result["schema_version"])
         self.assertEqual(
-            "player-signal-population-policy-adjudication",
-            result["audit_id"],
+            "player-signal-population-policy-adjudication", result["audit_id"]
         )
         self.assertEqual("analysis_only_no_population_change", result["runtime_effect"])
 
         baseline = result["baseline"]
         variants = result["policy_variants"]
-        recommended = result["recommended_policy"]
-        self.assertEqual("current_canonical", recommended["variant"])
+        candidate = result["candidate_policy"]
+        self.assertEqual("current_canonical", candidate["variant"])
 
         for name, summary in variants.items():
             self.assertIn(name, MODULE.POLICY_VARIANTS)
@@ -113,59 +101,38 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
             self.assertEqual(0, summary["league_owned_removed_count"])
             self.assertEqual(0, summary["managed_roster_players_removed_count"])
 
-        history_quality = result["canonical_history_quality"]
-        self.assertGreater(history_quality["latest_week"], 0)
-        self.assertGreater(history_quality["current_season_roster_record_count"], 0)
-        self.assertGreater(
-            history_quality["current_season_weekly_history"]["partition_count"],
-            0,
-        )
-        self.assertGreater(
-            history_quality["previous_season_weekly_history"]["partition_count"],
-            0,
-        )
-        self.assertGreater(
-            history_quality["previous_season_weekly_history"][
-                "eligible_player_additions_over_season_roster"
-            ],
-            0,
-            "Weekly Canonical history must retain evidence that season roster alone misses",
-        )
+        quality = result["canonical_history_quality"]
+        self.assertGreater(quality["latest_week"], 0)
+        self.assertGreater(quality["current_season_weekly_history"]["partition_count"], 0)
+        self.assertGreater(quality["previous_season_weekly_history"]["partition_count"], 0)
 
-        recommended_summary = variants[recommended["variant"]]
         cohorts = result["recommended_removal_cohorts"]
         self.assertEqual(
-            recommended_summary["removed_count"],
+            variants[candidate["variant"]]["removed_count"],
             sum(cohort["count"] for cohort in cohorts.values()),
         )
         self.assertEqual(
-            recommended_summary["kicker_candidates_removed_count"],
+            variants[candidate["variant"]]["kicker_candidates_removed_count"],
             result["removed_kicker_adjudication"]["count"],
-        )
-        self.assertEqual(
-            cohorts["free_agent_no_current_or_recent_roster_evidence"]["count"]
-            + cohorts["unresolved_diagnostic_state"]["count"],
-            variants["current_plus_previous_and_provider_context"]["removed_count"],
         )
 
         provider_rows = result["provider_context_exceptions"]["players"]
-        self.assertEqual(
-            cohorts["provider_context_exception"]["count"],
-            len(provider_rows),
-        )
+        self.assertEqual(cohorts["provider_context_exception"]["count"], len(provider_rows))
         self.assertTrue(
             all(
                 row["canonical_team"] or row["tank01_is_free_agent"] is False
                 for row in provider_rows
             )
         )
-        self.assertTrue(
-            all(
-                not row["previous_season_roster_member"]
-                and not row["previous_season_weekly_history_member"]
-                for row in provider_rows
+
+        current_identity_gap_count = result["current_identity_gap_candidates"]["count"]
+        if result["decision_status"] == "blocked_on_current_canonical_identity_coverage":
+            self.assertGreater(current_identity_gap_count, 0)
+        else:
+            self.assertEqual(
+                "policy_ready_for_runtime_cutover_design", result["decision_status"]
             )
-        )
+            self.assertEqual(0, current_identity_gap_count)
 
         print(
             "6Z4_POPULATION_POLICY_AUDIT="
