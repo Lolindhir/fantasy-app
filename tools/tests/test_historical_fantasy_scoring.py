@@ -327,8 +327,22 @@ class HistoricalFantasyScoringRepositoryParityTests(unittest.TestCase):
             league_id="nfl-reise",
             scoring_season=2025,
         )
+        compact = {
+            "TotalLeaguePlayerWeeks": summary["TotalLeaguePlayerWeeks"],
+            "ComparedPlayerWeeks": summary["ComparedPlayerWeeks"],
+            "ExactMatches": summary["ExactMatches"],
+            "MissingCanonicalStatZeroPointPlayerWeekCount": len(
+                summary["MissingCanonicalStatZeroPointPlayerWeeks"]
+            ),
+            "MissingCanonicalStatNonZeroPointPlayerWeeks": summary[
+                "MissingCanonicalStatNonZeroPointPlayerWeeks"
+            ],
+            "UnsupportedPlayerWeeks": summary["UnsupportedPlayerWeeks"],
+            "ProviderStatDivergences": summary["ProviderStatDivergences"],
+            "ScoringMismatches": summary["ScoringMismatches"],
+        }
         print("2025 W1-W17 historical scoring parity:")
-        print(json.dumps(summary, indent=2, sort_keys=True))
+        print(json.dumps(compact, indent=2, sort_keys=True))
 
         self.assertEqual([], summary["MissingCanonicalStatNonZeroPointPlayerWeeks"])
         self.assertEqual([], summary["UnsupportedPlayerWeeks"])
