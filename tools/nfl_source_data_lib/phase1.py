@@ -576,6 +576,36 @@ def _build_player_stats(
     return outputs, audit, preserved
 
 
+def _historical_finalized_weeks(repo_root: Path, season: int) -> set[int]:
+    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    if not path.exists():
+        raise ValueError(
+            f"Historical special-teams fumble materialization requires persisted game-finality evidence: {path}"
+        )
+    payload = load_json(path)
+    if not isinstance(payload, dict) or payload.get("Finalized") is not True:
+        raise ValueError(
+            f"Historical game-finality evidence must be finalized before deriving zero-event weeks: {path}"
+        )
+    weeks = payload.get("Weeks")
+    if not isinstance(weeks, list):
+        raise ValueError(f"Historical game-finality evidence has no Weeks array: {path}")
+
+    finalized: set[int] = set()
+    for row in weeks:
+        if not isinstance(row, dict):
+            raise ValueError(f"Historical game-finality Weeks contains a non-object row: {path}")
+        week = as_int(row.get("Week"))
+        week_final = row.get("WeekFinal")
+        if week is None or not isinstance(week_final, bool):
+            raise ValueError(f"Historical game-finality week row is missing Week/WeekFinal: {path}")
+        if week_final:
+            finalized.add(week)
+    if not finalized:
+        raise ValueError(f"Historical game-finality evidence contains no finalized weeks: {path}")
+    return finalized
+
+
 def _build_special_teams_fumble_events(
     repo_root: Path,
     dataset: Dataset,
@@ -592,6 +622,7 @@ def _build_special_teams_fumble_events(
     unresolved_count = 0
     unresolved_ids: set[str] = set()
     duplicate_count = 0
+    empty_finalized_partition_count = 0
     event_type_counts: Counter[str] = Counter()
     allowed_play_types = {"extra_point", "field_goal", "kickoff", "punt"}
 
@@ -691,7 +722,15 @@ def _build_special_teams_fumble_events(
                 event_count += 1
                 event_type_counts[event_type] += 1
 
-        for week, records in sorted(grouped.items()):
+        output_weeks = set(grouped)
+        empty_finalized_weeks: set[int] = set()
+        if season < observation_season:
+            finalized_weeks = _historical_finalized_weeks(repo_root, season)
+            empty_finalized_weeks = finalized_weeks - set(grouped)
+            output_weeks |= finalized_weeks
+
+        for week in sorted(output_weeks):
+            records = grouped.get(week, [])
             records.sort(
                 key=lambda item: (
                     item["GameID"],
@@ -719,9 +758,11 @@ def _build_special_teams_fumble_events(
             )
             outputs.append((path, effective))
             preserved += int(was_preserved)
+        empty_finalized_partition_count += len(empty_finalized_weeks)
 
     audit = {
         "partitionCount": len(outputs),
+        "emptyFinalizedPartitionCount": empty_finalized_partition_count,
         "eventCount": event_count,
         "eventTypeCounts": dict(sorted(event_type_counts.items())),
         "resolvedIdentityCount": resolved_count,

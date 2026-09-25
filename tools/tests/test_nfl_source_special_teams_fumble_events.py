@@ -75,6 +75,32 @@ def base_row(**overrides: str) -> dict[str, str]:
     return row
 
 
+def write_game_finality(root: Path, weeks: list[int], *, season: int = 2025) -> None:
+    path = root / "source-data/nfl/game-finality" / f"{season}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "SchemaVersion": 2,
+                "Season": season,
+                "SourceDataset": "nflverse.game-finality",
+                "Finalized": True,
+                "Weeks": [
+                    {
+                        "GameType": "REG",
+                        "Week": week,
+                        "ApplicableGameCount": 1,
+                        "FinalGameCount": 1,
+                        "WeekFinal": True,
+                    }
+                    for week in weeks
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 class SpecialTeamsFumbleRegistryTests(unittest.TestCase):
     def test_registry_loads_versioned_projected_source_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -320,6 +346,7 @@ class SpecialTeamsFumbleCanonicalTests(unittest.TestCase):
                 {"CanonicalPlayerID": "NFLP-1", "IDs": {"GSIS": "00-1"}},
                 {"CanonicalPlayerID": "NFLP-2", "IDs": {"GSIS": "00-2"}},
             ]
+            write_game_finality(root, [7])
 
             outputs, audit, preserved = _build_special_teams_fumble_events(
                 root,
@@ -331,6 +358,7 @@ class SpecialTeamsFumbleCanonicalTests(unittest.TestCase):
 
             self.assertEqual(0, preserved)
             self.assertEqual(1, len(outputs))
+            self.assertEqual(0, audit["emptyFinalizedPartitionCount"])
             self.assertEqual(2, audit["eventCount"])
             self.assertEqual(1, audit["equivalentDuplicateEventCount"])
             records = outputs[0][1]["Records"]
@@ -341,6 +369,55 @@ class SpecialTeamsFumbleCanonicalTests(unittest.TestCase):
             self.assertEqual(["BBB"], recovery["FumbledTeams"])
             self.assertTrue(recovery["SpecialTeams"])
             self.assertTrue(outputs[0][1]["Finalized"])
+
+    def test_finalized_historical_week_without_events_emits_empty_partition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = projected_dataset(root)
+            raw = dataset.raw_path_for(2025)
+            raw.parent.mkdir(parents=True, exist_ok=True)
+            raw.write_text(
+                json.dumps(
+                    {
+                        "SchemaVersion": 1,
+                        "Projection": {
+                            "ID": SPECIAL_TEAMS_FUMBLE_PROJECTION_ID,
+                            "Version": SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION,
+                        },
+                        "Columns": list(SPECIAL_TEAMS_FUMBLE_FIELDS),
+                        "Records": [
+                            base_row(
+                                forced_fumble_player_1_team="AAA",
+                                forced_fumble_player_1_player_id="00-1",
+                            )
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"GSIS": "00-1"}}]
+            write_game_finality(root, [7, 8])
+
+            outputs, audit, preserved = _build_special_teams_fumble_events(
+                root,
+                dataset,
+                canonical,
+                2026,
+                force=False,
+            )
+
+            self.assertEqual(0, preserved)
+            self.assertEqual(2, len(outputs))
+            self.assertEqual(1, audit["eventCount"])
+            self.assertEqual(1, audit["emptyFinalizedPartitionCount"])
+            by_week = {payload["Week"]: (path, payload) for path, payload in outputs}
+            empty_path, empty_payload = by_week[8]
+            self.assertEqual(
+                root / "source-data/nfl/special-teams-fumble-events/2025/08.json",
+                empty_path,
+            )
+            self.assertTrue(empty_payload["Finalized"])
+            self.assertEqual([], empty_payload["Records"])
 
     def test_conflicting_duplicate_event_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
