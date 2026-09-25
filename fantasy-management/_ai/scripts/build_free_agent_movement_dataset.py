@@ -78,6 +78,11 @@ def validate_config(config: dict[str, Any]) -> None:
         raise FreeAgentMovementMaterializationError("owned_boundary_quantile must be between 0 and 1")
     if not isinstance(near_distance, (int, float)) or float(near_distance) < 0:
         raise FreeAgentMovementMaterializationError("near_distance_percentile_points must be non-negative")
+    team_source_migration = config.get("team_source_migration") if isinstance(config.get("team_source_migration"), dict) else {}
+    if team_source_migration.get("comparison_policy") != "suppress_nfl_team_change_when_source_contract_differs":
+        raise FreeAgentMovementMaterializationError(
+            "team_source_migration.comparison_policy must suppress source-contract team changes"
+        )
     canonical_league = config.get("canonical_league") if isinstance(config.get("canonical_league"), dict) else {}
     canonical_league_id = canonical_league.get("canonical_league_id")
     if not isinstance(canonical_league_id, str) or not canonical_league_id:
@@ -827,16 +832,35 @@ def _activity_context(player: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _structural_movement(player: dict[str, Any], previous: dict[str, Any] | None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def _structural_movement(
+    player: dict[str, Any],
+    previous: dict[str, Any] | None,
+    team_source_migration: dict[str, Any],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     if previous is None:
-        return {"comparison_status": "no_previous_player_baseline", "changes": []}, []
+        return {
+            "comparison_status": "no_previous_player_baseline",
+            "team_comparison_status": "no_previous_player_baseline",
+            "changes": [],
+        }, []
     changes: list[dict[str, Any]] = []
 
     def add_change(kind: str, family: str, old: Any, new: Any, severity: str = "medium") -> None:
         if old != new:
             changes.append({"family": family, "kind": kind, "severity": severity, "window_days": 1, "from": old, "to": new})
 
-    add_change("nfl_team_change", "team_transaction", previous.get("nfl_team"), player.get("nfl_team"), "high")
+    if team_source_migration.get("comparison_policy") != "suppress_nfl_team_change_when_source_contract_differs":
+        raise FreeAgentMovementMaterializationError("Unsupported team source migration comparison policy")
+    previous_team_source = ops.optional_text(previous.get("nfl_team_source"))
+    current_team_source = ops.optional_text(player.get("nfl_team_source"))
+    if previous_team_source is None and current_team_source is None:
+        team_comparison_status = "legacy_unversioned_compared"
+        add_change("nfl_team_change", "team_transaction", previous.get("nfl_team"), player.get("nfl_team"), "high")
+    elif previous_team_source == current_team_source:
+        team_comparison_status = "compared"
+        add_change("nfl_team_change", "team_transaction", previous.get("nfl_team"), player.get("nfl_team"), "high")
+    else:
+        team_comparison_status = "source_contract_migration_suppressed"
 
     injury_now = player.get("injury") if isinstance(player.get("injury"), dict) else {}
     injury_old = previous.get("injury") if isinstance(previous.get("injury"), dict) else {}
@@ -858,6 +882,9 @@ def _structural_movement(player: dict[str, Any], previous: dict[str, Any] | None
 
     structural = {
         "comparison_status": "compared",
+        "team_comparison_status": team_comparison_status,
+        "previous_nfl_team_source": previous_team_source,
+        "current_nfl_team_source": current_team_source,
         "changes": changes,
         "activity_changes": activity_changes,
     }
@@ -1020,7 +1047,11 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
         projections, projection_crossed, projection_coverage, projection_deltas = _projection_movement(
             player, _projection_histories(histories, position), windows, thresholds["projections"], scoring
         )
-        structural, structural_crossed = _structural_movement(player, previous_by_id.get(str(player.get("player_id"))))
+        structural, structural_crossed = _structural_movement(
+            player,
+            previous_by_id.get(str(player.get("player_id"))),
+            config["team_source_migration"],
+        )
         crossed = adp_crossed + market_crossed + projection_crossed + structural_crossed
         coverage_changes = adp_coverage + market_coverage + projection_coverage
         material_families = {str(item["family"]) for item in crossed}
@@ -1055,6 +1086,7 @@ def build(root: Path, config_path: Path, previous_free_agent_path: Path | None =
             "name": player.get("name"),
             "position": position,
             "nfl_team": player.get("nfl_team"),
+            "nfl_team_source": player.get("nfl_team_source"),
             "ownership": player.get("ownership"),
             "replacement_relevance": replacement,
             "movement": {
