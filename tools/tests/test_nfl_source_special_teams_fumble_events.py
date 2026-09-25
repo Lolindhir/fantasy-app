@@ -75,7 +75,14 @@ def base_row(**overrides: str) -> dict[str, str]:
     return row
 
 
-def write_game_finality(root: Path, weeks: list[int], *, season: int = 2025) -> None:
+def write_game_finality(
+    root: Path,
+    weeks: list[int],
+    *,
+    season: int = 2025,
+    incomplete_weeks: list[int] | None = None,
+) -> None:
+    incomplete_weeks = incomplete_weeks or []
     path = root / "source-data/nfl/game-finality" / f"{season}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -94,6 +101,16 @@ def write_game_finality(root: Path, weeks: list[int], *, season: int = 2025) -> 
                         "WeekFinal": True,
                     }
                     for week in weeks
+                ]
+                + [
+                    {
+                        "GameType": "REG",
+                        "Week": week,
+                        "ApplicableGameCount": 1,
+                        "FinalGameCount": 0,
+                        "WeekFinal": False,
+                    }
+                    for week in incomplete_weeks
                 ],
             }
         ),
@@ -418,6 +435,51 @@ class SpecialTeamsFumbleCanonicalTests(unittest.TestCase):
             )
             self.assertTrue(empty_payload["Finalized"])
             self.assertEqual([], empty_payload["Records"])
+
+    def test_historical_event_week_uses_week_level_finality(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dataset = projected_dataset(root)
+            raw = dataset.raw_path_for(2025)
+            raw.parent.mkdir(parents=True, exist_ok=True)
+            raw.write_text(
+                json.dumps(
+                    {
+                        "SchemaVersion": 1,
+                        "Projection": {
+                            "ID": SPECIAL_TEAMS_FUMBLE_PROJECTION_ID,
+                            "Version": SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION,
+                        },
+                        "Columns": list(SPECIAL_TEAMS_FUMBLE_FIELDS),
+                        "Records": [
+                            base_row(
+                                forced_fumble_player_1_team="AAA",
+                                forced_fumble_player_1_player_id="00-1",
+                            )
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            canonical = [{"CanonicalPlayerID": "NFLP-1", "IDs": {"GSIS": "00-1"}}]
+            write_game_finality(root, [8], incomplete_weeks=[7])
+
+            outputs, audit, preserved = _build_special_teams_fumble_events(
+                root,
+                dataset,
+                canonical,
+                2026,
+                force=False,
+            )
+
+            self.assertEqual(0, preserved)
+            self.assertEqual(2, len(outputs))
+            by_week = {payload["Week"]: payload for _, payload in outputs}
+            self.assertFalse(by_week[7]["Finalized"])
+            self.assertEqual(1, len(by_week[7]["Records"]))
+            self.assertTrue(by_week[8]["Finalized"])
+            self.assertEqual([], by_week[8]["Records"])
+            self.assertEqual(1, audit["emptyFinalizedPartitionCount"])
 
     def test_conflicting_duplicate_event_identity_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
