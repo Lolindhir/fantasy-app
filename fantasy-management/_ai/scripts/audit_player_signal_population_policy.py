@@ -582,9 +582,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 "A removed player re-enters when league ownership, external Fantasy relevance, "
                 "current Canonical weekly membership or current-season Canonical history becomes true"
             ),
-            "current_expected_player_count": variants[recommended_name]["player_count"],
-            "current_expected_delta": variants[recommended_name]["delta"],
-            "current_expected_removed_count": variants[recommended_name]["removed_count"],
+            "pre_identity_repair_projected_player_count": variants[recommended_name]["player_count"],
+            "pre_identity_repair_projected_delta": variants[recommended_name]["delta"],
+            "pre_identity_repair_projected_removed_count": variants[recommended_name]["removed_count"],
             "cutover_readiness": decision_status,
         },
         "recommended_removal_cohorts": {
