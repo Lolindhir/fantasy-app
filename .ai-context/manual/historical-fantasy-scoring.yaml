@@ -312,6 +312,109 @@ projectionBacktest:
       V1 alone.
 
 
+  v3:
+    implementation: tools/historical_projection_v3_calibration.py
+    model: player-history-position-prior
+    playerBaselineFormula: >
+      PlayerBaseline = PlayerHistoryPPG * h + PreviousSeasonPositionPrior * (1 - h),
+      where h = EffectiveHistoryGames / (EffectiveHistoryGames + historyK).
+    projectionFormula: >
+      Projection = CurrentSeasonPPG * w + PlayerBaseline * (1 - w),
+      where w = PriorGames / (PriorGames + currentK).
+    calibration:
+      scoringProfile: nfl-reise-2025
+      seasons:
+        - 2023
+        - 2024
+      playerBaselineSelectionPopulation: history-backed cold starts
+      playerBaselineSelectionMetric: MAE
+      selectedHistoryVariant: two-completed-seasons-recency-weighted
+      selectedOlderSeasonWeight: 0.25
+      selectedHistoryK: 0.0
+      historyBackedColdStartCalibrationCount: 987
+      historyBackedColdStartCalibrationMetrics:
+        mae: 4.3682
+        rmse: 5.8518
+        bias: 1.3454
+      currentSeasonComparableCount: 11297
+      selectedCurrentK: 1.0
+      selectedCurrentMetrics:
+        mae: 4.5425
+        rmse: 6.1972
+        bias: -0.1029
+    playerHistoryRule: >
+      Use up to the two immediately preceding completed player seasons under the
+      target league scoring profile. Season T-1 has weight 1.0 and T-2 has weight
+      0.25. EffectiveHistoryGames applies the same recency weights to played-game
+      counts. Calibration selected historyK=0.0, so any available player history is
+      used directly rather than additionally shrunk toward the position prior.
+    positionPriorRule: >
+      Previous completed season position mean, leave-one-player-out. It is the
+      fallback baseline when the player has no usable completed-season history.
+    leakageRule: >
+      All V3 variant and parameter selection uses only 2023-2024. The 2025 season is
+      an untouched holdout. Completed player history uses only seasons before the
+      target season and CurrentSeasonPPG uses only confirmed played games from weeks
+      < W.
+    holdout2025:
+      comparableCount: 5724
+      v2:
+        mae: 4.5948
+        rmse: 6.3162
+        bias: -0.0628
+      v3:
+        mae: 4.5461
+        rmse: 6.2445
+        bias: 0.0197
+      improvementOverV2:
+        maePoints: 0.0487
+        maePercent: 1.0599
+        rmsePoints: 0.0717
+        rmsePercent: 1.1352
+      diagnostics:
+        week2V2Mae: 5.0683
+        week2V3Mae: 4.7838
+        priorGames1V2Mae: 4.3241
+        priorGames1V3Mae: 4.0746
+        qbV2Mae: 6.5573
+        qbV3Mae: 6.5297
+    coldStart:
+      totalObserved: 641
+      historyBacked:
+        count: 508
+        v2Mae: 5.9049
+        v3Mae: 4.1137
+        maeImprovementPoints: 1.7912
+        v3Rmse: 5.5433
+        v3Bias: 1.1729
+        productRule: use-v3-player-baseline-before-first-current-season-game
+      noPlayerHistory:
+        count: 133
+        diagnosticMae: 6.1296
+        diagnosticRmse: 6.9152
+        diagnosticBias: 4.8093
+        productRule: >
+          Do not emit a pre-game point projection before the player's first confirmed
+          current-season game. Position-only prior is retained as diagnostic evidence,
+          not as a product prediction.
+    availabilityRules:
+      byeOrDnp: no-player-game-observation-without-confirmed-position-appropriate-snaps
+      missingSnapEvidence: unknown-and-excluded
+      injury: no-explicit-adjustment-in-v3
+      firstCurrentSeasonGameWithHistory: player-baseline-is-allowed
+      firstCurrentSeasonGameWithoutHistory: no-point-projection
+      afterFirstConfirmedGameWithoutHistory: >
+        CurrentSeasonPPG may be combined with the position prior using currentK=1.0.
+    interpretation: >
+      V3 replaces V2 as the accepted player-level benchmark because it improves both
+      MAE and RMSE on the untouched 2025 comparable cohort. Its main incremental value
+      is early-season and returning-player stabilization: history-backed cold-start MAE
+      improves by 1.7912 points. Pure position priors remain too optimistic for players
+      with no completed history, so true rookie/no-history cold starts stay explicitly
+      unprojected until one current-season game is confirmed.
+
+
+
 operations:
   nflSyncWorkflow: .github/workflows/sync-nfl-source-data.yml
   leagueSyncWorkflow: .github/workflows/sync-league-source-data.yml
