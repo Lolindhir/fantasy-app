@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -8,7 +10,10 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from historical_fantasy_scoring import score_record  # noqa: E402
+from historical_fantasy_scoring import (  # noqa: E402
+    load_special_teams_fumble_events_for_player,
+    score_record,
+)
 
 
 class HistoricalFantasyScoringTests(unittest.TestCase):
@@ -170,7 +175,7 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 0.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
-    def test_unverifiable_player_special_teams_settings_fail_closed(self) -> None:
+    def test_special_teams_event_settings_require_explicit_event_evidence(self) -> None:
         record = {"Position": "WR", "Stats": {"special_teams_tds": 0}}
         scoring = {"st_ff": 1.0, "st_fum_rec": 1.0, "st_tkl_solo": 1.0}
         result = score_record(record, scoring)
@@ -178,6 +183,120 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
             result["UnsupportedNonZeroSettings"],
             ["st_ff", "st_fum_rec", "st_tkl_solo"],
         )
+
+        with_evidence = score_record(
+            record,
+            scoring,
+            special_teams_fumble_events=[],
+        )
+        self.assertEqual(
+            with_evidence["UnsupportedNonZeroSettings"],
+            ["st_tkl_solo"],
+        )
+
+    def test_kenneth_gainwell_special_teams_forced_fumble_scores_st_ff(self) -> None:
+        record = {"Position": "RB", "Stats": {}}
+        events = [
+            {
+                "CanonicalPlayerID": "NFLP-aba4437dc0913f51cede",
+                "GameID": "2025_01_PIT_NYJ",
+                "PlayID": 2977,
+                "EventType": "forced-fumble",
+                "SpecialTeams": True,
+            }
+        ]
+        result = score_record(
+            record,
+            {"st_ff": 1.0},
+            special_teams_fumble_events=events,
+        )
+        self.assertEqual(result["FantasyPoints"], 1.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_ben_skowronek_opponent_recovery_scores_st_fum_rec(self) -> None:
+        record = {"Position": "WR", "Stats": {}}
+        events = [
+            {
+                "CanonicalPlayerID": "NFLP-7e70774c5662ba0f4786",
+                "GameID": "2025_01_PIT_NYJ",
+                "PlayID": 2977,
+                "EventType": "fumble-recovery",
+                "SpecialTeams": True,
+                "RecoveryTeam": "PIT",
+                "FumbledTeams": ["NYJ"],
+            }
+        ]
+        result = score_record(
+            record,
+            {"st_fum_rec": 1.0},
+            special_teams_fumble_events=events,
+        )
+        self.assertEqual(result["FantasyPoints"], 1.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_treveyon_henderson_own_team_recovery_does_not_score_st_fum_rec(self) -> None:
+        record = {"Position": "RB", "Stats": {}}
+        events = [
+            {
+                "CanonicalPlayerID": "NFLP-3b1c31dbb09b5b6ff652",
+                "GameID": "2025_05_NE_BUF",
+                "PlayID": 1,
+                "EventType": "fumble-recovery",
+                "SpecialTeams": True,
+                "RecoveryTeam": "NE",
+                "FumbledTeams": ["NE"],
+            }
+        ]
+        result = score_record(
+            record,
+            {"st_fum_rec": 1.0},
+            special_teams_fumble_events=events,
+        )
+        self.assertEqual(result["FantasyPoints"], 0.0)
+        self.assertEqual(result["UnsupportedNonZeroSettings"], [])
+
+    def test_ambiguous_special_teams_recovery_relation_fails_closed(self) -> None:
+        record = {"Position": "WR", "Stats": {}}
+        events = [
+            {
+                "EventType": "fumble-recovery",
+                "SpecialTeams": True,
+                "RecoveryTeam": "PIT",
+                "FumbledTeams": ["PIT", "NYJ"],
+            }
+        ]
+        with self.assertRaisesRegex(ValueError, "ambiguous fumble-team relation"):
+            score_record(
+                record,
+                {"st_fum_rec": 1.0},
+                special_teams_fumble_events=events,
+            )
+
+    def test_nonfinal_special_teams_partition_cannot_supply_zero_by_absence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "source-data/nfl/special-teams-fumble-events/2000/03.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(
+                    {
+                        "SchemaVersion": 2,
+                        "Season": 2000,
+                        "Week": 3,
+                        "SourceDataset": "nflverse.special-teams-fumble-events",
+                        "Finalized": False,
+                        "Records": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "not finalized"):
+                load_special_teams_fumble_events_for_player(
+                    root,
+                    2000,
+                    3,
+                    "NFLP-test",
+                )
 
     def test_unimplemented_distance_specific_miss_scoring_fails_closed(self) -> None:
         record = {"Position": "K", "Stats": {"fg_att": 1, "fg_made": 0}}
