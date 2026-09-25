@@ -12,6 +12,18 @@ HISTORICAL_BANDS = {
     "nflverse.special-teams-fumble-events": {
         "start": 1999,
         "canonical": "special-teams-fumble-events",
+        "knownUnavailableWeeks": {
+            2000: {
+                3: (
+                    "nflverse PBP is unavailable for 2000_03_SD_KC; upstream "
+                    "nflverse-pbp-internal documents this game as never acquired and skipped by nflfastR."
+                ),
+                6: (
+                    "nflverse PBP is unavailable for 2000_06_BUF_MIA; upstream "
+                    "nflverse-pbp-internal documents this game as never acquired and skipped by nflfastR."
+                ),
+            }
+        },
     },
     "nflverse.snap-counts": {
         "start": 2012,
@@ -30,6 +42,14 @@ def known_unavailable_reason(dataset_id: str, season: int) -> str | None:
     policy = HISTORICAL_BANDS.get(dataset_id) or {}
     unavailable = policy.get("knownUnavailable") or {}
     reason = unavailable.get(season)
+    return str(reason) if reason else None
+
+
+def known_unavailable_week_reason(dataset_id: str, season: int, week: int) -> str | None:
+    policy = HISTORICAL_BANDS.get(dataset_id) or {}
+    by_season = policy.get("knownUnavailableWeeks") or {}
+    by_week = by_season.get(season) or {}
+    reason = by_week.get(week)
     return str(reason) if reason else None
 
 

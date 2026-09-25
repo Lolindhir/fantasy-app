@@ -338,11 +338,30 @@ specialTeamsFumbleEventContract:
     startSeason: 1999
     supportBand: HISTORICAL_BANDS
     readinessRule: >
-      Historical readiness requires the persisted raw season, no WeekFinal=false
-      weeks in persisted historical game-finality, and a canonical partition for
-      every WeekFinal=true week. Canonical partition Finalized must exactly match
-      WeekFinal. Explicit finalized Records=[] partitions are valid zero evidence;
-      an incomplete or missing finalized week remains unknown and fails readiness.
+      Historical readiness requires the persisted raw season and a canonical
+      partition for every WeekFinal=true week. Canonical partition Finalized must
+      exactly match WeekFinal. A WeekFinal=false historical week blocks readiness
+      unless the exact upstream PBP gap is explicitly adjudicated below; adjudicated
+      unavailable weeks remain non-final and never gain zero-by-absence semantics.
+      Explicit finalized Records=[] partitions are valid zero evidence; any other
+      incomplete or missing finalized week remains unknown and fails readiness.
+    knownUnavailablePbp:
+      - season: 2000
+        week: 3
+        gameID: 2000_03_SD_KC
+        reason: >
+          nflverse-pbp-internal documents this as one of exactly two schedule games
+          whose PBP was never acquired; nflfastR skips the game.
+      - season: 2000
+        week: 6
+        gameID: 2000_06_BUF_MIA
+        reason: >
+          nflverse-pbp-internal documents this as one of exactly two schedule games
+          whose PBP was never acquired; nflfastR skips the game.
+      - rule: >
+          These are explicit known-unavailable exceptions, not zero evidence.
+          Their canonical ST-fumble partitions remain Finalized=false and any
+          consumer evaluating those affected player-games must fail closed.
     identityRule: >
       Every historical canonical event record must have CanonicalPlayerID.
       Unresolved historical GSIS identities fail readiness closed.

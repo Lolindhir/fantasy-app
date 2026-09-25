@@ -10,7 +10,11 @@ from typing import Any
 
 from league_source_data_lib.coverage import build_season_player_reference_coverage
 from nfl_source_data_lib.coverage import build_player_stats_identity_coverage
-from nfl_source_data_lib.history import HISTORICAL_BANDS, known_unavailable_reason
+from nfl_source_data_lib.history import (
+    HISTORICAL_BANDS,
+    known_unavailable_reason,
+    known_unavailable_week_reason,
+)
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
 SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID = "nflverse.special-teams-fumble-events"
@@ -117,6 +121,24 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
 
     expected_weeks = sorted(week for week, week_final in week_finality.items() if week_final)
     incomplete_weeks = sorted(week for week, week_final in week_finality.items() if not week_final)
+    known_unavailable_incomplete_weeks = [
+        {
+            "Week": week,
+            "Reason": reason,
+        }
+        for week in incomplete_weeks
+        if (reason := known_unavailable_week_reason(
+            SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID,
+            season,
+            week,
+        ))
+    ]
+    known_unavailable_week_numbers = {
+        int(entry["Week"]) for entry in known_unavailable_incomplete_weeks
+    }
+    blocking_incomplete_weeks = [
+        week for week in incomplete_weeks if week not in known_unavailable_week_numbers
+    ]
     season_dir = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season)
     partition_paths = {
         int(path.stem): path
@@ -173,12 +195,14 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
     return {
         "ExpectedFinalizedWeeks": expected_weeks,
         "IncompleteGameFinalityWeeks": incomplete_weeks,
+        "KnownUnavailableIncompleteGameFinalityWeeks": known_unavailable_incomplete_weeks,
+        "BlockingIncompleteGameFinalityWeeks": blocking_incomplete_weeks,
         "MissingFinalizedWeeks": missing_weeks,
         "UnresolvedCanonicalPlayerRecordCount": unresolved_count,
         "UnresolvedGSISIDs": sorted(unresolved_gsis),
         "ContractErrors": contract_errors,
         "Ready": bool(expected_weeks)
-        and not incomplete_weeks
+        and not blocking_incomplete_weeks
         and not missing_weeks
         and unresolved_count == 0
         and not contract_errors,
@@ -189,6 +213,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
     datasets: dict[str, Any] = {}
     hard_failures: list[str] = []
     known_unavailable_partitions: list[dict[str, Any]] = []
+    known_unavailable_week_partitions: list[dict[str, Any]] = []
     for dataset_id, policy in HISTORICAL_BANDS.items():
         dataset = registry_dataset(repo_root, dataset_id)
         rows = []
@@ -196,6 +221,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
         known_unavailable_historical = []
         missing_finalized_week_partitions: list[dict[str, Any]] = []
         incomplete_game_finality_weeks: list[dict[str, Any]] = []
+        known_unavailable_game_finality_weeks: list[dict[str, Any]] = []
         historical_event_unresolved_count = 0
         historical_event_unresolved_gsis: set[str] = set()
         historical_event_contract_errors: list[str] = []
@@ -226,11 +252,24 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
                             "Weeks": special_coverage["MissingFinalizedWeeks"],
                         }
                     )
-                if special_coverage["IncompleteGameFinalityWeeks"]:
+                if special_coverage["BlockingIncompleteGameFinalityWeeks"]:
                     incomplete_game_finality_weeks.append(
                         {
                             "Season": season,
-                            "Weeks": special_coverage["IncompleteGameFinalityWeeks"],
+                            "Weeks": special_coverage["BlockingIncompleteGameFinalityWeeks"],
+                        }
+                    )
+                for entry in special_coverage["KnownUnavailableIncompleteGameFinalityWeeks"]:
+                    adjudicated = {
+                        "Season": season,
+                        "Week": entry["Week"],
+                        "Reason": entry["Reason"],
+                    }
+                    known_unavailable_game_finality_weeks.append(adjudicated)
+                    known_unavailable_week_partitions.append(
+                        {
+                            "DatasetID": dataset_id,
+                            **adjudicated,
                         }
                     )
                 historical_event_unresolved_count += int(
@@ -286,6 +325,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
                 {
                     "HistoricalFinalizedWeekGaps": missing_finalized_week_partitions,
                     "HistoricalIncompleteGameFinalityWeeks": incomplete_game_finality_weeks,
+                    "HistoricalKnownUnavailableGameFinalityWeeks": known_unavailable_game_finality_weeks,
                     "HistoricalUnresolvedCanonicalPlayerRecordCount": historical_event_unresolved_count,
                     "HistoricalUnresolvedGSISIDs": sorted(historical_event_unresolved_gsis),
                     "HistoricalPartitionContractErrors": historical_event_contract_errors,
@@ -363,6 +403,7 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "SnapCountStart": 2012,
             "SpecialTeamsFumbleEventStart": 1999,
             "KnownUnavailableHistoricalPartitions": known_unavailable_partitions,
+            "KnownUnavailableHistoricalWeeks": known_unavailable_week_partitions,
             "MissingIsZero": False,
             "Rule": "Historical seasons in the supported source band must be persisted unless an exact partition is explicitly documented as known upstream-unavailable; current not-yet-available evidence is allowed only by dataset availability policy. Unavailable facts are never zero.",
         },

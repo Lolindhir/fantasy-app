@@ -70,8 +70,22 @@ historicalCoverage:
       Every historical scoring week must have WeekFinal=true in persisted
       game-finality evidence before zero-by-absence is valid. Every such week requires
       a canonical special-teams-fumble-event partition whose Finalized value matches
-      WeekFinal. Records=[] is explicit zero; WeekFinal=false or a missing finalized
-      partition is unknown and fails readiness.
+      WeekFinal. Records=[] is explicit zero. Exact upstream-unavailable weeks may be
+      explicitly adjudicated for readiness but remain Finalized=false and unknown for
+      affected player-games; every other WeekFinal=false or missing finalized partition
+      fails readiness.
+    knownUnavailableWeeks:
+      - season: 2000
+        week: 3
+        missingGameID: 2000_03_SD_KC
+      - season: 2000
+        week: 6
+        missingGameID: 2000_06_BUF_MIA
+    knownUnavailableRule: >
+      nflverse-pbp-internal states these are the only two schedule games whose PBP
+      was never acquired and that nflfastR skips them. This adjudication permits the
+      global readiness inventory to distinguish a bounded known source gap from an
+      accidental missing partition; it does not authorize zero scoring for those games.
     identityRule: >
       Historical event records require CanonicalPlayerID; unresolved historical
       GSIS identities fail readiness closed.
@@ -145,11 +159,13 @@ readinessContract:
   readyForHistoricalScoringRule: >
     Every historical season in every declared support band must have persisted raw evidence
     and complete canonical materialization. For special-teams-fumble-events, completeness is
-    week-exact against persisted game-finality: historical WeekFinal=false blocks readiness,
-    every WeekFinal=true week must exist including explicit Records=[] zero partitions,
-    canonical Finalized must match WeekFinal, and historical event identities must be resolved.
-    Current-season not-yet-available evidence does not satisfy a historical partition and does
-    not create a historical failure by itself.
+    week-exact against persisted game-finality: every WeekFinal=true week must exist including
+    explicit Records=[] zero partitions, canonical Finalized must match WeekFinal, and historical
+    event identities must be resolved. WeekFinal=false blocks readiness unless it is one of the
+    exact documented upstream-unavailable exceptions; such exceptions remain non-final/unknown
+    for affected player-games and never become zero evidence. Current-season not-yet-available
+    evidence does not satisfy a historical partition and does not create a historical failure
+    by itself.
   leagueRule: >
     Every configured CanonicalLeagueID must have a manifest and the required per-season core
     files. The productive hardening target is the nfl-reise namespace.

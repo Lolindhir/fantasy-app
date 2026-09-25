@@ -377,6 +377,70 @@ class SourceDataReadinessTests(unittest.TestCase):
             readiness["HardFailures"],
         )
 
+    def test_special_teams_fumble_known_upstream_week_gap_is_explicitly_adjudicated(self) -> None:
+        self.configure_special_teams_fumble_registry()
+        self.mark_special_teams_fumble_raw_ready(2025)
+        self.mark_finality(2025, [1], incomplete_weeks=[2])
+        self.mark_special_teams_fumble_partition(2025, 1, [])
+        self.mark_special_teams_fumble_partition(
+            2025,
+            2,
+            [
+                {
+                    "CanonicalPlayerID": "NFLP-2",
+                    "SourceIDs": {"GSIS": "00-2"},
+                }
+            ],
+            finalized=False,
+        )
+
+        with patch.dict(
+            HISTORICAL_BANDS,
+            {
+                "nflverse.special-teams-fumble-events": {
+                    "start": 2025,
+                    "canonical": "special-teams-fumble-events",
+                    "knownUnavailableWeeks": {
+                        2025: {
+                            2: "fixture upstream PBP gap",
+                        }
+                    },
+                }
+            },
+            clear=True,
+        ):
+            readiness = build_nfl_readiness(self.root)
+
+        dataset = readiness["Datasets"]["nflverse.special-teams-fumble-events"]
+        season = next(row for row in dataset["Seasons"] if row["Season"] == 2025)
+        coverage = season["SpecialTeamsFumbleEventCoverage"]
+        self.assertEqual([2], coverage["IncompleteGameFinalityWeeks"])
+        self.assertEqual([], coverage["BlockingIncompleteGameFinalityWeeks"])
+        self.assertEqual(
+            [{"Week": 2, "Reason": "fixture upstream PBP gap"}],
+            coverage["KnownUnavailableIncompleteGameFinalityWeeks"],
+        )
+        self.assertEqual([], coverage["ContractErrors"])
+        self.assertTrue(coverage["Ready"])
+        self.assertEqual([], dataset["HistoricalIncompleteGameFinalityWeeks"])
+        self.assertEqual(
+            [{"Season": 2025, "Week": 2, "Reason": "fixture upstream PBP gap"}],
+            dataset["HistoricalKnownUnavailableGameFinalityWeeks"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "DatasetID": "nflverse.special-teams-fumble-events",
+                    "Season": 2025,
+                    "Week": 2,
+                    "Reason": "fixture upstream PBP gap",
+                }
+            ],
+            readiness["HistoricalBackfillPolicy"]["KnownUnavailableHistoricalWeeks"],
+        )
+        self.assertTrue(readiness["ReadyForHistoricalScoring"])
+        self.assertEqual([], readiness["HardFailures"])
+
     def test_special_teams_fumble_unresolved_historical_identity_is_a_hard_failure(self) -> None:
         self.configure_special_teams_fumble_registry()
         self.mark_special_teams_fumble_raw_ready(2025)
