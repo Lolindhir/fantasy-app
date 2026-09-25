@@ -217,6 +217,31 @@ def canonical_identity_name_aliases(identity: dict[str, Any]) -> list[str]:
     return [full_name]
 
 
+def canonical_nfl_population_shadow(
+    *,
+    latest_weekly_roster_member: bool,
+    current_season_roster_member: bool,
+) -> dict[str, Any]:
+    """Model future Canonical NFL population reasons without publishing them.
+
+    The latest weekly roster is the current in-season membership fact. The
+    season roster is broader current-season history. These facts stay separate
+    from provider Team/Status fields and from Tank01 IsFreeAgent evidence.
+    """
+    reasons: list[str] = []
+    if latest_weekly_roster_member:
+        reasons.append("canonical_nfl_membership")
+    if current_season_roster_member:
+        reasons.append("canonical_nfl_recent_history")
+    return {
+        "reasons": reasons,
+        "current_membership": latest_weekly_roster_member,
+        "current_season_history": current_season_roster_member,
+        "would_preserve_without_legacy_bridge": bool(reasons),
+        "runtime_effect": "shadow_only_not_published",
+    }
+
+
 def evaluate_source_for_canonical_player(
     player: dict[str, Any],
     identity: dict[str, Any],

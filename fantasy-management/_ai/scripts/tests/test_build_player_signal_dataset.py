@@ -491,6 +491,41 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             ],
         }
 
+    def test_canonical_nfl_population_shadow_separates_membership_from_recent_history(self) -> None:
+        current = MODULE.canonical_nfl_population_shadow(
+            latest_weekly_roster_member=True,
+            current_season_roster_member=True,
+        )
+        history_only = MODULE.canonical_nfl_population_shadow(
+            latest_weekly_roster_member=False,
+            current_season_roster_member=True,
+        )
+        absent = MODULE.canonical_nfl_population_shadow(
+            latest_weekly_roster_member=False,
+            current_season_roster_member=False,
+        )
+
+        self.assertEqual(
+            ["canonical_nfl_membership", "canonical_nfl_recent_history"],
+            current["reasons"],
+        )
+        self.assertEqual(["canonical_nfl_recent_history"], history_only["reasons"])
+        self.assertTrue(current["would_preserve_without_legacy_bridge"])
+        self.assertTrue(history_only["would_preserve_without_legacy_bridge"])
+        self.assertFalse(absent["would_preserve_without_legacy_bridge"])
+        self.assertEqual("shadow_only_not_published", absent["runtime_effect"])
+
+    def test_canonical_nfl_shadow_reasons_are_not_published_by_runtime_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            result = MODULE.build(root, config_path)
+
+            for player in result["players"]:
+                self.assertFalse(
+                    any(reason.startswith("canonical_nfl_") for reason in player["population_reasons"])
+                )
+
     def test_builds_free_agent_kicker_signals_without_averaging_provider_points(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
