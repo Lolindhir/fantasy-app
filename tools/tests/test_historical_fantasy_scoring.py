@@ -85,30 +85,47 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 2.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
-    def test_special_teams_player_touchdown_is_scored(self) -> None:
+    def test_rashid_shaheed_special_teams_touchdown_scores_with_offense(self) -> None:
         record = {
             "Position": "WR",
-            "Stats": {"special_teams_tds": 1},
+            "Stats": {
+                "receptions": 4,
+                "receiving_yards": 67,
+                "special_teams_tds": 1,
+            },
         }
-        result = score_record(record, {"st_td": 6.0})
-        self.assertEqual(result["FantasyPoints"], 6.0)
+        result = score_record(record, {"rec": 1.0, "rec_yd": 0.1, "st_td": 6.0})
+        self.assertEqual(result["FantasyPoints"], 16.7)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
-    def test_kicker_can_also_score_regular_offense_events(self) -> None:
+    def test_brandon_aubrey_kicker_can_also_score_rushing_yards(self) -> None:
         record = {
             "Position": "K",
             "Stats": {
-                "passing_yards": 15,
-                "fg_att": 1,
-                "fg_made": 1,
-                "fg_made_40_49": 1,
-                "pat_att": 0,
-                "pat_made": 0,
+                "rushing_yards": 6,
+                "fg_att": 6,
+                "fg_made": 4,
+                "fg_made_20_29": 1,
+                "fg_made_30_39": 1,
+                "fg_made_40_49": 2,
+                "fg_made_50_59": 0,
+                "fg_made_60_": 0,
+                "pat_att": 2,
+                "pat_made": 2,
             },
         }
-        scoring = {"pass_yd": 0.04, "fgm_40_49": 4.0}
+        scoring = {
+            "rush_yd": 0.1,
+            "fgm_20_29": 3.0,
+            "fgm_30_39": 3.0,
+            "fgm_40_49": 4.0,
+            "fgm_50_59": 5.0,
+            "fgm_60p": 6.0,
+            "fgmiss": -1.0,
+            "xpm": 1.0,
+        }
         result = score_record(record, scoring)
-        self.assertEqual(result["FantasyPoints"], 4.6)
+        self.assertEqual(result["FantasyPoints"], 14.6)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
     def test_kicker_profile_uses_distance_buckets_and_blocked_kicks_count_as_misses(self) -> None:
