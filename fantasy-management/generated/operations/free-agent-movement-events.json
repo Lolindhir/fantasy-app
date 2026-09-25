@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-25T15:00:48.838117Z",
-  "input_fingerprint": "3d87606916130a380dcec3528d6e6cdca13512f6d9143354043248fa5f66ab76",
+  "generated_at": "2026-09-25T15:10:46Z",
+  "input_fingerprint": "ae39a9af979c3d44cf122bab7dbced1aa7c9e4358828dbe7685d8d68ea785398",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "ef5a12204bba316b0b92ee97bca94ce414f27023783fe2436f20f4a906579610"
+      "input_fingerprint": "574d4075201f4b3e06b5c3f526dafa2ffabebc82a7dd48abfd0d6d2d84c3a48d"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "e8a50ec6ce4acb36398f0e1e4ecf101fd7786e3dde1b4ba428e0f92518d41de1"
+      "input_fingerprint": "ef5a12204bba316b0b92ee97bca94ce414f27023783fe2436f20f4a906579610"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,85 @@
     ],
     "current_discovery_count": 211,
     "previous_discovery_count": 211,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "changed": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "1128ace141c695437df2c60c9a4b88ac9c99eb5374a7162402d2aa2cb58383f2",
-    "previous_evidence_fingerprint": "b34ba8c80ac7ac6120de6819e1c4cfbd8debb3bbf873a91a8bee8d105e2fc7f2",
+    "current_evidence_fingerprint": "6b7df3cd114c3e477db3e9c8cf2a48c368965e864f74b42722c6f1e4e50aea0f",
+    "previous_evidence_fingerprint": "1128ace141c695437df2c60c9a4b88ac9c99eb5374a7162402d2aa2cb58383f2",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "12498",
+      "name": "Mason Taylor",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "6adcb112922d423e8d7b2117bb365df7b742d90079819b7daee05eedb052773d",
+      "previous_state_hash": "fab1a4c47505493ec87af4f8cddd71e8fd5d3d72e1bb21e196508c28aa36f482",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Doubtful",
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20260927",
+          "to": "20261004"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
