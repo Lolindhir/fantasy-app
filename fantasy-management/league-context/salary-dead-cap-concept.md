@@ -195,11 +195,15 @@ Ein langfristig gehaltener Vertrag lässt sich damit wesentlich sauberer beenden
 
 ---
 
-## 8. Offene Frage: mehrere Teams cutten denselben Spieler
+## 8. Repeated Cuts: geklärte Konzeptentscheidung
 
-Dieser Punkt ist **noch nicht entschieden** und soll separat anhand realer Transaktionen geprüft werden.
+Mehrere Cuts desselben Spielers innerhalb eines Salary-Zyklus sind **erlaubt**.
 
-Rein aus der Retained-Salary-Logik würde derzeit folgendes Modell entstehen:
+Jeder einzelne Cut erzeugt einen eigenen Dead-Cap-/Retained-Salary-Anteil. Dieser Anteil wird immer aus dem **zu diesem Zeitpunkt aktiven Salary** des Spielers berechnet.
+
+Dadurch kann das aktive Salary eines Spielers nach mehreren Cuts weiter sinken. Das ist kein Salary-Verlust: Frühere Teams tragen die Differenz weiterhin als Dead Cap.
+
+### Beispiel mit mehreren Teams
 
 Ausgangslage:
 
@@ -207,38 +211,74 @@ Ausgangslage:
 
 Team A cuttet bei 0 abgeschlossenen Saisons:
 
-- Team A behält **10**;
-- Spieler-Salary sinkt auf **10**.
+- Team A übernimmt **10 Dead Cap**;
+- aktives Salary sinkt auf **10**.
 
-Team B nimmt ihn auf und cuttet ebenfalls bei 0 abgeschlossenen Saisons:
+Team B nimmt den Spieler für 10 auf und cuttet ebenfalls bei 0 abgeschlossenen Saisons:
 
-- Team B behält **5**;
-- Spieler-Salary sinkt auf **5**.
+- Team B übernimmt zusätzlich **5 Dead Cap**;
+- aktives Salary sinkt auf **5**.
 
-Danach wäre die Verteilung:
+Danach gilt:
 
 ```text
 Team A Dead Cap: 10
 Team B Dead Cap:  5
-aktuelles Salary: 5
+aktives Salary:   5
 -------------------
 Gesamt:           20
 ```
 
-Der Spieler würde dadurch bei mehreren Cuts tatsächlich immer günstiger für ein weiteres Team.
+Die ursprüngliche Salary-Belastung bleibt vollständig erhalten. Sie wird lediglich auf mehrere Teams und den aktuellen Vertrag verteilt.
 
-Das ist konzeptionell zunächst logisch, weil das ursprüngliche Salary nicht verschwindet, sondern zunehmend von früheren Teams getragen wird.
+### Dasselbe Team kann mehrere Dead-Cap-Anteile besitzen
 
-Noch zu prüfen ist aber insbesondere:
+Auch eine spätere Wiederaufnahme durch dasselbe Team setzt diese Logik nicht zurück.
 
-- ob daraus problematisches „Contract Washing“ entstehen kann;
-- ob Teams einen Spieler bewusst mehrfach verschieben könnten, um sein aktives Salary unangemessen stark zu reduzieren;
-- ob die dafür entstehenden Dead-Cap-Kosten bereits ausreichender Schutz gegen einen solchen Effekt sind;
-- wie häufig dieses Szenario mit den realen Transaktionsmustern unserer Liga überhaupt relevant wäre.
+Beispiel:
 
-Vor einer Regelentscheidung soll dieser Punkt mit echten historischen Cuts simuliert werden.
+- Salary beim Salary Check: **20**
+- Team A cuttet den Spieler bei 50 % → **10 Dead Cap**, **10 aktives Salary**
+- Team A nimmt ihn später für 10 wieder auf
+- Team A cuttet ihn erneut bei 50 % des nun aktiven Salaries → weitere **5 Dead Cap**, **5 aktives Salary**
 
----
+Team A trägt danach für denselben Spieler zwei getrennte Dead-Cap-Anteile:
+
+```text
+Team A Dead Cap aus Cut 1: 10
+Team A Dead Cap aus Cut 2:  5
+aktives Salary:              5
+------------------------------
+Gesamt:                     20
+```
+
+Ein Team kann somit innerhalb desselben Salary-Zyklus mehrere Dead-Cap-Anteile desselben Spielers gleichzeitig tragen.
+
+### Keine zusätzliche Anti-Washing-Regel
+
+Eine spezielle Regel gegen sogenanntes „Contract Washing“ ist nach aktuellem Konzeptstand nicht vorgesehen.
+
+Der Grund:
+
+Jede weitere Reduktion des aktiven Salaries wird durch eine reale zusätzliche Dead-Cap-Belastung des cuttenden Teams finanziert. Ein niedrigeres aktives Salary entsteht daher nicht kostenlos.
+
+Bei wiederholten 50-%-Cuts ergibt sich beispielsweise:
+
+```text
+20 → 10 → 5 → 2,5 → 1,25 → ...
+```
+
+Während das aktive Salary sinkt, wächst die Summe der Dead-Cap-Anteile entsprechend an.
+
+Die zentrale Invariante bleibt erhalten:
+
+```text
+aktuelles Salary
++ Summe aller aktiven Dead-Cap-Anteile
+= Salary beim letzten Salary Check
+```
+
+Eine absichtliche Absprache mehrerer Teams zum Verschieben von Cap wäre gegebenenfalls eine allgemeine Fair-Play-/Collusion-Frage, aber kein Grund, die normale Vertragslogik technisch zu verändern.
 
 ## 9. Offene Alternative: Salary nur teilweise reduzieren
 
@@ -317,13 +357,10 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 
 ### Noch offen
 
-- genaue Behandlung mehrerer aufeinanderfolgender Cuts;
-- mögliche Schutzregel gegen Contract Washing;
 - vollständige versus nur teilweise Salary-Reduktion;
 - Dead Cap nur bis zum nächsten Salary Check versus mehrjährige Übernahme;
 - Details zu Rundung und Mindest-Salary;
-- genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check;
-- Sonderfälle wie Cut und Wiederaufnahme durch dasselbe Team.
+- genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check.
 
 ---
 
