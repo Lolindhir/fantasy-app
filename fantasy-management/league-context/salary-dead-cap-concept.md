@@ -106,9 +106,9 @@ Das neue Team übernimmt also nur den noch nicht von früheren Teams getragenen 
 
 ---
 
-## 4. Aktuell bevorzugte Invariante
+## 4. Konzeptinvariante
 
-Innerhalb eines laufenden Salary-Zyklus soll nach aktuellem Diskussionsstand grundsätzlich gelten:
+Innerhalb eines laufenden Salary-Zyklus gilt im aktuellen Konzept:
 
 ```text
 aktuelles Salary des Spielers
@@ -127,7 +127,7 @@ aktuelles Salary:      10
 Gesamt:                20
 ```
 
-Diese Invariante ist aktuell die bevorzugte Richtung, weil dadurch kein Salary künstlich entsteht oder verschwindet. Der bestehende Vertrag wird lediglich zwischen dem aktuellen und früheren Teams verteilt.
+Diese Invariante folgt aus der Retained-Salary-Logik und der vollständigen Salary-Reduktion: Kein Salary entsteht künstlich oder verschwindet. Der bestehende Vertrag wird lediglich zwischen dem aktuellen und früheren Teams verteilt.
 
 ---
 
@@ -391,6 +391,9 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 - Das frühere Team übernimmt diesen Anteil als Retained Salary.
 - Das neue Team zahlt nur den verbleibenden aktiven Salary-Anteil.
 - Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten.
+
+### Aktuell bevorzugte, noch offene Richtung
+
 - Beim nächsten Salary Check werden alle alten Retained-Salary-Anteile aufgelöst und das Salary vollständig neu berechnet.
 
 ### Noch offen
