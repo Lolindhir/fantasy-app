@@ -33,7 +33,7 @@ from .identity_sources import raw_identity_candidates
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
-_ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\\d+)(?:/|$)")
+_ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
 
 
 def _current_external_anchor_tokens(
