@@ -8,6 +8,7 @@ from pathlib import Path
 from tools.nfl_source_data_lib.identity import (
     _app_player_espn_bridge,
     _build_components,
+    _current_external_anchor_candidates,
     app_player_candidates,
 )
 from tools.nfl_source_data_lib.identity_model import IdentityCandidate
@@ -28,6 +29,38 @@ def external_candidate(ids: dict[str, str]) -> IdentityCandidate:
 
 
 class AppEspnIdentityBridgeTests(unittest.TestCase):
+    def test_durable_persisted_espn_with_independent_strong_anchor_is_eligible(self) -> None:
+        durable = IdentityCandidate(
+            ids={"ESPN": "1234", "GSIS": "00-1"},
+            name="Test Player",
+            first_name="Test",
+            last_name="Player",
+            birth_date="2001-01-01",
+            position="WR",
+            latest_team="NYG",
+            source="canonical-existing",
+            priority=0,
+            existing_internal_id="NFLP-durable",
+        )
+        anchors = _current_external_anchor_candidates([durable])
+        self.assertEqual([durable], anchors[("ESPN", "1234")])
+
+    def test_persisted_espn_without_other_strong_anchor_cannot_self_corroborate(self) -> None:
+        provisional = IdentityCandidate(
+            ids={"ESPN": "1234", "Sleeper": "S1", "Tank01": "T1"},
+            name="Test Player",
+            first_name=None,
+            last_name=None,
+            birth_date=None,
+            position="WR",
+            latest_team=None,
+            source="canonical-existing",
+            priority=0,
+            existing_internal_id="NFLP-provisional",
+        )
+        anchors = _current_external_anchor_candidates([provisional])
+        self.assertNotIn(("ESPN", "1234"), anchors)
+
     def test_tank01_espn_link_bridges_only_to_independently_observed_external_anchor(self) -> None:
         row = {
             "ID": "S1",
