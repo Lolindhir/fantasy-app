@@ -60,8 +60,7 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
         for row in persisted_sleeper_document["Records"]:
             rebuilt_row = dict(row)
             sleeper_id = str(row.get("SleeperPlayerID") or "")
-            if sleeper_id in rebuilt_by_sleeper:
-                rebuilt_row["CanonicalPlayerID"] = rebuilt_by_sleeper[sleeper_id]
+            rebuilt_row["CanonicalPlayerID"] = rebuilt_by_sleeper.get(sleeper_id)
             rebuilt_sleeper_records.append(rebuilt_row)
         rebuilt_sleeper_document = {
             **persisted_sleeper_document,
