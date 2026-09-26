@@ -35,25 +35,51 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
 
         datasets = {dataset.id: dataset for dataset in load_registry(ROOT)}
         rebuilt_players, _, _, _, _ = build_identities(ROOT, datasets)
-        rebuilt_document = {
+        rebuilt_identity_document = {
             "SchemaVersion": 2,
             "Players": rebuilt_players,
+        }
+        rebuilt_by_sleeper = {
+            str((row.get("IDs") or {})["Sleeper"]): str(row["CanonicalPlayerID"])
+            for row in rebuilt_players
+            if (row.get("IDs") or {}).get("Sleeper") and row.get("CanonicalPlayerID")
         }
 
         canonical_identity_path = (
             ROOT / "source-data" / "nfl" / "identities" / "players.json"
         ).resolve()
+        canonical_sleeper_path = (
+            ROOT / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+        ).resolve()
         original_load_json = population_policy.ops.load_json
+        persisted_sleeper_document = original_load_json(canonical_sleeper_path)
+        self.assertIsInstance(persisted_sleeper_document, dict)
+        self.assertIsInstance(persisted_sleeper_document.get("Records"), list)
 
-        def load_json_with_rebuilt_identity(path: Path):
-            if Path(path).resolve() == canonical_identity_path:
-                return rebuilt_document
+        rebuilt_sleeper_records = []
+        for row in persisted_sleeper_document["Records"]:
+            rebuilt_row = dict(row)
+            sleeper_id = str(row.get("SleeperPlayerID") or "")
+            if sleeper_id in rebuilt_by_sleeper:
+                rebuilt_row["CanonicalPlayerID"] = rebuilt_by_sleeper[sleeper_id]
+            rebuilt_sleeper_records.append(rebuilt_row)
+        rebuilt_sleeper_document = {
+            **persisted_sleeper_document,
+            "Records": rebuilt_sleeper_records,
+        }
+
+        def load_json_with_rebuilt_canonical_inputs(path: Path):
+            resolved = Path(path).resolve()
+            if resolved == canonical_identity_path:
+                return rebuilt_identity_document
+            if resolved == canonical_sleeper_path:
+                return rebuilt_sleeper_document
             return original_load_json(path)
 
         with patch.object(
             population_policy.ops,
             "load_json",
-            side_effect=load_json_with_rebuilt_identity,
+            side_effect=load_json_with_rebuilt_canonical_inputs,
         ):
             rebuilt = population_policy.build(ROOT, config_path)
 
