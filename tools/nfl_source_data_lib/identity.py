@@ -39,9 +39,25 @@ _ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
 def _current_external_anchor_candidates(
     candidates: list[IdentityCandidate],
 ) -> dict[tuple[str, str], list[IdentityCandidate]]:
-    """Index current external candidates by independently observed strong anchor."""
+    """Index independently corroborated strong anchors usable by the app bridge.
+
+    Current external candidates are always eligible. Persisted canonical candidates
+    are eligible only when ESPN is accompanied by at least one other strong
+    non-ESPN anchor. This lets an already durable external identity corroborate an
+    app ESPN bridge even when the latest raw crosswalk omits ESPN, without allowing
+    an app-provisional ESPN-only identity to corroborate itself.
+    """
     result: dict[tuple[str, str], list[IdentityCandidate]] = defaultdict(list)
     for candidate in candidates:
+        if candidate.source == "canonical-existing":
+            if not candidate.ids.get("ESPN"):
+                continue
+            if not any(
+                candidate.ids.get(key)
+                for key in ANCHOR_ID_KEYS
+                if key != "ESPN"
+            ):
+                continue
         for key, value in candidate.ids.items():
             if key in ANCHOR_ID_KEYS and value:
                 result[(key, value)].append(candidate)
@@ -489,11 +505,14 @@ def build_identities(
     list[dict[str, Any]],
 ]:
     raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
+    existing_candidates = existing_identity_candidates(repo_root)
     app_candidates, _ = app_player_candidates(
         repo_root,
-        external_anchor_candidates=_current_external_anchor_candidates(raw_candidates),
+        external_anchor_candidates=_current_external_anchor_candidates(
+            raw_candidates + existing_candidates
+        ),
     )
-    candidates = existing_identity_candidates(repo_root) + raw_candidates + app_candidates
+    candidates = existing_candidates + raw_candidates + app_candidates
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
     uf = _build_components(candidates)
     components = _component_members(uf, candidates)
