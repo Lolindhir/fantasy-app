@@ -465,13 +465,13 @@ Gesamtbelastung:        $400.000
 
 Der Floor ist damit eine bewusste Ausnahme von der sonst geltenden Salary-Invariante. Er verhindert, dass ein aktiver Spieler durch wiederholte Cuts unter das ligaweit gültige Mindestgehalt fällt.
 
-### Aktueller Referenzwert, aber noch keine finale Fixierung
+### Konkrete Höhe noch offen
 
-Im bestehenden Salary-Mapping wird derzeit ein Minimum von **$250.000** verwendet.
+Im aktuellen Salary-Mapping existiert derzeit **kein universeller fester Dollar-Floor**; die Mapping-Untergrenze liegt bei **$0**.
 
-Für dieses Konzept ist damit geklärt, **dass es einen harten Minimum-Salary-Floor geben muss**. Noch nicht entschieden ist, ob **$250.000 dauerhaft als fixer Betrag** die richtige Regel ist oder ob das Minimum anders bestimmt werden sollte.
+Für dieses Konzept ist geklärt, **dass künftig ein harter League Minimum Salary Floor gelten soll**. Noch nicht entschieden ist dessen konkrete Höhe oder Herleitung.
 
-Diese konkrete Minimum-Salary-Frage bleibt der nächste Diskussionspunkt.
+Als nächster Diskussionspunkt ist deshalb zu klären, ob beispielsweise **$250.000 als fixer Dollarwert** sinnvoll wäre oder ob das Minimum dynamisch aus dem Salary-/Cap-System abgeleitet werden sollte.
 
 ---
 
@@ -524,7 +524,7 @@ Team Tenure = aktuelle League Season − Acquisition Season
 
 ### Noch offen
 
-- Ob der aktuell verwendete Minimum-Salary-Wert von **$250.000** dauerhaft als fixer League-Wert beibehalten oder anders bestimmt werden soll.
+- Wie das League Minimum Salary konkret bestimmt werden soll: fixer Dollarwert (z. B. **$250.000**) oder dynamische Herleitung.
 
 ---
 
