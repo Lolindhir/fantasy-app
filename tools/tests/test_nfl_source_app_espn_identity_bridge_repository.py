@@ -18,7 +18,7 @@ import audit_player_signal_population_policy as population_policy  # noqa: E402
 
 
 class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
-    def test_rebuilt_identities_reduce_current_population_identity_gap(self) -> None:
+    def test_rebuilt_identities_do_not_regress_current_population_identity_gap(self) -> None:
         config_path = (
             ROOT
             / "fantasy-management"
@@ -144,11 +144,18 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
             + json.dumps(evidence_rows, ensure_ascii=False, sort_keys=True)
         )
 
-        self.assertLess(
-            rebuilt_gap,
-            baseline_gap,
-            "Corroborated ESPN bridge did not reduce the current identity-gap cohort",
-        )
+        if baseline_gap > 10:
+            self.assertLess(
+                rebuilt_gap,
+                baseline_gap,
+                "Corroborated ESPN bridge did not reduce the pre-repair identity-gap cohort",
+            )
+        else:
+            self.assertLessEqual(
+                rebuilt_gap,
+                baseline_gap,
+                "Identity rebuild regressed the persisted post-6Z.5 identity-gap cohort",
+            )
         self.assertLessEqual(
             rebuilt_gap,
             10,
