@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -92,6 +93,10 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
         print(
             "6Z.5 unresolved current identity-gap player IDs: "
             + ", ".join(str(row["player_id"]) for row in unresolved)
+        )
+        print(
+            "6Z.5 unresolved current identity-gap details: "
+            + json.dumps(unresolved, ensure_ascii=False, sort_keys=True)
         )
 
         self.assertLess(
