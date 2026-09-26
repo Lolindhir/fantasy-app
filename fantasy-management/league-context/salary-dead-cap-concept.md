@@ -299,11 +299,11 @@ Ohne einen eingreifenden Salary-Floor ergibt sich bei wiederholten 50-%-Cuts bei
 20 → 10 → 5 → 2,5 → 1,25 → ...
 ```
 
-Sobald das gültige League Minimum Salary erreicht ist, sinkt das aktive Salary nicht weiter.
+Sobald das für den Spieler in diesem Salary-Zyklus geltende erfahrungsabhängige Minimum Salary erreicht ist, sinkt das aktive Salary nicht weiter.
 
 Während das aktive Salary sinkt, wächst die Summe der Dead-Cap-Anteile entsprechend an.
 
-Solange das League Minimum Salary nicht greift, bleibt die zentrale Invariante erhalten:
+Solange das anwendbare erfahrungsabhängige Minimum Salary nicht greift, bleibt die zentrale Invariante erhalten:
 
 ```text
 aktuelles Salary
