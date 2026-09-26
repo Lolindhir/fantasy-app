@@ -31,6 +31,7 @@ export interface OverviewStandingRow {
   pointsAgainst: number;
   record: string;
   streak: string | null;
+  placementMovement: number | null;
 }
 
 export interface OverviewLastMatchupParticipant {
@@ -147,6 +148,18 @@ export function buildOverviewTopContext(
   displayWeek: number | null = readModel?.Summary.ActiveOrNextWeek ?? null
 ): OverviewTopContext {
   const standings = buildOverviewStandingsSnapshot(league, readModel, displayWeek);
+  const previousStandings = displayWeek === null
+    ? []
+    : buildOverviewStandingsSnapshot(league, readModel, displayWeek - 1, false);
+  const previousPlaceByTeam = new Map(
+    previousStandings.map(row => [String(row.team.TeamID), row.displayPlace])
+  );
+  for (const row of standings) {
+    const previousPlace = previousPlaceByTeam.get(String(row.team.TeamID));
+    row.placementMovement = previousPlace === undefined
+      ? null
+      : previousPlace - row.displayPlace;
+  }
   const lastWeek = displayWeek === null
     ? getLastCompletedWeek(readModel)
     : getFinalWeek(readModel, displayWeek - 1);
@@ -362,7 +375,8 @@ function buildOverviewStandingsSnapshot(
     points: roundStandingPoints(row.points),
     pointsAgainst: roundStandingPoints(row.pointsAgainst),
     record: formatStandingRecord(row.wins, row.losses, row.ties),
-    streak: formatStandingStreak(row.results)
+    streak: formatStandingStreak(row.results),
+    placementMovement: null
   }));
 }
 
@@ -381,7 +395,8 @@ function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[]
       points: Number(placement?.Points ?? team.Points ?? 0),
       pointsAgainst: Number(placement?.PointsAgainst ?? team.PointsAgainst ?? 0),
       record: formatStandingRecord(wins, losses, ties),
-      streak: placement?.Streak?.trim() || null
+      streak: placement?.Streak?.trim() || null,
+      placementMovement: null
     };
   });
 }
