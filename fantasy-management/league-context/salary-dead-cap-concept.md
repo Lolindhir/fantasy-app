@@ -360,8 +360,7 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 - vollständige versus nur teilweise Salary-Reduktion;
 - Dead Cap nur bis zum nächsten Salary Check versus mehrjährige Übernahme;
 - Details zu Rundung und Mindest-Salary;
-- genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check;
-- Sonderfälle wie Cut und Wiederaufnahme durch dasselbe Team.
+- genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check.
 
 ---
 
