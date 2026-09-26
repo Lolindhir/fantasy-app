@@ -131,21 +131,22 @@ Diese Invariante folgt aus der Retained-Salary-Logik und der vollständigen Sala
 
 ---
 
-## 5. Laufzeit des Dead Caps
+## 5. Laufzeit des Dead Caps: geklärte Konzeptentscheidung
 
-Der Dead Cap gilt nur innerhalb des aktuellen Salary-Zyklus.
+Dead Cap gilt ausschließlich innerhalb des Salary-Zyklus, in dem der jeweilige Cut stattfindet.
 
-Aktuelle bevorzugte Richtung:
+> **Die reguläre Salary-Überprüfung / Cap Deadline beendet den bisherigen Salary-Zyklus und resettet sämtliche bis dahin aktiven Dead-Cap-Anteile.**
 
-> **Beim nächsten regulären Salary Cut / Salary Check endet der bisherige Vertrag vollständig.**
+Am Stichtag:
 
-Dann:
+1. werden alle Dead-Cap-Anteile des alten Salary-Zyklus vollständig aufgelöst;
+2. endet der bisherige aktive Salary-Anteil des Spielers;
+3. wird das neue Salary anhand der dann geltenden Salary-Berechnung neu bestimmt;
+4. beginnt ein neuer Salary-Zyklus ohne finanzielle Altlasten aus dem vorherigen Zyklus.
 
-1. werden die alten Dead-Cap-Anteile aufgelöst;
-2. wird das neue Salary des Spielers anhand der dann geltenden Salary-Berechnung neu bestimmt;
-3. beginnt ein neuer Salary-Zyklus ohne mitgeschleppte Altlasten aus dem vorherigen Salary-Zyklus.
+Dead Cap wird damit **nicht über mehrere Salary-Jahre fortgeschrieben**.
 
-Das verhindert insbesondere komplizierte Wechselwirkungen zwischen einem alten Dead Cap und einem neuen Salary, das aufgrund der inzwischen geänderten Spielerleistung deutlich höher oder niedriger sein kann.
+Die Salary-Überprüfung / Cap Deadline ist also nicht nur ein neuer Bewertungszeitpunkt für den Spieler, sondern zugleich ein harter Vertrags- und Dead-Cap-Reset.
 
 ---
 
@@ -345,32 +346,49 @@ aktuelles Salary
 = Salary beim letzten Salary Check
 ```
 
-## 10. Offene Alternative: Dead Cap über mehrere Salary-Jahre
+## 10. Kein mehrjähriger Dead Cap: geklärte Konzeptentscheidung
 
-Eine weitere denkbare Variante wäre, Dead-Cap-Anteile über mehrere Jahre fortzuführen.
+Dead-Cap-Anteile werden nicht über den nächsten regulären Salary Check / die Cap Deadline hinaus übertragen.
 
-Aktuell spricht gegen diese Variante vor allem die Interaktion mit neu berechnetem Salary.
+Die zuvor diskutierte Mehrjahresvariante wird im aktuellen Konzept nicht weiterverfolgt.
+
+Der Hauptgrund ist die jährliche Neubewertung des Spielers: Ein alter Dead-Cap-Anteil soll nicht mit einem neu berechneten Salary vermischt werden, das aufgrund gestiegener oder gesunkener Leistung einen völlig anderen Wert haben kann.
 
 Beispiel:
 
-- alter Dead Cap aus dem vorherigen Salary-Zyklus: **15**;
-- neues Salary aufgrund eines Leistungseinbruchs: **12**.
+- alter Salary-Zyklus: Spieler-Salary **30**, davon **15 Dead Cap**
+- neuer Salary Check: neu berechnetes Salary **12**
 
-Dann entstehen unmittelbar Folgefragen:
+Mit einem mehrjährigen Dead Cap wäre unklar, ob die alten 15 unverändert weiterlaufen, begrenzt, proportional reduziert oder mit dem neuen Salary verrechnet werden müssten.
 
-- darf alter Dead Cap größer als das neue Salary sein?
-- bleibt der alte absolute Betrag bestehen?
-- wird er proportional an das neue Salary angepasst?
-- welche Entlastung erhält das aktuelle Team?
-- wie werden mehrere frühere Teams behandelt?
+Durch den Reset ist die Behandlung eindeutig:
 
-Aktuelle Tendenz deshalb:
+```text
+vor Salary Check / Cap Deadline:
+15 Dead Cap + 15 aktives Salary = 30
 
-> **Dead Cap endet am nächsten Salary Check und wird nicht über mehrere Salary-Zyklen mitgenommen.**
+am Reset:
+alte Dead Caps = 0
+alter aktiver Salary-Anteil = 0
 
-Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfachere und nachvollziehbarere Variante.
+neuer Salary-Zyklus:
+neu berechnetes Salary = 12
+```
 
----
+### Strategischer Effekt vor der Cap Deadline
+
+Die Regel soll bewusst dazu führen, dass Cuts **vor** der Cap Deadline noch in den laufenden Cap einzahlen.
+
+Ein Manager, der mehrere teure oder nicht mehr gewünschte Spieler bis kurz vor die Deadline hält, kann sie deshalb nicht kostenlos aus dem Kader entfernen. Jeder Cut erzeugt bis zum Reset Dead Cap.
+
+Dadurch entstehen zwei echte Handlungsalternativen:
+
+- früher cutten und den Dead Cap im laufenden Zyklus tragen;
+- rechtzeitig aktiv versuchen, den Spieler zu traden und so einen Cut samt Dead Cap möglichst zu vermeiden.
+
+Das erhöht den Wert von aktivem Roster- und Trade-Management vor der Cap Deadline.
+
+Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte er in der aktuellen Saison voraussichtlich entweder mehr Spieler cutten und die entsprechende Dead-Cap-Belastung tragen oder früher versuchen müssen, diese Spieler aktiv zu traden.
 
 ## 11. Aktueller Konzeptstand
 
@@ -392,13 +410,14 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 - Das neue Team zahlt nur den verbleibenden aktiven Salary-Anteil.
 - Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten.
 
-### Aktuell bevorzugte, noch offene Richtung
+### Geklärte weitere Konzeptentscheidung
 
-- Beim nächsten Salary Check werden alle alten Retained-Salary-Anteile aufgelöst und das Salary vollständig neu berechnet.
+- Die reguläre Salary-Überprüfung / Cap Deadline resettet sämtliche alten Dead-Cap-Anteile.
+- Dead Cap wird nicht über mehrere Salary-Zyklen fortgeführt.
+- Das Salary wird danach unabhängig vom alten Zyklus neu berechnet.
 
 ### Noch offen
 
-- Dead Cap nur bis zum nächsten Salary Check versus mehrjährige Übernahme;
 - Details zu Rundung und Mindest-Salary;
 - genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check.
 
