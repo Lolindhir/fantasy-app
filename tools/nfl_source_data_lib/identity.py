@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import re
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,87 @@ from .identity_sources import raw_identity_candidates
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
+_ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
+
+
+def _current_external_anchor_candidates(
+    candidates: list[IdentityCandidate],
+) -> dict[tuple[str, str], list[IdentityCandidate]]:
+    """Index independently corroborated strong anchors usable by the app bridge.
+
+    Current external candidates are always eligible. Persisted canonical candidates
+    are eligible only when ESPN is accompanied by at least one other strong
+    non-ESPN anchor. This lets an already durable external identity corroborate an
+    app ESPN bridge even when the latest raw crosswalk omits ESPN, without allowing
+    an app-provisional ESPN-only identity to corroborate itself.
+    """
+    result: dict[tuple[str, str], list[IdentityCandidate]] = defaultdict(list)
+    for candidate in candidates:
+        if candidate.source == "canonical-existing":
+            if not candidate.ids.get("ESPN"):
+                continue
+            if not any(
+                candidate.ids.get(key)
+                for key in ANCHOR_ID_KEYS
+                if key != "ESPN"
+            ):
+                continue
+        for key, value in candidate.ids.items():
+            if key in ANCHOR_ID_KEYS and value:
+                result[(key, value)].append(candidate)
+    return dict(result)
+
+
+def _app_player_espn_bridge(
+    row: dict[str, Any],
+    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]],
+) -> str | None:
+    """Use app-side ESPN evidence only when current external evidence corroborates it.
+
+    Players.ESPNID comes from Sleeper espn_id, while Players.ESPN comes from
+    Tank01 espnLink. If both exist and disagree, fail closed. A single value is
+    used only to bridge to an ESPN token already present in current external
+    identity candidates, so app data cannot seed a new CanonicalPlayerID via ESPN.
+
+    The bridge also refuses an ESPN anchor whose current external candidates carry
+    a conflicting Sleeper or Tank01 claim. This prevents a corroborated ESPN token
+    from collapsing known provider conflicts into a new ambiguous active mapping.
+    """
+    sleeper_espn = clean(row.get("ESPNID"))
+    tank_link = clean(row.get("ESPN"))
+    tank_espn = None
+    if tank_link:
+        match = _ESPN_PLAYER_LINK_RE.search(tank_link)
+        if match:
+            tank_espn = match.group(1)
+
+    if sleeper_espn and tank_espn and sleeper_espn != tank_espn:
+        return None
+
+    value = sleeper_espn or tank_espn
+    if not value:
+        return None
+
+    external_candidates = external_anchor_candidates.get(("ESPN", value), [])
+    if not external_candidates:
+        return None
+
+    app_claims = {
+        "Sleeper": clean(row.get("ID")),
+        "Tank01": clean(row.get("TankID")),
+    }
+    for provider, app_value in app_claims.items():
+        if not app_value:
+            continue
+        external_values = {
+            external_value
+            for candidate in external_candidates
+            if (external_value := clean(candidate.ids.get(provider)))
+        }
+        if any(external_value != app_value for external_value in external_values):
+            return None
+
+    return value
 
 
 class UnionFind:
@@ -62,7 +144,11 @@ class UnionFind:
             self.rank[left_root] += 1
 
 
-def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
+def app_player_candidates(
+    repo_root: Path,
+    *,
+    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]] | None = None,
+) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
     players = load_json(repo_root / "public/data/Players.json", []) or []
     relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
     candidates: list[IdentityCandidate] = []
@@ -72,6 +158,10 @@ def app_player_candidates(repo_root: Path) -> tuple[list[IdentityCandidate], lis
             ids["Sleeper"] = sleeper
         if tank := clean(row.get("TankID")):
             ids["Tank01"] = tank
+        if external_anchor_candidates is not None:
+            espn = _app_player_espn_bridge(row, external_anchor_candidates)
+            if espn:
+                ids["ESPN"] = espn
         if not ids:
             continue
         candidates.append(
@@ -415,8 +505,14 @@ def build_identities(
     list[dict[str, Any]],
 ]:
     raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
-    app_candidates, _ = app_player_candidates(repo_root)
-    candidates = existing_identity_candidates(repo_root) + raw_candidates + app_candidates
+    existing_candidates = existing_identity_candidates(repo_root)
+    app_candidates, _ = app_player_candidates(
+        repo_root,
+        external_anchor_candidates=_current_external_anchor_candidates(
+            raw_candidates + existing_candidates
+        ),
+    )
+    candidates = existing_candidates + raw_candidates + app_candidates
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
     uf = _build_components(candidates)
     components = _component_members(uf, candidates)
