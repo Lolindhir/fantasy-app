@@ -280,17 +280,39 @@ aktuelles Salary
 
 Eine absichtliche Absprache mehrerer Teams zum Verschieben von Cap wäre gegebenenfalls eine allgemeine Fair-Play-/Collusion-Frage, aber kein Grund, die normale Vertragslogik technisch zu verändern.
 
-## 9. Offene Alternative: Salary nur teilweise reduzieren
+## 9. Vollständige Salary-Reduktion: geklärte Konzeptentscheidung
 
-Eine diskutierte Alternative wäre, das aktive Salary des Spielers nicht um den vollständigen Dead Cap zu reduzieren, sondern beispielsweise nur um die Hälfte des Dead Caps.
+Der bei einem Cut entstehende Dead Cap wird **vollständig vom zu diesem Zeitpunkt aktiven Salary des Spielers abgezogen**.
+
+Beispiel:
+
+- aktives Salary vor dem Cut: **20**
+- Dead-Cap-Satz: **50 %**
+- neuer Dead Cap: **10**
+- verbleibendes aktives Salary: **10**
+
+Damit gilt:
+
+```text
+Dead Cap:       10
+aktives Salary: 10
+-----------------
+Gesamt:         20
+```
+
+Der Cut verteilt damit den bestehenden Vertrag zwischen dem cuttenden Team und dem verbleibenden aktiven Salary. Es entsteht keine zusätzliche ligaweite Cap-Belastung.
+
+### Keine teilweise Reduktion
+
+Eine zuvor diskutierte Variante hätte das aktive Salary nur um einen Teil des Dead Caps reduziert.
 
 Beispiel:
 
 - Salary: **20**
 - Dead Cap: **10**
-- aktives Salary würde nur auf **15** sinken.
+- aktives Salary würde nur auf **15** sinken
 
-Dann entstünde jedoch:
+Dann entstünde:
 
 ```text
 Dead Cap:       10
@@ -299,13 +321,29 @@ aktives Salary: 15
 Gesamt:         25
 ```
 
-Damit wäre Dead Cap nicht mehr nur eine Aufteilung des bestehenden Vertrags, sondern zusätzlich eine echte Cut-Strafe, durch die neue Cap-Belastung entsteht.
+Diese Variante wird im aktuellen Konzept **nicht weiterverfolgt**, weil dadurch zusätzliches Salary entstehen würde. Dead Cap wäre dann nicht mehr nur Retained Salary, sondern gleichzeitig eine zusätzliche Cut-Strafe.
 
-Diese Variante ist **nicht verworfen**, aber aktuell weniger elegant als die vollständige Retained-Salary-Logik.
+Wenn die Liga später bewusst eine zusätzliche Cut-Strafe einführen möchte, soll diese als **eigene Mechanik** diskutiert werden. Die Salary-Reduktion selbst bleibt vollständig und transparent.
 
-Falls eine zusätzliche Cut-Strafe gewünscht ist, sollte geprüft werden, ob sie besser als eigene Mechanik modelliert wird, statt die Vertragsinvariante aufzubrechen.
+### Konsequenz für die Vertragslogik
 
----
+Bei jedem Cut gilt:
+
+```text
+neuer Dead Cap
+= aktuelles Salary vor dem Cut × Dead-Cap-Satz
+
+neues aktives Salary
+= aktuelles Salary vor dem Cut − neuer Dead Cap
+```
+
+Damit bleibt die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
+
+```text
+aktuelles Salary
++ Summe aller aktiven Dead-Cap-Anteile
+= Salary beim letzten Salary Check
+```
 
 ## 10. Offene Alternative: Dead Cap über mehrere Salary-Jahre
 
@@ -347,7 +385,7 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 - Dead Cap bezieht sich auf das aktuelle Salary.
 - Dead Cap gilt bis zum nächsten regulären Salary Check.
 
-### Aktuell bevorzugte Richtung
+### Geklärte Konzeptentscheidungen
 
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
 - Das frühere Team übernimmt diesen Anteil als Retained Salary.
@@ -357,7 +395,6 @@ Diese Entscheidung ist noch nicht final, ist derzeit aber die deutlich einfacher
 
 ### Noch offen
 
-- vollständige versus nur teilweise Salary-Reduktion;
 - Dead Cap nur bis zum nächsten Salary Check versus mehrjährige Übernahme;
 - Details zu Rundung und Mindest-Salary;
 - genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check.
