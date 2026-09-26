@@ -136,7 +136,7 @@ Das neue Team übernimmt also nur den noch nicht von früheren Teams getragenen 
 
 ## 4. Konzeptinvariante
 
-Solange das League Minimum Salary nicht greift, gilt innerhalb eines laufenden Salary-Zyklus:
+Solange das für den Spieler geltende erfahrungsabhängige Minimum Salary nicht greift, gilt innerhalb eines laufenden Salary-Zyklus:
 
 ```text
 aktuelles Salary des Spielers
@@ -157,7 +157,7 @@ Gesamt:                20
 
 Diese Invariante folgt aus der Retained-Salary-Logik und der vollständigen Salary-Reduktion: Kein Salary entsteht künstlich oder verschwindet. Der bestehende Vertrag wird lediglich zwischen dem aktuellen und früheren Teams verteilt.
 
-**Ausnahme:** Würde die vollständige Salary-Reduktion das aktive Salary unter das gültige League Minimum Salary drücken, bleibt das aktive Salary auf diesem Floor. Der Dead Cap wird dadurch nicht nachträglich gekürzt. In diesem Floor-Fall darf die Summe aus aktivem Salary und Dead Caps deshalb oberhalb des ursprünglichen Salaries liegen.
+**Ausnahme:** Würde die vollständige Salary-Reduktion das aktive Salary unter das für diesen Salary-Zyklus und den Spieler geltende erfahrungsabhängige Minimum Salary drücken, bleibt das aktive Salary auf diesem Floor. Der Dead Cap wird dadurch nicht nachträglich gekürzt. In diesem Floor-Fall darf die Summe aus aktivem Salary und Dead Caps deshalb oberhalb des ursprünglichen Salaries liegen.
 
 ---
 
@@ -369,10 +369,10 @@ neuer Dead Cap
 = aktuelles Salary vor dem Cut × Dead-Cap-Satz
 
 neues aktives Salary
-= max(League Minimum Salary, aktuelles Salary vor dem Cut − neuer Dead Cap)
+= max(anwendbares Minimum Salary, aktuelles Salary vor dem Cut − neuer Dead Cap)
 ```
 
-Solange das League Minimum Salary nicht greift, bleibt damit die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
+Solange das anwendbare Minimum Salary nicht greift, bleibt damit die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
 
 ```text
 aktuelles Salary
@@ -426,52 +426,141 @@ Das erhöht den Wert von aktivem Roster- und Trade-Management vor der Cap Deadli
 
 Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte er in der aktuellen Saison voraussichtlich entweder mehr Spieler cutten und die entsprechende Dead-Cap-Belastung tragen oder früher versuchen müssen, diese Spieler aktiv zu traden.
 
-## 11. Rundung und Salary-Floor: teilweise geklärte Konzeptentscheidung
+## 11. Minimum Salary als erfahrungsabhängiges Base Salary: geklärte Konzeptentscheidung
 
 Salary und Dead Cap werden in **vollen Dollarbeträgen ohne Dezimalstellen** geführt.
 
 ### Rundung
 
-Prozentuale Dead-Cap-Berechnungen werden kaufmännisch auf den nächsten vollen Dollar gerundet.
-
-Beispiel:
-
-```text
-$1.234.567 × 30 % = $370.370,10
-Dead Cap = $370.370
-```
+Prozentuale Dead-Cap- und Minimum-Salary-Berechnungen werden kaufmännisch auf den nächsten vollen Dollar gerundet.
 
 Bei exakt 50 Cent wird auf den nächsten vollen Dollar aufgerundet.
 
-### Harter Minimum-Salary-Floor
+### Staffel nach NFL-Erfahrung
 
-Ein aktiver Spieler darf niemals unter das gültige **League Minimum Salary** fallen.
+Das Minimum Salary richtet sich nach `Player.Year` und damit nach der NFL-Erfahrung des Spielers. Die Fantasy-Team-Tenure spielt für die Höhe des Minimum Salaries keine Rolle; sie wird ausschließlich für die Dead-Cap-Staffel verwendet.
 
-Der Dead Cap wird zunächst normal aus dem aktiven Salary vor dem Cut und dem geltenden Prozentsatz berechnet. Würde die anschließende vollständige Reduktion das aktive Salary unter den Floor drücken, bleibt das aktive Salary stattdessen beim League Minimum Salary.
+| Player.Year | Minimum Salary |
+| ---: | ---: |
+| 1 | 0,25 % des maßgeblichen Vorjahres-Salary-Caps |
+| 2 | 0,30 % |
+| 3 | 0,35 % |
+| 4 | 0,40 % |
+| 5–7 | 0,45 % |
+| 8+ | 0,50 % |
 
-Beispiel mit einem angenommenen Minimum Salary von **$250.000**:
+Damit steigt das Base Minimum in gleichmäßigen Schritten von 0,25 % auf 0,50 % des maßgeblichen Salary Caps.
+
+### Maßgebliche Cap-Basis: Vorjahres-Salary-Cap
+
+Das Minimum Salary eines Salary-Zyklus wird aus dem **kanonisch berechneten Salary Cap des vorherigen Salary-Zyklus** abgeleitet.
+
+Die Berechnungsrichtung lautet:
 
 ```text
-aktives Salary vor Cut: $300.000
-Dead-Cap-Satz:          50 %
-Dead Cap:               $150.000
-rechnerischer Rest:     $150.000
-Salary-Floor:           $250.000
-
-neues aktives Salary:   $250.000
-Dead Cap:               $150.000
-Gesamtbelastung:        $400.000
+Salary Cap des Vorjahres
+→ Minimum Salaries des aktuellen Zyklus
+→ aktuelle Player Salaries
+→ aktuelles Salary Cap
 ```
 
-Der Floor ist damit eine bewusste Ausnahme von der sonst geltenden Salary-Invariante. Er verhindert, dass ein aktiver Spieler durch wiederholte Cuts unter das ligaweit gültige Mindestgehalt fällt.
+Dadurch entsteht innerhalb desselben Salary-Zyklus keine Zirkularität zwischen Minimum Salary und Salary Cap. Das aktuelle Salary Cap wird weiterhin erst aus den bereits feststehenden aktuellen Player Salaries berechnet.
 
-### Konkrete Höhe noch offen
+Beispiel bei einem Vorjahres-Cap von **$434.255.984**:
 
-Im aktuellen Salary-Mapping existiert derzeit **kein universeller fester Dollar-Floor**; die Mapping-Untergrenze liegt bei **$0**.
+| Player.Year | Anteil | Base Minimum Salary |
+| ---: | ---: | ---: |
+| 1 | 0,25 % | $1.085.640 |
+| 2 | 0,30 % | $1.302.768 |
+| 3 | 0,35 % | $1.519.896 |
+| 4 | 0,40 % | $1.737.024 |
+| 5–7 | 0,45 % | $1.954.152 |
+| 8+ | 0,50 % | $2.171.280 |
 
-Für dieses Konzept ist geklärt, **dass künftig ein harter League Minimum Salary Floor gelten soll**. Noch nicht entschieden ist dessen konkrete Höhe oder Herleitung.
+### Additives Base Salary statt nachträglichem Floor
 
-Als nächster Diskussionspunkt ist deshalb zu klären, ob beispielsweise **$250.000 als fixer Dollarwert** sinnvoll wäre oder ob das Minimum dynamisch aus dem Salary-/Cap-System abgeleitet werden sollte.
+Das Minimum Salary ist nicht nur eine Untergrenze, die nachträglich mit `max(...)` auf das normale Salary angewendet wird. Es ist ein **echtes Base Salary**, auf dem der variable Salary-Anteil aufbaut.
+
+Für die normale Performance-Skalierung gilt deshalb konzeptionell:
+
+```text
+Player Salary
+= Base Minimum Salary nach Player.Year
++ leistungsbasierter Salary-Anteil
+```
+
+Die bisherige Performance-Skala bleibt als variabler Anteil erhalten:
+
+```text
+0 Performance-Punkte  → $0 variabler Anteil
+20 Performance-Punkte → $50.000.000 variabler Anteil
+```
+
+Damit gilt insgesamt:
+
+```text
+0 Performance-Punkte
+→ Base Minimum Salary
+
+20 Performance-Punkte
+→ Base Minimum Salary + $50.000.000
+```
+
+Die bestehende quadratische Performance-Kurve wird dadurch nicht gestaucht oder neu skaliert, sondern lediglich um das jeweilige Base Minimum nach oben verschoben.
+
+Diese Konstruktion verhindert außerdem, dass ein größerer Bereich unterschiedlicher Low-End-Performance durch ein nachträgliches `max(Minimum, Performance Salary)` auf exakt denselben Salary-Wert fällt. Nur ein Spieler ohne zusätzlichen variablen Salary-Anteil liegt exakt auf seinem Base Minimum.
+
+### Verhältnis zum Rookie-/Young-Player-Modell
+
+Das erfahrungsabhängige Base Minimum ist die unterste Salary-Schicht für **alle** Spieler.
+
+Rookie- oder Young-Player-spezifische Salary-Komponenten, insbesondere die bereits vorgesehene Draft-basierte Rookie-Basis und der gleitende Übergang zur Performance-Historie, bauen oberhalb dieses Base Minimums auf. Die genaue Gewichtung dieser Rookie-Komponenten bleibt Teil des allgemeinen Salary-Modells und wird durch die Minimum-Salary-Regel nicht ersetzt.
+
+### Dead-Cap-Floor innerhalb eines Salary-Zyklus
+
+Das beim Salary Check festgelegte erfahrungsabhängige Minimum bleibt während des laufenden Salary-Zyklus die Untergrenze des aktiven Salaries.
+
+Bei einem Cut gilt:
+
+```text
+neuer Dead Cap
+= aktuelles Salary vor dem Cut × Dead-Cap-Satz
+
+neues aktives Salary
+= max(anwendbares Minimum Salary, aktuelles Salary vor dem Cut − neuer Dead Cap)
+```
+
+Der Dead Cap wird nicht nachträglich reduziert, nur weil der Floor greift.
+
+Dadurch darf im Floor-Fall gelten:
+
+```text
+aktives Salary + Summe aller Dead Caps
+> Salary vor dem ersten Cut
+```
+
+Das ist eine bewusste Ausnahme von der sonst geltenden Retained-Salary-Invariante: Das zusätzliche Salary entsteht ausschließlich durch den garantierten Minimum Contract.
+
+### Retroaktive Reproduzierbarkeit
+
+Salary und Salary Cap werden historisch nach den jeweils aktuell gültigen Regeln reproduzierbar berechnet.
+
+Wenn eine Salary-Regel rückwirkend geändert und die Historie neu berechnet wird, wird deshalb auch das kanonische Salary Cap der betroffenen Vorjahre mit den neuen Regeln neu bestimmt.
+
+Die Minimum-Salary-Kette wird anschließend ebenfalls neu berechnet:
+
+```text
+historischer Vorjahres-Cap
+→ Minimum des Folgejahres
+→ Salary des Folgejahres
+→ Cap des Folgejahres
+→ nächstes Minimum
+→ ...
+```
+
+Eine Regeländerung wirkt damit konsistent auf spätere Minimum Salaries, obwohl deren Basis jeweils das Vorjahres-Cap ist.
+
+Für die erste Saison, ab der dieses Minimum-Salary-System angewendet wird, wird technisch ein definierter historischer Anchor beziehungsweise Startwert benötigt. Die Wahl und technische Speicherung dieses Anchors ist eine Implementierungsfrage und ändert die fachliche Regel nicht.
 
 ---
 
@@ -511,10 +600,13 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
 - Das frühere Team übernimmt diesen Anteil als Retained Salary.
 - Das neue Team zahlt nur den verbleibenden aktiven Salary-Anteil.
-- Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten, solange der Minimum-Salary-Floor nicht greift.
+- Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten, solange das anwendbare Minimum Salary nicht greift.
 - Salary und Dead Cap werden in ganzen Dollarbeträgen ohne Dezimalstellen geführt.
-- Ein aktiver Spieler darf niemals unter das gültige League Minimum Salary fallen.
-- Greift der Floor, darf aktives Salary plus Dead Caps oberhalb des ursprünglichen Salaries liegen.
+- Das Minimum Salary ist ein erfahrungsabhängiges Base Salary nach `Player.Year`.
+- Die Staffel beträgt **0,25 % / 0,30 % / 0,35 % / 0,40 % / 0,45 % / 0,50 %** des maßgeblichen Vorjahres-Salary-Caps für Year 1 / 2 / 3 / 4 / 5–7 / 8+.
+- Das Base Minimum wird additiv mit dem variablen Performance-/Rookie-Salary-Anteil kombiniert.
+- Das Minimum eines Zyklus basiert auf dem kanonisch berechneten Salary Cap des vorherigen Zyklus.
+- Greift der Floor nach einem Cut, darf aktives Salary plus Dead Caps oberhalb des ursprünglichen Salaries liegen.
 
 ### Geklärte weitere Konzeptentscheidung
 
@@ -522,9 +614,9 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Dead Cap wird nicht über mehrere Salary-Zyklen fortgeführt.
 - Das Salary wird danach unabhängig vom alten Zyklus neu berechnet.
 
-### Noch offen
+### Technische Anschlussfrage
 
-- Wie das League Minimum Salary konkret bestimmt werden soll: fixer Dollarwert (z. B. **$250.000**) oder dynamische Herleitung.
+- Für die erste historische Saison des neuen Minimum-Salary-Systems muss ein reproduzierbarer Anchor-/Startwert für das Vorjahres-Cap festgelegt werden. Das ist eine Umsetzungsfrage, keine offene Grundsatzentscheidung des Salary-Modells.
 
 ---
 
