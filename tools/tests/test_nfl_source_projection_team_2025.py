@@ -96,6 +96,7 @@ class ProjectionV3Team2025Backtest(unittest.TestCase):
         starter_projected = 0
         unavailable_reasons: Counter[str] = Counter()
         matchup_rows: list[dict[str, Any]] = []
+        starter_rows: list[dict[str, Any]] = []
 
         for week in range(1, 18):
             target_observations = {
@@ -117,6 +118,10 @@ class ProjectionV3Team2025Backtest(unittest.TestCase):
                 self.assertEqual(len(starters), len(starter_points))
 
                 actual = sum(float(item.get("Points") or 0.0) for item in starter_points)
+                actual_by_player = {
+                    _player_id(item.get("Player")): float(item.get("Points") or 0.0)
+                    for item in starter_points
+                }
                 self.assertAlmostEqual(actual, float(team.get("Points") or 0.0), places=2)
 
                 projections: list[float] = []
@@ -194,6 +199,16 @@ class ProjectionV3Team2025Backtest(unittest.TestCase):
 
                     projections.append(projection)
                     starter_projected += 1
+                    starter_rows.append(
+                        {
+                            "Week": week,
+                            "CanonicalPlayerID": player_id,
+                            "Position": position,
+                            "Projection": projection,
+                            "Actual": actual_by_player.get(player_id, 0.0),
+                            "ConfirmedParticipation": player_id in target_observations,
+                        }
+                    )
 
                 complete = len(projections) == len(starters)
                 row = {
@@ -282,6 +297,24 @@ class ProjectionV3Team2025Backtest(unittest.TestCase):
                 "RegularSeason": _metrics(regular_rows),
                 "Playoffs": _metrics(playoff_rows),
                 "ByWeek": by_week,
+            },
+            "StarterDiagnostics": {
+                "AllProjectedStarters": _metrics(starter_rows),
+                "ConfirmedParticipation": _metrics(
+                    [row for row in starter_rows if row["ConfirmedParticipation"]]
+                ),
+                "NoConfirmedParticipation": _metrics(
+                    [row for row in starter_rows if not row["ConfirmedParticipation"]]
+                ),
+                "NoConfirmedParticipationCount": sum(
+                    1 for row in starter_rows if not row["ConfirmedParticipation"]
+                ),
+                "ByPosition": {
+                    position: _metrics(
+                        [row for row in starter_rows if row["Position"] == position]
+                    )
+                    for position in sorted({str(row["Position"]) for row in starter_rows})
+                },
             },
             "MatchupWinnerCheck": {
                 "ComparableMatchups": predicted_winners,
