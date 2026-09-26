@@ -36,21 +36,21 @@ _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
 _ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
 
 
-def _current_external_anchor_tokens(
+def _current_external_anchor_candidates(
     candidates: list[IdentityCandidate],
-) -> set[tuple[str, str]]:
-    """Return anchor IDs independently observed in current external identity sources."""
-    return {
-        (key, value)
-        for candidate in candidates
-        for key, value in candidate.ids.items()
-        if key in ANCHOR_ID_KEYS and value
-    }
+) -> dict[tuple[str, str], list[IdentityCandidate]]:
+    """Index current external candidates by independently observed strong anchor."""
+    result: dict[tuple[str, str], list[IdentityCandidate]] = defaultdict(list)
+    for candidate in candidates:
+        for key, value in candidate.ids.items():
+            if key in ANCHOR_ID_KEYS and value:
+                result[(key, value)].append(candidate)
+    return dict(result)
 
 
 def _app_player_espn_bridge(
     row: dict[str, Any],
-    allowed_anchor_tokens: set[tuple[str, str]],
+    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]],
 ) -> str | None:
     """Use app-side ESPN evidence only when current external evidence corroborates it.
 
@@ -58,6 +58,10 @@ def _app_player_espn_bridge(
     Tank01 espnLink. If both exist and disagree, fail closed. A single value is
     used only to bridge to an ESPN token already present in current external
     identity candidates, so app data cannot seed a new CanonicalPlayerID via ESPN.
+
+    The bridge also refuses an ESPN anchor whose current external candidates carry
+    a conflicting Sleeper or Tank01 claim. This prevents a corroborated ESPN token
+    from collapsing known provider conflicts into a new ambiguous active mapping.
     """
     sleeper_espn = clean(row.get("ESPNID"))
     tank_link = clean(row.get("ESPN"))
@@ -71,8 +75,28 @@ def _app_player_espn_bridge(
         return None
 
     value = sleeper_espn or tank_espn
-    if not value or ("ESPN", value) not in allowed_anchor_tokens:
+    if not value:
         return None
+
+    external_candidates = external_anchor_candidates.get(("ESPN", value), [])
+    if not external_candidates:
+        return None
+
+    app_claims = {
+        "Sleeper": clean(row.get("ID")),
+        "Tank01": clean(row.get("TankID")),
+    }
+    for provider, app_value in app_claims.items():
+        if not app_value:
+            continue
+        external_values = {
+            external_value
+            for candidate in external_candidates
+            if (external_value := clean(candidate.ids.get(provider)))
+        }
+        if any(external_value != app_value for external_value in external_values):
+            return None
+
     return value
 
 
@@ -107,7 +131,7 @@ class UnionFind:
 def app_player_candidates(
     repo_root: Path,
     *,
-    allowed_anchor_tokens: set[tuple[str, str]] | None = None,
+    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]] | None = None,
 ) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
     players = load_json(repo_root / "public/data/Players.json", []) or []
     relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
@@ -118,8 +142,8 @@ def app_player_candidates(
             ids["Sleeper"] = sleeper
         if tank := clean(row.get("TankID")):
             ids["Tank01"] = tank
-        if allowed_anchor_tokens is not None:
-            espn = _app_player_espn_bridge(row, allowed_anchor_tokens)
+        if external_anchor_candidates is not None:
+            espn = _app_player_espn_bridge(row, external_anchor_candidates)
             if espn:
                 ids["ESPN"] = espn
         if not ids:
@@ -467,7 +491,7 @@ def build_identities(
     raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
     app_candidates, _ = app_player_candidates(
         repo_root,
-        allowed_anchor_tokens=_current_external_anchor_tokens(raw_candidates),
+        external_anchor_candidates=_current_external_anchor_candidates(raw_candidates),
     )
     candidates = existing_identity_candidates(repo_root) + raw_candidates + app_candidates
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
