@@ -119,6 +119,35 @@ identityModel:
       - If one provider ID claims multiple distinct CanonicalPlayerIDs for an overlapping period, quarantine the provider mapping as ambiguous or conflicting.
       - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
       - Do not choose a winner silently and do not add provider-specific or player-specific hard-coded identity exceptions as the primary conflict strategy.
+    currentAdjudication:
+      source: source-data/nfl/identities/current-identity-adjudications.json
+      documentation: source-data/nfl/identities/current-identity-adjudications.md
+      provenancePrefix: manual.current-identity-adjudication
+      role: bounded-human-reviewed-current-provider-reassignment
+      runtimeStatus: contract-only-not-yet-consumed
+      rule: >
+        Rare current-season provider identity gaps that remain unresolved after the
+        ordinary automated corroboration rules may be represented by an explicit,
+        versioned adjudication contract. A current adjudication targets one already
+        existing durable CanonicalPlayerID, names one or more already existing
+        source/provisional CanonicalPlayerIDs and enumerates exactly which provider
+        tokens may be reassigned for one NFL season. It never creates or renames a
+        CanonicalPlayerID, never bulk-merges two identity records, never turns
+        display names into merge evidence and never rewrites raw provider evidence.
+        Checkpoint 6Z.7 establishes the source contract and fail-closed validator
+        only; productive identity materialization does not consume this source yet.
+      requirements:
+        - Status must be confirmed; unresolved review candidates do not belong in the canonical current-adjudication source.
+        - ResolutionKind must be current-provider-reassignment and ConflictPolicy must be reject-active-conflict.
+        - Every decision requires a stable AdjudicationID, exact Season, DecisionAuthority, DecisionDate, rationale and non-empty evidence references.
+        - TargetCanonicalPlayerID and every SourceCanonicalPlayerID must already exist in the persisted canonical identity graph, and the target must not also be listed as a source.
+        - ProviderAssignments enumerate the only Provider plus ExternalID tokens the decision may reassign; no unlisted provider value transfers implicitly.
+        - A decision is active only for its exact observation season and must not silently carry into a later season.
+        - The target must not already carry a different active value for an assigned provider.
+        - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
+        - An adjudication must fail closed rather than override an active provider conflict.
+        - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
+        - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
     historicalAdjudication:
       source: source-data/nfl/identities/historical-identity-adjudications.json
       provenancePrefix: manual.identity-adjudication
