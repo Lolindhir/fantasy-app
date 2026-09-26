@@ -99,6 +99,51 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
             + json.dumps(unresolved, ensure_ascii=False, sort_keys=True)
         )
 
+        app_players = {
+            str(row.get("ID")): row
+            for row in original_load_json(ROOT / "public/data" / "Players.json")
+            if row.get("ID") is not None
+        }
+        persisted_identities = original_load_json(canonical_identity_path)
+        persisted_by_id = {
+            str(row.get("CanonicalPlayerID")): row
+            for row in persisted_identities.get("Players", [])
+            if row.get("CanonicalPlayerID")
+        }
+        evidence_rows = []
+        for row in unresolved:
+            player_id = str(row["player_id"])
+            app_row = app_players.get(player_id, {})
+            target_id = (
+                row.get("identity_diagnostic", {})
+                .get("current_season", {})
+                .get("unique_other_canonical_id")
+            )
+            target = persisted_by_id.get(str(target_id), {}) if target_id else {}
+            provisional = persisted_by_id.get(str(row.get("canonical_player_id")), {})
+            evidence_rows.append(
+                {
+                    "player_id": player_id,
+                    "name": row.get("name"),
+                    "app": {
+                        "TankID": app_row.get("TankID"),
+                        "ESPNID": app_row.get("ESPNID"),
+                        "ESPN": app_row.get("ESPN"),
+                        "Team": app_row.get("Team"),
+                        "TeamID": app_row.get("TeamID"),
+                    },
+                    "provisional_ids": provisional.get("IDs"),
+                    "target_canonical_player_id": target_id,
+                    "target_ids": target.get("IDs"),
+                    "target_aliases": target.get("IDAliases"),
+                    "target_sources": target.get("Sources"),
+                }
+            )
+        print(
+            "6Z.5 unresolved provider evidence: "
+            + json.dumps(evidence_rows, ensure_ascii=False, sort_keys=True)
+        )
+
         self.assertLess(
             rebuilt_gap,
             baseline_gap,
