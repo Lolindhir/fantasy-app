@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-26T08:36:07Z",
-  "input_fingerprint": "c11f0a58d4f34322ba383dae41e219460094c899a6ac2f2ec24657d15c407cf7",
+  "generated_at": "2026-09-26T12:06:16Z",
+  "input_fingerprint": "a7cd3910c56228d0c3f19d3195a16dd542c6cccab31bace7ba4f8b4feef49f6c",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "057e2ef049f968021ad1d3499cc55b5b8b2b9333af64e924bfe568e61511b1bb"
+      "input_fingerprint": "107b1812f72ef66afecc106efaf1e154879c97ef18403773d1d681b49906acbc"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "1fc9cef7013e470fb375685b807da17c847a13aacaf2e10ddbdfe33dc132b7b9"
+      "input_fingerprint": "057e2ef049f968021ad1d3499cc55b5b8b2b9333af64e924bfe568e61511b1bb"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,64 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 172,
+    "current_discovery_count": 173,
     "previous_discovery_count": 172,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "new": 1
+    },
+    "event_priority_counts": {
+      "medium": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "21ad278d9fc90cf1c0d6bddd40412f7589a1c907ccfdb66d58859c650a5edba5",
+    "current_evidence_fingerprint": "d7270752d7ec4f24894885b3ab9ec32e6c053c9efbd8c63ba3b1dc5e446fe8ca",
     "previous_evidence_fingerprint": "21ad278d9fc90cf1c0d6bddd40412f7589a1c907ccfdb66d58859c650a5edba5",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "7610",
+      "name": "Trey Lance",
+      "position": "QB",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20261025",
+          "to": "20260927"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
