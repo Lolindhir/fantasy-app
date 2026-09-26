@@ -293,11 +293,13 @@ Der Grund:
 
 Jede weitere Reduktion des aktiven Salaries wird durch eine reale zusätzliche Dead-Cap-Belastung des cuttenden Teams finanziert. Ein niedrigeres aktives Salary entsteht daher nicht kostenlos.
 
-Bei wiederholten 50-%-Cuts ergibt sich beispielsweise:
+Ohne einen eingreifenden Salary-Floor ergibt sich bei wiederholten 50-%-Cuts beispielsweise:
 
 ```text
 20 → 10 → 5 → 2,5 → 1,25 → ...
 ```
+
+Sobald das gültige League Minimum Salary erreicht ist, sinkt das aktive Salary nicht weiter.
 
 Während das aktive Salary sinkt, wächst die Summe der Dead-Cap-Anteile entsprechend an.
 
@@ -367,7 +369,7 @@ neuer Dead Cap
 = aktuelles Salary vor dem Cut × Dead-Cap-Satz
 
 neues aktives Salary
-= aktuelles Salary vor dem Cut − neuer Dead Cap
+= max(League Minimum Salary, aktuelles Salary vor dem Cut − neuer Dead Cap)
 ```
 
 Solange das League Minimum Salary nicht greift, bleibt damit die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
