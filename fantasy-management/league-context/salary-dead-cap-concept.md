@@ -54,33 +54,61 @@ Damit erreicht ein Spieler nach drei abgeschlossenen Saisons vollständig das no
 
 ---
 
-## 2. Haltedauer für Dead Cap
+## 2. Team Tenure für Dead Cap: geklärte Konzeptentscheidung
 
-Die Dead-Cap-Höhe richtet sich nach der Zahl der **aufeinanderfolgenden, ununterbrochenen abgeschlossenen Saisons**, die ein Spieler bei demselben Fantasy-Team gehalten wurde.
+Die Dead-Cap-Höhe richtet sich nach der **ununterbrochenen Teamzugehörigkeit in League Seasons**.
 
-Aktueller Vorschlag:
+Die Tenure wird bewusst einfach berechnet:
 
-| Abgeschlossene ununterbrochene Saisons beim Team | Dead Cap beim Cut |
+```text
+Team Tenure
+= aktuelle League Season − Acquisition Season
+```
+
+Dabei ist die `Acquisition Season` die League Season, in der die **aktuelle ununterbrochene Zugehörigkeit** zu diesem Fantasy-Team begonnen hat.
+
+Die Staffel lautet:
+
+| Team Tenure | Dead Cap beim Cut |
 | ---: | ---: |
 | 0 | 50 % |
 | 1 | 30 % |
 | 2 | 15 % |
 | 3 oder mehr | 5 % |
 
-### Interpretation
+### Beispiele
 
-**0 Saisons** bedeutet zum Beispiel:
+Ein Spieler wird in **Week 1 der Saison 2026** aufgenommen:
 
-Ein Team nimmt einen Spieler während eines laufenden Salary-Zyklus auf und cuttet ihn wieder, bevor mit ihm eine komplette Saison abgeschlossen wurde.
+- in League Season 2026: Tenure **0**
+- in League Season 2027: Tenure **1**
+- in League Season 2028: Tenure **2**
+- ab League Season 2029: Tenure **3+**
 
-Die Haltedauer wird durch einen Teamwechsel unterbrochen. Ein neues Team beginnt für seine eigene spätere Dead-Cap-Berechnung wieder bei seiner eigenen Haltedauer.
+Ein Spieler wird erst in **Week 16 der Saison 2026** aufgenommen. Für die Dead-Cap-Staffel gilt trotzdem dieselbe Season-Logik:
 
-Die Staffel soll zwei Dinge verbinden:
+- in League Season 2026: Tenure **0**
+- in League Season 2027: Tenure **1**
 
-- kurzfristig aufgenommene Spieler sind relativ teuer wieder abzugeben;
-- langfristig gehaltene Spieler können nach mehreren Jahren mit nur kleiner Restbelastung abgegeben werden.
+Es wird bewusst **nicht** nach gehaltenen Wochen oder Spielen unterschieden.
 
-Auch hier entsteht damit ein Drei-Jahres-Lifecycle: Nach drei gehaltenen Saisons erreicht der Spieler die niedrigste Dead-Cap-Stufe.
+### Offseason-Aufnahmen
+
+Wird ein Spieler in der Offseason der League Season 2027 vor der Cap Deadline aufgenommen, gilt:
+
+```text
+2027 − 2027 = 0
+```
+
+Das bloße Passieren der Cap Deadline innerhalb derselben League Season erzeugt deshalb kein zusätzliches Tenure-Jahr.
+
+### Unterbrechung und Re-Acquisition
+
+Ein Cut oder Teamwechsel beendet die bisherige ununterbrochene Zugehörigkeit.
+
+Kehrt der Spieler später zum selben Team zurück, beginnt eine neue Acquisition Season. Die frühere Teamhistorie wird für die Dead-Cap-Staffel nicht weitergezählt.
+
+Damit misst die Staffel bewusst keine exakte Vertragsdauer in Tagen, sondern grobe Dynasty-Teamzugehörigkeit über aufeinanderfolgende League Seasons.
 
 ---
 
@@ -108,7 +136,7 @@ Das neue Team übernimmt also nur den noch nicht von früheren Teams getragenen 
 
 ## 4. Konzeptinvariante
 
-Innerhalb eines laufenden Salary-Zyklus gilt im aktuellen Konzept:
+Solange das League Minimum Salary nicht greift, gilt innerhalb eines laufenden Salary-Zyklus:
 
 ```text
 aktuelles Salary des Spielers
@@ -128,6 +156,8 @@ Gesamt:                20
 ```
 
 Diese Invariante folgt aus der Retained-Salary-Logik und der vollständigen Salary-Reduktion: Kein Salary entsteht künstlich oder verschwindet. Der bestehende Vertrag wird lediglich zwischen dem aktuellen und früheren Teams verteilt.
+
+**Ausnahme:** Würde die vollständige Salary-Reduktion das aktive Salary unter das gültige League Minimum Salary drücken, bleibt das aktive Salary auf diesem Floor. Der Dead Cap wird dadurch nicht nachträglich gekürzt. In diesem Floor-Fall darf die Summe aus aktivem Salary und Dead Caps deshalb oberhalb des ursprünglichen Salaries liegen.
 
 ---
 
@@ -263,21 +293,25 @@ Der Grund:
 
 Jede weitere Reduktion des aktiven Salaries wird durch eine reale zusätzliche Dead-Cap-Belastung des cuttenden Teams finanziert. Ein niedrigeres aktives Salary entsteht daher nicht kostenlos.
 
-Bei wiederholten 50-%-Cuts ergibt sich beispielsweise:
+Ohne einen eingreifenden Salary-Floor ergibt sich bei wiederholten 50-%-Cuts beispielsweise:
 
 ```text
 20 → 10 → 5 → 2,5 → 1,25 → ...
 ```
 
+Sobald das gültige League Minimum Salary erreicht ist, sinkt das aktive Salary nicht weiter.
+
 Während das aktive Salary sinkt, wächst die Summe der Dead-Cap-Anteile entsprechend an.
 
-Die zentrale Invariante bleibt erhalten:
+Solange das League Minimum Salary nicht greift, bleibt die zentrale Invariante erhalten:
 
 ```text
 aktuelles Salary
 + Summe aller aktiven Dead-Cap-Anteile
 = Salary beim letzten Salary Check
 ```
+
+Greift der Salary-Floor, bleibt das aktive Salary stattdessen auf dem Minimum und die Gesamtbelastung darf entsprechend höher liegen.
 
 Eine absichtliche Absprache mehrerer Teams zum Verschieben von Cap wäre gegebenenfalls eine allgemeine Fair-Play-/Collusion-Frage, aber kein Grund, die normale Vertragslogik technisch zu verändern.
 
@@ -335,16 +369,18 @@ neuer Dead Cap
 = aktuelles Salary vor dem Cut × Dead-Cap-Satz
 
 neues aktives Salary
-= aktuelles Salary vor dem Cut − neuer Dead Cap
+= max(League Minimum Salary, aktuelles Salary vor dem Cut − neuer Dead Cap)
 ```
 
-Damit bleibt die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
+Solange das League Minimum Salary nicht greift, bleibt damit die zentrale Invariante innerhalb des Salary-Zyklus erhalten:
 
 ```text
 aktuelles Salary
 + Summe aller aktiven Dead-Cap-Anteile
 = Salary beim letzten Salary Check
 ```
+
+Greift der Salary-Floor, wird das aktive Salary nicht weiter abgesenkt; der berechnete Dead Cap bleibt bestehen.
 
 ## 10. Kein mehrjähriger Dead Cap: geklärte Konzeptentscheidung
 
@@ -390,7 +426,74 @@ Das erhöht den Wert von aktivem Roster- und Trade-Management vor der Cap Deadli
 
 Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte er in der aktuellen Saison voraussichtlich entweder mehr Spieler cutten und die entsprechende Dead-Cap-Belastung tragen oder früher versuchen müssen, diese Spieler aktiv zu traden.
 
-## 11. Aktueller Konzeptstand
+## 11. Rundung und Salary-Floor: teilweise geklärte Konzeptentscheidung
+
+Salary und Dead Cap werden in **vollen Dollarbeträgen ohne Dezimalstellen** geführt.
+
+### Rundung
+
+Prozentuale Dead-Cap-Berechnungen werden kaufmännisch auf den nächsten vollen Dollar gerundet.
+
+Beispiel:
+
+```text
+$1.234.567 × 30 % = $370.370,10
+Dead Cap = $370.370
+```
+
+Bei exakt 50 Cent wird auf den nächsten vollen Dollar aufgerundet.
+
+### Harter Minimum-Salary-Floor
+
+Ein aktiver Spieler darf niemals unter das gültige **League Minimum Salary** fallen.
+
+Der Dead Cap wird zunächst normal aus dem aktiven Salary vor dem Cut und dem geltenden Prozentsatz berechnet. Würde die anschließende vollständige Reduktion das aktive Salary unter den Floor drücken, bleibt das aktive Salary stattdessen beim League Minimum Salary.
+
+Beispiel mit einem angenommenen Minimum Salary von **$250.000**:
+
+```text
+aktives Salary vor Cut: $300.000
+Dead-Cap-Satz:          50 %
+Dead Cap:               $150.000
+rechnerischer Rest:     $150.000
+Salary-Floor:           $250.000
+
+neues aktives Salary:   $250.000
+Dead Cap:               $150.000
+Gesamtbelastung:        $400.000
+```
+
+Der Floor ist damit eine bewusste Ausnahme von der sonst geltenden Salary-Invariante. Er verhindert, dass ein aktiver Spieler durch wiederholte Cuts unter das ligaweit gültige Mindestgehalt fällt.
+
+### Aktueller Referenzwert, aber noch keine finale Fixierung
+
+Im bestehenden Salary-Mapping wird derzeit ein Minimum von **$250.000** verwendet.
+
+Für dieses Konzept ist damit geklärt, **dass es einen harten Minimum-Salary-Floor geben muss**. Noch nicht entschieden ist, ob **$250.000 dauerhaft als fixer Betrag** die richtige Regel ist oder ob das Minimum anders bestimmt werden sollte.
+
+Diese konkrete Minimum-Salary-Frage bleibt der nächste Diskussionspunkt.
+
+---
+
+## 12. Team-Tenure-Regel: Zusammenfassung
+
+Für die Dead-Cap-Staffel gilt:
+
+```text
+Team Tenure = aktuelle League Season − Acquisition Season
+```
+
+- dieselbe League Season = Jahr 0;
+- nächste League Season = Jahr 1;
+- danach Jahr 2 und Jahr 3+;
+- Week 1 und Week 16 derselben Acquisition Season werden gleich behandelt;
+- eine Offseason-Aufnahme vor der Cap Deadline zählt weiterhin als Jahr 0, wenn sie bereits der aktuellen League Season zugeordnet ist;
+- Cut oder Teamwechsel unterbricht die Zugehörigkeit;
+- eine spätere Re-Acquisition startet mit einer neuen Acquisition Season wieder bei Jahr 0.
+
+---
+
+## 13. Aktueller Konzeptstand
 
 ### Grundannahmen
 
@@ -398,8 +501,8 @@ Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte 
 - Rookies erhalten zunächst ein Draft-basiertes Salary.
 - In Jahr 2 und 3 wird schrittweise echte NFL-Leistung ergänzt.
 - Ab Jahr 4 gilt das vollständige Drei-Saison-Salary-Modell.
-- Dead Cap basiert auf ununterbrochenen abgeschlossenen Saisons beim jeweiligen Fantasy-Team.
-- Vorgeschlagene Staffel: **50 % / 30 % / 15 % / 5 %**.
+- Team Tenure wird als `aktuelle League Season − Acquisition Season` der ununterbrochenen Teamzugehörigkeit berechnet.
+- Die Dead-Cap-Staffel lautet **50 % / 30 % / 15 % / 5 %** für Tenure 0 / 1 / 2 / 3+.
 - Dead Cap bezieht sich auf das aktuelle Salary.
 - Dead Cap gilt bis zum nächsten regulären Salary Check.
 
@@ -408,7 +511,10 @@ Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte 
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
 - Das frühere Team übernimmt diesen Anteil als Retained Salary.
 - Das neue Team zahlt nur den verbleibenden aktiven Salary-Anteil.
-- Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten.
+- Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten, solange der Minimum-Salary-Floor nicht greift.
+- Salary und Dead Cap werden in ganzen Dollarbeträgen ohne Dezimalstellen geführt.
+- Ein aktiver Spieler darf niemals unter das gültige League Minimum Salary fallen.
+- Greift der Floor, darf aktives Salary plus Dead Caps oberhalb des ursprünglichen Salaries liegen.
 
 ### Geklärte weitere Konzeptentscheidung
 
@@ -418,12 +524,11 @@ Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte 
 
 ### Noch offen
 
-- Details zu Rundung und Mindest-Salary;
-- genaue Stichtagsdefinition für „abgeschlossene Saison“ und Salary Check.
+- Ob der aktuell verwendete Minimum-Salary-Wert von **$250.000** dauerhaft als fixer League-Wert beibehalten oder anders bestimmt werden soll.
 
 ---
 
-## 12. Pflege dieses Dokuments
+## 14. Pflege dieses Dokuments
 
 Dieses Dokument ist ein **lebendes Konzeptpapier**.
 
