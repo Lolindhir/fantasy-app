@@ -15,6 +15,7 @@ export class SeasonResultsComponent {
   @Input() title = 'Season Results';
   @Input() showTitle = true;
   @Input() showBannerPreview = false;
+  @Input() bannerSeason: string | number | null = null;
 
   placeEmoji(place: number): string {
     switch (place) {
