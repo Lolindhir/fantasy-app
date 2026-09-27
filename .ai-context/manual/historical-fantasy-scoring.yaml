@@ -444,3 +444,23 @@ validationEvidence:
   trackingIssue: 373
   phase2Issue: 347
   phase2State: paused-until-phase1-hardening-complete
+
+
+playerWeekFantasyIntegration:
+  contract: .ai-context/manual/player-week-fantasy.yaml
+  implementationFoundation: tools/player_week_fantasy.py
+  scoringReuseRule: >
+    PlayerWeekFantasy Actual scoring delegates to tools/historical_fantasy_scoring.py.
+    It must not duplicate or fork the canonical player-scoring key mappings.
+  scoringProfileIdentity:
+    algorithm: semantic-sha256-v1
+    field: ScoringProfile.SettingsHash
+    rule: >
+      Effective ScoringSettings are normalized deterministically before hashing:
+      key ordering and equivalent numeric formatting do not matter, zero-valued
+      settings are omitted as semantically inactive, and any active weight change
+      changes the fingerprint.
+  compatibility: >
+    Canonical NFL facts remain unchanged when scoring rules change. Re-derivation
+    under a different SettingsHash yields a distinct PlayerWeekFantasy identity,
+    allowing multiple League/scoring profiles to coexist without code changes.

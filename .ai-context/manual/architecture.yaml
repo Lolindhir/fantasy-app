@@ -544,3 +544,25 @@ sharedDomainContext:
       Shared phase identifies domain context only. Each consumer owns its explicit
       required/secondary/inactive policy. Technical source validity remains independent
       from consumer relevance and may not be weakened by phase.
+
+
+playerWeekFantasySharedDerived:
+  contract: .ai-context/manual/player-week-fantasy.yaml
+  trackingIssue: 697
+  logicalLayer: Shared Derived Data
+  physicalPath: deferred
+  identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
+  inputs:
+    - canonical NFL weekly roster/player/game facts
+    - canonical NFL scoring/stat/snap/usage evidence
+    - explicit canonical League-season ScoringSettings
+  consumers:
+    - App read models including FantasyGameContext and later Players/Free Agents publication
+    - Fantasy Operations
+    - future Fantasy Management derivations
+  rules:
+    - Weekly NFL roster facts stay scoring-independent under source-data/nfl.
+    - PlayerWeekFantasy owns reusable scoring-specific player-week Actual plus Projection/PredictionRange semantics.
+    - public/data may publish or adapt this data later but does not become the shared owner.
+    - Starter, bench and ownership context remains consumer data and must not change the underlying player projection.
+    - Physical materialization and scheduling require a later approved checkpoint; this contract foundation introduces neither.
