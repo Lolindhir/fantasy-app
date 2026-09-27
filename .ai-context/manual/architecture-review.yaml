@@ -1,0 +1,267 @@
+schemaVersion: 1
+status: active
+
+purpose: >
+  Canonical repository contract for architecture self-review and independent
+  architecture review. It turns recurring design questions about reuse,
+  configurability, ownership, identity, invalidation, compatibility and
+  validation into explicit checks rather than relying on the user or reviewer
+  to remember them ad hoc.
+
+scope:
+  appliesTo:
+    - new or materially changed application architecture
+    - generated or shared data contracts
+    - source-of-truth or ownership changes
+    - cross-consumer shared derivations
+    - identity or key design
+    - material configuration/rule behavior
+    - migrations between canonical owners or read models
+    - new operational paths where an existing workflow or publisher may already own the concern
+  doesNotReplace:
+    - .ai-context/manual/frontend-design/**
+    - .ai-context/manual/work-tracking.yaml
+    - .ai-context/manual/workflow-monitoring.yaml
+    - .ai-context/manual/workflow-publication.yaml
+    - domain-specific canonical contracts
+  rule: >
+    Topic-specific governance remains authoritative. Architecture Review checks
+    composition and consistency across those contracts; it does not silently
+    override them.
+
+principles:
+  - Existing architecture is evidence, not an obstacle: inspect it before proposing a parallel contract, dataset, helper, service, workflow or owner.
+  - Prefer extension or reuse when semantics and ownership genuinely match; do not force reuse when it would blur responsibilities.
+  - Configuration and domain dimensions must be explicit. A design must state which changes require only re-derivation/configuration and which require code changes.
+  - Cross-consumer facts and deterministic reusable derivations must have one canonical owner.
+  - Unknown, unavailable and ambiguous states must be modeled deliberately rather than collapsed into convenient defaults.
+  - Review findings must be concrete and actionable; do not use numeric architecture scores, rankings or vague approval language.
+  - Review does not authorize mutation. An independent reviewer is read-only by default unless a separate instruction authorizes implementation.
+  - A review is against a specific Issue/body and, when code exists, a specific branch/commit/PR state. Material changes after review may require another pass.
+
+modes:
+  selfReview:
+    actor: proposing-or-implementing-agent
+    timing:
+      - before recommending a new architecture or contract when the repository may already contain a suitable owner or mechanism
+      - before beginning implementation of a materially architectural change
+      - again when implementation reveals a new ownership, identity, configuration or migration decision
+    behavior:
+      - Inspect the relevant current repository files and canonical AI context first.
+      - Answer every applicable review dimension internally and surface material risks, alternatives or unresolved decisions to the user/Issue.
+      - Prefer correcting the proposal before handoff rather than knowingly passing obvious architecture debt to the independent reviewer.
+      - Do not turn a lightweight self-review into a mandatory separate Issue or approval gate unless the work itself warrants one.
+
+  independentReview:
+    actor: separate-reviewer-agent-or-human
+    defaultMode: read-only
+    prerequisites:
+      - Read the current Issue body as operative work state.
+      - Read the applicable canonical architecture/domain/source/workflow contracts.
+      - Inspect the current repository implementation relevant to the proposal.
+      - Consider materially related open and closed Issues when they may own or constrain the same architecture.
+    behavior:
+      - Challenge the proposal independently rather than merely restating its rationale.
+      - Search for existing owners, contracts and mechanisms that could make proposed new structures redundant.
+      - Identify hidden hard-coded assumptions and missing configuration dimensions.
+      - Trace ownership, identity, dependency, invalidation, temporal and migration semantics end to end.
+      - Distinguish a design defect from an implementation detail that can safely be deferred.
+      - Record evidence and required changes precisely enough that another worker can act without reconstructing the review chat.
+      - Do not modify code, canonical docs, labels or Issue scope unless separately authorized; normal Issue review-state bookkeeping is governed by work-tracking rules.
+
+dimensions:
+  existingFirst:
+    intent: Reuse coherent existing architecture and prevent parallel mechanisms.
+    checks:
+      - Is there already a contract, dataset, helper, service, read model, source, publisher or workflow that owns this concern?
+      - Can that owner be extended without changing its meaning or creating improper coupling?
+      - If a new artifact is proposed, is the reason existing mechanisms are insufficient documented?
+      - Are materially related Issues or previous decisions being duplicated or contradicted?
+    expectedEvidence:
+      - relevant repository paths and contracts inspected
+      - reuse/extension decision and rationale
+
+  dynamicConfiguration:
+    intent: Keep variable domain behavior data-/configuration-driven where appropriate.
+    checks:
+      - Which values are domain rules, league settings, environment/configuration, algorithm parameters or truly fixed invariants?
+      - Which future changes should require configuration/re-derivation only, and which legitimately require code changes?
+      - Are league, season, scoring profile, format or other known dimensions hard-coded accidentally?
+      - Does the design support multiple valid configurations simultaneously when the domain permits them?
+      - Will cache/materialized data be distinguishable when configuration changes?
+    expectedEvidence:
+      - explicit configurable dimensions
+      - identified hard-coded invariants and justification
+      - regeneration/invalidation behavior for settings changes
+
+  identityAndDimensions:
+    intent: Prevent collisions and context loss by defining the full identity of each datum.
+    checks:
+      - What is the stable identity/key of the entity or derived value?
+      - Does identity require player/team/league/season/week/game/scoring-profile/provider/version or another dimension?
+      - Are provider IDs being mistaken for canonical identity?
+      - Can two legitimate values collide because a required dimension is omitted?
+      - Is identity stable across migrations and historical reconstruction?
+    expectedEvidence:
+      - explicit identity tuple/key
+      - canonical/provider mapping boundary where applicable
+
+  ownershipAndSourceOfTruth:
+    intent: Maintain one authoritative owner for reusable facts and derivations.
+    checks:
+      - Is the datum Source Evidence, Canonical/Normalized Data, Shared Derived Data or Consumer Data/Insight under ADR-037?
+      - Which existing contract owns it today and which owner should own it after the change?
+      - Does the proposal create a second source of truth or consumer-to-consumer dependency?
+      - Is derived logic being placed in a consumer merely because that consumer needs it first?
+      - Are league rules, technical configuration and presentation concerns kept in their documented owners?
+    expectedEvidence:
+      - current owner
+      - target owner
+      - migration/compatibility boundary if ownership changes
+
+  dependencyInvalidation:
+    intent: Make derived state reproducible and safely refreshable.
+    checks:
+      - What exact inputs does the derived value depend on?
+      - Which input changes invalidate or require recomputation of the result?
+      - Is dependency/invalidation encoded or at least explicitly contractually defined?
+      - Can stale cached/materialized output be mistaken for output under newer inputs or settings?
+      - Are semantic no-ops preserved where the repository requires them?
+    expectedEvidence:
+      - dependency list
+      - invalidation/recompute triggers
+      - cache/fingerprint/version semantics where applicable
+
+  crossConsumerReuse:
+    intent: Avoid hiding reusable data inside the first consumer that asks for it.
+    checks:
+      - Is the value useful to more than one app feature, Fantasy Operations, Fantasy Management or a future consumer?
+      - If yes, is the reusable part owned in a shared layer with consumer-specific adaptation downstream?
+      - Are consumers independently re-deriving the same business/domain meaning?
+      - Is a consumer-specific view model being incorrectly promoted to shared truth?
+    expectedEvidence:
+      - known consumers
+      - shared vs consumer-owned boundary
+
+  temporalSemantics:
+    intent: Preserve correct meaning across time and state transitions.
+    checks:
+      - Is the datum snapshot-, event-, game-, week-, season- or current-state scoped?
+      - Are pregame, live, final and historical semantics distinct where needed?
+      - Can future/current data leak into historical or pre-event derivations?
+      - What establishes finality, and is finality distinct from value/score presence?
+      - Does historical reconstruction remain reproducible after current state changes?
+    expectedEvidence:
+      - temporal scope/state model
+      - leakage/finality guard where applicable
+
+  unknownAndFailClosed:
+    intent: Keep missing or ambiguous evidence distinguishable from legitimate zero/false values.
+    checks:
+      - What does missing, unavailable, ambiguous or unsupported data mean?
+      - Is zero/false/empty a legitimate value, or is it being used as an unknown sentinel?
+      - Which identity/source/join failures must fail closed?
+      - Is fallback evidence explicitly weaker and observable rather than silently treated as canonical?
+    expectedEvidence:
+      - unknown/unavailable representation
+      - fallback/fail-closed rules
+
+  compatibilityAndMigration:
+    intent: Change contracts without leaving ambiguous ownership or breaking consumers silently.
+    checks:
+      - Which current producers and consumers depend on the existing contract?
+      - Is the change additive, breaking, transitional or a migration?
+      - What is the compatibility window and removal condition for legacy paths?
+      - Will old and new owners coexist, and if so which remains authoritative during transition?
+      - Are stale documentation/instructions/references retired with the migration?
+    expectedEvidence:
+      - affected producers/consumers
+      - compatibility strategy
+      - legacy retirement or explicit coexistence rule
+
+  operationsAndWorkflowReuse:
+    intent: Reuse established acquisition, derivation, publication and scheduling paths.
+    checks:
+      - Is there already a workflow, scheduler target, generator, publisher or refresh path for the dependency?
+      - Can the new derivation be composed into the existing acquire -> normalize/materialize -> derive -> publish flow?
+      - Is a new workflow actually necessary, or would it duplicate cadence/publication behavior?
+      - If operational behavior changes, have monitoring/publication contracts been reviewed?
+      - Are workflow changes separately authorized as required by repository rules?
+    expectedEvidence:
+      - existing operational path inspected
+      - reuse/new-path decision
+      - monitoring/publication impact when applicable
+
+  documentationImpact:
+    intent: Keep durable architecture truth outside transient chats and Issue history.
+    checks:
+      - Which canonical .ai-context/manual files describe the changed ownership, data flow, domain rule or decision?
+      - Is an ADR required for a durable architectural choice?
+      - Are file-local docs or generated context affected?
+      - Does the Issue explicitly require documentation updates as part of completion?
+    expectedEvidence:
+      - documentation update list or explicit no-change rationale
+
+  validationAndInvariants:
+    intent: Make architecture claims testable.
+    checks:
+      - Which invariants prove the design behaves as intended?
+      - Which regression tests prevent a future hard-coded shortcut or duplicate owner?
+      - How will multi-configuration, historical, unknown and migration cases be validated where applicable?
+      - What evidence is needed before the Issue can move from review to ready/implementation or completion?
+    expectedEvidence:
+      - validation plan
+      - explicit invariants and edge cases
+
+reviewOutput:
+  requiredSections:
+    - reviewed-scope
+    - existing-reuse
+    - findings-by-applicable-dimension
+    - required-changes
+    - open-questions-or-insufficient-evidence
+    - documentation-impact
+    - validation-requirements
+    - review-result
+  resultValues:
+    clear:
+      meaning: >
+        No unresolved architecture finding prevents the next intended lifecycle
+        step. This is not a guarantee that implementation is defect-free.
+    changes-required:
+      meaning: >
+        One or more concrete architecture findings must be resolved before the
+        reviewed proposal should advance.
+    insufficient-evidence:
+      meaning: >
+        The reviewer cannot establish a safe architecture conclusion from the
+        current contract/repository evidence; the missing evidence must be named.
+  rules:
+    - Do not produce numeric scores, architecture grades, rankings or tier labels.
+    - Do not mark clear merely because the proposal matches the author's stated intent.
+    - Non-applicable dimensions may be omitted or marked not-applicable with a short reason.
+    - Findings should cite concrete repository paths, contracts, Issue decisions or implementation behavior when available.
+    - Required changes belong in the Issue body when they affect current scope, acceptance criteria or handoff.
+
+issueIntegration:
+  lifecycleStatus: status:review
+  newLabelRequired: false
+  bodyFields:
+    requestedReviewTypeExample: "Review requested: architecture"
+    reviewStateExample: "Architecture review: pending | clear | changes-required | insufficient-evidence"
+    reviewedBasisExample: "Reviewed basis: Issue body + branch/commit/PR + canonical contracts"
+  rules:
+    - status:review remains the generic lifecycle state for a normal review handoff.
+    - Review type/result is recorded in the Issue body in v1; do not add review:* labels solely for Architecture Review.
+    - A changes-required result normally returns the Issue to the appropriate analysis or in-progress state after the findings are incorporated into the body.
+    - A clear result may advance to ready, implementation continuation or acceptance depending on the work package; Architecture Review does not choose product priority.
+    - A review comment may preserve discussion history, but durable current findings and handoff must be consolidated into the Issue body.
+
+relationshipToRoleModes:
+  relatedIssue: 199
+  rule: >
+    Architecture Review is a required governance contract when its activation
+    conditions apply, not an optional AI persona. Future role-based modes from
+    #199 may prioritize this contract for an Architect/Reviewer mode, but must not
+    filter out global repository rules or make the review contract dependent on a
+    special chat mode.

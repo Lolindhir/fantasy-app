@@ -85,6 +85,28 @@ bodyContract:
     - The instruction to keep routine Issue bookkeeping invisible to the user changes reporting only; it never permits skipping the synchronization itself.
     - Native GitHub open/closed state does not replace the body contract; after merge or auto-closure, reconcile the Issue body and native state before treating the lifecycle transition as complete.
 
+architectureReviewHandoff:
+  contract: .ai-context/manual/architecture-review.yaml
+  lifecycleStatus: status:review
+  labelPolicy: no-new-review-label-in-v1
+  bodyState:
+    requestedReviewType: architecture
+    resultValues:
+      - pending
+      - clear
+      - changes-required
+      - insufficient-evidence
+    reviewedBasis: issue-body-plus-reviewed-repository-state
+  rules:
+    - Architecture Review is one possible review type within the generic status:review lifecycle state; status:review does not imply Architecture Review unless the Issue body requests it.
+    - Do not add review:architecture or equivalent labels in v1 solely to distinguish review types.
+    - Before an Architecture Review handoff, the Issue body must identify the requested review type and the concrete proposal/branch/commit/PR state to review when applicable.
+    - Independent Architecture Review is read-only by default; reviewer mutation requires separate authorization under the normal user-intent rules.
+    - Review findings that change current scope, guardrails, acceptance criteria, validation requirements or handoff must be consolidated into the canonical Issue body.
+    - A changes-required or insufficient-evidence result is not a blocker label by itself; move the lifecycle state to analysis or in-progress as appropriate when work resumes.
+    - A clear result means no unresolved architecture finding prevents the next intended lifecycle step; it does not auto-authorize implementation, merging or closure.
+    - Architecture Review does not replace domain-specific review such as frontend-design governance; both apply when their scopes overlap.
+
 lifecycle:
   start:
     - If the user names an Issue, fetch and use it.

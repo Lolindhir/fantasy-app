@@ -36,13 +36,14 @@ Before making architecture, data model, generation or frontend changes, read:
 
 1. `.ai-context/ai-context.yaml`
 2. `.ai-context/manual/ai-guidance.yaml`
-3. `.ai-context/manual/work-tracking.yaml`
-4. `.ai-context/manual/workflow-monitoring.yaml`
-5. `.ai-context/manual/workflow-publication.yaml`
-6. `.ai-context/manual/architecture.yaml`
-7. `.ai-context/manual/domain.yaml`
-8. `.ai-context/manual/data-sources.yaml`
-9. `.ai-context/manual/decisions.yaml`
+3. `.ai-context/manual/architecture-review.yaml`
+4. `.ai-context/manual/work-tracking.yaml`
+5. `.ai-context/manual/workflow-monitoring.yaml`
+6. `.ai-context/manual/workflow-publication.yaml`
+7. `.ai-context/manual/architecture.yaml`
+8. `.ai-context/manual/domain.yaml`
+9. `.ai-context/manual/data-sources.yaml`
+10. `.ai-context/manual/decisions.yaml`
 
 For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
 
@@ -70,6 +71,7 @@ For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
 - When updating application documentation:
   - AI working guidance goes to `.ai-context/manual/ai-guidance.yaml`
+  - architecture self-review and independent reviewer governance goes to `.ai-context/manual/architecture-review.yaml`
   - work-tracking and label semantics go to `.ai-context/manual/work-tracking.yaml`
   - workflow publication and branch-writer race-safety rules go to `.ai-context/manual/workflow-publication.yaml`
   - architecture decisions go to `.ai-context/manual/architecture.yaml` or `.ai-context/manual/decisions.yaml`
