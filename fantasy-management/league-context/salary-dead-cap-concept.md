@@ -130,16 +130,51 @@ NFL undrafted     = 0,25 %
 
 Ein in beiden Signalen undrafted Rookie landet damit exakt beim garantierten Year-1-Minimum und nicht künstlich bei einem doppelten Base Salary.
 
-### Übergang vom Rookie zum Veteranen
+### Rookie Contract: Year 1 bis Year 3 als geklärte Konzeptentscheidung
 
-Der strukturelle Zielpfad bleibt ein gleitender Übergang zur echten NFL-Performance:
+Das in Year 1 berechnete Draft-Salary bildet den **festen Dollar-Ausgangswert des dreijährigen Rookie Contracts**.
 
-- **Jahr 1:** vollständig Draft-basiertes Rookie-Salary;
-- **Jahr 2:** Draft-Basis und Leistung aus einer abgeschlossenen Saison;
-- **Jahr 3:** Draft-Basis und Leistung aus zwei abgeschlossenen Saisons;
-- **ab Jahr 4:** vollständiges normales Salary aus den letzten drei abgeschlossenen Saisons.
+Die Contract-Eskalation lautet:
 
-Die **konkrete Gewichtung und Salary-Steigerungslogik für Jahr 2 und Jahr 3 ist noch nicht festgelegt**. Insbesondere ist noch zu entscheiden, wie schnell das Draft-Signal ausläuft und wie die vorhandene Performance-Historie in diesen beiden Übergangsjahren skaliert wird.
+```text
+Year 1 = 100 % × Year1Salary
+Year 2 = 125 % × Year1Salary
+Year 3 = 150 % × Year1Salary
+```
+
+Die Steigerungen sind ausdrücklich **nicht kumulativ**. Year 3 wird also nicht aus dem bereits erhöhten Year-2-Salary berechnet, sondern immer wieder aus demselben festen Year-1-Dollarvertrag.
+
+Beispiel:
+
+```text
+Year 1: $10,0 Mio.
+Year 2: $12,5 Mio.
+Year 3: $15,0 Mio.
+```
+
+Damit gilt als direkte rechnerische Folge für den dreijährigen Rookie Contract:
+
+```text
+Gesamtkosten Year 1–3
+= 3,75 × Year1Salary
+```
+
+Year 2 und Year 3 werden **nicht** anhand eines späteren Salary Caps, neuer Draftwerte oder der bis dahin erzielten NFL-Performance neu bepreist. Die festgelegten Faktoren 1,25 und 1,50 beziehen sich ausschließlich auf den bei Vertragsbeginn bestimmten Year-1-Dollarwert.
+
+Die bereits bestehende allgemeine Minimum-Salary-Regel bleibt davon unberührt und weiterhin als ligaweite Untergrenze gültig; diese Contract-Regel verändert ausschließlich die Berechnungsbasis der Rookie-Salary-Eskalation.
+
+### Übergang zum Performance-Salary ab Year 4
+
+Der Rookie Contract endet nach Year 3.
+
+Zu Beginn von **Year 4** liegen drei abgeschlossene NFL-Saisons vor. Ab diesem Zeitpunkt entfällt die Draft-/Rookie-Contract-Logik vollständig und das Salary wird erstmals nach dem normalen Drei-Saison-Performance-Modell aus den drei abgeschlossenen Seasons Year 1 bis Year 3 berechnet.
+
+Damit gilt strukturell:
+
+- **Year 1:** Draft-basiertes Rookie-Salary;
+- **Year 2:** 125 % des festen Year-1-Salary;
+- **Year 3:** 150 % des festen Year-1-Salary;
+- **ab Year 4:** normales Performance-Salary aus drei abgeschlossenen NFL-Saisons.
 
 
 ---
@@ -608,7 +643,9 @@ Für das normale Performance-Modell wird dieses Base Minimum additiv mit dem lei
 
 **Rookie Year 1 ist eine explizite Sonderbehandlung:** Die Draft-basierte Year-1-Formel enthält das Year-1-Minimum von 0,25 % bereits in ihren Draft-Komponenten und liefert direkt das vollständige Year-1-Salary. Das Minimum wird deshalb bei Rookies in Year 1 nicht ein zweites Mal addiert.
 
-Für Year 2 und Year 3 bleibt noch festzulegen, wie das dann höhere erfahrungsabhängige Base Minimum, die auslaufende Draft-Basis und die wachsende Performance-Historie konkret zusammenspielen. Diese Übergangslogik darf nicht aus der Year-1-Regel abgeleitet werden, bevor sie separat entschieden wurde.
+**Rookie Year 2 und Year 3 bleiben ebenfalls innerhalb des festen Rookie Contracts:** Die Salary-Werte werden als 125 % beziehungsweise 150 % des ursprünglichen Year-1-Dollarvertrags berechnet. Sie werden weder aus aktueller Performance noch aus einem späteren Salary Cap neu hergeleitet.
+
+Die allgemeine Minimum-Salary-Regel bleibt parallel als ligaweite Untergrenze bestehen. Ab Year 4 endet der Rookie Contract; dann greift erstmals das normale Drei-Saison-Performance-Modell mit dem für Year 4 geltenden Base Minimum.
 
 ### Dead-Cap-Floor innerhalb eines Salary-Zyklus
 
@@ -682,8 +719,8 @@ Team Tenure = aktuelle League Season − Acquisition Season
 
 - Salary basiert grundsätzlich auf einem Drei-Jahres-Horizont.
 - Rookies erhalten in Year 1 ein vollständig Draft-basiertes Salary.
-- In Year 2 und 3 wird schrittweise echte NFL-Leistung ergänzt; die konkrete Übergangsgewichtung ist noch offen.
-- Ab Year 4 gilt das vollständige Drei-Saison-Salary-Modell.
+- Year 2 beträgt 125 % und Year 3 150 % des festen Year-1-Dollarvertrags; die Steigerungen sind nicht kumulativ und verwenden keine Performance-Neubewertung.
+- Ab Year 4 endet der Rookie Contract und es gilt erstmals das vollständige Drei-Saison-Performance-Modell.
 - Team Tenure wird als `aktuelle League Season − Acquisition Season` der ununterbrochenen Teamzugehörigkeit berechnet.
 - Die Dead-Cap-Staffel lautet **50 % / 30 % / 15 % / 5 %** für Tenure 0 / 1 / 2 / 3+.
 - Dead Cap bezieht sich auf das aktuelle Salary.
@@ -702,6 +739,17 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Die Draft-basierte Year-1-Formel enthält das garantierte Year-1-Minimum bereits. Das 0,25-%-Minimum wird nicht zusätzlich addiert.
 - Ein in der Fantasy-Liga undrafted Rookie darf aufgrund starken NFL Draft Capitals teurer als ein spät gedrafteter Fantasy-Rookie sein. Die 65/35-Gewichtung begrenzt den Einfluss des NFL-Signals, ohne eine künstliche Reihenfolge zu erzwingen.
 
+### Geklärte Rookie-Contract-Entscheidungen für Year 2 und Year 3
+
+- Das bei Vertragsbeginn bestimmte Year-1-Salary ist der feste Dollar-Ausgangswert für den gesamten dreijährigen Rookie Contract.
+- Year 2 = **125 % des Year-1-Salary**.
+- Year 3 = **150 % des Year-1-Salary**.
+- Die Steigerungen sind **nicht kumulativ**; beide Faktoren werden direkt auf Year 1 angewendet.
+- Year 2 und Year 3 werden nicht anhand späterer Salary Caps, neuer Draftwerte oder NFL-Performance neu bepreist.
+- Die rechnerischen Gesamtkosten des dreijährigen Rookie Contracts betragen **3,75 × Year1Salary**.
+- Die bestehende allgemeine Minimum-Salary-Regel bleibt davon unberührt.
+- Ab Year 4 endet der Rookie Contract; das Salary basiert dann vollständig auf den drei abgeschlossenen NFL-Saisons Year 1 bis Year 3.
+
 ### Geklärte allgemeine Konzeptentscheidungen
 
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
@@ -718,10 +766,9 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Dead Cap wird nicht über mehrere Salary-Zyklen fortgeführt.
 - Das Salary wird danach unabhängig vom alten Zyklus neu berechnet.
 
-### Nächste fachliche Anschlussfragen
+### Nächste fachliche Anschlussfrage
 
-1. **Year 2 / Year 3:** Wie werden Draft-Basis, höheres erfahrungsabhängiges Base Minimum und echte NFL-Performance konkret gewichtet, sodass der Übergang bis Year 4 nachvollziehbar und stabil verläuft?
-2. **Draft-Pick-Kostenprognose:** Erst nach Festlegung dieser Übergangslogik soll geprüft werden, wie erwartete Salary-Kosten zukünftiger Rookie-Draftpicks vor dem Draft sinnvoll prognostiziert werden können.
+- **Draft-Pick-Kostenprognose:** Auf Basis des nun vollständig definierten dreijährigen Rookie Contracts soll als Nächstes geprüft werden, wie erwartete Salary-Kosten zukünftiger Rookie-Draftpicks vor dem Draft sinnvoll prognostiziert werden können.
 
 ### Technische Anschlussfrage
 
