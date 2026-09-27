@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-27T17:38:08Z`  
+Generated: `2026-09-27T18:16:09Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -30,7 +30,7 @@ Taxi phase: `locked`
 | K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
 | QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
-| QB | Kirk Cousins | active | unclassified | unclassified | unclassified | unclassified | no | no |
+| QB | Michael Penix Jr. | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Tyler Shough | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
