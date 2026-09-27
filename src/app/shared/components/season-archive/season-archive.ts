@@ -8,6 +8,7 @@ import type {
   SeasonHistoryAwardItem,
   SeasonHistorySeasonViewModel,
   SeasonHistoryViewModel,
+  SeasonResultAwardVisual,
   SeasonResultsViewModel
 } from '../../utils/league-standings-view.util';
 
@@ -28,13 +29,18 @@ export class SeasonArchiveComponent {
 
   playoffResultsViewModel(season: SeasonHistorySeasonViewModel): SeasonResultsViewModel {
     const teams = season.playoffResults
-      .map(row => ({
-        team: { Owner: row.owner },
-        place: row.place,
-        awardsDisplay: this.awardsForOwner(season, row.owner)
-          .map(award => award.icon)
-          .join('')
-      }))
+      .map(row => {
+        const awards = this.awardsForOwner(season, row.owner);
+
+        return {
+          team: { Owner: row.owner },
+          place: row.place,
+          awardsDisplay: awards
+            .map(award => award.icon)
+            .join(''),
+          awardVisuals: awards.map(award => this.awardVisual(award))
+        };
+      })
       .sort((a, b) => a.place - b.place);
 
     return {
@@ -51,5 +57,21 @@ export class SeasonArchiveComponent {
     owner: string
   ): SeasonHistoryAwardItem[] {
     return season.awards.filter(award => award.owner === owner);
+  }
+
+  private awardVisual(award: SeasonHistoryAwardItem): SeasonResultAwardVisual {
+    if (award.name === 'Regular Season King') {
+      return {
+        key: award.key,
+        label: award.name,
+        imageSrc: 'assets/awards/ui/award-regular-season.png'
+      };
+    }
+
+    return {
+      key: award.key,
+      label: award.name,
+      text: award.icon
+    };
   }
 }

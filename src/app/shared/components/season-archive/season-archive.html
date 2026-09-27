@@ -6,7 +6,15 @@
       <mat-expansion-panel-header>
         <mat-panel-title>{{ season.season }}</mat-panel-title>
         <mat-panel-description>
-          <span *ngIf="season.champion">🏆 {{ season.champion.owner }}</span>
+          <span *ngIf="season.champion" class="season-champion">
+            <img
+              class="season-champion-icon"
+              src="assets/awards/ui/award-championship-ring.png"
+              alt=""
+              aria-hidden="true"
+            />
+            {{ season.champion.owner }}
+          </span>
         </mat-panel-description>
       </mat-expansion-panel-header>
 

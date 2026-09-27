@@ -5,10 +5,18 @@ export interface CurrentStandingRow {
   displayPlace: number;
 }
 
+export interface SeasonResultAwardVisual {
+  key: string;
+  label: string;
+  imageSrc?: string;
+  text?: string;
+}
+
 export interface SeasonResultTeam {
   team: Pick<FantasyTeam, 'Owner'>;
   place: number;
   awardsDisplay: string;
+  awardVisuals?: SeasonResultAwardVisual[];
 }
 
 export interface SeasonResultsViewModel {
