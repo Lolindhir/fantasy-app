@@ -637,9 +637,10 @@ nextArchitectureStep: >
 
 
 playerWeekFantasy:
-  status: accepted-contract-v1
+  status: productively-materialized-v1
   contract: .ai-context/manual/player-week-fantasy.yaml
   targetOwner: Shared Derived Data
+  physicalOwner: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
   primaryInputs:
     weeklyPlayerAnchor: source-data/nfl/weekly-rosters/<season>/<week>.json
@@ -648,6 +649,7 @@ playerWeekFantasy:
     projection: canonical historical scoring plus snap/usage evidence under the selected scoring profile
   currentConsumers:
     - none-yet-at-this-checkpoint
+  currentMaterializer: tools/player_week_fantasy_materialize.py
   targetConsumers:
     - App FantasyGameContext
     - App Players/Free Agents

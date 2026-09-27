@@ -550,7 +550,7 @@ playerWeekFantasySharedDerived:
   contract: .ai-context/manual/player-week-fantasy.yaml
   trackingIssue: 697
   logicalLayer: Shared Derived Data
-  physicalPath: deferred
+  physicalPath: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
   inputs:
     - canonical NFL weekly roster/player/game facts
@@ -566,3 +566,24 @@ playerWeekFantasySharedDerived:
     - public/data may publish or adapt this data later but does not become the shared owner.
     - Starter, bench and ownership context remains consumer data and must not change the underlying player projection.
     - Physical materialization and scheduling require a later approved checkpoint; this contract foundation introduces neither.
+
+
+sharedDerivedPhysicalLayer:
+  architectureDecision: ADR-038
+  root: derived-data/**
+  responsibility: >
+    Physical owner for deterministic, reproducible, consumer-neutral Shared Derived
+    Data downstream of canonical source-data and upstream of consumer publication.
+  firstProduct:
+    name: PlayerWeekFantasy
+    path: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+    contract: .ai-context/manual/player-week-fantasy.yaml
+    materializer: tools/player_week_fantasy_materialize.py
+  doesNotOwn:
+    - provider/source evidence or canonical NFL/League facts
+    - public/data App delivery contracts
+    - consumer-specific Fantasy Operations or Fantasy Management insights
+  rules:
+    - Writers must be deterministic and preserve semantic no-op behavior.
+    - Shared outputs remain consumer-neutral; consumer-specific joins happen downstream.
+    - Existing transitional derivations are not automatically migrated by introducing this root.
