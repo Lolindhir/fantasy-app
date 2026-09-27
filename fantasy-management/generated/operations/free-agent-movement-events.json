@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-27T06:36:48Z",
-  "input_fingerprint": "d314c57b43b45aa7753b436f6835e672a1b334c1d2181fb1394048524d73801c",
+  "generated_at": "2026-09-27T08:37:41Z",
+  "input_fingerprint": "2ceaf95afaf6f9fad23c4fdfb462f3587d8f6b4d858236b83818659ddaae8052",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "a7fdb9c51d3e890f9f081f017293a6dfcab255a7102d7b9c4f91eb6d30d48db8"
+      "input_fingerprint": "689cef60b5a1957b65eb8b234c95d2073b3ae2e653930ac8b7172fcc5801eb79"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "894835118bb9f4fa055305d922e36fe965468ddd429d8d4211f541b508378ac5"
+      "input_fingerprint": "a7fdb9c51d3e890f9f081f017293a6dfcab255a7102d7b9c4f91eb6d30d48db8"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -24,250 +24,25 @@
       "WR"
     ],
     "current_discovery_count": 209,
-    "previous_discovery_count": 212,
-    "event_count": 6,
-    "event_type_counts": {
-      "changed": 3,
-      "resolved": 3
-    },
-    "event_priority_counts": {
-      "low": 3,
-      "medium": 3
-    },
+    "previous_discovery_count": 209,
+    "event_count": 0,
+    "event_type_counts": {},
+    "event_priority_counts": {},
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "3d600835f8838205402134b683268237f370af060693d2be0f483922e35c738a",
-    "previous_evidence_fingerprint": "531ea0e8064501309bd5b4fd2c0fdf4298a162d0595a3ab40030ff19489991fe",
+    "current_evidence_fingerprint": "da575789fa075d6bf0180114f2dd913fc9b7596de2bf9530f0f2d9ad110486dd",
+    "previous_evidence_fingerprint": "3d600835f8838205402134b683268237f370af060693d2be0f483922e35c738a",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 6,
+    "comparison_event_count_before_suppression": 0,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [
-    {
-      "player_id": "10226",
-      "name": "Andrei Iosivas",
-      "position": "WR",
-      "event_type": "changed",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "e71f6ef0fe05ca143e6f08dcf77d813473073093132c5631ee1d7cddd5588b41",
-      "previous_state_hash": "17d36955ca777999e78a3cb64ad9cd147939a4c6812cef179f19d24bfefd4251",
-      "changed_dimensions": [
-        "research_priority"
-      ],
-      "current_material_families": [
-        "dynasty_market"
-      ],
-      "previous_material_families": [
-        "dynasty_market",
-        "injury_availability"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "tier_change",
-          "severity": "high",
-          "direction": null
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "divergence",
-          "families": [],
-          "up_families": [
-            "season_projection"
-          ],
-          "down_families": [
-            "dynasty_market"
-          ]
-        }
-      ],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "3286",
-      "name": "Demarcus Robinson",
-      "position": "WR",
-      "event_type": "changed",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "867025fbed35040a272a5c438625fc9495aba208e0518a23c5c54ee0d0701edc",
-      "previous_state_hash": "ae3f0560215517102693e981ff9cac267632ecc9c340cf863de7193fe701d74e",
-      "changed_dimensions": [
-        "research_priority"
-      ],
-      "current_material_families": [
-        "season_projection"
-      ],
-      "previous_material_families": [
-        "injury_availability",
-        "season_projection"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "season_projection",
-          "kind": "consensus_percentile_movement",
-          "severity": "medium",
-          "direction": "down"
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "divergence",
-          "families": [],
-          "up_families": [
-            "dynasty_market"
-          ],
-          "down_families": [
-            "season_projection"
-          ]
-        }
-      ],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "5848",
-      "name": "Marquise Brown",
-      "position": "WR",
-      "event_type": "changed",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "31c842e185eebc112078ac5506e1d474134da06784a42f6300d4fe27ffb44a7d",
-      "previous_state_hash": "9e4928632f2d0a469417af9c641bc7bfada759417d752e680c6025ebdae7cf35",
-      "changed_dimensions": [
-        "research_priority"
-      ],
-      "current_material_families": [
-        "dynasty_market"
-      ],
-      "previous_material_families": [
-        "dynasty_market",
-        "injury_availability"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "high",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "down"
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "confirmation_down",
-          "families": [
-            "dynasty_market",
-            "season_projection"
-          ],
-          "up_families": [],
-          "down_families": []
-        }
-      ],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "10866",
-      "name": "Aidan O'Connell",
-      "position": "QB",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "unknown",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "7720",
-      "name": "Kene Nwangwu",
-      "position": "RB",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "56be8871a455a92ed3c14a123322f2918f22f55d836a943f9a6cac857615da4c",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "11577",
-      "name": "Will Shipley",
-      "position": "RB",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    }
-  ],
+  "events": [],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
