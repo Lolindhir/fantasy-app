@@ -884,3 +884,421 @@ Explizit **nicht** beschlossen sind derzeit:
 - eine Änderung am Minimum Salary.
 
 Dieses Dokument dient als Ausgangspunkt für die nächste Designphase.
+
+---
+
+## 20. Empirische Positionskurven 2024/2025
+
+Als nächster Schritt wurde die reine Produktionsverteilung vermessen, bewusst **noch ohne Salary-Mapping**.
+
+Methodik:
+
+- Rankings nach Fantasy-Punkten pro tatsächlich gespieltem Spiel;
+- mindestens 8 Spiele, um sehr kleine Samples zu begrenzen;
+- QB/RB/WR/TE: Elite-Gruppe = Top 6;
+- K: Elite-Gruppe = Top 3;
+- fixe Starterplätze aus dem aktuellen Ligaformat;
+- die 24 FLEX-Plätze werden pro Saison automatisch an die besten verbleibenden RB/WR/TE vergeben;
+- anschließend werden effektive Startergrenze und die nächsten sechs Depth-Spieler betrachtet.
+
+### 2025
+
+FLEX-Verteilung:
+
+```text
+11 RB
+13 WR
+0 TE
+```
+
+Damit lagen die effektiven Startergrenzen 2025 bei:
+
+- QB12: **18,36 PPG**
+- RB23: **13,06 PPG**
+- WR25: **12,30 PPG**
+- TE12: **10,86 PPG**
+- K6: **7,87 PPG**
+
+### 2024
+
+FLEX-Verteilung:
+
+```text
+9 RB
+15 WR
+0 TE
+```
+
+Effektive Startergrenzen:
+
+- QB12: **17,77 PPG**
+- RB21: **13,51 PPG**
+- WR27: **13,62 PPG**
+- TE12: **10,06 PPG**
+- K6: **8,12 PPG**
+
+### Zweijahres-Sicht
+
+| Position | Ø Elite | Ø effektive Startergrenze | Ø nächste 6 Depth | Elite → Grenze | Grenze → Depth |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| QB | 22,60 | 18,06 | 16,95 | +4,54 | +1,11 |
+| RB | 20,78 | 13,29 | 11,89 | +7,50 | +1,39 |
+| WR | 19,86 | 12,96 | 12,52 | +6,90 | +0,45 |
+| TE | 14,53 | 10,46 | 9,50 | +4,06 | +0,96 |
+| K | 9,61 | 7,99 | 7,78 | +1,61 | +0,22 |
+
+Die effektive Startertiefe lag dabei im Zweijahresbild ungefähr bei:
+
+- QB: **12**
+- RB: **22**
+- WR: **26**
+- TE: **12**
+- K: **6**
+
+### Interpretation der Kurvenform
+
+#### QB: hoher Peak, danach relativ schnelle Kompression
+
+Elite-QBs besitzen einen klaren Vorteil gegenüber der Startergrenze. Hinter QB12 wird die Kurve dagegen deutlich flacher.
+
+Das unterstützt die bisherige Hypothese:
+
+> Elite-QB kann ein sehr hohes Premium verdienen, ohne dass automatisch der gesamte QB7–QB24-Bereich ähnlich teuer sein muss.
+
+#### RB: breiteste Knappheit
+
+RB zeigt:
+
+- einen sehr großen Elite-Vorteil;
+- hohe effektive Startertiefe durch FLEX;
+- den stärksten Drop von Startergrenze zu Depth unter den betrachteten Skill-Positionen.
+
+Damit ist RB nicht nur an der Spitze wertvoll, sondern über einen vergleichsweise breiten Bereich strukturell knapp.
+
+#### WR: Elite sehr wertvoll, Mitte sehr tief
+
+WR besitzt ebenfalls ein großes Elite-Premium.
+
+Gleichzeitig ist der Übergang von der effektiven Startergrenze zur nächsten Depth-Schicht extrem flach:
+
+```text
+ca. 0,45 PPG
+```
+
+Die vielen FLEX-Plätze machen WR breit relevant, aber der tiefe Spielerpool reduziert die Knappheit im mittleren Bereich.
+
+#### TE: top-heavy durch Pflichtstarter
+
+TE erhält seine Kritikalität vor allem aus:
+
+- zwei festen TE-Spots pro Team;
+- einem deutlichen Elite-Vorteil.
+
+In beiden betrachteten Jahren ging dagegen **kein zusätzlicher FLEX-Platz an TE**.
+
+Damit ist TE eher top-heavy als breit knapp.
+
+#### K: sehr flache Austauschbarkeit
+
+Zwischen K6 und der nächsten Depth-Gruppe liegen im Zweijahresmittel nur rund:
+
+```text
+0,22 PPG
+```
+
+Das spricht für sehr geringe strukturelle Kritikalität außerhalb weniger kleiner Elite-Unterschiede.
+
+### Vorläufige Kurvencharakterisierung
+
+| Position | Kurvencharakter |
+| --- | --- |
+| QB | hoher Elite-Peak, danach schnelle Kompression |
+| RB | steil und über relativ viele Spieler knapp |
+| WR | hoher Elite-Peak, tiefe und flache Mitte |
+| TE | top-heavy, moderate Starterknappheit |
+| K | fast vollständig flach |
+
+Diese Charakterisierung ist **keine feste Positionsbewertung**, sondern nur die beobachtete Form der 2024/2025-Daten.
+
+---
+
+## 21. Geklärte Designrichtung: Criticality wird jährlich dynamisch berechnet
+
+Eine feste Tabelle wie
+
+```text
+QB = 0,85
+RB = 1,10
+WR = ...
+```
+
+soll ausdrücklich **nicht** das Zielmodell sein.
+
+Stattdessen soll Positional Criticality in jedem Salary-Zyklus neu aus zwei objektiven Inputs entstehen:
+
+```text
+aktuelles Ligaformat
++
+historische Produktionsverteilungen
+```
+
+Daraus folgt eine jährlich neu berechnete Positions- und Qualitätskurve.
+
+### Grundprinzip
+
+```text
+League Settings des kommenden Salary-Zyklus
++ historische abgeschlossene Player-Performance
+→ dynamische Positional-Criticality-Kurven
+
+individuelle Mehrjahres-Performance
++ Position des Spielers auf seiner Criticality-Kurve
+→ Performance-Salary
+
+alle Player Salaries
+→ Top 120 Salaries
+→ neues Salary Cap
+```
+
+Damit bleibt das Salary Cap weiterhin **endogen**.
+
+### Keine statische Positionskritikalität
+
+Criticality soll nicht bedeuten:
+
+> "QB ist immer X % wichtiger als WR."
+
+Sondern:
+
+> "Wie kritisch ist dieses konkrete Leistungsniveau auf dieser Position unter dem aktuell geltenden Ligaformat?"
+
+Damit ist Criticality zugleich:
+
+- positionsabhängig;
+- leistungsabhängig;
+- ligaformatabhängig;
+- jährlich neu kalibriert.
+
+---
+
+## 22. Aktuelles Ligaformat bewertet historische Produktion
+
+Für die Salary-Berechnung eines neuen Zyklus soll das **Ligaformat gelten, für das das neue Salary benutzt wird**.
+
+Historische Produktionsdaten bleiben unverändert, werden aber unter dem aktuellen Ziel-Format neu interpretiert.
+
+Beispiel:
+
+Die Liga besitzt heute:
+
+```text
+6 Teams × 2 QB = 12 fixe QB-Starter
+```
+
+Würde die Liga zukünftig auf drei Quarterbacks pro Team umstellen:
+
+```text
+6 Teams × 3 QB = 18 fixe QB-Starter
+```
+
+Dann soll kein manueller QB-Faktor angepasst werden.
+
+Stattdessen wird die historische QB-Produktion automatisch unter einer Nachfrage von **18 festen QB-Startern** ausgewertet.
+
+Die relevante QB-Kurve verschiebt sich dadurch tiefer in den Pool und die gemessene Knappheit kann automatisch steigen.
+
+Dasselbe Prinzip gilt für:
+
+- mehr oder weniger FLEX-Plätze;
+- zusätzliche oder reduzierte TE-Spots;
+- veränderte Teamzahl;
+- andere Positionsberechtigungen für FLEX;
+- sonstige relevante Starterstrukturänderungen.
+
+---
+
+## 23. Dynamische FLEX-Verteilung
+
+FLEX-Nachfrage soll nicht per fixer Positionsquote hinterlegt werden.
+
+Für jede historische Saison wird zunächst die feste Nachfrage erfüllt.
+
+Danach werden die vorhandenen FLEX-Plätze an die besten verbleibenden FLEX-berechtigten Spieler dieser Saison vergeben.
+
+Dadurch kann sich die effektive Startertiefe jedes Jahr natürlich verändern.
+
+Beispiel aus den bisherigen Daten:
+
+```text
+2024:
+9 RB + 15 WR + 0 TE in FLEX
+
+2025:
+11 RB + 13 WR + 0 TE in FLEX
+```
+
+Damit reagiert das Modell sowohl auf das Ligaformat als auch auf die tatsächliche Leistungslandschaft der NFL.
+
+---
+
+## 24. Auch die NFL-Leistungslandschaft darf Positionswerte verändern
+
+Ein zentraler gewünschter Effekt ist, dass sich Positionskritikalität ohne Regeländerung verschieben kann.
+
+### Beispiel: tiefer QB-Pool
+
+Entstehen mehrere Jahre mit sehr vielen produktiven Quarterbacks:
+
+- die QB-Kurve wird tiefer und flacher;
+- brauchbarer Ersatz verbessert sich;
+- Mid-Tier-QBs werden relativ weniger kritisch;
+- ihr Salary-Premium kann automatisch komprimieren.
+
+### Beispiel: knapper RB-Pool
+
+Gibt es dagegen nur wenige produktive Running Backs:
+
+- die RB-Kurve wird steiler;
+- Ersatz hinter den relevanten Starter-/FLEX-Plätzen fällt stärker ab;
+- gute RBs werden automatisch kritischer;
+- Salary-Premium kann steigen.
+
+Damit bildet die Formel nicht nur eine statische Fantasy-Theorie ab, sondern kann auf Veränderungen der realen NFL-Spielerlandschaft reagieren.
+
+---
+
+## 25. Mehrjährige Glättung der Criticality-Kurven
+
+Auch Criticality soll nicht ausschließlich auf einer einzelnen Saison beruhen.
+
+Ein einzelnes NFL-Jahr kann durch:
+
+- außergewöhnlich viele Verletzungen;
+- eine besonders starke oder schwache Positionsklasse;
+- kleine Samples;
+- ungewöhnliche Scoring-Verteilungen
+
+verzerrt sein.
+
+Die aktuelle Designrichtung lautet deshalb:
+
+> Für jeden Salary-Zyklus sollen mehrere abgeschlossene historische Saisons in die Criticality-Berechnung eingehen.
+
+Naheliegend sind dieselben drei historischen Saisons, die auch beim normalen Performance-Salary relevant sind.
+
+**Noch nicht entschieden** ist die konkrete Glättung.
+
+Mögliche Varianten:
+
+- einfacher Dreijahresschnitt;
+- Recency-Weighting, z. B. 50/30/20;
+- robustes Mittel / Median;
+- Glättung der kompletten Rank-Kurve statt einzelner Ankerpunkte.
+
+Die bisherige 50/33/17-Floor-Logik des individuellen Player Salaries soll nicht automatisch auf Positionskurven übertragen werden. Diese Frage wird separat geprüft.
+
+---
+
+## 26. Criticality muss Qualität innerhalb der Position unterscheiden
+
+Ein wesentliches Ziel ist:
+
+```text
+Position allein ≠ Criticality
+```
+
+Stattdessen:
+
+```text
+Position × Leistungsniveau innerhalb der aktuellen Positionskurve
+→ Criticality
+```
+
+Dadurch kann beispielsweise gelten:
+
+- Elite-QB: sehr hohe Kritikalität;
+- guter QB-Starter: deutlich weniger zusätzliches Premium;
+- QB-Depth: geringe Kritikalität.
+
+Gleichzeitig kann RB über einen breiteren Bereich hohe Kritikalität besitzen, wenn die empirische Kurve entsprechend steil bleibt.
+
+Das unterscheidet das geplante Modell fundamental von einem festen Positionsmultiplikator.
+
+---
+
+## 27. Managerverhalten bleibt Validierung, nicht Formelinput
+
+Cuts, Free-Agent-Drafts, Waivers und sonstiges Managerverhalten bleiben wertvolle empirische Tests.
+
+Sie sollen aber **nicht direkt in die Criticality-Berechnung eingehen**.
+
+Grund:
+
+Das aktuelle Salary-System beeinflusst selbst das Managerverhalten.
+
+Eine Formel nach dem Muster
+
+```text
+QBs werden wegen hoher Salaries häufig gecuttet
+→ QBs sind weniger kritisch
+→ QB-Salaries sinken
+```
+
+würde einen problematischen Rückkopplungskreis erzeugen.
+
+Stattdessen gilt:
+
+```text
+Ligaformat + Produktionsdaten
+→ Criticality-Modell
+
+beobachtetes Marktverhalten
+→ Backtest / Plausibilitätsprüfung
+```
+
+Der 2026 Free-Agent-Draft bleibt damit ein besonders guter Testfall:
+
+- Purdy sollte als echter Difference Maker weiterhin hoch bewertet werden;
+- Goff/Darnold/Stroud sollten nicht allein wegen hoher QB-Rohpunkte automatisch ähnlich stark bepreist werden;
+- Brissett-artige Depth sollte deutlich komprimierter ausfallen.
+
+---
+
+## 28. Konsequenz für die nächste Modellierungsphase
+
+Die nächste Aufgabe ist **nicht**, einen festen Criticality-Score für QB/RB/WR/TE/K festzulegen.
+
+Stattdessen muss eine mathematische Funktion entwickelt werden, die aus der jährlich neu berechneten Rank-/Performance-Kurve für jeden Spieler einen dynamischen Criticality-Wert ableitet.
+
+Diese Funktion soll insbesondere:
+
+1. das aktuelle Ligaformat automatisch berücksichtigen;
+2. FLEX-Nachfrage empirisch verteilen;
+3. mehrere historische Saisons glätten;
+4. Elite-Peaks belohnen;
+5. flache Mid-Tiers komprimieren;
+6. steile und tiefe Knappheit entsprechend stärker bepreisen;
+7. ohne manuell festgelegte Positionsfaktoren funktionieren;
+8. bei Formatänderungen automatisch neu kalibrieren.
+
+Erst wenn dieser **Criticality-Score ohne Dollar-Mapping** plausibel funktioniert, soll untersucht werden, wie er mit der bestehenden individuellen Performance-Berechnung und der Salary-Kurve kombiniert wird.
+
+---
+
+## 29. Zusätzliche noch offene Entscheidungen
+
+Durch die dynamische Architektur sind folgende Punkte weiterhin bewusst offen:
+
+- exakte mathematische Definition des Criticality-Scores;
+- Anzahl historischer Saisons;
+- Gewichtung der historischen Saisons;
+- geeignete robuste Behandlung kleiner Samples;
+- ob die komplette Rank-Kurve oder lokale Nachbarschaften eines Spielers verwendet werden;
+- wie stark absolute Performance und relative Criticality im späteren Salary-Signal jeweils wirken;
+- ob und wie die bestehende quadratische Salary-Kurve angepasst werden muss;
+- ob die heutige 20-Punkte-/50-Mio.-Referenz bestehen bleibt.
+
+Geklärt ist dagegen die Architekturentscheidung:
+
+> **Positional Criticality wird nicht als feste Positionskonstante gespeichert, sondern pro Salary-Zyklus dynamisch aus aktuellem Ligaformat und historischen Produktionskurven neu berechnet.**
+
