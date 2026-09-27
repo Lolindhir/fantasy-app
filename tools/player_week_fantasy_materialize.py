@@ -46,6 +46,7 @@ from historical_projection_v4_calibration import (
     _adjustment,
     _fallback_older_current_mean,
     _historical_usage_baseline,
+    _opportunity_value,
     _position_group,
     _recent_mean,
     _usage_by_week,
@@ -169,23 +170,299 @@ def _scheduled_teams(repo_root: Path, season: int, week: int) -> set[str]:
     return teams
 
 
+def _week_finality(
+    repo_root: Path,
+    *,
+    season: int,
+    week: int,
+) -> tuple[bool, set[str]]:
+    """Return canonical REG WeekFinal plus the final game IDs for that week.
+
+    Current-season source partitions deliberately keep Finalized=false until the
+    season becomes historical. WeekFinal is therefore the temporal authority for
+    whether a completed current-season week may enter pregame projection history.
+    """
+    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    payload = _require_object(path)
+    if payload.get("Season") != season:
+        raise ValueError(f"Game-finality season mismatch: {path}")
+
+    weeks = payload.get("Weeks")
+    games = payload.get("Games")
+    if not isinstance(weeks, list) or not isinstance(games, list):
+        raise ValueError(f"Game-finality payload is missing Weeks/Games arrays: {path}")
+
+    matches = [
+        row
+        for row in weeks
+        if isinstance(row, dict)
+        and str(row.get("GameType") or "").upper() == "REG"
+        and int(row.get("Week") or 0) == week
+    ]
+    if len(matches) != 1 or not isinstance(matches[0].get("WeekFinal"), bool):
+        raise ValueError(
+            f"Expected exactly one REG WeekFinal row for {season}/W{week}: {path}"
+        )
+
+    final_game_ids = {
+        str(row["GameID"])
+        for row in games
+        if isinstance(row, dict)
+        and str(row.get("GameType") or "").upper() == "REG"
+        and int(row.get("Week") or 0) == week
+        and row.get("Final") is True
+        and isinstance(row.get("GameID"), str)
+        and row.get("GameID")
+    }
+    applicable = int(matches[0].get("ApplicableGameCount") or 0)
+    final_count = int(matches[0].get("FinalGameCount") or 0)
+    if final_count != len(final_game_ids):
+        raise ValueError(
+            f"Game-finality summary/game detail mismatch for {season}/W{week}: "
+            f"summary={final_count} detail={len(final_game_ids)}"
+        )
+    if matches[0]["WeekFinal"] is True and (applicable <= 0 or final_count != applicable):
+        raise ValueError(
+            f"WeekFinal=true without complete final-game evidence for {season}/W{week}"
+        )
+    return bool(matches[0]["WeekFinal"]), final_game_ids
+
+
+def _current_partition_records(
+    repo_root: Path,
+    relative_path: str,
+    *,
+    season: int,
+    week: int,
+) -> list[dict[str, Any]]:
+    path = repo_root / "source-data/nfl" / relative_path / str(season) / f"{week:02d}.json"
+    payload = _require_object(path)
+    if payload.get("Season") != season or payload.get("Week") != week:
+        raise ValueError(f"Current-season canonical partition season/week mismatch: {path}")
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise ValueError(f"Current-season canonical partition has no Records array: {path}")
+    return records
+
+
+def _current_snap_rows_by_player(
+    repo_root: Path,
+    *,
+    season: int,
+    week: int,
+) -> dict[str, list[dict[str, Any]]]:
+    rows = _current_partition_records(
+        repo_root,
+        "snap-counts",
+        season=season,
+        week=week,
+    )
+    result: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError(f"Current snap-count partition contains a non-object row: {season}/W{week}")
+        player_id = row.get("CanonicalPlayerID")
+        if not isinstance(player_id, str) or not player_id:
+            continue
+        result[player_id].append(row)
+    return dict(result)
+
+
+def _current_event_rows_by_player(
+    repo_root: Path,
+    *,
+    season: int,
+    week: int,
+    required: bool,
+    final_game_ids: set[str],
+) -> dict[str, list[dict[str, Any]]]:
+    path = (
+        repo_root
+        / "source-data/nfl/special-teams-fumble-events"
+        / str(season)
+        / f"{week:02d}.json"
+    )
+    if not path.exists():
+        if required:
+            raise ValueError(
+                "Current-season Special Teams event evidence is required for active "
+                f"scoring settings but missing for finalized {season}/W{week}: {path}"
+            )
+        return {}
+
+    payload = _require_object(path)
+    if payload.get("Season") != season or payload.get("Week") != week:
+        raise ValueError(f"Current Special Teams event partition season/week mismatch: {path}")
+    rows = payload.get("Records")
+    if not isinstance(rows, list):
+        raise ValueError(f"Current Special Teams event partition has no Records array: {path}")
+
+    result: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError(f"Current Special Teams event partition contains non-object row: {path}")
+        game_id = row.get("GameID")
+        if game_id not in final_game_ids:
+            raise ValueError(
+                f"Current Special Teams event references a non-final/foreign game in {season}/W{week}: {game_id!r}"
+            )
+        player_id = row.get("CanonicalPlayerID")
+        if not isinstance(player_id, str) or not player_id:
+            raise ValueError(
+                f"Current finalized-week Special Teams event lacks CanonicalPlayerID: {path}"
+            )
+        result[player_id].append(row)
+    return dict(result)
+
+
+def _current_scored_played_games(
+    repo_root: Path,
+    *,
+    season: int,
+    week: int,
+    scoring: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    week_final, final_game_ids = _week_finality(
+        repo_root,
+        season=season,
+        week=week,
+    )
+    if not week_final:
+        raise ValueError(
+            f"Current-season projection history cannot consume non-final {season}/W{week}"
+        )
+
+    stat_rows = _current_partition_records(
+        repo_root,
+        "player-stats",
+        season=season,
+        week=week,
+    )
+    snaps_by_player = _current_snap_rows_by_player(
+        repo_root,
+        season=season,
+        week=week,
+    )
+    active_event_keys = {
+        key
+        for key in SPECIAL_TEAMS_EVENT_SCORING_KEYS
+        if number(scoring.get(key)) != 0
+    }
+    events_by_player = _current_event_rows_by_player(
+        repo_root,
+        season=season,
+        week=week,
+        required=bool(active_event_keys),
+        final_game_ids=final_game_ids,
+    )
+
+    observations: list[dict[str, Any]] = []
+    usage: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
+    for record in stat_rows:
+        if not isinstance(record, dict):
+            raise ValueError(f"Current player-stats contains a non-object row: {season}/W{week}")
+        position = str(record.get("Position") or "").upper()
+        if position not in FANTASY_POSITIONS:
+            continue
+        player_id = record.get("CanonicalPlayerID")
+        if not isinstance(player_id, str) or not player_id:
+            raise ValueError(
+                f"Fantasy-relevant current player-stat row lacks CanonicalPlayerID: {season}/W{week}"
+            )
+        if player_id in seen:
+            raise ValueError(f"Duplicate current player-stat record for {player_id} in {season}/W{week}")
+        seen.add(player_id)
+
+        stats = record.get("Stats")
+        if not isinstance(stats, dict):
+            raise ValueError(
+                f"Current player-stat record has no Stats object: {season}/W{week}/{player_id}"
+            )
+        game_id = stats.get("game_id")
+        if not isinstance(game_id, str) or game_id not in final_game_ids:
+            raise ValueError(
+                f"Current player-stat row is not backed by final-game evidence: "
+                f"{season}/W{week}/{player_id}/{game_id!r}"
+            )
+
+        snap_rows = snaps_by_player.get(player_id, [])
+        if not snap_rows:
+            continue
+        offense_snaps = sum(number(row.get("OffenseSnaps")) for row in snap_rows)
+        special_teams_snaps = sum(number(row.get("SpecialTeamsSnaps")) for row in snap_rows)
+        played = special_teams_snaps > 0 if position == "K" else offense_snaps > 0
+        if not played:
+            continue
+
+        points = derive_actual_points(
+            record,
+            scoring,
+            special_teams_fumble_events=events_by_player.get(player_id, [])
+            if active_event_keys
+            else None,
+        )
+        observations.append(
+            {
+                "Season": season,
+                "Week": week,
+                "CanonicalPlayerID": player_id,
+                "PlayerName": record.get("PlayerName"),
+                "Position": position,
+                "FantasyPoints": points,
+                "OffenseSnaps": offense_snaps,
+                "SpecialTeamsSnaps": special_teams_snaps,
+            }
+        )
+
+        snap_values = [
+            float(row["OffensePct"])
+            for row in snap_rows
+            if row.get("OffensePct") not in (None, "")
+        ]
+        usage[player_id] = {
+            "Position": position,
+            "SnapShare": (
+                None
+                if position == "K"
+                else (max(snap_values) if snap_values else None)
+            ),
+            "Opportunity": _opportunity_value(position, stats),
+        }
+
+    return observations, usage
+
+
 def _completed_observations(
     repo_root: Path,
     *,
     season: int,
     scoring: dict[str, Any],
     last_week: int,
+    current_season: bool = False,
 ) -> dict[int, list[dict[str, Any]]]:
     if last_week <= 0:
         return {}
-    observations, _audit = build_scored_played_games(
-        repo_root,
-        season=season,
-        scoring=scoring,
-        first_week=1,
-        last_week=last_week,
-    )
-    return observations
+    if not current_season:
+        observations, _audit = build_scored_played_games(
+            repo_root,
+            season=season,
+            scoring=scoring,
+            first_week=1,
+            last_week=last_week,
+        )
+        return observations
+
+    result: dict[int, list[dict[str, Any]]] = {}
+    for week in range(1, last_week + 1):
+        observations, _usage = _current_scored_played_games(
+            repo_root,
+            season=season,
+            week=week,
+            scoring=scoring,
+        )
+        result[week] = observations
+    return result
 
 
 def _score_history(
@@ -344,17 +621,17 @@ def _target_projection_context(
         season=target_season,
         scoring=scoring,
         last_week=target_week - 1,
+        current_season=True,
     )
-    current_usage = (
-        _usage_by_week(
+    current_usage: dict[int, dict[str, dict[str, Any]]] = {}
+    for prior_week in range(1, target_week):
+        _observations, week_usage = _current_scored_played_games(
             repo_root,
             season=target_season,
-            first_week=1,
-            last_week=target_week - 1,
+            week=prior_week,
+            scoring=scoring,
         )
-        if target_week > 1
-        else {}
-    )
+        current_usage[prior_week] = week_usage
     observations[target_season] = current_observations
     usage[target_season] = current_usage
 
@@ -628,59 +905,54 @@ def _final_actual_inputs(
     week: int,
     scoring: dict[str, Any],
 ) -> tuple[bool, dict[str, dict[str, Any]], dict[str, list[dict[str, Any]]]]:
+    week_final, final_game_ids = _week_finality(
+        repo_root,
+        season=season,
+        week=week,
+    )
+    if not week_final:
+        return False, {}, {}
+
     stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
     if not stats_path.exists():
         return False, {}, {}
-    stats_payload = _require_object(stats_path)
-    if stats_payload.get("Season") != season or stats_payload.get("Week") != week:
-        raise ValueError(f"Target player-stats season/week mismatch: {stats_path}")
-    if stats_payload.get("Finalized") is not True:
-        return False, {}, {}
-
-    rows = stats_payload.get("Records")
-    if not isinstance(rows, list):
-        raise ValueError(f"Target player-stats has no Records array: {stats_path}")
-    stats_by_player = {
-        str(row["CanonicalPlayerID"]): row
-        for row in rows
-        if isinstance(row, dict)
-        and isinstance(row.get("CanonicalPlayerID"), str)
-        and row.get("CanonicalPlayerID")
-    }
+    rows = _current_partition_records(
+        repo_root,
+        "player-stats",
+        season=season,
+        week=week,
+    )
+    stats_by_player: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError(f"Target player-stats contains a non-object row: {stats_path}")
+        player_id = row.get("CanonicalPlayerID")
+        stats = row.get("Stats")
+        if not isinstance(player_id, str) or not player_id:
+            continue
+        if not isinstance(stats, dict):
+            raise ValueError(f"Target player-stat record has no Stats object: {stats_path}")
+        game_id = stats.get("game_id")
+        if not isinstance(game_id, str) or game_id not in final_game_ids:
+            raise ValueError(
+                f"Target player-stat row is not backed by final-game evidence: "
+                f"{season}/W{week}/{player_id}/{game_id!r}"
+            )
+        stats_by_player[player_id] = row
 
     active_event_keys = {
         key
         for key in SPECIAL_TEAMS_EVENT_SCORING_KEYS
         if number(scoring.get(key)) != 0
     }
-    events_by_player: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    if active_event_keys:
-        event_path = (
-            repo_root
-            / "source-data/nfl/special-teams-fumble-events"
-            / str(season)
-            / f"{week:02d}.json"
-        )
-        if not event_path.exists():
-            return False, {}, {}
-        event_payload = _require_object(event_path)
-        if (
-            event_payload.get("Season") != season
-            or event_payload.get("Week") != week
-            or event_payload.get("Finalized") is not True
-        ):
-            return False, {}, {}
-        event_rows = event_payload.get("Records")
-        if not isinstance(event_rows, list):
-            raise ValueError(f"Target special-teams event partition has no Records array: {event_path}")
-        for event in event_rows:
-            if not isinstance(event, dict):
-                raise ValueError(f"Target special-teams event partition contains non-object row: {event_path}")
-            player_id = event.get("CanonicalPlayerID")
-            if isinstance(player_id, str) and player_id:
-                events_by_player[player_id].append(event)
-
-    return True, stats_by_player, dict(events_by_player)
+    events_by_player = _current_event_rows_by_player(
+        repo_root,
+        season=season,
+        week=week,
+        required=bool(active_event_keys),
+        final_game_ids=final_game_ids,
+    )
+    return True, stats_by_player, events_by_player
 
 
 def _actual_for_player(
