@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
 import sys
 import unittest
 from collections import Counter, defaultdict
@@ -29,6 +28,7 @@ STARTER_COUNTS = {"QB": 2, "RB": 2, "WR": 2, "TE": 2, "K": 1}
 FLEX_ELIGIBLE = {"RB", "WR", "TE"}
 FLEX_COUNT = 4
 FANTASY_POSITIONS = {"QB", "RB", "WR", "TE", "FB", "K"}
+MODEL_KEYS = ("PureV3", "ByeAwareV3", "ParticipationOracleV3")
 
 
 def _player_id(value: Any) -> str | None:
@@ -38,29 +38,58 @@ def _player_id(value: Any) -> str | None:
     return str(value) if isinstance(value, str) and value else None
 
 
-def _walk_player_positions(value: Any, result: dict[str, str]) -> None:
+def _walk_player_metadata(
+    value: Any,
+    positions: dict[str, str],
+    teams: dict[str, str],
+) -> None:
     if isinstance(value, dict):
         player_id = value.get("CanonicalPlayerID")
         position = value.get("Position")
-        if (
-            isinstance(player_id, str)
-            and player_id
-            and isinstance(position, str)
-            and position.upper() in FANTASY_POSITIONS
-        ):
-            result[player_id] = position.upper()
+        team = value.get("Team")
+        if isinstance(player_id, str) and player_id:
+            if (
+                isinstance(position, str)
+                and position.upper() in FANTASY_POSITIONS
+            ):
+                positions[player_id] = position.upper()
+            if isinstance(team, str) and team:
+                teams[player_id] = team.upper()
         for child in value.values():
-            _walk_player_positions(child, result)
+            _walk_player_metadata(child, positions, teams)
     elif isinstance(value, list):
         for child in value:
-            _walk_player_positions(child, result)
+            _walk_player_metadata(child, positions, teams)
 
 
-def _weekly_position_index(root: Path, season: int, week: int) -> dict[str, str]:
+def _weekly_player_index(
+    root: Path,
+    season: int,
+    week: int,
+) -> tuple[dict[str, str], dict[str, str]]:
     path = root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
     payload = json.loads(path.read_text(encoding="utf-8"))
-    result: dict[str, str] = {}
-    _walk_player_positions(payload, result)
+    positions: dict[str, str] = {}
+    teams: dict[str, str] = {}
+    _walk_player_metadata(payload, positions, teams)
+    return positions, teams
+
+
+def _scheduled_teams_by_week(root: Path, season: int) -> dict[int, set[str]]:
+    payload = json.loads(
+        (root / "source-data/nfl/schedules" / f"{season}.json").read_text(encoding="utf-8")
+    )
+    result: dict[int, set[str]] = defaultdict(set)
+    for game in payload.get("Games") or []:
+        if not isinstance(game, dict) or str(game.get("GameType") or "").upper() != "REG":
+            continue
+        week = game.get("Week")
+        if not isinstance(week, int):
+            continue
+        for key in ("AwayTeam", "HomeTeam"):
+            team = game.get(key)
+            if isinstance(team, str) and team:
+                result[week].add(team.upper())
     return result
 
 
@@ -86,7 +115,6 @@ def _select_legal_lineup(
 
     selected: list[dict[str, Any]] = []
     selected_ids: set[str] = set()
-
     for position, count in STARTER_COUNTS.items():
         for row in buckets[position][:count]:
             selected.append(row)
@@ -110,13 +138,84 @@ def _select_legal_lineup(
 
 def _safe_mean(values: Iterable[float]) -> float | None:
     rows = list(values)
-    if not rows:
-        return None
-    return sum(rows) / len(rows)
+    return sum(rows) / len(rows) if rows else None
 
 
 def _r(value: float | None) -> float | None:
     return None if value is None else round(float(value), 4)
+
+
+def _compare_lineups(
+    *,
+    model_lineup: list[dict[str, Any]] | None,
+    manager_projection: float | None,
+    manager_actual: float,
+    manager_starter_ids: list[str],
+) -> dict[str, Any] | None:
+    if model_lineup is None or manager_projection is None:
+        return None
+
+    model_projection = sum(float(row["Projection"]) for row in model_lineup)
+    model_actual = sum(float(row["Actual"]) for row in model_lineup)
+    model_ids = {str(row["CanonicalPlayerID"]) for row in model_lineup}
+    expected_delta = manager_projection - model_projection
+    realized_delta = manager_actual - model_actual
+    return {
+        "SameLineup": model_ids == set(manager_starter_ids),
+        "ExpectedPointsForgone": -expected_delta,
+        "RealizedDeltaVsModel": realized_delta,
+        "ManagerAlpha": realized_delta - expected_delta,
+        "ModelNoScheduledGameSlots": sum(
+            1 for row in model_lineup if not bool(row["ScheduledThisWeek"])
+        ),
+        "ModelNoConfirmedParticipationSlots": sum(
+            1 for row in model_lineup if not bool(row["ConfirmedParticipation"])
+        ),
+    }
+
+
+def _aggregate_comparisons(
+    team_weeks: list[dict[str, Any]],
+    model_key: str,
+) -> dict[str, Any]:
+    comparable = [row[model_key] for row in team_weeks if row.get(model_key) is not None]
+    different = [row for row in comparable if not bool(row["SameLineup"])]
+    beat_model = [row for row in different if float(row["RealizedDeltaVsModel"]) > 0]
+    model_better = [row for row in different if float(row["RealizedDeltaVsModel"]) < 0]
+    tied = [row for row in different if float(row["RealizedDeltaVsModel"]) == 0]
+
+    return {
+        "ComparableWeeks": len(comparable),
+        "AgainstModelWeeks": len(different),
+        "SameAsModelWeeks": len(comparable) - len(different),
+        "ExpectedPointsForgoneTotal": _r(
+            sum(float(row["ExpectedPointsForgone"]) for row in comparable)
+        ),
+        "ExpectedPointsForgonePerComparableWeek": _r(
+            _safe_mean(float(row["ExpectedPointsForgone"]) for row in comparable)
+        ),
+        "RealizedPointsVsModelTotal": _r(
+            sum(float(row["RealizedDeltaVsModel"]) for row in comparable)
+        ),
+        "ManagerAlphaTotal": _r(
+            sum(float(row["ManagerAlpha"]) for row in comparable)
+        ),
+        "ManagerAlphaPerComparableWeek": _r(
+            _safe_mean(float(row["ManagerAlpha"]) for row in comparable)
+        ),
+        "BeatModelWeeks": len(beat_model),
+        "ModelBetterWeeks": len(model_better),
+        "TiedModelWeeks": len(tied),
+        "BeatModelRateOnDifferentLineupsPercent": _r(
+            100.0 * len(beat_model) / len(different) if different else None
+        ),
+        "ModelNoScheduledGameSlots": sum(
+            int(row["ModelNoScheduledGameSlots"]) for row in comparable
+        ),
+        "ModelNoConfirmedParticipationSlots": sum(
+            int(row["ModelNoConfirmedParticipationSlots"]) for row in comparable
+        ),
+    }
 
 
 class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
@@ -145,6 +244,8 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
             previous_position_counts,
         ) = _season_position_aggregates(observations_by_season[2024])
 
+        scheduled_teams = _scheduled_teams_by_week(ROOT, 2025)
+
         members = json.loads(
             (
                 ROOT
@@ -172,7 +273,8 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
         coverage = Counter()
 
         for week in range(1, 18):
-            weekly_positions = _weekly_position_index(ROOT, 2025, week)
+            weekly_positions, weekly_teams = _weekly_player_index(ROOT, 2025, week)
+            week_scheduled_teams = scheduled_teams.get(week, set())
             target_observations = {
                 str(row["CanonicalPlayerID"]): row
                 for row in observations_by_season[2025].get(week, [])
@@ -212,8 +314,6 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
 
                 candidates: list[dict[str, Any]] = []
                 projection_by_player: dict[str, float] = {}
-                unknown_position = 0
-                no_projection = 0
 
                 for player_id in roster_player_ids:
                     position = weekly_positions.get(player_id) or current_positions.get(player_id)
@@ -231,7 +331,7 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
                             else None
                         )
                     if position is None or position.upper() not in FANTASY_POSITIONS:
-                        unknown_position += 1
+                        coverage["unknown_position_roster_entries"] += 1
                         continue
                     position = position.upper()
 
@@ -262,8 +362,6 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
 
                     projection: float | None
                     if not prior:
-                        # Accepted V3 product rule: no numeric projection before a
-                        # true no-history player's first confirmed played game.
                         projection = float(history_ppg) if history_backed else None
                     elif baseline is None:
                         projection = None
@@ -273,24 +371,25 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
                         projection = current_ppg * weight + float(baseline) * (1.0 - weight)
 
                     if projection is None:
-                        no_projection += 1
+                        coverage["no_projection_roster_entries"] += 1
                     else:
                         projection_by_player[player_id] = projection
 
+                    nfl_team = weekly_teams.get(player_id)
+                    scheduled_this_week = (
+                        nfl_team is not None and nfl_team in week_scheduled_teams
+                    )
                     candidates.append(
                         {
                             "CanonicalPlayerID": player_id,
                             "Position": position,
+                            "NFLTeam": nfl_team,
                             "Projection": projection,
                             "Actual": player_points.get(player_id, 0.0),
+                            "ScheduledThisWeek": scheduled_this_week,
+                            "ConfirmedParticipation": player_id in target_observations,
                         }
                     )
-
-                coverage["unknown_position_players"] += unknown_position
-                coverage["no_projection_players"] += no_projection
-
-                model_lineup = _select_legal_lineup(candidates, score_key="Projection")
-                actual_optimal_lineup = _select_legal_lineup(candidates, score_key="Actual")
 
                 manager_actual = float(team.get("Points") or 0.0)
                 manager_projection_values = [
@@ -305,88 +404,57 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
                     else None
                 )
 
-                model_projection = (
-                    sum(float(row["Projection"]) for row in model_lineup)
-                    if model_lineup is not None
-                    else None
+                pure_model = _select_legal_lineup(candidates, score_key="Projection")
+                bye_aware_model = _select_legal_lineup(
+                    [row for row in candidates if row["ScheduledThisWeek"]],
+                    score_key="Projection",
                 )
-                model_actual = (
-                    sum(float(row["Actual"]) for row in model_lineup)
-                    if model_lineup is not None
-                    else None
+                participation_oracle_model = _select_legal_lineup(
+                    [row for row in candidates if row["ConfirmedParticipation"]],
+                    score_key="Projection",
                 )
-                optimal_actual = (
-                    sum(float(row["Actual"]) for row in actual_optimal_lineup)
-                    if actual_optimal_lineup is not None
-                    else None
+                actual_optimal_lineup = _select_legal_lineup(candidates, score_key="Actual")
+
+                row: dict[str, Any] = {
+                    "Week": week,
+                    "Manager": manager,
+                    "ManagerActual": manager_actual,
+                    "ActualOptimal": (
+                        sum(float(item["Actual"]) for item in actual_optimal_lineup)
+                        if actual_optimal_lineup is not None
+                        else None
+                    ),
+                }
+                row["PureV3"] = _compare_lineups(
+                    model_lineup=pure_model,
+                    manager_projection=manager_projection,
+                    manager_actual=manager_actual,
+                    manager_starter_ids=starter_ids,
+                )
+                row["ByeAwareV3"] = _compare_lineups(
+                    model_lineup=bye_aware_model,
+                    manager_projection=manager_projection,
+                    manager_actual=manager_actual,
+                    manager_starter_ids=starter_ids,
+                )
+                row["ParticipationOracleV3"] = _compare_lineups(
+                    model_lineup=participation_oracle_model,
+                    manager_projection=manager_projection,
+                    manager_actual=manager_actual,
+                    manager_starter_ids=starter_ids,
                 )
 
-                expected_comparable = (
-                    manager_projection is not None
-                    and model_projection is not None
-                    and model_actual is not None
-                )
-                if expected_comparable:
-                    coverage["expected_comparable_team_weeks"] += 1
-                if optimal_actual is not None:
+                if manager_projection is not None:
+                    coverage["manager_projection_complete_team_weeks"] += 1
+                if actual_optimal_lineup is not None:
                     coverage["actual_efficiency_team_weeks"] += 1
+                for model_key in MODEL_KEYS:
+                    if row[model_key] is not None:
+                        coverage[f"{model_key}_comparable_team_weeks"] += 1
 
-                model_ids = (
-                    {str(row["CanonicalPlayerID"]) for row in model_lineup}
-                    if model_lineup is not None
-                    else set()
-                )
-                same_lineup = bool(model_ids) and model_ids == set(starter_ids)
+                team_weeks.append(row)
 
-                expected_delta = (
-                    float(manager_projection) - float(model_projection)
-                    if expected_comparable
-                    else None
-                )
-                realized_delta = (
-                    manager_actual - float(model_actual)
-                    if expected_comparable
-                    else None
-                )
-                manager_alpha = (
-                    float(realized_delta) - float(expected_delta)
-                    if expected_delta is not None and realized_delta is not None
-                    else None
-                )
-                actual_efficiency = (
-                    manager_actual / float(optimal_actual)
-                    if optimal_actual is not None and float(optimal_actual) > 0
-                    else None
-                )
-
-                team_weeks.append(
-                    {
-                        "Week": week,
-                        "Manager": manager,
-                        "RosterID": roster_id,
-                        "ManagerActual": manager_actual,
-                        "ManagerProjection": manager_projection,
-                        "ModelProjection": model_projection,
-                        "ModelActual": model_actual,
-                        "OptimalActual": optimal_actual,
-                        "ExpectedComparable": expected_comparable,
-                        "SameLineup": same_lineup if expected_comparable else None,
-                        "ExpectedDelta": expected_delta,
-                        "ExpectedPointsForgone": (
-                            -float(expected_delta) if expected_delta is not None else None
-                        ),
-                        "RealizedDeltaVsModel": realized_delta,
-                        "ManagerAlpha": manager_alpha,
-                        "ActualEfficiency": actual_efficiency,
-                        "ActualPointsLeftOnBench": (
-                            float(optimal_actual) - manager_actual
-                            if optimal_actual is not None
-                            else None
-                        ),
-                    }
-                )
-
-            # Week W outcomes become current-season evidence only after every
+            # Week W outcomes enter current-season evidence only after every
             # lineup decision for Week W has been evaluated.
             for player_id, observation in target_observations.items():
                 current_points[player_id].append(float(observation["FantasyPoints"]))
@@ -395,74 +463,31 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
         by_manager: dict[str, Any] = {}
         for manager in sorted({str(row["Manager"]) for row in team_weeks}):
             rows = [row for row in team_weeks if row["Manager"] == manager]
-            expected = [row for row in rows if row["ExpectedComparable"]]
-            different = [row for row in expected if not row["SameLineup"]]
-            efficiency = [
-                row for row in rows if row["ActualEfficiency"] is not None
-            ]
-
-            beat_model = [
-                row
-                for row in different
-                if float(row["RealizedDeltaVsModel"]) > 0
-            ]
-            model_better = [
-                row
-                for row in different
-                if float(row["RealizedDeltaVsModel"]) < 0
-            ]
-            ties = [
-                row
-                for row in different
-                if float(row["RealizedDeltaVsModel"]) == 0
-            ]
-
-            total_manager_actual = sum(float(row["ManagerActual"]) for row in efficiency)
-            total_optimal_actual = sum(float(row["OptimalActual"]) for row in efficiency)
-
+            efficiency_rows = [row for row in rows if row["ActualOptimal"] is not None]
+            total_manager_actual = sum(float(row["ManagerActual"]) for row in efficiency_rows)
+            total_optimal_actual = sum(float(row["ActualOptimal"]) for row in efficiency_rows)
             by_manager[manager] = {
                 "TeamWeeks": len(rows),
-                "ExpectedComparableWeeks": len(expected),
-                "AgainstModelWeeks": len(different),
-                "SameAsModelWeeks": len(expected) - len(different),
-                "ExpectedPointsForgoneTotal": _r(
-                    sum(float(row["ExpectedPointsForgone"]) for row in expected)
-                ),
-                "ExpectedPointsForgonePerComparableWeek": _r(
-                    _safe_mean(float(row["ExpectedPointsForgone"]) for row in expected)
-                ),
-                "RealizedPointsVsModelTotal": _r(
-                    sum(float(row["RealizedDeltaVsModel"]) for row in expected)
-                ),
-                "ManagerAlphaTotal": _r(
-                    sum(float(row["ManagerAlpha"]) for row in expected)
-                ),
-                "ManagerAlphaPerComparableWeek": _r(
-                    _safe_mean(float(row["ManagerAlpha"]) for row in expected)
-                ),
-                "BeatModelWeeks": len(beat_model),
-                "ModelBetterWeeks": len(model_better),
-                "TiedModelWeeks": len(ties),
-                "BeatModelRateOnDifferentLineupsPercent": _r(
-                    100.0 * len(beat_model) / len(different) if different else None
-                ),
-                "ActualEfficiencyWeeks": len(efficiency),
                 "ActualLineupEfficiencyPercent": _r(
                     100.0 * total_manager_actual / total_optimal_actual
                     if total_optimal_actual > 0
                     else None
                 ),
-                "ActualPointsLeftOnBenchTotal": _r(
-                    sum(float(row["ActualPointsLeftOnBench"]) for row in efficiency)
-                ),
                 "ActualPointsLeftOnBenchPerWeek": _r(
-                    _safe_mean(float(row["ActualPointsLeftOnBench"]) for row in efficiency)
+                    _safe_mean(
+                        float(row["ActualOptimal"]) - float(row["ManagerActual"])
+                        for row in efficiency_rows
+                    )
                 ),
+                **{
+                    model_key: _aggregate_comparisons(rows, model_key)
+                    for model_key in MODEL_KEYS
+                },
             }
 
-        expected_all = [row for row in team_weeks if row["ExpectedComparable"]]
-        different_all = [row for row in expected_all if not row["SameLineup"]]
-        efficiency_all = [row for row in team_weeks if row["ActualEfficiency"] is not None]
+        efficiency_all = [row for row in team_weeks if row["ActualOptimal"] is not None]
+        total_manager_actual = sum(float(row["ManagerActual"]) for row in efficiency_all)
+        total_optimal_actual = sum(float(row["ActualOptimal"]) for row in efficiency_all)
 
         summary = {
             "Contract": {
@@ -479,60 +504,45 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
                     "CurrentK": 1.0,
                     "NoHistoryColdStart": "no numeric projection",
                 },
-                "Metrics": {
-                    "ExpectedPointsForgone": "V3-optimal projected lineup minus manager-lineup projection",
-                    "RealizedPointsVsModel": "manager actual score minus actual score of the V3-optimal lineup",
-                    "ManagerAlpha": "RealizedPointsVsModel minus (manager projection minus V3-optimal projection)",
-                    "ActualLineupEfficiency": "manager actual score divided by hindsight-optimal legal lineup score",
+                "ComparisonLayers": {
+                    "PureV3": "projection only; deliberately no schedule or availability filter",
+                    "ByeAwareV3": "decision-time schedule filter removes players whose NFL team has no game that week",
+                    "ParticipationOracleV3": "hindsight diagnostic restricted to confirmed participants; not a deployable pregame model",
                 },
+                "ManagerAlpha": "Realized relative advantage minus expected relative advantage",
             },
             "Coverage": {
                 "TeamWeeks": coverage["team_weeks"],
-                "ExpectedComparableTeamWeeks": coverage["expected_comparable_team_weeks"],
-                "ExpectedComparablePercent": _r(
-                    100.0
-                    * coverage["expected_comparable_team_weeks"]
-                    / coverage["team_weeks"]
-                ),
+                "ManagerProjectionCompleteTeamWeeks": coverage[
+                    "manager_projection_complete_team_weeks"
+                ],
                 "ActualEfficiencyTeamWeeks": coverage["actual_efficiency_team_weeks"],
-                "UnknownPositionRosterEntries": coverage["unknown_position_players"],
-                "NoProjectionRosterEntries": coverage["no_projection_players"],
+                "PureV3ComparableTeamWeeks": coverage["PureV3_comparable_team_weeks"],
+                "ByeAwareV3ComparableTeamWeeks": coverage[
+                    "ByeAwareV3_comparable_team_weeks"
+                ],
+                "ParticipationOracleV3ComparableTeamWeeks": coverage[
+                    "ParticipationOracleV3_comparable_team_weeks"
+                ],
+                "UnknownPositionRosterEntries": coverage["unknown_position_roster_entries"],
+                "NoProjectionRosterEntries": coverage["no_projection_roster_entries"],
             },
             "League": {
-                "ExpectedComparableWeeks": len(expected_all),
-                "AgainstModelWeeks": len(different_all),
-                "SameAsModelWeeks": len(expected_all) - len(different_all),
-                "ExpectedPointsForgonePerComparableWeek": _r(
-                    _safe_mean(
-                        float(row["ExpectedPointsForgone"]) for row in expected_all
-                    )
-                ),
-                "ManagerAlphaPerComparableWeek": _r(
-                    _safe_mean(float(row["ManagerAlpha"]) for row in expected_all)
-                ),
-                "BeatModelRateOnDifferentLineupsPercent": _r(
-                    100.0
-                    * sum(
-                        1
-                        for row in different_all
-                        if float(row["RealizedDeltaVsModel"]) > 0
-                    )
-                    / len(different_all)
-                    if different_all
-                    else None
-                ),
                 "ActualLineupEfficiencyPercent": _r(
-                    100.0
-                    * sum(float(row["ManagerActual"]) for row in efficiency_all)
-                    / sum(float(row["OptimalActual"]) for row in efficiency_all)
-                    if efficiency_all
+                    100.0 * total_manager_actual / total_optimal_actual
+                    if total_optimal_actual > 0
                     else None
                 ),
                 "ActualPointsLeftOnBenchPerWeek": _r(
                     _safe_mean(
-                        float(row["ActualPointsLeftOnBench"]) for row in efficiency_all
+                        float(row["ActualOptimal"]) - float(row["ManagerActual"])
+                        for row in efficiency_all
                     )
                 ),
+                **{
+                    model_key: _aggregate_comparisons(team_weeks, model_key)
+                    for model_key in MODEL_KEYS
+                },
             },
             "ByManager": by_manager,
         }
@@ -541,8 +551,19 @@ class ProjectionV3ManagerLineup2025Analysis(unittest.TestCase):
 
         self.assertEqual(102, coverage["team_weeks"])
         self.assertEqual(6, len(by_manager))
-        self.assertGreater(coverage["expected_comparable_team_weeks"], 0)
-        self.assertGreater(coverage["actual_efficiency_team_weeks"], 0)
+        self.assertGreater(coverage["ByeAwareV3_comparable_team_weeks"], 0)
+        self.assertGreater(coverage["ParticipationOracleV3_comparable_team_weeks"], 0)
+        # The schedule-aware layer must remove all known bye selections by construction.
+        self.assertEqual(
+            0,
+            summary["League"]["ByeAwareV3"]["ModelNoScheduledGameSlots"],
+        )
+        self.assertEqual(
+            0,
+            summary["League"]["ParticipationOracleV3"][
+                "ModelNoConfirmedParticipationSlots"
+            ],
+        )
 
 
 if __name__ == "__main__":
