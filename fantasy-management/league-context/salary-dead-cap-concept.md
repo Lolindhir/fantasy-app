@@ -750,6 +750,68 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Die bestehende allgemeine Minimum-Salary-Regel bleibt davon unberührt.
 - Ab Year 4 endet der Rookie Contract; das Salary basiert dann vollständig auf den drei abgeschlossenen NFL-Saisons Year 1 bis Year 3.
 
+
+### Rookie-Pick-Salary-Outlook und Live-Draft-Kosten
+
+Aus der Year-1-Formel folgt eine wichtige Unterscheidung zwischen dem **Salary eines Draftpicks als Prognose** und dem **exakten Salary eines konkreten Spielers am aktuell offenen Pick**.
+
+Ein zukünftiger oder noch nicht ausgeübter Rookie Pick besitzt nicht automatisch einen einzigen festen Salary-Wert. Für eine konkrete Fantasy-Draftposition ist zwar die Fantasy-Komponente der Year-1-Formel bekannt, das NFL-Draft-Signal des später ausgewählten Spielers kann aber noch unbekannt sein.
+
+#### Pick Salary Envelope vor dem Pick
+
+Für einen bekannten Fantasy-Pick kann deshalb zunächst ein **Salary-Korridor / Salary Envelope** berechnet werden.
+
+Dabei bleibt der Fantasy-Rang fest und unterschiedliche plausible NFL-Draft-Ränge werden eingesetzt. Das ermöglicht zum Beispiel:
+
+- mechanische Min-/Max- oder Referenzwerte für einen Pick;
+- Beispielkosten für verschiedene NFL-Draft-Capital-Stufen;
+- nach dem realen NFL Draft eine klassenbezogene Range aus den tatsächlich relevanten Rookie-Kandidaten.
+
+Diese Range ist eine Prognosehilfe und kein neuer fixer Contract-Wert des Picks.
+
+Ein historisch kalibriertes **Expected Salary pro Pick** kann später zusätzlich modelliert werden. Dafür sollen jedoch erst mehrere ausreichend vergleichbare Rookie Drafts vorliegen. Kleine Samples dürfen nicht in eine scheinpräzise feste Pick-Salary-Tabelle umgewandelt werden.
+
+#### Exakter Live Player Contract im laufenden Rookie Draft
+
+Sobald ein Fantasy-Pick konkret **on the clock** ist und der reale NFL Draft bereits bekannt ist, kann für jeden noch verfügbaren Rookie der Vertrag exakt berechnet werden, den er bei Auswahl mit genau diesem Pick erhalten würde.
+
+Für einen offenen Fantasy-Pick mit Rang `r_fantasy` und einen Kandidaten mit bekanntem bereinigten NFL-Rang `r_nfl` gilt:
+
+```text
+LiveYear1Pct
+= 65 % × FantasyDraftPct(r_fantasy, N_Fantasy)
++ 35 % × NflDraftPct(r_nfl, N_NFL)
+
+LiveYear1Salary
+= maßgeblicher Vorjahres-Salary-Cap × LiveYear1Pct
+
+LiveYear2Salary
+= 1,25 × LiveYear1Salary
+
+LiveYear3Salary
+= 1,50 × LiveYear1Salary
+
+Live3YTotal
+= 3,75 × LiveYear1Salary
+```
+
+Für einen im realen NFL Draft undrafted Kandidaten gilt weiterhin die definierte NFL-Komponente von 0,25 %.
+
+Der gleiche Spieler kann dadurch mit jedem späteren Fantasy-Pick günstiger werden, weil sich seine Fantasy-Draft-Komponente verändert, während sein NFL-Draft-Signal unverändert bleibt.
+
+#### Vorgesehene Contract View
+
+Eine spätere Draft-UI soll Salary möglichst nicht nur als isolierten Year-1-Wert darstellen. Die entscheidungsrelevante Standardansicht ist:
+
+- **Year 1**
+- **Year 2**
+- **Year 3**
+- **3Y Total**
+
+Optional kann zusätzlich sichtbar gemacht werden, wie stark der Contract eines Spielers durch sein Fallen im Fantasy Draft günstiger geworden ist, zum Beispiel als **Salary Drop / Contract Savings** gegenüber einer früheren Draftposition.
+
+Diese Live-Berechnung ist deterministisch. Sie ist von einer probabilistischen Pre-Draft-Prognose oder einem späteren historischen Expected-Salary-Modell klar zu trennen.
+
 ### Geklärte allgemeine Konzeptentscheidungen
 
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
@@ -766,9 +828,13 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Dead Cap wird nicht über mehrere Salary-Zyklen fortgeführt.
 - Das Salary wird danach unabhängig vom alten Zyklus neu berechnet.
 
-### Nächste fachliche Anschlussfrage
+### Geklärte Richtung für Draft-Pick-Kosten
 
-- **Draft-Pick-Kostenprognose:** Auf Basis des nun vollständig definierten dreijährigen Rookie Contracts soll als Nächstes geprüft werden, wie erwartete Salary-Kosten zukünftiger Rookie-Draftpicks vor dem Draft sinnvoll prognostiziert werden können.
+- Ein Rookie Pick erhält vor seiner Ausübung **keinen künstlich exakten festen Salary-Wert**.
+- Für bekannte Draftpositionen kann ein **Pick Salary Envelope** aus der festen Fantasy-Komponente und verschiedenen plausiblen NFL-Draft-Rängen berechnet werden.
+- Im laufenden Rookie Draft kann für jeden verfügbaren Spieler der **exakte Contract bei Auswahl mit dem aktuell offenen Pick** live berechnet werden.
+- Die Standard-Contract-Sicht soll Year 1, Year 2, Year 3 und 3Y Total umfassen.
+- Ein historisch modelliertes Expected Salary pro Pick bleibt ein möglicher späterer Ausbau und muss empirisch kalibriert werden, bevor daraus enge Ranges oder Heuristiken abgeleitet werden.
 
 ### Technische Anschlussfrage
 
