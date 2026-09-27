@@ -634,3 +634,26 @@ nextArchitectureStep: >
   game-day refresh behind the legacy Schedule.json shape. Continue the App-Generator-DAG
   and remaining consumer migration while preserving public contracts unless a separate
   contract change is explicitly approved.
+
+
+playerWeekFantasy:
+  status: accepted-contract-v1
+  contract: .ai-context/manual/player-week-fantasy.yaml
+  targetOwner: Shared Derived Data
+  identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
+  primaryInputs:
+    weeklyPlayerAnchor: source-data/nfl/weekly-rosters/<season>/<week>.json
+    scoringProfile: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    actualScoring: canonical NFL scoring evidence via tools/historical_fantasy_scoring.py
+    projection: canonical historical scoring plus snap/usage evidence under the selected scoring profile
+  currentConsumers:
+    - none-yet-at-this-checkpoint
+  targetConsumers:
+    - App FantasyGameContext
+    - App Players/Free Agents
+    - Fantasy Operations
+  migrationRule: >
+    Existing provider/current consumer score paths remain productive until a later
+    materialization/publication checkpoint explicitly migrates them. The new shared
+    contract is the target owner; no consumer may create a second independent
+    scoring/projection truth once the shared value is productively available.
