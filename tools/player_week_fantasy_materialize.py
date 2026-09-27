@@ -67,6 +67,7 @@ INTERVAL_MODEL = "V4-C-PI1"
 V4_C_RIDGE = 64.0
 V4_C_CLIP = 4.0
 INTERVAL_LEVEL = 0.90
+EXCLUDED_WEEKLY_ROSTER_STATUSES = {"RET"}
 
 
 def _require_object(path: Path) -> dict[str, Any]:
@@ -122,6 +123,9 @@ def _target_roster(
         position = str(row.get("Position") or "").upper()
         if position not in FANTASY_POSITIONS:
             continue
+        roster_status = str(row.get("Status") or "").upper()
+        if roster_status in EXCLUDED_WEEKLY_ROSTER_STATUSES:
+            continue
         player_id = row.get("CanonicalPlayerID")
         if not isinstance(player_id, str) or not player_id:
             raise ValueError(f"Fantasy-relevant weekly roster row lacks CanonicalPlayerID: {path}")
@@ -134,7 +138,7 @@ def _target_roster(
                 "PlayerName": row.get("PlayerName"),
                 "Position": position,
                 "Team": row.get("Team"),
-                "RosterStatus": row.get("Status"),
+                "RosterStatus": roster_status,
             }
         )
     players.sort(key=lambda row: row["CanonicalPlayerID"])
@@ -789,6 +793,7 @@ def build_player_week_fantasy_dataset(
         "TargetWeeklyRosterFinalized": roster_finalized,
         "ActualScoringEvidenceFinalized": actual_finalized,
         "FantasyRelevantPositions": sorted(FANTASY_POSITIONS),
+        "ExcludedWeeklyRosterStatuses": sorted(EXCLUDED_WEEKLY_ROSTER_STATUSES),
         "RecordCount": len(contract["Records"]),
         "ProjectionStatusCounts": dict(
             sorted(
