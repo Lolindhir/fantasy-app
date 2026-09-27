@@ -173,16 +173,93 @@ class ProjectionV4CalibrationTests(unittest.TestCase):
             baseline["Metrics"],
         )
 
+        expected = {
+            VARIANT_SNAP: {
+                "Ridge": 0.0,
+                "Clip": 4.0,
+                "Metrics": {
+                    "Count": 5724,
+                    "MAE": 4.5308,
+                    "RMSE": 6.2342,
+                    "Bias": 0.0222,
+                    "MeanProjection": 8.0893,
+                    "MeanActual": 8.0671,
+                },
+                "AdjustedCount": 4910,
+                "MAEImprovementPoints": 0.0153,
+                "RMSEImprovementPoints": 0.0103,
+            },
+            VARIANT_OPPORTUNITY: {
+                "Ridge": 64.0,
+                "Clip": 4.0,
+                "Metrics": {
+                    "Count": 5724,
+                    "MAE": 4.537,
+                    "RMSE": 6.2389,
+                    "Bias": 0.0149,
+                    "MeanProjection": 8.082,
+                    "MeanActual": 8.0671,
+                },
+                "AdjustedCount": 5337,
+                "MAEImprovementPoints": 0.0091,
+                "RMSEImprovementPoints": 0.0056,
+            },
+            VARIANT_COMBINED: {
+                "Ridge": 64.0,
+                "Clip": 4.0,
+                "Metrics": {
+                    "Count": 5724,
+                    "MAE": 4.5335,
+                    "RMSE": 6.2294,
+                    "Bias": 0.0299,
+                    "MeanProjection": 8.0971,
+                    "MeanActual": 8.0671,
+                },
+                "AdjustedCount": 5412,
+                "MAEImprovementPoints": 0.0126,
+                "RMSEImprovementPoints": 0.0151,
+            },
+        }
+
         for variant in (VARIANT_SNAP, VARIANT_OPPORTUNITY, VARIANT_COMBINED):
             calibration = report["Calibrations"][variant]
             holdout = report["Holdout"][variant]
             self.assertEqual(2023, calibration["DevelopmentSeason"])
             self.assertEqual(2024, calibration["ValidationSeason"])
             self.assertEqual([2023, 2024], calibration["CalibrationSeasons"])
+            self.assertEqual(expected[variant]["Ridge"], calibration["Selected"]["Ridge"])
+            self.assertEqual(expected[variant]["Clip"], calibration["Selected"]["Clip"])
             self.assertEqual(5724, holdout["PredictionCount"])
-            self.assertGreater(holdout["AdjustedCount"], 0)
-            self.assertIsNotNone(holdout["Metrics"]["MAE"])
-            self.assertIsNotNone(holdout["Metrics"]["RMSE"])
+            self.assertEqual(expected[variant]["Metrics"], holdout["Metrics"])
+            self.assertEqual(expected[variant]["AdjustedCount"], holdout["AdjustedCount"])
+            self.assertEqual(
+                expected[variant]["MAEImprovementPoints"],
+                holdout["MAEImprovementPoints"],
+            )
+            self.assertEqual(
+                expected[variant]["RMSEImprovementPoints"],
+                holdout["RMSEImprovementPoints"],
+            )
+
+        # All three V4 variants improve the untouched holdout on both headline
+        # error metrics. Snap trend wins MAE; the combined model wins RMSE.
+        for variant in (VARIANT_SNAP, VARIANT_OPPORTUNITY, VARIANT_COMBINED):
+            self.assertLess(
+                report["Holdout"][variant]["Metrics"]["MAE"],
+                baseline["Metrics"]["MAE"],
+            )
+            self.assertLess(
+                report["Holdout"][variant]["Metrics"]["RMSE"],
+                baseline["Metrics"]["RMSE"],
+            )
+        self.assertLess(
+            report["Holdout"][VARIANT_SNAP]["Metrics"]["MAE"],
+            report["Holdout"][VARIANT_COMBINED]["Metrics"]["MAE"],
+        )
+        self.assertLess(
+            report["Holdout"][VARIANT_COMBINED]["Metrics"]["RMSE"],
+            report["Holdout"][VARIANT_SNAP]["Metrics"]["RMSE"],
+        )
 
 
 if __name__ == "__main__":
