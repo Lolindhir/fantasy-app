@@ -17,6 +17,34 @@
     <ng-template #legacyAwards>{{ result.awardsDisplay }}</ng-template>
   </ng-template>
 
+  <ng-template #bannerAwards let-result>
+    <div
+      *ngIf="result.awardVisuals?.length; else legacyBannerAwards"
+      class="honor-banner__awards-content"
+    >
+      <span
+        *ngFor="let award of result.awardVisuals"
+        class="honor-banner__award-item"
+      >
+        <img
+          *ngIf="award.imageSrc"
+          class="honor-banner__award-image"
+          [src]="award.imageSrc"
+          alt=""
+          aria-hidden="true"
+        />
+        <span *ngIf="award.text" class="honor-banner__award-text">
+          {{ award.text }}
+        </span>
+      </span>
+    </div>
+    <ng-template #legacyBannerAwards>
+      <span *ngIf="result.awardsDisplay" class="honor-banner__legacy-awards">
+        {{ result.awardsDisplay }}
+      </span>
+    </ng-template>
+  </ng-template>
+
   <div class="standings-wrapper">
     <div class="podium">
       <div class="podium-item second" *ngIf="resultsVm.runnerUp as runnerUp">
@@ -64,6 +92,79 @@
         />
       </div>
     </div>
+
+    <section
+      *ngIf="showBannerPreview"
+      class="honor-banner-preview"
+      aria-hidden="true"
+    >
+      <div class="honor-banner-preview__label">Banner Preview</div>
+
+      <div class="honor-banners">
+        <article
+          *ngIf="resultsVm.runnerUp as runnerUp"
+          class="honor-banner honor-banner--runner-up"
+        >
+          <div class="honor-banner__name-zone">
+            <span class="honor-banner__name">{{ runnerUp.team.Owner }}</span>
+          </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: runnerUp }"
+            ></ng-container>
+          </div>
+          <div class="honor-banner__placement">
+            <img
+              class="honor-banner__placement-icon honor-banner__placement-icon--runner-up"
+              src="assets/awards/ui/award-runner-up.png"
+              alt=""
+            />
+          </div>
+        </article>
+
+        <article
+          *ngIf="resultsVm.champion as champion"
+          class="honor-banner honor-banner--champion"
+        >
+          <div class="honor-banner__name-zone">
+            <span class="honor-banner__name">{{ champion.team.Owner }}</span>
+          </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: champion }"
+            ></ng-container>
+          </div>
+          <div class="honor-banner__placement">
+            <img
+              class="honor-banner__placement-icon honor-banner__placement-icon--champion"
+              src="assets/awards/ui/award-championship-ring.png"
+              alt=""
+            />
+          </div>
+        </article>
+
+        <article
+          *ngIf="resultsVm.thirdPlace as thirdPlace"
+          class="honor-banner honor-banner--third"
+        >
+          <div class="honor-banner__name-zone">
+            <span class="honor-banner__name">{{ thirdPlace.team.Owner }}</span>
+          </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: thirdPlace }"
+            ></ng-container>
+          </div>
+          <div class="honor-banner__placement">
+            <img
+              class="honor-banner__placement-icon honor-banner__placement-icon--third"
+              src="assets/awards/ui/award-third-place.png"
+              alt=""
+            />
+          </div>
+        </article>
+      </div>
+    </section>
 
     <div class="rest">
       <div *ngFor="let result of resultsVm.remainingTeams" class="team-row">
