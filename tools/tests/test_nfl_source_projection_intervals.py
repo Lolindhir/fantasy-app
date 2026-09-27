@@ -133,13 +133,61 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
 
             self.assertTrue(result["Coverage90ByPosition"])
 
-        volatility = report["Strategies"][
+        # The projection-aware strategy is the sharpest well-calibrated 90%
+        # interval, while the volatility-conditioned strategy trades a small
+        # amount of width for player-specific floor/ceiling differentiation.
+        projection_aware = report["Strategies"]["position-projection"]["Levels"]
+        self.assertEqual(51.6422, projection_aware["50"]["CoveragePercent"])
+        self.assertEqual(79.7694, projection_aware["80"]["CoveragePercent"])
+        self.assertEqual(90.4263, projection_aware["90"]["CoveragePercent"])
+        self.assertEqual(95.0734, projection_aware["95"]["CoveragePercent"])
+        self.assertEqual(19.2381, projection_aware["90"]["MeanWidth"])
+
+        volatility_strategy = report["Strategies"][
             STRATEGY_POSITION_PROJECTION_VOLATILITY
-        ]["Width90ByVolatilityClass"]
-        self.assertIn("low", volatility)
-        self.assertIn("high", volatility)
-        self.assertGreater(volatility["low"]["Count"], 0)
-        self.assertGreater(volatility["high"]["Count"], 0)
+        ]
+        expected_volatility_levels = {
+            "50": (51.8169, 7.4409),
+            "80": (80.2411, 14.7877),
+            "90": (90.3739, 19.6189),
+            "95": (95.0734, 24.0096),
+        }
+        for level, (coverage, width) in expected_volatility_levels.items():
+            self.assertEqual(
+                coverage,
+                volatility_strategy["Levels"][level]["CoveragePercent"],
+            )
+            self.assertEqual(
+                width,
+                volatility_strategy["Levels"][level]["MeanWidth"],
+            )
+
+        self.assertEqual(
+            7.6048,
+            volatility_strategy["Levels"]["90"]["MeanLowerDistance"],
+        )
+        self.assertEqual(
+            12.0141,
+            volatility_strategy["Levels"]["90"]["MeanUpperDistance"],
+        )
+
+        volatility = volatility_strategy["Width90ByVolatilityClass"]
+        self.assertEqual(2654, volatility["high"]["Count"])
+        self.assertEqual(2717, volatility["low"]["Count"])
+        self.assertEqual(90.731, volatility["high"]["CoveragePercent"])
+        self.assertEqual(90.4306, volatility["low"]["CoveragePercent"])
+        self.assertEqual(21.0521, volatility["high"]["MeanWidth"])
+        self.assertEqual(18.565, volatility["low"]["MeanWidth"])
+        self.assertGreater(
+            volatility["high"]["MeanWidth"],
+            volatility["low"]["MeanWidth"],
+        )
+
+        # Players without enough historical games for an individual volatility
+        # estimate fall back to broader groups; this early-history subset remains
+        # a known weaker calibration pocket and is kept visible rather than hidden.
+        self.assertEqual(353, volatility["unavailable"]["Count"])
+        self.assertEqual(87.2521, volatility["unavailable"]["CoveragePercent"])
 
 
 if __name__ == "__main__":
