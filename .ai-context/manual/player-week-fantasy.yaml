@@ -15,8 +15,9 @@ architecture:
   decisionBasis:
     - ADR-033
     - ADR-037
+    - ADR-038
   logicalLayer: Shared Derived Data
-  physicalStorage: deferred
+  physicalStorage: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   implementationFoundation: tools/player_week_fantasy.py
   rules:
     - source-data/nfl/weekly-rosters/<season>/<week>.json remains the canonical week-scoped NFL player anchor.
@@ -130,18 +131,18 @@ projection:
   acceptedPointModel:
     id: V4-C
     evidence: issue-697-and-PR-771
-    productionImplementationState: pending-promotion
+    productionImplementationState: productive-materializer
     rule: >
-      Contract v1 reserves V4-C as the accepted point-model identity, but this
-      checkpoint does not copy the stale/diverged research branch into production.
-      Promotion/materialization is a separate checkpoint on current main.
+      V4-C is productively implemented by tools/player_week_fantasy_materialize.py.
+      The materializer preserves the accepted V4-C model form while recalibrating
+      deterministically from completed canonical history under the selected scoring profile.
   predictionRange:
     primaryLevel: 0.90
     acceptedIntervalModel:
       id: V4-C-PI1
       strategy: position-plus-projection-bucket-plus-historical-player-volatility
       evidence: issue-697-and-PR-771
-      productionImplementationState: pending-promotion
+      productionImplementationState: productive-materializer
     rules:
       - Lower and Upper must be finite and Lower <= Upper.
       - Negative lower bounds are allowed when scoring permits negative outcomes.
@@ -234,11 +235,11 @@ currentCheckpoint:
     - contract builder/validation
     - Actual derivation delegation to canonical scorer
     - regression coverage
-  deferred:
-    - physical Shared Derived storage path
+    - physical Shared Derived storage path under derived-data/**
     - current-week materialization
     - V4-C production promotion
-    - interval production promotion
+    - V4-C-PI1 interval production promotion
+  deferred:
     - Sleeper/app publication join
     - FantasyGameContext migration
     - Players/Free Agents migration
@@ -246,3 +247,38 @@ currentCheckpoint:
     - live remaining-points model
     - workflows/scheduling
     - UI
+
+
+productionMaterialization:
+  implementation: tools/player_week_fantasy_materialize.py
+  outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  firstAcceptedSnapshot: derived-data/player-week-fantasy/nfl-reise/2026/03.json
+  writeSemantics: deterministic-semantic-no-op
+  targetPopulation: >
+    All canonical weekly-roster QB/RB/WR/TE/FB/K players for the target NFL week,
+    independent of fantasy ownership. Status=RET rows are excluded before identity
+    validation; other fantasy-relevant rows require CanonicalPlayerID.
+  rollingCalibration:
+    pointFitSeasons: T-3-through-T-1
+    intervalCalibrationSeason: T-1
+    intervalCalibrationPointFitSeasons: T-3-through-T-2
+    targetWeekRule: >
+      For target week W, target-season score/snap/opportunity history may use only
+      canonically final weeks < W. Week W outcome and usage never enter its projection.
+    scoringRule: >
+      Historical outcomes and both model calibrations are re-derived under the
+      explicitly selected ScoringSettings. A SettingsHash change therefore invalidates
+      Actual, Projection and PredictionRange without requiring a code change.
+  currentSeasonFinality:
+    authority: source-data/nfl/game-finality/<season>.json::Weeks[].WeekFinal
+    rule: >
+      Current-season source partitions may remain lifecycle Finalized=false while
+      completed weeks are valid history. Only canonical REG WeekFinal=true weeks
+      enter projection history, and consumed rows must belong to final GameIDs.
+  actualV1:
+    rule: >
+      Actual becomes final only when the whole target REG week is canonically
+      WeekFinal. Otherwise it remains unavailable; live remaining-points semantics
+      are deliberately deferred.
+  scheduling: explicit-tool-only
+  publication: shared-derived-only-no-app-consumer-yet

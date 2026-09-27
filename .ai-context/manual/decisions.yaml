@@ -1164,3 +1164,35 @@ decisions:
         - Existing consumer-owned paths now contain recognized transitional shared responsibilities that will need staged migration.
         - A future physical data-platform layout, rule storage model and derivation registry still require separate design and migration work.
         - Rights/publication policy must be modeled independently for retained media/source evidence.
+
+
+  - id: ADR-038
+    title: Shared Derived Data materializes under derived-data
+    status: accepted
+    context: >
+      ADR-037 defined Shared Derived Data logically but deliberately deferred its
+      final physical repository root. PlayerWeekFantasy is the first production
+      shared derivation and needs an owner that is neither source-data, public/data
+      nor a consumer namespace.
+    decision: >
+      Use derived-data/** as the canonical physical repository root for deterministic,
+      reproducible and consumer-neutral Shared Derived Data. PlayerWeekFantasy is the
+      first product at
+      derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
+      source-data/** remains source/canonical facts; public/data/** remains App
+      delivery; consumer-generated insights remain consumer-owned. Writers must be
+      deterministic and preserve semantic no-op writes. Existing transitional
+      derivations are not bulk-migrated and require separate scoped migrations.
+    rationale: >
+      A neutral root makes ADR-037 operational without making App or Fantasy
+      Management the upstream owner of a value both may consume, while keeping
+      algorithmic/scoring-specific results distinct from canonical NFL facts.
+    consequences:
+      positive:
+        - PlayerWeekFantasy has one explicit consumer-neutral physical owner.
+        - Peer consumers can later reuse the same derived value without cross-consumer dependencies.
+        - Source facts, shared derivations and consumer publication remain physically distinct.
+      negative:
+        - The repository gains a new top-level data namespace.
+        - Existing transitional shared derivations remain mixed until separately migrated.
+        - Each new shared-derived product still needs explicit contract and invalidation semantics.

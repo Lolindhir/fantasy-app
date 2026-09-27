@@ -572,3 +572,33 @@ sharedDerivedContexts:
       boundaries. Sleeper League.Status/SeasonType and GitHub scheduler timing are not
       authoritative inputs for this shared NFL context. Consumer-specific activity and
       criticality remain outside the canonical schedule dataset.
+
+
+sharedDerivedData:
+  architectureDecision: ADR-038
+  root: derived-data/**
+  role: deterministic-consumer-neutral-derivations
+  products:
+    playerWeekFantasy:
+      contract: .ai-context/manual/player-week-fantasy.yaml
+      outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+      implementation: tools/player_week_fantasy_materialize.py
+      inputs:
+        - source-data/nfl/weekly-rosters/<season>/<week>.json
+        - source-data/nfl/schedules/<season>.json
+        - source-data/nfl/game-finality/<season>.json
+        - source-data/nfl/player-stats/**
+        - source-data/nfl/snap-counts/**
+        - source-data/nfl/special-teams-fumble-events/**
+        - source-data/leagues/<CanonicalLeagueID>/seasons/<scoring-season>/league.json::ScoringSettings
+      outputSemantics:
+        - scoring-specific Actual
+        - V4-C pregame Projection
+        - V4-C-PI1 90-percent PredictionRange
+      invalidation:
+        - target weekly-roster or schedule changes
+        - historical scoring/stat/snap/usage changes used by calibration
+        - final scoring/finality evidence changes
+        - semantic ScoringSettings / SettingsHash changes
+      publicationState: shared-derived-only-no-app-consumer-yet
+      schedulingState: explicit-materializer-only
