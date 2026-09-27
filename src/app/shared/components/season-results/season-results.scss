@@ -147,9 +147,9 @@
 
   position: relative;
   min-width: 0;
-  height: 184px;
+  height: 216px;
   display: grid;
-  grid-template-rows: 2.85rem 3.65rem 1fr;
+  grid-template-rows: 4.85rem 3.65rem 1fr;
   padding: 18px 7px 27px;
   overflow: hidden;
   clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
@@ -204,7 +204,7 @@
   --banner-edge: rgba(126, 87, 8, 0.24);
   --banner-name-size: 1rem;
 
-  height: 204px;
+  height: 236px;
 }
 
 .honor-banner--third {
@@ -212,14 +212,67 @@
   --banner-bottom: #c9783f;
   --banner-edge: rgba(117, 61, 24, 0.24);
 
-  height: 174px;
+  height: 206px;
 }
 
-.honor-banner__name-zone {
+.honor-banner__identity {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.22rem;
+}
+
+.honor-banner__avatar-stack {
+  position: relative;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+}
+
+.honor-banner__owner-avatar {
+  width: 2.375rem;
+  height: 2.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.46);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  color: #2f3742;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.honor-banner__owner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.honor-banner__team-avatar {
+  position: absolute;
+  right: -0.12rem;
+  bottom: -0.08rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+}
+
+.honor-banner__team-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .honor-banner__name {

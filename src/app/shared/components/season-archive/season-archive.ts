@@ -38,7 +38,9 @@ export class SeasonArchiveComponent {
           awardsDisplay: awards
             .map(award => award.icon)
             .join(''),
-          awardVisuals: awards.map(award => this.awardVisual(award))
+          awardVisuals: awards.map(award => this.awardVisual(award)),
+          ownerAvatar: row.ownerAvatar,
+          teamAvatar: row.teamAvatar
         };
       })
       .sort((a, b) => a.place - b.place);
