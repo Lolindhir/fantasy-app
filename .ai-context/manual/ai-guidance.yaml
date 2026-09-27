@@ -21,6 +21,15 @@ guidance:
     - Ground application-specific recommendations in the current repository structure, source-of-truth rules and existing implementation.
     - Avoid purely abstract guidance unless the user explicitly asks for general options.
 
+  architectureReview:
+    - Follow `.ai-context/manual/architecture-review.yaml` for materially architectural proposals, contract/data-model changes, ownership/source-of-truth changes, cross-consumer derivations, identity/key design and migrations.
+    - Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.
+    - Explicitly check whether variable behavior is configuration/settings-driven or accidentally hard-coded, including league, season, scoring-profile and other relevant dimensions. State which future changes require reconfiguration/re-derivation versus code changes.
+    - For derived or cached state, identify its complete identity, dependencies, invalidation/recompute triggers and compatibility behavior when inputs/settings change.
+    - Keep the normal agent self-review lightweight but mandatory when the contract applies; surface material unresolved findings before implementation rather than waiting for the user to ask recurring architecture-check questions.
+    - When acting as an independent Architecture Reviewer, operate read-only by default, challenge the proposal independently, use the contract's review-output shape and record durable findings in the owning Issue. Do not implement fixes unless separately authorized.
+    - Reuse `status:review` for an architecture-review handoff; do not invent a `review:architecture` label in v1. The requested review type, reviewed basis and result belong in the Issue body.
+
   standingsTerminology:
     - For completed, previous or historical seasons, treat unqualified `Standings` as Overall/final season standings, represented by playoff/final placement, unless the user explicitly says Regular Season.
     - Treat `Previous Season Standings` as `Placements.Previous.Playoffs` / the previous season's final overall placement by default. Do not substitute `Placements.Previous.Regular` unless Regular Season is explicitly requested.
