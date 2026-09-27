@@ -446,6 +446,71 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
         self.assertEqual(97, metrics["V4A"]["AllLeagueWeeks"]["Count"])
         self.assertEqual(97, metrics["V4C"]["AllLeagueWeeks"]["Count"])
 
+        self.assertEqual(
+            {
+                "Count": 97,
+                "MAE": 24.4566,
+                "RMSE": 30.3191,
+                "Bias": 4.5837,
+                "MeanProjection": 189.1744,
+                "MeanActual": 184.5907,
+            },
+            metrics["V3"]["AllLeagueWeeks"],
+        )
+        self.assertEqual(
+            {
+                "Count": 97,
+                "MAE": 24.5217,
+                "RMSE": 30.4656,
+                "Bias": 5.4946,
+                "MeanProjection": 190.0853,
+                "MeanActual": 184.5907,
+            },
+            metrics["V4A"]["AllLeagueWeeks"],
+        )
+        self.assertEqual(
+            {
+                "Count": 97,
+                "MAE": 24.3656,
+                "RMSE": 30.2257,
+                "Bias": 5.0239,
+                "MeanProjection": 189.6146,
+                "MeanActual": 184.5907,
+            },
+            metrics["V4C"]["AllLeagueWeeks"],
+        )
+
+        # V4-C is the only V4 candidate that improves both team-level headline
+        # error metrics over V3 on the common 2025 team-week cohort.
+        self.assertLess(
+            metrics["V4C"]["AllLeagueWeeks"]["MAE"],
+            metrics["V3"]["AllLeagueWeeks"]["MAE"],
+        )
+        self.assertLess(
+            metrics["V4C"]["AllLeagueWeeks"]["RMSE"],
+            metrics["V3"]["AllLeagueWeeks"]["RMSE"],
+        )
+        self.assertGreater(
+            metrics["V4A"]["AllLeagueWeeks"]["MAE"],
+            metrics["V3"]["AllLeagueWeeks"]["MAE"],
+        )
+        self.assertGreater(
+            metrics["V4A"]["AllLeagueWeeks"]["RMSE"],
+            metrics["V3"]["AllLeagueWeeks"]["RMSE"],
+        )
+        self.assertEqual(85, metrics["V4C"]["AllStartersParticipated"]["Count"])
+        self.assertLess(
+            metrics["V4C"]["AllStartersParticipated"]["MAE"],
+            metrics["V3"]["AllStartersParticipated"]["MAE"],
+        )
+        self.assertLess(
+            metrics["V4C"]["AllStartersParticipated"]["RMSE"],
+            metrics["V3"]["AllStartersParticipated"]["RMSE"],
+        )
+        self.assertEqual(26, matchup_direction["V3"]["CorrectHigherScoreSide"])
+        self.assertEqual(27, matchup_direction["V4A"]["CorrectHigherScoreSide"])
+        self.assertEqual(27, matchup_direction["V4C"]["CorrectHigherScoreSide"])
+
 
 if __name__ == "__main__":
     unittest.main()
