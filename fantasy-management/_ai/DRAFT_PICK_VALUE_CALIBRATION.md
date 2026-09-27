@@ -66,6 +66,82 @@ Example pattern:
 - the same FA 4th may have a lower **Mighty Giants exercise value** if using it would only add a marginal veteran, force the loss of a better long-term hold, and add meaningful `SalaryProjected`/retention risk;
 - in that situation, trading the FA pick for a lower theoretical market return can still be positive for Mighty Giants if the alternative is effectively passing the pick or destroying more roster value through the required cut.
 
+## Rookie-pick salary modeling
+
+The fixed three-year Rookie Contract creates a separate salary-cost dimension for Rookie-pick valuation. Keep this dimension distinct from the pick's player-value, liquidity and optionality value.
+
+### Do not assign false precision to an unexercised pick
+
+A future or still-unexercised Rookie pick does not automatically own one exact salary number.
+
+For a known Fantasy Rookie Draft position, the Fantasy-draft component of the Year-1 formula is deterministic. The remaining uncertainty is primarily which player is selected and therefore which filtered NFL Draft rank enters the NFL component.
+
+Model pre-exercise salary as a **range / envelope** unless the selected player is already known.
+
+Useful pre-draft or pre-pick views include:
+
+- mechanical reference salaries for representative NFL Draft ranks;
+- a minimum/maximum or percentile-style envelope when the candidate population supports it;
+- after the NFL Draft, a class-specific range based on realistic candidates expected around the exact Fantasy pick.
+
+Do not treat a round label as sufficient. Salary analysis should resolve the exact overall Fantasy pick.
+
+### Live contract at the current pick is deterministic
+
+During the live Rookie Draft, once an exact Fantasy pick is on the clock and NFL Draft capital is known, calculate the contract for each available candidate using the canonical Rookie Salary formula.
+
+For candidate `c` at current Fantasy rank `r_fantasy`:
+
+```text
+LiveYear1Pct(c)
+= 0.65 * FantasyDraftPct(r_fantasy, N_Fantasy)
++ 0.35 * NflDraftPct(r_nfl(c), N_NFL)
+
+LiveYear1Salary(c)
+= prior-year Salary Cap * LiveYear1Pct(c)
+
+LiveYear2Salary(c)
+= 1.25 * LiveYear1Salary(c)
+
+LiveYear3Salary(c)
+= 1.50 * LiveYear1Salary(c)
+
+Live3YTotal(c)
+= 3.75 * LiveYear1Salary(c)
+```
+
+Use the canonical undrafted treatment when the player was not selected in the NFL Draft.
+
+This calculation is not an estimate once the current Fantasy pick, prior-year cap basis, NFL Draft pool and candidate NFL rank are known.
+
+### Contract-view decision surface
+
+When salary is used in Rookie Draft analysis, prefer showing:
+
+- Year 1 salary;
+- Year 2 salary;
+- Year 3 salary;
+- three-year total.
+
+A candidate's salary can fall as the Fantasy Draft progresses because the Fantasy component becomes cheaper while the candidate's NFL component remains fixed. When useful, expose that change as a `salary drop` or `contract savings` comparison against an earlier pick.
+
+Do not interpret a lower contract automatically as higher overall pick value. Salary cost is one decision dimension alongside player quality, tier scarcity, roster fit, liquidity and opportunity cost.
+
+### Historical expected salary per pick is a later calibration layer
+
+A historical `Expected Salary for Pick X` model is optional, not required for the live-draft feature.
+
+If added later:
+
+- use exact overall Fantasy picks or defensible pick bands rather than round labels alone;
+- derive distributions from observed selected-player NFL Draft ranks and the salary rule that actually applied;
+- report sample size and uncertainty;
+- prefer ranges or percentiles over a single deterministic number;
+- re-evaluate the model when Rookie Salary rules, league size, draft length or NFL-position filtering changes;
+- do not promote a small historical sample into a permanent fixed pick-salary table.
+
+The live exact-player contract calculation and the historical expected-pick model are separate layers and must not be conflated.
+
 ## Evidence policy
 
 When comparing FA-pick and Rookie-pick value across seasons:
