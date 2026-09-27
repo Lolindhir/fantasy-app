@@ -28,29 +28,119 @@ Sowohl das Salary-Modell als auch die vorgeschlagene Dead-Cap-Logik orientieren 
 
 Das Salary eines etablierten Spielers berechnet sich aus den Ergebnissen seiner letzten drei abgeschlossenen Saisons.
 
-### Rookie-Salary
+### Rookie Year 1: Draft-basiertes Salary als geklärte Konzeptentscheidung
 
-Bei einem Rookie existiert noch keine ausreichende NFL-Leistungshistorie.
+Bei einem Rookie existiert noch keine abgeschlossene NFL-Leistungshistorie. Sein Year-1-Salary wird deshalb vollständig aus zwei Draft-Signalen abgeleitet:
 
-Sein initiales Salary soll deshalb anteilig aus zwei Draft-Komponenten entstehen:
+- seiner Draft Position im Rookie Draft unserer Fantasy-Liga;
+- seiner realen NFL Draft Position, bereinigt auf den für Fantasy relevanten QB/RB/WR/TE-Pool.
 
-- seiner realen NFL Draft Position;
-- seiner Draft Position in unserer Fantasy-Liga.
+Der Fantasy-Draft ist das primäre ligainterne Marktsignal. Der NFL Draft bleibt ein starkes externes Korrektiv.
 
-Die genaue Gewichtung dieser beiden Komponenten ist Teil des Salary-Modells und nicht Gegenstand dieses Dead-Cap-Konzepts.
+Die Gewichtung lautet:
+
+```text
+Year1Pct
+= 65 % × FantasyDraftPct
++ 35 % × NflDraftPct
+```
+
+Das resultierende Year-1-Salary wird aus dem maßgeblichen Vorjahres-Salary-Cap berechnet:
+
+```text
+Year1Salary
+= Vorjahres-Salary-Cap × Year1Pct
+```
+
+Anschließend wird nach der allgemeinen Salary-Rundungsregel auf volle Dollar kaufmännisch gerundet.
+
+#### Kurve je Draft-Signal
+
+Für einen regulär gedrafteten Spieler wird jedes der beiden Draft-Signale mit derselben fallenden Kurve bewertet:
+
+```text
+DraftPct(r, N)
+= 0,30 %
++ (3,50 % - 0,30 %)
+  × (1 - (r - 1) / (N - 1))^3,5
+```
+
+Dabei gilt:
+
+- `r` = Rang des Spielers im jeweiligen Draft-Pool;
+- `N` = konkrete Größe dieses Draft-Pools;
+- Rang 1 ergibt **3,50 %**;
+- der letzte reguläre Rang ergibt **0,30 %**;
+- der Exponent **3,5** sorgt dafür, dass frühes Draft Capital deutlich stärker differenziert wird als spätes Draft Capital.
+
+Ist ein Spieler in einem der beiden Signale **undrafted**, erhält genau diese Komponente **0,25 %**.
+
+Damit kann ein Spieler beispielsweise in der Fantasy-Liga undrafted sein, aber über hohes reales NFL Draft Capital weiterhin ein relevantes Year-1-Salary erhalten. Die 65/35-Gewichtung dämpft diesen Effekt bewusst, verhindert ihn aber nicht künstlich.
+
+#### Dynamische Fantasy-Draft-Poolgröße
+
+`N_Fantasy` entspricht der konkreten Größe des jeweiligen Rookie Drafts.
+
+Für 2026 gilt:
+
+```text
+N_Fantasy = 30
+```
+
+Die Regel ist nicht dauerhaft auf 30 festgeschrieben. Ändert sich künftig die Zahl der regulären Rookie-Draft-Slots, ändert sich auch `N_Fantasy`.
+
+#### Dynamische NFL-Draft-Poolgröße
+
+Für das NFL-Signal werden ausschließlich im realen NFL Draft ausgewählte Spieler der Positionen
+
+- QB,
+- RB,
+- WR,
+- TE
+
+berücksichtigt.
+
+Diese Spieler werden nach ihrem echten NFL Overall Pick sortiert und innerhalb dieses gefilterten Pools neu durchnummeriert. Die Salary-Kurve verwendet diesen **bereinigten NFL-Rang**, nicht unmittelbar den rohen NFL Overall Pick.
+
+`N_NFL` ist deshalb die konkrete Zahl der in diesem NFL Draft ausgewählten QB/RB/WR/TE.
+
+Für 2026 enthält der kanonische NFL Draft **80** solche Spieler:
+
+```text
+N_NFL = 80
+```
+
+Die Zahl 80 ist keine dauerhafte Konstante. Für jedes Draftjahr wird `N_NFL` aus dem realen Draft dieses Jahres neu bestimmt.
+
+#### Verhältnis zum Year-1-Minimum
+
+Das Draft-basierte Year-1-Modell liefert bereits das **vollständige Year-1-Salary inklusive des garantierten Year-1-Minimums**.
+
+Das allgemeine Year-1-Minimum von **0,25 % des maßgeblichen Vorjahres-Salary-Caps** wird deshalb nicht noch einmal addiert.
+
+Das ist notwendig, damit insbesondere gilt:
+
+```text
+Fantasy undrafted = 0,25 %
+NFL undrafted     = 0,25 %
+
+65 % × 0,25 % + 35 % × 0,25 %
+= 0,25 %
+```
+
+Ein in beiden Signalen undrafted Rookie landet damit exakt beim garantierten Year-1-Minimum und nicht künstlich bei einem doppelten Base Salary.
 
 ### Übergang vom Rookie zum Veteranen
 
-Ab dem zweiten Jahr fließt zusätzlich die tatsächliche Leistung der bereits abgeschlossenen NFL-Saisons in das Salary ein.
+Der strukturelle Zielpfad bleibt ein gleitender Übergang zur echten NFL-Performance:
 
-Der Übergang ist damit gleitend:
-
-- **Jahr 1:** Draft-basierte Rookie-Basis;
-- **Jahr 2:** Draft-Basis plus Leistung aus einer abgeschlossenen Saison;
-- **Jahr 3:** Draft-Basis plus Leistung aus zwei abgeschlossenen Saisons;
+- **Jahr 1:** vollständig Draft-basiertes Rookie-Salary;
+- **Jahr 2:** Draft-Basis und Leistung aus einer abgeschlossenen Saison;
+- **Jahr 3:** Draft-Basis und Leistung aus zwei abgeschlossenen Saisons;
 - **ab Jahr 4:** vollständiges normales Salary aus den letzten drei abgeschlossenen Saisons.
 
-Damit erreicht ein Spieler nach drei abgeschlossenen Saisons vollständig das normale Veteranen-Salary-Modell.
+Die **konkrete Gewichtung und Salary-Steigerungslogik für Jahr 2 und Jahr 3 ist noch nicht festgelegt**. Insbesondere ist noch zu entscheiden, wie schnell das Draft-Signal ausläuft und wie die vorhandene Performance-Historie in diesen beiden Übergangsjahren skaliert wird.
+
 
 ---
 
@@ -512,9 +602,13 @@ Diese Konstruktion verhindert außerdem, dass ein größerer Bereich unterschied
 
 ### Verhältnis zum Rookie-/Young-Player-Modell
 
-Das erfahrungsabhängige Base Minimum ist die unterste Salary-Schicht für **alle** Spieler.
+Das erfahrungsabhängige Base Minimum ist die garantierte unterste Salary-Schicht für alle Spieler.
 
-Rookie- oder Young-Player-spezifische Salary-Komponenten, insbesondere die bereits vorgesehene Draft-basierte Rookie-Basis und der gleitende Übergang zur Performance-Historie, bauen oberhalb dieses Base Minimums auf. Die genaue Gewichtung dieser Rookie-Komponenten bleibt Teil des allgemeinen Salary-Modells und wird durch die Minimum-Salary-Regel nicht ersetzt.
+Für das normale Performance-Modell wird dieses Base Minimum additiv mit dem leistungsbasierten Salary-Anteil kombiniert.
+
+**Rookie Year 1 ist eine explizite Sonderbehandlung:** Die Draft-basierte Year-1-Formel enthält das Year-1-Minimum von 0,25 % bereits in ihren Draft-Komponenten und liefert direkt das vollständige Year-1-Salary. Das Minimum wird deshalb bei Rookies in Year 1 nicht ein zweites Mal addiert.
+
+Für Year 2 und Year 3 bleibt noch festzulegen, wie das dann höhere erfahrungsabhängige Base Minimum, die auslaufende Draft-Basis und die wachsende Performance-Historie konkret zusammenspielen. Diese Übergangslogik darf nicht aus der Year-1-Regel abgeleitet werden, bevor sie separat entschieden wurde.
 
 ### Dead-Cap-Floor innerhalb eines Salary-Zyklus
 
@@ -587,15 +681,28 @@ Team Tenure = aktuelle League Season − Acquisition Season
 ### Grundannahmen
 
 - Salary basiert grundsätzlich auf einem Drei-Jahres-Horizont.
-- Rookies erhalten zunächst ein Draft-basiertes Salary.
-- In Jahr 2 und 3 wird schrittweise echte NFL-Leistung ergänzt.
-- Ab Jahr 4 gilt das vollständige Drei-Saison-Salary-Modell.
+- Rookies erhalten in Year 1 ein vollständig Draft-basiertes Salary.
+- In Year 2 und 3 wird schrittweise echte NFL-Leistung ergänzt; die konkrete Übergangsgewichtung ist noch offen.
+- Ab Year 4 gilt das vollständige Drei-Saison-Salary-Modell.
 - Team Tenure wird als `aktuelle League Season − Acquisition Season` der ununterbrochenen Teamzugehörigkeit berechnet.
 - Die Dead-Cap-Staffel lautet **50 % / 30 % / 15 % / 5 %** für Tenure 0 / 1 / 2 / 3+.
 - Dead Cap bezieht sich auf das aktuelle Salary.
 - Dead Cap gilt bis zum nächsten regulären Salary Check.
 
-### Geklärte Konzeptentscheidungen
+### Geklärte Rookie-Year-1-Entscheidungen
+
+- Year 1 verwendet zwei Draft-Signale: Fantasy Rookie Draft und realen NFL Draft.
+- Die Gewichtung lautet **65 % Fantasy Draft / 35 % NFL Draft**.
+- Beide Signale verwenden dieselbe Kurve von **3,50 %** auf **0,30 %** mit Exponent **3,5**.
+- Undrafted in einem Signal entspricht **0,25 %** für diese Komponente.
+- `N_Fantasy` ist die konkrete Größe des jeweiligen Fantasy Rookie Drafts; 2026 gilt **30**.
+- `N_NFL` ist die konkrete Zahl der im realen NFL Draft ausgewählten **QB/RB/WR/TE**; 2026 gilt **80**.
+- NFL-Spieler werden innerhalb dieses Positionspools nach Overall Pick neu gerankt; dieser bereinigte Rang fließt in die Kurve ein.
+- Das resultierende Year-1-Salary basiert auf dem maßgeblichen Vorjahres-Salary-Cap.
+- Die Draft-basierte Year-1-Formel enthält das garantierte Year-1-Minimum bereits. Das 0,25-%-Minimum wird nicht zusätzlich addiert.
+- Ein in der Fantasy-Liga undrafted Rookie darf aufgrund starken NFL Draft Capitals teurer als ein spät gedrafteter Fantasy-Rookie sein. Die 65/35-Gewichtung begrenzt den Einfluss des NFL-Signals, ohne eine künstliche Reihenfolge zu erzwingen.
+
+### Geklärte allgemeine Konzeptentscheidungen
 
 - Dead Cap wird vollständig vom aktiven Salary des Spielers abgezogen.
 - Das frühere Team übernimmt diesen Anteil als Retained Salary.
@@ -604,19 +711,22 @@ Team Tenure = aktuelle League Season − Acquisition Season
 - Salary und Dead Cap werden in ganzen Dollarbeträgen ohne Dezimalstellen geführt.
 - Das Minimum Salary ist ein erfahrungsabhängiges Base Salary nach `Player.Year`.
 - Die Staffel beträgt **0,25 % / 0,30 % / 0,35 % / 0,40 % / 0,45 % / 0,50 %** des maßgeblichen Vorjahres-Salary-Caps für Year 1 / 2 / 3 / 4 / 5–7 / 8+.
-- Das Base Minimum wird additiv mit dem variablen Performance-/Rookie-Salary-Anteil kombiniert.
+- Für das normale Performance-Modell wird das Base Minimum additiv mit dem variablen Performance-Salary-Anteil kombiniert.
 - Das Minimum eines Zyklus basiert auf dem kanonisch berechneten Salary Cap des vorherigen Zyklus.
 - Greift der Floor nach einem Cut, darf aktives Salary plus Dead Caps oberhalb des ursprünglichen Salaries liegen.
-
-### Geklärte weitere Konzeptentscheidung
-
 - Die reguläre Salary-Überprüfung / Cap Deadline resettet sämtliche alten Dead-Cap-Anteile.
 - Dead Cap wird nicht über mehrere Salary-Zyklen fortgeführt.
 - Das Salary wird danach unabhängig vom alten Zyklus neu berechnet.
 
+### Nächste fachliche Anschlussfragen
+
+1. **Year 2 / Year 3:** Wie werden Draft-Basis, höheres erfahrungsabhängiges Base Minimum und echte NFL-Performance konkret gewichtet, sodass der Übergang bis Year 4 nachvollziehbar und stabil verläuft?
+2. **Draft-Pick-Kostenprognose:** Erst nach Festlegung dieser Übergangslogik soll geprüft werden, wie erwartete Salary-Kosten zukünftiger Rookie-Draftpicks vor dem Draft sinnvoll prognostiziert werden können.
+
 ### Technische Anschlussfrage
 
 - Für die erste historische Saison des neuen Minimum-Salary-Systems muss ein reproduzierbarer Anchor-/Startwert für das Vorjahres-Cap festgelegt werden. Das ist eine Umsetzungsfrage, keine offene Grundsatzentscheidung des Salary-Modells.
+
 
 ---
 
