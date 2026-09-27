@@ -1,24 +1,67 @@
 <section *ngIf="results as resultsVm">
   <h2 *ngIf="showTitle">{{ title }}</h2>
 
+  <ng-template #resultAwards let-result>
+    <span *ngIf="result.awardVisuals?.length; else legacyAwards" class="result-awards">
+      <ng-container *ngFor="let award of result.awardVisuals">
+        <img
+          *ngIf="award.imageSrc"
+          class="result-award-icon"
+          [src]="award.imageSrc"
+          alt=""
+          aria-hidden="true"
+        />
+        <span *ngIf="award.text">{{ award.text }}</span>
+      </ng-container>
+    </span>
+    <ng-template #legacyAwards>{{ result.awardsDisplay }}</ng-template>
+  </ng-template>
+
   <div class="standings-wrapper">
     <div class="podium">
       <div class="podium-item second" *ngIf="resultsVm.runnerUp as runnerUp">
         <div class="owner runner-up">{{ runnerUp.team.Owner }}</div>
-        <div>{{ runnerUp.awardsDisplay }}</div>
-        <div class="medal">🥈</div>
+        <div>
+          <ng-container
+            *ngTemplateOutlet="resultAwards; context: { $implicit: runnerUp }"
+          ></ng-container>
+        </div>
+        <img
+          class="placement-icon medal"
+          src="assets/awards/ui/award-runner-up.png"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
       <div class="podium-item first" *ngIf="resultsVm.champion as champion">
         <div class="owner champ">{{ champion.team.Owner }}</div>
-        <div>{{ champion.awardsDisplay }}</div>
-        <div class="cup">🏆</div>
+        <div>
+          <ng-container
+            *ngTemplateOutlet="resultAwards; context: { $implicit: champion }"
+          ></ng-container>
+        </div>
+        <img
+          class="placement-icon cup"
+          src="assets/awards/ui/award-championship-ring.png"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
       <div class="podium-item third" *ngIf="resultsVm.thirdPlace as thirdPlace">
         <div class="owner">{{ thirdPlace.team.Owner }}</div>
-        <div>{{ thirdPlace.awardsDisplay }}</div>
-        <div class="medal">🥉</div>
+        <div>
+          <ng-container
+            *ngTemplateOutlet="resultAwards; context: { $implicit: thirdPlace }"
+          ></ng-container>
+        </div>
+        <img
+          class="placement-icon medal"
+          src="assets/awards/ui/award-third-place.png"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
     </div>
 
@@ -27,7 +70,11 @@
         <div class="place">{{ placeEmoji(result.place) }}</div>
         <div class="owner">
           {{ result.team.Owner }}
-          <span class="owner-awards">{{ result.awardsDisplay }}</span>
+          <span class="owner-awards">
+            <ng-container
+              *ngTemplateOutlet="resultAwards; context: { $implicit: result }"
+            ></ng-container>
+          </span>
         </div>
       </div>
     </div>
