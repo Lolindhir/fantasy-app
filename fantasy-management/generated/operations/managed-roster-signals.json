@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-27T19:25:30Z",
-  "input_fingerprint": "d1001d217f975a5d6d8992cbfb72e58687351aac2e9477b8e3aee951daaac4a3",
+  "generated_at": "2026-09-27T19:55:40Z",
+  "input_fingerprint": "9542e07797395b71b741a6ea431e599a6633dbf9ed117d1daddf0ecd369aade5",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "9878f304d482c4fb76dd3731d673b6ad0bd49893483bc992b797803a51c2e67f",
-      "source_timestamp": "2026-09-27T17:36:27Z"
+      "content_sha256": "477d8e4888c8eaba4885c0661b162e891446ac7138db290065babfdebfee4867",
+      "source_timestamp": "2026-09-27T19:55:40Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "a2c53de1cf133a9b9f420b7ddfc3db13500a6ba8bbcd80b2c825840a9510847e",
-      "source_timestamp": "2026-09-27T19:25:30Z"
+      "content_sha256": "0fd9346ee2d87a72ed5fdb884aa945ff246c25ef8a1732e35ff21aa6b8cc58a4",
+      "source_timestamp": "2026-09-27T19:55:40Z"
     },
     {
       "id": "operations_source_catalog",
@@ -2401,13 +2401,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Sep 27: Hall was ruled out for the remainder of Sunday's game against the Lions after sustaining a thigh injury with 11:30 remaining in the fourth quarter.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261004",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -2623,9 +2623,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9394,7 +9395,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 12,
+      "players_with_current_injury_signal": 13,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {
