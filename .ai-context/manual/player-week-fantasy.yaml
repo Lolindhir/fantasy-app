@@ -1,0 +1,248 @@
+schemaVersion: 1
+
+domain: player-week-fantasy
+status: accepted-contract-v1
+trackingIssue: 697
+
+purpose: >
+  Define the reusable Shared Derived Data contract for one NFL player's
+  fantasy-football state in one target week under one explicit League scoring
+  profile. The contract unifies realized fantasy points and pregame projection
+  semantics without making a consumer read model or provider score the upstream
+  owner.
+
+architecture:
+  decisionBasis:
+    - ADR-033
+    - ADR-037
+  logicalLayer: Shared Derived Data
+  physicalStorage: deferred
+  implementationFoundation: tools/player_week_fantasy.py
+  rules:
+    - source-data/nfl/weekly-rosters/<season>/<week>.json remains the canonical week-scoped NFL player anchor.
+    - PlayerWeekFantasy never mutates or enriches canonical NFL source records in place.
+    - public/data is an App delivery layer and is not the shared domain owner.
+    - FantasyGameContext, Players/Free Agents and later Fantasy Operations are consumers, not independent scoring owners.
+    - Starter/bench/free-agent ownership does not change the underlying player-week projection.
+
+identity:
+  recordTuple:
+    - CanonicalPlayerID
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - ScoringProfile.SettingsHash
+  scoringProfile:
+    fields:
+      - Season
+      - SettingsHash
+      - FingerprintVersion
+      - ActiveSettingsCount
+    rule: >
+      ScoringProfile.Season identifies the canonical League-season rule set selected
+      for derivation. It is explicit even when it equals the target NFL Season so
+      historical/what-if re-scoring remains unambiguous.
+  providerBoundary: >
+    Sleeper PlayerID is not part of the shared identity. CanonicalPlayerID -> app
+    PlayerID resolution belongs to a later App publication/join step and must fail
+    closed when ambiguous.
+
+scoringFingerprint:
+  version: 1
+  algorithm: sha256
+  implementation: tools/player_week_fantasy.py::scoring_settings_fingerprint
+  semanticInput: ScoringSettings
+  normalization:
+    - sort setting keys deterministically
+    - normalize numeric values so equivalent forms such as 1, 1.0 and "1.000" are identical
+    - omit zero-valued settings because absent and explicit zero are scoring-equivalent
+    - reject non-numeric, non-finite or invalid setting values
+  payloadShape: >
+    {"ActiveSettings":{...canonical decimal strings...},"Version":1}
+  hashFormat: sha256:<lowercase-hex>
+  rules:
+    - Active scoring-weight changes must change SettingsHash.
+    - Reordering settings must not change SettingsHash.
+    - Adding/removing an inactive zero-valued setting must not change SettingsHash.
+    - The same effective settings may have the same SettingsHash in multiple leagues; CanonicalLeagueID remains a separate identity dimension.
+    - Any materialized Actual, Projection or PredictionRange must never be reused under a different SettingsHash.
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "ContractVersion": 1,
+      "CanonicalLeagueID": "nfl-reise",
+      "Season": 2026,
+      "Week": 4,
+      "ScoringProfile": {
+        "Season": 2026,
+        "SettingsHash": "sha256:...",
+        "FingerprintVersion": 1,
+        "ActiveSettingsCount": 41
+      },
+      "Records": []
+    }
+  recordShape: |
+    {
+      "CanonicalPlayerID": "NFLP-...",
+      "Projection": {
+        "Status": "available",
+        "Points": 16.8,
+        "PredictionRange": {
+          "Level": 0.90,
+          "Lower": 8.4,
+          "Upper": 29.7
+        },
+        "RangeQuality": "player-volatility",
+        "HistoryGames": 27,
+        "ParticipationCondition": "conditional-on-participation",
+        "AvailabilityAdjustmentApplied": false,
+        "PointModel": "V4-C",
+        "IntervalModel": "V4-C-PI1"
+      },
+      "Actual": {
+        "Points": 21.4,
+        "State": "final"
+      }
+    }
+
+projection:
+  statuses:
+    available:
+      points: required-finite-number
+      predictionRange: required
+      rangeQuality:
+        - player-volatility
+        - limited-history-fallback
+    insufficient-history:
+      points: null
+      predictionRange: null
+      rangeQuality: unavailable
+    no-game:
+      points: null
+      predictionRange: null
+      rangeQuality: unavailable
+    unavailable:
+      points: null
+      predictionRange: null
+      rangeQuality: unavailable
+  acceptedPointModel:
+    id: V4-C
+    evidence: issue-697-and-PR-771
+    productionImplementationState: pending-promotion
+    rule: >
+      Contract v1 reserves V4-C as the accepted point-model identity, but this
+      checkpoint does not copy the stale/diverged research branch into production.
+      Promotion/materialization is a separate checkpoint on current main.
+  predictionRange:
+    primaryLevel: 0.90
+    acceptedIntervalModel:
+      id: V4-C-PI1
+      strategy: position-plus-projection-bucket-plus-historical-player-volatility
+      evidence: issue-697-and-PR-771
+      productionImplementationState: pending-promotion
+    rules:
+      - Lower and Upper must be finite and Lower <= Upper.
+      - Negative lower bounds are allowed when scoring permits negative outcomes.
+      - Bounds are prediction limits, not guaranteed floor/ceiling values.
+      - Team ranges must not be built by summing player lower/upper bounds.
+  historyGames: >
+    Count of pregame historical played games available to the uncertainty layer;
+    target-week outcome is excluded.
+  participationCondition: conditional-on-participation
+  availabilityAdjustmentApplied: false
+  availabilityRule: >
+    Contract v1 does not silently include injury/inactive/DNP probability.
+    Availability-aware expectation requires a separately validated model.
+
+actual:
+  implementationReuse: tools/historical_fantasy_scoring.py
+  derivationRule: >
+    Realized fantasy points are derived from canonical NFL scoring evidence plus
+    the explicit ScoringSettings profile through the accepted canonical scorer.
+    PlayerWeekFantasy must not implement a second scoring engine.
+  states:
+    pending:
+      points: null
+    live:
+      points: finite-number
+    final:
+      points: finite-number
+    unavailable:
+      points: null
+  rules:
+    - Zero and negative fantasy scores are valid realized values.
+    - Unknown/unavailable must never be represented as zero.
+    - Finality is separate from score presence and must come from canonical game/finality evidence in the later materializer.
+    - Provider fantasy totals remain validation/fallback evidence according to the historical-scoring contract; they are not silently promoted to canonical truth.
+
+dependencies:
+  scoringProfile:
+    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    invalidates:
+      - Actual
+      - Projection
+      - PredictionRange
+    key: SettingsHash
+  weeklyPlayerAnchor:
+    owner: source-data/nfl/weekly-rosters/<season>/<week>.json
+    invalidates:
+      - target-week player population
+      - no-game/game association semantics
+  actualInputs:
+    - canonical player-stats
+    - canonical special-teams-fumble-events when active settings require them
+    - canonical finality evidence
+  projectionInputs:
+    - canonical historical player scoring outcomes under the selected scoring profile
+    - canonical snap/usage history
+    - target-week player/game membership
+  leakageGuard: >
+    Target-week Actual, snaps, opportunities or outcomes must never enter the
+    pregame Projection or PredictionRange feature/calibration path.
+
+consumerBoundary:
+  app:
+    - FantasyGameContext may join PlayerWeekFantasy for rostered player rows.
+    - Players/Free Agents may join the same value for unrostered players.
+    - Current app Sleeper IDs remain an App publication concern.
+  teamProjection:
+    pointRule: sum available starter Projection.Points
+    rangeRule: separate later distribution/simulation aggregation
+  liveProjectedFinal:
+    rule: >
+      final players use Actual; not-started players use pregame Projection; live
+      players require a separate remaining-points model. Current points must not
+      be added to the full pregame Projection.
+
+failClosed:
+  - duplicate CanonicalPlayerID within one PlayerWeekFantasy contract
+  - malformed or non-finite scoring settings
+  - malformed SettingsHash or unsupported fingerprint version
+  - mismatched CanonicalLeagueID between root and scoring profile identity
+  - non-finite Actual/Projection/range values
+  - invalid Actual state/value combinations
+  - numeric Projection values for unavailable statuses
+  - malformed PredictionRange ordering
+  - ambiguous canonical-to-app identity during later publication
+
+currentCheckpoint:
+  implemented:
+    - semantic scoring fingerprint
+    - scoring-profile identity
+    - contract builder/validation
+    - Actual derivation delegation to canonical scorer
+    - regression coverage
+  deferred:
+    - physical Shared Derived storage path
+    - current-week materialization
+    - V4-C production promotion
+    - interval production promotion
+    - Sleeper/app publication join
+    - FantasyGameContext migration
+    - Players/Free Agents migration
+    - team range simulation
+    - live remaining-points model
+    - workflows/scheduling
+    - UI
