@@ -146,13 +146,18 @@
   --banner-name-size: 0.92rem;
   --owner-avatar-size: 2.375rem;
   --team-avatar-size: 1.35rem;
+  --banner-header-height: 2.3rem;
   --placement-zone-height: 4rem;
 
   position: relative;
   min-width: 0;
-  height: 216px;
+  height: 248px;
   display: grid;
-  grid-template-rows: var(--placement-zone-height) 2.4rem 1fr;
+  grid-template-rows:
+    var(--banner-header-height)
+    var(--placement-zone-height)
+    2.4rem
+    1fr;
   padding: 18px 7px 27px;
   overflow: hidden;
   clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%);
@@ -208,9 +213,9 @@
   --banner-name-size: 1rem;
   --owner-avatar-size: 2.625rem;
   --team-avatar-size: 1.5rem;
-  --placement-zone-height: 5.2rem;
+  --placement-zone-height: 4.5rem;
 
-  height: 240px;
+  height: 272px;
 }
 
 .honor-banner--third {
@@ -220,9 +225,46 @@
   --banner-name-size: 0.84rem;
   --owner-avatar-size: 2.125rem;
   --team-avatar-size: 1.2rem;
-  --placement-zone-height: 3.5rem;
+  --placement-zone-height: 4rem;
 
-  height: 206px;
+  height: 238px;
+}
+
+.honor-banner__header {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  color: #2f3742;
+  font-family: inherit;
+  text-align: center;
+}
+
+.honor-banner__season {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.18rem;
+  font-size: 0.72rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.honor-banner__season strong {
+  font-weight: 800;
+}
+
+.honor-banner__season-dash {
+  color: rgba(47, 55, 66, 0.58);
+  font-weight: 400;
+}
+
+.honor-banner__finish {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.05;
 }
 
 .honor-banner__identity {
@@ -379,11 +421,11 @@
 }
 
 .honor-banner__placement-icon--champion {
-  width: 5rem;
-  height: 5rem;
+  width: 4.25rem;
+  height: 4.25rem;
 }
 
 .honor-banner__placement-icon--third {
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 3.75rem;
+  height: 3.75rem;
 }
