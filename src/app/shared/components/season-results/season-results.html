@@ -47,6 +47,8 @@
 
   <ng-template #bannerIdentity let-result>
     <div class="honor-banner__identity">
+      <span class="honor-banner__name">{{ result.team.Owner }}</span>
+
       <span class="honor-banner__avatar-stack">
         <span class="honor-banner__owner-avatar">
           <img
@@ -63,8 +65,6 @@
           <img [src]="result.teamAvatar" alt="" />
         </span>
       </span>
-
-      <span class="honor-banner__name">{{ result.team.Owner }}</span>
     </div>
   </ng-template>
 
@@ -128,14 +128,6 @@
           *ngIf="resultsVm.runnerUp as runnerUp"
           class="honor-banner honor-banner--runner-up"
         >
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: runnerUp }"
-          ></ng-container>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: runnerUp }"
-            ></ng-container>
-          </div>
           <div class="honor-banner__placement">
             <img
               class="honor-banner__placement-icon honor-banner__placement-icon--runner-up"
@@ -143,20 +135,20 @@
               alt=""
             />
           </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: runnerUp }"
+            ></ng-container>
+          </div>
+          <ng-container
+            *ngTemplateOutlet="bannerIdentity; context: { $implicit: runnerUp }"
+          ></ng-container>
         </article>
 
         <article
           *ngIf="resultsVm.champion as champion"
           class="honor-banner honor-banner--champion"
         >
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: champion }"
-          ></ng-container>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: champion }"
-            ></ng-container>
-          </div>
           <div class="honor-banner__placement">
             <img
               class="honor-banner__placement-icon honor-banner__placement-icon--champion"
@@ -164,20 +156,20 @@
               alt=""
             />
           </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: champion }"
+            ></ng-container>
+          </div>
+          <ng-container
+            *ngTemplateOutlet="bannerIdentity; context: { $implicit: champion }"
+          ></ng-container>
         </article>
 
         <article
           *ngIf="resultsVm.thirdPlace as thirdPlace"
           class="honor-banner honor-banner--third"
         >
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: thirdPlace }"
-          ></ng-container>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: thirdPlace }"
-            ></ng-container>
-          </div>
           <div class="honor-banner__placement">
             <img
               class="honor-banner__placement-icon honor-banner__placement-icon--third"
@@ -185,6 +177,14 @@
               alt=""
             />
           </div>
+          <div class="honor-banner__awards">
+            <ng-container
+              *ngTemplateOutlet="bannerAwards; context: { $implicit: thirdPlace }"
+            ></ng-container>
+          </div>
+          <ng-container
+            *ngTemplateOutlet="bannerIdentity; context: { $implicit: thirdPlace }"
+          ></ng-container>
         </article>
       </div>
     </section>
