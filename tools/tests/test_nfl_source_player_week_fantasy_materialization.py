@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import gzip
 import json
 import sys
 import unittest
@@ -50,9 +48,10 @@ class PlayerWeekFantasyMaterializationCaptureTests(unittest.TestCase):
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
-        ).encode("utf-8")
-        capture = base64.b64encode(gzip.compress(compact, compresslevel=9)).decode("ascii")
-        print(f"PWF_CAPTURE_GZIP_B64={capture}")
+        )
+        chunk_size = 6000
+        for index, start in enumerate(range(0, len(compact), chunk_size)):
+            print(f"PWF_CAPTURE_CHUNK_{index:03d}={compact[start:start + chunk_size]}")
         self.fail("intentional one-time capture gate: persist generated dataset, then replace this test")
 
 
