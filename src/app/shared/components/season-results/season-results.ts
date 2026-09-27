@@ -14,6 +14,7 @@ export class SeasonResultsComponent {
   @Input({ required: true }) results!: SeasonResultsViewModel | null | undefined;
   @Input() title = 'Season Results';
   @Input() showTitle = true;
+  @Input() showBannerPreview = false;
 
   placeEmoji(place: number): string {
     switch (place) {
