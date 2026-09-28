@@ -17,34 +17,6 @@
     <ng-template #legacyAwards>{{ result.awardsDisplay }}</ng-template>
   </ng-template>
 
-  <ng-template #bannerAwards let-result>
-    <div
-      *ngIf="result.awardVisuals?.length; else legacyBannerAwards"
-      class="honor-banner__awards-content"
-    >
-      <span
-        *ngFor="let award of result.awardVisuals"
-        class="honor-banner__award-item"
-      >
-        <img
-          *ngIf="award.imageSrc"
-          class="honor-banner__award-image"
-          [src]="award.imageSrc"
-          alt=""
-          aria-hidden="true"
-        />
-        <span *ngIf="award.text" class="honor-banner__award-text">
-          {{ award.text }}
-        </span>
-      </span>
-    </div>
-    <ng-template #legacyBannerAwards>
-      <span *ngIf="result.awardsDisplay" class="honor-banner__legacy-awards">
-        {{ result.awardsDisplay }}
-      </span>
-    </ng-template>
-  </ng-template>
-
   <ng-template #bannerIdentity let-result>
     <div class="honor-banner__identity">
       <span class="honor-banner__name">{{ result.team.Owner }}</span>
@@ -143,11 +115,6 @@
               alt=""
             />
           </div>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: runnerUp }"
-            ></ng-container>
-          </div>
           <ng-container
             *ngTemplateOutlet="bannerIdentity; context: { $implicit: runnerUp }"
           ></ng-container>
@@ -172,11 +139,6 @@
               alt=""
             />
           </div>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: champion }"
-            ></ng-container>
-          </div>
           <ng-container
             *ngTemplateOutlet="bannerIdentity; context: { $implicit: champion }"
           ></ng-container>
@@ -200,11 +162,6 @@
               src="assets/awards/ui/award-third-place.png"
               alt=""
             />
-          </div>
-          <div class="honor-banner__awards">
-            <ng-container
-              *ngTemplateOutlet="bannerAwards; context: { $implicit: thirdPlace }"
-            ></ng-container>
           </div>
           <ng-container
             *ngTemplateOutlet="bannerIdentity; context: { $implicit: thirdPlace }"
