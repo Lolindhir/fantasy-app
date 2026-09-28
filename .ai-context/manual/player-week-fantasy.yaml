@@ -205,9 +205,11 @@ dependencies:
 
 consumerBoundary:
   app:
-    - FantasyGameContext may join PlayerWeekFantasy for rostered player rows.
-    - Players/Free Agents may join the same value for unrostered players.
-    - Current app Sleeper IDs remain an App publication concern.
+    - public/data/PlayerWeekFantasy.json is the App delivery adapter for the shared PlayerWeekFantasy snapshot.
+    - App PlayerID is the active canonical Sleeper mapping when available; CanonicalPlayerID is always retained.
+    - Missing active Sleeper identity is represented as PlayerID=null and never name-joined or silently dropped.
+    - FantasyGameContext may join the published value for rostered player rows.
+    - Players/Free Agents may join the same published value for unrostered players.
   teamProjection:
     pointRule: sum available starter Projection.Points
     rangeRule: separate later distribution/simulation aggregation
@@ -226,7 +228,7 @@ failClosed:
   - invalid Actual state/value combinations
   - numeric Projection values for unavailable statuses
   - malformed PredictionRange ordering
-  - ambiguous canonical-to-app identity during later publication
+  - ambiguous or conflicting canonical-to-app identity during publication
 
 currentCheckpoint:
   implemented:
@@ -239,8 +241,8 @@ currentCheckpoint:
     - current-week materialization
     - V4-C production promotion
     - V4-C-PI1 interval production promotion
+    - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
   deferred:
-    - Sleeper/app publication join
     - FantasyGameContext migration
     - Players/Free Agents migration
     - team range simulation
@@ -281,4 +283,4 @@ productionMaterialization:
       WeekFinal. Otherwise it remains unavailable; live remaining-points semantics
       are deliberately deferred.
   scheduling: explicit-tool-only
-  publication: shared-derived-only-no-app-consumer-yet
+  publication: shared-derived-plus-app-publication-bridge-no-consumer-join-yet
