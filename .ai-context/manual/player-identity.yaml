@@ -260,7 +260,8 @@ boundaries:
   - source-data/nfl owns provider-independent NFL-domain identities and historical provider mappings; the path name does not imply NFL-issued identifiers.
   - public/data remains generated app output and is not the source of truth for cross-provider identity history.
   - fantasy-management may consume the canonical identity bridge but does not own the app player identity contract.
-  - Integration of CanonicalPlayerID into any generated app JSON is a separate contract change and requires explicit design and validation.
+  - public/data/PlayerWeekFantasy.json is the first explicitly designed App publication carrying CanonicalPlayerID beside the existing Sleeper-based PlayerID; unresolved active Sleeper identity stays PlayerID=null, duplicate/conflicting mappings fail closed, and no name fallback is allowed.
+  - Any further CanonicalPlayerID integration into existing generated App contracts remains a separate scoped contract change with explicit validation.
 
 implementationOrder:
   - Add regression coverage for conflicting, corrected and historically reused provider IDs.
