@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-09-28T17:15:51Z",
-  "input_fingerprint": "3b00f18411ff86ef27bae247865dc2f1151afc052f02dfedc92de766c0b95aef",
+  "generated_at": "2026-09-28T17:36:36Z",
+  "input_fingerprint": "2579de4346fe89cc94e061350e5eec6d163ef311c83f8fbbc6a36d196c9d4bde",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "87c0bb746f4c0f391cbf483351ba1b3051719533e620b31a1f30084fe242b2cb"
+      "input_fingerprint": "f909367e9a389ec398fcc73bf8db6e7cf77a15b9553c1d7239b4af58e42644fa"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "f19790f48f9f668e0b31ace2050a8201689038768eba94c0d5a02371f023dec4"
+      "input_fingerprint": "b09710d51dd73104a8417c4914fce02e7626a31b62727d2ca39ebc2f42857970"
     },
     "canonical_league_scoring": {
       "canonical_league_id": "nfl-reise",
@@ -34,7 +34,7 @@
     "comparison_anchor_policy": "calendar windows are anchored to the evaluation date; each source uses the last available snapshot at or before the cutoff",
     "previous_free_agent_signals": {
       "status": "available",
-      "input_fingerprint": "d33b18805c26c9c5c114f11a241354b67618f2b929c0471ef8f779abf72b1010"
+      "input_fingerprint": "87c0bb746f4c0f391cbf483351ba1b3051719533e620b31a1f30084fe242b2cb"
     },
     "ranking_histories": {
       "cbs-sports-redraft-kicker-preseason": {
@@ -507,7 +507,6 @@
     },
     "material_family_counts": {
       "dynasty_market": 178,
-      "injury_availability": 1,
       "season_projection": 77
     },
     "selection_rule": "all current fantasy free agents QB/RB/WR/TE/K are evaluated; only research-relevant movement discoveries are emitted"
@@ -2800,32 +2799,7 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [
-            {
-              "family": "injury_availability",
-              "kind": "injury_flag_change",
-              "severity": "medium",
-              "window_days": 1,
-              "from": true,
-              "to": false
-            },
-            {
-              "family": "injury_availability",
-              "kind": "injury_designation_change",
-              "severity": "medium",
-              "window_days": 1,
-              "from": "Out",
-              "to": null
-            },
-            {
-              "family": "injury_availability",
-              "kind": "return_timeline_change",
-              "severity": "medium",
-              "window_days": 1,
-              "from": "20261004",
-              "to": null
-            }
-          ],
+          "changes": [],
           "activity_changes": []
         }
       },
@@ -2841,7 +2815,6 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
-          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -2902,30 +2875,6 @@
             "delta": 11.76,
             "threshold": 10,
             "provider_count": 1
-          },
-          {
-            "family": "injury_availability",
-            "kind": "injury_flag_change",
-            "severity": "medium",
-            "window_days": 1,
-            "from": true,
-            "to": false
-          },
-          {
-            "family": "injury_availability",
-            "kind": "injury_designation_change",
-            "severity": "medium",
-            "window_days": 1,
-            "from": "Out",
-            "to": null
-          },
-          {
-            "family": "injury_availability",
-            "kind": "return_timeline_change",
-            "severity": "medium",
-            "window_days": 1,
-            "from": "20261004",
-            "to": null
           }
         ],
         "coverage_changes": [],
@@ -99431,6 +99380,6 @@
     "fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db"
   },
   "evidence": {
-    "input_fingerprint": "31d2e57d9db32c6c9d9dbe54d6d3336f9fa4a11bf00fdef24f2031d4a3483c7b"
+    "input_fingerprint": "a32faccd28baec127be325a931776ab052b237461990a5f2264e98760a2923c1"
   }
 }
