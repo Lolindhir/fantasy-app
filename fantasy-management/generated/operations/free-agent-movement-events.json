@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-28T13:56:35.000369Z",
-  "input_fingerprint": "d03204831dc40e974f034bd57cf5c37930565b8e3cf15fde3a490301c700e1a1",
+  "generated_at": "2026-09-28T14:31:48Z",
+  "input_fingerprint": "e6b96d39a93faf79800302acd446c18ca34526a217872bcd691d5bf635b9cd25",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "422c285800dd32a0a8f4bbb682fe475fd161b4557858b6a76dc45c53909cd013"
+      "input_fingerprint": "81f6621056addc952075a279b655d3ddbf3dec0ca58cbf91d89e5244b47b79f4"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "7197df04191c99147d0ab6ab5f53463d627f8e3449c7691d77d9397816c7680f"
+      "input_fingerprint": "422c285800dd32a0a8f4bbb682fe475fd161b4557858b6a76dc45c53909cd013"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,84 @@
     ],
     "current_discovery_count": 215,
     "previous_discovery_count": 215,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "changed": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "e19b69e2613dc2e67777f5d904a69f3760e37b12ef62303d830723e51d157ee1",
-    "previous_evidence_fingerprint": "823f0f0ecbec12f99f59cb7a3215a7f05eec9db971459a04a9746176f5c17917",
+    "current_evidence_fingerprint": "37f89ebc30c54897c9f8cf01d7daae1cab2db5215a21e78b8a8fae3e14dc5c77",
+    "previous_evidence_fingerprint": "e19b69e2613dc2e67777f5d904a69f3760e37b12ef62303d830723e51d157ee1",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "5973",
+      "name": "Josh Oliver",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "fc2643b2f989c0224a8b9d33e58abf32b0b6ebf5847edda73d58908a635c3e5c",
+      "previous_state_hash": "a76402131ecae853c006fbd0ce3dce1715a9ba2e7e637b2653ff1ecfb41da198",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": "Doubtful"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
