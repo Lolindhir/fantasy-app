@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-09-28T04:15:24.478218Z",
-  "input_fingerprint": "38843d6ac1ac0e8b688c195d1ef6487ad784e762998370e82904404c024a9883",
+  "generated_at": "2026-09-28T04:25:37.958111Z",
+  "input_fingerprint": "94ba01e770aaff22e31698fc3f5e231a560bff481b46e94706fda30373c5a392",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "e150e655311cfc7a68151a3e8623b87000bf850af1bf0b62c526fcc42dd0c8aa"
+      "input_fingerprint": "391c2f13db793500d2be816c88364515b1154ed8a3496117f99b03df1c2aa019"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "7838229573de5919204b81d5110bb6283a1ac7578eb77f06d8f9c13fab3ff099"
+      "input_fingerprint": "d4e7436ed14946465547c3ed8f511aad1cb6055f88d79c1e7211557448105eef"
     },
     "canonical_league_scoring": {
       "canonical_league_id": "nfl-reise",
@@ -34,7 +34,7 @@
     "comparison_anchor_policy": "calendar windows are anchored to the evaluation date; each source uses the last available snapshot at or before the cutoff",
     "previous_free_agent_signals": {
       "status": "available",
-      "input_fingerprint": "ed5477e4ae54682c89c8a2160c9e3d912d29c0e0c9deb7777b444623c8ccddec"
+      "input_fingerprint": "e150e655311cfc7a68151a3e8623b87000bf850af1bf0b62c526fcc42dd0c8aa"
     },
     "ranking_histories": {
       "cbs-sports-redraft-kicker-preseason": {
@@ -493,9 +493,9 @@
       "TE",
       "WR"
     ],
-    "discovery_count": 216,
+    "discovery_count": 215,
     "discovery_position_counts": {
-      "K": 5,
+      "K": 4,
       "QB": 36,
       "RB": 54,
       "TE": 50,
@@ -503,7 +503,7 @@
     },
     "priority_counts": {
       "high": 87,
-      "medium": 129
+      "medium": 128
     },
     "material_family_counts": {
       "dynasty_market": 179,
@@ -902,15 +902,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 27,
+              "to": 53
+            },
+            {
+              "field": "drop_count",
+              "from": 19074,
+              "to": 37404
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 27,
-        "drop_count": 19074,
+        "drop_rank": 53,
+        "drop_count": 37404,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -1365,15 +1376,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 95
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 18335
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 95,
+        "drop_count": 18335,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -1817,15 +1839,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 23,
+              "to": 18
+            },
+            {
+              "field": "add_count",
+              "from": 37304,
+              "to": 91272
+            },
+            {
+              "field": "drop_rank",
+              "from": 80,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 8168,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 23,
-        "add_count": 37304,
-        "drop_rank": 80,
-        "drop_count": 8168,
+        "add_rank": 18,
+        "add_count": 91272,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -1914,7 +1957,8 @@
         "coverage_changes": [],
         "reasons": [
           "material_movement_threshold",
-          "cross_signal_pattern"
+          "cross_signal_pattern",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -2298,13 +2342,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 35,
+              "to": 34
+            },
+            {
+              "field": "add_count",
+              "from": 23028,
+              "to": 51100
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 35,
-        "add_count": 23028,
+        "add_rank": 34,
+        "add_count": 51100,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -5190,15 +5245,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 9,
+              "to": 7
+            },
+            {
+              "field": "add_count",
+              "from": 63936,
+              "to": 185736
+            },
+            {
+              "field": "drop_rank",
+              "from": 29,
+              "to": 58
+            },
+            {
+              "field": "drop_count",
+              "from": 17880,
+              "to": 34936
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 9,
-        "add_count": 63936,
-        "drop_rank": 29,
-        "drop_count": 17880,
+        "add_rank": 7,
+        "add_count": 185736,
+        "drop_rank": 58,
+        "drop_count": 34936,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -7254,15 +7330,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 18,
+              "to": 25
+            },
+            {
+              "field": "add_count",
+              "from": 41556,
+              "to": 76350
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 79
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 22230
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 18,
-        "add_count": 41556,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 25,
+        "add_count": 76350,
+        "drop_rank": 79,
+        "drop_count": 22230,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -8256,15 +8353,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 8,
+              "to": 14
+            },
+            {
+              "field": "add_count",
+              "from": 68304,
+              "to": 132816
+            },
+            {
+              "field": "drop_rank",
+              "from": 30,
+              "to": 17
+            },
+            {
+              "field": "drop_count",
+              "from": 17168,
+              "to": 81792
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 8,
-        "add_count": 68304,
-        "drop_rank": 30,
-        "drop_count": 17168,
+        "add_rank": 14,
+        "add_count": 132816,
+        "drop_rank": 17,
+        "drop_count": 81792,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -8724,13 +8842,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 58,
+              "to": 13
+            },
+            {
+              "field": "add_count",
+              "from": 14520,
+              "to": 133016
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 58,
-        "add_count": 14520,
+        "add_rank": 13,
+        "add_count": 133016,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -8762,7 +8891,8 @@
         ],
         "coverage_changes": [],
         "reasons": [
-          "material_movement_threshold"
+          "material_movement_threshold",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -9145,13 +9275,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 50,
+              "to": 55
+            },
+            {
+              "field": "add_count",
+              "from": 17418,
+              "to": 29784
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 50,
-        "add_count": 17418,
+        "add_rank": 55,
+        "add_count": 29784,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -9601,15 +9742,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 47,
+              "to": 86
+            },
+            {
+              "field": "add_count",
+              "from": 18657,
+              "to": 18513
+            },
+            {
+              "field": "drop_rank",
+              "from": 11,
+              "to": 2
+            },
+            {
+              "field": "drop_count",
+              "from": 28188,
+              "to": 196344
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 47,
-        "add_count": 18657,
-        "drop_rank": 11,
-        "drop_count": 28188,
+        "add_rank": 86,
+        "add_count": 18513,
+        "drop_rank": 2,
+        "drop_count": 196344,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -11588,15 +11750,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 19,
+              "to": 21
+            },
+            {
+              "field": "add_count",
+              "from": 41445,
+              "to": 82548
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 75
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 23877
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 19,
-        "add_count": 41445,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 21,
+        "add_count": 82548,
+        "drop_rank": 75,
+        "drop_count": 23877,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -11636,8 +11819,7 @@
         "coverage_changes": [],
         "reasons": [
           "material_movement_threshold",
-          "cross_signal_pattern",
-          "activity_near_replacement_boundary"
+          "cross_signal_pattern"
         ],
         "final_roster_recommendation": null
       }
@@ -12560,15 +12742,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 31,
+              "to": 19
+            },
+            {
+              "field": "add_count",
+              "from": 25632,
+              "to": 89388
+            },
+            {
+              "field": "drop_rank",
+              "from": 47,
+              "to": 85
+            },
+            {
+              "field": "drop_count",
+              "from": 13680,
+              "to": 20898
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 31,
-        "add_count": 25632,
-        "drop_rank": 47,
-        "drop_count": 13680,
+        "add_rank": 19,
+        "add_count": 89388,
+        "drop_rank": 85,
+        "drop_count": 20898,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -12612,7 +12815,8 @@
         "coverage_changes": [],
         "reasons": [
           "material_movement_threshold",
-          "cross_signal_pattern"
+          "cross_signal_pattern",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -13942,15 +14146,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 48,
+              "to": 93
+            },
+            {
+              "field": "drop_count",
+              "from": 13329,
+              "to": 19044
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 48,
-        "drop_count": 13329,
+        "drop_rank": 93,
+        "drop_count": 19044,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -14461,13 +14676,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 79
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 20825
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 79,
+        "add_count": 20825,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -14970,15 +15196,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 56,
+              "to": 52
+            },
+            {
+              "field": "add_count",
+              "from": 15152,
+              "to": 32448
+            },
+            {
+              "field": "drop_rank",
+              "from": 88,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 7416,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 56,
-        "add_count": 15152,
-        "drop_rank": 88,
-        "drop_count": 7416,
+        "add_rank": 52,
+        "add_count": 32448,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -15979,13 +16226,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 99,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 6956,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
-        "add_rank": 99,
-        "add_count": 6956,
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -16895,15 +17153,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 77,
+              "to": 61
+            },
+            {
+              "field": "add_count",
+              "from": 9772,
+              "to": 26950
+            },
+            {
+              "field": "drop_rank",
+              "from": 5,
+              "to": 9
+            },
+            {
+              "field": "drop_count",
+              "from": 46655,
+              "to": 102942
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 77,
-        "add_count": 9772,
-        "drop_rank": 5,
-        "drop_count": 46655,
+        "add_rank": 61,
+        "add_count": 26950,
+        "drop_rank": 9,
+        "drop_count": 102942,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -17774,15 +18053,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 72
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 26790
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
+        "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
+        "drop_rank": 72,
+        "drop_count": 26790,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -20137,15 +20427,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 99
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 14536
+            },
+            {
+              "field": "drop_rank",
+              "from": 96,
+              "to": 88
+            },
+            {
+              "field": "drop_count",
+              "from": 6808,
+              "to": 20200
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": 96,
-        "drop_count": 6808,
+        "add_rank": 99,
+        "add_count": 14536,
+        "drop_rank": 88,
+        "drop_count": 20200,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -23219,15 +23530,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 96
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 14814
+            },
+            {
+              "field": "drop_rank",
+              "from": 6,
+              "to": 7
+            },
+            {
+              "field": "drop_count",
+              "from": 43722,
+              "to": 109395
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": 6,
-        "drop_count": 43722,
+        "add_rank": 96,
+        "add_count": 14814,
+        "drop_rank": 7,
+        "drop_count": 109395,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -23712,15 +24044,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 62,
+              "to": 99
+            },
+            {
+              "field": "drop_count",
+              "from": 10840,
+              "to": 17856
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 62,
-        "drop_count": 10840,
+        "drop_rank": 99,
+        "drop_count": 17856,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -26149,15 +26492,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 27,
+              "to": 32
+            },
+            {
+              "field": "add_count",
+              "from": 31914,
+              "to": 56187
+            },
+            {
+              "field": "drop_rank",
+              "from": 16,
+              "to": 24
+            },
+            {
+              "field": "drop_count",
+              "from": 23940,
+              "to": 63216
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 27,
-        "add_count": 31914,
-        "drop_rank": 16,
-        "drop_count": 23940,
+        "add_rank": 32,
+        "add_count": 56187,
+        "drop_rank": 24,
+        "drop_count": 63216,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -26286,8 +26650,7 @@
         ],
         "reasons": [
           "material_movement_threshold",
-          "relevant_source_coverage_change",
-          "activity_near_replacement_boundary"
+          "relevant_source_coverage_change"
         ],
         "final_roster_recommendation": null
       }
@@ -26684,15 +27047,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 82,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 7992,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
+        "listed": false,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 82,
-        "drop_count": 7992,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -29130,13 +29504,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 85
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 18780
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 85,
+        "add_count": 18780,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -29569,7 +29954,13 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_count",
+              "from": 7308,
+              "to": 20100
+            }
+          ]
         }
       },
       "activity": {
@@ -29577,7 +29968,7 @@
         "add_rank": null,
         "add_count": null,
         "drop_rank": 89,
-        "drop_count": 7308,
+        "drop_count": 20100,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -30526,15 +30917,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 60,
+              "to": 71
+            },
+            {
+              "field": "drop_count",
+              "from": 11178,
+              "to": 28116
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 60,
-        "drop_count": 11178,
+        "drop_rank": 71,
+        "drop_count": 28116,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -31908,15 +32310,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 24,
+              "to": 27
+            },
+            {
+              "field": "drop_count",
+              "from": 20295,
+              "to": 61731
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 24,
-        "drop_count": 20295,
+        "drop_rank": 27,
+        "drop_count": 61731,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -32939,15 +33352,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 67,
+              "to": 48
+            },
+            {
+              "field": "drop_count",
+              "from": 10107,
+              "to": 41085
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 67,
-        "drop_count": 10107,
+        "drop_rank": 48,
+        "drop_count": 41085,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -34447,13 +34871,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 86,
+              "to": 88
+            },
+            {
+              "field": "add_count",
+              "from": 8060,
+              "to": 16948
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 86,
-        "add_count": 8060,
+        "add_rank": 88,
+        "add_count": 16948,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -34893,13 +35328,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 97,
+              "to": 31
+            },
+            {
+              "field": "add_count",
+              "from": 7292,
+              "to": 57752
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 97,
-        "add_count": 7292,
+        "add_rank": 31,
+        "add_count": 57752,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -35796,13 +36242,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 69,
+              "to": 77
+            },
+            {
+              "field": "add_count",
+              "from": 12039,
+              "to": 22074
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 69,
-        "add_count": 12039,
+        "add_rank": 77,
+        "add_count": 22074,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -36341,15 +36798,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 2,
+              "to": 5
+            },
+            {
+              "field": "add_count",
+              "from": 145448,
+              "to": 264672
+            },
+            {
+              "field": "drop_rank",
+              "from": 51,
+              "to": 80
+            },
+            {
+              "field": "drop_count",
+              "from": 12680,
+              "to": 21848
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 2,
-        "add_count": 145448,
-        "drop_rank": 51,
-        "drop_count": 12680,
+        "add_rank": 5,
+        "add_count": 264672,
+        "drop_rank": 80,
+        "drop_count": 21848,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -37345,15 +37823,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 88,
+              "to": 33
+            },
+            {
+              "field": "add_count",
+              "from": 7960,
+              "to": 53240
+            },
+            {
+              "field": "drop_rank",
+              "from": 56,
+              "to": 63
+            },
+            {
+              "field": "drop_count",
+              "from": 12128,
+              "to": 31992
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 88,
-        "add_count": 7960,
-        "drop_rank": 56,
-        "drop_count": 12128,
+        "add_rank": 33,
+        "add_count": 53240,
+        "drop_rank": 63,
+        "drop_count": 31992,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -38411,13 +38910,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 49,
+              "to": 60
+            },
+            {
+              "field": "add_count",
+              "from": 18404,
+              "to": 27877
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 49,
-        "add_count": 18404,
+        "add_rank": 60,
+        "add_count": 27877,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -39007,15 +39517,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 71,
+              "to": 17
+            },
+            {
+              "field": "add_count",
+              "from": 11250,
+              "to": 105534
+            },
+            {
+              "field": "drop_rank",
+              "from": 95,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6822,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 71,
-        "add_count": 11250,
-        "drop_rank": 95,
-        "drop_count": 6822,
+        "add_rank": 17,
+        "add_count": 105534,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -39185,7 +39716,8 @@
         "reasons": [
           "material_movement_threshold",
           "cross_signal_pattern",
-          "relevant_source_coverage_change"
+          "relevant_source_coverage_change",
+          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -39567,13 +40099,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 55,
+              "to": 45
+            },
+            {
+              "field": "add_count",
+              "from": 15744,
+              "to": 38296
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 55,
-        "add_count": 15744,
+        "add_rank": 45,
+        "add_count": 38296,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -40091,15 +40634,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 66,
+              "to": 61
+            },
+            {
+              "field": "drop_count",
+              "from": 10578,
+              "to": 33918
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 66,
-        "drop_count": 10578,
+        "drop_rank": 61,
+        "drop_count": 33918,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -41654,15 +42208,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 22,
+              "to": 44
+            },
+            {
+              "field": "add_count",
+              "from": 37625,
+              "to": 38458
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 77
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 23163
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 22,
-        "add_count": 37625,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 44,
+        "add_count": 38458,
+        "drop_rank": 77,
+        "drop_count": 23163,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -42143,15 +42718,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 5,
+              "to": 9
+            },
+            {
+              "field": "add_count",
+              "from": 115024,
+              "to": 175196
+            },
+            {
+              "field": "drop_rank",
+              "from": 59,
+              "to": 46
+            },
+            {
+              "field": "drop_count",
+              "from": 11956,
+              "to": 41650
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 5,
-        "add_count": 115024,
-        "drop_rank": 59,
-        "drop_count": 11956,
+        "add_rank": 9,
+        "add_count": 175196,
+        "drop_rank": 46,
+        "drop_count": 41650,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -42648,207 +43244,6 @@
         "coverage_changes": [],
         "reasons": [
           "material_movement_threshold"
-        ],
-        "final_roster_recommendation": null
-      }
-    },
-    {
-      "player_id": "2020",
-      "name": "Cairo Santos",
-      "position": "K",
-      "nfl_team": "CHI",
-      "nfl_team_source": "canonical_sleeper_team",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "replacement_relevance": {
-        "classification": "at_or_above_rostered_boundary",
-        "family_percentiles": {
-          "dynasty_market": null,
-          "redraft_adp": null,
-          "season_projection": 69.36
-        },
-        "distance_to_owned_boundary": {
-          "dynasty_market": null,
-          "redraft_adp": null,
-          "season_projection": 14.36
-        },
-        "near_families": [
-          "season_projection"
-        ]
-      },
-      "movement": {
-        "redraft_adp": {
-          "status": "not_applicable",
-          "windows": {}
-        },
-        "dynasty_market": {
-          "current_consensus_percentile": null,
-          "providers": {}
-        },
-        "season_projection": {
-          "current_consensus_percentile": 69.36,
-          "current_provider_count": 2,
-          "current_percentile_spread": 22.59,
-          "providers": {
-            "fftoday": {
-              "sources": [
-                {
-                  "source_id": "fftoday-redraft-kicker-preseason",
-                  "provider": "fftoday",
-                  "current_snapshot_date": "2026-09-07",
-                  "current_listed": true,
-                  "current_percentile": 58.06,
-                  "current_core_points": null,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-08-27",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    }
-                  }
-                }
-              ]
-            },
-            "cbs_sports": {
-              "sources": [
-                {
-                  "source_id": "cbs-sports-redraft-kicker-preseason",
-                  "provider": "cbs-sports",
-                  "current_snapshot_date": "2026-09-28",
-                  "current_listed": true,
-                  "current_percentile": 80.65,
-                  "current_core_points": null,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-09-26",
-                      "baseline_listed": true,
-                      "delta_percentile": 12.91,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-09-21",
-                      "baseline_listed": true,
-                      "delta_percentile": 9.68,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-09-21",
-                      "baseline_listed": true,
-                      "delta_percentile": 9.68,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-09-14",
-                      "baseline_listed": true,
-                      "delta_percentile": -3.73,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-08-29",
-                      "baseline_listed": true,
-                      "delta_percentile": -2.21,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "windows": {
-            "1": {
-              "baseline_consensus_percentile": 62.9,
-              "delta_consensus_percentile": 6.46,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 9.68
-            },
-            "3": {
-              "baseline_consensus_percentile": 64.52,
-              "delta_consensus_percentile": 4.84,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 12.91
-            },
-            "7": {
-              "baseline_consensus_percentile": 64.52,
-              "delta_consensus_percentile": 4.84,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 12.91
-            },
-            "14": {
-              "baseline_consensus_percentile": 71.22,
-              "delta_consensus_percentile": -1.86,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 26.32
-            },
-            "30": {
-              "baseline_consensus_percentile": 70.46,
-              "delta_consensus_percentile": -1.1,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 24.8
-            }
-          }
-        },
-        "cross_signal_patterns": [],
-        "structural_day_over_day": {
-          "comparison_status": "compared",
-          "team_comparison_status": "compared",
-          "previous_nfl_team_source": "canonical_sleeper_team",
-          "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
-          "activity_changes": []
-        }
-      },
-      "activity": {
-        "listed": true,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": 19,
-        "drop_count": 21735,
-        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
-      },
-      "materiality": {
-        "research_priority": "medium",
-        "material_families": [],
-        "thresholds_crossed": [],
-        "coverage_changes": [],
-        "reasons": [
-          "activity_near_replacement_boundary"
         ],
         "final_roster_recommendation": null
       }
@@ -43676,13 +44071,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 61,
+              "to": 49
+            },
+            {
+              "field": "add_count",
+              "from": 13798,
+              "to": 35832
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 61,
-        "add_count": 13798,
+        "add_rank": 49,
+        "add_count": 35832,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -45460,15 +45866,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 73,
+              "to": 94
+            },
+            {
+              "field": "add_count",
+              "from": 10448,
+              "to": 15142
+            },
+            {
+              "field": "drop_rank",
+              "from": 98,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6638,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 73,
-        "add_count": 10448,
-        "drop_rank": 98,
-        "drop_count": 6638,
+        "add_rank": 94,
+        "add_count": 15142,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -46798,15 +47225,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 10,
+              "to": 54
+            },
+            {
+              "field": "drop_count",
+              "from": 29815,
+              "to": 37175
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 10,
-        "drop_count": 29815,
+        "drop_rank": 54,
+        "drop_count": 37175,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -49425,13 +49863,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 75,
+              "to": 54
+            },
+            {
+              "field": "add_count",
+              "from": 10056,
+              "to": 30144
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 75,
-        "add_count": 10056,
+        "add_rank": 54,
+        "add_count": 30144,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -57434,15 +57883,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 15,
+              "to": null
+            },
+            {
+              "field": "add_count",
+              "from": 45840,
+              "to": null
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 74
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 24950
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 15,
-        "add_count": 45840,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": 74,
+        "drop_count": 24950,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -57896,15 +58366,31 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 14,
+              "to": 40
+            },
+            {
+              "field": "add_count",
+              "from": 48852,
+              "to": 40410
+            },
+            {
+              "field": "drop_count",
+              "from": 76896,
+              "to": 323631
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 14,
-        "add_count": 48852,
+        "add_rank": 40,
+        "add_count": 40410,
         "drop_rank": 1,
-        "drop_count": 76896,
+        "drop_count": 323631,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -58798,15 +59284,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 99,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6624,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
+        "listed": false,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 99,
-        "drop_count": 6624,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -64344,15 +64841,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 77,
+              "to": 94
+            },
+            {
+              "field": "drop_count",
+              "from": 8888,
+              "to": 18952
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 77,
-        "drop_count": 8888,
+        "drop_rank": 94,
+        "drop_count": 18952,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -81430,13 +81938,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": null,
+              "to": 83
+            },
+            {
+              "field": "add_count",
+              "from": null,
+              "to": 20250
+            }
+          ]
         }
       },
       "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
+        "listed": true,
+        "add_rank": 83,
+        "add_count": 20250,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -82701,15 +83220,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 93,
+              "to": null
+            },
+            {
+              "field": "drop_count",
+              "from": 6984,
+              "to": null
+            }
+          ]
         }
       },
       "activity": {
-        "listed": true,
+        "listed": false,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 93,
-        "drop_count": 6984,
+        "drop_rank": null,
+        "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -85930,15 +86460,26 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "drop_rank",
+              "from": 81,
+              "to": 97
+            },
+            {
+              "field": "drop_count",
+              "from": 8073,
+              "to": 18270
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
         "add_rank": null,
         "add_count": null,
-        "drop_rank": 81,
-        "drop_count": 8073,
+        "drop_rank": 97,
+        "drop_count": 18270,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -88731,15 +89272,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 11,
+              "to": 8
+            },
+            {
+              "field": "add_count",
+              "from": 52224,
+              "to": 178752
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 81
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 21660
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 11,
-        "add_count": 52224,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 8,
+        "add_count": 178752,
+        "drop_rank": 81,
+        "drop_count": 21660,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -91835,13 +92397,24 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 62,
+              "to": 63
+            },
+            {
+              "field": "add_count",
+              "from": 13536,
+              "to": 26271
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 62,
-        "add_count": 13536,
+        "add_rank": 63,
+        "add_count": 26271,
         "drop_rank": null,
         "drop_count": null,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
@@ -98062,15 +98635,36 @@
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
           "changes": [],
-          "activity_changes": []
+          "activity_changes": [
+            {
+              "field": "add_rank",
+              "from": 25,
+              "to": 2
+            },
+            {
+              "field": "add_count",
+              "from": 36648,
+              "to": 680600
+            },
+            {
+              "field": "drop_rank",
+              "from": null,
+              "to": 34
+            },
+            {
+              "field": "drop_count",
+              "from": null,
+              "to": 52664
+            }
+          ]
         }
       },
       "activity": {
         "listed": true,
-        "add_rank": 25,
-        "add_count": 36648,
-        "drop_rank": null,
-        "drop_count": null,
+        "add_rank": 2,
+        "add_count": 680600,
+        "drop_rank": 34,
+        "drop_count": 52664,
         "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
       },
       "materiality": {
@@ -99621,6 +100215,6 @@
     "fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db"
   },
   "evidence": {
-    "input_fingerprint": "cfbdafc07742eed5dc0dd5d183681b570eeb4bfa07320f6f2700925cee72bef5"
+    "input_fingerprint": "1e51a8fe5c86e5e85af56604957805320baa09392f8aac1c00f472e5749d4807"
   }
 }
