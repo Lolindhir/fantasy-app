@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-28T19:24:48Z",
-  "input_fingerprint": "2d746ede85cd802a3e3ccdb8d61cebd381610f865314b0b3dc0363600c676f12",
+  "generated_at": "2026-09-28T19:30:56.748038Z",
+  "input_fingerprint": "b68dc8b2f689d2518f62e79ec6049903c1264da48f526bdfdf040cc6a72511bd",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "99f1a8ee421c8041e80ec228720bc5102430cd70f76eaa17e14e718b7020a798"
+      "input_fingerprint": "06b604ac305968aaf7f617ce744b510323ae344b5751aeede25c7f478168eee3"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "f4b7e8b9befbfc18f122cc406b5bc488e7f71b1e27dd077494352e730826fe8d"
+      "input_fingerprint": "99f1a8ee421c8041e80ec228720bc5102430cd70f76eaa17e14e718b7020a798"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,102 @@
     ],
     "current_discovery_count": 215,
     "previous_discovery_count": 215,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "changed": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "19cad01f48cb1cc30d1a846183e456c9e55920a76171f4a77feacc5994b82345",
-    "previous_evidence_fingerprint": "20ed37aad3b6ae444b6b1d2014a896db3ff67392ca1f091dec6d5caf7c180e58",
+    "current_evidence_fingerprint": "728c650f0971456a4f7583dceacfd6d51a3eeedf11a54e1ca86e87cebb7bbc48",
+    "previous_evidence_fingerprint": "19cad01f48cb1cc30d1a846183e456c9e55920a76171f4a77feacc5994b82345",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "4017",
+      "name": "Deshaun Watson",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "1523052c80a67e3be778aba78ba9999d9d446ce1b7e5c244cdfa6df97c1147ad",
+      "previous_state_hash": "8225ef3c74fb21360210f940a2f955184aab5b931ef88db85ff443d093143f22",
+      "changed_dimensions": [
+        "cross_signal"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
