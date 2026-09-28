@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-28T17:05:27Z",
-  "input_fingerprint": "03ee1139d2509660a35a8bea965a22aecfca522134fbc7c1eb647be2b02c7c9f",
+  "generated_at": "2026-09-28T17:15:51Z",
+  "input_fingerprint": "cec6726a5923b02a69490943abe48a36a9506d4ea3e6273b2c7d2e9fbf526f66",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "fa41460d8d7f448d693e167934af705e556358508812a6dad169a2e59ec36dd7"
+      "input_fingerprint": "3b00f18411ff86ef27bae247865dc2f1151afc052f02dfedc92de766c0b95aef"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "a8112be0f0d738a5aed8f77f0ad0cb3fc9b6fc1e6fa0348b1467be23a75b7fab"
+      "input_fingerprint": "fa41460d8d7f448d693e167934af705e556358508812a6dad169a2e59ec36dd7"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,116 @@
     ],
     "current_discovery_count": 215,
     "previous_discovery_count": 215,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "structural_change": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "f6a3c2027f5251f56a483db06695f911f9718a5528d54219d066e9f3cce7c58e",
+    "current_evidence_fingerprint": "31d2e57d9db32c6c9d9dbe54d6d3336f9fa4a11bf00fdef24f2031d4a3483c7b",
     "previous_evidence_fingerprint": "f6a3c2027f5251f56a483db06695f911f9718a5528d54219d066e9f3cce7c58e",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "11565",
+      "name": "J.J. McCarthy",
+      "position": "QB",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "98ef8e9e97959afe293a9a82563a968a0d1605caa4a9e5c8673e5d7eb9034134",
+      "previous_state_hash": "98ef8e9e97959afe293a9a82563a968a0d1605caa4a9e5c8673e5d7eb9034134",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "dynasty_market"
+          ]
+        }
+      ],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "medium",
+          "from": true,
+          "to": false
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Out",
+          "to": null
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20261004",
+          "to": null
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
