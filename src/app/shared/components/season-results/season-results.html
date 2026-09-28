@@ -17,29 +17,6 @@
     <ng-template #legacyAwards>{{ result.awardsDisplay }}</ng-template>
   </ng-template>
 
-  <ng-template #bannerIdentity let-result>
-    <div class="honor-banner__identity">
-      <span class="honor-banner__name">{{ result.team.Owner }}</span>
-
-      <span class="honor-banner__avatar-stack">
-        <span class="honor-banner__owner-avatar">
-          <img
-            *ngIf="result.ownerAvatar; else ownerAvatarFallback"
-            [src]="result.ownerAvatar"
-            alt=""
-          />
-          <ng-template #ownerAvatarFallback>
-            <span>{{ result.team.Owner.charAt(0) || '?' }}</span>
-          </ng-template>
-        </span>
-
-        <span *ngIf="result.teamAvatar" class="honor-banner__team-avatar">
-          <img [src]="result.teamAvatar" alt="" />
-        </span>
-      </span>
-    </div>
-  </ng-template>
-
   <div class="standings-wrapper">
     <div class="podium">
       <div class="podium-item second" *ngIf="resultsVm.runnerUp as runnerUp">
@@ -96,77 +73,38 @@
       <div class="honor-banner-preview__label">Banner Preview</div>
 
       <div class="honor-banners">
-        <article
+        <app-achievement-banner
           *ngIf="resultsVm.runnerUp as runnerUp"
-          class="honor-banner honor-banner--runner-up"
-        >
-          <div class="honor-banner__header">
-            <div class="honor-banner__season">
-              <span class="honor-banner__season-dash">—</span>
-              <strong>{{ bannerSeason }}</strong>
-              <span class="honor-banner__season-dash">—</span>
-            </div>
-            <div class="honor-banner__finish">Runner Up</div>
-          </div>
-          <div class="honor-banner__placement">
-            <img
-              class="honor-banner__placement-icon honor-banner__placement-icon--runner-up"
-              src="assets/awards/ui/award-runner-up.png"
-              alt=""
-            />
-          </div>
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: runnerUp }"
-          ></ng-container>
-        </article>
+          [season]="bannerSeason"
+          achievementLabel="Runner Up"
+          accent="silver"
+          [subjectName]="runnerUp.team.Owner"
+          [subjectAvatar]="runnerUp.ownerAvatar"
+          [secondaryAvatar]="runnerUp.teamAvatar"
+          emblemSrc="assets/awards/ui/award-runner-up.png"
+        ></app-achievement-banner>
 
-        <article
+        <app-achievement-banner
           *ngIf="resultsVm.champion as champion"
-          class="honor-banner honor-banner--champion"
-        >
-          <div class="honor-banner__header">
-            <div class="honor-banner__season">
-              <span class="honor-banner__season-dash">—</span>
-              <strong>{{ bannerSeason }}</strong>
-              <span class="honor-banner__season-dash">—</span>
-            </div>
-            <div class="honor-banner__finish">Champion</div>
-          </div>
-          <div class="honor-banner__placement">
-            <img
-              class="honor-banner__placement-icon honor-banner__placement-icon--champion"
-              src="assets/awards/ui/award-championship-ring.png"
-              alt=""
-            />
-          </div>
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: champion }"
-          ></ng-container>
-        </article>
+          [season]="bannerSeason"
+          achievementLabel="Champion"
+          accent="gold"
+          [subjectName]="champion.team.Owner"
+          [subjectAvatar]="champion.ownerAvatar"
+          [secondaryAvatar]="champion.teamAvatar"
+          emblemSrc="assets/awards/ui/award-championship-ring.png"
+        ></app-achievement-banner>
 
-        <article
+        <app-achievement-banner
           *ngIf="resultsVm.thirdPlace as thirdPlace"
-          class="honor-banner honor-banner--third"
-        >
-          <div class="honor-banner__header">
-            <div class="honor-banner__season">
-              <span class="honor-banner__season-dash">—</span>
-              <strong>{{ bannerSeason }}</strong>
-              <span class="honor-banner__season-dash">—</span>
-            </div>
-            <div class="honor-banner__finish">3rd Place</div>
-          </div>
-          <div class="honor-banner__placement">
-            <img
-              class="honor-banner__placement-icon honor-banner__placement-icon--third"
-              src="assets/awards/ui/award-third-place.png"
-              alt=""
-            />
-          </div>
-          <ng-container
-            *ngTemplateOutlet="bannerIdentity; context: { $implicit: thirdPlace }"
-          ></ng-container>
-        </article>
+          [season]="bannerSeason"
+          achievementLabel="3rd Place"
+          accent="bronze"
+          [subjectName]="thirdPlace.team.Owner"
+          [subjectAvatar]="thirdPlace.ownerAvatar"
+          [secondaryAvatar]="thirdPlace.teamAvatar"
+          emblemSrc="assets/awards/ui/award-third-place.png"
+        ></app-achievement-banner>
       </div>
     </section>
 

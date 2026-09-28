@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 import type { SeasonResultsViewModel } from '../../utils/league-standings-view.util';
+import { AchievementBannerComponent } from '../achievement-banner/achievement-banner';
 
 @Component({
   selector: 'app-season-results',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AchievementBannerComponent],
   templateUrl: './season-results.html',
   styleUrl: './season-results.scss'
 })

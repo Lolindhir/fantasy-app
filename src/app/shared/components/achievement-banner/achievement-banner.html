@@ -1,0 +1,39 @@
+<article
+  class="achievement-banner"
+  [class.achievement-banner--gold]="accent === 'gold'"
+  [class.achievement-banner--bronze]="accent === 'bronze'"
+>
+  <header class="achievement-banner__header">
+    <div *ngIf="season !== null" class="achievement-banner__season">
+      <span class="achievement-banner__season-dash">—</span>
+      <strong>{{ season }}</strong>
+      <span class="achievement-banner__season-dash">—</span>
+    </div>
+    <div class="achievement-banner__title">{{ achievementLabel }}</div>
+  </header>
+
+  <div class="achievement-banner__identity">
+    <div class="achievement-banner__name">{{ subjectName }}</div>
+
+    <span class="achievement-banner__avatar-stack">
+      <span class="achievement-banner__primary-avatar">
+        <img
+          *ngIf="subjectAvatar; else avatarFallback"
+          [src]="subjectAvatar"
+          alt=""
+        />
+        <ng-template #avatarFallback>
+          <span>{{ subjectName.charAt(0) || '?' }}</span>
+        </ng-template>
+      </span>
+
+      <span *ngIf="secondaryAvatar" class="achievement-banner__secondary-avatar">
+        <img [src]="secondaryAvatar" alt="" />
+      </span>
+    </span>
+  </div>
+
+  <div class="achievement-banner__emblem">
+    <img [src]="emblemSrc" alt="" />
+  </div>
+</article>
