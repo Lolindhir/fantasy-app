@@ -1,0 +1,48 @@
+schemaVersion: 1
+
+artifact: public/data/PlayerWeekFantasy.json
+
+role: >
+  Generated App delivery read model for the current published PlayerWeekFantasy
+  snapshot. It adapts the consumer-neutral Shared Derived contract to the current
+  Sleeper-based App player identity without becoming the owner of projection or
+  scoring semantics.
+
+source:
+  sharedDerived: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  canonicalIdentity: source-data/nfl/identities/players.json
+  sleeperValidation: source-data/nfl/platform/sleeper/players.json
+  publisher: tools/player_week_fantasy_app_publish.py
+
+identity:
+  canonical: CanonicalPlayerID
+  app: PlayerID
+  appProvider: Sleeper
+  rules:
+    - CanonicalPlayerID is always retained.
+    - PlayerID is the active canonical Sleeper mapping when one exists.
+    - Missing active Sleeper identity is represented as null; rows are never dropped or name-joined.
+    - Duplicate active Sleeper mappings and cross-source identity disagreement fail publication closed.
+
+contract:
+  schemaVersion: 1
+  rootFields:
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - ScoringProfile
+    - IdentityCoverage
+    - Records
+  recordFields:
+    - PlayerID
+    - CanonicalPlayerID
+    - Projection
+    - Actual
+  projectionSemantics: .ai-context/manual/player-week-fantasy.yaml
+  actualSemantics: .ai-context/manual/player-week-fantasy.yaml
+
+boundaries:
+  - This file is an App delivery adapter, not Shared Derived ownership.
+  - It does not recompute points, ranges, availability or model parameters.
+  - FantasyGameContext and Players/Free Agents may consume this publication in later checkpoints.
+  - Scheduling/freshness orchestration is not owned by this file or publisher.

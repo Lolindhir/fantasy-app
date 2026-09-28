@@ -600,5 +600,12 @@ sharedDerivedData:
         - historical scoring/stat/snap/usage changes used by calibration
         - final scoring/finality evidence changes
         - semantic ScoringSettings / SettingsHash changes
-      publicationState: shared-derived-only-no-app-consumer-yet
+      publicationState: app-publication-bridge-available-no-consumer-join-yet
+      appPublication:
+        output: public/data/PlayerWeekFantasy.json
+        implementation: tools/player_week_fantasy_app_publish.py
+        identityPrimary: source-data/nfl/identities/players.json::Players[].IDs.Sleeper
+        identityCrossCheck: source-data/nfl/platform/sleeper/players.json
+        unresolvedIdentity: retain record with PlayerID=null
+        semantics: adapt-only-no-recompute
       schedulingState: explicit-materializer-only

@@ -150,6 +150,7 @@ shortContext:
   .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
   public/data/*.json: Generierte App-Daten
+  public/data/PlayerWeekFantasy.json: App-Delivery-Adapter des Shared-Derived PlayerWeekFantasy-Snapshots; bewahrt CanonicalPlayerID und ergänzt nullable Sleeper PlayerID ohne Projection-/Scoring-Neuberechnung
   public/data/League.json: Generiertes League-Home-Read-Model für Lifecycle, Teams, Standings, League-Konfiguration und Season-Metadaten; Fantasy-Matchup-Schedule/Score/Result/Finality liegen ausschließlich im dedizierten Matchups-Read-Model
   public/data/Matchups.json: Generator-eigenes season-weites Fantasy-Matchup-Read-Model mit bekannten Paarungen, nullable effective Scores, FantasyMatchupID, open/final/unknown-Finality, finalen Ergebnissen, Week Stage/Kickoff und Summary-Helpern; historische Pendants liegen unter past_seasons/Matchups
   public/data/DecisionWindows.json: Generiertes providerneutrales App-Read-Model für exakte Kickoff-Decision-Windows, Player-Lock-Fakten und objektive TeamLineupEvaluations; Angular nutzt StartsAtUtc nur für aktuelle Countdown-/Rollover-Darstellung und leitet keine Schedule-, Roster- oder Lineup-Domainlogik neu ab
