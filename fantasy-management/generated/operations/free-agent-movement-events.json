@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-29T04:00:43.094533Z",
-  "input_fingerprint": "c97176020156153aabdf9a519dc323e6a938be1628b265bf95d7cf34ff0c877d",
+  "generated_at": "2026-09-29T04:15:43.522987Z",
+  "input_fingerprint": "c0db38b7eae4a0d016226662a1965d19835c143f5a5efde2f360fa372cbe7349",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "4c83fa1ba9bfff099f3f8596eb86d61a48dc704fdc1c7b599463949bd8a22ad3"
+      "input_fingerprint": "8e7f1520e103382289af545bd5bab8b1ebb26b13572f33fcae25fb7621d55f80"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "86360868323746e6df2c08c995e4fc799cd7641adf15cde6faa7f838e1552441"
+      "input_fingerprint": "4c83fa1ba9bfff099f3f8596eb86d61a48dc704fdc1c7b599463949bd8a22ad3"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,1639 @@
     ],
     "current_discovery_count": 219,
     "previous_discovery_count": 219,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 33,
+    "event_type_counts": {
+      "changed": 27,
+      "new": 3,
+      "resolved": 3
+    },
+    "event_priority_counts": {
+      "high": 18,
+      "low": 3,
+      "medium": 12
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "ec96d528bb67b31d392ed3341f9c4c259d844b173348407ff1a4227f1b690d4b",
-    "previous_evidence_fingerprint": "cf9e15a9f82e0dd04f94433e86494ae198426c45a02069c4e533bb2021b6922c",
+    "current_evidence_fingerprint": "7ae6497c3f9662232373424975db90ad99202c1473949c42e047906e709fd686",
+    "previous_evidence_fingerprint": "ec96d528bb67b31d392ed3341f9c4c259d844b173348407ff1a4227f1b690d4b",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 33,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "11565",
+      "name": "J.J. McCarthy",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "ed010f3f59569eb72bcd1c4082b24212efa0da09b2def59a01c3f019fa36e49e",
+      "previous_state_hash": "fe8990e91c3ace10d2a6012e61f48970326c9cde416e91674c2418f4d49383b8",
+      "changed_dimensions": [
+        "coverage",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12524",
+      "name": "Shedeur Sanders",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "387ab228d26772ddc34046fa7cbc13c80803b0f9226aa9bed016f0f188bd69be",
+      "previous_state_hash": "71793c7fd8c978a92a5690593a6f668ef66e8f73894375bfbd39a24b9a80cfe1",
+      "changed_dimensions": [
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "redraft_adp",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11576",
+      "name": "Braelon Allen",
+      "position": "RB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "bb2736b92337f8fa6ea8595c7554fd2e03d90f68a275828c1e021401e8b89732",
+      "previous_state_hash": "9005267e4e639a86dd2f93d53afc7517254f85bf905808f93e83962a334f5550",
+      "changed_dimensions": [
+        "cross_signal"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9757",
+      "name": "Kendre Miller",
+      "position": "RB",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "8c6aa6ae829a029450d56043351dc6a0d534b3b0698c0d8c80b67c7bed0ff636",
+      "previous_state_hash": "18771dfa7a8e80f01c3f9d68ac234b229495be9258d620ae31995535649f9e19",
+      "changed_dimensions": [
+        "cross_signal"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13282",
+      "name": "Jack Endries",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "04e40f799c5571070f32acafe1d4bb5bf74ed61a6a4dc64d90399dc8d1370c03",
+      "previous_state_hash": "d51a7170d8301c6bf1dc9028e4c4a4a6fb06fb8b1532ce45e8fe91e891c909a4",
+      "changed_dimensions": [
+        "material_families",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "5973",
+      "name": "Josh Oliver",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "3faa9d6a6e95431c550d520d9fd7f7fe590aaae27d38636e187ffdf6b09cba07",
+      "previous_state_hash": "a76402131ecae853c006fbd0ce3dce1715a9ba2e7e637b2653ff1ecfb41da198",
+      "changed_dimensions": [
+        "cross_signal",
+        "material_families",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13307",
+      "name": "Marlin Klein",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "5d20e2beb8dcf443f71045e02fdd4b175f7d35092bc3e179f89ab3bc90216b44",
+      "previous_state_hash": "d9c967434b04b225ce7027eed23a155b4ef956faa86d012273acabff64f13a45",
+      "changed_dimensions": [
+        "cross_signal",
+        "material_families",
+        "replacement_classification",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13324",
+      "name": "Matthew Hibner",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "2c5c928128f68d98f7035414417b2de768c7f0d42caffd5e567549f33c575d8a",
+      "previous_state_hash": "2875da35df82ceb5315953fbdf699d7a98c49811a3703d6d93d48117c6304f06",
+      "changed_dimensions": [
+        "replacement_classification",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11433",
+      "name": "Nate Adkins",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "ed432e39db7af5cdc1045e335fd21479a08f9382cf89a0a5813ad49d3481d2ac",
+      "previous_state_hash": "9104fac12edeba33b639d7ab7250db27d20732d05caf0f8cc734b44bc4f215e7",
+      "changed_dimensions": [
+        "replacement_classification",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13322",
+      "name": "Sam Roush",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "a9d51fac66a5a3c74373ec075ce13dbc838e7121082efdeb79dacab066aaf237",
+      "previous_state_hash": "824112ce10bf85d0017603c2fe0dce30c23f5f085a2dc48654a06b0162cc0c24",
+      "changed_dimensions": [
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "dynasty_market"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "1339",
+      "name": "Zach Ertz",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "4a177f77241f4fcc2ed4f22f4c1a9f2e5119c2f7091bae831730fa0983d332a8",
+      "previous_state_hash": "808f3aee9ed435766b5adcc269d27a8c061840bf446dbab10a81fd82cc0082c9",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13420",
+      "name": "Bryce Lance",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "881a837d44a0b7b343d14839460f5b8aed18f760632f6d2fc86d8f132e9b5b5c",
+      "previous_state_hash": "a4cb989eb2ca23a4cdd946b7cbf9e5c864bc3f1985e7c0e763f906d8a57f0993",
+      "changed_dimensions": [
+        "material_families",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "dynasty_market"
+          ],
+          "down_families": [
+            "season_projection"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7090",
+      "name": "Darnell Mooney",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "d1b6911c4bab0c6910def371bc63a4060f787d040858e1102b914c227bde1a7b",
+      "previous_state_hash": "5832d6fa90338c10fe903dd53b1240930add6499dbc7be599c25e72a9080f25b",
+      "changed_dimensions": [
+        "material_families",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "season_projection"
+          ],
+          "down_families": [
+            "dynasty_market"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3286",
+      "name": "Demarcus Robinson",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "3497f491eb02be10e4c3d56e14a9f45fc662a85f464b2da6627732e684567914",
+      "previous_state_hash": "18329530c00118347caca4fea6d5c8f3e32320888a6c9c9ed5ae4ab1733278cf",
+      "changed_dimensions": [
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "dynasty_market"
+          ],
+          "down_families": [
+            "season_projection"
+          ]
+        },
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9501",
+      "name": "DeMario Douglas",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "1f7f3f3b13d9ecf94dd2bcf098d628f15a2f91920353ad0e33943dec2b7bac83",
+      "previous_state_hash": "37096817dd807c84113dfe85311d493bc02f35db6eec94fa29ff2c60bfb5849b",
+      "changed_dimensions": [
+        "material_families",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7587",
+      "name": "Dyami Brown",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "d9c967434b04b225ce7027eed23a155b4ef956faa86d012273acabff64f13a45",
+      "previous_state_hash": "084dd02a0693f26bda04ad4bae0f1100de89f7475251f81fa1247ba3ced23dd2",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3634",
+      "name": "Kalif Raymond",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "598d9ae939f5c021b23df9cba654574d6b0d86271ba228279d2e24aa61205058",
+      "previous_state_hash": "72eb0750adbb687f80cf7c5e6a94201fd62baa8ccb5483dde70330fa02ed75aa",
+      "changed_dimensions": [
+        "material_families",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "8579412a29afac1fc9622ca2145662cb15529f11ff519f49c6eddeecae5261d8",
+      "previous_state_hash": "401657b347e527416701a74ac10d177e569d0f0c054f9bf93185b0b8cd2b1620",
+      "changed_dimensions": [
+        "material_families",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12494",
+      "name": "Kyle McCord",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "9bcfcdec455a88fd923467f3d42ee317c3d77eae0837ca1f5761499b72be3a24",
+      "previous_state_hash": "d0f3cff5cbaa026c8f57262b99b47f0abeb63e616d3ca306e50ecc0f37692018",
+      "changed_dimensions": [
+        "cross_signal",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "2307",
+      "name": "Marcus Mariota",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "41bf217e958130217427a33c9a52d5186ae1ea3e85b42a17e9709a4be66ef18e",
+      "previous_state_hash": "bc80f190a9a94f358e04d230ca3c0e9018297a32257d78fa10551faf71735e28",
+      "changed_dimensions": [
+        "cross_signal"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "high",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "dynasty_market"
+          ],
+          "down_families": [
+            "season_projection"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "10857",
+      "name": "Stetson Bennett",
+      "position": "QB",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "a1e94f495a097d10bb590042cd597d94207516a3be7504a733e3bdf53b1edeb0",
+      "previous_state_hash": "c171509b8454d4414b3c2e9851edf1c519a8aa19b0d80f722a10807ccc7d57cc",
+      "changed_dimensions": [
+        "thresholds"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "4663",
+      "name": "Austin Ekeler",
+      "position": "RB",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "a66afe81c1c17d0e6d7284f07849327907fe03079bea03b72a30a71d02b86bb9",
+      "previous_state_hash": "9e6cd4f75ba0005d4ebe9c9ffccd15376d09509a69f08dada85eb853677fe2e7",
+      "changed_dimensions": [
+        "coverage"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3048",
+      "name": "Chris Manhertz",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "bb3b33dddcd327773ec90769d7ef0d754e24dc16f843cf76aee084b124a49704",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11592",
+      "name": "Erick All",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "e0de5939ab5cb0cc2348e985eaa2cb5b7b9f9ac03c144d703ba971108f796213",
+      "previous_state_hash": "80faee25abd8066926063409cc0ad29e294ff4df05a8d533074e126511df065f",
+      "changed_dimensions": [
+        "replacement_classification"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9481",
+      "name": "Luke Musgrave",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "medium",
+      "current_state_hash": "d51a7170d8301c6bf1dc9028e4c4a4a6fb06fb8b1532ce45e8fe91e891c909a4",
+      "previous_state_hash": "fa968281a9999eadb5b91a14d3987751411729655fe4f744b98b203a58c83ea7",
+      "changed_dimensions": [
+        "cross_signal"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11597",
+      "name": "Theo Johnson",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "7509f3d2922fea8c0892de4fccdafef4397113065c498cac4bdf5ff453592016",
+      "previous_state_hash": "c2fdc7fa6685a71bc8f4231bbecf6e04a0d02bb5e042cf1eeacbfbb5c50075df",
+      "changed_dimensions": [
+        "material_families",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "3271",
+      "name": "Tyler Higbee",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "f2cdd315711bd2c541b378cf4819398f5f63e0f7a6c538721ba25671bbe38b76",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13394",
+      "name": "Josh Cameron",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "43f4db91a813198a6c5c2e5a2fe699517ff6a366c72e8025347630b18fda07e9",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery"
+      ],
+      "current_material_families": [
+        "season_projection"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7670",
+      "name": "Josh Palmer",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "3d0c5f1ad18d25f261b9cce6f0acdaaebe6a279bebe8f5c67c51f5a9be6d6ec7",
+      "previous_state_hash": "83bce9046821b786b3f3e8116ce9b8db33281bfee4052a8452f648c51ba82b24",
+      "changed_dimensions": [
+        "cross_signal",
+        "material_families",
+        "replacement_classification",
+        "research_priority",
+        "thresholds"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "4454",
+      "name": "Kendrick Bourne",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "11c797819e3d7f1e15ee7f0c8025c1f7671fff19de78769228e0982c50241337",
+      "previous_state_hash": "b2cb6a4bdb10e12dd1d95c5d8d6923b7004ea12cec2d796bf27c795ed8a06f17",
+      "changed_dimensions": [
+        "coverage",
+        "cross_signal",
+        "replacement_classification",
+        "research_priority"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "divergence",
+          "families": [],
+          "up_families": [
+            "dynasty_market"
+          ],
+          "down_families": [
+            "season_projection"
+          ]
+        }
+      ],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "4195",
+      "name": "Jake Elliott",
+      "position": "K",
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "f05afff1d31ba1885e0472ec5199837c0945f9998b01eb71492e46922e2dbbc7",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "5127",
+      "name": "Kyle Allen",
+      "position": "QB",
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9104fac12edeba33b639d7ab7250db27d20732d05caf0f8cc734b44bc4f215e7",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8207",
+      "name": "Tyler Goodson",
+      "position": "RB",
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "0d441fe7f67b50fde032ea7e52712cb677bd4e9175b3700d83ffa62630132d2c",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [],
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
