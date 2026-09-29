@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-29T23:11:53Z",
-  "input_fingerprint": "09192884a1909fa935cadc55ff253c58e69d00098b3833e2fd1dfbe63d689cbc",
+  "generated_at": "2026-09-29T23:36:22Z",
+  "input_fingerprint": "bb8dce00860481cd0341eb2f5fdc0b001e7069406770159c1177ac0588828302",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "e48f1cc024b4bb25718ee39a3ea40fa5a3df6c685cef1d378512bc2ec873b9af"
+      "input_fingerprint": "995ae5ff425ce2f559b8eea874f42133bc35c1c2e747e13aad11d0299d32fce7"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "542f2fba4f97fadba36d5956475c3649a8cd12c5014f99a267ce596398a95390"
+      "input_fingerprint": "e48f1cc024b4bb25718ee39a3ea40fa5a3df6c685cef1d378512bc2ec873b9af"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -25,24 +25,107 @@
     ],
     "current_discovery_count": 218,
     "previous_discovery_count": 218,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "structural_change": 1
+    },
+    "event_priority_counts": {
+      "high": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "18ba39b885306be727a73a71aeeae1a8d26deca5a6308955bf05e3b708813871",
-    "previous_evidence_fingerprint": "2e4387ea108b0a3018ee97a42eb0c28c06ec0db6429855a72f8ad8ed7f7a5d14",
+    "current_evidence_fingerprint": "5c8ce296e3df321c884ac1c43f17089a9363bd47906e2075e9a94a30c5aa873a",
+    "previous_evidence_fingerprint": "18ba39b885306be727a73a71aeeae1a8d26deca5a6308955bf05e3b708813871",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "5973",
+      "name": "Josh Oliver",
+      "position": "TE",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "3faa9d6a6e95431c550d520d9fd7f7fe590aaae27d38636e187ffdf6b09cba07",
+      "previous_state_hash": "3faa9d6a6e95431c550d520d9fd7f7fe590aaae27d38636e187ffdf6b09cba07",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "high",
+          "direction": "down"
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_down",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Out",
+          "to": "Injured Reserve"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
