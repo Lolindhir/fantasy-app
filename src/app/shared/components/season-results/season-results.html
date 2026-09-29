@@ -78,9 +78,9 @@
           [season]="bannerSeason"
           achievementLabel="Runner Up"
           accent="silver"
-          [subjectName]="runnerUp.team.Owner"
-          [subjectAvatar]="runnerUp.ownerAvatar"
-          [secondaryAvatar]="runnerUp.teamAvatar"
+          [subjectName]="runnerUp.teamName || runnerUp.team.Owner"
+          [subjectAvatar]="runnerUp.teamAvatar"
+          [secondaryAvatar]="runnerUp.ownerAvatar"
           emblemSrc="assets/awards/ui/award-runner-up.png"
         ></app-achievement-banner>
 
@@ -89,9 +89,9 @@
           [season]="bannerSeason"
           achievementLabel="Champion"
           accent="gold"
-          [subjectName]="champion.team.Owner"
-          [subjectAvatar]="champion.ownerAvatar"
-          [secondaryAvatar]="champion.teamAvatar"
+          [subjectName]="champion.teamName || champion.team.Owner"
+          [subjectAvatar]="champion.teamAvatar"
+          [secondaryAvatar]="champion.ownerAvatar"
           emblemSrc="assets/awards/ui/award-championship-ring.png"
         ></app-achievement-banner>
 
@@ -100,9 +100,9 @@
           [season]="bannerSeason"
           achievementLabel="3rd Place"
           accent="bronze"
-          [subjectName]="thirdPlace.team.Owner"
-          [subjectAvatar]="thirdPlace.ownerAvatar"
-          [secondaryAvatar]="thirdPlace.teamAvatar"
+          [subjectName]="thirdPlace.teamName || thirdPlace.team.Owner"
+          [subjectAvatar]="thirdPlace.teamAvatar"
+          [secondaryAvatar]="thirdPlace.ownerAvatar"
           emblemSrc="assets/awards/ui/award-third-place.png"
         ></app-achievement-banner>
       </div>
