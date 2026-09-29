@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-29T21:01:29Z",
-  "input_fingerprint": "f7462c81b0c4d38802d3329b5eaf8af673a974f2c54b195b29c603e00607332c",
+  "generated_at": "2026-09-29T21:21:48Z",
+  "input_fingerprint": "80ef63f44f725c7b8df8a7c9bcd42f50017fcf744380fbdff2a435cb2bf61e47",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "05c791f55196c45769802be6774c5fb44259764030b374ed95700d80aaea48a3"
+      "input_fingerprint": "610d3ecbb2a5e5d056fedeeb67a2f15d0375c707e5454de16ce2659cd1117a77"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "eecc4c73a4801e1dac7f504efd8da103b2824d58f152eda7dd1acf467b25894c"
+      "input_fingerprint": "05c791f55196c45769802be6774c5fb44259764030b374ed95700d80aaea48a3"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,133 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 218,
+    "current_discovery_count": 219,
     "previous_discovery_count": 218,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 2,
+    "event_type_counts": {
+      "new": 1,
+      "structural_change": 1
+    },
+    "event_priority_counts": {
+      "high": 1,
+      "medium": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "43a91985dbb0ab15c350efd3b4fc6d896594467631d9ff44d1c81a79abdbcb4e",
-    "previous_evidence_fingerprint": "2ae0d47aa00cf02e0659fa98a694623c20c5fab73c64fd25e00b2ff76820ab1a",
+    "current_evidence_fingerprint": "a6cc420afed413a3d48352f7daa0905ba4f0f0266c7de7504fcde4634b765468",
+    "previous_evidence_fingerprint": "43a91985dbb0ab15c350efd3b4fc6d896594467631d9ff44d1c81a79abdbcb4e",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 2,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "12483",
+      "name": "Jack Bech",
+      "position": "WR",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "d762b517c50c861a6a7b70866755963796eeae0e8474fa2c0658e6bb061ecc00",
+      "previous_state_hash": "d762b517c50c861a6a7b70866755963796eeae0e8474fa2c0658e6bb061ecc00",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Out",
+          "to": "Injured Reserve"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "9489",
+      "name": "Justin Shorter",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Injured Reserve",
+          "to": "Questionable"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20270215",
+          "to": "20261011"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
