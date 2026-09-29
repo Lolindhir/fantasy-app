@@ -208,10 +208,20 @@ consumerBoundary:
     - public/data/PlayerWeekFantasy.json is the App delivery adapter for the shared PlayerWeekFantasy snapshot.
     - App PlayerID is the active canonical Sleeper mapping when available; CanonicalPlayerID is always retained.
     - Missing active Sleeper identity is represented as PlayerID=null and never name-joined or silently dropped.
-    - FantasyGameContext may join the published value for rostered player rows.
-    - Players/Free Agents may join the same published value for unrostered players.
+    - Angular DataService joins the published value into current FantasyGameContext player rows by App/Sleeper PlayerID only when Season and Week match.
+    - The FantasyGameContext join is compatibility-safe: missing publication, duplicate non-null App PlayerID, or Season/Week mismatch leaves the raw context unchanged.
+    - Players/Free Agents may join the same published value for unrostered players in a later checkpoint.
   teamProjection:
     pointRule: sum available starter Projection.Points
+    appAggregation:
+      owner: src/app/core/services/data.service.ts
+      sourceLineup: current FantasyGameContext starters plus starter NonGameAssociations
+      coverageState:
+        available: every current starter has Projection.Status=available and finite Points
+        partial: at least one but not every current starter has an available finite projection
+        unavailable: no current starter has an available finite projection
+      projectedStarterPoints: sum of all available current-starter Projection.Points
+      predictedEndScore: numeric only when coverageState=available; otherwise null so a partial sum is never presented as a complete team expectation
     rangeRule: separate later distribution/simulation aggregation
   liveProjectedFinal:
     rule: >
@@ -242,8 +252,9 @@ currentCheckpoint:
     - V4-C production promotion
     - V4-C-PI1 interval production promotion
     - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
+    - Angular FantasyGameContext consumer join by published App/Sleeper PlayerID
+    - current-starter team PredictedEndScore aggregation with explicit complete/partial/unavailable coverage
   deferred:
-    - FantasyGameContext migration
     - Players/Free Agents migration
     - team range simulation
     - live remaining-points model
@@ -283,4 +294,4 @@ productionMaterialization:
       WeekFinal. Otherwise it remains unavailable; live remaining-points semantics
       are deliberately deferred.
   scheduling: explicit-tool-only
-  publication: shared-derived-plus-app-publication-bridge-no-consumer-join-yet
+  publication: shared-derived-plus-app-publication-bridge-consumed-by-fantasy-game-context

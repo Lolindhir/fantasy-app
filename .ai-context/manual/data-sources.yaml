@@ -600,7 +600,7 @@ sharedDerivedData:
         - historical scoring/stat/snap/usage changes used by calibration
         - final scoring/finality evidence changes
         - semantic ScoringSettings / SettingsHash changes
-      publicationState: app-publication-bridge-available-no-consumer-join-yet
+      publicationState: app-publication-bridge-consumed-by-fantasy-game-context
       appPublication:
         output: public/data/PlayerWeekFantasy.json
         implementation: tools/player_week_fantasy_app_publish.py
@@ -608,4 +608,6 @@ sharedDerivedData:
         identityCrossCheck: source-data/nfl/platform/sleeper/players.json
         unresolvedIdentity: retain record with PlayerID=null
         semantics: adapt-only-no-recompute
+        currentConsumer: src/app/core/services/data.service.ts::getFantasyGameContext
+        consumerJoin: Season+Week match and unique non-null App/Sleeper PlayerID; otherwise raw FantasyGameContext is preserved
       schedulingState: explicit-materializer-only

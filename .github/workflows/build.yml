@@ -67,6 +67,9 @@ jobs:
       - name: Run fantasy-team ordering regression tests
         run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=fantasy-team-order --include=src/app/shared/utils/fantasy-team-order.util.spec.ts
 
+      - name: Run PlayerWeekFantasy consumer regression tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=player-week-fantasy --include=src/app/core/services/data.service.spec.ts
+
       - name: Run Overview weekly-dashboard regression tests
         run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=overview-weekly-dashboard --include=src/app/testing/overview-weekly-dashboard.karma.spec.ts
 
