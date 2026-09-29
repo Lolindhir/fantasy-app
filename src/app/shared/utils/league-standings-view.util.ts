@@ -14,6 +14,7 @@ export interface SeasonResultAwardVisual {
 
 export interface SeasonResultTeam {
   team: Pick<FantasyTeam, 'Owner'>;
+  teamName: string | null;
   place: number;
   awardsDisplay: string;
   awardVisuals?: SeasonResultAwardVisual[];
@@ -155,6 +156,7 @@ export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel
   const allResults = teams
     .map(team => ({
       team,
+      teamName: team.Team,
       place: team.Placements.Previous.Playoffs?.Place ?? 999,
       awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards)
     }))
