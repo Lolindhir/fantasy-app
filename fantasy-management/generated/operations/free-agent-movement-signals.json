@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-09-29T18:36:30.908796Z",
-  "input_fingerprint": "a467578a7627f37926cf89ed7368dc2e4300c64f21025c5c046db471583531ff",
+  "generated_at": "2026-09-29T19:10:50Z",
+  "input_fingerprint": "3d78d142408038c76453f8b1bc95e3d42c1213f507869855b64e50df8fca6fdd",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "497f04e7c38b72f4e44c5c6a372b1e9a98d5cbca68fbd1a3f75024b2b1eed882"
+      "input_fingerprint": "30de513c80cff28c0747bc27399f96f0e4fcce34b4b0448122dd1751e941cf43"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "05cd5fb12ff5fdb4a5284e73c8f37a30c1affeccdb1fb9641554879d0c94c712"
+      "input_fingerprint": "d8ba848f63c4f8abafe1347a74f7ce8127d56738baf0b66df53ba4d12691ac97"
     },
     "canonical_league_scoring": {
       "canonical_league_id": "nfl-reise",
@@ -507,6 +507,7 @@
     },
     "material_family_counts": {
       "dynasty_market": 182,
+      "injury_availability": 1,
       "season_projection": 80
     },
     "selection_rule": "all current fantasy free agents QB/RB/WR/TE/K are evaluated; only research-relevant movement discoveries are emitted"
@@ -24836,7 +24837,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "return_timeline_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "20270116",
+              "to": "20270117"
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -24852,6 +24862,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -24944,6 +24955,14 @@
             "delta": -16.86,
             "threshold": 10,
             "provider_count": 1
+          },
+          {
+            "family": "injury_availability",
+            "kind": "return_timeline_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "20270116",
+            "to": "20270117"
           }
         ],
         "coverage_changes": [
@@ -100254,6 +100273,6 @@
     "fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db"
   },
   "evidence": {
-    "input_fingerprint": "ff041cea53bd074844daf582371255f160472b76cc52f29ba123ea6ace7a70c9"
+    "input_fingerprint": "fe69f2f0c2c34e9e575076616300e246ef0c48c207ac2648635fbcf49b4577f8"
   }
 }
