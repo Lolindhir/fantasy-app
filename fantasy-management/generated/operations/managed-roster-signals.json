@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-09-30T00:37:22Z",
-  "input_fingerprint": "877d59d481a7797df1d9dba555ca5768820a6881d1f170677efb2ab819b0e990",
+  "generated_at": "2026-09-30T02:16:12Z",
+  "input_fingerprint": "70bd96b01f78772cf231f6def796a81a57418380d0b58d49d29cfd1da358fa46",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "e4ec9218789c67f6e023f05c524def611b5eb50c88c77893ad4deee0f0be05f4",
-      "source_timestamp": "2026-09-30T00:06:41Z"
+      "content_sha256": "4375356e4f222ca99d1fb3a334b48593105f31c6d59fa0d8f3840f6db05bd207",
+      "source_timestamp": "2026-09-30T02:16:12Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "b80917a5901084e6f1680c2a398fba5933d17317d5f23a71e0cedce9ed729c23",
-      "source_timestamp": "2026-09-30T00:37:22Z"
+      "content_sha256": "205e8af951923cf14048a5cf5b56dafca7b2302e5db765ed62fb2fc0c2443c04",
+      "source_timestamp": "2026-09-30T02:16:12Z"
     },
     {
       "id": "operations_source_catalog",
@@ -1164,13 +1164,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
         "description": null,
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261004",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -1386,9 +1386,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -3903,7 +3904,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Questionable",
-        "description": "Sep 29: Daniels will avoid a procedure on his dislocated left elbow for the time being, but Adam Schefter of ESPN reports that the quarterback could undergo surgery after the season.",
+        "description": "Sep 29: Daniels (elbow) is traveling with the Commanders to London ahead of Sunday's game against the Colts, Adam Schefter of ESPN reports.",
         "reported_date": null,
         "return_date": "20261004",
         "external_verification_priority": "high",
@@ -9395,7 +9396,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 13,
+      "players_with_current_injury_signal": 14,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {

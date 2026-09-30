@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-09-30T00:37:22Z",
-  "input_fingerprint": "c6bdf7c61e1210607e4d4df45cb7042265b5350b0e39185b1ad61807cc078c86",
+  "generated_at": "2026-09-30T02:16:12Z",
+  "input_fingerprint": "ea0fe345534c6a6d6454a71c311752e15ffb2dc4e6198d6254f665062ede9690",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "16502974db7975ce35dbb7b9485ff03d703e906d4962b662ffb94735a75c33ce"
+      "input_fingerprint": "f52ed0be9a74c1f6ead97a2efacc1599073f532a934abd3f4994d11c93a6b2ff"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "9f4901eda83e6c626ba5d8951f66f3f869e63251abac7c10b1d04c4cbabc3bf1"
+      "input_fingerprint": "16502974db7975ce35dbb7b9485ff03d703e906d4962b662ffb94735a75c33ce"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,78 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 227,
+    "current_discovery_count": 228,
     "previous_discovery_count": 227,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "new": 1
+    },
+    "event_priority_counts": {
+      "medium": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "ecb9f1b66b64795ed3db8c5012fa02f24d4c89e062c7ccf0385c178499aafd97",
-    "previous_evidence_fingerprint": "97c085a8e3db20197d74280cd498c89983333991143e73a171aa9f2a391128d2",
+    "current_evidence_fingerprint": "6bdc15ec2d7c4f7642de9d56eccbcd5162e0d003cf923c374f4be91d2f80eb28",
+    "previous_evidence_fingerprint": "ecb9f1b66b64795ed3db8c5012fa02f24d4c89e062c7ccf0385c178499aafd97",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "9489",
+      "name": "Justin Shorter",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "medium",
+          "from": true,
+          "to": false
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": null
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20261011",
+          "to": null
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
