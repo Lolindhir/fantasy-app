@@ -69,7 +69,9 @@ Die Aufstellung enthielt viele ex ante klar vertretbare Starts. Der entscheidend
 - Skattebo: 13,00
 - direkter Outcome-Gap: **9,30 Punkte**
 
-Unser ursprüngliches Week-3-Board hatte Skattebo vor McMillan. Am Spieltag wurde diese Reihenfolge bewusst überschrieben: Marcels starker Saisonstart und sein bereits erzielter Donnerstagsscore wurden als Grund interpretiert, mehr Ceiling zu suchen.
+Unser ursprüngliches Week-3-Board hatte Skattebo vor McMillan. Am Spieltag wurde diese Reihenfolge bewusst überschrieben, weil Marcel aus **242,80 und 202,50 Punkten** in den ersten beiden Wochen kam und deshalb eine erneut sehr hohe gegnerische Scoring-Erwartung plausibel war. Die Entscheidung war damit bewusst gegnerspezifisch: Gegen ein bis dahin regelmäßig über 200 Punkte scorendes Team wurde McMillans höheres Receiving-/Big-Play-Ceiling gegenüber Skattebos stabilerem Volumenprofil stärker gewichtet.
+
+Christian Watsons bereits erzielte 22,60 Donnerstagspunkte waren dabei **kein eigenständiger Auslöser und kein als außergewöhnlicher Outlier behandeltes Signal**. Sie lagen noch im Rahmen dessen, was gegen Marcel ohnehin einkalkuliert wurde, und veränderten die Grundthese nicht wesentlich.
 
 Die McMillan-These war ex ante nicht unbegründet. Er kam mit hohem Target-/First-Read-Anteil, Deep Targets und Red-Zone-Usage in die Woche. Cleveland veränderte im Spiel seine bisherige Coverage jedoch sichtbar gegen McMillan und begrenzte ihn auf 2 Receptions für 17 Yards.
 
@@ -77,9 +79,9 @@ Skattebos Gegenargument war der stabilere Volumenpfad. Schon vor Week 3 hatte er
 
 Mit Skattebo statt McMillan hätte Mighty Giants **182,94 : 178,96 gewonnen**.
 
-**Bewertung:** echter, aber begrenzter **Decision Regret**. Der Fehler war weniger eine falsche McMillan-Evaluation als eine zu aggressive Matchup-State-Kalibrierung. Der gegnerische Donnerstagsscore und die hohen Scores aus Marcels ersten beiden Wochen rechtfertigten nicht ausreichend, ein zuvor stabileres Boundary-Board zu überschreiben.
+**Bewertung:** leichter **Decision Regret / vertretbarer aggressiver Call**. Der McMillan-Start war ex ante nachvollziehbar, weil Marcels bisheriges Scoring-Profil eine höhere als normale Team-Scoring-Anforderung plausibel machte und McMillan das höhere Ceiling-Profil bot. Im Rückblick war Skattebos stabilerer Median die bessere Wahl, aber der Call war kein klarer Prozessfehler und insbesondere keine Überreaktion auf Watsons Donnerstagsspiel.
 
-**Same-Information-Re-Decision:** Skattebo vor McMillan beibehalten; Ceiling nur dann priorisieren, wenn der um bereits absolvierte Starter und verbleibende Erwartung bereinigte Matchup-State einen echten materiellen Aufholbedarf zeigt.
+**Same-Information-Re-Decision:** leichter Lean zu Skattebo wegen des stabileren Median-/Volumenprofils, aber McMillan bleibt eine vertretbare Alternative, wenn die vorab erwartete Gegnerstärke bewusst ein höheres Risikobudget rechtfertigt. Die Gegner-Erwartung ist dabei von einem tatsächlich entstandenen Live-Matchup-Rückstand zu trennen.
 
 ### Harold Fannin Jr. auf der Bank
 
@@ -175,7 +177,7 @@ Der Abstand von **52,50 Punkten** zum Hindsight-Maximum ist ausdrücklich kein M
 
 | Entscheidung | Gap | Kategorie | Begründung |
 | --- | ---: | --- | --- |
-| McMillan statt Skattebo | 9,30 | **Decision Regret** | Das ursprüngliche Board wurde wegen zu aggressiver Matchup-State-/Ceiling-Kalibrierung überschrieben. |
+| McMillan statt Skattebo | 9,30 | **leichter Decision Regret / vertretbarer aggressiver Call** | Marcels 242,80/202,50-Punkte-Start rechtfertigte ein höheres Risikobudget; Skattebos stabilerer Median wäre im Same-Information-Re-Decision dennoch leicht vorzuziehen. |
 | McMillan statt Love | 18,20 | Outcome Regret | Loves klarer Rollenanstieg materialisierte sich erst im Spiel. |
 | McMillan statt Fannin | 20,40 | Outcome Regret | Fannins neues Target-/Scoring-Level war vor Week 3 noch nicht ausreichend belastbar. |
 | McMillan statt Meyers | 15,70 | Outcome Regret | Meyers kam aus sehr niedrigem Target-Volumen; Week 3 war ein neues Usage-Signal. |
@@ -183,7 +185,7 @@ Der Abstand von **52,50 Punkten** zum Hindsight-Maximum ist ausdrücklich kein M
 | Waddle trotz 6,40 | — | Outcome Regret | Week-2-Usage machte den Start vertretbar; Week 3 scheiterte primär an Conversion. |
 | Nabers benchen | kein Verlust gegenüber den gewählten Kernstarts ableitbar | neutrale/positive Decision Quality | Die problematische QB-/Target-Qualität blieb real. |
 
-Der zentrale Prozessbefund ist damit klar: **Week 3 hatte einen echten Start/Sit-Prozessfehler, aber nicht mehrere.**
+Der zentrale Prozessbefund ist damit nuancierter: **Week 3 hatte keinen klaren groben Start/Sit-Prozessfehler.** McMillan statt Skattebo war ein vertretbarer aggressiver Call mit leichtem Decision Regret, während die übrigen großen Bench-Gaps überwiegend Outcome Regret beziehungsweise neue Week-3-Evidenz waren.
 
 ## 6. Spieler-für-Spieler-Review
 
@@ -270,19 +272,19 @@ Der zentrale Prozessbefund ist damit klar: **Week 3 hatte einen echten Start/Sit
 
 ## 8. Prozesslehren
 
-1. **Matchup-State darf ein stabiles Board nicht aus Rohscore/Narrativ überschreiben.** Vor einem Ceiling-Override müssen absolvierte Starter, erwartete Sollpunkte dieser Starter, verbleibende Slots und verbleibende Projektion beider Teams gemeinsam betrachtet werden.
-2. **Ein später Ceiling-Override sollte explizit dokumentiert werden.** Mindestens: ursprüngliche Boundary-Reihenfolge, geänderte Reihenfolge, konkreter Matchup-State-Grund und erwarteter zusätzlicher Ceiling-/Median-Trade-off.
+1. **Erwartete Gegnerstärke und Live-Matchup-State sind getrennte Risikosignale.** Ein Gegner, der wie Marcel mit 242,80 und 202,50 Punkten in die Woche kommt, kann bereits vor Kickoff ein etwas höheres Risikobudget rechtfertigen. Das ist etwas anderes als eine nachträgliche Reaktion auf einen einzelnen Donnerstagsscore oder einen optischen Live-Rückstand.
+2. **Ein bewusster Ceiling-Override sollte explizit dokumentiert werden.** Mindestens: ursprüngliche Boundary-Reihenfolge, geänderte Reihenfolge, ob der Grund aus der vorab erwarteten Gegnerstärke oder aus dem tatsächlichen Live-Matchup-State stammt, und der erwartete Ceiling-/Median-Trade-off. Ein einzelner früher gegnerischer Score erzeugt dabei keine eigene Sonderregel.
 3. **Bench-Breakouts sind nicht automatisch Managementfehler.** Love, Fannin und Meyers erzeugen neue Evidenz für Week 4; sie machen ihren Week-3-Sit nicht rückwirkend falsch.
 4. **Namen erhalten keinen Bestandsschutz.** Barkley, Breece und Chase müssen gegen Love, Skattebo, Fannin, Meyers und andere aktuelle Boundary-Spieler nach denselben Kriterien neu geprüft werden.
 5. **Usage/Opportunity und Boxscore getrennt führen.** Besonders Love/Fannin sind nachhaltig interessanter, weil nicht nur die Punkte, sondern die Opportunity stieg.
-6. **Same-Information-Re-Decision bleibt der zentrale Regret-Test.** Für Week 3 würde die Aufstellung im Kern gleich bleiben; die materielle Änderung wäre Skattebo vor McMillan.
+6. **Same-Information-Re-Decision bleibt der zentrale Regret-Test.** Für Week 3 würde die Aufstellung im Kern gleich bleiben; bei Skattebo vs. McMillan läge der leichte Re-Decision-Lean bei Skattebo, ohne den damaligen McMillan-Call als klaren Fehler zu klassifizieren.
 
 ## 9. Abschlussurteil
 
-Week 3 war **keine generell schlecht gemanagte Lineup-Woche**, aber sie enthält erstmals seit Einführung des Weekly-Postmortem-Standards einen Matchup-State-Fehler, der das konkrete Matchup wahrscheinlich entschieden hat.
+Week 3 war **keine generell schlecht gemanagte Lineup-Woche**. Der engste Retrospektivpunkt ist **Tetairoa McMillan statt Cam Skattebo**, aber auch dieser Call war ex ante vertretbar: Marcel kam aus 242,80 und 202,50 Punkten, sodass ein bewusst höheres Risikobudget plausibel war. Watsons Donnerstagsspiel war dabei kein eigenständiger Auslöser.
 
-Der klare Decision-Regret-Schwerpunkt ist **Tetairoa McMillan statt Cam Skattebo**. Das ursprüngliche stabilere Board wurde aus einem zu aggressiv interpretierten Ceiling-Bedarf überschrieben. Der 9,30-Punkte-Gap war größer als die 5,32-Punkte-Niederlage.
+Im Same-Information-Re-Decision würde Skattebos stabilerer Median leicht vor McMillans Ceiling liegen. Deshalb bleibt ein **leichter Decision Regret**, aber kein klarer Matchup-State- oder Start/Sit-Prozessfehler. Der 9,30-Punkte-Gap war größer als die 5,32-Punkte-Niederlage und erklärt damit den Outcome, nicht automatisch einen groben Entscheidungsfehler.
 
 Die großen Bench-Scores von Harold Fannin Jr., Jeremiyah Love und Jakobi Meyers sind dagegen überwiegend **neue Week-3-Evidenz** statt rückwirkender Start/Sit-Fehler. Genau daraus entsteht die wichtigste Folge für Week 4: Der bisherige Starterkern darf an der FLEX-Grenze keinen Incumbency-Bonus erhalten. Love, Fannin, Skattebo und Meyers müssen zusammen mit Waddle, McMillan, Nabers, Barkley, Breece und Chase in einen neuen gemeinsamen Boundary-Stresstest.
 
-Die wichtigste Prozessverbesserung aus Week 3 ist ein expliziter dokumentierter **Ceiling-Override-Gate**: Eine bestehende Boundary-Reihenfolge darf wegen Matchup-State nur dann verändert werden, wenn der bereinigte tatsächliche Rückstand einen materiellen Varianzbedarf rechtfertigt.
+Die wichtigste Prozessverbesserung aus Week 3 ist deshalb **keine spezielle Donnerstag-Regel**. Sinnvoll ist stattdessen eine saubere Dokumentation des Risikobudgets: Vorab erwartete Gegnerstärke darf einen aggressiveren Call rechtfertigen; ein später Live-Matchup-State muss separat anhand bereits absolvierter Starter, verbleibender Slots und Erwartungswert eingeordnet werden.
