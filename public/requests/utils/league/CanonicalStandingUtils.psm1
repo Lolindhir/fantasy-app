@@ -5,6 +5,7 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\..\general\AvatarUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\StandingUtils.psm1" -ErrorAction Stop -Force
 }
@@ -198,6 +199,22 @@ function Get-CanonicalStandingTeamData {
             $teamName = $teamName.Trim()
         }
 
+        $ownerAvatarID = [string](Get-CanonicalStandingPropertyValue -Object $member -PropertyName "Avatar" -DefaultValue "")
+        $ownerAvatar = if ([string]::IsNullOrWhiteSpace($ownerAvatarID)) {
+            $null
+        }
+        else {
+            Get-SleeperAvatar $ownerAvatarID.Trim()
+        }
+
+        $teamAvatar = [string](Get-CanonicalStandingPropertyValue -Object $member.Metadata -PropertyName "avatar" -DefaultValue "")
+        if ([string]::IsNullOrWhiteSpace($teamAvatar)) {
+            $teamAvatar = $null
+        }
+        else {
+            $teamAvatar = $teamAvatar.Trim()
+        }
+
         $wholePoints = [double](Get-CanonicalStandingPropertyValue -Object $roster.Settings -PropertyName "fpts" -DefaultValue 0)
         $pointDecimals = [double](Get-CanonicalStandingPropertyValue -Object $roster.Settings -PropertyName "fpts_decimal" -DefaultValue 0)
         $wholePointsAgainst = [double](Get-CanonicalStandingPropertyValue -Object $roster.Settings -PropertyName "fpts_against" -DefaultValue 0)
@@ -205,7 +222,9 @@ function Get-CanonicalStandingTeamData {
 
         $teamData += [PSCustomObject][ordered]@{
             Owner         = $owner
+            OwnerAvatar   = $ownerAvatar
             Team          = $teamName
+            TeamAvatar    = $teamAvatar
             TeamID        = [int]$rosterSource.ProviderRosterID
             PlaceRegular  = 0
             PlacePlayoffs = 0
