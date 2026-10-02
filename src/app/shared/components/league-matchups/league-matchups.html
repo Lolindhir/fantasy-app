@@ -17,11 +17,11 @@
           <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
           <strong class="weekly-standing-record">{{ row.record }}</strong>
           <strong
-            class="weekly-standing-point-diff"
-            [class.weekly-standing-point-diff--positive]="row.points - row.pointsAgainst > 0"
-            [class.weekly-standing-point-diff--negative]="row.points - row.pointsAgainst < 0"
-            title="Point differential"
-          ><ng-container *ngIf="row.points - row.pointsAgainst > 0">+</ng-container>{{ row.points - row.pointsAgainst | number:'1.0-0' }}</strong>
+            class="weekly-standing-movement"
+            [class.weekly-standing-movement--positive]="row.placementMovement !== null && row.placementMovement > 0"
+            [class.weekly-standing-movement--negative]="row.placementMovement !== null && row.placementMovement < 0"
+            [attr.aria-label]="row.placementMovement === null ? 'No previous week available' : row.placementMovement === 0 ? 'No change since last week' : row.placementMovement > 0 ? 'Moved up ' + row.placementMovement + ' places since last week' : 'Moved down ' + (-row.placementMovement) + ' places since last week'"
+          >{{ row.placementMovement === null || row.placementMovement === 0 ? '—' : row.placementMovement > 0 ? '↑' + row.placementMovement : '↓' + (-row.placementMovement) }}</strong>
         </div>
       </div>
     </a>
