@@ -9,7 +9,10 @@ import type {
 } from '../../core/models/decision-window.models';
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import { buildDecisionWindowTeamRows } from './decision-window-view.util';
-import { buildCurrentStandings } from './league-standings-view.util';
+import {
+  buildCurrentStandings,
+  buildSeasonHistory
+} from './league-standings-view.util';
 import {
   buildNeutralFantasyTeamOrderIndex,
   sortFantasyTeamsByNeutralOrder
@@ -115,6 +118,63 @@ describe('fantasy-team neutral ordering', () => {
     const rows = buildDecisionWindowTeamRows(model, window, teams);
 
     expect(rows.map(row => row.teamId)).toEqual([2, 9]);
+  });
+});
+
+describe('historical Season Archive identity', () => {
+  it('uses season-specific avatars and never leaks the current team avatar into history', () => {
+    const league = {
+      Teams: [
+        {
+          TeamID: 1,
+          Owner: 'Owner 1',
+          Avatar: 'current-team-1.png',
+          OwnerAvatar: 'current-owner-1.png'
+        },
+        {
+          TeamID: 2,
+          Owner: 'Owner 2',
+          Avatar: 'current-team-2.png',
+          OwnerAvatar: 'current-owner-2.png'
+        }
+      ],
+      Standings: [
+        {
+          Season: '2025',
+          Playoffs: [
+            {
+              Place: 1,
+              PlaceOrdinal: '1st',
+              TeamID: 1,
+              Owner: 'Owner 1',
+              OwnerAvatar: 'historical-owner-1.png',
+              TeamName: 'Historical Team 1',
+              TeamAvatar: 'historical-team-1.png'
+            },
+            {
+              Place: 2,
+              PlaceOrdinal: '2nd',
+              TeamID: 2,
+              Owner: 'Owner 2',
+              OwnerAvatar: 'historical-owner-2.png',
+              TeamName: 'Historical Team 2',
+              TeamAvatar: null
+            }
+          ],
+          RegularSeason: []
+        }
+      ]
+    } as unknown as League;
+
+    const history = buildSeasonHistory(league);
+    const season = history.seasons[0];
+
+    expect(season.playoffResults[0].teamAvatar).toBe('historical-team-1.png');
+    expect(season.playoffResults[0].ownerAvatar).toBe('historical-owner-1.png');
+    expect(season.playoffResults[1].teamAvatar).toBe('assets/default-team-avatar.png');
+    expect(season.playoffResults[1].ownerAvatar).toBe('historical-owner-2.png');
+    expect(season.playoffResults.map(row => row.teamAvatar)).not.toContain('current-team-1.png');
+    expect(season.playoffResults.map(row => row.teamAvatar)).not.toContain('current-team-2.png');
   });
 });
 

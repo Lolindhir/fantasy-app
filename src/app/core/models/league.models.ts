@@ -20,7 +20,9 @@ export interface PlayoffTeam {
   PlaceOrdinal: string;
   TeamID: string | number;
   Owner: string;
+  OwnerAvatar?: string | null;
   TeamName: string | null;
+  TeamAvatar?: string | null;
   PlaceType?: string;
   Championships?: number;
   RunnerUps?: number;
