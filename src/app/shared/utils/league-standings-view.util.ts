@@ -158,7 +158,9 @@ export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel
       team,
       teamName: team.Team,
       place: team.Placements.Previous.Playoffs?.Place ?? 999,
-      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards)
+      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards),
+      ownerAvatar: team.OwnerAvatar?.trim() || null,
+      teamAvatar: team.Avatar?.trim() || 'assets/default-team-avatar.png'
     }))
     .sort((a, b) => a.place - b.place);
 
