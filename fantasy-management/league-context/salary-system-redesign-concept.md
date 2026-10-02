@@ -1,7 +1,7 @@
 # Performance Salary Redesign – Research- und Designstand
 
 Status: **offenes Research-/Designpapier**  
-Stand: **27.09.2026**
+Stand: **29.09.2026**
 
 Dieses Dokument hält den aktuellen Diskussions- und Analyse­stand für ein mögliches Redesign des normalen Performance-Salary-Systems fest.
 
@@ -1167,138 +1167,773 @@ Damit bildet die Formel nicht nur eine statische Fantasy-Theorie ab, sondern kan
 
 ---
 
-## 25. Mehrjährige Glättung der Criticality-Kurven
+## 25. Architekturpräzisierung: Criticality gehört zur Position und zum Leistungsrang
 
-Auch Criticality soll nicht ausschließlich auf einer einzelnen Saison beruhen.
+Die nach den ersten DMLI-Tests präzisierte Architektur trennt zwei Ebenen bewusst voneinander.
 
-Ein einzelnes NFL-Jahr kann durch:
+### Ebene A: individuelle Player Performance
 
-- außergewöhnlich viele Verletzungen;
-- eine besonders starke oder schwache Positionsklasse;
-- kleine Samples;
-- ungewöhnliche Scoring-Verteilungen
+Die individuelle Performance eines Spielers bleibt das bereits bestehende Mehrjahressignal.
 
-verzerrt sein.
+Für jede abgeschlossene Saison gilt weiterhin:
 
-Die aktuelle Designrichtung lautet deshalb:
+```text
+SeasonPerformance
+= 0,5 × AvgPotentialGame
++ 0,5 × AvgGame
+```
 
-> Für jeden Salary-Zyklus sollen mehrere abgeschlossene historische Saisons in die Criticality-Berechnung eingehen.
+Für das normale Performance Salary werden die drei abgeschlossenen Saisons anschließend weiterhin mit der bestehenden Player-Floor-Logik geglättet:
 
-Naheliegend sind dieselben drei historischen Saisons, die auch beim normalen Performance-Salary relevant sind.
+- liegt der beste Wert in der neuesten Saison, beträgt der Floor 50 % dieses Bestwerts;
+- liegt der beste Wert in der mittleren Saison, beträgt der Floor 33 %;
+- liegt der beste Wert in der ältesten Saison, beträgt der Floor 17 %;
+- jeder der drei Saisonwerte wird mindestens auf diesen Floor angehoben;
+- anschließend wird der Mittelwert der drei gefloorten Werte gebildet.
 
-**Noch nicht entschieden** ist die konkrete Glättung.
+Diese Logik bleibt **spielerindividuell**. Sie schützt insbesondere vor einer übermäßigen Salary-Reaktion auf eine einzelne verletzungsbedingt schwache Saison.
 
-Mögliche Varianten:
+### Ebene B: Positional Criticality
 
-- einfacher Dreijahresschnitt;
-- Recency-Weighting, z. B. 50/30/20;
-- robustes Mittel / Median;
-- Glättung der kompletten Rank-Kurve statt einzelner Ankerpunkte.
+Criticality wird dagegen **nicht als persönliche Historie eines Spielers** geführt.
 
-Die bisherige 50/33/17-Floor-Logik des individuellen Player Salaries soll nicht automatisch auf Positionskurven übertragen werden. Diese Frage wird separat geprüft.
+Historische Spieler dienen ausschließlich als Messpunkte für die Frage:
+
+> Wie kritisch war in dieser Saison Rang X innerhalb einer Position unter dem heute gültigen Ligaformat?
+
+Nach der saisonalen Messung wird die Spieleridentität für die Criticality-Kurve verworfen.
+
+Dadurch entsteht beispielsweise nicht:
+
+```text
+Josh Allen besitzt historische Criticality X
+```
+
+sondern:
+
+```text
+QB1-Level besitzt historische Criticality X
+QB2-Level besitzt historische Criticality Y
+...
+```
+
+Für einen späteren Salary-Zyklus wird zunächst die individuelle geglättete Player Performance bestimmt. Daraus folgt der aktuelle Leistungsrang innerhalb der Position. Dieser Rang verweist anschließend auf die geglättete Criticality-Kurve der Position.
+
+Damit gilt konzeptionell:
+
+```text
+individuelle 3Y Performance mit Player Floor
+→ aktueller Positionsrang
+
+historische DMLI-Messungen
+→ 3Y Criticality-Kurve je Position und Rang
+
+Positionsrang
+→ Criticality am entsprechenden Punkt der Kurve
+```
+
+Criticality bewertet damit **die strukturelle Bedeutung eines Leistungsniveaus**, nicht noch einmal die persönliche Verletzungs- oder Karrierehistorie desselben Spielers.
 
 ---
 
-## 26. Criticality muss Qualität innerhalb der Position unterscheiden
+## 26. Formale Definition: Dynamic Marginal Lineup Impact als Messverfahren
 
-Ein wesentliches Ziel ist:
-
-```text
-Position allein ≠ Criticality
-```
-
-Stattdessen:
+Für eine historische Saison `y` wird zunächst für jeden Spieler `i` die bestehende saisonale Performance berechnet:
 
 ```text
-Position × Leistungsniveau innerhalb der aktuellen Positionskurve
-→ Criticality
+P(i,y)
+= 0,5 × AvgPotentialGame(i,y)
++ 0,5 × AvgGame(i,y)
 ```
 
-Dadurch kann beispielsweise gelten:
+Danach wird unter dem **aktuellen Ziel-Ligaformat** die optimale synthetische ligaweite Startaufstellung bestimmt.
 
-- Elite-QB: sehr hohe Kritikalität;
-- guter QB-Starter: deutlich weniger zusätzliches Premium;
-- QB-Depth: geringe Kritikalität.
+```text
+L(y)
+= maximal erreichbare Summe der SeasonPerformance
+  über alle ligaweiten Starterplätze
+```
 
-Gleichzeitig kann RB über einen breiteren Bereich hohe Kritikalität besitzen, wenn die empirische Kurve entsprechend steil bleibt.
+Die Optimierung berücksichtigt:
 
-Das unterscheidet das geplante Modell fundamental von einem festen Positionsmultiplikator.
+- alle festen Positionsslots;
+- die aktuelle Teamzahl;
+- alle FLEX-Slots;
+- die aktuelle FLEX-Berechtigung;
+- die tatsächliche historische Produktionsverteilung dieser Saison.
+
+Für jeden Spieler wird anschließend exakt dieser Spieler aus dem Pool entfernt und die komplette Aufstellung neu optimiert:
+
+```text
+DMLI(i,y)
+= L(y) - L(-i,y)
+```
+
+Der Wert misst damit den tatsächlichen marginalen Lineup-Verlust, den das Entfernen dieses Spielers unter dem aktuellen Format erzeugt.
+
+### Abstraktion auf Positionsrang
+
+Innerhalb jeder Position werden die Spieler derselben Saison nach `SeasonPerformance` absteigend sortiert.
+
+Sei:
+
+```text
+i(p,r,y)
+= Spieler auf Position p,
+  Leistungsrang r,
+  Saison y
+```
+
+Dann wird die saisonale Criticality-Kurve definiert als:
+
+```text
+C(p,r,y)
+= DMLI(i(p,r,y), y)
+```
+
+Ab diesem Schritt ist die konkrete Spieleridentität für Criticality nicht mehr relevant.
+
+Fällt Rang `r` in einer Saison außerhalb der optimalen ligaweiten Startaufstellung, ist sein DMLI definitionsgemäß `0`. Dieser Nullwert bleibt Bestandteil der späteren Mehrjahresglättung.
+
+### Drei-Jahres-Glättung
+
+Die aktuelle Architekturentscheidung verwendet die drei letzten abgeschlossenen Saisons gleichgewichtet:
+
+```text
+C3Y(p,r)
+= [C(p,r,y-2) + C(p,r,y-1) + C(p,r,y)] / 3
+```
+
+Für den Salary-Zyklus 2026 werden damit verwendet:
+
+```text
+2023 + 2024 + 2025
+```
+
+Es gibt **keinen Criticality-Floor**.
+
+### Keine harten Tiers in der Berechnung
+
+Begriffe wie:
+
+- Elite;
+- High Starter;
+- Starter;
+- Replacement
+
+dürfen später zur Erklärung oder Darstellung verwendet werden.
+
+Die Berechnung selbst nutzt jedoch die vollständige Rank-Kurve. Dadurch entsteht kein künstlicher Sprung zwischen beispielsweise QB3 und QB4.
+
+Bei exakt gebundenen aktuellen Player-Performance-Werten sollen die betroffenen Spieler denselben Criticality-Wert erhalten; dafür wird im späteren technischen Mapping der Mittelwert der durch den Tie belegten Rank-Punkte verwendet.
 
 ---
 
-## 27. Managerverhalten bleibt Validierung, nicht Formelinput
+## 27. Warum der Player Floor nicht auf Criticality übertragen wird
 
-Cuts, Free-Agent-Drafts, Waivers und sonstiges Managerverhalten bleiben wertvolle empirische Tests.
+Der bestehende Performance-Floor und die neue Criticality-Glättung lösen unterschiedliche Probleme.
 
-Sie sollen aber **nicht direkt in die Criticality-Berechnung eingehen**.
+### Player Performance
+
+Der Floor beantwortet:
+
+> Wie vermeiden wir, dass eine einzelne schlechte oder verletzungsbedingt verkürzte Saison einen etablierten Spieler übermäßig stark abwertet?
+
+Das ist eine **spielerindividuelle Stabilitätsregel**.
+
+### Criticality
+
+Die Criticality-Kurve beantwortet dagegen:
+
+> Wie wertvoll war Rang X dieser Position relativ zur gesamten verfügbaren Produktionslandschaft?
+
+Eine einzelne Verletzung verändert dabei lediglich, **welcher Spieler** einen bestimmten Rang einnimmt. Die Criticality-Historie gehört nicht dem verletzten Spieler selbst.
+
+Deshalb wird Criticality nur rankweise über mehrere Saisons gemittelt.
+
+Diese Trennung verhindert insbesondere eine doppelte Verletzungsbestrafung:
+
+```text
+Verletzung
+→ beeinflusst individuelle Player Performance
+→ wird dort bereits durch den bestehenden Floor geglättet
+
+Verletzung
+≠ zusätzliche persönliche Criticality-Abwertung
+```
+
+---
+
+## 28. Sample-Behandlung
+
+Für die formale Criticality-Berechnung wird **kein zusätzlicher Mindestspiele-Filter** verwendet.
 
 Grund:
 
-Das aktuelle Salary-System beeinflusst selbst das Managerverhalten.
+`AvgPotentialGame` ist bereits Bestandteil von `SeasonPerformance` und reduziert den Saisonwert eines Spielers automatisch, wenn er einen großen Teil der Saison verpasst.
 
-Eine Formel nach dem Muster
+Ein zusätzlicher harter Filter wie `mindestens 8 Spiele` würde deshalb eine zweite, diskrete Availability-Regel einführen.
 
-```text
-QBs werden wegen hoher Salaries häufig gecuttet
-→ QBs sind weniger kritisch
-→ QB-Salaries sinken
-```
+Der Backtest 2023–2025 zeigt dabei keinen problematischen Small-Sample-Effekt in der optimalen ligaweiten Startaufstellung:
 
-würde einen problematischen Rückkopplungskreis erzeugen.
+- 2023: kein optimaler Starter mit weniger als 8 Spielen;
+- 2024: nur Chris Godwin mit 7 Spielen;
+- 2025: kein optimaler Starter mit weniger als 8 Spielen.
 
-Stattdessen gilt:
-
-```text
-Ligaformat + Produktionsdaten
-→ Criticality-Modell
-
-beobachtetes Marktverhalten
-→ Backtest / Plausibilitätsprüfung
-```
-
-Der 2026 Free-Agent-Draft bleibt damit ein besonders guter Testfall:
-
-- Purdy sollte als echter Difference Maker weiterhin hoch bewertet werden;
-- Goff/Darnold/Stroud sollten nicht allein wegen hoher QB-Rohpunkte automatisch ähnlich stark bepreist werden;
-- Brissett-artige Depth sollte deutlich komprimierter ausfallen.
+Damit bleibt die bestehende availability-adjusted SeasonPerformance vorerst die einzige Sample-/Availability-Behandlung.
 
 ---
 
-## 28. Konsequenz für die nächste Modellierungsphase
+## 29. Berechnungsbasis 2023–2025
 
-Die nächste Aufgabe ist **nicht**, einen festen Criticality-Score für QB/RB/WR/TE/K festzulegen.
+Das aktuelle Ligaformat wurde für diese Berechnung erneut aus `public/data/League.json` abgeleitet.
 
-Stattdessen muss eine mathematische Funktion entwickelt werden, die aus der jährlich neu berechneten Rank-/Performance-Kurve für jeden Spieler einen dynamischen Criticality-Wert ableitet.
+Aktuell gilt ligaweit:
 
-Diese Funktion soll insbesondere:
+```text
+6 Teams
+12 QB fixe Starter
+12 RB fixe Starter
+12 WR fixe Starter
+12 TE fixe Starter
+24 FLEX
+6 K
+```
 
-1. das aktuelle Ligaformat automatisch berücksichtigen;
-2. FLEX-Nachfrage empirisch verteilen;
-3. mehrere historische Saisons glätten;
-4. Elite-Peaks belohnen;
-5. flache Mid-Tiers komprimieren;
-6. steile und tiefe Knappheit entsprechend stärker bepreisen;
-7. ohne manuell festgelegte Positionsfaktoren funktionieren;
-8. bei Formatänderungen automatisch neu kalibrieren.
+Die FLEX-Verteilung entsteht in jeder historischen Saison neu aus der Optimierung.
 
-Erst wenn dieser **Criticality-Score ohne Dollar-Mapping** plausibel funktioniert, soll untersucht werden, wie er mit der bestehenden individuellen Performance-Berechnung und der Salary-Kurve kombiniert wird.
+| Saison | FLEX RB | FLEX WR | FLEX TE | QB Grenze / nächster | RB Grenze / nächster | WR Grenze / nächster | TE Grenze / nächster | K Grenze / nächster |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2023 | 7 | 17 | 0 | 17,43 / 17,13 | 12,74 / 12,70 | 12,85 / 12,72 | 9,41 / 8,79 | 7,69 / 7,63 |
+| 2024 | 8 | 16 | 0 | 17,77 / 16,40 | 13,09 / 12,69 | 12,77 / 12,76 | 9,24 / 9,09 | 8,12 / 8,06 |
+| 2025 | 8 | 16 | 0 | 17,17 / 16,98 | 11,30 / 11,21 | 11,31 / 11,16 | 10,51 / 10,40 | 7,69 / 7,67 |
+
+Damit ergab sich die effektive Startertiefe:
+
+```text
+2023: QB12 / RB19 / WR29 / TE12 / K6
+2024: QB12 / RB20 / WR28 / TE12 / K6
+2025: QB12 / RB20 / WR28 / TE12 / K6
+```
+
+Die Verteilung wird nicht gespeichert oder vorgegeben. Sie ist jeweils nur das Ergebnis aus Ligaformat und historischer SeasonPerformance.
 
 ---
 
-## 29. Zusätzliche noch offene Entscheidungen
+## 30. Drei-Jahres-Criticality 2023–2025
 
-Durch die dynamische Architektur sind folgende Punkte weiterhin bewusst offen:
+Die folgende Tabelle zeigt ausgewählte Ankerpunkte der vollständigen Rank-Kurven.
 
-- exakte mathematische Definition des Criticality-Scores;
-- Anzahl historischer Saisons;
-- Gewichtung der historischen Saisons;
-- geeignete robuste Behandlung kleiner Samples;
-- ob die komplette Rank-Kurve oder lokale Nachbarschaften eines Spielers verwendet werden;
-- wie stark absolute Performance und relative Criticality im späteren Salary-Signal jeweils wirken;
-- ob und wie die bestehende quadratische Salary-Kurve angepasst werden muss;
-- ob die heutige 20-Punkte-/50-Mio.-Referenz bestehen bleibt.
+| Rangpunkt | 2023 | 2024 | 2025 | 3Y Ø |
+| --- | ---: | ---: | ---: | ---: |
+| QB1 | 7,16 | 9,62 | 6,62 | **7,80** |
+| QB3 | 4,38 | 6,90 | 3,94 | **5,07** |
+| QB6 | 2,15 | 4,60 | 2,89 | **3,21** |
+| QB12 | 0,30 | 1,37 | 0,20 | **0,62** |
+| RB1 | 11,86 | 9,51 | 14,10 | **11,82** |
+| RB3 | 4,63 | 6,64 | 11,13 | **7,47** |
+| RB6 | 3,52 | 5,01 | 7,77 | **5,43** |
+| RB12 | 1,44 | 3,04 | 4,09 | **2,86** |
+| RB18 | 0,22 | 1,13 | 0,86 | **0,74** |
+| RB20 | 0,00 | 0,33 | 0,09 | **0,14** |
+| WR1 | 10,39 | 10,83 | 11,40 | **10,87** |
+| WR3 | 6,94 | 6,21 | 7,59 | **6,91** |
+| WR6 | 5,05 | 3,91 | 5,60 | **4,85** |
+| WR12 | 2,96 | 2,61 | 2,70 | **2,76** |
+| WR20 | 1,28 | 1,39 | 1,27 | **1,31** |
+| WR28 | 0,16 | 0,01 | 0,10 | **0,09** |
+| WR29 | 0,13 | 0,00 | 0,00 | **0,04** |
+| TE1 | 5,45 | 6,44 | 8,50 | **6,79** |
+| TE3 | 5,30 | 5,78 | 2,08 | **4,39** |
+| TE6 | 3,91 | 2,30 | 1,41 | **2,54** |
+| TE12 | 0,62 | 0,15 | 0,11 | **0,29** |
+| K1 | 1,49 | 1,32 | 2,27 | **1,70** |
+| K3 | 0,38 | 0,34 | 1,37 | **0,69** |
+| K6 | 0,07 | 0,06 | 0,02 | **0,05** |
 
-Geklärt ist dagegen die Architekturentscheidung:
+### Vollständige geglättete QB-Kurve
 
-> **Positional Criticality wird nicht als feste Positionskonstante gespeichert, sondern pro Salary-Zyklus dynamisch aus aktuellem Ligaformat und historischen Produktionskurven neu berechnet.**
+```text
+QB1 7,80 · QB2 6,28 · QB3 5,07 · QB4 4,39 · QB5 3,96 · QB6 3,21 · QB7 2,57 · QB8 2,12 · QB9 1,63 · QB10 1,43 · QB11 1,18 · QB12 0,62
+QB13+ 0,00
+```
 
+### Vollständige geglättete RB-Kurve
+
+```text
+RB1 11,82 · RB2 8,16 · RB3 7,47 · RB4 7,01 · RB5 5,87 · RB6 5,43 · RB7 4,62 · RB8 4,22 · RB9 3,67 · RB10 3,30 · RB11 3,02 · RB12 2,86 · RB13 2,46 · RB14 2,44 · RB15 2,23 · RB16 1,76 · RB17 1,29 · RB18 0,74 · RB19 0,21 · RB20 0,14
+RB21+ 0,00
+```
+
+### Vollständige geglättete WR-Kurve
+
+```text
+WR1 10,87 · WR2 9,10 · WR3 6,91 · WR4 6,22 · WR5 5,56 · WR6 4,85 · WR7 3,99 · WR8 3,72 · WR9 3,22 · WR10 3,07 · WR11 2,89 · WR12 2,76 · WR13 2,62 · WR14 2,36 · WR15 2,13 · WR16 1,92 · WR17 1,71 · WR18 1,53 · WR19 1,43 · WR20 1,31 · WR21 1,00 · WR22 0,84 · WR23 0,71 · WR24 0,65 · WR25 0,58 · WR26 0,34 · WR27 0,18 · WR28 0,09 · WR29 0,04
+WR30+ 0,00
+```
+
+### Vollständige geglättete TE-Kurve
+
+```text
+TE1 6,79 · TE2 4,75 · TE3 4,39 · TE4 3,30 · TE5 2,89 · TE6 2,54 · TE7 1,87 · TE8 1,62 · TE9 1,24 · TE10 0,92 · TE11 0,53 · TE12 0,29
+TE13+ 0,00
+```
+
+### Vollständige geglättete K-Kurve
+
+```text
+K1 1,70 · K2 0,94 · K3 0,69 · K4 0,55 · K5 0,11 · K6 0,05
+K7+ 0,00
+```
+
+Diese Werte sind **noch keine Salary-Zuschläge in Dollar und keine Positionsmultiplikatoren**. Sie sind ausschließlich die dimensionsgleichen marginalen Performance-Verluste, die aus der ligaweiten Lineup-Optimierung entstehen.
+
+---
+
+## 31. Interpretation der Drei-Jahres-Kurven
+
+### QB
+
+Die geglättete QB-Kurve beginnt bei:
+
+```text
+QB1  7,80
+QB3  5,07
+QB6  3,21
+QB9  1,63
+QB12 0,62
+QB13 0,00
+```
+
+Damit bleibt ein klares Elite-Premium erhalten, während die Kurve Richtung letzter fester Starter stark komprimiert.
+
+Das adressiert direkt den Ausgangsverdacht des Salary-Redesigns:
+
+> Ein Elite-QB kann strukturell sehr kritisch sein, ohne dass jeder solide QB automatisch ein ähnlich hohes Positionspremium erhalten muss.
+
+### RB
+
+RB besitzt die breiteste hohe Criticality:
+
+```text
+RB1  11,82
+RB3   7,47
+RB6   5,43
+RB12  2,86
+RB18  0,74
+RB20  0,14
+RB21  0,00
+```
+
+Die vier FLEX-Spots pro Team verlängern die relevante RB-Kurve deutlich über die zwölf festen RB-Starter hinaus.
+
+### WR
+
+WR besitzt ebenfalls ein sehr hohes Elite-Premium, fällt im mittleren und hinteren Bereich aber deutlich flacher ab:
+
+```text
+WR1  10,87
+WR3   6,91
+WR6   4,85
+WR12  2,76
+WR20  1,31
+WR28  0,09
+WR29  0,04
+WR30  0,00
+```
+
+Das bildet gleichzeitig hohe Elite-Relevanz und die große Breite brauchbarer WR-Produktion ab.
+
+### TE
+
+TE bleibt klar top-heavy:
+
+```text
+TE1  6,80
+TE3  4,39
+TE6  2,54
+TE9  1,24
+TE12 0,29
+TE13 0,00
+```
+
+Da in keiner der drei Saisons ein FLEX-Platz an TE ging, entsteht Criticality ausschließlich aus den zwölf festen TE-Slots.
+
+### K
+
+Kicker werden fast vollständig komprimiert:
+
+```text
+K1 1,70
+K3 0,69
+K5 0,11
+K6 0,05
+K7 0,00
+```
+
+Damit erzeugt die Methode ohne Sonderregel genau die gewünschte hohe Austauschbarkeit der Position.
+
+---
+
+## 32. Geklärte Architektur nach dem Drei-Jahres-Test
+
+Der aktuelle Stand lautet damit:
+
+```text
+A) historische abgeschlossene Saison
+   ↓
+SeasonPerformance aller Spieler
+   ↓
+aktuelles Ziel-Ligaformat
+   ↓
+optimale ligaweite Startaufstellung
+   ↓
+DMLI je historischem Spieler
+   ↓
+Abstraktion auf Position + SeasonPerformance-Rang
+   ↓
+saisonale Criticality-Kurve
+
+B) 2023 / 2024 / 2025 Rank-by-Rank mitteln
+   ↓
+3Y Positional Criticality Curve
+
+C) individueller Spieler
+   ↓
+3Y Player Performance mit bestehendem Floor
+   ↓
+aktueller Rang innerhalb seiner Position
+   ↓
+Criticality aus der 3Y Positionskurve
+```
+
+Damit ist Criticality:
+
+- nicht spielerhistorisch;
+- nicht als fester Positionsfaktor gespeichert;
+- positionsabhängig;
+- leistungsrangabhängig;
+- ligaformatabhängig;
+- aus mehreren NFL-Saisons geglättet;
+- automatisch FLEX-sensitiv;
+- automatisch auf Formatänderungen reagierend.
+
+---
+
+## 33. Nächste Modellfrage: Performance + Criticality
+
+Nach der Herleitung der rank-basierten Criticality-Kurven war die nächste offene Ebene:
+
+> **Wie werden geglättete individuelle Player Performance und die dem aktuellen Positionsrang zugeordnete Criticality zu einem gemeinsamen Salary-Signal kombiniert?**
+
+Diese Frage wurde am 02.10.2026 quantitativ weitergeführt. Der daraus entstandene führende Arbeitsstand ist in den folgenden Abschnitten dokumentiert.
+
+---
+
+## 34. Führendes Arbeitsmodell: Criticality als Performance-Modifier
+
+Criticality bleibt ein Modifier auf individuelle Player Performance und wird **nicht** als zweiter eigenständiger Performance-Score addiert.
+
+Die Normalisierungsreferenz wird aus den positiven Drei-Jahres-Criticality-Rangpunkten abgeleitet:
+
+```text
+C_ref
+= Mittelwert der oberen 10 % aller positiven C3Y-Rangpunkte
+```
+
+Im aktuellen 2023–2025-Snapshot existieren 79 positive Rangpunkte. Die oberen 10 % entsprechen damit acht Rangpunkten.
+
+Aktuell ergibt sich:
+
+```text
+C_ref = 8,6425
+```
+
+Der Modifier wird als **Centered-25** definiert:
+
+```text
+M(C)
+= 0,75 + 0,5 × min(C / C_ref, 1)
+```
+
+Damit gilt:
+
+```text
+C = 0       -> Modifier 0,75
+C = C_ref/2 -> Modifier 1,00
+C >= C_ref  -> Modifier 1,25
+```
+
+Das gemeinsame Salary-Signal lautet:
+
+```text
+SalarySignal
+= PlayerPerformance × M(C)
+```
+
+Dadurch entscheidet Player Performance weiterhin über die individuelle Qualität des Spielers, während Criticality beschreibt, wie stark diese Qualität im aktuellen Ligaformat ökonomisch gewichtet werden soll.
+
+### Warum Top-10%-Mittel?
+
+Verglichen wurden unter anderem:
+
+- Maximum;
+- P95 nur über positive Criticality-Rangpunkte;
+- Top-3-Mittel;
+- Top-10%-Mittel.
+
+P95 über alle Rangpunkte wurde früh verworfen, weil nur 79 von 570 betrachteten Rangpunkten positive Criticality besitzen und die vielen Nullwerte die Referenz dadurch künstlich niedrig setzen würden.
+
+Das Maximum reagiert stark auf einen einzelnen Extremwert.
+
+Positive-P95 und Top-10%-Mittel sind deutlich robuster. Das Top-10%-Mittel bleibt zusätzlich leicht erklärbar, deckelt die Spitzengruppe weniger früh als P95 und wird deshalb als führende Referenz verwendet.
+
+---
+
+## 35. Performance-zu-Dollar-Kurve: k = 1,5
+
+Die bisherige Salary-Kurve verwendet unterhalb der 20-Punkte-Referenz eine quadratische Abbildung mit:
+
+```text
+k = 2,0
+```
+
+Centered-25 wird jedoch **vor** dieser Dollar-Abbildung angewendet.
+
+Damit würde beispielsweise ein Signal-Multiplikator von `1,25` unterhalb der Referenz bei `k = 2` näherungsweise zu folgendem Dollar-Effekt führen:
+
+```text
+1,25² = 1,5625
+```
+
+also rund +56 %.
+
+Damit würden Criticality-Modifier und quadratische Elite-Spreizung teilweise dieselbe Funktion doppelt erfüllen.
+
+Der getestete führende Arbeitswert ist deshalb:
+
+```text
+k = 1,5
+```
+
+Unterhalb der Referenz:
+
+```text
+Salary
+= 50.000.000 × (SalarySignal / 20)^1,5
+```
+
+Oberhalb von `SalarySignal = 20` bleibt die bestehende Architektur einer linearen Extrapolation ab 50 Mio. erhalten, nun mit der Steigung `k = 1,5`.
+
+Damit werden die Aufgaben klarer getrennt:
+
+```text
+Player Performance
+-> individuelle Produktionsqualität
+
+Criticality
+-> ligaformatspezifische ökonomische Relevanz dieser Qualität
+
+k
+-> allgemeine Spreizung des Salary-Marktes
+```
+
+---
+
+## 36. Vollmarkt-Test 02.10.2026
+
+Der vollständige Test wurde mit der aktuellen `public/data/Players.json`-Population durchgeführt.
+
+Vollständige reproduzierbare Detailanalyse:
+
+- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.md`
+- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.json`
+
+Das JSON enthält zusätzlich die vollständige Top-120-Tabelle mit:
+
+- Player Performance;
+- Positionsrang;
+- Criticality;
+- Modifier;
+- SalarySignal;
+- Salary;
+- Cap-Anteil.
+
+### Endogenes Salary Cap
+
+Der Marktcheck ergab:
+
+```text
+heutiges Top-120-Cap: 434,26 Mio.
+Arbeitsmodell:         438,25 Mio.
+Veränderung:             +0,92 %
+```
+
+Damit verändert das Modell die gesamte verfügbare Salary-Masse praktisch nicht, sondern verteilt sie primär neu.
+
+### Positionsanteile der Top-120-Salary-Masse
+
+Aktuell ungefähr:
+
+```text
+QB  34,9 %
+RB  25,7 %
+WR  33,0 %
+TE   6,4 %
+K    0,0 %
+```
+
+Arbeitsmodell:
+
+```text
+QB  30,4 %
+RB  27,7 %
+WR  34,0 %
+TE   7,5 %
+K    0,4 %
+```
+
+Damit wird insbesondere die breite QB-Mittelklasse entlastet, ohne Elite-QB pauschal billig zu machen.
+
+### QB-Anker
+
+```text
+QB1  Josh Allen        83,23 Mio.
+QB2  Jalen Hurts       63,74 Mio.
+QB3  Lamar Jackson     56,33 Mio.
+QB4  Baker Mayfield    46,71 Mio.
+QB5  Patrick Mahomes   44,65 Mio.
+QB6  Jared Goff        41,31 Mio.
+QB7  Brock Purdy       37,05 Mio.
+QB8  Dak Prescott      33,37 Mio.
+QB9  Justin Herbert    31,44 Mio.
+QB10 Jordan Love       30,23 Mio.
+QB11 Matthew Stafford  29,32 Mio.
+QB12 Trevor Lawrence   26,66 Mio.
+QB13 Joe Burrow        23,15 Mio.
+```
+
+### Weitere Positionsanker
+
+```text
+RB1  Christian McCaffrey 72,73 Mio.
+RB3  Bijan Robinson      58,14 Mio.
+RB6  Saquon Barkley      42,88 Mio.
+RB12 Alvin Kamara        25,54 Mio.
+RB20 Tony Pollard        15,88 Mio.
+
+WR1  Ja'Marr Chase       67,14 Mio.
+WR3  Puka Nacua          55,80 Mio.
+WR6  A.J. Brown          36,87 Mio.
+WR12 Keenan Allen        25,76 Mio.
+WR20 Zay Flowers         19,91 Mio.
+WR28 Jakobi Meyers       15,44 Mio.
+
+TE1  Trey McBride        38,81 Mio.
+TE3  Travis Kelce        25,68 Mio.
+TE6  David Njoku         15,30 Mio.
+TE12 Hunter Henry        10,49 Mio.
+```
+
+### Übergang zu Criticality 0
+
+Die letzten positiven Rangpunkte liegen bereits nahe am Minimalmodifier:
+
+```text
+QB12 -> 0,786 ; QB13+ -> 0,750
+RB20 -> 0,758 ; RB21+ -> 0,750
+WR29 -> 0,752 ; WR30+ -> 0,750
+TE12 -> 0,767 ; TE13+ -> 0,750
+K6   -> 0,753 ; K7+  -> 0,750
+```
+
+Es entsteht damit kein harter Salary-Cliff am Ende einer Criticality-Kurve.
+
+Im Top-120-Markt bleiben 46 Spieler mit `Criticality = 0` allein über ihre Player Performance relevant.
+
+### Konzentration
+
+Das Arbeitsmodell konzentriert Salary gezielter auf die Spitze:
+
+```text
+                  heute   Arbeitsmodell
+Top 10            17,6 %      21,7 %
+Top 20            31,2 %      36,3 %
+Top 40            52,3 %      56,7 %
+untere 60/Top120  31,6 %      28,6 %
+```
+
+Das ist trotz des flacheren Exponenten kein Widerspruch.
+
+Der allgemeine Performance-Exponent wird reduziert, während Criticality gezielt diejenigen Elite-Ränge aufwertet, deren Produktion im Ligaformat besonders schwer ersetzbar ist.
+
+Die Architektur wird damit **gezielter elitär statt pauschal punkte-elitär**.
+
+### Sichtbarer Boundary-Effekt
+
+Im aktuellen Snapshot tritt genau ein neuer Spieler in die Top 120 ein:
+
+```text
+Brandon Aubrey (K1)
+```
+
+und verdrängt:
+
+```text
+Mac Jones (QB34)
+```
+
+Aubrey erhält trotz seines Eintritts einen Criticality-Discount; der Effekt entsteht aus hoher eigener Performance plus der flacheren allgemeinen `k = 1,5`-Kurve.
+
+Dieser Effekt bleibt explizit Teil späterer Validierung.
+
+---
+
+## 37. Aktueller Modellstatus
+
+Führender Arbeitsstand:
+
+```text
+Player Performance
+= bestehende 3Y-Floor-Logik
+
+Criticality
+= 3Y rank-basierte Positionskurve
+
+C_ref
+= Top-10%-Mittel positiver Criticality-Rangpunkte
+= aktuell 8,6425
+
+Criticality Modifier
+= Centered-25
+= 0,75 bis 1,25
+
+SalarySignal
+= PlayerPerformance × CriticalityModifier
+
+Performance -> Dollar
+= k 1,5 statt k 2,0
+
+Salary Cap
+= weiterhin endogen aus den Top 120
+```
+
+Dieser Stand ist fachlich der führende Kandidat und soll nicht mehr nur als Chat-Experiment behandelt werden.
+
+Er ist dennoch **noch keine produktive Regeländerung**.
+
+Vor der technischen Implementierung folgt die systemweite Validierung zusammen mit:
+
+- Rookie Contracts;
+- Minimum Salary;
+- Dead Cap;
+- Team-Level-Cap-Strukturen;
+- gewünschter Team-Window-Ökonomie.
+
+---
+
+Geklärt sind damit zwei aufeinander aufbauende Architekturentscheidungen:
+
+> **Positional Criticality ist eine jährlich neu berechnete und über drei Saisons geglättete Rank-Kurve je Position. Historische Spieler liefern lediglich die saisonalen Messpunkte; individuelle Salary-Spieler werden erst über ihren geglätteten aktuellen Positionsrang auf diese Kurve abgebildet.**
+
+> **Im führenden Salary-Arbeitsmodell modifiziert diese Criticality die individuelle Player Performance über Centered-25 mit einer Top-10%-Referenz; die anschließende Performance-zu-Dollar-Kurve verwendet k = 1,5.**
