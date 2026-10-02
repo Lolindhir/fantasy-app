@@ -1,7 +1,7 @@
 # League Economy Redesign – Optionen für die Offseason
 
 > **Status:** frühes Synthese- und Diskussionspapier  
-> **Stand:** 29.09.2026
+> **Stand:** 02.10.2026
 >
 > Dieses Dokument soll später als gemeinsame, ligaweit lesbare Entscheidungsgrundlage dienen. Es fasst drei Detaildiskussionen zusammen, ersetzt deren kanonische Konzeptpapiere aber nicht.
 >
@@ -62,6 +62,31 @@ Damit besitzt Competitive Bleiben einen hohen Optionswert:
 Die kleine Liga konzentriert zudem NFL-Talent und begünstigt schnelle Reparaturen.
 
 Gegenläufig wirken die Zwei-Wochen-Playoffs: Sie reduzieren Single-Week-Varianz und geben echter Rosterqualität mehr Gelegenheit, sich durchzusetzen.
+
+### Bestätigtes Preserve-Prinzip: Draftorder + Legacy-Anreize
+
+Die aktuelle Rookie-Draft-Reihenfolge ist ein bewusst gekoppelter Bestandteil der Ligaökonomie:
+
+| Vorjahresplatz | eigener Rookie-Pick |
+| ---: | ---: |
+| 5. | 1.01 |
+| 6. | 1.02 |
+| 4. | 1.03 |
+| 3. | 1.04 |
+| 2. | 1.05 |
+| 1. | 1.06 |
+
+Sie soll gleichzeitig Competitive Balance und sportliche Motivation erhalten.
+
+- Platz 5 wird gegenüber Platz 6 mit 1.01 belohnt; ganz unten besteht damit weiterhin ein Anreiz, besser abzuschneiden.
+- Platz 3 erhält bewusst einen späteren Pick als Platz 4, weil der Third Place langfristigen Franchise-/Legacy-Wert besitzt.
+- Die vom User bestätigte gewünschte All-Time-Erfolgshierarchie lautet: **Championships -> Runner-Ups -> Third Places -> Regular Season Kings**.
+
+Damit tauscht ein besseres Finish teilweise Draftposition gegen dauerhaften historischen Erfolg.
+
+**Folgerung für die Offseason-Diskussion:** Die Rookie-Draft-Reihenfolge wird zunächst nicht als isolierter Rebuild-Hebel behandelt. Ein Paket, das mehr Rebuild-Anreize erzeugen soll, muss zuerst zeigen, dass die bereits vorhandenen Zukunftsanreize aus Picks, Rookie Contracts, Salary/Cap und Trades nicht ausreichen.
+
+Eine technische Abweichung im aktuellen All-Time-Generator wird separat in #810 geprüft; sie ändert die hier dokumentierte beabsichtigte Ligalogik nicht.
 
 ### Drei Grundrichtungen
 
