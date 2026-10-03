@@ -608,6 +608,7 @@ validation:
   - Unerwartet kleine/leere oder schema-inkompatible Inputs koennen keinen letzten guten Stand ersetzen.
   - Exakte known-unavailable historische Partitionen werden separat auditiert, vom bounded Backfill ausgelassen und nie als Ready oder 0-Fakten ausgegeben; benachbarte unterstuetzte Seasons bleiben Pflicht.
   - PR-CI fuehrt die komplette test_nfl_source*.py-Suite vor den bestehenden PowerShell-/Angular-Checks aus.
+  - Der Sync-Workflow fuehrt test_nfl_source*.py als Pre-Gate ohne den Repo-State-Identity-Audit aus (NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1, nur Full-Scope). Dieser Audit laeuft danach gegen die frisch materialisierte Kanonik, nach dem zweiten Idempotenz-Pass und vor dem kanonischen Commit; scheitert er, wird nichts Kanonisches publiziert (ADR-039).
   - Schedules und released-games game_id muessen eindeutig sein; unbekannte released game_id bricht fail-closed ab.
   - BUF-CIN Week 17/2022 bleibt ohne released-Evidenz nicht final, auch wenn Scores vorliegen.
   - Roster/Stats/Snap/Sleeper-Player-Zuordnung verwendet nur Provider-IDs; Namen sind nie autoritativ.
