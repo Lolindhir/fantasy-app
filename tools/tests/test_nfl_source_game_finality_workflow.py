@@ -40,6 +40,32 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("python -m unittest tools.tests.test_nfl_source_game_finality_scope -v", source)
         self.assertIn('discover -s tools/tests -p "test_nfl_source*.py" -v', source)
 
+    def test_repo_state_audit_runs_after_materialization_not_in_pre_gate(self) -> None:
+        # Issue #814 / ADR-039: the repo-state identity audit fails closed while
+        # persisted identities lag behind Players.json, which the sync repairs.
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        skip = "NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1"
+        self.assertEqual(source.count(skip), 1)
+        self.assertLess(
+            source.index(skip),
+            source.index("- name: Sync, validate and publish NFL source data"),
+        )
+        self.assertNotIn("NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT:", source)
+
+        audit_cmd = (
+            "python -m unittest "
+            "tools.tests.test_nfl_source_app_espn_identity_bridge_repository -v"
+        )
+        self.assertEqual(source.count(audit_cmd), 1)
+        audit_at = source.index(audit_cmd)
+        self.assertGreater(audit_at, source.index("Second idempotency check (attempt"))
+        self.assertLess(audit_at, source.index("python tools/nfl_source_data.py audit"))
+        self.assertLess(audit_at, source.index("git add -- source-data\n"))
+        section = source[source.rindex('if [[ "$materialization_scope" == "full" ]]; then', 0, audit_at):audit_at]
+        self.assertIn("post_audit_log", section)
+        self.assertIn('write_failure_diagnostic "post-materialize-audit"', source)
+        self.assertIn("Post-materialization repo-state audit (attempt", source)
+
     def test_scoped_workflow_emits_requested_observability(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         for marker in (
