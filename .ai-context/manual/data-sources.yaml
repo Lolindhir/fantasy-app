@@ -69,6 +69,13 @@ dataSources:
       generation steps that need the full player universe. Players[].ID is the
       canonical Sleeper player_id resolved through the Tank01 sleeperBotID join;
       Players[].TankID preserves the Tank01 playerID for provider provenance.
+    retiredProviderInputs:
+      - input: Tank01 getNFLDFS DraftKings salaries
+        status: not used
+        note: >
+          Confirmed by the owner as no longer used. The only former consumer was the
+          removed legacy copy public/requests/RequestPlayers_old.ps1 (#246); do not
+          reintroduce DraftKings salary data as a player input without a new decision.
     identityContract:
       canonicalField: ID
       canonicalSource: Sleeper player_id

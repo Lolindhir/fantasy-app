@@ -1196,3 +1196,35 @@ decisions:
         - The repository gains a new top-level data namespace.
         - Existing transitional shared derivations remain mixed until separately migrated.
         - Each new shared-derived product still needs explicit contract and invalidation semantics.
+
+
+  - id: ADR-039
+    title: NFL source-data test gate depends on independently written Players.json
+    status: accepted
+    context: >
+      The workflow "Data • NFL Source Sync" runs the NFL source-data regression tests before it
+      materializes and publishes source-data/**. The test
+      test_rebuilt_identities_do_not_regress_current_population_identity_gap compares
+      persisted canonical identities with public/data/Players.json, which
+      update-players.yml writes independently. When Players.json gains a player that
+      the persisted identities do not cover yet, the test fails, the sync is skipped
+      and the identities stay stale. CI of every PR runs the same suite and turns
+      red (Issue #814, resolved once by PR #815).
+    decision: >
+      Record this as a known structural coupling. The one-time recovery is an
+      official re-materialization (python tools/nfl_source_data.py materialize)
+      reviewed and merged through a normal PR, never hand-edited source-data/**.
+      Whether the test gate, the test or the writer ordering should change is a
+      separate decision tracked in #814; workflow or test changes require explicit
+      owner approval.
+    rationale: >
+      The failure mode is reproducible and can recur with every new player, but the
+      available structural fixes (decoupling the test from Players.json, running
+      materialization before the gate, or a dedicated recovery path) change
+      publication semantics and need an explicit decision.
+    consequences:
+      positive:
+        - The recovery path is documented and uses the official tooling.
+        - Future agents recognize the deadlock instead of treating red CI as PR-caused.
+      negative:
+        - The coupling remains until the structural decision in #814 is made.
