@@ -166,7 +166,9 @@ jobs:
           if [[ "${MATERIALIZATION_SCOPE:-full}" == "game-finality" ]]; then
             python -m unittest tools.tests.test_nfl_source_game_finality_scope -v
           else
-            python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
+            # The repo-state identity audit runs after materialization inside the
+            # publish step instead (Issue #814, ADR-039).
+            NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1 python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
           fi
           test_seconds=$(( $(date +%s) - test_start ))
           echo "- Tests (${MATERIALIZATION_SCOPE:-full}): ${test_seconds}s" >> "$GITHUB_STEP_SUMMARY"
@@ -519,6 +521,28 @@ jobs:
 
             assert_source_data_only
             assert_scoped_canonical_write_set
+
+            # The repo-state identity audit reads Players.json, persisted identities
+            # and Sleeper platform data. It is skipped in the pre-materialization
+            # test gate (it fails closed while persisted identities lag behind
+            # Players.json, which this sync repairs) and runs here against the
+            # freshly materialized canonical state instead (Issue #814, ADR-039).
+            # A failure publishes no canonical data; raw evidence is already on main.
+            if [[ "$materialization_scope" == "full" ]]; then
+              post_audit_log="$(mktemp)"
+              post_audit_start="$(date +%s)"
+              set +e
+              python -m unittest tools.tests.test_nfl_source_app_espn_identity_bridge_repository -v 2>&1 | tee "$post_audit_log"
+              post_audit_status=${PIPESTATUS[0]}
+              set -e
+              post_audit_seconds=$(( $(date +%s) - post_audit_start ))
+              echo "- Post-materialization repo-state audit (attempt $attempt): ${post_audit_seconds}s" >> "$GITHUB_STEP_SUMMARY"
+              if (( post_audit_status != 0 )); then
+                echo "NFL post-materialization repo-state audit failed; canonical data is not published." >&2
+                write_failure_diagnostic "post-materialize-audit" "$post_audit_status" "$post_audit_log"
+                exit "$post_audit_status"
+              fi
+            fi
 
             # The complete NFL audit belongs only to the full materializer. Scoped
             # finality diagnostics remain execution output and never overwrite it.
