@@ -23,7 +23,7 @@ guidance:
 
   architectureReview:
     - Follow `.ai-context/manual/architecture-review.yaml` for materially architectural proposals, contract/data-model changes, ownership/source-of-truth changes, cross-consumer derivations, identity/key design and migrations.
-    - Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.
+    - 'Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.'
     - Explicitly check whether variable behavior is configuration/settings-driven or accidentally hard-coded, including league, season, scoring-profile and other relevant dimensions. State which future changes require reconfiguration/re-derivation versus code changes.
     - For derived or cached state, identify its complete identity, dependencies, invalidation/recompute triggers and compatibility behavior when inputs/settings change.
     - Keep the normal agent self-review lightweight but mandatory when the contract applies; surface material unresolved findings before implementation rather than waiting for the user to ask recurring architecture-check questions.
@@ -35,7 +35,7 @@ guidance:
     - Treat `Previous Season Standings` as `Placements.Previous.Playoffs` / the previous season's final overall placement by default. Do not substitute `Placements.Previous.Regular` unless Regular Season is explicitly requested.
     - Treat `All-Time Standings` as overall/all-time playoff placement by default. Use all-time regular-season placement only when the user explicitly says `All-Time Regular Season Standings` or equivalent.
     - Keep explicitly named `Regular Season Standings` separate from Overall standings in answers, implementation choices, comparisons and fallback/tiebreak logic.
-    - `Current Standings` during an active season may represent the live current-season table; this exception does not change the historical/default meaning of unqualified previous-season or all-time standings.
+    - '`Current Standings` during an active season may represent the live current-season table; this exception does not change the historical/default meaning of unqualified previous-season or all-time standings.'
 
   userIntent:
     - Treat every user message phrased as a question as a question only and never as an instruction to perform an action, even when the wording could be understood as a polite request in German.
@@ -74,7 +74,7 @@ guidance:
     - Use .ai-context/manual/work-tracking.yaml as the canonical contract for Issue lifecycle, label semantics, priority rules, handoff and work-tracking drift governance.
 
   workflowObservability:
-    - When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.
+    - 'When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.'
     - A scheduler-integrated decision path that executes outside the normal configured scheduler targets must be explicitly composed into the final operator summary and machine-readable decision set, or its intentional exclusion must be documented. Execution order must never silently make a working decision path invisible to operators.
     - Prefer the final Job Summary to be materialized only after all scheduler-integrated decisions for the tick are known. If an existing layer writes an intermediate summary earlier, the orchestrator may deliberately replace it with one final combined view after late decision paths have completed.
     - Add or update regression coverage whenever summary composition changes so a new workflow or decision path cannot be introduced successfully while remaining absent from the expected operator-facing summary.
@@ -83,7 +83,7 @@ guidance:
     - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
     - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
-    - Use lifecycle status and blocking as separate dimensions: status:* describes where the Issue is in the work lifecycle, while the standalone `blocked` label describes whether a real impediment currently prevents the next meaningful step.
+    - 'Use lifecycle status and blocking as separate dimensions: status:* describes where the Issue is in the work lifecycle, while the standalone `blocked` label describes whether a real impediment currently prevents the next meaningful step.'
     - Treat an open Issue with no status:* label as intentional Backlog. Do not add status:backlog or status:new merely to represent the default backlog state.
     - Use status:analysis when the topic has been meaningfully discussed or investigated but remains deliberately not Ready because scope, options, requirements or decisions are still unresolved.
     - Use status:ready only when the Issue is sufficiently defined that an implementing worker should not need to invent fundamental product or architecture decisions before starting.
@@ -105,7 +105,7 @@ guidance:
 
   frontend:
     - Keep visible frontend UI copy in English by default, including Angular templates and presentation ViewModel strings. Only use German in frontend UI when the user explicitly requests a German-only UI element or when displaying generated/user-provided data that is already German.
-    - Use English-style user-facing numeric formatting by default: `.` as decimal separator and `,` as thousands separator (for example `1,234.5`). Make numeric locale explicit where needed rather than globally changing application locale in a way that could alter dates/times. Preserve surface-specific precision unless a product requirement changes it.
+    - 'Use English-style user-facing numeric formatting by default: `.` as decimal separator and `,` as thousands separator (for example `1,234.5`). Make numeric locale explicit where needed rather than globally changing application locale in a way that could alter dates/times. Preserve surface-specific precision unless a product requirement changes it.'
     - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
 
   ciDeployment:
@@ -120,7 +120,7 @@ guidance:
     - If a guidance section becomes too broad, mixed or hard to scan, propose a content or physical split instead of continuing to append unrelated rules.
 
   writeStrategy:
-    - For large, multi-file, move-heavy or refactor commits, use a deliberate large-change mode: summarize the intended change, identify affected files, choose the safest write strategy, and avoid uploading unnecessarily large full-file contents.
+    - 'For large, multi-file, move-heavy or refactor commits, use a deliberate large-change mode: summarize the intended change, identify affected files, choose the safest write strategy, and avoid uploading unnecessarily large full-file contents.'
     - Prefer small focused commits over one large commit. Split large changes into logical commits when possible, especially when moving files, restructuring folders, or changing multiple layers.
     - For pure file moves or renames, prefer Git tree/blob/SHA-based operations when available instead of re-uploading full file contents.
     - Preserve file content unchanged during pure moves and verify that the resulting diff represents a move, not an unintended rewrite.
@@ -152,7 +152,7 @@ guidance:
 
   postMerge:
     - After an authorized merge actually succeeds, treat Issue reconciliation as a mandatory lifecycle gate before reporting the merge/close lifecycle as complete.
-    - Verify the Pull Request is actually merged and fetch the linked Issue after the merge even when GitHub has already closed it through `Fixes #N` or another closing reference.
+    - 'Verify the Pull Request is actually merged and fetch the linked Issue after the merge even when GitHub has already closed it through `Fixes #N` or another closing reference.'
     - Re-check every acceptance criterion against the merged result and available validation evidence.
     - Finalize the Issue body with completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
     - If the full scope is complete, ensure the Issue is closed as `completed` and remove active work-status labels unless intentionally retained for history.

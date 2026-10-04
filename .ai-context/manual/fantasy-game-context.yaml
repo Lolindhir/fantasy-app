@@ -92,9 +92,10 @@ counterfactual:
     - custom_points / commissioner-adjusted scoring evidence is present
 
 historical_evidence_ladder:
-  - canonical week-specific player/team membership when identity is available
-  - exact historical Players_<season>.json Games[] game/team evidence
-  - explicit unknown/no-association when neither rung resolves exactly one game
+  rungs:
+    - canonical week-specific player/team membership when identity is available
+    - exact historical Players_<season>.json Games[] game/team evidence
+    - explicit unknown/no-association when neither rung resolves exactly one game
   forbidden:
     - current roster/team membership as historical evidence
     - nearest-date or abbreviation guessing
