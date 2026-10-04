@@ -24,7 +24,7 @@ import type { MatchupProjectionTeam } from '../../../core/models/matchup-project
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { MatchupRangeChartComponent } from '../projection-range/matchup-range-chart';
-import { RangeWhiskerComponent } from '../projection-range/range-whisker';
+import { PlayerProjectionComponent } from '../projection-range/player-projection';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import {
   isFantasyGameImpactVisible,
@@ -33,11 +33,14 @@ import {
 import { orderOverviewCurrentMatchups } from '../../utils/overview-weekly-dashboard.util';
 import {
   axisPosition,
+  formatProjectionPoints,
+  playerProjectionView,
   rangeAtLevel,
   rangeBarGeometry,
+  scoredSoFarNote,
   type MatchupRangeTeamView,
   type MatchupRangeView,
-  type PlayerRangeBarView
+  type PlayerProjectionView
 } from '../../utils/projection-range.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
@@ -188,7 +191,7 @@ export interface FantasyGameContextDialogData {
     MatIconModule,
     PositionStylePipe,
     MatchupRangeChartComponent,
-    RangeWhiskerComponent
+    PlayerProjectionComponent
   ],
   templateUrl: './fantasy-game-context-dialog.html',
   styleUrls: ['./fantasy-game-context-dialog.scss', './fantasy-game-context-dialog-refinements.scss']
@@ -444,7 +447,7 @@ export class FantasyGameContextDialogComponent {
     const left = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'left'));
     const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
     if (left === null && right === null) return null;
-    return { left: this.formatFantasyPoints(left), right: this.formatFantasyPoints(right) };
+    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
   }
 
   matchupRange(matchup: FantasyGameContextMatchup): MatchupRangeView | null {
@@ -455,15 +458,16 @@ export class FantasyGameContextDialogComponent {
 
     const sides: MatchupDisplaySide[] = ['left', 'right'];
     const teams: MatchupRangeTeamView[] = [];
-    const scored: string[] = [];
+    const scored: number[] = [];
     for (const side of sides) {
       const teamID = this.matchupTeamID(matchup, side);
       const team = matchupProjectionTeam(matchup, teamID);
       const range = rangeAtLevel(team?.Ranges, level);
       if (!team || !range || team.ProjectedFinalScore === null) return null;
-      const projected = this.formatFantasyPoints(team.ProjectedFinalScore);
+      const projected = formatProjectionPoints(team.ProjectedFinalScore);
       teams.push({
         label: this.teamShortName(teamID),
+        avatar: this.teamAvatar(teamID),
         bar: rangeBarGeometry(range, axis),
         marker: axisPosition(team.ProjectedFinalScore, axis),
         projected,
@@ -471,27 +475,28 @@ export class FantasyGameContextDialogComponent {
         upper: String(Math.round(range.Upper)),
         ariaLabel: `${this.teamName(teamID)} projected ${projected}, ${Math.round(level * 100)}% range ${Math.round(range.Lower)} to ${Math.round(range.Upper)}`
       });
-      scored.push(this.formatFantasyPoints(team.ScoredPoints));
+      scored.push(team.ScoredPoints);
     }
 
     const ticks: Array<{ value: number; position: number }> = [];
     for (let value = axis.Min; value <= axis.Max; value += axis.Step) {
       ticks.push({ value, position: axisPosition(value, axis) });
     }
-    return { levelLabel: `${Math.round(level * 100)}% range`, teams, ticks, scored: { left: scored[0], right: scored[1] } };
+    return {
+      levelLabel: `${Math.round(level * 100)}% range`,
+      teams,
+      ticks,
+      scoredNote: scoredSoFarNote(scored[0], scored[1])
+    };
   }
 
-  playerRangeBar(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): PlayerRangeBarView | null {
-    const axis = this.data.context.ProjectionDisplay?.PlayerRangeAxis;
-    if (!axis || !player.ProjectedRange || player.ProjectedPoints === null) return null;
-    if (!this.showPlayerProjection(row, player)) return null;
-    const bar = rangeBarGeometry(player.ProjectedRange, axis);
-    return {
-      left: bar.left,
-      width: bar.width,
-      marker: axisPosition(player.ProjectedPoints, axis),
-      ariaLabel: `Projected ${this.formatFantasyPoints(player.ProjectedPoints)}, range ${this.formatFantasyPoints(player.ProjectedRange.Lower)} to ${this.formatFantasyPoints(player.ProjectedRange.Upper)}`
-    };
+  playerProjection(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): PlayerProjectionView | null {
+    if (player.ProjectedPoints === null || !this.showPlayerProjection(row, player)) return null;
+    return playerProjectionView({
+      projected: player.ProjectedPoints,
+      range: player.ProjectedRange,
+      axis: this.data.context.ProjectionDisplay?.PlayerRangeAxis ?? null
+    });
   }
 
   showPlayerProjection(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): boolean {

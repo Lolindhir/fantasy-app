@@ -55,6 +55,7 @@ import {
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
+import { formatProjectionPoints } from '../../utils/projection-range.util';
 import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
@@ -288,7 +289,7 @@ export class LeagueMatchupsComponent {
     const right = scoreOf(matchup.right.team.TeamID);
     if (left === null && right === null) return null;
 
-    return { left: this.formatFantasyPoints(left), right: this.formatFantasyPoints(right) };
+    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
   }
 
   scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {

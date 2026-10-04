@@ -13,6 +13,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from matchup_projection import (  # noqa: E402
+    AXIS_PADDING,
     METHOD_ID,
     build_matchup_projections,
     player_sigma,
@@ -249,8 +250,8 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertEqual(axis["Step"], 20)
         self.assertEqual(axis["Min"] % 20, 0)
         self.assertEqual(axis["Max"] % 20, 0)
-        self.assertLessEqual(axis["Min"], min(item["Lower"] for item in bounds) - 5)
-        self.assertGreaterEqual(axis["Max"], max(item["Upper"] for item in bounds) + 5)
+        self.assertLessEqual(axis["Min"], min(item["Lower"] for item in bounds) - AXIS_PADDING)
+        self.assertGreaterEqual(axis["Max"], max(item["Upper"] for item in bounds) + AXIS_PADDING)
 
     def test_axis_is_absent_when_a_team_has_no_range(self) -> None:
         model = default_model()

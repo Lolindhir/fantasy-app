@@ -2,7 +2,10 @@
   <div class="head"><h3>Projected range</h3><span>{{ view.levelLabel }} · est.</span></div>
   <div class="chart">
     <div *ngFor="let team of view.teams" class="row">
-      <span class="team">{{ team.label }}</span>
+      <span class="team" [attr.aria-label]="team.label">
+        <img *ngIf="team.avatar as avatar; else initials" [src]="avatar" alt="" />
+        <ng-template #initials>{{ team.label }}</ng-template>
+      </span>
       <div class="track" role="img" [attr.aria-label]="team.ariaLabel">
         <i class="bar" [style.left.%]="team.bar.left" [style.width.%]="team.bar.width"></i>
         <span class="end end--low" [style.left.%]="team.bar.left">{{ team.lower }}</span>
@@ -15,5 +18,5 @@
       <span *ngFor="let tick of view.ticks" [style.left.%]="tick.position">{{ tick.value }}</span>
     </div>
   </div>
-  <p class="note">Scored so far {{ view.scored.left }} and {{ view.scored.right }}. Estimate that assumes players score independently.</p>
+  <p class="note"><ng-container *ngIf="view.scoredNote">{{ view.scoredNote }} </ng-container>Estimate; players are assumed to score independently.</p>
 </section>
