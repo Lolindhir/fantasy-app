@@ -25,17 +25,6 @@ export interface MatchupPlayerStatusPlayerView extends MatchupPlayerStatusPlayer
   playerID: string;
 }
 
-export interface MatchupPlayerStatusPlayedView extends MatchupPlayerStatusPlayerView {
-  points: number;
-  projectedPoints: number | null;
-}
-
-export interface MatchupPlayerStatusGameView {
-  gameID: string;
-  label: string;
-  players: MatchupPlayerStatusPlayedView[];
-}
-
 export interface MatchupPlayerStatusProblemView extends MatchupPlayerStatusPlayerView {
   kind: MatchupPlayerProblemKind;
   slot: string | null;
@@ -53,10 +42,7 @@ export interface MatchupPlayerStatusTeamView {
   teamID: string | number;
   name: string;
   avatar: string | null;
-  starterCount: number;
-  finalCount: number;
   openCount: number;
-  games: MatchupPlayerStatusGameView[];
   problems: MatchupPlayerStatusProblemView[];
   nextWindow: MatchupPlayerStatusNextWindowView | null;
 }
@@ -65,7 +51,6 @@ interface StarterEntry {
   playerID: string;
   game: FantasyGameContextGame;
   points: number | null;
-  projectedPoints: number | null;
 }
 
 export function fantasyGameLabel(game: FantasyGameContextGame): string {
@@ -89,14 +74,10 @@ function starterEntries(
     const team = game.FantasyTeams.find(candidate => String(candidate.FantasyTeamID) === String(teamID));
     for (const player of team?.Players ?? []) {
       if (!player.IsStarter) continue;
-      const prediction = player.Prediction;
       entries.set(String(player.PlayerID), {
         playerID: String(player.PlayerID),
         game,
-        points: player.Points ?? null,
-        projectedPoints: prediction?.Status === 'available' && Number.isFinite(prediction.Points)
-          ? prediction.Points
-          : null
+        points: player.Points ?? null
       });
     }
   }
@@ -127,8 +108,8 @@ function problemSlot(
 }
 
 /**
- * Presentation-only grouping of generated facts for the matchup dialog: starters whose NFL game is
- * final, starters flagged OUT or questionable by MatchupProjections, and a count of the rest.
+ * Presentation-only grouping of generated facts for the matchup dialog: starters flagged OUT or
+ * questionable by MatchupProjections, and a count of the remaining open starters.
  * Availability, scoring and next-window membership all come from generated fields.
  */
 export function buildMatchupPlayerStatus(
@@ -144,26 +125,16 @@ export function buildMatchupPlayerStatus(
     const decisionTeam = lookups.decisionTeam(teamID);
     const starters = starterEntries(context, teamID);
 
-    const playedByGame = new Map<string, MatchupPlayerStatusGameView>();
-    const playedIDs = new Set<string>();
     const sortedStarters = [...starters.values()].sort(
       (left, right) => Date.parse(left.game.StartsAtUtc) - Date.parse(right.game.StartsAtUtc)
         || left.game.GameID.localeCompare(right.game.GameID)
     );
-    for (const entry of sortedStarters) {
-      if (!isFinalGame(entry.game) || entry.points === null || !Number.isFinite(entry.points)) continue;
-      playedIDs.add(entry.playerID);
-      let group = playedByGame.get(entry.game.GameID);
-      if (!group) {
-        group = { gameID: entry.game.GameID, label: fantasyGameLabel(entry.game), players: [] };
-        playedByGame.set(entry.game.GameID, group);
-      }
-      group.players.push({
-        ...toInfoView(entry.playerID, lookups),
-        points: entry.points,
-        projectedPoints: entry.projectedPoints
-      });
-    }
+    // Starters from finished NFL games are not listed here; the matchup timeline already shows them.
+    const playedIDs = new Set(
+      sortedStarters
+        .filter(entry => isFinalGame(entry.game) && entry.points !== null && Number.isFinite(entry.points))
+        .map(entry => entry.playerID)
+    );
 
     const problems: MatchupPlayerStatusProblemView[] = [];
     const problemIDs = new Set<string>();
@@ -214,10 +185,7 @@ export function buildMatchupPlayerStatus(
       teamID,
       name: lookups.teamName(teamID),
       avatar: lookups.teamAvatar(teamID),
-      starterCount,
-      finalCount,
       openCount,
-      games: [...playedByGame.values()],
       problems,
       nextWindow
     };
@@ -225,5 +193,5 @@ export function buildMatchupPlayerStatus(
 }
 
 export function hasMatchupPlayerStatus(teams: readonly MatchupPlayerStatusTeamView[]): boolean {
-  return teams.some(team => team.starterCount > 0);
+  return teams.some(team => team.problems.length > 0);
 }

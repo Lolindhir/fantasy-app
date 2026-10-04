@@ -50,8 +50,6 @@
 }
 
 button.mps-team-identity,
-button.mps-game-label,
-button.mps-player,
 button.mps-problem {
   border: 0;
   background: transparent;
@@ -86,50 +84,12 @@ button.mps-team-identity {
   }
 }
 
-.mps-team-progress {
-  flex: none;
-  color: #7c8799;
-  font-size: 0.6rem;
-  font-weight: 700;
-}
-
 .mps-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
-.mps-game {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px;
-  border: 1px solid #edf0f5;
-  border-radius: 10px;
-}
-
-button.mps-game-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px;
-  border-radius: 6px;
-  color: #475569;
-  font-size: 0.68rem;
-  font-weight: 800;
-}
-
-.mps-final {
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  color: #475569;
-  font-size: 0.6rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-button.mps-player,
 button.mps-problem {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) auto;
@@ -140,8 +100,6 @@ button.mps-problem {
   border-radius: 8px;
 }
 
-button.mps-player:hover,
-button.mps-game-label:hover,
 button.mps-team-identity:hover {
   background: rgba(124, 58, 237, 0.045);
 }
@@ -186,15 +144,6 @@ button.mps-team-identity:hover {
   }
 }
 
-.mps-meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #7c8799;
-  font-size: 0.6rem;
-  font-weight: 700;
-}
-
 .mps-chip {
   display: inline-flex;
   align-items: center;
@@ -208,24 +157,11 @@ button.mps-team-identity:hover {
   white-space: nowrap;
 }
 
-.mps-chip--position {
-  color: #0f172a;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
-}
-
 .mps-chip--status {
   height: 15px;
   margin-right: 4px;
   color: #fff;
   vertical-align: 1px;
-}
-
-/* Score is primary sports information, so it stays neutral and large. */
-.mps-points {
-  color: #1e293b;
-  font-size: 0.92rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
 }
 
 button.mps-problem {
@@ -286,4 +222,10 @@ button.mps-problem {
 
 @media (max-width: 520px) {
   .mps-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mps-none {
+  margin: 0;
+  color: #7c8799;
+  font-size: 0.64rem;
 }
