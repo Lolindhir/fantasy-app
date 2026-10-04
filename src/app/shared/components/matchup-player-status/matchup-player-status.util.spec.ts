@@ -92,14 +92,10 @@ describe('buildMatchupPlayerStatus', () => {
     decisionTeam: id => (String(id) === '1' ? decisionTeam : null)
   };
 
-  it('groups final starters by NFL game with points and earlier projection', () => {
+  it('does not list starters from finished NFL games', () => {
     const [left] = buildMatchupPlayerStatus(matchup, [1, 2], context, lookups);
 
-    expect(left.games.map(g => g.label)).toEqual(['PIT @ CLE']);
-    expect(left.games[0].players).toEqual([
-      jasmine.objectContaining({ playerID: 'rb', points: 15.6, projectedPoints: 13.8 })
-    ]);
-    expect(left.finalCount).toBe(1);
+    expect(left.problems.map(problem => problem.playerID)).not.toContain('rb');
   });
 
   it('lists OUT starters with lineup slot, game and replacement count', () => {
@@ -134,7 +130,7 @@ describe('buildMatchupPlayerStatus', () => {
     expect(left.nextWindow).toEqual({ gameLabel: 'IND @ WSH', playerName: 'taylor', extraPlayerCount: 1 });
   });
 
-  it('keeps real points for an OUT starter whose game is already final', () => {
+  it('does not flag an OUT starter whose game is already final', () => {
     const finalOut = {
       ...matchup,
       Projection: {
@@ -145,10 +141,10 @@ describe('buildMatchupPlayerStatus', () => {
     const [left] = buildMatchupPlayerStatus(finalOut, [1, 2], context, lookups);
 
     expect(left.problems).toEqual([]);
-    expect(left.games[0].players.map(p => p.playerID)).toEqual(['rb']);
+    expect(left.openCount).toBe(4);
   });
 
-  it('renders nothing when the matchup has no starters', () => {
+  it('renders nothing when no starter is out or questionable', () => {
     const empty = buildMatchupPlayerStatus(
       { ...matchup, Projection: null } as FantasyGameContextMatchup,
       [1, 2],
