@@ -145,7 +145,7 @@ identityModel:
         - A decision is active only for its exact observation season and must not silently carry into a later season.
         - For current-provider-reassignment, the target must not already carry a different active value for an assigned provider.
         - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
-        - A current-provider-reassignment must fail closed rather than override an active provider conflict; only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
+        - A current-provider-reassignment must fail closed rather than override an active provider conflict, with one exception: a conflict whose parties are exactly the declared target and declared sources is the split the decision resolves (a persisted empty provisional record and the full record both claiming the token). Any third party in an active conflict for the token keeps it fail-closed. Otherwise only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
         - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
     currentIdentityGapResolution:

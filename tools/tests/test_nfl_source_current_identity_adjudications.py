@@ -183,6 +183,43 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
                 2026,
             )
 
+    def test_state_guard_resolves_conflict_between_declared_target_and_source_only(self) -> None:
+        decision = {
+            "AdjudicationID": "test",
+            "Season": 2026,
+            "TargetCanonicalPlayerID": "NFLP-target",
+            "SourceCanonicalPlayerIDs": ["NFLP-provisional"],
+            "ProviderAssignments": [{"Provider": "Sleeper", "ExternalID": "14071"}],
+            "Provenance": "manual.current-identity-adjudication:test",
+        }
+        canonical = [
+            {"CanonicalPlayerID": "NFLP-target", "IDs": {"Sleeper": "14071"}, "IDAliases": {}},
+            {"CanonicalPlayerID": "NFLP-provisional", "IDs": {}, "IDAliases": {}},
+        ]
+
+        def conflict(members: list[str], first: int = 2026, last: int = 2026) -> dict[str, Any]:
+            return {
+                "Provider": "Sleeper",
+                "ExternalID": "14071",
+                "CanonicalPlayerIDs": members,
+                "FirstObservedSeason": first,
+                "LastObservedSeason": last,
+            }
+
+        declared = conflict(["NFLP-provisional", "NFLP-target"])
+        statuses = validate_current_identity_adjudications_against_state(
+            [decision], canonical, [declared], 2026
+        )
+        self.assertEqual([{"AdjudicationID": "test", "Status": "active"}], statuses)
+
+        # A third party in any active conflict for the token keeps it fail-closed.
+        canonical.append({"CanonicalPlayerID": "NFLP-other", "IDs": {}, "IDAliases": {}})
+        third_party = conflict(["NFLP-provisional", "NFLP-other"])
+        with self.assertRaisesRegex(ValueError, "cannot override active provider conflict"):
+            validate_current_identity_adjudications_against_state(
+                [decision], canonical, [declared, third_party], 2026
+            )
+
     def test_state_guard_rejects_active_conflict_and_undeclared_owner(self) -> None:
         decision = {
             "AdjudicationID": "test",

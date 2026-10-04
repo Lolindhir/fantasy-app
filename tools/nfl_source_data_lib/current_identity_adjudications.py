@@ -351,7 +351,8 @@ def validate_current_identity_adjudications_against_state(
     boundary required before a future identity-builder integration:
     - the target may not already carry a different active value for an assigned provider;
     - an assigned provider token may not be owned by an undeclared third canonical identity;
-    - an assigned token may not overlap an active provider conflict.
+    - an assigned token may not overlap an active provider conflict, unless every
+      party of that conflict is the declared target or a declared source.
 
     The declared source CanonicalPlayerIDs are the only existing owners that may be
     superseded by a future application step.
@@ -386,6 +387,7 @@ def validate_current_identity_adjudications_against_state(
                     token_owners.setdefault((str(provider), external_id), set()).add(canonical_id)
 
     active_conflict_tokens: set[tuple[str, str]] = set()
+    active_conflict_members: dict[tuple[str, str], set[str]] = {}
     for conflict in mapping_conflicts:
         provider = str(conflict.get("Provider") or "").strip()
         external_id = str(conflict.get("ExternalID") or "").strip()
@@ -393,13 +395,16 @@ def validate_current_identity_adjudications_against_state(
             continue
         first_raw = conflict.get("FirstObservedSeason")
         last_raw = conflict.get("LastObservedSeason")
+        members = {str(value) for value in conflict.get("CanonicalPlayerIDs") or []}
         if first_raw is None and last_raw is None:
             active_conflict_tokens.add((provider, external_id))
+            active_conflict_members.setdefault((provider, external_id), set()).update(members)
             continue
         first = int(first_raw if first_raw is not None else observation_season)
         last = int(last_raw if last_raw is not None else first)
         if first <= observation_season <= last:
             active_conflict_tokens.add((provider, external_id))
+            active_conflict_members.setdefault((provider, external_id), set()).update(members)
 
     statuses: list[dict[str, str]] = []
     for adjudication in adjudications:
@@ -447,7 +452,12 @@ def validate_current_identity_adjudications_against_state(
             external_id = str(assignment["ExternalID"])
             token = (provider, external_id)
 
-            if token in active_conflict_tokens:
+            # A conflict whose parties are exactly the declared target and sources is
+            # the split this decision resolves; any third party keeps it fail-closed.
+            conflict_members = active_conflict_members.get(token, set())
+            if token in active_conflict_tokens and (
+                not conflict_members or not conflict_members <= source_ids | {target_id}
+            ):
                 raise ValueError(
                     f"Current identity adjudication {adjudication_id} cannot override active "
                     f"provider conflict: {provider}/{external_id}/{observation_season}"
