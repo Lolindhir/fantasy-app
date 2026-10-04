@@ -282,7 +282,8 @@ matrix:
     identityKey: CanonicalPlayerID + season + week/game
     lifecycle: derived-seasonal
     historyCoverage: follows canonical player-stats coverage
-    migrationState: target-approved-generator-migration-not-started
+    derivationOwner: playerWeekFantasy (productively-materialized-v1, contract .ai-context/manual/player-week-fantasy.yaml; derives league-scoring points from canonical stats plus canonical league ScoringSettings)
+    migrationState: derivation-materialized-as-playerWeekFantasy-players-consumer-not-migrated
     guards:
       - scoring definition comes from the league settings rather than a provider-default fantasy-point field
       - canonical source stat corrections must propagate deterministically
