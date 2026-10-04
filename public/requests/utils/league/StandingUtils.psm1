@@ -334,12 +334,140 @@ function Format-WinPct {
     return ([math]::Round($value, 3).ToString("0.000", [System.Globalization.CultureInfo]::InvariantCulture)).Substring(1)
 }
 
+# Builds the regular season table as it stood after the immediately preceding completed
+# week (games played - 1) from per-week matchup facts and returns TeamID -> place.
+# Uses the same ranking/tiebreak function as the current table. Returns $null when the
+# comparison is not available (fewer than two completed weeks, missing/inconsistent
+# weekly facts, or weekly outcomes that do not match the teams' Record) so that no
+# misleading movement is published.
+# WeeklyMatchups: array of @{ Week = <int>; Entries = @(@{ TeamID; MatchupID; Points }) }
+function Get-PreviousWeekRegularSeasonPlaces {
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$teamData,
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [array]$weeklyMatchups
+    )
+
+    $teams = @($teamData)
+    if ($teams.Count -eq 0) { return $null }
+
+    $gamesPlayed = @($teams | ForEach-Object { ([string]$_.Record).Length } | Select-Object -Unique)
+    if ($gamesPlayed.Count -ne 1) {
+        Write-Warning "Previous week places unavailable: teams report differing games played."
+        return $null
+    }
+    $completedWeeks = [int]$gamesPlayed[0]
+    if ($completedWeeks -lt 2) { return $null }
+
+    $previousWeeks = $completedWeeks - 1
+    $weeksByNumber = @{}
+    foreach ($weekEntry in @($weeklyMatchups)) {
+        if ($null -ne $weekEntry) { $weeksByNumber[[int]$weekEntry.Week] = $weekEntry }
+    }
+
+    $state = @{}
+    foreach ($team in $teams) {
+        $state[[int]$team.TeamID] = [ordered]@{ Wins = 0; Losses = 0; Ties = 0; Points = [double]0; PointsAgainst = [double]0 }
+    }
+
+    for ($week = 1; $week -le $previousWeeks; $week++) {
+        if (-not $weeksByNumber.ContainsKey($week)) {
+            Write-Warning "Previous week places unavailable: matchup facts for week $week are missing."
+            return $null
+        }
+
+        $entries = @($weeksByNumber[$week].Entries)
+        if ($entries.Count -ne $teams.Count) {
+            Write-Warning "Previous week places unavailable: week $week does not cover all $($teams.Count) teams."
+            return $null
+        }
+
+        $byMatchup = @{}
+        foreach ($entry in $entries) {
+            if ($null -eq $entry.Points -or $null -eq $entry.MatchupID -or -not $state.ContainsKey([int]$entry.TeamID)) {
+                Write-Warning "Previous week places unavailable: incomplete matchup entry in week $week."
+                return $null
+            }
+            $key = [string]$entry.MatchupID
+            if (-not $byMatchup.ContainsKey($key)) { $byMatchup[$key] = @() }
+            $byMatchup[$key] += $entry
+        }
+
+        $seen = @{}
+        foreach ($pair in $byMatchup.Values) {
+            if (@($pair).Count -ne 2) {
+                Write-Warning "Previous week places unavailable: week $week has a matchup without exactly two teams."
+                return $null
+            }
+
+            for ($i = 0; $i -lt 2; $i++) {
+                $own = $pair[$i]
+                $opp = $pair[1 - $i]
+                $teamID = [int]$own.TeamID
+                if ($seen.ContainsKey($teamID)) {
+                    Write-Warning "Previous week places unavailable: team $teamID appears twice in week $week."
+                    return $null
+                }
+                $seen[$teamID] = $true
+
+                $ownPoints = [double]$own.Points
+                $oppPoints = [double]$opp.Points
+                $result = if ($ownPoints -gt $oppPoints) { 'W' } elseif ($ownPoints -lt $oppPoints) { 'L' } else { 'T' }
+
+                $team = $teams | Where-Object { [int]$_.TeamID -eq $teamID } | Select-Object -First 1
+                if ([string]$team.Record[$week - 1] -ne $result) {
+                    Write-Warning "Previous week places unavailable: week $week result '$result' for team $teamID does not match Record '$($team.Record)'."
+                    return $null
+                }
+
+                switch ($result) {
+                    'W' { $state[$teamID].Wins++ }
+                    'L' { $state[$teamID].Losses++ }
+                    'T' { $state[$teamID].Ties++ }
+                }
+                $state[$teamID].Points = [math]::Round($state[$teamID].Points + $ownPoints, 2)
+                $state[$teamID].PointsAgainst = [math]::Round($state[$teamID].PointsAgainst + $oppPoints, 2)
+            }
+        }
+    }
+
+    $previousTeams = foreach ($team in $teams) {
+        $teamState = $state[[int]$team.TeamID]
+        [PSCustomObject]@{
+            TeamID        = [int]$team.TeamID
+            Team          = $team.Team
+            Owner         = $team.Owner
+            PlaceRegular  = 0
+            Wins          = $teamState.Wins
+            Losses        = $teamState.Losses
+            Ties          = $teamState.Ties
+            Points        = $teamState.Points
+            PointsAgainst = $teamState.PointsAgainst
+        }
+    }
+
+    $ranked = Get-RankedRegularSeasonStandings -teams @($previousTeams)
+    $places = @{}
+    foreach ($team in $ranked) {
+        $places[[int]$team.TeamID] = [int]$team.PlaceRegular
+    }
+
+    return $places
+}
+
 function Get-RegularSeasonStandings {
     param (
         [Parameter(Mandatory = $true)]
         [array]$teamData,
         [Parameter(Mandatory = $true)]
-        [int]$regularSeasonGames
+        [int]$regularSeasonGames,
+        # TeamID -> place after the previous completed week; $null (default) omits the
+        # weekly movement fields, e.g. for completed seasons.
+        [AllowNull()]
+        [hashtable]$previousWeekPlaces = $null,
+        [switch]$includeWeeklyMovement
     )
 
     # Liga-übergreifende Statistiken ermitteln
@@ -418,7 +546,7 @@ function Get-RegularSeasonStandings {
             $diffs += $winPctHistory[$k] - $winPctHistory[$k - 1]
         }
 
-        [PSCustomObject]@{
+        $row = [ordered]@{
             Place         = $team.PlaceRegular
             PlaceOrdinal  = Get-Ordinal ($team.PlaceRegular)
             TeamID        = $team.TeamID
@@ -449,13 +577,29 @@ function Get-RegularSeasonStandings {
             EfficiencyScore                     = [math]::Round($efficiencyScore, 4)
             IronWillScore                       = [math]::Round($ironWillScore, 4)
         }
+
+        # Weekly movement: PreviousWeekPlace is the place after the immediately preceding
+        # completed week, PlaceDelta = PreviousWeekPlace - Place (positive = moved up,
+        # negative = moved down, 0 = unchanged). Both are $null when no comparison exists.
+        if ($includeWeeklyMovement) {
+            $previousPlace = $null
+            $placeDelta = $null
+            if ($null -ne $previousWeekPlaces -and $previousWeekPlaces.ContainsKey([int]$team.TeamID)) {
+                $previousPlace = [int]$previousWeekPlaces[[int]$team.TeamID]
+                $placeDelta = $previousPlace - [int]$team.PlaceRegular
+            }
+            $row['PreviousWeekPlace'] = $previousPlace
+            $row['PlaceDelta'] = $placeDelta
+        }
+
+        [PSCustomObject]$row
     }
 
     return $result
 }
 
 function Get-RegularSeasonProperties{
-    return @('Place','TeamID','Owner','TeamName','PlaceOrdinal','NumberOfGames','Wins','Losses','Ties','RegularSeasonWins','WinPercentage', 'WinPercentageDiffLeagueAvg','Points','PointsAgainst','Record','Streak','PointDifference', 'PointsPerGame', 'PointsPerGameDiffLeagueAvg', 'PointsAgainstPerGame', 'PointsAgainstPerGameDiffLeagueAvg', 'LongestWinStreak', 'WinStreakScore', 'LongestLossStreak', 'LossStreakScore', 'EfficiencyScore', 'IronWillScore')
+    return @('Place','TeamID','Owner','TeamName','PlaceOrdinal','NumberOfGames','Wins','Losses','Ties','RegularSeasonWins','WinPercentage', 'WinPercentageDiffLeagueAvg','Points','PointsAgainst','Record','Streak','PointDifference', 'PointsPerGame', 'PointsPerGameDiffLeagueAvg', 'PointsAgainstPerGame', 'PointsAgainstPerGameDiffLeagueAvg', 'LongestWinStreak', 'WinStreakScore', 'LongestLossStreak', 'LossStreakScore', 'EfficiencyScore', 'IronWillScore', 'PreviousWeekPlace', 'PlaceDelta')
 }
 
 function Compare-RegularSeasonStandings{
@@ -750,7 +894,10 @@ function Get-StandingsRemote {
         [array]$playoffs = (Get-Playoffs -leagueID $leagueID),
         [Parameter(Mandatory=$true)][array]$teamData,
         [Parameter(Mandatory=$true)][int]$regularSeasonGames,
-        [Parameter(Mandatory=$true)][AllowNull()]$previousSeasonStandings
+        [Parameter(Mandatory=$true)][AllowNull()]$previousSeasonStandings,
+        # Per-week matchup facts of the active season; when supplied, weekly place movement is added.
+        [AllowNull()][AllowEmptyCollection()][array]$weeklyMatchups = $null,
+        [switch]$includeWeeklyMovement
     )
 
     try {
@@ -767,7 +914,11 @@ function Get-StandingsRemote {
         }
 
         # Regular Season Standings berechnen
-        $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames
+        $previousWeekPlaces = $null
+        if ($includeWeeklyMovement) {
+            $previousWeekPlaces = Get-PreviousWeekRegularSeasonPlaces -teamData $teamData -weeklyMatchups $weeklyMatchups
+        }
+        $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames -previousWeekPlaces $previousWeekPlaces -includeWeeklyMovement:$includeWeeklyMovement
 
         if($regularStandings.Count -eq 0){
             Write-Host "No regular season information available yet." -ForegroundColor Cyan

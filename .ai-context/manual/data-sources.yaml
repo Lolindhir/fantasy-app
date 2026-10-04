@@ -217,6 +217,20 @@ dataSources:
       Season-specific Playoff rows additionally retain OwnerAvatar and TeamAvatar
       from the same season's canonical members.json snapshot so archive consumers
       never resolve historical identity from the current team.
+      Current-season RegularSeason rows (and therefore Teams.json
+      Placements.Current.Regular) additionally carry the canonical weekly table
+      movement, issue #565, ADR-040. PreviousWeekPlace is the regular season place
+      after the immediately preceding completed week (completed weeks = games in
+      Record, previous = that minus one) and PlaceDelta = PreviousWeekPlace - Place
+      (positive = moved up, negative = moved down, 0 = unchanged). The previous
+      table is rebuilt from the canonical per-week matchups
+      (source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json)
+      with the same Get-RankedRegularSeasonStandings ranking and tiebreak as the
+      current table. Both fields are explicit null when no comparison exists
+      (fewer than two completed weeks, missing or incomplete week facts, or weekly
+      outcomes contradicting a team Record); consumers must not reconstruct or
+      infer them, and Placements.Previous (previous season) is never a source.
+      Completed-season rows do not carry the fields.
     historicalSource:
       canonicalLeagueID: nfl-reise
       consumer: public/requests/utils/league/CanonicalStandingUtils.psm1
