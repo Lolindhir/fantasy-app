@@ -32,18 +32,18 @@ Do not duplicate detailed Fantasy Management rules or source documentation in gl
 
 ## Required app context
 
-Before making architecture, data model, generation or frontend changes, read:
+Before making architecture, data model, generation or frontend changes, these files must be read completely, in this order (they are listed as `@` imports so that tools which support imports load them automatically; other tools must open the paths):
 
-1. `.ai-context/ai-context.yaml`
-2. `.ai-context/manual/ai-guidance.yaml`
-3. `.ai-context/manual/architecture-review.yaml`
-4. `.ai-context/manual/work-tracking.yaml`
-5. `.ai-context/manual/workflow-monitoring.yaml`
-6. `.ai-context/manual/workflow-publication.yaml`
-7. `.ai-context/manual/architecture.yaml`
-8. `.ai-context/manual/domain.yaml`
-9. `.ai-context/manual/data-sources.yaml`
-10. `.ai-context/manual/decisions.yaml`
+1. @.ai-context/ai-context.yaml
+2. @.ai-context/manual/ai-guidance.yaml
+3. @.ai-context/manual/architecture-review.yaml
+4. @.ai-context/manual/work-tracking.yaml
+5. @.ai-context/manual/workflow-monitoring.yaml
+6. @.ai-context/manual/workflow-publication.yaml
+7. @.ai-context/manual/architecture.yaml
+8. @.ai-context/manual/domain.yaml
+9. @.ai-context/manual/data-sources.yaml
+10. @.ai-context/manual/decisions.yaml
 
 For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
 
