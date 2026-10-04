@@ -239,10 +239,10 @@ describe('matchups overview view utility', () => {
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
     expect(left?.groups.map(group => group.kind)).toEqual([
-      'irreparable', 'final', 'locked', 'next', 'future', 'repairable', 'unknown'
+      'irreparable', 'repairable', 'final', 'locked', 'next', 'future', 'unknown'
     ]);
     expect(right?.groups.map(group => group.kind)).toEqual([
-      'unknown', 'repairable', 'future', 'next', 'locked', 'final', 'irreparable'
+      'unknown', 'future', 'next', 'locked', 'final', 'repairable', 'irreparable'
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
@@ -260,7 +260,7 @@ describe('matchups overview view utility', () => {
 
     const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
 
-    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'next', 'questionable', 'unknown']);
+    expect(view?.groups.map(group => group.kind)).toEqual(['questionable', 'locked', 'next', 'unknown']);
     expect(view?.groups.find(group => group.kind === 'questionable')?.outline).toBe('questionable');
     expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
   });

@@ -62,14 +62,15 @@ export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonVie
   isLive: boolean;
 }
 
+// Outer edge first: problems (red), then questionable (yellow), then lifecycle, unknown innermost.
 const kindOrder: Record<MatchupProgressKind, number> = {
   irreparable: 0,
-  final: 1,
-  locked: 2,
-  next: 3,
-  future: 4,
-  repairable: 5,
-  questionable: 6,
+  repairable: 1,
+  questionable: 2,
+  final: 3,
+  locked: 4,
+  next: 5,
+  future: 6,
   unknown: 7
 };
 
