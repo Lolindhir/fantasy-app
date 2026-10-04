@@ -1,5 +1,8 @@
+import type { PlayerWeekFantasyProjection } from './player-week-fantasy.models';
+
 export type FantasyGameContextScoringState = 'pending' | 'partial' | 'final';
 export type FantasyGameImpactState = 'unavailable' | 'partial' | 'final';
+export type FantasyGameContextTeamPredictionState = 'available' | 'partial' | 'unavailable';
 
 export interface FantasyGameContextDecisionWindow {
   DecisionWindowID: string;
@@ -11,6 +14,7 @@ export interface FantasyGameContextPlayer {
   PlayerID: string;
   IsStarter: boolean;
   Points: number | null;
+  Prediction?: PlayerWeekFantasyProjection | null;
 }
 
 export interface FantasyGameContextTeam {
@@ -74,6 +78,16 @@ export interface FantasyGameContextCounterfactualScore {
   Right: number;
 }
 
+export interface FantasyGameContextTeamPrediction {
+  FantasyTeamID: string | number;
+  State: FantasyGameContextTeamPredictionState;
+  StarterCount: number;
+  ProjectedStarterCount: number;
+  ProjectedStarterPoints: number;
+  PredictedEndScore: number | null;
+  UnavailableStarterPlayerIDs: string[];
+}
+
 export interface FantasyGameContextMatchupGame {
   GameID: string;
   DecisionWindowID: string;
@@ -122,6 +136,7 @@ export interface FantasyMatchupRemainingRelevance {
 export interface FantasyGameContextMatchup {
   FantasyMatchupID: string;
   TeamIDs: Array<string | number>;
+  TeamPredictions?: FantasyGameContextTeamPrediction[];
   FinalScores: FantasyGameContextCounterfactualScore | null;
   CounterfactualState:
     | 'available'
