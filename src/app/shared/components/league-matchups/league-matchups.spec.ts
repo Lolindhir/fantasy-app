@@ -352,8 +352,8 @@ describe('LeagueMatchupsComponent scoring overview', () => {
         .map(kicker => kicker.textContent?.trim());
 
       expect(progressKinds).toEqual([
-        'matchup-progress-segment--locked',
         'matchup-progress-segment--final',
+        'matchup-progress-segment--locked',
         'matchup-progress-segment--next',
         'matchup-progress-segment--future'
       ]);

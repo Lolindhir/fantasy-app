@@ -62,15 +62,16 @@ export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonVie
   isLive: boolean;
 }
 
-// Outer edge first. Started starters (locked or final) form the outermost block: red, yellow, blue, green.
+// Outer edge first. Started starters (locked or final) form the outermost block: red, green, blue, yellow, unknown.
 // Open starters follow: plain next-window and later segments, then the always-outlined problems
 // (yellow, red) with unknown innermost.
 const startedOrder: Partial<Record<MatchupProgressKind, number>> = {
   irreparable: 0,
   repairable: 0.5,
-  questionable: 1,
+  final: 1,
   locked: 2,
-  final: 3
+  questionable: 3,
+  unknown: 4
 };
 const openOrder: Partial<Record<MatchupProgressKind, number>> = {
   next: 0,

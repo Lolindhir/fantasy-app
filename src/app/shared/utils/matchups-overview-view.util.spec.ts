@@ -239,10 +239,10 @@ describe('matchups overview view utility', () => {
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
     expect(left?.groups.map(group => group.kind)).toEqual([
-      'locked', 'final', 'next', 'future', 'repairable', 'irreparable', 'unknown'
+      'final', 'locked', 'next', 'future', 'repairable', 'irreparable', 'unknown'
     ]);
     expect(right?.groups.map(group => group.kind)).toEqual([
-      'unknown', 'irreparable', 'repairable', 'future', 'next', 'final', 'locked'
+      'unknown', 'irreparable', 'repairable', 'future', 'next', 'locked', 'final'
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
@@ -265,7 +265,7 @@ describe('matchups overview view utility', () => {
     expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
   });
 
-  it('orders started starters red, yellow, blue, green outermost and puts open problems innermost', () => {
+  it('orders started starters red, green, blue outermost and puts open problems innermost', () => {
     const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
     const slots = [
       slot('WR-1', 'unlocked', { DecisionWindowID: 'later', ScoringAvailability: uncertain }),
